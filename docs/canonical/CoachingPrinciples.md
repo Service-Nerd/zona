@@ -10912,6 +10912,73 @@ way neither sitting saw; they are returned to the board before §116's flag may 
 - **C5** — measured: of 880 staged cases, **71.0% clean**; the rest are C4 (WEEK1-LEAP 10.0%, LONG-RUN-SHORT 9.8%, both
   6.2%) and §113 on the recorded long run (3.1%).
 
+### §116 Amendment 10 — A STAGED BLOCK MAY BE PUBLISHED; THE RACE IT STAGES MAY NOT *(Coaching Board 2026-11-06, `SITE-STAGED-PLAN-01`)*
+
+**Principle.** The base-build block a staged refusal returns may be rendered on a public page. **The race it
+stages may not be claimed there.** A published staged plan names the block, its length, and the checkpoint at its
+end; it does not name a race date, a countdown, or a week count beyond the block.
+
+**Why the distinction is the whole ruling.** For a 0 km/week, 0 km-longest-run beginner at a ~30-week marathon
+runway the engine returns a `base_build` block: seven **walk-run** weeks carrying no distance at all, then base
+weeks that first put a measurable kilometre on the page.
+
+🔴 **CORRECTED SAME DAY, BEFORE THE BUILD — THE SITTING RULED ON THE WRONG INPUT AND THE AMENDMENT SURVIVED IT.**
+The submission measured a probe that omitted **`days_available`**, which the wizard always sends. That single field
+is the discriminator:
+
+| input | block | door | checkpoint | `target_found` |
+|---|---|---|---|---|
+| probe, no `days_available` | 10 weeks | 7 km | week 10 | **false** |
+| **what the product sends** | **16 weeks** | **12 km** | **week 16** | **TRUE** |
+
+⚠️ **So the sitting's stated reason — *"the marathon block does not exist"* — IS FALSE for the published page.** It
+does exist. **The amendment stands and binds harder**, and the honest reason is ⚕️ Sims's condition, which was
+already inside it: the block ends at a **checkpoint**, and the race is built there *from what the runner actually
+ran, which may be less*. **A page cannot publish a plan contingent on a measurement nobody has taken** — and a page
+that can see a real race block behind the checkpoint is *more* tempted to claim it, not less.
+
+⚠️ **Recorded because the correction is the lesson:** `A RULE'S STATED REASON ROTS BEFORE ITS NUMBER`, and here it
+was wrong on arrival. The probe was the same class as `COHORT-GRID-UNSET-LEVEL-01` inverted — **a field the product
+always sends that the measurement left out.**
+
+⚠️ **THIS EXTENDS `FOUNDATION-LONG-RUNWAY-01` RATHER THAN INVENTING A RULE, and that ruling is why this is an
+amendment and not a veto.** It governs weeks a runner spends outside a plan and records Sims's point as binding —
+the reason that finding is `error` and not `warn`: *"a runner in that gap **is not resting, they are training
+unsupervised**, and for the women in this cohort unsupervised ramping into a first marathon is exactly where energy
+availability and bone loading go wrong. **We will never see it. Silence is not neutral.**"* It also fixed the limit
+on the copy: *"the note may not oversell the gap… **copy that oversold unsupervised weeks would be worse than the
+silence it replaces.**"*
+
+🔴 **A PUBLISHED PAGE IS THAT GAP AT SCALE.** Every reader is training unsupervised and none of them is a user we
+can observe, nudge or reshape. In the app the week-10 checkpoint is a **door**; on a page it is a **cliff** unless
+the page says what happens at the edge. ⚕️ **Sims's binding condition:** week 10 is presented as *the point at which
+the plan is built, from what the runner actually ran, which may be less* — never as the gateway to a marathon.
+
+🩹 **Willy's binding condition, and he expected to object and did not.** The plan itself is right: **seven weeks
+before the first measured kilometre**, spent on tissue rather than fitness, entering week 8 at 6 km with no leap.
+His objection is to the PAGE: it renders **one instance** (40, no injury history, three days, ~30-week runway), and
+a 55-year-old with a knee history is reading somebody else's plan. **The page states that it is one runner's plan,
+with its inputs named, and that age and injury history change it** — in the body, not in grey.
+
+🎯 **McMillan's condition.** Weeks 1–7 are duration-anchored and carry no distance, which is correct for a runner
+who has never run and reads as **broken** in a published table. The page says why the column is empty: at this
+stage the number is minutes, and a beginner chasing kilometres in week one is the runner the block exists to
+protect.
+
+📊 **Seiler, recorded rather than silent:** §1 is **undefined** here, not violated. There is no quality work in a
+walk-run block to distribute, per CD-21 Amendment 1. Nobody should read this page looking for 80/20.
+
+**Config.** No new numeric. The page reads `meta.staged_race` (`door_km`, `checkpoint_week`, `race_weeks`) rather
+than restating any of them.
+
+**Check.** ⚠️ **NOT an engine invariant, and the reason is structural:** `validatePlan()` takes a `Plan` and cannot
+see a page. Enforced on the marketing surface instead by `lib/marketing/stagedPagePromise.test.ts`.
+
+⚠️ **What this does not settle, flagged by the chair rather than buried:** a never-run runner can be staged into a
+**marathon** block and is **refused** for a **half**, at every runway from 12 to 30 weeks. §117 Amendment 5's logic
+— readiness to run is answered by the longest run — applies identically to both distances. Returned to this board
+as its own item (`STAGED-HM-DOOR-01`).
+
 ## 117. The finish-goal run-walk marathon — a lower target, not a looser rule
 
 *(Coaching Board 2026-09-20, ZERO-REJECTION-01. CORRECT WITH AMENDMENT, four binding amendments. Founder directive: "we cannot be rejecting nearly 50% of beginner runners" and "we just need to help them get to the end.")*

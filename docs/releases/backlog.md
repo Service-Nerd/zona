@@ -88,6 +88,19 @@ before planning against any number below (an item is a snapshot of the code on t
   which a four-word bullet cannot say. The question for the board is which of the six (if any) a reader choosing
   between tiers actually needs named.
 
+- 🏃 **COACHING BOARD** `STAGED-HM-DOOR-01` — **a never-run runner is staged into a MARATHON and refused a HALF.**
+  Measured 2026-11-06 through `runEngine` for `current_weekly_km: 0`, `longest_recent_run_km: 0`, beginner, 3 days:
+  marathon → `base_build` at 24/30/36-week runways; **half marathon → `refusal`, `long_run_readiness`, at 12, 16,
+  20, 24 AND 30 weeks**; 10K and 5K → an ordinary plan. ⚠️ **The boundary is literally zero:** at 5 km/week with a
+  2 km longest run the half returns a normal 16-week plan. **Cause:** `stagingDoorKm` stages a
+  `LongRunReadinessError` only when `walkRunDoorKm` returns a door, and that probe regenerates with the minimum
+  longest run and returns a door **only if §111 (`BaseVolumeError`) is what refuses**. The half is not refused by
+  §111, so the probe returns null and the original refusal stands. 🔴 **That function's own docstring says it was
+  written for this exact class** — *"the envelope staged only §111's refusals and could not see a walk-run runner,
+  whom §113 refuses first"* — **the fix landed in the measurement and not in the door.** §117 Amendment 5's logic
+  (readiness to run is answered by the longest run) applies identically to both distances. Flagged by the chair at
+  the `SITE-STAGED-PLAN-01` sitting and returned as its own item; **not** ruled there.
+
 **Found while BUILDING the sitting's items, filed not swept:**
 
 - 🧭 **DESIGN BOARD** `SITE-BAND-RHYTHM-01` — **16 band vertical rhythms are hand-typed where W-07's token family
@@ -109,11 +122,11 @@ before planning against any number below (an item is a snapshot of the code on t
 
 **Filed by the sitting, not built:**
 
-- 🏃 **COACHING BOARD first, then 🧭** `SITE-STAGED-PLAN-01` — `NO-RUNNER-TURNED-AWAY-01` has been live since
-  2026-10-25 and appears nowhere on the site. 🔴 **DON'T SHIP as a sentence about our own generosity** — that is
-  the W-03 commitments block, killed. The surviving form is the staged plan **rendered on `/plans`** for a
-  from-nothing runner, engine-printed. Routes to the Coaching Board first: it is a claim about what the engine will
-  build for an untrained runner (W-03 precedent).
+- ✅ **SHIPPED 2026-11-06** `SITE-STAGED-PLAN-01` — **the tenth plan page, `/plans/never-run-before`.** 🏃 Coaching
+  Board §116 Am.10 + 🧭 Design Board, both the same day, routed coaching-first under W-03. Publishes the engine's
+  real **16-week base-build block** for a 0 km/week runner: seven weeks in **minutes with no distance**, then
+  kilometres, then a checkpoint drawn as a door. **A published BLOCK is not a published PLAN** — no race H1, no
+  race day, no countdown. 🔴 **The engine had refused 0% since 2026-10-25 and the site never said so.**
 - 🧭 **DESIGN BOARD** `SITE-FRAME-TAXONOMY-01` — Collins, filed after losing placement: **six ways to frame a
   product visual on one site** (`ProductStill`, `PhoneShell`, `TabbedPhone`, `PhoneFrame`, `HeroTrace`, `HrTrace`).
   Taxonomy question, not this sitting's.

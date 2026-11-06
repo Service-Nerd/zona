@@ -6,6 +6,7 @@
 // Warm Slate tokens only (no hardcoded brand string / colour).
 
 import { isHardEffort } from '@/lib/plan/sessionRole'
+import { generateMarketingPlan } from '@/lib/marketing/marketingPlan'
 import Link from 'next/link'
 import { Section } from '@/components/marketing/Section'
 import { BRAND } from '@/lib/brand'
@@ -243,7 +244,7 @@ const phaseKey = (w: Week): string => w.phase ?? 'base'
 
 export function PlanPage({ plan }: { plan: MarketingPlan }) {
   const { planStart, raceDate } = planAnchor(plan.dayOffset)
-  const generated = generateRulePlan(plan.input(raceDate), 'free', planStart)
+  const generated = generateMarketingPlan(plan).plan
   const weeks = generated.weeks.filter(w => w.n >= 1)
   const faqs = faqsFor(plan)
   const planUrl = `${APP_URL}/plans/${plan.slug}`

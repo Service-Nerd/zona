@@ -44,6 +44,7 @@
 // reaching a marketing page fails the build.
 
 import { describe, it, expect } from 'vitest'
+import { generateMarketingPlan } from './marketingPlan'
 import { MARKETING_PLANS, planAnchor } from './plans'
 import { generateRulePlan } from '@/lib/plan/ruleEngine'
 import { isHardEffort } from '@/lib/plan/sessionRole'
@@ -67,7 +68,7 @@ function renderedExemplars(): { slug: string; weekN: number; text: string }[] {
   const out: { slug: string; weekN: number; text: string }[] = []
   for (const p of MARKETING_PLANS) {
     const { planStart, raceDate } = planAnchor(p.dayOffset)
-    const plan = generateRulePlan(p.input(raceDate), 'free', planStart)
+    const plan = generateMarketingPlan(p).plan
     let found = false
     for (const w of plan.weeks) {
       if (found) break
@@ -103,7 +104,14 @@ describe('engine copy on a marketing page — SITE-SESSION-STEPS-01', () => {
     // arms below pass on an empty corpus, and if PlanPage's own picker drifts
     // from this one the counts separate.
     expect(MARKETING_PLANS.length).toBeGreaterThanOrEqual(9)
-    expect(exemplars.length).toBe(MARKETING_PLANS.length)
+    // ⚠️ A STAGED PAGE HAS NO EXEMPLAR AND THAT IS CORRECT. The exemplar is the
+    // first QUALITY session carrying a resolved v2 set; a walk-run and base block
+    // contains no quality session at all (measured: every session `type: 'easy'`,
+    // all 33 in Zone 2). Counting it as a miss would ask the page to show a hard
+    // session to a runner who has never run.
+    const racePlans = MARKETING_PLANS.filter(p => !p.staged)
+    expect(exemplars.length).toBe(racePlans.length)
+    expect(racePlans.length).toBeGreaterThanOrEqual(9)
     expect(exemplars.every(e => e.text.length > 200)).toBe(true)
   })
 

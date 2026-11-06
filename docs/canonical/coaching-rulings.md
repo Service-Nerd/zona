@@ -2891,3 +2891,66 @@ unpaid-work load, and telling her HER BASE is the problem is the app misreading 
 lever. **A copy-and-alternatives change: no plan changes and nothing is newly refused.**
 
 **Evidence:** `scripts/board-evidence-111-monotonic.ts`.
+
+---
+
+## 2026-11-06 — `SITE-STAGED-PLAN-01`: publishing the staged block · **CORRECT WITH AMENDMENT (3)**
+
+**Routed here FIRST under the W-03 precedent** — a claim about what the engine will build for an untrained runner
+is this board's wherever it appears, including marketing. Design owns the page; this sitting ruled the claim.
+
+**What was measured, through `runEngine` and not `generateRulePlan`** (the latter throws the refusal; the staging
+sits upstream of it — the first measurement of this item was taken at the wrong entry point and reported the
+marathon as refused):
+
+| | |
+|---|---|
+| 0 km/wk, 0 km longest, beginner, 3 days, ~30wk marathon | `base_build`, **10 weeks** |
+| weeks 1–7 | "Walk-run 1..7", 3 sessions, **duration-anchored, no distance at all** |
+| weeks 8–10 | "Base 1..3", 4 sessions, 6→7 km, longest run 1.5→1.8 km |
+| `meta.staged_race` | `door_km 7`, `checkpoint_week 10`, `race_weeks 19`, **`target_found: false`** |
+
+🔴 **CORRECTED BEFORE THE BUILD — THE SITTING RULED ON THE WRONG INPUT.** The measurement above omitted
+**`days_available`**, which the wizard always sends. With it the block is **16 weeks, door 12 km, checkpoint week
+16, and `target_found` is TRUE** — the race block *does* exist. **The amendment stands and binds harder:** its
+honest reason is ⚕️ Sims's condition, already inside it, that the race is built at the checkpoint *from what the
+runner actually ran, which may be less*. A page that can see a real block behind the checkpoint is MORE tempted to
+claim it. ⚠️ Same class as `COHORT-GRID-UNSET-LEVEL-01`, inverted: a field the product always sends that the
+measurement left out.
+
+🔴 **ON THE ORIGINAL (WRONG) INPUT:** It is built nineteen weeks later from observed volume. So the page
+publishes ten weeks that **end in a question**, and "couch to marathon" would be publishing a plan that has not
+been generated.
+
+🔍 **The conflict scan found the governing row and it was not in the submission.** `FOUNDATION-LONG-RUNWAY-01`
+(§55 Am.) already ruled on weeks a runner spends outside a plan, and carries ⚕️ **Sims's binding point** as the
+reason that finding is `error` not `warn`: *"a runner in that gap is not resting, they are training unsupervised…
+We will never see it. Silence is not neutral."* — plus the limit on the copy: *"copy that oversold unsupervised
+weeks would be worse than the silence it replaces."* **A published page is that gap at scale.**
+
+**AMENDMENTS (all three binding):**
+
+| | |
+|---|---|
+| 🏃 **1. The page may not claim the race** | It publishes a block. No race date, no countdown, no week count beyond the block |
+| 🩹 **2. It states it is ONE runner's plan** | Willy, who expected to object and withdrew on the measurement — *seven weeks before the first measured kilometre* is the right spend. His objection is the PAGE: a 55-year-old with a knee history is reading somebody else's plan. Inputs named, in the body, not in grey |
+| 🎯 **3. Weeks 1–7 explain their empty volume column** | Duration-anchored is correct and reads as *broken* in a published table. The page says the number is minutes |
+
+⚕️ **Sims's condition, inside amendment 1:** week 10 is *the point at which the plan is built, from what the runner
+actually ran, which may be less*. In the app the checkpoint is a **door**; on a page it is a **cliff** unless the
+page says what is at the edge.
+
+📊 **Seiler, recorded rather than silent:** §1 is **undefined** here, not violated (CD-21 Am.1) — there is no
+quality work in a walk-run block to distribute. 💪 **Blagrove:** no objection, and no strength prescription belongs
+in these ten weeks.
+
+**Artifacts.** Principle: §116 Amendment 10. Numeric: none — the page reads `meta.staged_race` rather than
+restating it. Check: `lib/marketing/stagedPagePromise.test.ts`. ⚠️ **Not an engine invariant, structurally:**
+`validatePlan()` takes a `Plan` and cannot see a page.
+
+⚠️ **Returned to this board as its own item, flagged by the chair rather than buried:** `STAGED-HM-DOOR-01` — a
+never-run runner is staged into a **marathon** and **refused** a **half**, at every runway from 12 to 30 weeks,
+and §117 Am.5's logic applies identically to both.
+
+**Evidence:** measured this sitting through `runEngine` across distances × runways; boundary probe showed the half
+builds normally from 5 km/week with a 2 km longest run.

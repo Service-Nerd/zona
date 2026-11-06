@@ -367,6 +367,11 @@ files, plus the 170px left-edge misalignment it was causing on every page but th
 now show the app's real session structure, one exemplar), `PRICING-FREE-GATE-02` (the free column could shrink to
 nothing under a green suite).
 
+**2026-11-06.** 🟢 **`SITE-STAGED-PLAN-01` SHIPPED** — the tenth plan page, `/plans/never-run-before`, publishing the
+engine's real base-build block for someone who has never run. Both boards sat. 🔴 The engine had refused 0% since
+2026-10-25 and the site never said so. 🏃 **New for the Coaching Board: `STAGED-HM-DOOR-01`** — a never-run runner is
+staged into a marathon and **refused a half**, at every runway from 12 to 30 weeks.
+
 **OPEN.** `SITE-EFFORT-RECORD-01` — ⏸️ **blocked**: the board's amendment spends the trio's zones still on the effort
 record, and `Dropping ZoneRings` is a 🔴 REVERSED row retaining it as *"one third of the public face"*. Needs a
 founder call or a third sitting. · `SITE-STAGED-PLAN-01` and `SITE-ENGINE-EMDASH-01` → 🏃 Coaching Board first. ·

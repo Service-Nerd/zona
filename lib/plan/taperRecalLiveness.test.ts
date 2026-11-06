@@ -12,6 +12,7 @@
 // enforced. This file proves the whole path: real generated plan → the rows the
 // route now selects → the function → a plan whose taper actually moved.
 import { describe, it, expect } from 'vitest'
+import { generateMarketingPlan } from '@/lib/marketing/marketingPlan'
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { computeTaperRecalibration } from './taperRecalibration'
@@ -27,8 +28,10 @@ const ROUTE = readFileSync(join(process.cwd(), 'app/api/recalibrate-taper/route.
  *  and the database, which a hand-built plan cannot exercise. */
 function realPlan(slug = 'sub-4-hour-marathon-plan'): Plan {
   const src = MARKETING_PLANS.find(p => p.slug === slug)!
-  const { planStart, raceDate } = planAnchor(src.dayOffset)
-  return generateRulePlan(src.input(raceDate), 'paid', planStart)
+  // Through the owner. ⚠️ The TIER changes from 'paid' to the owner's 'free',
+  // which is correct for a PUBLISHED plan — the nine pages are free, and this
+  // test reads a published plan's shape, not a paid entitlement.
+  return generateMarketingPlan(src).plan
 }
 
 const taperStartOf = (p: Plan) => {

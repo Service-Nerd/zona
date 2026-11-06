@@ -743,6 +743,26 @@ Adding more is surface area that reads to the next person as an SEO win.
 
 ## Component Patterns
 
+### The staged block page — a published BLOCK is not a published PLAN *(SITE-STAGED-PLAN-01, Design Board 2026-11-06)*
+
+A `/plans` page whose engine output is a `base_build` block rather than a race plan. One exists: `/plans/never-run-before`.
+
+**It is a SIBLING of `PlanPage`, not a branch inside it.** 🧭 Zhuo: *"the nine are 'pick your race, here is the plan'. A reader arrives knowing their distance. This page's reader does not have a distance; they have a doubt. Dropping it into the same template means inheriting an H1 that names a race we may not claim, a stat row whose numbers are wrong, and a hub that files it next to Sub-4 marathon."*
+
+| Rule | Why |
+|---|---|
+| **No race H1, no race day, no countdown, no breadcrumb naming a distance** | 🏃 §116 Am.10. ⚠️ `target_found` is **TRUE** on this plan — a real race block sits past the checkpoint — which makes the rule bind **harder**: a page that can see a race is more tempted to claim it |
+| **The hero is the ENGINE's first-week instruction, verbatim, read off the plan** | ✋ Silvanto: *"that sentence is the page. It is the engine speaking to someone who is frightened, and it tells them to walk before they need to."* Reading it rather than quoting it is also what stops it drifting |
+| **The stat row carries the block's own measured numbers, or there is none** | The nine's row (weeks / days / distance) is wrong here in every cell |
+| **The volume column CHANGES UNIT, and its header changes with it** | ✋ *"A footnote explains an absence; a changed unit shows a progression."* 📱 At 375px a header that does not change makes a reader read `30` as kilometres. ⚠️ **The boundary is DERIVED** — the first week carrying a `distance_km` — never a typed week number |
+| **The checkpoint is a DOOR, in the runner's favour** | ⚕️ *"where the plan gets built from what you actually ran, which may be less."* 🎓 Sierra: *"this reader has spent a lifetime not clearing hurdles"* — never a target to clear |
+| **It states it is ONE runner's plan, inputs named, in the body** | 🩹 Willy: a 55-year-old with a knee history is otherwise reading somebody else's plan |
+| **No "couch"; no race distance in the slug or h1** | 🎓 the category's word, and contemptuous about the person it names. 🎪 the moment a distance appears the reader anchors on it |
+| **Hub: one lead item ABOVE the groups. Not in the nav** | 📱 it belongs to neither "by distance" nor "by goal time", and a third group for one page is a taxonomy error |
+
+Check: `lib/marketing/stagedPagePromise.test.ts` (8 arms, falsified four ways). ⚠️ **Not an engine invariant:** `validatePlan()` takes a `Plan` and cannot see a page.
+
+
 ### 1. SessionCard
 
 Four states: `future` (default), `current`, `done`, `skipped`.

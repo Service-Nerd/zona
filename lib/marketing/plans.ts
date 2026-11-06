@@ -35,6 +35,18 @@ export interface MarketingPlan {
   related: string[]
   /** Hub grouping: by-distance (Wave 1) or by-goal-time (Wave 2). Default distance. */
   group?: 'distance' | 'goal'
+  /** 🔴 SITE-STAGED-PLAN-01 — this page publishes a BLOCK, not a race plan.
+   *
+   *  Coaching Board §116 Amendment 10 (2026-11-06): *"the base-build block a staged
+   *  refusal returns may be rendered on a public page; the race it stages may not be
+   *  claimed there."* `meta.staged_race.target_found` is **false** — the race block
+   *  does not exist, it is built at the checkpoint from what the runner actually ran.
+   *
+   *  ⚠️ `distanceLabel`, `distanceKm` and `weeks` still carry real values because the
+   *  generator needs a race to stage TOWARD. **A staged page may not RENDER them**:
+   *  Design Board 2026-11-06 ruled no race H1, no race-day anything, and no breadcrumb
+   *  naming a distance. The flag is what keeps the renderer honest. */
+  staged?: true
   /** Plan-specific FAQs prepended to the shared set — the goal-time pages answer
    *  "what pace is sub-X?", the term people actually search. */
   extraFaqs?: { q: string; a: string }[]
@@ -186,6 +198,62 @@ export const MARKETING_PLANS: MarketingPlan[] = [
     input: (raceDate) => ({ ...BASE, race_date: raceDate, goal: 'time_target', target_time: '3:59:00', race_distance_km: 42.2, current_weekly_km: 44, longest_recent_run_km: 20, days_available: 5, benchmark: { type: 'race', distance_km: 21.1, time: '1:52:00' } }),
     related: ['marathon-16-week', 'sub-2-hour-half-marathon-plan', 'sub-45-10k-plan'],
     extraFaqs: [{ q: 'What pace is a sub-4-hour marathon?', a: '5:41 per kilometre (about 9:09 per mile), held for the full 42.2 km. The hard part is holding it late, which is why this plan protects the easy weeks that build your durability.' }],
+  },
+  // ── 🔴 THE TENTH PAGE, AND IT IS NOT A PLAN PAGE ────────────────────────────
+  //
+  // `SITE-STAGED-PLAN-01`. 🏃 Coaching Board 2026-11-06 (§116 Am.10) + 🧭 Design
+  // Board 2026-11-06, five amendments. The engine has refused 0% since
+  // `NO-RUNNER-TURNED-AWAY-01` went live on 2026-10-25, and **the most
+  // distinctive thing this product does has been true and invisible for twelve
+  // days** (Collins) while the site sold nine race plans to people who already run.
+  //
+  // ⚠️ THE RACE IS AN INPUT, NOT A CLAIM. The generator needs something to stage
+  // TOWARD, so this entry names a marathon 30 weeks out. What comes back is a
+  // **10-week base-build block** whose `meta.staged_race.target_found` is FALSE:
+  // the race block does not exist and is built at the week-10 checkpoint from what
+  // the runner actually ran. `staged: true` is what stops the renderer treating
+  // the input as a promise.
+  //
+  // ⚠️ NO "COUCH" AND NO "MARATHON" in the slug or the h1 (Design Board,
+  // Collins + Sierra): "couch" is the category's word and mildly contemptuous
+  // about the person it describes, and the moment "marathon" appears the reader
+  // anchors on it and the page becomes a marathon page that undersells itself.
+  {
+    slug: 'never-run-before',
+    // ⚠️ `weeks: 16` is MEASURED, not chosen: the block is 16 weeks on all 107
+    // publishing dates the gate walks. The first cut said 10, from a probe that
+    // omitted `days_available` — the one field that moves this block from 10
+    // weeks to 16 and from no race target to a real one. The product always
+    // sends it. ⚠️ The DESIGN BOARD forbids RENDERING a week count on this page;
+    // the field exists because the gates read it.
+    distanceLabel: 'Base building', distanceKm: 42.2, weeks: 16, dayOffset: 30 * 7 - 1, daysPerWeek: 3,
+    staged: true,
+    // ⚠️ NO WEEK COUNT IN THE TITLE. The first cut said "The First Ten Weeks"
+    // from the bad probe and was wrong by six. A number here buys nothing and
+    // rots the moment the engine changes the ramp; the page derives its own.
+    metaTitle: 'Never Run Before? Here Is Week One, Free',
+    metaDescription:
+      'A free plan for someone who has never run. Walk-run from minute one, three sessions a week, every one in Zone 2. Read the whole thing, no signup.',
+    h1: 'You have never run. This is week one.',
+    heroSub:
+      'Walking and running from minute one, built by the same engine that writes everything else on this site. Read every session below. No signup, no email.',
+    ogTitle: `Never run before? Here is week one | ${BRAND.name}`,
+    ogDescription:
+      'Walk-run from minute one, three sessions a week, every one in Zone 2. The whole thing, free, no signup.',
+    whoFor:
+      'For the person who has never run and is not sure they can. Not a beginner who already runs a bit: someone starting from nothing.',
+    input: (raceDate) => ({
+      ...BASE,
+      // ⚠️ `fitness_level` is NOT set — `COHORT-GRID-UNSET-LEVEL-01`: the wizard
+      // never sends it, and a corpus that fills it in makes §79's two-signal
+      // disagreement unreachable. The runner DECLARES beginner; §79 binds downward.
+      fitness_level: undefined,
+      user_declared_level: 'beginner' as const,
+      race_date: raceDate, race_distance_km: 42.2,
+      current_weekly_km: 0, longest_recent_run_km: 0,
+      training_days_per_week: 3, days_available: 3,
+    }),
+    related: ['5k-12-week', '10k-12-week', 'half-marathon-12-week'],
   },
 ]
 

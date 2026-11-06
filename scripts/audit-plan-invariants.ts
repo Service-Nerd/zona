@@ -14,6 +14,7 @@
 // per-week table; the test exists so a regression fails the build.
 
 import { MARKETING_PLANS, planAnchor } from '@/lib/marketing/plans'
+import { generateMarketingPlan } from '@/lib/marketing/marketingPlan'
 import { generateRulePlan } from '@/lib/plan/ruleEngine'
 import { checkPlanShape, easySharePctByTime, weekRows } from '@/lib/plan/planShapeInvariants'
 
@@ -24,9 +25,11 @@ let violations = 0
 const tally = new Map<string, number>()
 const shares: { slug: string; pct: number }[] = []
 
-for (const p of MARKETING_PLANS) {
-  const { planStart, raceDate } = planAnchor(p.dayOffset)
-  const plan = generateRulePlan(p.input(raceDate) as any, 'free', planStart)
+for (const p of MARKETING_PLANS.filter(x => !x.staged)) {
+  // Through the engine the product runs: `generateRulePlan` throws for a staged page.
+  // ⚠️ `checkPlanShape` below is the RACE constitution; a base-build block is
+  // audited by its own validators, so staged pages are skipped by name here.
+  const plan = generateMarketingPlan(p).plan
   const findings = checkPlanShape(plan as any)
   const share = easySharePctByTime(plan as any)
   shares.push({ slug: p.slug, pct: share })

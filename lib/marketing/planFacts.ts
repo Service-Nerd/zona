@@ -6,6 +6,7 @@
 // 50 km. A number typed into copy is a claim nobody re-checks; this is the check.
 
 import { getPlan, planAnchor } from './plans'
+import { generateMarketingPlan } from './marketingPlan'
 import { generateRulePlan } from '@/lib/plan/ruleEngine'
 import { isLongRun } from '@/lib/plan/sessionRole'
 import { sessionKmSelfPaced } from '@/lib/plan/sessionDistance'
@@ -24,7 +25,7 @@ export function planShape(slug: string): PlanShape {
   const mp = getPlan(slug)
   if (!mp) throw new Error(`no published plan ${slug}`)
   const { planStart, raceDate } = planAnchor(mp.dayOffset)
-  const plan = generateRulePlan(mp.input(raceDate), 'free', planStart)
+  const plan = generateMarketingPlan(mp).plan
   const runs = (w: (typeof plan.weeks)[number]): Session[] => (Object.values(w.sessions).flat() as Array<Session | null | undefined>)
     .filter((s): s is Session => !!s && !['rest', 'strength', 'cross-train'].includes(s.type))
   const km = (w: (typeof plan.weeks)[number]) => runs(w).reduce((a, s) => a + (sessionKmSelfPaced(s) ?? 0), 0)

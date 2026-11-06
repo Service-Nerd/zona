@@ -6040,3 +6040,31 @@ The homepage device drew **`‹ WEEK 6 OF 16 ›` with two working chevrons** �
 📦 **Check:** `lib/marketing/heroStillCurrency.test.ts`, 4 arms, **falsified four ways** — re-adding the week header (the exact reported defect), re-adding a chevron path, the still LOSING the day strip (stale by subtraction, not only by addition), and a hand-typed countdown returning in place of `formatRaceCountdown` (S5's finding, which caught this same file mirroring a format by hand).
 
 ⚠️ **WHAT THE CHECK CANNOT DO, stated so it is not over-trusted: it cannot prove the still MATCHES the app.** No check can, for a drawing. It is a **ratchet on known rulings** — controls the board has explicitly removed may not reappear, and named parts of the screen may not silently vanish. Verified by eye against the live `TodayScreen` this once: phase + week line, countdown, wordmark and bell, greeting, 56px metric, Kit's note, day cells, the hold-the-zone line, the session card and the CTA all match. Conditional states the app can show (`TdReadyHero`, `PendingAdjustmentBanner`, `ConnectRunsBanner`, two-session days, strength dots) are absent by design: a still shows one state.
+
+## 🧭 2026-11-06 — `SITE-STAGED-PLAN-01`: the tenth page, for someone who has never run · **SHIP WITH AMENDMENT (5)**
+
+🏃 **Coaching Board ruled the CLAIM first** (same day, §116 Am.10, W-03 precedent) and left the page here. Its three amendments bind: no race claim · one runner's plan, inputs named, in the body · the weeks with no distance explain themselves.
+
+🔴 **THE ENGINE HAS REFUSED 0% SINCE 2026-10-25 AND THE SITE NEVER SAID SO.** 🎪 Collins: *"the single most distinctive thing this product does has been true and invisible for twelve days, while the site sold nine race plans to people who already run."*
+
+🧭 **Zhuo's ruling turns on the container, and four of the item's five questions dissolved once it was answered:** the nine are *"pick your race, here is the plan"*; this reader *"does not have a distance, they have a doubt."* **Not the plan-page template — a sibling layout.** Success condition, stated before the design: **a reader who has never run can say what their first week is, after one screen.**
+
+| # | Amendment | Seat |
+|---|---|---|
+| 1 | **Not the template.** No race H1, no race day, no breadcrumb naming a distance | 🧭 |
+| 2 | **The hero is the engine's first-week instruction, verbatim** — *"Run 1 minute, walk 2. Repeat. Take the walk break before you need it, from the first rep."* ✋ *"That sentence is the page… the engine speaking to someone who is frightened, telling them to walk BEFORE they need to. No competitor's landing page says that, because saying it requires having built something that decides it."* | ✋ |
+| 3 | **Different stats, all measured** | 📱 measured 3,3,3… every week — *the board's "3 → 4" came from the submission's bad probe* |
+| 4 | **The volume column CHANGES UNIT at the first measured week, header with it.** ✋ *"A footnote explains an absence; a changed unit shows a progression."* 📱 at 375px a static header makes `30` read as kilometres | ✋ + 📱 |
+| 5 | **The checkpoint is a DOOR** — ⚕️ *"where the plan gets built from what you actually ran, which may be less."* 🎓 *"this reader has spent a lifetime not clearing hurdles"* | ⚕️ + 🎓 |
+
+**Plus:** no "couch" (🎓 *the category's word, and contemptuous about the person it names*); no race distance in slug or h1 (🎪 *the moment it appears the reader anchors on it*); hub gets **one lead item above the groups**, 📱 *"a third group for one page is the taxonomy error"*; **not in the nav**.
+
+🔴 **THE SITTING RULED ON A PLAN THE PRODUCT DOES NOT PRODUCE, AND THE AMENDMENTS SURVIVED IT.** The submission's probe omitted **`days_available`**, which the wizard always sends. With it: **16 weeks, not 10; door 12 km, not 7; and `target_found` TRUE, not false.** The stated reason for amendment 1 — *"the marathon block does not exist"* — **is false for the published page.** It exists, 13 weeks past the checkpoint. **The amendment binds harder**, on ⚕️ Sims's condition which was always the real reason. ⚠️ `COHORT-GRID-UNSET-LEVEL-01` inverted: *a field the product always sends that the measurement left out.*
+
+📐 **Measured, and the technical finding is why the page could exist at all:** every marketing surface called `generateRulePlan`, which is **not** the entry point the product uses — `runEngine` is, and it stages. Parity-checked across all nine existing pages before switching: **exactly one differing leaf each, `meta.foundation_gap_class`, which no page renders.** `lib/marketing/marketingPlan.ts` is now the single owner.
+
+🔴 **AND IT SURFACED `RESHAPE-VALIDATOR-KIND-01`'S TWIN.** The marketing gate ran `validatePlan` — the **race** constitution — against a base-build block: **48 × `INV-PLAN-EASY-PACE-PRESENT`** (a walk-run session has no pace, by design) and `INV-PLAN-BASE-BUILD-RATIO` reading *"∞x the runner's 0km/week base"* — **infinite because the base is zero, which is the page's whole premise.** That remedy had gone to the adjust path; the marketing gates kept the race validator, and nobody noticed because every published plan was a race plan. Validated by its own validators: **zero error violations.**
+
+**Rendered at 375px: 3.7 screens, no overflow.** Pattern: `ui-patterns.md` § *The staged block page*. Check: `stagedPagePromise.test.ts`, 8 arms. ⚠️ **One was HOLLOW on its first write and a mutation caught it:** it asserted the unit boundary was derived by matching the helper's NAME, which matches its **definition** — so hardcoding the call site left the definition unused and the arm green. ⚠️ **And the fix caught itself**: banning any numeral in a `weeks.slice` tripped on the helper's own `weeks.slice(0, i)`. Now scoped to a literal *boundary*.
+
+⚠️ **What this does not settle:** the slug, whether a reader who has never run ever reaches `/plans` at all (a traffic question nobody at either table can answer), and the half-marathon finding returned to the Coaching Board as `STAGED-HM-DOOR-01` — a never-run runner is staged into a marathon and **refused** a half, at every runway from 12 to 30 weeks.

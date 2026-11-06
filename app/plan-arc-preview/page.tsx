@@ -15,6 +15,7 @@
 // Committed but unreachable in production, same as the others.
 
 import { notFound } from 'next/navigation'
+import { generateMarketingPlan } from '@/lib/marketing/marketingPlan'
 import PlanArc from '@/components/shared/PlanArc'
 import { MARKETING_PLANS, planAnchor } from '@/lib/marketing/plans'
 import { generateRulePlan } from '@/lib/plan/ruleEngine'
@@ -35,8 +36,9 @@ const REAL = [
 function build(slug: string) {
   const src = MARKETING_PLANS.find(p => p.slug === slug)
   if (!src) return null
-  const { planStart, raceDate } = planAnchor(src.dayOffset)
-  const plan = generateRulePlan(src.input(raceDate), 'free', planStart)
+  // Through the owner: `build()` takes a string, so a future caller could hand
+  // it a staged slug, and `generateRulePlan` throws for one.
+  const plan = generateMarketingPlan(src).plan
   const series = planArcSeries(plan.weeks)
   return {
     slug,

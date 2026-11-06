@@ -6,7 +6,11 @@ import { longRunDayFor, DAY_ORDER, type Day } from './days'
 import { generateRulePlan } from './ruleEngine'
 import { MARKETING_PLANS } from '../marketing/plans'
 
-const marathon = MARKETING_PLANS.find(p => p.distanceKm > 40)!.input('2027-04-25')
+// ⚠️ `!p.staged` is load-bearing, not tidiness. `SITE-STAGED-PLAN-01`'s entry
+// also carries `distanceKm: 42.2` — it stages TOWARD a marathon — so this
+// `.find` returns the right plan today only because that entry is listed last.
+// A reorder would silently hand this test a base-build block.
+const marathon = MARKETING_PLANS.find(p => !p.staged && p.distanceKm > 40)!.input('2027-04-25')
 
 function longRunDays(blocked: string[]): Set<string> {
   const plan = generateRulePlan({ ...marathon, days_cannot_train: blocked }, 'paid', '2026-11-02')

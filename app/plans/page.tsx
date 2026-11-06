@@ -61,6 +61,43 @@ export default function PlansHubPage() {
         </p>
       </Section>
 
+      {/* ── SITE-STAGED-PLAN-01 — the lead item, ABOVE the groups ──────────
+          🧭 Design Board 2026-11-06. 📱 Wroblewski: *"the hub groups by distance
+          and by goal time. This belongs to neither. Adding a third group for one
+          page is the taxonomy error Collins catches. Put it in the hub as a
+          single lead item above the groups — it is the entry point for the
+          reader least able to choose a group."*
+
+          ⚠️ Kept OUT of the nav, which the SLT keeps short. If the founder wants
+          it there, that is the SLT's call, not this board's.
+
+          ⚠️ DERIVED from `staged`, not a hardcoded slug: a second staged page
+          would appear here on its own, and `MARKETING_PLANS` stays the one list. */}
+      {MARKETING_PLANS.filter(p => p.staged).map(p => (
+        <Section key={p.slug} width="read" rhythm="none" innerStyle={{ padding: 'var(--space-5) 24px 0' }}>
+          <Link href={`/plans/${p.slug}`} style={{ textDecoration: 'none', display: 'block' }}>
+            <div style={{
+              background: 'var(--card)', border: '1px solid var(--line)',
+              borderLeft: '3px solid var(--s-easy)', borderRadius: 'var(--radius-lg)',
+              boxShadow: 'var(--shadow-card)', padding: 'var(--space-4) var(--space-5)',
+            }}>
+              <p style={{
+                fontFamily: 'var(--font-brand)', fontSize: 'var(--fs-eyebrow)', fontWeight: 700,
+                letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--moss-strong)',
+                margin: '0 0 var(--space-2)',
+              }}>Start here</p>
+              <p style={{
+                fontFamily: 'var(--font-brand)', fontSize: 'var(--fs-lead)', fontWeight: 700,
+                color: 'var(--ink)', margin: '0 0 4px',
+              }}>{p.h1}</p>
+              <p style={{ fontSize: 'var(--fs-body)', lineHeight: 1.5, color: 'var(--mute)', margin: 0 }}>
+                {p.whoFor}
+              </p>
+            </div>
+          </Link>
+        </Section>
+      ))}
+
       {([
         { key: 'distance', label: 'By distance' },
         { key: 'goal', label: 'By goal time' },

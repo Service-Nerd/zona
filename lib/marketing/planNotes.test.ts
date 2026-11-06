@@ -1,4 +1,5 @@
 import { describe, it, expect, afterEach, vi } from 'vitest'
+import { generateMarketingPlan, validateMarketingPlan } from './marketingPlan'
 import { generateRulePlan } from '@/lib/plan/ruleEngine'
 import { validatePlan } from '@/lib/plan/invariants'
 import type { Week } from '@/types/plan'
@@ -48,7 +49,7 @@ describe.each(MARKETING_PLANS.map(p => [p.slug, p] as const))('published plan: %
     for (const today of everyPublishedAnchor()) {
       vi.useFakeTimers(); vi.setSystemTime(new Date(`${today}T09:00:00Z`))
       const { planStart, raceDate } = planAnchor(plan.dayOffset)
-      const n = generateRulePlan(plan.input(raceDate), 'free', planStart).weeks.filter(w => w.n >= 1).length
+      const n = generateMarketingPlan(plan).plan.weeks.filter(w => w.n >= 1).length
       if (n !== plan.weeks) wrong.push(`${today} -> ${n}`)
       vi.useRealTimers()
     }
@@ -60,7 +61,7 @@ describe.each(MARKETING_PLANS.map(p => [p.slug, p] as const))('published plan: %
     for (const today of everyPublishedAnchor()) {
       vi.useFakeTimers(); vi.setSystemTime(new Date(`${today}T09:00:00Z`))
       const { planStart, raceDate } = planAnchor(plan.dayOffset)
-      const weeks = generateRulePlan(plan.input(raceDate), 'free', planStart).weeks.filter(w => w.n >= 1)
+      const weeks = generateMarketingPlan(plan).plan.weeks.filter(w => w.n >= 1)
       for (const g of phaseGroups(weeks)) {
         const note = phaseNote(g.key, g.weeks)
         const hard = hardSessionsIn(g.weeks)
@@ -85,7 +86,7 @@ describe.each(MARKETING_PLANS.map(p => [p.slug, p] as const))('published plan: %
     for (const today of everyPublishedAnchor()) {
       vi.useFakeTimers(); vi.setSystemTime(new Date(`${today}T09:00:00Z`))
       const { planStart, raceDate } = planAnchor(plan.dayOffset)
-      const weeks = generateRulePlan(plan.input(raceDate), 'free', planStart).weeks.filter(w => w.n >= 1)
+      const weeks = generateMarketingPlan(plan).plan.weeks.filter(w => w.n >= 1)
       weeks.forEach((w, i) => {
         const badged = (w as Week & { type?: string; badge?: string }).type === 'deload'
           || (w as Week & { type?: string; badge?: string }).badge === 'deload'
@@ -104,8 +105,17 @@ describe.each(MARKETING_PLANS.map(p => [p.slug, p] as const))('published plan: %
       vi.useFakeTimers(); vi.setSystemTime(new Date(`${today}T09:00:00Z`))
       const { planStart, raceDate } = planAnchor(plan.dayOffset)
       const input = plan.input(raceDate)
-      const gen = generateRulePlan(input, 'free', planStart)
-      for (const v of validatePlan(gen, input)) if (v.severity === 'error') errs.push(`${today} ${v.code}`)
+      // 🔴 THE PRODUCER'S OWN VALIDATOR, NOT THE RACE ONE. `validatePlan` is the
+      // race constitution; a `base_build` block is validated by
+      // `validateBaseBuildBlock` + `validateStagedRace`, which is what
+      // `runEngine` runs. Measured before the fix on the tenth page: 48 ×
+      // INV-PLAN-EASY-PACE-PRESENT (a walk-run session has no pace, by design)
+      // and INV-PLAN-BASE-BUILD-RATIO reading "∞x the runner's 0km/week base" —
+      // infinite because the base is zero, which is the page's whole premise.
+      // `RESHAPE-VALIDATOR-KIND-01`'s twin: that remedy went to the adjust path
+      // and the marketing gates kept the race validator.
+      const res = generateMarketingPlan(plan)
+      for (const v of validateMarketingPlan(res, input)) if (v.severity === 'error') errs.push(`${today} ${v.code}`)
       vi.useRealTimers()
     }
     expect(errs.slice(0, 5), `${plan.slug}: ${errs.length} error-severity violations`).toEqual([])
@@ -114,7 +124,7 @@ describe.each(MARKETING_PLANS.map(p => [p.slug, p] as const))('published plan: %
   it('the FAQ days-a-week claim matches what the plan actually delivers', () => {
     vi.useFakeTimers(); vi.setSystemTime(new Date('2026-09-21T09:00:00Z'))
     const { planStart, raceDate } = planAnchor(plan.dayOffset)
-    const weeks = generateRulePlan(plan.input(raceDate), 'free', planStart).weeks.filter(w => w.n >= 1)
+    const weeks = generateMarketingPlan(plan).plan.weeks.filter(w => w.n >= 1)
     // Race week is short by design, so the claim is about the modal week.
     const counts = weeks.map(w => Object.keys(w.sessions).length)
     const mode = Array.from(new Set(counts)).sort((a, b) =>

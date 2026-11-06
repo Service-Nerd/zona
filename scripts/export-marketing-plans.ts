@@ -15,6 +15,7 @@
 // any change to `lib/plan/*` or `lib/marketing/plans.ts`.
 
 import { MARKETING_PLANS, planAnchor, faqsFor } from '@/lib/marketing/plans'
+import { generateMarketingPlan } from '@/lib/marketing/marketingPlan'
 import { phaseNote, PHASE_LABEL } from '@/lib/marketing/planNotes'
 import { generateRulePlan } from '@/lib/plan/ruleEngine'
 import { writeFileSync } from 'node:fs'
@@ -54,8 +55,8 @@ md.push('# Zonna free plans — full content export',
   '')
 
 for (const p of MARKETING_PLANS) {
-  const { planStart, raceDate } = planAnchor(p.dayOffset)
-  const plan = generateRulePlan(p.input(raceDate) as any, 'free', planStart)
+  // Through the engine the product runs: `generateRulePlan` throws for a staged page.
+  const { plan, raceDate } = generateMarketingPlan(p)
   const weeks = plan.weeks.filter(w => w.n >= 1)
   const inp: any = p.input(raceDate)
 

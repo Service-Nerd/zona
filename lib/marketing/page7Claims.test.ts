@@ -1,6 +1,7 @@
 // Coaching Board 2026-10-29 (GTM-SEO-COMPARE-01 page 7, CORRECT WITH AMENDMENT) + CHARITY-PLAN-PREREQ-01. What these
 // pages say about a published plan is read from the plan; the three sentences the board replaced cannot come back.
 import { describe, it, expect } from 'vitest'
+import { generateMarketingPlan } from './marketingPlan'
 import fs from 'node:fs'
 import path from 'node:path'
 import { getArticle } from './articles'
@@ -15,7 +16,7 @@ const article = getArticle('marathon-training-plan-full-time-job')!
 const text = JSON.stringify(article.body)
 const mp = getPlan('marathon-16-week')!
 const { planStart, raceDate } = planAnchor(mp.dayOffset)
-const plan = generateRulePlan(mp.input(raceDate), 'free', planStart)
+const plan = generateMarketingPlan(mp).plan
 const runs = (w: (typeof plan.weeks)[number]) => (Object.values(w.sessions).flat() as Array<Session | null | undefined>)
   .filter((s): s is Session => !!s && !['rest', 'strength', 'cross-train'].includes(s.type))
 const km = (w: (typeof plan.weeks)[number]) => runs(w).reduce((a, s) => a + (sessionKmSelfPaced(s) ?? 0), 0)

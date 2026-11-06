@@ -15,19 +15,31 @@
 // what they fail and why is in `docs/decisions/mkt-plan-shape-01-conflicts.md`.
 
 import { describe, it, expect } from 'vitest'
+import { generateMarketingPlan } from '@/lib/marketing/marketingPlan'
 import { MARKETING_PLANS, planAnchor } from '@/lib/marketing/plans'
 import { generateRulePlan } from './ruleEngine'
 import { checkPlanShape, easySharePctByTime, I10_MIN_EASY_SHARE_PCT } from './planShapeInvariants'
 import { validatePlan } from './invariants'
 import type { GeneratorInput } from '@/types/plan'
 
+// 🔴 THROUGH THE ENGINE THE PRODUCT RUNS, NOT THE GENERATOR UNDER IT.
+// `generateRulePlan` THROWS for a staged page (`SITE-STAGED-PLAN-01`): the
+// staging lives in `runEngine` above it. This gate was the LAST call site to
+// find — my consumer check grepped `lib/marketing`, `components/marketing` and
+// `app/plans`, and this file is in `lib/plan`. **A consumer check is only as
+// wide as the directories it searches.**
 function build(p: typeof MARKETING_PLANS[number]) {
-  const { planStart, raceDate } = planAnchor(p.dayOffset)
-  return generateRulePlan(p.input(raceDate) as GeneratorInput, 'free', planStart)
+  return generateMarketingPlan(p).plan
 }
 
+/** ⚠️ The SHAPE invariants are the race constitution, like `validatePlan`. A
+ *  base-build block is validated by its own producer's validators
+ *  (`validateMarketingPlan`), so it is checked there, not here. Named rather
+ *  than silently skipped: `RESHAPE-VALIDATOR-KIND-01`'s class. */
+const raceShaped = MARKETING_PLANS.filter(p => !p.staged)
+
 describe('MKT-PLAN-SHAPE-01 — published plan shape', () => {
-  for (const p of MARKETING_PLANS) {
+  for (const p of raceShaped) {
     it(`${p.slug} has no gating shape violation`, () => {
       const findings = checkPlanShape(build(p) as never).filter(f => f.gate)
       expect(findings.map(f => `${f.id} w${f.weekN}: ${f.message}`)).toEqual([])

@@ -7,6 +7,7 @@ import { notFound } from 'next/navigation'
 import { pageMetadata } from '@/lib/marketing/siteMeta'
 import { MARKETING_PLANS, getPlan } from '@/lib/marketing/plans'
 import { PlanPage } from '@/components/marketing/PlanPage'
+import { StagedPlanPage } from '@/components/marketing/StagedPlanPage'
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://www.zonna.run'
 
@@ -38,5 +39,8 @@ export default async function Page({ params }: { params: Promise<{ slug: string 
   const { slug } = await params
   const plan = getPlan(slug)
   if (!plan) notFound()
-  return <PlanPage plan={plan} />
+  // SITE-STAGED-PLAN-01 — a staged page is a SIBLING layout, not a branch inside
+  // PlanPage: §116 Am.10 forbids claiming the race, and the nine-plan template's
+  // H1, stat row and breadcrumb all name one.
+  return plan.staged ? <StagedPlanPage plan={plan} /> : <PlanPage plan={plan} />
 }

@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest'
+import { generateMarketingPlan } from './marketingPlan'
 import { generateRulePlan } from '@/lib/plan/ruleEngine'
 import type { Session } from '@/types/plan'
 import { MARKETING_PLANS, planAnchor } from './plans'
@@ -22,15 +23,29 @@ describe('marketing plans catalogue', () => {
     '%s — even weeks, label matches the engine, races on a Sunday',
     (_slug, plan) => {
       const { planStart, raceDate } = planAnchor(plan.dayOffset)
-      const gen = generateRulePlan(plan.input(raceDate), 'free', planStart)
+      const gen = generateMarketingPlan(plan).plan
       const weeks = gen.weeks.filter(w => w.n >= 1)
 
       expect(plan.weeks % 2, `${plan.slug}: weeks (${plan.weeks}) must be even`).toBe(0)
       expect(weeks.length, `${plan.slug}: advertised ${plan.weeks} weeks vs generated ${weeks.length}`).toBe(plan.weeks)
 
+      // 🔴 A STAGED PAGE HAS NO RACE DAY, BY RULING, NOT BY ACCIDENT. §116
+      // Amendment 10: the block may be published, the race it stages may not be
+      // claimed. Its last week is a base week ending at a CHECKPOINT, so there
+      // is no `type: 'race'` session to find — asserting one here would require
+      // the page to publish the very thing the Coaching Board forbade.
+      // ⚠️ The arm below keeps the staged page honest in the OTHER direction,
+      // which is the one that can actually go wrong: it must contain no race
+      // session at all.
       const last = weeks[weeks.length - 1]
       const raceDay = Object.entries(last.sessions).find(([, s]) => (s as Session | undefined)?.type === 'race')?.[0]
-      expect(raceDay, `${plan.slug}: race day should be Sunday`).toBe('sun')
+      if (plan.staged) {
+        const anyRace = weeks.some(w => Object.values(w.sessions)
+          .some(s => (s as Session | undefined)?.type === 'race'))
+        expect(anyRace, `${plan.slug}: a staged page may not publish a race session (§116 Am.10)`).toBe(false)
+      } else {
+        expect(raceDay, `${plan.slug}: race day should be Sunday`).toBe('sun')
+      }
     },
   )
 
@@ -70,7 +85,12 @@ describe('plan cross-links', () => {
   })
 
   it('links every distance plan to at least one goal plan', () => {
-    const orphans = distance.filter(p => !p.related.some(r => bySlug.get(r)?.group === 'goal'))
+    // ⚠️ A STAGED PAGE IS EXEMPT AND THE REASON IS THE READER, not convenience:
+    // the goal pages are "sub-25 5K", "sub-4 marathon". A person who has never
+    // run has no goal time, and routing them to one is the opposite of what the
+    // page is for. It links to the three distance plans instead, which is a real
+    // route onward.
+    const orphans = distance.filter(p => !p.staged && !p.related.some(r => bySlug.get(r)?.group === 'goal'))
     expect(
       orphans.map(p => p.slug),
       'a distance plan with no route to a goal plan is a dead end for a runner with a target',
