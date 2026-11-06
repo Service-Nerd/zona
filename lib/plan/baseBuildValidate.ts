@@ -4,7 +4,8 @@ import { GENERATION_CONFIG } from './generationConfig'
 import { sessionKmSelfPaced } from './sessionDistance'
 import type { Violation } from './invariants'
 import type { Plan, GeneratorInput } from '@/types/plan'
-import { stagedRaceOf } from './stagedRacePlan'
+import { stagedRaceOf, stagedDisplay, checkpointRaceInput, raceBlockVerdict, longestSessionKm } from './stagedRacePlan'
+import { baseBuildRatioApplies, baseBuildRatioOf } from './baseVolume'
 import { prepBlockWeeks } from './inputs'
 
 /**
@@ -241,7 +242,67 @@ export function validateStagedRace(plan: Plan): Violation[] {
   if (input && hasRamp && staged.race_weeks < prepBlockWeeks(input)) {
     push(staged.checkpoint_week, `Staged plan leaves ${staged.race_weeks} weeks for the race block, under §44's block of ${prepBlockWeeks(input)}.`, `${staged.race_weeks}`, `>= ${prepBlockWeeks(input)}`)
   }
-  return [...v, ...validateWalkRunStart(plan)]
+  return [...v, ...validateStagedDoorRatio(plan), ...validateWalkRunStart(plan)]
+}
+
+/**
+ * `INV-PLAN-STAGED-DOOR-RATIO` — §116 Amendment 11 (Coaching Board 2026-11-06, `STAGED-HM-DOOR-01`).
+ *
+ * **Where §111 does not govern the race, the checkpoint door must still land the race block inside §111's ratio.**
+ * 🔴 Why it needs a mechanical check at all: C3's door search asks for *the lowest CLEAN volume*, and "clean" is
+ * `validatePlan` plus the coach objections — **§111 is in neither, below 42 km.** Measured before the ruling: the half
+ * staged at C3's lowest door built **5.67×** off a runner who had never run, against **3.55×** for the ratified
+ * marathon twin, with a green validator throughout (🩹 Willy, binding).
+ *
+ * ⚠️ IT BUILDS THE BLOCK AND DERIVES THE RATIO ITSELF. It shares the producer's CONSTRUCTION — the same plan, via
+ * `raceBlockVerdict`, because a second generator would be a second answer — and shares none of its PREDICATE: the
+ * producer's `BASE-BUILD-RATIO-OVER-CAP` objection is not read here. A checker that asks the producer whether the
+ * producer was right is the `deloadCadence` flaw.
+ *
+ * ⚠️ EXEMPT WHERE `target_found` IS FALSE, AND THE REASON IS DOCTRINE, NOT CONVENIENCE. That is C4: no target fit
+ * the runway, so the runner is staged at the seed door and **the checkpoint offers what builds rather than a block**.
+ * There is no block being promised, so there is no ratio to bound. A plan that promised one WOULD be caught, because
+ * the exemption keys on the plan's own `target_found`, which the producer sets only when a clean block was found.
+ *
+ * ⚠️ `warn`, NOT `error`, AND THAT IS A DELIBERATE ASYMMETRY WITH §111's OWN INVARIANT. `INV-PLAN-BASE-BUILD-RATIO`
+ * is `error` because over the cap §111 REFUSES. Here nothing refuses: the rule disqualifies a DOOR, so a plan that
+ * reaches the validator over the cap is a producer defect to be seen, not a plan to reject on save — and rejecting it
+ * would turn a staged runner's saved plan into an error for a rule that was never a refusal
+ * (`WIZARD-ZERO-VOLUME-REFUSAL-01` Am. 1: §111's scope ratified, not extended).
+ */
+export function validateStagedDoorRatio(plan: Plan): Violation[] {
+  const staged = stagedRaceOf(plan)
+  const input = (plan.meta as unknown as { generator_input?: GeneratorInput }).generator_input
+  if (!staged || !input) return []
+  if (baseBuildRatioApplies(staged.race_distance_km)) return []
+  if (!staged.target_found) return []
+  const d = stagedDisplay(plan)
+  if (!d) return []
+  const raceInput = checkpointRaceInput(input, staged.door_km, longestSessionKm(plan.weeks ?? []))
+  // 🔴 A VALIDATOR MAY NOT THROW, AND THIS ONE COULD — code review, 2026-11-06. `raceBlockVerdict` re-throws
+  // anything that is not a DESIGNED refusal, and `InputFieldError` is not one (§55 answers it before generation).
+  // So a stored staged plan whose `generator_input` is missing a field — `age`, say — made `validateStoredPlan`
+  // THROW instead of returning violations, reaching `adjustmentEngine` and `/api/ops/plan-audit` unguarded. Every
+  // other arm in this file is a pure read of the plan; this one regenerates, so it is the only one that can fail,
+  // and the honest answer to "I could not build the block" is **no violation**, never a crash and never a pass
+  // dressed as a check: the ratio is unknown, and `INV-PLAN-BASE-BUILD-RATIO` still backstops §111's own distances.
+  //
+  // ⚠️ IT ALSO COSTS A FULL GENERATION PLUS `auditPlanQuality` PER STORED STAGED PLAN. Accepted: it runs on save
+  // and on audit, not per request, and the alternative is reading a stamp the producer wrote, which is the
+  // `deloadCadence` flaw.
+  let race: Plan | null = null
+  try { race = raceBlockVerdict(raceInput, d.raceBlockStart).race } catch { return [] }
+  if (!race) return []
+  const { ratio, cap, minBaseKm } = baseBuildRatioOf(race, raceInput)
+  if (ratio <= cap) return []
+  return [{
+    code: 'INV-PLAN-STAGED-DOOR-RATIO', principle_ref: 'CoachingPrinciples §116 Am. 11', severity: 'warn',
+    week: staged.checkpoint_week,
+    message: `Staged door ${staged.door_km} km/wk builds a race block of ${ratio.toFixed(2)}x, over §111's ${cap}x. `
+      + `The door for a race §111 does not govern must reach at least ${minBaseKm} km/wk.`,
+    actual: `${ratio.toFixed(2)}x at door ${staged.door_km}`,
+    expected: `<= ${cap}x (door >= ${minBaseKm})`,
+  }]
 }
 
 

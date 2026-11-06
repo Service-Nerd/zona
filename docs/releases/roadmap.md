@@ -376,6 +376,21 @@ engine's real base-build block for someone who has never run. Both boards sat. �
 2026-10-25 and the site never said so. 🏃 **New for the Coaching Board: `STAGED-HM-DOOR-01`** — a never-run runner is
 staged into a marathon and **refused a half**, at every runway from 12 to 30 weeks.
 
+### 🏃 ENGINE — `STAGED-HM-DOOR-01` shipped 2026-11-06, four items filed
+
+**2026-11-06.** 🟢 **`STAGED-HM-DOOR-01` SHIPPED** — a never-run runner was refused a half at every runway while
+being staged into a marathon at all of them. 🏃 Coaching Board CORRECT WITH AMENDMENT, two sittings; three of the
+four parts were defects against ratified text. 🩹 Willy's binding door amendment took the block from **5.67× to
+3.60/4.00×** inside §111's cap.
+
+**OPEN from it.** 🏃 `HM-BASE-RATIO-SCOPE-01` — §111 is silent at the half for ORDINARY generation and a 5 km/wk
+half runner gets **6.80× today**; needs its own sitting because `WIZARD-ZERO-VOLUME-REFUSAL-01` Am. 1 ratified §111's
+scope. · ⚙️ `ENVELOPE-LRR-BLIND-01` — no corpus can reach a §113-refused half runner, so every gate reports
+IDENTICAL and that is blindness, not safety (⚕️ Sims wanted it a prerequisite). · 🧭
+`WALKRUN-WEEK-LEGIBILITY-01` — seven walk-run weeks whose only change is inside the session. · 🔻
+`STAGED-DOOR-AT-CAP-01` — the door's modal outcome is exactly 4.00×; no buffer set, on the chair's own standard.
+Detail in `backlog.md`.
+
 **OPEN (re-measured 2026-11-06).** 🏃 `STAGED-HM-DOOR-01` — Coaching Board, and the only one of these about a
 runner rather than the site. · 🧭 `SITE-FREE-COLUMN-COPY-01` — six free gates registered in `OMITTED_FROM_PRICING`
 with a reason each; the question is which (if any) a reader choosing between tiers needs named, against 🎓 Sierra's

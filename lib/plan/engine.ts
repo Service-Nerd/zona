@@ -54,7 +54,7 @@ import { isDesignedRefusal } from './designedRefusal'
 import { effectiveStartKm } from './startVolume'
 import { BaseVolumeError } from './baseVolume'
 import { assessOnRamp, onRampEnabled } from './baseBuildOnRamp'
-import { generateStagedRacePlan, stagedRaceOf, observedCheckpointKm, observedLongestRunKm, checkpointRaceInput, extendedStagedPlan, runWalkFinishInput, halfSameDayInput, stagingDoorKm, type CheckpointOption, type CheckpointChoice } from './stagedRacePlan'
+import { generateStagedRacePlan, stagedRaceOf, observedCheckpointKm, observedLongestRunKm, checkpointRaceInput, extendedStagedPlan, runWalkFinishInput, halfSameDayInput, stagingDoorKm, longestSessionKm, raceBlockVerdict, addWeeksIso, type CheckpointOption, type CheckpointChoice } from './stagedRacePlan'
 import { notPassedHeading, notPassedWhy, NO_RUNS_HEADING, CHOOSE_HEADING } from './checkpointCopy'
 import { isBaseBuildPlan } from './validateStoredPlan'
 import type { WeeklyLoad } from '@/lib/coaching/weeklyActualLoad'
@@ -376,6 +376,55 @@ export function runEngine(req: EngineRequest): EngineOutcome {
 }
 
 /**
+ * §118 / P-15 — **NO REFUSAL LEAVES WITHOUT SOMETHING TO DO**, and the founder's directive after the board twice
+ * ruled zero rejection unreachable by coaching: *"we can't just say no, go away."*
+ *
+ * 🔴 THIS WAS WRITTEN INSIDE THE `BaseVolumeError` BRANCH, UNDER A COMMENT READING *"the only refusal that can
+ * carry an OFFER"* (§118 Am. 4, Coaching Board 2026-11-06, `STAGED-HM-DOOR-01`). **§118's own principle is not
+ * §111-scoped:** *"A runner **whose base no race plan can safely build from** is given a get-running plan."* §113
+ * refuses for exactly that reason, and its refusal returned the message and nothing else. A defect against documented
+ * intent, not a new decision — which is why the board ruled it a fix rather than an extension.
+ *
+ * ⚠️ `reachesRaceDoor` IS ANSWERED PER RULE, BECAUSE THE DOOR IS A DIFFERENT QUANTITY PER RULE. §111's door is
+ * WEEKLY VOLUME; §113's is a LONG RUN. Handing §111's comparison to a §113 refusal would underwrite *"a race plan
+ * opens up at the end of it"* with a test of the wrong thing — and that sentence is a commitment (SLT 2026-09-20:
+ * *"when it does not happen, the runner concludes you lied, and they will be right"*).
+ *
+ * ⚠️ THE COPY IS UNCHANGED, DELIBERATELY. Both variants read on weekly volume and are the founder's and the SLT's;
+ * only the PREDICATE behind `reaches_race_door` differs. New copy here would be a brand decision this board cannot take.
+ *
+ * ⚠️ `getRunningApplies` IS STILL `effectiveStartKm > 0`, SO A DECLARED ZERO GETS NO OFFER FROM HERE. That is
+ * §118's own predicate and its table starts at 2 km/week; for a declared zero the answer is §117's walk-run start,
+ * which is reached through staging. ⚠️ **Where staging ALSO fails (a runway too short for it), such a runner still
+ * receives nothing** — ⚕️ Sims raised it, the chair filed it, and it is not fixed here.
+ */
+function getRunningOffer(
+  input: GeneratorInput, planStart: string, runway: number, displayUnits: DistanceUnits,
+  reaches: (plan: Plan, endsAtKm: number, weeks: number) => boolean,
+): Record<string, unknown> | null {
+  if (!getRunningApplies(input)) return null
+  const { plan, endsAtKm, weeks } = generateGetRunningPlan(input, planStart, runway)
+  const reachesRaceDoor = reaches(plan, endsAtKm, weeks)
+  // ADR-015 owns every distance string; this module never formats one itself.
+  // ⚠️ NO FALLBACK STRING. The first cut wrote `?? `${Math.round(endsAtKm)} km`` and PREF-SWEEP-01's guard caught
+  // it: a unit glyph welded to an interpolated value is the defect ADR-015 exists to prevent. `formatDistance` returns
+  // null only on a non-finite input, so the branch is the honest way to say that.
+  const label = formatDistance(endsAtKm, displayUnits)
+  if (!label) return null
+  return {
+    weeks,
+    ends_at_km: Math.round(endsAtKm * 10) / 10,
+    reaches_race_door: reachesRaceDoor,
+    // ⚠️ THE COPY SHIPS WITH THE OFFER, from its single owner, rather than being assembled client-side. Two
+    // variants keyed on `reaches_race_door` (SLT 2026-09-20), and the non-clearing one must say NOTHING about a race —
+    // a rule a client-side template would be free to break.
+    title: baseBuildOfferTitle(),
+    line: baseBuildOfferLine({ weeks, endsAtKm, reachesRaceDoor, distanceLabel: label }),
+    why: baseBuildOfferWhy(),
+  }
+}
+
+/**
  * Every designed refusal → the 422 the client already renders, plus the event the
  * caller should record. Returns null for anything that is NOT a refusal, so the
  * caller re-throws it.
@@ -483,9 +532,38 @@ function mapRefusal(
   // §113 — long-run readiness. Same 422 shape as §44/§52/§111 so the "not yet"
   // screen renders every refusal identically.
   if (err instanceof LongRunReadinessError) {
+    // §118 Amendment 4 — the offer follows §118's own scope, not §111's branch.
+    //
+    // 🔴 AND `reaches_race_door` IS ANSWERED BY GENERATING THE RACE PLAN, NOT BY CLEARING §113. My first cut tested
+    // *"does the base build's longest run reach §113's floor"*, which is the rule that refused them — and it is not
+    // enough. A §113-refused MARATHON runner can clear §113's 5 km and still be refused by §111 on weekly volume, and
+    // the sentence this underwrites is *"a race plan opens up at the end of it"*, which the SLT ruled a commitment:
+    // *"when it does not happen, the runner concludes you lied, and they will be right"* (2026-09-20).
+    //
+    // ⚠️ THE LESSON WAS ALREADY WRITTEN DOWN, TWENTY LINES BELOW, in `finishRescues`: a gate cannot see a bound that
+    // is checked after the plan is built, **"an offer that gets refused again is worse than no offer at all"**, and the
+    // only honest answer is to generate it and look. Clearing ONE refusal is the same mistake in a new place.
+    //
+    // So: build the race plan from where the base build actually ends — its endpoint volume and its own longest
+    // session, through `checkpointRaceInput`, the single owner of that input — and ask whether anything still refuses.
+    // Costs one generation on the refusal path only. ⚠️ "Generates" is the bar, NOT the checkpoint's stricter "clean":
+    // the claim is that a plan opens, not that it is the best block we could build.
+    const getRunning = getRunningOffer(
+      input, planStart, weeksBetweenLocal(planStart, input.race_date), displayUnits,
+      // 🔴 THE CHECKPOINT IS WHERE THE BASE BUILD ENDS, NOT `planStart` — code review, 2026-11-06. Passing
+      // `planStart` counted the base-build weeks twice: on a 10-week runway the probe asked whether a race plan
+      // generates in the 10 weeks that START today, while the base build consumes all ten of them. So the offer
+      // could claim *"a race plan opens up at the end of it"* about a race day that has already passed.
+      (plan, endsAtKm, weeks) => raceBlockVerdict(
+        checkpointRaceInput(input, endsAtKm, longestSessionKm(plan.weeks)), addWeeksIso(planStart, weeks),
+      ).refusal === null,
+    )
     return {
       kind: 'refusal', status: 422, telemetry,
-      body: { error: err.message, reason: 'long_run_readiness', readiness: err.readiness },
+      body: {
+        error: err.message, reason: 'long_run_readiness', readiness: err.readiness,
+        ...(getRunning ? { get_running: getRunning } : {}),
+      },
     }
   }
 
@@ -512,29 +590,10 @@ function mapRefusal(
     // at the top of `runEngine`, above the generation attempt, and leaving a second
     // copy here would be two producers of one decision — the exact unsoundness that
     // moved it (`BASEBUILD-ADJUST-REBUILD-01`).
-    let getRunning: Record<string, unknown> | null = null
-    if (getRunningApplies(input)) {
-      const { endsAtKm, weeks } = generateGetRunningPlan(input, planStart, runway)
-      const reachesRaceDoor = endsAtKm >= err.base.min_base_km
-      // ADR-015 owns every distance string; this module never formats one itself.
-      // ⚠️ NO FALLBACK STRING. The first cut wrote `?? \`${Math.round(endsAtKm)} km\``
-      // and PREF-SWEEP-01's guard caught it: a unit glyph welded to an interpolated
-      // value is the defect ADR-015 exists to prevent. `formatDistance` returns null
-      // only on a non-finite input, so the branch is the honest way to say that.
-      const label = formatDistance(endsAtKm, displayUnits)
-      if (label) getRunning = {
-        weeks,
-        ends_at_km: Math.round(endsAtKm * 10) / 10,
-        reaches_race_door: reachesRaceDoor,
-        // ⚠️ THE COPY SHIPS WITH THE OFFER, from its single owner, rather than being
-        // assembled client-side. Two variants keyed on `reaches_race_door` (SLT
-        // 2026-09-20), and the non-clearing one must say NOTHING about a race — a
-        // rule a client-side template would be free to break.
-        title: baseBuildOfferTitle(),
-        line: baseBuildOfferLine({ weeks, endsAtKm, reachesRaceDoor, distanceLabel: label }),
-        why: baseBuildOfferWhy(),
-      }
-    }
+    // §111's door is WEEKLY VOLUME. Unchanged: same predicate, same copy, same owner — the body moved into
+    // `getRunningOffer` so §113 could have it too, and this call is byte-equivalent to what was here.
+    const getRunning = getRunningOffer(input, planStart, runway, displayUnits,
+      (_plan, endsAtKm) => endsAtKm >= err.base.min_base_km)
 
     return {
       kind: 'refusal', status: 422, telemetry,

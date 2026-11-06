@@ -138,6 +138,37 @@ export function assessBaseBuild(plan: Plan, input: GeneratorInput): BaseBuildAss
   return { applies, peakKm, currentKm, ratio, cap, minBaseKm, exceeded: ratio > cap }
 }
 
+/**
+ * §116 Amendment 11 — **§111's ARITHMETIC WITHOUT §111's SCOPE.**
+ *
+ * `assessBaseBuild` returns `ratio: null` wherever §111 does not govern
+ * (`race_distance_km < BASE_BUILD_RATIO_MIN_DISTANCE_KM`), because that is what
+ * §111's refusal needs: silence outside its own distances. The staged door rule
+ * needs the opposite — **the number, at every distance, used to CHOOSE a door and
+ * never to refuse a runner.**
+ *
+ * 🔴 WHY THIS EXISTS AT ALL. Staging a §113-refused runner at the half gave the
+ * engine its most aggressive build: the C3 door search picks *the lowest clean
+ * volume*, "clean" is the validator plus the coach objections, and **§111 is not
+ * among them below 42 km** — so the search stopped at 6.5 km/week and the block it
+ * then builds peaks at 34, a **5.67×** build off a runner who has never run. The
+ * already-ratified marathon twin, staged at door 11, is **3.55×**. §111 Amendment 2
+ * ratified the 4.0 cap citing a median true build of **5.57×** in exactly this
+ * cohort, with *zero* genuine plan defects in the plans that produced it — so a
+ * green validator was never going to see this (Willy, binding, 2026-11-06).
+ *
+ * ⚠️ `WIZARD-ZERO-VOLUME-REFUSAL-01` Am. 1 ratified §111's scope and **did not
+ * extend it**, and this does not either: nothing here refuses anybody. `applies`
+ * is untouched, `exceeded` is untouched, and the door simply moves up.
+ */
+export function baseBuildRatioOf(plan: Plan, input: GeneratorInput): { ratio: number; cap: number; minBaseKm: number } {
+  const a = assessBaseBuild(plan, input)
+  // `assessBaseBuild` nulls the ratio outside §111's distances; recompute from its
+  // own two numbers rather than keeping a second derivation of either.
+  const ratio = a.peakKm <= 0 ? 0 : a.currentKm > 0 ? a.peakKm / a.currentKm : Infinity
+  return { ratio, cap: a.cap, minBaseKm: a.minBaseKm }
+}
+
 /** Which rule produced the refusal. §111's ratio and §117's adequacy bound are
  *  different failures and were sharing one message; see `runWalkInadequateRefusal`. */
 export type BaseVolumeCause = 'base-ratio' | 'runwalk-inadequate'

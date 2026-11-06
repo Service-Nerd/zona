@@ -92,18 +92,46 @@ before planning against any number below (an item is a snapshot of the code on t
   which a four-word bullet cannot say. The question for the board is which of the six (if any) a reader choosing
   between tiers actually needs named.
 
-- 🏃 **COACHING BOARD** `STAGED-HM-DOOR-01` — **a never-run runner is staged into a MARATHON and refused a HALF.**
-  Measured 2026-11-06 through `runEngine` for `current_weekly_km: 0`, `longest_recent_run_km: 0`, beginner, 3 days:
-  marathon → `base_build` at 24/30/36-week runways; **half marathon → `refusal`, `long_run_readiness`, at 12, 16,
-  20, 24 AND 30 weeks**; 10K and 5K → an ordinary plan. ⚠️ **The boundary is literally zero:** at 5 km/week with a
-  2 km longest run the half returns a normal 16-week plan. **Cause:** `stagingDoorKm` stages a
-  `LongRunReadinessError` only when `walkRunDoorKm` returns a door, and that probe regenerates with the minimum
-  longest run and returns a door **only if §111 (`BaseVolumeError`) is what refuses**. The half is not refused by
-  §111, so the probe returns null and the original refusal stands. 🔴 **That function's own docstring says it was
-  written for this exact class** — *"the envelope staged only §111's refusals and could not see a walk-run runner,
-  whom §113 refuses first"* — **the fix landed in the measurement and not in the door.** §117 Amendment 5's logic
-  (readiness to run is answered by the longest run) applies identically to both distances. Flagged by the chair at
-  the `SITE-STAGED-PLAN-01` sitting and returned as its own item; **not** ruled there.
+- ✅ **SHIPPED 2026-11-06** `STAGED-HM-DOOR-01` — **a never-run runner was staged into a MARATHON and refused a
+  HALF**, at every runway from 12 to 30. 🏃 Coaching Board **CORRECT WITH AMENDMENT**, two sittings (the second on the
+  generated plans). **Three of the four parts were DEFECTS against ratified text**, including §111's own claim that
+  *"a never-run beginner still generates there"* — false since §113 was ratified the same day — and §118's offer
+  living inside the `BaseVolumeError` branch under a comment reading *"the only refusal that can carry an OFFER"*.
+  🩹 Willy's binding amendment moved the door so the block lands inside §111's cap (**5.67× → 3.60/4.00**), using
+  §111's arithmetic and never its veto. ⚠️ **Code review narrowed the ruling before the push** — *"at every volume"*
+  shipped an **18.3 km week-1 long run** to a 55 km/wk runner with a 2 km longest run. ⚕️ Sims dissents on priority:
+  the product population is unmeasured (`ENVELOPE-LRR-BLIND-01`).
+
+- 🏃 **COACHING BOARD** `HM-BASE-RATIO-SCOPE-01` — **§111 is silent at the half for ORDINARY generation, and the
+  numbers are live today.** Measured 2026-11-06 through `generateRulePlan`: a **5 km/week** half-marathon runner is
+  handed a **6.80×** build (peak 34 km/wk) and a **7 km/week** one **4.86×**, against the 4.0 cap §111 Am. 2 ratified
+  for the marathon citing a median 5.57× *"with zero genuine plan defects"*. No staging involved; nothing in
+  `STAGED-HM-DOOR-01` makes it worse. ⚠️ **Settled ground to clear first:** `WIZARD-ZERO-VOLUME-REFUSAL-01` Am. 1
+  ratified §111's scope and explicitly **did not extend it**, so this needs a sitting with the new measurement in
+  front of it, not an inference. ⚠️ **Blast radius is the opposite sign to the usual:** extending §111's REFUSAL to
+  the half would turn plans that generate today into refusals, which is why the staged ruling used the arithmetic as a
+  door rather than a veto.
+
+- ⚙️ **NO BOARD** `ENVELOPE-LRR-BLIND-01` — **no corpus can reach a §113-refused half runner, and the envelope says
+  "refused 0%".** `measure:envelope` derives `longest_recent_run_km = round(min(weekly × 0.45, dist × 0.75))`; at the
+  lowest half volume band (10 km/wk) that is `round(4.5) = 5` — **exactly §113's floor** — so of 33,792 cases
+  **0** are sub-floor at 21.1 km, and only **two** (dist, cw, lr) triples below the floor exist at all
+  (`42.2 cw4 lr2`, `42.2 cw8 lr4`), **both already staged**. `measure:fitness`'s hand-built cohort uses longest 14;
+  `verify:parity`'s grid is `Math.max(5, weekly/3)`, so it cannot hold one by construction. ⚠️ **The cause is that
+  the longest run is DERIVED from volume, so the two can never disagree** — varying an axis is not reaching the
+  interaction. ⚕️ Sims wanted this a prerequisite to `STAGED-HM-DOOR-01`; the chair ruled it parallel.
+
+- 🧭 **DESIGN BOARD** `WALKRUN-WEEK-LEGIBILITY-01` — **seven walk-run weeks whose only change is inside the
+  session.** 🎯 McMillan, at the plans sitting: the §117 ladder really does progress (1/2 → 2/2 → 3/2 → 3/2 on the
+  deload → 4/2 → 5/2 → 6/1), but every week renders as *"Walk-run · 30 min · Zone 2"*, so a runner reading the Plan
+  screen sees the same week seven times. **Not a coaching question** — the prescription is right; the question is
+  whether the interval is visible on the week. Nobody has looked at it on a phone.
+
+- 🔻 `STAGED-DOOR-AT-CAP-01` — **the staged door's modal outcome is exactly 4.00×**, because the search stops at
+  the first volume inside §111's cap. 🏃 The chair declined a buffer at the sitting on his own standard
+  (*"a number because I happen to have one"*, `SESSION-ACHIEVABLE-01`). Evidence that would settle it: whether a
+  staged half runner at 4.00× completes. **We have no such runner.**
+
 
 **Found while BUILDING the sitting's items, filed not swept:**
 

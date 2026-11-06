@@ -10912,6 +10912,125 @@ way neither sitting saw; they are returned to the board before §116's flag may 
 - **C5** — measured: of 880 staged cases, **71.0% clean**; the rest are C4 (WEEK1-LEAP 10.0%, LONG-RUN-SHORT 9.8%, both
   6.2%) and §113 on the recorded long run (3.1%).
 
+### §116 Amendment 11 — A §113 REFUSAL IS STAGED TOO, AND THE DOOR MUST LAND THE BLOCK INSIDE §111's RATIO *(Coaching Board 2026-11-06, `STAGED-HM-DOOR-01`)*
+
+**Principle, two halves.**
+
+**(1) Staging follows the REFUSAL, not §111.** A runner refused by §113 on long-run readiness is staged exactly as a
+runner refused by §111 on base volume: this section's ramp first, a checkpoint named from day one, and the race block
+generated only once the checkpoint passes on what they actually ran. **It applies at every distance §113 governs,
+including those §111 does not** — the half marathon — in two cases and only two:
+
+- **§111 supplies a door** (asked with §113's floor substituted as the long run). Staged at any volume. This is
+  §116 Am. 9's own path, and it includes the second twin below.
+- **Nothing refuses once the long run is out of the question**, AND the runner is below
+  `BASE_BUILD_ONRAMP_MIN_START_KM`, so §117's **walk-run start** is what they begin with.
+
+🔴 **THE SECOND CONDITION IS A NARROWING OF THIS RULING, FOUND BY CODE REVIEW BEFORE THE PUSH, AND IT IS RECORDED
+RATHER THAN ABSORBED.** The sitting ruled *"at every volume, including a runner already above
+`BASE_BUILD_ONRAMP_MIN_START_KM`"*. That sentence assumed §111 would supply the door. Where it does not, the seed is
+the on-ramp floor — and **§113's blocker is a LONG RUN while the staged door is a WEEKLY VOLUME.** For a runner
+starting from nothing the two coincide, because the walk-run start builds the long run from zero in minutes over seven
+weeks. For a runner who already has volume they diverge completely, because this section's ramp sizes its long run from
+VOLUME and never from theirs. Measured with the condition absent:
+
+| | week-1 long run | §45's cap | |
+|---|---|---|---|
+| marathon, 55 km/wk, longest **2 km** | **18.3 km** | 2.2 | **+815%**, and `INV-PLAN-ONRAMP-PER-RUN-STEP` (§116 Am. 2, Willy) FIRED |
+| half, 10 km/wk, longest 1 km | 3.3 km | 1.1 | +230% |
+| half, 6 km/wk, longest 1 km | 2.0 km | 1.1 | +100% |
+
+**That is the exact hazard §113 exists to prevent, shipped by the rule written to serve §113's cohort.** The ruling's
+REASON is fully served — the never-run half runner is staged, which is what McMillan carried — and for the
+already-running runner §113's own lever is the right coaching (*"build up to one 5 km run"*), which now carries
+§118's offer (Am. 4).
+
+**(2) Where §111 supplies no door, the door must still land the race block inside `MAX_BASE_BUILD_RATIO`.** C3's
+target is *the lowest weekly volume at or above §111's door from which the race block is clean*. Where §111 gives no
+door, the search is seeded at `BASE_BUILD_ONRAMP_MIN_START_KM` and **"clean" additionally requires the block's
+delivered peak to sit within §111's cap of the volume the checkpoint builds from.**
+
+🔴 **WHAT WAS MEASURED, AND IT IS THE WHOLE REASON FOR BOTH HALVES.** Through `runEngine` in the shape the wizard
+posts (`days_available` set, `fitness_level` unset), for 0 km/week, 0 km longest run, declared beginner, three days:
+
+| race | 12 wks | 16 | 20 | 24 | 30 |
+|---|---|---|---|---|---|
+| 5K / 10K | plan | plan | plan | plan | plan |
+| **half marathon** | **refused** | **refused** | **refused** | **refused** | **refused** |
+| marathon | staged, door 9 | staged, 11 | staged, 12 | staged, 12 | staged, 12 |
+| 50K | refused (§44) | staged, 13 | staged, 16 | staged, 16 | staged, 16 |
+
+🎯 **McMillan, carrying:** *"A runner says half marathon in six months and we say no. The same runner says
+marathon and we hand them a sixteen-week plan. There is no coach alive who would defend that in a room, and the runner
+who finds it out will simply type the harder race to get the easier answer."*
+
+⚠️ **§111's OWN TEXT ALREADY SAID THIS RUNNER WAS SERVED, AND HAD BEEN WRONG SINCE THE DAY IT WAS WRITTEN.** §111
+states *"Short distances (5K/10K/HM) are outside §111 entirely, so a never-run beginner still generates there"* — and
+§113 was ratified in the same sitting block, governs `>= LONG_RUN_READINESS_MIN_RACE_KM` (21 km), and made that
+sentence false immediately. §111's own closing line, *"Out of scope, flagged not fixed … a separate sitting"*, is this
+amendment. **Two sections ratified the same day, neither knowing what the other had done to the half marathon.**
+
+**The mechanism it corrects.** `stagingDoorKm` read a door only from a `BaseVolumeError`, so (a) a race §111 does not
+govern had **no door by construction**, and (b) the §113 branch was gated on `walkRunStartApplies`, so a runner
+already running was not staged **even where §111 had a door and `stagingApplies` returned true** (marathon at 6–10
+km/week, doors 9 and 11). ⚠️ The door function's own docstring said it was written for *"a walk-run runner, whom
+§113 refuses first"* — the class is *§113 refuses first*, of which walk-run is one case. **The remedy had been applied
+to one twin.**
+
+🩹 **WILLY, BINDING, ON THE DOOR — AND THIS IS THE AMENDMENT THE SUBMISSION DID NOT ASK FOR.** C3 asks for *the
+lowest CLEAN volume*, and "clean" is `validatePlan` plus the coach objections — **§111 is in neither below 42 km.**
+Measured at runway 30:
+
+| | checkpoint door | block peak | **peak ÷ start** |
+|---|---|---|---|
+| half, staged at C3's lowest clean door | 6.5 | 34 | **5.67×** |
+| half, door 9 | 9 | 34 | 3.78× |
+| **marathon, staged — already ratified** | 11 | 39 | **3.55×** |
+
+*"5.67× off a never-run runner's base is the clearest bone-stress setup in this engine, and we have the measurement
+already. §111 Amendment 2 ratified the 4.0 cap citing a median true build of 5.57× in precisely this cohort, skewing
+female, with zero genuine plan defects in the plans that produced it. **A green validator was the problem then and it
+is the problem now.**"* ⚕️ **Sims concurred and asked it be recorded that supporting the staging and supporting the
+door are one position, not a compromise between them.**
+
+⚠️ **NOBODY IS NEWLY REFUSED, AND THAT IS LOAD-BEARING.** `WIZARD-ZERO-VOLUME-REFUSAL-01` Am. 1 ratified §111's
+scope and **did not extend it**. This uses §111's *arithmetic* to choose a door and never its *veto*: `applies` and
+`exceeded` are untouched, and a door that would breach the cap is simply not chosen.
+
+🔴 **AND IT IS FIXED IN BOTH PLACES, BECAUSE IT WAS THE SAME HAZARD TWICE.** E1's half-same-day offer shares the
+same "is this a block we would hand over" owner: measured, **8 of 68 E1 offers were over the cap**, every one at 6–8
+km/week observed, up to 5.67×. The rule lives in `raceBlockVerdict`, which both the door search and E1 reach, so one
+condition covers both. 🩹 Willy required it; the cost was measured first — **all 8 of those runners have `extend`
+available**, which is the right answer at 6 km/week, so the withdrawn offer costs them nothing.
+
+**Config.** ⚠️ **NO NEW NUMERIC, DELIBERATELY, AGAINST THE RULING'S OWN ARTIFACT LIST.** The sitting named a
+`STAGED_DOOR_FLOOR_KM`; a constant equal to `BASE_BUILD_ONRAMP_MIN_START_KM` is the second copy the Configuration
+Singularity forbids, and `configPrincipleSync` would then demand a principle for a number that already has one. The
+rule reads `BASE_BUILD_ONRAMP_MIN_START_KM` (the seed) and `MAX_BASE_BUILD_RATIO` (the bound). Recorded as a departure,
+with the reason, rather than taken silently.
+
+**Enforcement.** `INV-PLAN-STAGED-DOOR-RATIO` (**warn**, `baseBuildValidate.ts → validateStagedDoorRatio`). It builds
+the block through the producer's own `raceBlockVerdict` — a second generator would be a second answer — and derives
+the ratio itself via `baseBuildRatioOf`, never reading the producer's objection. ⚠️ **Exempt where `target_found` is
+false**: that is C4, no block is promised, so there is no ratio to bound. ⚠️ **`warn` not `error`**, asymmetrically
+with `INV-PLAN-BASE-BUILD-RATIO`, because §111 refuses and this disqualifies a door.
+
+**Measured delivery.** The half now stages at every runway from 12. At 24/30/36 weeks `target_found` is true and the
+block's ratio is **3.60 / 4.00 / 4.00** against the cap of 4.0, where C3 unmodified gave 5.67×. 0 error violations on
+every staged plan. The marathon's Gap-B cohort (6–10 km/week, longest 1–2) now stages at doors 9–12.
+
+⚠️ **WHAT THIS DOES NOT PROVE, AND ⚕️ SIMS DISSENTS ON ITS PRIORITY.** The product-population share is
+**unmeasured**. `measure:envelope` derives `longest = round(min(weekly × 0.45, dist × 0.75))`, which at the lowest half
+volume band (10 km/week) is `round(4.5) = 5` — **exactly §113's floor** — so the envelope has never contained a
+refused half-marathon runner and reports the half at *"refused 0%"*. `measure:fitness`'s hand-built cohort uses a
+longest run of 14. The rate quoted to the board (24.2% of halves refused) is from a deliberately low-volume grid and is
+**not** a product estimate. Filed as `ENVELOPE-LRR-BLIND-01`; Sims wanted it a prerequisite, the chair ruled it
+parallel.
+
+🔻 **NOT RULED HERE: §111 is silent at the half for ORDINARY generation too.** Measured live: a 5 km/week
+half-marathon runner is handed **6.80×** and a 7 km/week one **4.86×**, today, with no staging involved. Staging
+introduces nothing new and nothing here makes it worse. `HM-BASE-RATIO-SCOPE-01`.
+
 ### §116 Amendment 10 — A STAGED BLOCK MAY BE PUBLISHED; THE RACE IT STAGES MAY NOT *(Coaching Board 2026-11-06, `SITE-STAGED-PLAN-01`)*
 
 **Principle.** The base-build block a staged refusal returns may be rendered on a public page. **The race it
@@ -11374,6 +11493,57 @@ to avoid a new number; settled at 5 because a 10 min walk leaves one round on a 
 ⚠️ **§2 CHECKS WEEK-ON-WEEK AND CANNOT SEE THE ENDPOINT.** That blind spot is general, and this is the first place it has been closed.
 
 ⚠️ **NO HARNESS WATCHES THIS PLAN KIND.** `measure:fitness` and `measure:envelope` are both shaped around a race. Inventing a way to score a raceless plan would be the decorative-check failure, so it is **filed as a known gap, not papered over** (chair).
+
+### §118 Amendment 4 — THE OFFER FOLLOWS THIS SECTION'S OWN SCOPE, NOT §111's BRANCH *(Coaching Board 2026-11-06, `STAGED-HM-DOOR-01`)*
+
+**Principle.** Every designed refusal whose cause is **the base a race plan would build from** carries this section's
+offer. That is what this section already said — *"a runner **whose base no race plan can safely build from** is given
+a get-running plan"* — and §113 refuses for exactly that reason.
+
+🔴 **THE DEFECT, AND IT IS AGAINST THIS SECTION'S OWN TEXT.** The offer was written inside `mapRefusal`'s
+`BaseVolumeError` branch, under a comment reading **"the only refusal that can carry an OFFER"**. So a §113 refusal
+returned the message, the readiness figures, and **nothing to do** — against the founder's directive this section
+exists to honour: *"we can't just say no, go away."* A runner told *"build up to one 5 km run, then come back"* was
+being sent away to do unstructured running to reach a threshold we would not help them reach. ⚕️ **Sims objected to
+this more strongly than to the refusal itself.**
+
+⚠️ **IT IS A DEFECT FIX, NOT AN EXTENSION, AND THE BOARD RULED IT SO.** No scope changed; the implementation was
+narrower than the principle.
+
+**`reaches_race_door` IS ANSWERED PER RULE, BECAUSE THE DOOR IS A DIFFERENT QUANTITY PER RULE.** §111's door is a
+**weekly volume** and its predicate is unchanged, byte-for-byte: `endsAtKm >= min_base_km`. §113's blocker is a **long
+run**, so its predicate is *"does a race plan generate from where this base build actually ends"* — the endpoint volume
+and the block's own longest session, through `checkpointRaceInput`.
+
+🔴 **MY FIRST CUT TESTED §113's FLOOR AND THAT WAS WRONG, FOR A REASON ALREADY WRITTEN TWENTY LINES AWAY.** It
+asked *"does the base build reach a 5 km long run"* — the rule that refused them. **A §113-refused marathoner can
+clear 5 km and still be refused by §111**, and the sentence being underwritten is *"and a race plan opens up at the end
+of it"*, which the SLT ruled a commitment: *"when it does not happen, the runner concludes you lied, and they will be
+right."* `finishRescues` in the same file already records the lesson — a gate cannot see a bound checked after the
+plan is built, **"an offer that gets refused again is worse than no offer at all"**, and the only honest answer is to
+generate it and look. **Clearing ONE refusal is that mistake in a new place.**
+
+🔴 **AND THE FIRST GENERATE-AND-SEE CUT ASKED AT THE WRONG DATE, SO MY OWN MEASUREMENT OF IT WAS MEASURING THE
+DEFECT** (code review, same day). It passed `planStart` as the race-block checkpoint, so the base-build weeks were
+**counted twice**: on a 10-week runway it asked whether a race plan generates in the ten weeks starting today, while
+the base build consumes all ten of them. I reported *"measured both ways, true 168 / false 28 across 196 refusals"* and
+read that as the predicate working. **Those 168 were false promises about a race day that had already passed** —
+precisely the commitment the SLT ruled on.
+
+Corrected: **0 of 612.** ⚠️ **So the clearing variant is UNREACHABLE for §113, by construction**, and the gate says
+so rather than pretending to vary: a §113 refusal now survives only where staging could not place a checkpoint, which
+means the runway cannot hold a base build plus §44's block — so the base build cannot leave room for a race plan. An
+arm asserting both values would be asserting the defect. A separate arm proves the clearing copy is still live and
+still says what the SLT ruled, so the two-variant machinery is not half-dead; §111's branch is what reaches it.
+
+**The copy is unchanged, deliberately.** Both variants are the founder's and the SLT's; only the predicate moved. New
+copy here would be a brand decision this board cannot take.
+
+⚠️ **TWO RUNNERS STILL GET NOTHING, NAMED NOT FIXED.** `getRunningApplies` is `effectiveStartKm > 0`, so a
+**declared zero** gets no offer from this branch — this section's own table starts at 2 km/week and §117's walk-run
+start is their answer, which is reached through staging. **Where staging also fails on a short runway, such a runner
+receives nothing.** And a §44 `PrepTimeError` ("not enough weeks") carries no offer, correctly: that is not a base
+problem. ⚕️ Sims raised the first; the chair filed it.
 
 ### §118 — the name and the copy (SLT 2026-09-20)
 

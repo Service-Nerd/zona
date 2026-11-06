@@ -138,9 +138,21 @@ describe('the refusal telemetry records the levels it claims to', () => {
    * prove the payload carries usable levels, which is the thing that was broken: 20
    * production events, **0 carrying any level**.
    */
+  /**
+   * ⚠️ THE FIXTURE MUST BE A RUNNER THE ENGINE STILL REFUSES, AND THAT PROPERTY IS
+   * LOAD-BEARING — it broke once. The date was `2026-12-28` (a 12-week runway) and
+   * §116 Am. 11 (`STAGED-HM-DOOR-01`) now STAGES that runner instead of refusing them,
+   * so all five arms failed on their own premise. `2026-11-30` is eight weeks, under
+   * §44's 10-week marathon block, so the refusal is §44's and cannot be staged away.
+   *
+   * 🔑 The arms below are about the TELEMETRY PAYLOAD, not about which rule refused,
+   * so any designed refusal serves — but the LEVEL inputs are not interchangeable:
+   * `current_weekly_km: 6` + `training_age: '<6mo'` + declared `experienced` is what
+   * makes SAID and ASSESSED disagree, which is the whole point of the event.
+   */
   const refuse = (extra: Record<string, unknown>) => {
     const input = {
-      race_distance_km: 42.2, race_date: '2026-12-28', goal: 'finish',
+      race_distance_km: 42.2, race_date: '2026-11-30', goal: 'finish',
       current_weekly_km: 6, longest_recent_run_km: 3, days_available: 3,
       training_age: '<6mo', age: 38, injury_history: [],
       recent_quality_training: 'none', hard_session_relationship: 'neutral',

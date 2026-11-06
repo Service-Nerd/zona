@@ -38,7 +38,7 @@ import { validatePlan } from './invariants'
 import { isBaseBuildPlan } from './validateStoredPlan'
 import { isDateBeforePlan } from './weekResolution'
 import { walkRunStartApplies, walkRunStartWeeks, generateWalkRunWeeks, walkRunSchedule, walkRunResumeSchedule } from './walkRunStart'
-import { BaseVolumeError } from './baseVolume'
+import { BaseVolumeError, baseBuildRatioApplies, baseBuildRatioOf } from './baseVolume'
 import { LongRunReadinessError } from './longRunReadiness'
 import { applyRunWalk } from './runWalkPlan'
 
@@ -112,7 +112,11 @@ export function stagingApplies(input: GeneratorInput, doorKm: number, runwayWeek
   return checkpointPlacement(input, rampDoorFloor(doorKm, effectiveStartKm(input)), runwayWeeks) !== null
 }
 
-const addWeeks = (iso: string, n: number) => new Date(Date.parse(`${iso}T00:00:00Z`) + n * 7 * 864e5).toISOString().slice(0, 10)
+/** ⚠️ EXPORTED AS `addWeeksIso` rather than copied. `engine.ts` needs the same arithmetic for §118's probe
+ *  checkpoint, and `length.ts` owns `addDays(Date)` only — a third hand-rolled ISO walk is how two date helpers come
+ *  to disagree. UTC-anchored deliberately: plan dates are plain ISO days, not instants. */
+export const addWeeksIso = (iso: string, n: number) => new Date(Date.parse(`${iso}T00:00:00Z`) + n * 7 * 864e5).toISOString().slice(0, 10)
+const addWeeks = addWeeksIso
 const dayBefore = (iso: string) => new Date(Date.parse(`${iso}T00:00:00Z`) - 864e5).toISOString().slice(0, 10)
 
 /** The longest single session a set of weeks prescribes, in km. */
@@ -161,7 +165,36 @@ export function raceBlockVerdict(input: GeneratorInput, checkpoint: string): Rac
   const maintDeclared = m.volume_profile === 'maintenance' && !!m.volume_constraint_note
   // The same §23 reconciliation every harness applies: a declared maintenance plan may not build.
   const objectionCodes = objectionsOnly(auditPlanQuality(race, input).filter(o => !(o.code === 'NEVER-BUILDS' && maintDeclared))).map(o => o.code)
-  return { race, refusal: null, errorCodes, objectionCodes }
+  return { race, refusal: null, errorCodes, objectionCodes: [...objectionCodes, ...ratioObjection(race, input)] }
+}
+
+/**
+ * §116 Amendment 11 — **the door must land the block inside §111's ratio, at a distance §111 does not govern.**
+ *
+ * 🩹 Willy, binding (Coaching Board 2026-11-06, `STAGED-HM-DOOR-01`): C3 picks *the lowest CLEAN volume*, and "clean"
+ * is the validator plus the coach objections — **neither of which contains §111 below 42 km.** So at the half the
+ * search stopped at 6.5 km/week and the block it built peaked at 34: a **5.67×** build off a runner who has never run,
+ * where the already-ratified marathon twin is **3.55×**. §111 Am. 2 ratified the 4.0 cap citing a median true build of
+ * **5.57×** in this exact cohort with *zero* genuine plan defects, so a green validator was never going to see it.
+ *
+ * ⚠️ IT IS AN OBJECTION, NOT A REFUSAL, AND THE REGISTER IS THE POINT. §111 refuses; this disqualifies a DOOR.
+ * Nobody is newly refused, so `WIZARD-ZERO-VOLUME-REFUSAL-01` Am. 1 ("§111's scope ratified, NOT extended") holds.
+ *
+ * ⚠️ A NO-OP WHERE §111 GOVERNS, **BY CONSTRUCTION AND NOT BY LUCK** — guarded on `!applies` rather than left to the
+ * fact that `generateRulePlan` would have thrown first. "It cannot happen" is the claim this repo has paid for; the
+ * predicate says it.
+ *
+ * 🔴 AND IT LIVES IN `raceBlockVerdict`, WHICH IS WHY BOTH TWINS ARE FIXED. The door search reaches it through
+ * `raceBlockClean`; **E1's half-same-day offer reaches it through `cleanRaceBlock`** — measured before the board ruled:
+ * 8 of 68 E1 offers were over the cap, every one at 6–8 km/week observed, up to 5.67×. Fixing the search and leaving E1
+ * is the one-twin failure this repo catalogues. The cost was measured too: **all 8 of those runners have `extend`
+ * available**, which is the right answer at 6 km/week. ⚠️ `stagedScore` reads `objectionCodes` from here, so the
+ * harness cannot disagree with the producer about this — the flaw that put a second copy of "clean" in the harness.
+ */
+function ratioObjection(race: Plan, input: GeneratorInput): string[] {
+  if (baseBuildRatioApplies(input.race_distance_km)) return []
+  const { ratio, cap } = baseBuildRatioOf(race, input)
+  return ratio > cap ? ['BASE-BUILD-RATIO-OVER-CAP'] : []
 }
 function cleanRaceBlock(input: GeneratorInput, checkpoint: string): Plan | null {
   const v = raceBlockVerdict(input, checkpoint)
@@ -420,7 +453,12 @@ function generateWalkRunStagedPlan(input: GeneratorInput, planStart: string, min
   const rampRunway = runway - wrWeeks
   const startKm = GENERATION_CONFIG.BASE_BUILD_ONRAMP_MIN_START_KM
   const target = checkpointTarget(input, rampStart, minBaseKm, rampRunway, startKm)
-  const doorKm = target ?? minBaseKm
+  // 🔴 `rampDoorFloor`, WHICH THIS LINE WAS MISSING WHILE ITS SIBLING AT `generateStagedRacePlan` HAD IT
+  // (code review, 2026-11-06). `checkpointPlacement` requires `doorKm > startKm`, and the new floor seed of 6 EQUALS
+  // the ramp's own `BASE_BUILD_ONRAMP_MIN_START_KM` of 6 — so the fallback door failed its own placement and the
+  // ramp was dropped entirely. Measured: a never-run half runner at a 20-week runway got **7 walk-run weeks and
+  // ZERO ramp weeks**, though `checkpointPlacement` yields 2 reachable ramp weeks with 5 available.
+  const doorKm = target ?? rampDoorFloor(minBaseKm, startKm)
   const placed = checkpointPlacement(input, doorKm, rampRunway, startKm)
 
   let rampWeeks: Week[] = []
@@ -465,16 +503,63 @@ function generateWalkRunStagedPlan(input: GeneratorInput, planStart: string, min
 }
 
 /**
- * Phase D — §111's door for a walk-run runner, whom §113 refuses before §111 is reached. Asked with §113's own floor
- * (`MIN_SESSION_DISTANCE_KM.long`) as the long run: the door is a property of the race block's peak, not of the long
- * run. Null when §111 is not what refuses them (e.g. §44 on the runway), so that refusal stands.
+ * §116 Amendment 11 — **the door for a runner §113 refuses**, asked with §113's own floor
+ * (`MIN_SESSION_DISTANCE_KM.long`) substituted as the long run: the door is a property of the race block's weekly
+ * volume, not of the long run, so the probe removes the long run from the question.
+ *
+ * Three answers, and the middle one is the fix:
+ *
+ *   - **§111 refuses** → its door. (What this function did, and only this.)
+ *   - **nothing refuses** → `BASE_BUILD_ONRAMP_MIN_START_KM`, the volume §116 says a runner must reach to be running
+ *     at all. The long run was the ONLY blocker, so the runner is stageable and there is no §111 door to seed with.
+ *   - **something else refuses** (§44 on the runway, §52 on the days) → `null`, and that refusal stands.
+ *
+ * 🔴 THE MIDDLE ANSWER WAS `null`, AND THAT IS THE WHOLE DEFECT (`STAGED-HM-DOOR-01`). §111 governs
+ * `race_distance_km >= BASE_BUILD_RATIO_MIN_DISTANCE_KM` (42), so **a half marathon has no §111 door by construction**
+ * — and the old `return null` read "nothing to stage" where the truth was "nothing left to object to". Measured
+ * through `runEngine` for 0 km/week, 0 km longest, declared beginner, 3 days: the **marathon stages at every runway
+ * from 12**, and the **half is refused at 12, 16, 20, 24 AND 30**. A runner who typed the harder race got the plan.
+ *
+ * ⚠️ §111's TEXT ALREADY SAID THIS RUNNER WAS SERVED, and had been wrong since the day it was written:
+ * *"Short distances (5K/10K/HM) are outside §111 entirely, so a never-run beginner still generates there."* §113 was
+ * ratified in the same sitting block and governs >= 21 km, so it made that sentence false immediately. §111's own
+ * *"Out of scope, flagged not fixed — a separate sitting"* is this sitting.
+ *
+ * ⚠️ THE SEED IS NOT A NEW NUMERIC, DELIBERATELY. The board's artifact list named a `STAGED_DOOR_FLOOR_KM`; a
+ * constant equal to `BASE_BUILD_ONRAMP_MIN_START_KM` is the second copy the Configuration Singularity forbids, and
+ * `configPrincipleSync` would then want a principle for a number that already has one. Recorded as a departure from
+ * the ruling's artifact list, with the reason, rather than taken silently.
  */
-export function walkRunDoorKm(input: GeneratorInput, planStart: string): number | null {
+export type LongRunRefusalDoor =
+  /** §111 refuses once the long run is out of the question: its door, and §116 Am. 9's ratified path. */
+  | { kind: 'base_volume'; km: number }
+  /** Nothing refuses: the long run was the ONLY blocker, so there is no §111 door to seed with. */
+  | { kind: 'no_objection' }
+  /** Something else refuses (§44 on the runway, §52 on the days). That refusal stands. */
+  | null
+
+/**
+ * 🔴 A KIND, NOT A NUMBER, AND THE FIRST CUT RETURNED A NUMBER FOR ALL THREE (code review, same day).
+ * `no_objection` was encoded as `BASE_BUILD_ONRAMP_MIN_START_KM`, so the caller could only tell the two apart by
+ * comparing against that constant — and §111's own door can equal 6. **Absence written as a value**, in the commit
+ * whose own invariant note warns about it.
+ */
+export function longRunRefusalDoor(input: GeneratorInput, planStart: string): LongRunRefusalDoor {
+  const floor = GENERATION_CONFIG.MIN_SESSION_DISTANCE_KM.long
+  // ⚠️ THE WEEKLY VOLUME RISES WITH THE LONG RUN, BECAUSE §18 SAYS IT MUST. A hypothetical runner with a 5 km long
+  // run cannot be on a 2 km week — `INV-INPUT-LONGEST-LE-WEEKLY` is exactly that rule — and the first cut substituted
+  // the long run alone, so the probe asked §111 about a runner the constitution forbids and `validatePlan` logged an
+  // error from inside the probe on every sub-floor case. An incoherent hypothetical cannot give a trustworthy door.
+  const probe = {
+    ...input,
+    longest_recent_run_km: floor,
+    current_weekly_km: Math.max(Number(input.current_weekly_km ?? 0), floor),
+  } as GeneratorInput
   try {
-    generateRulePlan({ ...input, longest_recent_run_km: GENERATION_CONFIG.MIN_SESSION_DISTANCE_KM.long } as GeneratorInput, 'paid', planStart)
-    return null
+    generateRulePlan(probe, 'paid', planStart)
+    return { kind: 'no_objection' }
   } catch (e) {
-    return e instanceof BaseVolumeError ? e.base.min_base_km : null
+    return e instanceof BaseVolumeError ? { kind: 'base_volume', km: e.base.min_base_km } : null
   }
 }
 
@@ -485,7 +570,39 @@ export function walkRunDoorKm(input: GeneratorInput, planStart: string): number 
  */
 export function stagingDoorKm(err: unknown, input: GeneratorInput, planStart: string): number | null {
   if (err instanceof BaseVolumeError) return err.base.min_base_km
-  if (err instanceof LongRunReadinessError && walkRunStartApplies(effectiveStartKm(input))) return walkRunDoorKm(input, planStart)
+  // 🔴 THE `walkRunStartApplies` GATE WAS HERE AND IT WAS A SECOND, NARROWER DEFECT (§116 Am. 11).
+  //
+  // Phase D added this branch for the walk-run runner and gated it on being one, so a runner ALREADY RUNNING whom
+  // §113 refuses was not staged **even where §111 has a door and `stagingApplies` returns true** — measured, marathon
+  // at 6-10 km/week, doors 9 and 11. `longRunRefusalDoor`'s own docstring said it was written for "a walk-run
+  // runner, whom §113 refuses first", and the class is "§113 refuses first", of which walk-run is one case.
+  // **The remedy was applied to one twin**, which this repo catalogues. The door function answers for both.
+  if (err instanceof LongRunReadinessError) {
+    const door = longRunRefusalDoor(input, planStart)
+    if (door === null) return null
+    // §111's door is the ratified §116 Am. 9 path and includes the second twin (a runner already running whom
+    // §113 refuses first). Staged at whatever volume.
+    if (door.kind === 'base_volume') return door.km
+    // 🔴 BUT THE FLOOR SEED IS ONLY MEANINGFUL WHERE THE WALK-RUN START APPLIES, AND CODE REVIEW CAUGHT THE
+    // FIRST CUT SHIPPING THE EXACT HAZARD §113 EXISTS TO PREVENT.
+    //
+    // §113's blocker is a LONG RUN; the staged door is a WEEKLY VOLUME. For a runner starting from nothing the two
+    // coincide — §117's walk-run start builds the long run from zero, in minutes, over seven weeks, and §113's
+    // premise is answered. **For a runner who already has volume they diverge completely**, because §116's ramp sizes
+    // its long run from VOLUME and never from their long run. Measured, with the gate removed:
+    //
+    //     marathon, 55 km/wk, longest 2 km, 12 wks -> staged, WEEK-1 LONG RUN 18.3 km (+815%)
+    //                                                 and `INV-PLAN-ONRAMP-PER-RUN-STEP` fires (§116 Am. 2, Willy)
+    //     half,     10 km/wk, longest 1 km         -> 3.3 km (+230%)
+    //     half,      6 km/wk, longest 1 km         -> 2.0 km (+100%)
+    //
+    // ⚠️ THIS NARROWS THE BOARD'S RULING, WHICH SAID *"at every volume, including a runner already above
+    // `BASE_BUILD_ONRAMP_MIN_START_KM`"*. That sentence assumed §111 would supply the door; where it does not, a
+    // volume ramp does nothing for a long-run blocker. The ruling's REASON is fully served — the never-run half
+    // runner is staged — and for the already-running runner §113's own lever is the right coaching
+    // (*"build up to one 5 km run"*), now carrying §118's offer (Am. 4). Recorded as a correction, not absorbed.
+    return walkRunStartApplies(effectiveStartKm(input)) ? GENERATION_CONFIG.BASE_BUILD_ONRAMP_MIN_START_KM : null
+  }
   return null
 }
 

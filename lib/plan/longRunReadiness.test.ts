@@ -271,8 +271,13 @@ describe('§113 — the route holds no coaching number any more', () => {
    * §113 arms above use, so the two cannot drift.
    */
   it('§113 refuses as a 422 with the same shape as its siblings, asserted not grepped', () => {
+    // ⚠️ THE RUNWAY IS LOAD-BEARING AND THIS FIXTURE BROKE ONCE. At `2026-12-28`
+    // (12 weeks) §116 Am. 11 (`STAGED-HM-DOOR-01`) now STAGES this runner rather than
+    // refusing them, which is the ruling working. `2026-12-14` is ten weeks — exactly
+    // §44's marathon block, so a checkpoint cannot be placed and §113's refusal stands.
+    // The arm is about the SHAPE of a §113 refusal, so it needs one that still happens.
     const outcome = runEngine({
-      input: base({ longest_recent_run_km: 2, race_date: '2026-12-28' }),
+      input: base({ longest_recent_run_km: 2, race_date: '2026-12-14' }),
       tier: 'paid', displayUnits: 'km', planStart: '2026-10-05', today: '2026-10-05',
     })
     expect(outcome.kind, 'the engine admitted a runner §113 refuses').toBe('refusal')

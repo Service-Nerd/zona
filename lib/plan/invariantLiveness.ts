@@ -3,7 +3,7 @@ import { generateRulePlan, derivedLevelsFor } from '@/lib/plan/ruleEngine'
 import { V1_SESSION_CATALOGUE } from '@/lib/plan/sessionCatalogueData'
 import { validatePlan, validateMaintenanceBlock, INVARIANT_CODES, type Violation } from '@/lib/plan/invariants'
 import { validateBaseBuildBlock, validateStagedRace } from '@/lib/plan/baseBuildValidate'
-import { generateStagedRacePlan } from '@/lib/plan/stagedRacePlan'
+import { generateStagedRacePlan, stagedRaceOf } from '@/lib/plan/stagedRacePlan'
 import { assessOnRamp, generateBaseBuildPlan } from '@/lib/plan/baseBuildOnRamp'
 import { generateGetRunningPlan } from '@/lib/plan/getRunningPlan'
 import { generateMaintenanceBlock } from '@/lib/plan/maintenance'
@@ -1301,6 +1301,23 @@ export function probeLiveness(sampleSize = 64): LivenessReport {
             checkStaged(pl, m.name)
           }
         }
+        // §116 Am. 11 (`STAGED-HM-DOOR-01`) — THE STAGED DOOR'S RATIO, WHICH NEEDS A HALF AND NOT A MARATHON.
+        // `INV-PLAN-STAGED-DOOR-RATIO` is exempt where §111 governs, by predicate, so the marathon plan above cannot
+        // wake it however it is mutated. A never-run runner at a long half-marathon runway is the shape that can.
+        {
+          const hm = { ...input, race_distance_km: 21.1, race_date: '2027-06-06',
+            current_weekly_km: 0, longest_recent_run_km: 0 } as GeneratorInput
+          const sh = generateStagedRacePlan(hm, '2026-10-05', GENERATION_CONFIG.BASE_BUILD_ONRAMP_MIN_START_KM)
+          if (sh && stagedRaceOf(sh)?.target_found) {
+            for (const v of validateStagedRace(sh)) if (!woken.has(v.code)) woken.set(v.code, 'fires on a valid staged half')
+            const pl = JSON.parse(JSON.stringify(sh)) as Plan
+            // The door, pushed back down to C3's lowest clean volume — which is what the engine chose before the
+            // amendment, and which builds 5.67x off a runner who has never run.
+            ;((pl.meta as unknown as Poke).staged_race as Poke).door_km = GENERATION_CONFIG.BASE_BUILD_ONRAMP_MIN_START_KM
+            for (const v of validateStagedRace(pl)) if (!woken.has(v.code)) woken.set(v.code, 'staged half: the door dropped to the on-ramp floor')
+          }
+        }
+
         // ONRAMP-SPACING-01 (R1) — a stamped ramp week moved onto Mon/Tue/Wed.
         {
           const sp = generateGetRunningPlan({ ...input, current_weekly_km: 10, longest_recent_run_km: 6, days_available: 3 } as GeneratorInput, '2026-10-05', 12).plan
