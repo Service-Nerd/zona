@@ -1,5 +1,7 @@
 import { describe, it, expect } from 'vitest'
-import { readFileSync } from 'fs'
+import { execSync } from 'child_process'
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'fs'
+import { tmpdir } from 'os'
 import { join } from 'path'
 
 /**
@@ -175,7 +177,7 @@ describe('XREF-DANGLE-01 — promised backlog entries exist', () => {
     }
   })
 
-  it('agrees with audit-docs.sh about which tags make a bullet an open item', () => {
+  it('agrees with audit-docs.sh LINE BY LINE about what counts as an open filing', () => {
     // ⚠️ TWO REGISTERS READ THESE SAME TWO FILES. `audit-docs.sh` asks "is this
     // item still open?" and this file asks "was it ever filed?", and they must
     // mean the same thing by "filed" or a promise can dangle here while the audit
@@ -188,6 +190,41 @@ describe('XREF-DANGLE-01 — promised backlog entries exist', () => {
     expect(alt, 'the extractor no longer carries a tag alternation').not.toBeNull()
     expect(alt![1].split('|'), 'the two registers disagree about the board tags')
       .toEqual([...BOARD_TAGS])
+
+    // 🔴 AND COMPARING THE TAG SET WAS NOT ENOUGH — code review, 2026-11-07. The
+    // two extractors also disagreed about what ENDS an id: `[ —–-]` in the shell
+    // against `\b` here. So `- ⚙️ **NO BOARD** \`FOO-01\`: …` was a filing to this
+    // file and invisible to all three of the audit's widened arms — the same
+    // blindness one punctuation mark over, inside the commit written to remove
+    // it. **An agreement arm that compares one clause of two regexes agrees
+    // about one clause.** This half runs the real shell function over a fixture
+    // and compares VERDICTS, so any future divergence in any clause fails here.
+    const CASES: Array<[string, string, boolean]> = [
+      ['em dash, backticked', '- \u2699\uFE0F **NO BOARD** `FIXTURE-TA-01` — the canonical filing.', true],
+      ['a colon after the id', '- \u2699\uFE0F **NO BOARD** `FIXTURE-TB-01`: the spelling that diverged.', true],
+      ['a comma after the id', '- \u{1F3C3} **COACHING BOARD** `FIXTURE-TC-01`, measured 2026-11-07.', true],
+      ['a parenthesis after the id', '- \u{1F9ED} **DESIGN BOARD** `FIXTURE-TD-01` (375px only).', true],
+      ['en dash, no backticks', '- \u{1F4BC} **SLT** FIXTURE-TE-01 – the tier question.', true],
+      ['✅-closed, so not open', '- ✅ **SHIPPED 2026-11-06** `FIXTURE-TF-01` — closed.', false],
+      ['bold prose, no board tag', '- **MEASURED** `FIXTURE-TG-01` — bold is not a tag.', false],
+      ['a bare cross-reference', 'see `FIXTURE-TH-01` for the measured figure', false],
+    ]
+    const dir = mkdtempSync(join(tmpdir(), 'itemxref-agree-'))
+    try {
+      const fixture = join(dir, 'fixture.md')
+      writeFileSync(fixture, `${CASES.map(c => c[1]).join('\n')}\n`)
+      const shellIds = new Set(
+        execSync(`${fn![0]}\nboard_tag_bullet_ids ${JSON.stringify(fixture)}`,
+          { shell: '/bin/bash', encoding: 'utf8' }).split('\n').filter(Boolean),
+      )
+      for (const [what, line, isFiling] of CASES) {
+        const id = line.match(/FIXTURE-[A-Z]+-\d+/)![0]
+        expect(definitionSite(id).test(line), `itemXref disagrees on ${what}`).toBe(isFiling)
+        expect(shellIds.has(id), `audit-docs.sh disagrees on ${what}`).toBe(isFiling)
+      }
+    } finally {
+      rmSync(dir, { recursive: true, force: true })
+    }
   })
 
   it('every promised id has a definition site in the backlog or roadmap', () => {

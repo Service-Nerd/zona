@@ -54,8 +54,15 @@ say() { printf '%s\n' "$*"; }
 # Group 2, never "every id on the matched text" — the mistake this script
 # records making on the registry extractor, where a qualifier's id read as a row
 # of its own (`| SITE-WAVE-4 (SITE-SPACE-01) — …`).
+# 🔴 THE TERMINATOR WAS `[ —–-]` AND `itemXref.test.ts` USED `\b`, so the two
+# registers still disagreed about what ENDS an id after the commit that was
+# meant to make them agree. `- ⚙️ **NO BOARD** `FOO-01`: …` is a filing to
+# itemXref and was invisible to all three arms here — the same blindness, one
+# punctuation mark over. Found by code review on the fix. Now: any character
+# that cannot be part of an id ends it, which also stops `FOO-01-BAR` being
+# truncated to `FOO-01` (`-` was IN the old set).
 board_tag_bullet_ids() {
-  sed -nE 's/^- (🏃|🧭|💼|👤|⚙️) \*\*[^*]+\*\* `?([A-Z][A-Z0-9]*(-[A-Z0-9]+)+)`?[ —–-].*/\2/p' "$1"
+  sed -nE 's/^- (🏃|🧭|💼|👤|⚙️) \*\*[^*]+\*\* `?([A-Z][A-Z0-9]*(-[A-Z0-9]+)+)`?([^A-Z0-9-].*)?$/\2/p' "$1"
 }
 
 # ── The ship-record window: a MARKER, not a calendar date ───────────────────
