@@ -42,13 +42,27 @@ describe('WEEK1-LEAP-ABS-01', () => {
   })
 
   it('2. a LARGE absolute jump is still flagged — the floor removes noise, not the rule', () => {
-    // Reconstructed from the measured worst case: 10 km/wk declared, scaled to
-    // ~7 by §29, handed an 18 km week 1.
+    // Reconstructed from the measured worst case. ⚠️ Re-pinned by §111 Am. 4 (see below): it WAS a half at
+    // 10 km/week declared, scaled to ~7 by §29 and handed an 18 km week 1 — which §111 now refuses.
     const big = {
       athlete_name: 'A', age: 38, race_name: 'T', primary_metric: 'distance',
-      race_distance_km: 21.1, race_date: '2027-02-22', plan_start: '2026-11-02',
+      race_date: '2027-02-22', plan_start: '2026-11-02',
       goal: 'finish', fitness_level: 'intermediate', training_age: '2-5yr',
-      resting_hr: 55, max_hr: 184, current_weekly_km: 10, longest_recent_run_km: 5,
+      // 🔴 HALF → MARATHON, cw 10 → 18, lr 5 → 10 (§111 Amendment 4, 2026-11-07), and the reason is the ruling
+      // WORKING rather than a fixture breaking.
+      //
+      // At 10 km/week with a 5 km longest run and `training_age: '2-5yr'`, §29's fresh-return heuristic scales the
+      // start to 7, so the HALF now exceeds §111's 4.0 ratio and is REFUSED — this fixture stopped generating.
+      // Raising the volume does not rescue it either: probed across 24 combinations (2 distances × 6 volumes ×
+      // 2 longest runs), **`WEEK1-LEAP` fires on exactly ONE** — the marathon at 18 km/week, effStart 18, w1 26,
+      // jump 8.0.
+      //
+      // ⚠️ SO AT THE HALF, `WEEK1-LEAP` NO LONGER HAS A SUBJECT ABOVE §111's DOOR, and that is expected: the leap
+      // and the ratio are the SAME HAZARD measured two ways, both anchored on the week-1 floor at 35% of peak
+      // (🩹 Willy's whole point — *"the injury happens in the ramp, not at the race"*). Capping the ratio caps the
+      // leap. Recorded here so a future reader does not read the absence as the rule having broken.
+      race_distance_km: 42.2,
+      resting_hr: 55, max_hr: 184, current_weekly_km: 18, longest_recent_run_km: 10,
       days_available: 4, injury_history: [], hard_session_relationship: 'neutral',
       recent_quality_training: 'occasional',
     } as never

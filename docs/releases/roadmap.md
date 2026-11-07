@@ -389,9 +389,29 @@ being staged into a marathon at all of them. 🏃 Coaching Board CORRECT WITH AM
 four parts were defects against ratified text. 🩹 Willy's binding door amendment took the block from **5.67× to
 3.60/4.00×** inside §111's cap.
 
-**OPEN from it.** 🏃 `HM-BASE-RATIO-SCOPE-01` — §111 is silent at the half for ORDINARY generation and a 5 km/wk
-half runner gets **6.80× today**; needs its own sitting because `WIZARD-ZERO-VOLUME-REFUSAL-01` Am. 1 ratified §111's
-scope. · ⚙️ `ENVELOPE-LRR-BLIND-01` — no corpus can reach a §113-refused half runner, so every gate reports
+✅ **CLOSED 2026-11-07 — `HM-BASE-RATIO-SCOPE-01` SHIPPED as §111 Amendment 4** (Coaching Board, CORRECT WITH
+AMENDMENT): `BASE_BUILD_RATIO_MIN_DISTANCE_KM` **42 → 21**, cap unchanged at 4.0. 🔴 **The same runner — 5 km/week,
+5 km longest run, declared beginner — got a staged base-build block for the MARATHON and a 17-week RACE PLAN for the
+HALF at 6.80×, week 1 at 14 km against the 5 they run (+180%).** *"Type the harder race, get the SAFER answer."*
+**2 of the 6 production half plans were over the cap.** Four binding amendments all discharged by measurement (480
+inputs → 404 staged, 0 over cap, **0 bare refusals**; 80 changed, all at 21.1 km, **14 rescued from an outright
+refusal**; the half's own binding points restated; 0 "marathon" strings on a half runner's block). ⚠️ **Am. 4 made
+YESTERDAY's invariant inert** (`INV-PLAN-STAGED-DOOR-RATIO` — measured, not declared), recorded under a new fifth
+liveness reason. ⚠️ **My first flip grid derived the long run from volume and an existing test caught it** —
+`ENVELOPE-LRR-BLIND-01`'s class, fourth time in four days. `cohort:shape` byte-identical on 41,472 cases.
+🔻 **Filed from it:** 🏃 `SHORT-DISTANCE-RAMP-SCOPE-01` — the **5K (45 cases) and 10K (57) are over the cap too** and
+the board did not rule on them; **the week-1 leap is IDENTICAL at every distance** (+160% at 5 km/week whether the
+runner types 5K or marathon) and only the ratio falls. ⚠️ §111's own text now contradicts itself — the chair's
+**ratio** reasoning transfers to 5K unchanged while the scope sentence justifies itself on **absolute** grounds, and
+one of the two has to give. §116 Am. 11's staged-door objection is currently the only ratio guard below 21 km.
+🩹 `WALKRUN-GATE-VOLUME-ONLY-01` — **a runner who declares they have NEVER RUN gets CONTINUOUS running (82 of 90
+cases, `Easy run 2.0` x 3) if their volume is 6-8 km/week**, because `walkRunStartApplies` keys on volume and never
+on the longest run. ⚠️ **NOT introduced by Am. 4 — the MARATHON twin is identical and has been since 10-25** — but
+those 82 were previously refused, and whether that was safer is a load question. **This is where Willy'"'"'s condition
+actually pointed: I proved EXISTENCE, not ADEQUACY.** · ⚙️ `PARITY-GRID-VOLUME-FLOOR-01` — **parity reported IDENTICAL on 6,102 cases for a change that re-routes 290
+plans, and it was guaranteed to**: its lowest volume is 15 km/week against an affected band of 4–8. Distinct from
+`PARITY-GRID-UNSET-LEVEL-01`, and the two compound. **Every standing harness was blind to this change; only a
+purpose-built grid and production saw it.** Detail in `backlog.md`. · ⚙️ `ENVELOPE-LRR-BLIND-01` — no corpus can reach a §113-refused half runner, so every gate reports
 IDENTICAL and that is blindness, not safety (⚕️ Sims wanted it a prerequisite). · 🧭
 `WALKRUN-WEEK-LEGIBILITY-01` — seven walk-run weeks whose only change is inside the session. · 🔻
 `STAGED-DOOR-AT-CAP-01` — the door's modal outcome is exactly 4.00×; no buffer set, on the chair's own standard.

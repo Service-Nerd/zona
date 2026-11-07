@@ -514,8 +514,11 @@ function generateWalkRunStagedPlan(input: GeneratorInput, planStart: string, min
  *     at all. The long run was the ONLY blocker, so the runner is stageable and there is no §111 door to seed with.
  *   - **something else refuses** (§44 on the runway, §52 on the days) → `null`, and that refusal stands.
  *
- * 🔴 THE MIDDLE ANSWER WAS `null`, AND THAT IS THE WHOLE DEFECT (`STAGED-HM-DOOR-01`). §111 governs
- * `race_distance_km >= BASE_BUILD_RATIO_MIN_DISTANCE_KM` (42), so **a half marathon has no §111 door by construction**
+ * 🔴 THE MIDDLE ANSWER WAS `null`, AND THAT IS THE WHOLE DEFECT (`STAGED-HM-DOOR-01`). ⚠️ **AND THE PREMISE BELOW
+ * EXPIRED ONE DAY LATER: §111 Amendment 4 (2026-11-07) moved `BASE_BUILD_RATIO_MIN_DISTANCE_KM` to 21, so the half
+ * DOES have a §111 door now and this function's middle answer is reached less often.** The reasoning is kept because
+ * it is why the function exists; the parenthetical scope is corrected. As written on 2026-11-06: §111 governed
+ * `race_distance_km >= BASE_BUILD_RATIO_MIN_DISTANCE_KM` (**then 42**), so **a half marathon had no §111 door**
  * — and the old `return null` read "nothing to stage" where the truth was "nothing left to object to". Measured
  * through `runEngine` for 0 km/week, 0 km longest, declared beginner, 3 days: the **marathon stages at every runway
  * from 12**, and the **half is refused at 12, 16, 20, 24 AND 30**. A runner who typed the harder race got the plan.

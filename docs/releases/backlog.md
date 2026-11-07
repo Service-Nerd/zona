@@ -102,15 +102,88 @@ before planning against any number below (an item is a snapshot of the code on t
   shipped an **18.3 km week-1 long run** to a 55 km/wk runner with a 2 km longest run. ⚕️ Sims dissents on priority:
   the product population is unmeasured (`ENVELOPE-LRR-BLIND-01`).
 
-- 🏃 **COACHING BOARD** `HM-BASE-RATIO-SCOPE-01` — **§111 is silent at the half for ORDINARY generation, and the
-  numbers are live today.** Measured 2026-11-06 through `generateRulePlan`: a **5 km/week** half-marathon runner is
-  handed a **6.80×** build (peak 34 km/wk) and a **7 km/week** one **4.86×**, against the 4.0 cap §111 Am. 2 ratified
-  for the marathon citing a median 5.57× *"with zero genuine plan defects"*. No staging involved; nothing in
-  `STAGED-HM-DOOR-01` makes it worse. ⚠️ **Settled ground to clear first:** `WIZARD-ZERO-VOLUME-REFUSAL-01` Am. 1
-  ratified §111's scope and explicitly **did not extend it**, so this needs a sitting with the new measurement in
-  front of it, not an inference. ⚠️ **Blast radius is the opposite sign to the usual:** extending §111's REFUSAL to
-  the half would turn plans that generate today into refusals, which is why the staged ruling used the arithmetic as a
-  door rather than a veto.
+- ✅ **SHIPPED 2026-11-07** `HM-BASE-RATIO-SCOPE-01` 🏃 **COACHING BOARD — CORRECT WITH AMENDMENT.** §111
+  **Amendment 4**: `BASE_BUILD_RATIO_MIN_DISTANCE_KM` **42 → 21**, so the base-build ceiling governs the half
+  marathon. Cap unchanged at 4.0. 🔴 **The same runner — 5 km/week, 5 km longest run, declared beginner, 3 days — got
+  a staged base-build block for the MARATHON and a 17-week RACE PLAN for the HALF at 6.80×, week 1 at 14 km against
+  the 5 they run (+180%).** *"Type the harder race, get the SAFER answer"* — the inverse of `STAGED-HM-DOOR-01` the
+  day before, same root cause. ⚠️ **The item's two numbers held exactly on re-measurement** (6.80× and 4.86×) and it
+  **understated the tail**: over the cap at bases 4–8, worst **8.50×**, and the delivered peak is a **flat 34 km from
+  4 to 12 km/week** — volume-blind, §111's own ratified mechanism. Over the cap at **every runway 12→30**, so a
+  longer runway does not rescue them. 🔴 **Live, not synthetic: 2 of the 6 production half plans were over the cap
+  (5.40× and 6.80×).**
+  **The chair's amendment:** 4.0 was fixed by two MARATHON binding points, so they are **restated for the half** —
+  admission floor, the lowest documented HM persona anywhere in the repo at **10 km/week = 3.40×**, admitted with
+  margin; reckless end, the two live plans, refused. ⚠️ **The triple ~5.6× is one engine producing one shape off one
+  floor, an explanation and not three measurements** (recorded so it is never cited as corroboration).
+  🩹 **Willy's blocking condition DISCHARGED before shipping:** `stagingApplies` is distance-agnostic, so nobody is
+  sent away — **480 inputs in the band → 404 staged blocks, 76 race plans with 0 over the cap, 0 bare refusals.**
+  🔴 **AND MY FIRST FLIP GRID WAS BLIND, CAUGHT BY AN EXISTING TEST:** it set `longest_recent_run_km = min(cw, 5)`,
+  **derived from volume**, so it could never reach `lr 0` and reported *"0 refused→served"*. Re-measured with the
+  long run as an independent axis: **80 changed, all at 21.1 km** — 51 `race:OVERCAP → base_build:ok`, **14
+  `refused:long_run_readiness → base_build:ok` (runners RESCUED from an outright refusal)**, 15 label artefacts at
+  `cw ≤ 2` where the denominator is zero (the marathon's own staged blocks already carried them; every door compliant
+  per `INV-PLAN-STAGED-DOOR-RATIO`). **SERVED → REFUSED: 0.** ⚠️ `ENVELOPE-LRR-BLIND-01`'s class, fourth time in four
+  days, and this time an existing arm found it rather than a reviewer.
+  🎯⚕️ **Copy condition discharged, measured:** 0 strings mention *"marathon"* on a half runner's staged block.
+  ⚠️ **§113 can no longer be isolated at the half** — a runner passing §111 with room and failing §113 alone is
+  refused, because the §113 door seed requires §117's walk-run start, so the two causes now coincide by construction.
+  ⚠️ **§116 Am. 11 part 2 is NARROWED, not moot** — the ratio objection is now live at 5K/10K only, where it is the
+  ONLY ratio guard; at the half §111's refusal does the same job inside `raceBlockVerdict`. The arm that predicted
+  this was re-ruled, not deleted. Invariant unchanged by construction and **falsified anyway**; all five new arms go
+  red when the constant reverts. ⚕️ **Sims, recorded not ruled:** this cohort skews female and whether it completes
+  the block or churns is unmeasured on 34 stored plans. ↗️ SLT informed for the record, not for permission.
+
+- 🩹 **COACHING BOARD** `WALKRUN-GATE-VOLUME-ONLY-01` — **a runner who declares they have NEVER RUN gets continuous
+  running, at every distance §111 governs, if their weekly volume is 6–8 km.** `walkRunStartApplies` keys on
+  `effectiveStartKm` and **never on `longest_recent_run_km`**, so §117's walk-run start is chosen by volume alone.
+  Measured 2026-11-07 on 90 cases (HM, cw 6–8, `longest_recent_run_km: 0`, runways 14–30, 3–5 days, both levels):
+  **82 staged with CONTINUOUS runs** (`Easy run 2.0 km` × 3 in week 1), **0 with the walk-run start**, 8 refused.
+  ⚠️ **NOT INTRODUCED BY §111 Am. 4, AND THE TWIN MEASUREMENT IS THE PROOF:** the MARATHON does exactly the same —
+  `42.2, cw 6, lr 0` → `base_build` with `Easy run 2` × 3, identical to the half after Am. 4, and live since §116
+  shipped on 2026-10-25. At `cw 5` both distances correctly give walk-run. **Am. 4 propagated a ratified path to the
+  half; it did not create this.** 🔴 **But `/code-review` surfaced it as a regression and that reading is defensible
+  on one point:** those 82 were previously **refused**, and whether a refusal is SAFER for a never-run runner than
+  continuous 2 km running is a load question, not mine. 🩹 **This is where Willy's binding amendment actually points.**
+  His condition was *"prove the staged path catches every runner"*; I proved **existence** (0 bare refusals) and read
+  that as discharged. **Existence is not adequacy** — a door can be open and the room still wrong.
+  ⚠️ **Settled ground to weigh:** §10's Amendment holds that a declared zero is *"the lowest state"* resolving to
+  `MIN_SESSION_DISTANCE_ABSOLUTE_KM`, so 2.0 km is a ~2× step on that rung and `INV-PLAN-WEEK-1-2-LONG-CAP` governs
+  it — the engine is not ungoverned here, it is governed by a rule that reads volume where the runner answered about
+  distance. §117's ladder exists for exactly this runner. **Evidence that would settle it:** whether a declared-zero
+  runner at 6–8 km/week completes a 2 km continuous run. We have no such runner.
+  ⚠️ **Pinned, not endorsed**, in `stagedHmDoor.test.ts` — so a change in either direction is noticed while it is open.
+
+- ⚙️ **NO BOARD** `PARITY-GRID-VOLUME-FLOOR-01` — **`verify:parity` reported IDENTICAL on 6,102 cases for a change
+  that demonstrably re-routes 290 plans, and it was guaranteed to.** `scripts/verify-parity.ts` has
+  `const VOLUMES = [15, 30, 55]`: its **lowest weekly volume is 15 km/week**, and §111 Am. 4's affected band is
+  **4–8**. The grid cannot express a single affected runner, so IDENTICAL was certain before a line was written.
+  ⚠️ **This is a DISTINCT blindness from `PARITY-GRID-UNSET-LEVEL-01`** (which is about `fitness_level`, line 212):
+  that one makes level-gated rules invisible, this one makes **low-volume** rules invisible, and the two compound.
+  🔴 **Fifth corpus blindness in four days** — after `ENVELOPE-LRR-BLIND-01`, `COHORT-GRID-UNSET-LEVEL-01`, §113's
+  *"0 of 612"* and my own flip grid deriving the longest run from volume. ⚠️ **CLAUDE.md already warns about exactly
+  this** (*"IDENTICAL is not the same as VERIFIED… check the grid actually varies the thing you changed"*), which is
+  why this was caught — the warning worked and the grid still cannot see the cohort.
+  **What would fix it:** add a sub-10 volume to `VOLUMES`. ⚠️ **Not swept here** — adding a volume multiplies 6,102
+  cases by 4/3 and will re-baseline parity for every future change, so it is a deliberate cost decision, and the
+  low-volume rows will include refusals and staged blocks whose hashes need the comparison to handle both.
+  ⚠️ Measured corpora that DO reach the band: none of the standing ones. `review:cohort`'s lowest HM band is
+  10 km/week, `measure:envelope` derives the longest run from volume, `cohortGrid` is byte-identical on 41,472 cases.
+  **Every standing harness was blind to a change that moves 290 plans; only a purpose-built grid and production saw it.**
+
+- 🏃 **COACHING BOARD** `SHORT-DISTANCE-RAMP-SCOPE-01` — **the 5K and 10K are over §111's cap too, and the board did
+  not rule on them because I scoped the submission to the half.** Measured 2026-11-07 on the same 920-input grid:
+  **45 of the 5K race plans and 57 of the 10K** exceed 4.0, unchanged by Am. 4. 🔴 **The week-1 leap is IDENTICAL at
+  every distance** — +150% at 4 km/week, +160% at 5, +117% at 6, +63% at 8 — because the week-1 floor is 35% of peak
+  and both scale with distance together. Only the **ratio** falls (5K peaks flat at 17 km, 10K at 22), so fewer cases
+  breach the cap: the 5K only at `cw 4` (4.25×), the 10K at `cw 4` (5.50×) and `cw 5` (4.40×).
+  ⚠️ **There is a genuine tension in §111's own text for the board to resolve, not me:** the chair's reasoning for the
+  half was the **ratio** (the denominator is the runner), which transfers to 5K unchanged — but §111's scope sentence
+  justifies itself on **absolute** grounds (*"the distances whose peak sits far enough above a low base for the jump
+  to be a load hazard"*). One of those two arguments has to give. ⚠️ **Settled ground:** §116 Am. 11's staged-door
+  objection is currently the only ratio guard below 21 km, so extending §111 again would narrow it to nothing —
+  check before ruling. ⚠️ **Blast radius runs backwards**, as Am. 4's did.
+
 
 - ✅ **SHIPPED 2026-11-07** `GOALPACE-5K-CLOCK-01` *(filed 2026-11-06 as `GOALPACE-5K-RED-01`; **its premise was mine
   and it was wrong**)* ⚙️ **NO BOARD** — defect fix restoring documented intent.

@@ -285,9 +285,16 @@ describe('AUDIT-FOUNDATION-MISCOUNT-01 — an input-level code cannot be an engi
       // ⚠️ A HALF, NOT THE FILE'S MARATHON FIXTURE. 5 km/week into a marathon is a DESIGNED
       // REFUSAL (`BaseVolumeError`), which the first version of this arm hit — the refusal
       // fired correctly and my test was wrong. The real runner was a half marathon.
+      //
+      // 🔴 AND THAT ESCAPE IS CLOSED (§111 Amendment 4, 2026-11-07). The half was chosen here BECAUSE §111 did not
+      // reach it — which is the asymmetry Am. 4 removed, and this comment is the clearest evidence it was being used
+      // as a workaround rather than a coaching position. 5 km/week into a HALF is now a designed refusal too.
+      // The arm's subject is an INPUT-level code on a plan that generates, so the volume moves above §111's door and
+      // the breach (`longest > weekly`) is preserved: measured at cw 12 / lr 15, `INV-INPUT-LONGEST-LE-WEEKLY` is
+      // still present and the plan still builds.
       const breaching = {
         ...INPUT, race_distance_km: 21.1, goal: 'finish',
-        current_weekly_km: 5, longest_recent_run_km: 6,
+        current_weekly_km: 12, longest_recent_run_km: 15,
         user_declared_level: 'beginner', injury_history: ['knee'],
       } as unknown as GeneratorInput
       const p = generateRulePlan(breaching, 'paid', PINNED_PLAN_START_0907) as Plan
@@ -310,9 +317,13 @@ describe('AUDIT-FOUNDATION-MISCOUNT-01 — an input-level code cannot be an engi
     // The branch must not swallow everything: only the `INV-INPUT-` prefix diverts.
     vi.stubEnv('NODE_ENV', 'production')
     try {
+      // ⚠️ THE SAME FIXTURE AS THE ARM ABOVE AND A SECOND COPY OF IT — cw 5 / lr 6 → 12 / 15 (§111 Amendment 4).
+      // I fixed the first copy and this one still read 5 km/week, which is now a designed refusal at the half.
+      // This arm's plan-level code is a SYNTHETIC name (`INV-PLAN-A-RULE-THAT-NOTHING-BREAKS`), so it needs the plan
+      // to generate and nothing more; the input breach (`longest > weekly`) is what it actually exercises.
       const breaching = {
         ...INPUT, race_distance_km: 21.1, goal: 'finish',
-        current_weekly_km: 5, longest_recent_run_km: 6,
+        current_weekly_km: 12, longest_recent_run_km: 15,
         user_declared_level: 'beginner', injury_history: ['knee'],
       } as unknown as GeneratorInput
       const p = generateRulePlan(breaching, 'paid', PINNED_PLAN_START_0907) as Plan

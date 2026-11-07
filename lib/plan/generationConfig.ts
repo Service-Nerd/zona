@@ -1596,7 +1596,24 @@ export const GENERATION_CONFIG = {
   BASE_BUILD_CHECKPOINT_OBSERVED_WEEKS: 2,
 
   MAX_BASE_BUILD_RATIO: 4.0,              // delivered peak weekly_km / current_weekly_km
-  BASE_BUILD_RATIO_MIN_DISTANCE_KM: 42,  // §111 governs marathon and ultra only
+  // §111 Amendment 4 (Coaching Board 2026-11-07, HM-BASE-RATIO-SCOPE-01) — 42 → 21.
+  //
+  // The half was outside §111 and §111's own text gave no reason: *"Short distances (5K/10K/HM) are outside §111
+  // entirely, so a never-run beginner still generates there"* — a sentence already found false once (§113 refuses
+  // >= 21 km on long-run readiness). Measured through `runEngine` at production shape: the SAME runner, 5 km/week,
+  // 5 km longest run, declared beginner, gets a staged base-build block for the MARATHON and a 17-week RACE PLAN
+  // for the HALF at **6.80×**, week 1 at 14 km against the 5 they run (**+180%**). "Type the harder race, get the
+  // SAFER answer." Over the cap at bases 4–8 km/week and at EVERY runway from 12 to 30, so a longer runway does not
+  // rescue them — the delivered peak is a FLAT 34 km from 4 to 12 km/week, which is §111's own ratified mechanism
+  // (the week-1 floor is 35% of peak and does not scale down with the runner).
+  //
+  // ⚠️ THE CAP DOES NOT MOVE AND ITS JUSTIFICATION IS NO LONGER INHERITED (chair, binding). 4.0 was fixed by two
+  // MARATHON binding points. Measured for the half: admission floor — the lowest documented HM persona anywhere in
+  // this repo is 10 km/week = **3.40×**, admitted with margin (the cap admits >= 8.5 km/week); reckless end — the two
+  // LIVE half plans at **5.40× and 6.80×**, refused. Both ends are half-marathon facts.
+  //
+  // ⚠️ 21, NOT 21.1 — the threshold is the distance CLASS, and a 21.0 entry is the same runner.
+  BASE_BUILD_RATIO_MIN_DISTANCE_KM: 21,  // §111 governs half marathon, marathon and ultra (Am. 4)
 
   // ── Prep-time validation (CoachingPrinciples §44) ──────────────────────────
   // Minimum weeks of preparation per race distance / goal type. Two-step UX:

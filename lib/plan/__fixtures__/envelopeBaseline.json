@@ -1,6 +1,6 @@
 {
  "stride": 29,
- "productFitPct": 94.7,
+ "productFitPct": 94.6,
  "byDistance": {
   "5": {
    "fitPct": 100,
@@ -79,11 +79,13 @@
     "DEGENERATE-WEEK": 2.3
    },
    "watched": {
-    "DAYS-SHORT-SILENCED": 21.5
+    "DAYS-SHORT-SILENCED": 20.7
    },
-   "stagedPct": 0,
-   "stagedCleanPct": 0,
-   "stagedObjections": {}
+   "stagedPct": 1,
+   "stagedCleanPct": 0.9,
+   "stagedObjections": {
+    "WEEK1-LEAP": 0.1
+   }
   },
   "42.2": {
    "fitPct": 84.4,

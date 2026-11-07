@@ -1,14 +1,19 @@
 {
-  "_": "Invariants no mutation can wake. UNPROVEN, not proven dead. This list may only SHRINK.",
+  "_": "Invariants no mutation can wake. UNPROVEN, not proven dead. This list may only SHRINK — ⚠️ EXCEPT for a `superseded` entry, which GROWS it, and 2026-11-07 is the first time that has happened. §111 Am. 4 moved a scope boundary and removed another invariant's population; that is a ruling changing the world, not a check decaying, and a `superseded` entry must name the ruling in `supersededBy` and carry its measurement.",
   "reasons": {
     "corpus": "the harness never builds this plan SHAPE (foundation / recalibration / ultra are not in the cohort grid). Not a defect in the check. ⚠️ MAINTENANCE IS NO LONGER IN THIS CATEGORY — MAINT-LIVENESS-01 (2026-09-19) found the 8 INV-MAINT-* codes were never unreachable by SHAPE: they are checked by validateMaintenanceBlock and the harness only ever called validatePlan. The harness was calling the wrong validator.",
     "mutation": "the battery does not yet perturb the field this rule reads. Add a mutation, not a fixture.",
     "static": "the rule reads STATIC CONFIGURATION (the catalogue, the plan signatures), not the plan, so no plan mutation can reach it by construction — a `Plan => void` cannot perturb a module constant. Not debt and not a defect: it needs a config test that breaks the data, which is a different harness. Name that test when you use this.",
-    "unclassified": "nobody has looked yet. THIS is the column that should shrink."
+    "unclassified": "nobody has looked yet. THIS is the column that should shrink.",
+    "superseded": "a LATER RULING removed the population this rule could fire on, so it is unreachable in the ENGINE and not merely in the harness. ⚠️ NOT `corpus` — that reason blames the harness for not building a shape, and here the engine cannot build it either. The entry must name the ruling in `supersededBy` with the measurement that established it, and it stays in the registry as defence-in-depth for the day its population returns."
   },
   "unproven": {
     "INV-INPUT-LONGEST-LE-WEEKLY": "mutation",
     "INV-PLAN-PHASE-FOCUS-REACHABLE": "static",
-    "INV-PLAN-ULTRA-NO-PACE-SEGMENTS": "corpus"
+    "INV-PLAN-ULTRA-NO-PACE-SEGMENTS": "corpus",
+    "INV-PLAN-STAGED-DOOR-RATIO": "superseded"
+  },
+  "supersededBy": {
+    "INV-PLAN-STAGED-DOOR-RATIO": "§111 Amendment 4 (Coaching Board 2026-11-07, HM-BASE-RATIO-SCOPE-01). This rule's guard is `!baseBuildRatioApplies` — below BASE_BUILD_RATIO_MIN_DISTANCE_KM — and a staged plan arises only from a §111 or §113 refusal, both of which govern >= 21 km. Am. 4 moved §111's boundary to 21, so the two conditions are now DISJOINT. ⚠️ MEASURED, NOT DECLARED (yesterday's 'unreachable by construction' on §113 was a population artefact, so this one is a measurement): across 920 production-shaped cases — 4 distances x 12 volumes x 5 longest runs x 5 runways, longest <= weekly — **0 plans below 21 km are staged**; 5K and 10K produce a race plan in 230 of 230 cases each. It becomes reachable again if a THIRD staging trigger appears below 21 km, and inert everywhere if SHORT-DISTANCE-RAMP-SCOPE-01 extends §111 to 5K/10K. Willy ordered it on 2026-11-06 and it is NOT retired on my own authority; §111's refusal now does its job, measured at 0 over the cap across 480 inputs in the affected band."
   }
 }

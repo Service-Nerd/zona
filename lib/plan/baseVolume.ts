@@ -26,8 +26,12 @@ import type { Plan, GeneratorInput } from '@/types/plan'
 import { GENERATION_CONFIG, raceDistanceKey } from './generationConfig'
 import { effectiveStartKm } from './startVolume'
 
-/** §111 governs the marathon and ultra distances only — the distances whose
- *  peak sits far enough above a low base for the jump to be a load hazard. */
+/** §111 governs the **half marathon, marathon and ultra** — `>= BASE_BUILD_RATIO_MIN_DISTANCE_KM`, which is 21
+ *  since §111 **Amendment 4** (2026-11-07, `HM-BASE-RATIO-SCOPE-01`). This docstring said *"marathon and ultra
+ *  distances only"*, and that was the whole defect in prose: §111's text justified the scope on the ABSOLUTE peak
+ *  (*"the distances whose peak sits far enough above a low base"*) while the ratified METRIC is a RATIO, whose
+ *  denominator is the runner. ⚠️ 5K and 10K are still outside — `SHORT-DISTANCE-RAMP-SCOPE-01` holds the question of
+ *  whether that is defensible, since the week-1 leap is identical at every distance and only the ratio falls. */
 export function baseBuildRatioApplies(distanceKm: number): boolean {
   return distanceKm >= GENERATION_CONFIG.BASE_BUILD_RATIO_MIN_DISTANCE_KM
 }
@@ -184,6 +188,21 @@ export interface BaseVolumeResult {
   cap: number
 }
 
+/** The distance as a runner would say it, for a refusal sentence. One owner, because the same expression is read by
+ *  §111's refusal and §117's adequacy refusal and they must not drift (and because its fallback went from dead to
+ *  runner-facing the moment §111's scope moved). */
+export function distanceLabelFor(distKey: string): string {
+  switch (distKey) {
+    case 'MARATHON': return 'marathon'
+    case 'HM': return 'half marathon'
+    case '50K': return '50K'
+    case '100K': return '100K'
+    case '10K': return '10K'
+    case '5K': return '5K'
+    default: return 'this race'   // never "this distance" — it reads as a placeholder because it was one
+  }
+}
+
 /** §44's obligation applied to §111 — a refusal names the lever and an
  *  alternative, in brand voice, never a bare stop. The screen (REFUSAL-SCREEN-01)
  *  renders this as "not yet", using the same date arithmetic it already knows. */
@@ -207,7 +226,13 @@ export function baseVolumeRefusal(
   a: BaseBuildAssessment, input: GeneratorInput, finishRescues = false,
 ): BaseVolumeResult {
   const distKey = raceDistanceKey(input.race_distance_km)
-  const label = distKey === 'MARATHON' ? 'marathon' : distKey === '50K' ? '50K' : distKey === '100K' ? '100K' : 'this distance'
+  // 🔴 `'this distance'` WAS UNREACHABLE AND §111 Am. 4 MADE IT RUNNER-FACING (code review, 2026-11-07).
+  // §111 governed >= 42 km, so every refusal hit MARATHON / 50K / 100K and the fallback was dead. With the half
+  // inside §111 it reads *"5 km a week is too low to build safely to a this distance yet"* — and at cw 0,
+  // *"before the this distance block begins"*. 101 of 2,436 probed refusals carried it. Same class as
+  // REFUSAL-PLURAL-01 ("check back in 1 weeks"), 250 lines from it in the same test file: **a refused runner is the
+  // last person who should be reading a grammar slip.**
+  const label = distanceLabelFor(distKey)
   // §111 Am.2 — THE RETURN TRIGGER (Wood's condition, SLT 2026-09-19).
   //
   // The refusal named a TARGET and said come back. Wood: "a number plus 'come
@@ -311,7 +336,13 @@ export function runWalkInadequateRefusal(
   a: BaseBuildAssessment, input: GeneratorInput, peakLrKm: number,
 ): BaseVolumeResult {
   const distKey = raceDistanceKey(input.race_distance_km)
-  const label = distKey === 'MARATHON' ? 'marathon' : distKey === '50K' ? '50K' : distKey === '100K' ? '100K' : 'this distance'
+  // 🔴 `'this distance'` WAS UNREACHABLE AND §111 Am. 4 MADE IT RUNNER-FACING (code review, 2026-11-07).
+  // §111 governed >= 42 km, so every refusal hit MARATHON / 50K / 100K and the fallback was dead. With the half
+  // inside §111 it reads *"5 km a week is too low to build safely to a this distance yet"* — and at cw 0,
+  // *"before the this distance block begins"*. 101 of 2,436 probed refusals carried it. Same class as
+  // REFUSAL-PLURAL-01 ("check back in 1 weeks"), 250 lines from it in the same test file: **a refused runner is the
+  // last person who should be reading a grammar slip.**
+  const label = distanceLabelFor(distKey)
   const need = GENERATION_CONFIG.FINISH_GOAL_RUNWALK_MIN_PEAK_LR_KM
   // ⚠️ "about N", "at least", "first" and "come back" each satisfy
   // REFUSAL_NAMES_NEXT_STEP, which proves §44's obligation by matching PROSE.

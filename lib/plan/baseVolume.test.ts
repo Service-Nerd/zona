@@ -237,3 +237,64 @@ describe('REFUSAL-PLURAL-01 — a refusal does not say "1 weeks"', () => {
       .toBeGreaterThanOrEqual(2)
   })
 })
+
+// ── §111 Amendment 4 — the half marathon is inside §111 (Coaching Board 2026-11-07, HM-BASE-RATIO-SCOPE-01) ──
+//
+// 🔴 WHY. The SAME runner — 5 km/week, 5 km longest run, declared beginner, 3 days — got a staged base-build block
+// for the MARATHON and a 17-week RACE PLAN for the HALF at **6.80×**, week 1 at 14 km against the 5 they run
+// (**+180%**). "Type the harder race, get the SAFER answer", the inverse of `STAGED-HM-DOOR-01` and the same root
+// cause: a `>= 42` in `baseBuildRatioApplies` that §111's text never gave a reason for.
+//
+// Measured over 920 production-shaped inputs (4 distances × 12 volumes × 5 longest runs × 5 runways, longest ≤
+// weekly), before and after: **80 changed, every one at 21.1 km**, and the transitions were
+// `race:OVERCAP → base_build:ok` (51), `refused:long_run_readiness → base_build:ok` (**14 runners RESCUED from an
+// outright refusal**), and 15 rows at `cw ≤ 2` whose ratio denominator is zero — a label artefact the marathon's own
+// staged blocks already carried, and `INV-PLAN-STAGED-DOOR-RATIO` reports every one of those doors compliant.
+// **SERVED → REFUSED: 0**, which was Willy's blocking condition.
+//
+// ⚠️ PRODUCTION SHAPE. These arms set `user_declared_level`, never `fitness_level` — the helpers above predate
+// `COHORT-GRID-UNSET-LEVEL-01` and `fitness_level` is the structural override no wizard caller sends.
+describe('§111 Am. 4 — the half marathon is governed, at the same 4.0 cap', () => {
+  const hm = (over: Partial<Record<string, unknown>> = {}): GeneratorInput => ({
+    age: 38, goal: 'finish', race_distance_km: 21.1, race_date: raceDate(20), days_available: 3,
+    current_weekly_km: 5, longest_recent_run_km: 5, user_declared_level: 'beginner', training_age: '1-2yr',
+    recent_quality_training: 'occasional', injury_history: [], acknowledged_prep_warning: true,
+    max_hr: 185, resting_hr: 55, ...over,
+  } as unknown as GeneratorInput)
+
+  it('the scope: 21 km and up, and NOT the shorter distances', () => {
+    expect(GENERATION_CONFIG.BASE_BUILD_RATIO_MIN_DISTANCE_KM).toBe(21)
+    for (const d of [21, 21.1, 42.2, 50]) expect(assessBaseBuild({ weeks: [] } as unknown as Plan, hm({ race_distance_km: d })).applies, `${d} km`).toBe(true)
+    // ⚠️ 5K and 10K are over the cap too — 45 and 57 of the 920 cases — and the board did NOT rule on them.
+    // `SHORT-DISTANCE-RAMP-SCOPE-01`. §116 Am. 11's staged-door objection is now the ONLY ratio guard there.
+    for (const d of [5, 10, 20.9]) expect(assessBaseBuild({ weeks: [] } as unknown as Plan, hm({ race_distance_km: d })).applies, `${d} km`).toBe(false)
+  })
+
+  it('🔴 the engine REFUSES the over-cap half, and the runner the board admitted still generates', () => {
+    // The reckless end: the two LIVE half plans sat at 5.40× and 6.80×. This is the 6.80× runner's input.
+    expect(() => generateRulePlan(hm(), 'paid', PLAN_START)).toThrowError(BaseVolumeError)
+    // The admission floor the chair fixed for the HALF: the lowest documented HM persona in the repo is 10 km/week
+    // = 3.40×. If this ever throws, the cap has stopped admitting a cohort we design for.
+    const ok = generateRulePlan(hm({ current_weekly_km: 10 }), 'paid', PLAN_START)
+    const a = assessBaseBuild(ok, hm({ current_weekly_km: 10 }))
+    expect(a.exceeded, `10 km/week persona scored ${a.ratio?.toFixed(2)}× against the ${a.cap} cap`).toBe(false)
+    expect(a.ratio!).toBeLessThan(GENERATION_CONFIG.MAX_BASE_BUILD_RATIO)
+  })
+
+  it('🔴 INV-PLAN-BASE-BUILD-RATIO IS SEEN TO FIRE AT THE HALF, not assumed to extend', () => {
+    // The board's third amendment: the invariant reads `assessBaseBuild`, so it extends with the scope BY
+    // CONSTRUCTION — "which is exactly why it must be falsified rather than assumed. A check that extends silently
+    // is a check nobody has seen fire at the new distance."
+    const input = hm({ current_weekly_km: 10 })
+    const clean = generateRulePlan(input, 'paid', PLAN_START)
+    expect(validatePlan(clean, input).map(v => v.code)).not.toContain('INV-PLAN-BASE-BUILD-RATIO')
+    // Inflate one training week past the cap: 10 km/week × 4.0 = 40, so 45 is over by construction.
+    const over = JSON.parse(JSON.stringify(clean)) as Plan
+    const peakWeek = over.weeks.find(w => w.phase !== 'foundation' && w.n > 0 && w.type !== 'race')!
+    peakWeek.weekly_km = 45
+    expect(deliveredPeakKm(over)).toBe(45)
+    expect(validatePlan(over, input).map(v => v.code),
+      'the §111 backstop must fire on a half-marathon plan that reaches the validator over the ceiling')
+      .toContain('INV-PLAN-BASE-BUILD-RATIO')
+  })
+})

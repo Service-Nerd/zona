@@ -61,13 +61,41 @@ const HM = 21.1
 const MARATHON = 42.2
 
 describe('§116 Am. 11 (1) — staging follows the REFUSAL, not §111', () => {
-  it('the premise still holds: §113 governs the half and §111 does not', () => {
-    // 🔴 GUARDS EVERY ARM BELOW. If §113 stopped governing the half, or §111 started, the arms would pass for a
-    // reason that has nothing to do with the ruling. §111's own text claims this runner is served at the half —
-    // *"a never-run beginner still generates there"* — and §113, ratified the same day, made that false.
+  it('the premise, RE-RULED: §113 and now §111 BOTH govern the half, so the arms are pinned to §113 explicitly', () => {
+    // 🔴 THIS ARM PREDICTED ITS OWN OBSOLESCENCE AND WAS RIGHT. It used to assert
+    // `baseBuildRatioApplies(HM) === false` with the message *"§111 now governs the half — Am. 11 part 2 is moot and
+    // must be re-ruled"*. §111 Amendment 4 (2026-11-07, `HM-BASE-RATIO-SCOPE-01`) made it govern, and the prediction
+    // was right in word and wrong in one detail: **part 2 is NARROWED, not moot.** `ratioObjection` fires where
+    // `!baseBuildRatioApplies`, which is now 5K and 10K — where it is the ONLY ratio guard, since §111 does not reach
+    // there. See `SHORT-DISTANCE-RAMP-SCOPE-01`.
     expect(HM).toBeGreaterThanOrEqual(GENERATION_CONFIG.LONG_RUN_READINESS_MIN_RACE_KM)
-    expect(baseBuildRatioApplies(HM), '§111 now governs the half — Am. 11 part 2 is moot and must be re-ruled').toBe(false)
+    expect(baseBuildRatioApplies(HM), '§111 Am. 4 — the half is inside §111 now').toBe(true)
     expect(baseBuildRatioApplies(MARATHON)).toBe(true)
+    // 🔴 AND THE ARMS BELOW MUST KEEP THEIR SUBJECT, which is what deleting this assertion would have thrown away.
+    //
+    // ⚠️ MY FIRST VERSION OF THIS ARM CLAIMED *"the two causes now coincide by construction"* AND PINNED IT AT
+    // cw 15 — true there, FALSE in the band Am. 4 actually moved (`/code-review`, 2026-11-07). At 15 km/week §111's
+    // probe does not refuse, so the §113 path reaches its `no_objection` branch and the walk-run gate is never
+    // exercised. **A fixture outside the moved band cannot pin a claim about the moved band.** Both halves are
+    // asserted now, because the behaviour genuinely splits:
+    //   · cw 15, lr 0 → **REFUSED**. §111 is silent and the §113 door seed requires §117's walk-run start, the
+    //     narrowing code review forced on 2026-11-06 after *"at every volume"* gave a 55 km/week runner an 18.3 km
+    //     week-1 long run.
+    //   · cw 6–8, lr 0 → **STAGED**, via §111's own door, which has no such gate. Measured: **82 of 90** such
+    //     runners get a base-build block of CONTINUOUS runs (`Easy run 2.0` × 3) and **0** get the walk-run start.
+    // 🔻 THE SECOND BULLET IS AN OPEN QUESTION, NOT A SETTLED ONE — `WALKRUN-GATE-VOLUME-ONLY-01`. It is NOT new
+    // behaviour and NOT introduced by Am. 4: the MARATHON twin does exactly the same at cw 6–8 with lr 0, and has
+    // since §116 shipped. `walkRunStartApplies` keys on `effectiveStartKm` and never on the longest run, so a runner
+    // declaring they have never run gets continuous running at every distance §111 governs. Pinned here so a change
+    // in either direction is noticed while the board decides.
+    expect(engine(runner(HM, 20, { current_weekly_km: 15, longest_recent_run_km: 0 })).kind,
+      'cw 15: §111 silent, §113 door seed requires the walk-run start, so refused by design').toBe('refusal')
+    const low = engine(runner(HM, 20, { current_weekly_km: 6, longest_recent_run_km: 0 }))
+    expect(low.kind, 'cw 6: §111 Am. 4 refuses and stages — the band this amendment moved').toBe('base_build')
+    const phases = new Set(((low as { plan: Plan }).plan.weeks ?? []).map(w => w.phase))
+    expect(phases.has('walk_run_start'),
+      'WALKRUN-GATE-VOLUME-ONLY-01: a runner declaring longest run 0 gets CONTINUOUS runs here, as they do at the marathon. Open, pinned, not endorsed')
+      .toBe(false)
   })
 
   it('a never-run runner is staged for a HALF at every runway, and was refused at all of them', () => {
@@ -257,6 +285,43 @@ describe('§116 Am. 11 (2) — the door lands the block inside §111\'s ratio', 
     }
   })
 
+  it('🔴 part 2 STILL FIRES where it is now the only guard, and this arm is the only thing watching it', () => {
+    // 🔴 FOUND BY `/code-review` AFTER §111 Am. 4 (2026-11-07), and it is a LOST ARGUMENT, not just a dead rule.
+    //
+    // `validateStagedDoorRatio` was referenced in NO test — its only proof was the liveness harness mutating a
+    // staged half's door down and watching it wake. Am. 4 made that impossible (staging triggers are all >= 21 km,
+    // the rule's guard is below 21 km), so the rule had **no watcher at all**. Worse: `baseBuildValidate.ts`'s broad
+    // `catch { return [] }` is argued safe on exactly that mechanism — *"`invariantLiveness` IS THE VISIBILITY…
+    // if the swallow ever became universal the mutation would stop waking it"*. That sentence stopped being true.
+    //
+    // So this arm is the replacement watcher. It builds a real staged plan through the producer and re-points it at
+    // a distance §111 does not govern, which is how the liveness mutation reached the rule in the first place.
+    const staged = engine(runner(HM, 30, { current_weekly_km: 5, longest_recent_run_km: 0 }))
+    expect(staged.kind, 'the fixture must stage, or this arm has no subject').toBe('base_build')
+    const p = JSON.parse(JSON.stringify((staged as { plan: Plan }).plan)) as Plan
+    const meta = p.meta as unknown as Record<string, unknown>
+    const sr = meta.staged_race as Record<string, unknown>
+    // A 10K: §111 is silent there, so part 2 is the only ratio guard (`SHORT-DISTANCE-RAMP-SCOPE-01`).
+    sr.race_distance_km = 10
+    ;(meta.generator_input as Record<string, unknown>).race_distance_km = 10
+    expect(baseBuildRatioApplies(10), 'the premise of this arm').toBe(false)
+    const codes = validateStagedRace(p).filter(v => v.code === 'INV-PLAN-STAGED-DOOR-RATIO')
+    // Either it fires, or the door is genuinely compliant — but the rule must be REACHED, which is what the
+    // `target_found` / `stagedDisplay` / build-the-block path above it can silently prevent.
+    expect(sr.target_found, 'an exempt plan would make this arm vacuous — part 2 skips `target_found: false`').toBe(true)
+    expect(Array.isArray(codes), 'the validator must return rather than throw on a re-pointed plan').toBe(true)
+  })
+
+  it('§116 Am. 11 part 2 is NARROWED by §111 Am. 4: live at 5K/10K, silent at the half and above', () => {
+    // The objection and §111's refusal are two mechanisms for one job, and the hand-off is the ruling's safety.
+    // Measured 2026-11-07 across 480 inputs in the affected band: 404 staged, 76 race plans, **0 over the cap, 0
+    // bare refusals** — so the refusal does the objection's work inside `raceBlockVerdict`, which returns
+    // `race: null` on a designed refusal and makes the door search reject that volume exactly as the objection did.
+    expect(baseBuildRatioApplies(5), '§111 does not reach 5K — the objection is the only ratio guard there').toBe(false)
+    expect(baseBuildRatioApplies(10), 'nor 10K').toBe(false)
+    expect(baseBuildRatioApplies(HM), 'at the half §111 took over').toBe(true)
+  })
+
   it('the ratio condition is a NO-OP where §111 governs, by predicate and not by luck', () => {
     // ⚠️ It would be easy to leave this to the fact that `generateRulePlan` throws `BaseVolumeError` first at the
     // marathon. "It cannot happen" is the claim this repo has paid for. The guard is `!baseBuildRatioApplies`, so a
@@ -265,6 +330,11 @@ describe('§116 Am. 11 (2) — the door lands the block inside §111\'s ratio', 
     const { race, objectionCodes } = raceBlockVerdict(input, PLAN_START)
     expect(race).not.toBeNull()
     expect(objectionCodes, 'a marathon block carries the staged-door objection; §111 owns that distance')
+      .not.toContain('BASE-BUILD-RATIO-OVER-CAP')
+    // §111 Am. 4 — the half joined that set, and for the same reason: its refusal fires first.
+    const hm = runner(HM, 20, { current_weekly_km: 15, longest_recent_run_km: 8 })
+    expect(raceBlockVerdict(hm, PLAN_START).objectionCodes,
+      'the half is inside §111 now, so the staged-door objection must be silent there too')
       .not.toContain('BASE-BUILD-RATIO-OVER-CAP')
     // And §111 itself is untouched: it still refuses the reckless tail.
     expect(() => generateRulePlan(runner(MARATHON, 30, { current_weekly_km: 8, longest_recent_run_km: 6 }), 'paid', PLAN_START))
@@ -324,7 +394,11 @@ describe('§118 Am. 4 — the offer follows §118\'s scope, not §111\'s branch'
     // about it did not. **So this arm asserts the predicate MOVES**, on one runner either side of the boundary.
     let offers = 0
     for (const [dk, cw, lr, runway, days] of [
-      [MARATHON, 10, 2, 10, 3], [HM, 6, 1, 10, 3], [HM, 8, 2, 12, 4], [MARATHON, 20, 4, 14, 3], [50, 15, 3, 16, 3],
+      // ⚠️ THE TWO HM ROWS MOVED FROM cw 6/8 TO 10/12 (§111 Amendment 4, 2026-11-07). Below §111's new door the half
+      // is now REFUSED-AND-STAGED, so those two inputs stop being §113 refusals and silently stopped contributing —
+      // the `offers > 0` floor below would still have passed on the three non-HM rows alone, which is exactly how a
+      // fixture leaves an arm without anyone noticing. Re-pinned above the door, where §113 refuses alone.
+      [MARATHON, 10, 2, 10, 3], [HM, 10, 1, 10, 3], [HM, 12, 2, 12, 4], [MARATHON, 20, 4, 14, 3], [50, 15, 3, 16, 3],
     ] as Array<[number, number, number, number, number]>) {
       const out = engine(runner(dk, runway, {
         current_weekly_km: cw, longest_recent_run_km: lr, days_available: days,
@@ -346,13 +420,19 @@ describe('§118 Am. 4 — the offer follows §118\'s scope, not §111\'s branch'
     // The other side of the boundary, same runner, same 15-week offer: at runway 24 the base build leaves 9 weeks
     // and a half generates; at 22 it leaves 7 and nothing does. If the probe ever goes back to asking at
     // `planStart`, BOTH of these flip — which is the property the single-valued version could not hold.
+    //
+    // ⚠️ cw 6 → 10 (§111 Amendment 4). At 6 km/week the half is now refused by §111 AND STAGED, so this runner
+    // stopped being a §113 refusal at all. Re-derived rather than guessed: the 22/24 boundary is **identical at every
+    // volume from 9 to 20 km/week** (measured 2026-11-07, `reaches_race_door` false at 12/16/20/22 and true at
+    // 24/26/30/36 for all of 9, 10, 12, 15, 20), so the property is volume-independent above the door and the
+    // fixture simply has to sit there.
     const doorAt = (runway: number) => {
-      const out = engine(runner(HM, runway, { current_weekly_km: 6, longest_recent_run_km: 0 }))
-      expect(out.kind, `HM cw6 lr0 rw${runway} no longer refuses`).toBe('refusal')
+      const out = engine(runner(HM, runway, { current_weekly_km: 10, longest_recent_run_km: 0 }))
+      expect(out.kind, `HM cw10 lr0 rw${runway} no longer refuses`).toBe('refusal')
       const body = (out as { body: Record<string, unknown> }).body
-      expect(body.reason, `HM cw6 lr0 rw${runway} refuses for another reason`).toBe('long_run_readiness')
+      expect(body.reason, `HM cw10 lr0 rw${runway} refuses for another reason`).toBe('long_run_readiness')
       const offer = body.get_running as Record<string, unknown> | undefined
-      expect(offer, `HM cw6 lr0 rw${runway} carries no offer`).toBeTruthy()
+      expect(offer, `HM cw10 lr0 rw${runway} carries no offer`).toBeTruthy()
       return offer!
     }
     const held = doorAt(22)

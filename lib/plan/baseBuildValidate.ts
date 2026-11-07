@@ -303,11 +303,23 @@ export function validateStagedDoorRatio(plan: Plan): Violation[] {
   // `generator_input.injury_history = 7` propagates a **TypeError**, so the narrow version still throws out of a
   // validator on corrupt stored data — it traded one rule for the other instead of satisfying both.
   //
-  // ✅ SO THE CATCH IS BROAD AND **`invariantLiveness` IS THE VISIBILITY**. This module is pure by
-  // `ENGINE-PURITY-GATE-01` and cannot record an ops event, but the liveness harness mutates a staged half's door
-  // down to the on-ramp floor and asserts this code wakes — on every `npm run verify`. **If the swallow ever became
-  // universal the mutation would stop waking it and `invariantLiveness.test.ts` would fail the build**, which is a
-  // mechanical signal on a sustained failure and is exactly what the gate asks for. The honest answer to "I could
+  // ✅ SO THE CATCH IS BROAD AND SOMETHING MUST WATCH IT. This module is pure by `ENGINE-PURITY-GATE-01` and cannot
+  // record an ops event, so the watcher has to be a test.
+  //
+  // 🔴 AND THE ORIGINAL WATCHER EXPIRED ONE DAY LATER (code review, 2026-11-07). This comment read
+  // *"`invariantLiveness` IS THE VISIBILITY… the liveness harness mutates a staged half's door down to the on-ramp
+  // floor and asserts this code wakes… if the swallow ever became universal the mutation would stop waking it"*.
+  // **§111 Amendment 4 made that impossible.** Staging triggers only on `BaseVolumeError` and
+  // `LongRunReadinessError`, both `>= 21 km`, and this rule's guard is `!baseBuildRatioApplies` — below 21 km since
+  // Am. 4. The two conditions are disjoint, the mutation cannot wake it, and `INV-PLAN-STAGED-DOOR-RATIO` is
+  // recorded `superseded` in the liveness baseline. ⚠️ **Measured, not declared: 0 staged plans below 21 km across
+  // 920 production-shaped cases** — because "unreachable by construction" was the exact claim that proved false on
+  // §113 the day before.
+  //
+  // ✅ REPLACEMENT WATCHER: `stagedHmDoor.test.ts` § *"part 2 STILL FIRES where it is now the only guard"* builds a
+  // staged plan through the producer, re-points it at a 10K (where §111 is silent) and asserts this code is REACHED
+  // and returns rather than throws. It was the only reference to `validateStagedDoorRatio` outside this file — there
+  // were none before, which is how a load-bearing argument came to rest on a mechanism nobody had checked. The honest answer to "I could
   // not build the block" is no violation: the ratio is unknown, never a pass dressed as a check, and
   // `INV-PLAN-BASE-BUILD-RATIO` still backstops §111's own distances.
   try { race = raceBlockVerdict(raceInput, d.raceBlockStart).race } catch { return [] }

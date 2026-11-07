@@ -88,11 +88,12 @@
    "10": {
     "n": 165,
     "refusedPct": 0,
-    "cleanPct": 83.2,
+    "cleanPct": 82.5,
     "servedPct": 100,
     "doorPct": null,
     "objections": {
-     "DEGENERATE-WEEK": 16.8
+     "DEGENERATE-WEEK": 16.8,
+     "STAGED:WEEK1-LEAP": 0.6
     }
    },
    "20": {

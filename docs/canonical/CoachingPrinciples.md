@@ -10360,7 +10360,7 @@ The `fitness_level_max` scope is covered by `lib/plan/beginnerCatalogue.test.ts`
 
 *Added 2026-09-18 — Coaching Board (MARATHON-VOLUME-GATE-01), CORRECT WITH AMENDMENT. Ratifies the artifacts for a floor the board had already ruled correct in concept; the amendment set the metric, the cap, and error severity.*
 
-**Principle.** For the marathon and ultra distances (`race_distance_km ≥ `BASE_BUILD_RATIO_MIN_DISTANCE_KM` = 42`), the plan's **delivered peak weekly volume** may not exceed `MAX_BASE_BUILD_RATIO` (4.0) times the runner's **raw stated `current_weekly_km`**. Over that ceiling the engine **refuses to generate** — it does not ship the plan — and returns, per §44, the lever and an alternative: the base volume to reach first (`ceil(peak / cap)` km/week). A `current_weekly_km` of 0 is an infinite ratio and is refused. The refusal is surfaced as "not yet", not "no" (SLT, REFUSAL-SCREEN-01): the runner has a fixed race date weeks away and the honest thing is the base to build, not a door.
+**Principle.** For the **half marathon, marathon and ultra** distances (`race_distance_km ≥ `BASE_BUILD_RATIO_MIN_DISTANCE_KM`, which is **21** since **Amendment 4**, 2026-11-07 — it read 42 here until then), the plan's **delivered peak weekly volume** may not exceed `MAX_BASE_BUILD_RATIO` (4.0) times **`effectiveStartKm`, the volume the engine STARTS FROM** (**Amendment 2**; this sentence said *"raw stated `current_weekly_km`"* until 2026-11-07, which Am. 2 had already superseded — found by code review, because `audit-docs.sh` checks that a record EXISTS and never that it is TRUE). Over that ceiling the engine **refuses to generate** — it does not ship the plan — and returns, per §44, the lever and an alternative: the base volume to reach first (`ceil(peak / cap)` km/week). A `current_weekly_km` of 0 is an infinite ratio and is refused. The refusal is surfaced as "not yet", not "no" (SLT, REFUSAL-SCREEN-01): the runner has a fixed race date weeks away and the honest thing is the base to build, not a door.
 
 **Why the metric is peak ÷ current, and not peak ÷ week1.** The danger is the jump from where the runner **is** to what the plan **demands** — a 5 km/week first-timer handed a 47 km peak is being asked for a 9.4× build, and nothing downstream caught it (`validatePlan` returned zero errors). Measured, `peak/week1` cannot see this: week 1 is floored at `BUILD_VOL_INIT_FLOOR_VS_PEAK` (35%) of peak, so `peak/week1` sits flat at ~2.6 across the entire low-volume cohort and a cap there would refuse everyone or no one. `peak/current` is monotonic in current volume and discriminating: first-timer marathon 5 km→9.4×, 12 km→3.9×, 15 km→3.1×, 20 km→2.6×, 40 km→1.3×.
 
@@ -10377,12 +10377,12 @@ The `fitness_level_max` scope is covered by `lib/plan/beginnerCatalogue.test.ts`
 **The base-building plan that would let a low-base runner in is deferred** (SLT part 2, Coaching Board first): `FOUNDATION_MAX_WEEKS` is 3 and a ~20-week ramp from 10 km/week to marathon readiness is a new plan type, not a longer foundation block. Until it exists, §111 refuses honestly rather than promising a plan we have not built.
 
 **Config.**
-- `GENERATION_CONFIG.MAX_BASE_BUILD_RATIO = 4.0` — delivered peak weekly_km / current_weekly_km ceiling.
-- `GENERATION_CONFIG.BASE_BUILD_RATIO_MIN_DISTANCE_KM = 42` — marathon and ultra only.
+- `GENERATION_CONFIG.MAX_BASE_BUILD_RATIO = 4.0` — delivered peak weekly_km ÷ `effectiveStartKm` ceiling (Am. 2).
+- `GENERATION_CONFIG.BASE_BUILD_RATIO_MIN_DISTANCE_KM = 21` — **half marathon, marathon and ultra** (Am. 4; it was 42, marathon and ultra only, until 2026-11-07).
 
 **Enforcement.** The refusal is thrown from `generateRulePlan` (`BaseVolumeError`, mirroring `PrepTimeError`/`DaysAvailableError`); the computation is owned by `lib/plan/baseVolume.ts` and read by both the refusal and `INV-PLAN-BASE-BUILD-RATIO` (error) so they cannot drift. The invariant is the defense-in-depth backstop: the refusal pre-empts it in the generation path, and it catches any plan that reaches `validatePlan` over the ceiling by another route.
 
-**Supersedes MAINT-LABEL-01/UX-BEGINNER-01 for the reckless tail only** *(Coaching Board, reconvened same day on the collision the first scan missed).* MAINT-LABEL-01 gave a very-low-base beginner marathoner (5 km/week) an honest-labelled plan rather than refusing them. **Measured, that plan starts week 1 at 18 km regardless of the stated base** (the week-1 floor is 35% of peak), so for a 5 km runner it is a **3.6× acute jump in week one** that §2's ramp cap does not govern — the load hazard MAINT-LABEL-01 never audited (it fixed the *label*, not the load). §111 refuses that tail with "not yet", which is a coaching answer, not the database-field-name refusal UX-BEGINNER-01 removed and not "you'll fail". For a 12–15 km runner the same 18 km week 1 is a 1.2–1.5× step, safe, and the honest note still fires — so MAINT-LABEL-01's actual subject (the beginner who *does* generate) and UX-BEGINNER-01's input acceptance (`validateInputFields` still accepts a 0 base, §55) are both untouched. Short distances (5K/10K/HM) are outside §111 entirely, so a never-run beginner still generates there.
+**Supersedes MAINT-LABEL-01/UX-BEGINNER-01 for the reckless tail only** *(Coaching Board, reconvened same day on the collision the first scan missed).* MAINT-LABEL-01 gave a very-low-base beginner marathoner (5 km/week) an honest-labelled plan rather than refusing them. **Measured, that plan starts week 1 at 18 km regardless of the stated base** (the week-1 floor is 35% of peak), so for a 5 km runner it is a **3.6× acute jump in week one** that §2's ramp cap does not govern — the load hazard MAINT-LABEL-01 never audited (it fixed the *label*, not the load). §111 refuses that tail with "not yet", which is a coaching answer, not the database-field-name refusal UX-BEGINNER-01 removed and not "you'll fail". For a 12–15 km runner the same 18 km week 1 is a 1.2–1.5× step, safe, and the honest note still fires — so MAINT-LABEL-01's actual subject (the beginner who *does* generate) and UX-BEGINNER-01's input acceptance (`validateInputFields` still accepts a 0 base, §55) are both untouched. Short distances are outside §111 entirely, so a never-run beginner still generates there. 🔴 **FALSE TWICE OVER AND CORRECTED: §113 (ratified the same day) refuses `>= 21 km` on long-run readiness, and §111 **Amendment 4** (2026-11-07) brought the HALF inside this section. The sentence now reads: 5K and 10K are outside §111 — see `SHORT-DISTANCE-RAMP-SCOPE-01`.**
 
 **Out of scope, flagged not fixed.** The route's `longest_recent_run_km < 5` gate for half-plus is the same ungoverned-number smell but a distinct coaching question (long-run readiness, not weekly ramp) — a separate sitting, untouched here.
 
@@ -10471,6 +10471,81 @@ and the return trigger reuses §2's existing ramp constant.
 inherits the correction with no change — producer and checker share one owner
 by construction. Gated by `lib/plan/baseVolumeDenominator.test.ts` (6
 assertions, including that the door is unmoved and the cap is still 4.0).
+
+### §111 Amendment 4 — the HALF MARATHON is inside §111 (Coaching Board 2026-11-07, HM-BASE-RATIO-SCOPE-01)
+
+**Principle.** `BASE_BUILD_RATIO_MIN_DISTANCE_KM` is **21**, not 42. The base-build ceiling governs the **half
+marathon, marathon and ultra**. The cap is unchanged at 4.0.
+
+**Why.** Measured through `runEngine` at production shape: the **same runner** — 5 km/week, 5 km longest run,
+declared beginner, three days — received a staged base-build block for the **marathon** and a full **17-week RACE
+PLAN** for the **half**, at **6.80×**, opening week 1 at **14 km against the 5 they run (+180%)**. *"Type the harder
+race, get the SAFER answer"* — the inverse of `STAGED-HM-DOOR-01` the day before, and the same root cause: a `>= 42`
+in `baseBuildRatioApplies` that §111's text never justified. §111 said only *"Short distances (5K/10K/HM) are outside
+§111 entirely, so a never-run beginner still generates there"*, a sentence already found false once (§113 refuses
+`>= 21 km` on long-run readiness), and §111's own *"Out of scope, flagged not fixed — a separate sitting"* named the
+long-run half of this; **this is the weekly-ramp half.**
+
+**The measurement.** Over the cap at bases **4–8 km/week** and at **every runway from 12 to 30 weeks** — a longer
+runway does not rescue them, exactly as Am. 2 measured for the marathon. The delivered peak is a **flat 34 km from 4
+to 12 km/week**: volume-blind, which is this section's own ratified mechanism (the week-1 floor is 35% of peak and
+does not scale down with the runner). Week-1 leap median **+133%**, worst **+180%**, against the **+114%** Am. 2 was
+ratified on. On a 1,200-input low-base grid: **270 of 600 HM race plans over the cap**, median **5.67×**; the
+marathon twin **0 of 176**. ⚠️ **That share is of a grid built from bases 4–20, not of all half-marathon runners**
+(Seiler). 🔴 **And it is live, not synthetic: of the SIX half-marathon plans in production, TWO are over the cap —
+5.40× and 6.80×.**
+
+**The cap does not move, and its justification is no longer inherited** *(chair, binding)*. 4.0 was fixed by two
+**marathon** binding points — persona M1 at 3.13× must generate, a ≤10 km/week beginner marathon at ≥4.7× must be
+refused. **Restated for the half:** the **admission floor** is the lowest documented HM persona anywhere in this
+repo, **10 km/week = 3.40×**, admitted with margin (the cap admits ≥ 8.5 km/week); the **reckless end** is the two
+live plans at **5.40× and 6.80×**, refused. Both ends are half-marathon facts.
+
+**Why the ratio transfers where the absolute load does not** *(chair)*. The obvious objection is that a half peaks at
+34 km and a marathon at 47, so the half is safer. That is an argument about absolute load, and **this board chose the
+ratio over absolute figures** — Am. 3 says so, and this section's *"Why the metric is peak ÷ current"* already ruled
+that `peak/week1` cannot see this cohort. The denominator is the runner, and the runner is identical. ⚠️ **The triple
+appearance of ~5.6× (Am. 2's 5.57 marathon median, `STAGED-HM-DOOR-01`'s 5.67 door, this grid's 5.67 median) is ONE
+ENGINE PRODUCING ONE SHAPE OFF ONE FLOOR — an explanation, not three measurements.** Recorded so it is never cited as
+corroboration.
+
+**Nobody is sent away** *(🩹 Willy, binding, discharged before shipping)*. `stagingApplies` is **distance-agnostic**,
+and `engine.ts` states that a stageable runner never reaches the refusal branch. Measured over 480 inputs in the
+affected band (cw 4–8 × runways 10–36 × 3–5 days × both levels × both goals): **404 staged base-build blocks, 76 race
+plans with 0 over the cap, and 0 bare refusals.** Re-measured over 920 inputs with the **longest run as an
+independent axis including 0** — the first grid derived it from volume, which is `ENVELOPE-LRR-BLIND-01`'s defect and
+hid a whole transition class: **80 changed, all at 21.1 km**; `race:OVERCAP → base_build:ok` **51**;
+`refused:long_run_readiness → base_build:ok` **14 — runners RESCUED from an outright refusal**; 15 rows at `cw ≤ 2`
+where the ratio denominator is zero, a label artefact the marathon's own staged blocks already carried, with
+`INV-PLAN-STAGED-DOOR-RATIO` reporting every door compliant. **SERVED → REFUSED: 0.**
+
+**What the runner reads** *(🎯 McMillan, ⚕️ Sims concurring, discharged)*. The staged block's copy must not inherit
+marathon strings. Measured on a half runner's block: **0 of its strings mention "marathon"** — `race_name` is
+*"Base building"* and the copy is distance-agnostic already.
+
+⚠️ **§113 CAN NO LONGER BE ISOLATED AT THE HALF, and that is a consequence worth stating.** A runner who passes §111
+with room and fails §113 alone (15 km/week, no long run) is **refused**, because the §113 door seed requires §117's
+walk-run start — the narrowing code review forced on 2026-11-06. So every runner the §113 staging path can serve has a
+volume low enough that Am. 4 refuses them too: **the two causes now coincide by construction.**
+
+⚕️ **Sims, recorded and not ruled:** this cohort — 4–8 km/week, declared beginner, first half marathon — skews female
+and toward runners coming to the sport in their thirties and forties, where a +180% week one lands on bone that has
+not been loaded. A base-build block is the better plan; **it is still not the plan they asked for**, and whether this
+band completes the block or churns is **unmeasured** on 34 stored plans.
+
+**Config.** `GENERATION_CONFIG.BASE_BUILD_RATIO_MIN_DISTANCE_KM: 42 → 21`. One constant, already the single owner,
+read by the refusal and the invariant both. `MAX_BASE_BUILD_RATIO` unchanged.
+**Enforcement.** `INV-PLAN-BASE-BUILD-RATIO` needs no change — it reads `assessBaseBuild`, which reads
+`baseBuildRatioApplies`, so it extends with the scope by construction. ⚠️ **Which is exactly why it was falsified
+rather than assumed**: a check that extends silently is one nobody has seen fire at the new distance. `baseVolume.test.ts`
+§ Am. 4 asserts it fires on a half plan inflated past the ceiling and not on a compliant one; all five new arms go red
+when the constant reverts to 42.
+
+🔻 **NOT RULED, FILED: `SHORT-DISTANCE-RAMP-SCOPE-01`.** The 5K and 10K are over the cap too (**45 and 57** of the 920
+cases) and the board did not rule on them, because the submission scoped itself to the half. ⚠️ **The week-1 leap is
+IDENTICAL at every distance** — +150% at 4 km/week, +160% at 5, +117% at 6 — because the week-1 floor and the peak
+scale together; only the *ratio* falls with distance, so fewer cases breach 4.0. §116 Am. 11's staged-door objection
+is now the **only** ratio guard below 21 km.
 
 ### §111 — RECORDED LIMITATION, not yet remedied (Coaching Board 2026-09-19, S111-SUBFLOOR-VOLUME-01)
 
@@ -10914,6 +10989,15 @@ way neither sitting saw; they are returned to the board before §116's flag may 
   6.2%) and §113 on the recorded long run (3.1%).
 
 ### §116 Amendment 11 — A §113 REFUSAL IS STAGED TOO, AND THE DOOR MUST LAND THE BLOCK INSIDE §111's RATIO *(Coaching Board 2026-11-06, `STAGED-HM-DOOR-01`)*
+
+> 🔻 **PART 2 IS NARROWED BY §111 Amendment 4 (2026-11-07), NOT MOOT.** This amendment's ratio objection fires where
+> `!baseBuildRatioApplies`, which is now **5K and 10K only** — and there it is the **only** ratio guard, since §111
+> does not reach those distances (`SHORT-DISTANCE-RAMP-SCOPE-01`). At the half, §111's **refusal** does the same job
+> through a different mechanism: `raceBlockVerdict` returns `race: null` on a designed refusal, so the door search
+> rejects that volume exactly as the objection did. ⚠️ **The hand-off was measured, not reasoned** — 480 inputs in the
+> affected band, **0 over the cap and 0 bare refusals**. The arm that predicted this (`stagedHmDoor.test.ts`, *"§111
+> now governs the half — Am. 11 part 2 is moot and must be re-ruled"*) was right in word and wrong in that one
+> detail, and is re-ruled rather than deleted.
 
 **Principle, two halves.**
 

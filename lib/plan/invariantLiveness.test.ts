@@ -69,9 +69,30 @@ describe('invariant liveness — a rule that cannot fail is not a check', () => 
     ].join('\n')).toEqual([])
   })
 
+  it('a `superseded` entry names the ruling that removed its population', () => {
+    // 🔴 THE FIFTH REASON, ADDED 2026-11-07, AND THE ONLY ONE THAT MAKES THIS LIST GROW.
+    // §111 Am. 4 moved a scope boundary and `INV-PLAN-STAGED-DOOR-RATIO` — ordered by this board the DAY BEFORE —
+    // lost every plan it could fire on: its guard is below `BASE_BUILD_RATIO_MIN_DISTANCE_KM` and a staged plan
+    // arises only from a §111 or §113 refusal, both now >= 21 km. The two conditions are disjoint.
+    // ⚠️ IT IS NOT `corpus`. That reason says the HARNESS cannot build the shape; here the ENGINE cannot, and
+    // mislabelling it would hide a ruling's consequence behind a harness limitation.
+    // ⚠️ AND IT MUST NOT BECOME A DUMPING GROUND, which is the standing criticism of `unclassified`. Every
+    // `superseded` code has to name its ruling and carry the measurement that established the disjointness —
+    // because "unreachable by construction" is the exact claim that was false on §113 one day earlier.
+    const superseded = Object.entries(BASELINE.unproven).filter(([, r]) => r === 'superseded').map(([c]) => c)
+    const named = (BASELINE as unknown as { supersededBy?: Record<string, string> }).supersededBy ?? {}
+    expect(superseded.filter(c => !named[c]), 'a superseded entry with no ruling named').toEqual([])
+    for (const c of superseded) {
+      expect(named[c], `${c}: the ruling must be named`).toMatch(/§\d+|Am\.|Coaching Board|[A-Z][A-Z0-9]*(-[A-Z0-9]+)+/)
+      expect(named[c].length, `${c}: a reason this consequential needs the measurement, not a sentence`).toBeGreaterThan(200)
+    }
+    // And nothing may be named that is not actually listed — a stale row reads as live debt.
+    expect(Object.keys(named).filter(c => !superseded.includes(c)), 'named as superseded but not listed').toEqual([])
+  })
+
   it('the recorded reasons are from the fixed set', () => {
     const bad = Object.entries(BASELINE.unproven)
-      .filter(([, r]) => !['corpus', 'mutation', 'static', 'unclassified'].includes(r))
+      .filter(([, r]) => !['corpus', 'mutation', 'static', 'superseded', 'unclassified'].includes(r))
     expect(bad).toEqual([])
   })
 
@@ -89,7 +110,9 @@ describe('invariant liveness — a rule that cannot fail is not a check', () => 
     // The live counts already have owners — INVARIANT_CODES.length and
     // probeLiveness().woken — recomputed on every run by the arms above. A second
     // copy in a fixture is the duplicate that drifted.
-    const READ_KEYS = ['_', 'reasons', 'unproven']
+    // `supersededBy` is read by the `superseded` arm above, which asserts every entry names its ruling, carries the
+    // measurement, and is actually listed in `unproven` — so it cannot go stale silently, which is this gate's point.
+    const READ_KEYS = ['_', 'reasons', 'unproven', 'supersededBy']
     const extra = Object.keys(BASELINE).filter(k => !READ_KEYS.includes(k))
     expect(extra, [
       `the baseline holds ${extra.length} key(s) this test never reads: ${extra.join(', ')}`,
