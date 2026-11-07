@@ -11530,11 +11530,24 @@ the base build consumes all ten of them. I reported *"measured both ways, true 1
 read that as the predicate working. **Those 168 were false promises about a race day that had already passed** —
 precisely the commitment the SLT ruled on.
 
-Corrected: **0 of 612.** ⚠️ **So the clearing variant is UNREACHABLE for §113, by construction**, and the gate says
-so rather than pretending to vary: a §113 refusal now survives only where staging could not place a checkpoint, which
-means the runway cannot hold a base build plus §44's block — so the base build cannot leave room for a race plan. An
-arm asserting both values would be asserting the defect. A separate arm proves the clearing copy is still live and
-still says what the SLT ruled, so the two-variant machinery is not half-dead; §111's branch is what reaches it.
+Corrected: **0 of 612.**
+
+🔴 **AND THAT CORRECTION OVERSHOT INTO A SECOND FALSE CLAIM, WHICH THIS AMENDMENT CARRIED FOR A DAY.** It read
+*"so the clearing variant is UNREACHABLE for §113, by construction"*, reasoning that a §113 refusal now survives only
+where staging could not place a checkpoint, so the runway cannot hold a base build plus §44's block. **That reasoning
+omits the narrowing ratified in Amendment 11 of §116, in the same commit.** A runner who already has weekly volume but
+no long run is excluded from staging for a reason that has **nothing to do with the runway**, so their §113 refusal
+survives at ANY runway. Re-measured through `runEngine` over a 6,600-case grid (code review, 2026-11-07):
+**126 of 936** §113 refusals carrying an offer DO clear the race door. Every one has `longest_recent_run_km: 0` with
+volume above §117's walk-run start, at a runway of **24 weeks or more**; at runways 10–20 it is **0 of 783**, and the
+612-case corpus held only those. ⚠️ **"0 of 612" was a property of the POPULATION, not of the construction** — the
+third corpus blindness on this item, after `ENVELOPE-LRR-BLIND-01` and `COHORT-GRID-UNSET-LEVEL-01`.
+
+⚠️ **THE ENGINE WAS RIGHT THROUGHOUT AND NO PRESCRIPTION CHANGED.** The offer told each runner the truth; the
+doctrine describing it did not, in five documents and one test comment. The gate now asserts the predicate **moves**,
+on one runner either side of the boundary — half marathon, 6 km/week, longest 0, the same 15-week offer, runway 22
+(held) against 24 (cleared) — falsified in both directions. A separate arm proves both copy variants are still live
+at the copy owner.
 
 **The copy is unchanged, deliberately.** Both variants are the founder's and the SLT's; only the predicate moved. New
 copy here would be a brand decision this board cannot take.

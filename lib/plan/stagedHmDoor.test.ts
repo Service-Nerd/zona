@@ -308,10 +308,20 @@ describe('§118 Am. 4 — the offer follows §118\'s scope, not §111\'s branch'
     // commitment the SLT ruled on — *"when it does not happen, the runner concludes you lied, and they will be
     // right"* (2026-09-20). After the fix: **0 of 612**.
     //
-    // ⚠️ SO THE CLEARING VARIANT IS UNREACHABLE FOR §113, BY CONSTRUCTION, AND THIS ARM SAYS SO RATHER THAN
-    // PRETENDING TO VARY. A §113 refusal now survives only where staging could NOT place a checkpoint, which means
-    // the runway cannot hold a base build plus §44's block — so the base build cannot leave room for a race plan.
-    // An arm asserting both values would be asserting the defect.
+    // 🔴 AND THAT CORRECTION OVERSHOT INTO A SECOND FALSE CLAIM, in this arm and in four documents:
+    // *"so the clearing variant is UNREACHABLE for §113, by construction"*. Code review, 2026-11-07. Re-measured
+    // through `runEngine` over a 6,600-case grid (5 distances × 11 volumes × 5 longest runs × 8 runways × 3 day
+    // counts, longest ≤ weekly): **126 of 936** §113 refusals carrying an offer DO clear the race door.
+    //
+    // ⚠️ AND THE CLEARING COHORT IS THE ONE THIS SAME COMMIT CREATED. Every one of the 126 has
+    // `longest_recent_run_km: 0` with weekly volume ABOVE §117's walk-run start — precisely the runner §116 Am. 11's
+    // narrowing excludes from staging, so their §113 refusal survives for a reason that has nothing to do with the
+    // runway — at a runway of 24 weeks or more. At runways 10–20 it is **0 of 783**, and the five fixtures below all
+    // sit at 10–16. So `.toBe(false)` was a property of the POPULATION, not an invariant: the same corpus blindness
+    // as `ENVELOPE-LRR-BLIND-01` and `COHORT-GRID-UNSET-LEVEL-01`, for the third time on this item.
+    //
+    // ⚠️ THE ENGINE WAS RIGHT THROUGHOUT — no prescription changes here. The offer told the truth; the claim
+    // about it did not. **So this arm asserts the predicate MOVES**, on one runner either side of the boundary.
     let offers = 0
     for (const [dk, cw, lr, runway, days] of [
       [MARATHON, 10, 2, 10, 3], [HM, 6, 1, 10, 3], [HM, 8, 2, 12, 4], [MARATHON, 20, 4, 14, 3], [50, 15, 3, 16, 3],
@@ -332,12 +342,35 @@ describe('§118 Am. 4 — the offer follows §118\'s scope, not §111\'s branch'
       expect(String(offer.line), 'the non-clearing offer mentions a race').not.toMatch(/race|marathon|half/i)
     }
     expect(offers, 'no §113 refusal carried an offer: this arm measured nothing').toBeGreaterThan(0)
+
+    // The other side of the boundary, same runner, same 15-week offer: at runway 24 the base build leaves 9 weeks
+    // and a half generates; at 22 it leaves 7 and nothing does. If the probe ever goes back to asking at
+    // `planStart`, BOTH of these flip — which is the property the single-valued version could not hold.
+    const doorAt = (runway: number) => {
+      const out = engine(runner(HM, runway, { current_weekly_km: 6, longest_recent_run_km: 0 }))
+      expect(out.kind, `HM cw6 lr0 rw${runway} no longer refuses`).toBe('refusal')
+      const body = (out as { body: Record<string, unknown> }).body
+      expect(body.reason, `HM cw6 lr0 rw${runway} refuses for another reason`).toBe('long_run_readiness')
+      const offer = body.get_running as Record<string, unknown> | undefined
+      expect(offer, `HM cw6 lr0 rw${runway} carries no offer`).toBeTruthy()
+      return offer!
+    }
+    const held = doorAt(22)
+    const cleared = doorAt(24)
+    expect(held.reaches_race_door, 'a 22-week runway cannot hold a 15-week base build plus a race block').toBe(false)
+    expect(cleared.reaches_race_door, '§116 Am. 11 leaves this runner unstaged on a 24-week runway, and a race plan DOES open')
+      .toBe(true)
+    expect(held.weeks, 'the two sides differ by runway, not by the length of the base build').toBe(cleared.weeks)
+    expect(String(cleared.line), 'the clearing offer says nothing about a race').toMatch(/race plan/i)
   })
 
   it('the clearing variant is still live copy, not dead code, and §111 is the branch that reaches it', () => {
-    // ⚠️ A BOOLEAN THAT CANNOT MOVE IS A METRIC THAT CANNOT MOVE. The arm above proves §113 never clears; this
-    // proves the other variant still exists and still says what the SLT ruled it must, so the two-variant machinery
-    // is not half-dead. §111's predicate (weekly volume, unchanged) is the branch that can reach it.
+    // ⚠️ A BOOLEAN THAT CANNOT MOVE IS A METRIC THAT CANNOT MOVE. The arm above proves the §113 predicate moves
+    // on live inputs; this one proves BOTH copy variants exist and still say what the SLT ruled, at the copy owner
+    // rather than through the engine. §111's predicate (weekly volume, unchanged) reaches the clearing one too.
+    //
+    // ⚠️ This arm's own premise used to read *"the arm above proves §113 never clears"*, which was false for the
+    // same reason — a stale sentence about a neighbour is how a true check acquires a wrong justification.
     const clearing = baseBuildOfferLine({ weeks: 12, endsAtKm: 24, reachesRaceDoor: true, distanceLabel: '24km' })
     const holding = baseBuildOfferLine({ weeks: 12, endsAtKm: 24, reachesRaceDoor: false, distanceLabel: '24km' })
     expect(clearing).toMatch(/race plan/i)
