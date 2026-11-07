@@ -410,6 +410,15 @@ the board did not rule on them; **the week-1 leap is IDENTICAL at every distance
 runner types 5K or marathon) and only the ratio falls. ⚠️ §111's own text now contradicts itself — the chair's
 **ratio** reasoning transfers to 5K unchanged while the scope sentence justifies itself on **absolute** grounds, and
 one of the two has to give. §116 Am. 11's staged-door objection is currently the only ratio guard below 21 km.
+🏃 `GETRUNNING-WALKRUN-FLOOR-01` — **§118's own producer has no walk-run path, so a runner BELOW §116's
+floor gets continuous running from it, against the floor note's own text.** Found by `/code-review` of
+§117 Am. 7. Measured: `cw 0 / lr 0` correctly gets the walk-run start, but **`cw 2 / lr 0` and
+`cw 4 / lr 0` get continuous `Easy run: 2`** — only `cw 0` is served, and only because `getRunningApplies`
+is false there and the staged path picks it up. Two questions in one item: the `cw < 6` rows are a defect
+against documented intent (board-exempt to fix, but §118's producer needs a walk-run composition path it
+does not have); the `lr 0` rows at cw 10–20 carry the volume-reduction hazard that forced Am. 7's own
+narrowing, and that half is the board's. **0 affected plans in production, so latent.**
+
 ✅ **`WALKRUN-GATE-VOLUME-ONLY-01` RULED AND SHIPPED 2026-11-07 — §117 Amendment 7.** The walk-run start is gated on the LONGEST RUN; Willy withdrew his own volume trigger, 18 days after §117 Am. 5 had already ratified that discriminator. **8,064 engine inputs: 335 move, all `refusal → base_build`, SERVED → REFUSED 0, no race plan changes**; continuous running **108 → 0**; all 335 newly-staged plans carry **0 error-severity violations**. 🔻 The 5K/10K face is NOT covered (§117 is marathon-only by construction) → 🏃 `SHORTDIST-RUNWALK-SCOPE-01`.
 
 🔻 **Originally filed as:** 🩹 ~~`WALKRUN-GATE-VOLUME-ONLY-01`~~ — **a runner who declares they have NEVER RUN gets CONTINUOUS running (82 of 90
