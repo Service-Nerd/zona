@@ -300,25 +300,33 @@ describe('§116 Am. 11 (2) — the door lands the block inside §111\'s ratio', 
     // ⚠️ MY FIRST VERIFICATION OF THIS FIX WAS HOLLOW and I found it by falsifying: I checked
     // `offer.weeks >= runway`, and 8 >= 9 is false, so the probe could never see the case it was written for.
     // **The arm below asserts the predicate the runner is actually served, not arithmetic about it.**
-    const offersClaimingDoor: string[] = []
-    for (const cw of [4, 5, 6, 7, 8]) for (const lr of [0, 2, 5]) for (const rw of [9, 10, 11, 12]) {
-      if (lr > cw) continue
-      for (const days of [3, 4, 5]) {
-        const out = engine(runner(HM, rw, {
-          current_weekly_km: cw, longest_recent_run_km: lr, days_available: days,
-          goal: 'time_target', target_time: '2:30:00',
-        } as Partial<GeneratorInput>))
-        if (out.kind !== 'refusal') continue
-        const body = (out as { body: Record<string, unknown> }).body
-        if (body.reason !== 'base_volume') continue
-        const offer = body.get_running as Record<string, unknown> | undefined
-        if (!offer || offer.reaches_race_door !== true) continue
-        // It claims the door opens. The base build must therefore leave room for a block that generates.
-        offersClaimingDoor.push(`cw${cw} lr${lr} rw${rw} d${days}: ${offer.weeks}w block on a ${rw}w runway`)
-      }
+    // 🔴 MY FIRST VERSION OF THIS ARM WAS VACUOUS, and code review proved it by replaying its own grid: 168 inputs
+    // gave 126 `warn_unacknowledged` + 14 `long_run_readiness` refusals and **0 `base_volume`**, because `runner()`
+    // never acknowledges §44's prep warning — so §111 was never reached and `offersClaimingDoor` could not be
+    // populated. **It passed with the fix reverted.** That is the third hollow gate I built in one day.
+    //
+    // The real population is narrow and was measured, not guessed: `cw 6 / lr 5 / runway 9 / days 4–5`, time goal,
+    // prep acknowledged — **exactly 2 inputs.** The arm therefore asserts the population is NON-EMPTY first, because
+    // an arm whose subject can vanish is an arm that reports nothing (`an empty population must not render`).
+    const probed: Array<{ what: string; door: unknown; weeks: unknown }> = []
+    for (const days of [3, 4, 5]) for (const rw of [8, 9, 10]) {
+      const out = engine({
+        ...runner(HM, rw, { current_weekly_km: 6, longest_recent_run_km: 5, days_available: days }),
+        goal: 'time_target', target_time: '2:30:00', acknowledged_prep_warning: true,
+      } as GeneratorInput)
+      if (out.kind !== 'refusal') continue
+      const body = (out as { body: Record<string, unknown> }).body
+      if (body.reason !== 'base_volume') continue
+      const offer = body.get_running as Record<string, unknown> | undefined
+      if (!offer) continue
+      probed.push({ what: `rw${rw} d${days}`, door: offer.reaches_race_door, weeks: offer.weeks })
     }
-    expect(offersClaimingDoor,
-      'a §111 offer claimed the race door opens where the runway cannot hold the block — the SLT ruled on exactly this: "when it does not happen, the runner concludes you lied, and they will be right"')
+    expect(probed.length,
+      'no §111 offer was reached: this arm has no subject and would pass with the fix reverted, which is exactly how its first version was vacuous')
+      .toBeGreaterThan(0)
+    // Every one of them: the base build consumes the runway, so the door must NOT be promised.
+    expect(probed.filter(p => p.door === true),
+      'a §111 offer claimed the race door opens where the base build consumes the runway — the SLT ruled on exactly this: "when it does not happen, the runner concludes you lied, and they will be right"')
       .toEqual([])
   })
 

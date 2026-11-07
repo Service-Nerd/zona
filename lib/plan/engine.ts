@@ -54,7 +54,7 @@ import { isDesignedRefusal } from './designedRefusal'
 import { effectiveStartKm } from './startVolume'
 import { BaseVolumeError } from './baseVolume'
 import { assessOnRamp, onRampEnabled } from './baseBuildOnRamp'
-import { generateStagedRacePlan, stagedRaceOf, observedCheckpointKm, observedLongestRunKm, checkpointRaceInput, extendedStagedPlan, runWalkFinishInput, halfSameDayInput, stagingDoorKm, longestSessionKm, raceBlockVerdict, addWeeksIso, type CheckpointOption, type CheckpointChoice } from './stagedRacePlan'
+import { generateStagedRacePlan, stagedRaceOf, observedCheckpointKm, observedLongestRunKm, checkpointRaceInput, probeCheckpointInput, extendedStagedPlan, runWalkFinishInput, halfSameDayInput, stagingDoorKm, longestSessionKm, raceBlockVerdict, addWeeksIso, type CheckpointOption, type CheckpointChoice } from './stagedRacePlan'
 import { notPassedHeading, notPassedWhy, NO_RUNS_HEADING, CHOOSE_HEADING } from './checkpointCopy'
 import { isBaseBuildPlan } from './validateStoredPlan'
 import type { WeeklyLoad } from '@/lib/coaching/weeklyActualLoad'
@@ -398,8 +398,13 @@ export function runEngine(req: EngineRequest): EngineOutcome {
  * which is reached through staging. ⚠️ **Where staging ALSO fails (a runway too short for it), such a runner still
  * receives nothing** — ⚕️ Sims raised it, the chair filed it, and it is not fixed here.
  */
+/* eslint-disable-next-line -- see below */
 /**
  * **Does a race plan ACTUALLY open at the end of this base build?** — the one owner, read by §113's offer and §111's.
+ *
+ * ⚠️ INSERTED ABOVE `getRunningOffer`, WHOSE OWN JSDoc FOLLOWS THIS ONE. Code review 2026-11-07 caught that the
+ * §118/P-15 block below — all of it about `reachesRaceDoor`, `getRunningApplies` and the two copy variants —
+ * was left documenting this function instead of the one it was written for. Both comments are now anchored.
  *
  * 🔴 WHY IT IS A FUNCTION AND NOT AN EXPRESSION WRITTEN TWICE. §113's offer was fixed on 2026-11-06 to answer this by
  * GENERATING the race block at the checkpoint, because a volume-only test cannot see §44's prep floor; the first cut
@@ -410,9 +415,26 @@ export function runEngine(req: EngineRequest): EngineOutcome {
  * part has already been wrong once — so it gets an owner rather than a second copy.**
  */
 function raceDoorOpens(input: GeneratorInput, planStart: string): (plan: Plan, endsAtKm: number, weeks: number) => boolean {
-  return (plan, endsAtKm, weeks) => raceBlockVerdict(
-    checkpointRaceInput(input, endsAtKm, longestSessionKm(plan.weeks)), addWeeksIso(planStart, weeks),
-  ).refusal === null
+  return (plan, endsAtKm, weeks) => {
+    // ⚠️ §18's COHERENCE GUARD, AT THE PROBE AND NOWHERE ELSE. This pairs a DOOR volume with the longest session of
+    // the WHOLE block, so it can produce `longest 7.2 > weekly 7` — an input the wizard cannot post, which trips
+    // `INV-INPUT-LONGEST-LE-WEEKLY`. That throws under `NODE_ENV=development`/`test` (`enforceViolations`), and
+    // `raceBlockVerdict` re-throws anything that is not a DESIGNED refusal, so the probe threw **out of `runEngine`**
+    // — a 500 where a 422 belonged, invisible in production because production only logs.
+    // ⚠️ The clamp was first put in `checkpointRaceInput` itself and that was wrong: the REAL checkpoint pairs an
+    // observed MEAN with an observed MAX, which legitimately disagree, and clamping there rewrote a real runner's
+    // longest run. Here it only ever makes the PROBE's runner look less prepared, which is the safe direction.
+    // 🔴 FAIL CLOSED — code review, 2026-11-07. This runs `generateRulePlan` inside `mapRefusal`, so a
+    // non-designed throw turns a designed **422 refusal into a 500**. §111's refusal could not fail this way before
+    // the offer probe was added to it. Fixing the one known trigger (§18's coherence guard, above) fixes the
+    // instance; this closes the CLASS, and the direction is the safe one: a probe that cannot answer
+    // "does a race plan open?" must not answer YES.
+    try {
+      return raceBlockVerdict(
+        probeCheckpointInput(input, endsAtKm, plan.weeks), addWeeksIso(planStart, weeks),
+      ).refusal === null
+    } catch { return false }
+  }
 }
 
 function getRunningOffer(

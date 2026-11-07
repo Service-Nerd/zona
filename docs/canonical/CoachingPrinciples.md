@@ -10527,7 +10527,15 @@ offer attaches — but the offer was LYING: it claimed `reaches_race_door: true`
 2026-11-06 to answer that question by GENERATING the block; §111's still used a volume-only test, and Am. 4 made the
 gap reachable. Both now read one owner, `raceDoorOpens`, ANDed with §111's own volume door: measured **2 → 0**.
 **The SLT ruled on exactly this class — *"when it does not happen, the runner concludes you lied, and they will be
-right"*.** ⚠️ And fixing it surfaced a THIRD defect: `checkpointRaceInput` built a synthetic probe input with
+right"*.**
+
+⚠️ **A CONSEQUENCE, STATED AS A POPULATION MEASUREMENT AND NOT AS A CONSTRUCTION** (the distinction this item has got
+wrong twice): with the probe in place, **no §111 offer in the measured population claims the race door opens.** §111
+refusals occur only at short runways, where the base build (`max(8, min(runway, 15))` weeks) consumes what the runner
+has — so §118's *clearing* copy variant is currently unreachable **for §111**, though it remains live for §113. That
+is honest rather than broken: the door really does not open for these runners. ⚠️ **It is a fact about who gets
+refused, not a property of the code** — a longer runway with a §111 refusal would reach it, and the population simply
+contains none. Measured across 3,008 production-shaped inputs and separately on the 2-case live band. ⚠️ And fixing it surfaced a THIRD defect: `checkpointRaceInput` built a synthetic probe input with
 `longest 7.2 > weekly 7`, violating §18's coherence guard, and `enforceViolations` THROWS under
 `NODE_ENV=development`/`test` — so the probe threw out of `runEngine`, a 500 on the dev server, invisible in
 production because production only logs. Clamped to §18.

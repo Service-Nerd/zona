@@ -4,7 +4,7 @@ import { GENERATION_CONFIG } from './generationConfig'
 import { sessionKmSelfPaced } from './sessionDistance'
 import type { Violation } from './invariants'
 import type { Plan, GeneratorInput } from '@/types/plan'
-import { stagedRaceOf, stagedDisplay, checkpointRaceInput, raceBlockVerdict, longestSessionKm } from './stagedRacePlan'
+import { stagedRaceOf, stagedDisplay, probeCheckpointInput, raceBlockVerdict, longestSessionKm } from './stagedRacePlan'
 import { baseBuildRatioApplies, baseBuildRatioOf } from './baseVolume'
 import { prepBlockWeeks } from './inputs'
 
@@ -278,7 +278,8 @@ export function validateStagedDoorRatio(plan: Plan): Violation[] {
   if (!staged.target_found) return []
   const d = stagedDisplay(plan)
   if (!d) return []
-  const raceInput = checkpointRaceInput(input, staged.door_km, longestSessionKm(plan.weeks ?? []))
+  // §18's guard, via the probe's own owner — this pairs a DOOR volume with the whole block's longest session.
+  const raceInput = probeCheckpointInput(input, staged.door_km, plan.weeks ?? [])
   // 🔴 A VALIDATOR MAY NOT THROW, AND THIS ONE COULD — code review, 2026-11-06. `raceBlockVerdict` re-throws
   // anything that is not a DESIGNED refusal, and `InputFieldError` is not one (§55 answers it before generation).
   // So a stored staged plan whose `generator_input` is missing a field — `age`, say — made `validateStoredPlan`

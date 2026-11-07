@@ -130,27 +130,45 @@ export function longestSessionKm(weeks: Week[]): number {
  * checkpoint builds.
  */
 export function checkpointRaceInput(input: GeneratorInput, weeklyKm: number, longestKm: number): GeneratorInput {
-  // 🔴 §18's COHERENCE GUARD APPLIES TO A SYNTHETIC INPUT TOO — code review, 2026-11-07, found by a new arm rather
-  // than by reading. `INV-INPUT-LONGEST-LE-WEEKLY` holds that a single run cannot exceed the week's total, and this
-  // builder set both fields independently: `longestSessionKm` over the WHOLE block can exceed the DOOR week's
-  // volume, so the probe constructed `longest 7.2 > weekly 7` — an input the wizard cannot produce.
-  //
-  // ⚠️ AND IT DID NOT FAIL QUIETLY. `enforceViolations` THROWS on an error-severity violation under
-  // `NODE_ENV=development` / `test`, `raceBlockVerdict` re-throws anything that is not a DESIGNED refusal, so the
-  // probe threw **out of `runEngine`** — a 500 on the dev server and an exception in any test that reached it.
-  // Production only logs, which is why it was invisible there. Live on the §113 offer path since 2026-11-06; §111
-  // Am. 4 and the shared `raceDoorOpens` owner widened the inputs that reach it.
-  //
-  // The clamp is the conservative direction: it can only make the probe's runner look LESS prepared, so an offer it
-  // approves is one a real runner could have earned.
+  // ⚠️ NO CLAMP HERE, AND THAT IS DELIBERATE — code review, 2026-11-07. I briefly put
+  // `Math.min(longestKm, weeklyKm)` in this owner to satisfy §18's coherence guard, and it was the wrong place:
+  // `engine.ts`'s REAL checkpoint passes `observedCheckpointKm` (the MEAN of the last two non-deload weeks) and
+  // `observedLongestRunKm` (the MAX over all weeks), and those legitimately disagree — a runner who ran 14 km inside
+  // a 16 km week with a 12.2 km mean is a real runner, and clamping **rewrote their longest run to 12.2**, feeding
+  // §113's readiness, the week-1–2 long-run cap and §29's `longest < 5` fresh-return flip. **The incoherence belongs
+  // to the PROBE, which pairs a door volume with the longest session of the whole block, so the guard belongs at the
+  // probe's call site.** `longRunRefusalDoor` solves the same problem the other way, by raising the weekly.
   return {
     ...input,
     current_weekly_km: weeklyKm,
-    longest_recent_run_km: Math.min(longestKm, weeklyKm),
+    longest_recent_run_km: longestKm,
     volume_observed: true,
     // §44's warning was answered at the wizard, before §111 was reached; the handover card carries it otherwise.
     acknowledged_prep_warning: true,
   } as GeneratorInput
+}
+
+/**
+ * **The PROBE's checkpoint input** — `checkpointRaceInput` with §18's coherence guard applied.
+ *
+ * 🔴 TWO CALLERS PAIR A DOOR VOLUME WITH THE LONGEST SESSION OF THE WHOLE BLOCK, and that can exceed the door:
+ * `raceDoorOpens` (engine.ts, §113's and §111's get-running offers) and `validateStagedDoorRatio`
+ * (baseBuildValidate.ts). `longest 7.2 > weekly 7` is an input the wizard cannot post, so
+ * `INV-INPUT-LONGEST-LE-WEEKLY` fires — and `enforceViolations` THROWS under `NODE_ENV=development`/`test`, which
+ * `raceBlockVerdict` re-throws because it is not a DESIGNED refusal. The probe then threw **out of `runEngine`**: a
+ * 500 where a 422 belonged, invisible in production because production only logs. Live on the §113 path since
+ * 2026-11-06 (code review, 2026-11-07).
+ *
+ * ⚠️ **AND IT MUST NOT GO IN `checkpointRaceInput` ITSELF — I tried that first and it was wrong.** The REAL
+ * checkpoint (`engine.ts`) passes `observedCheckpointKm`, the MEAN of the last two non-deload weeks, alongside
+ * `observedLongestRunKm`, the MAX over all weeks. Those legitimately disagree: a runner who ran 14 km inside a 16 km
+ * week with a 12.2 km mean is a real runner, and clamping there **rewrote their longest run to 12.2**, feeding
+ * §113's readiness, the week-1–2 long-run cap and §29's `longest < 5` fresh-return flip. **The incoherence belongs
+ * to the probe, so the guard does too** — and here it only ever makes the probe's runner look less prepared, which
+ * is the safe direction for a door it is deciding to open.
+ */
+export function probeCheckpointInput(input: GeneratorInput, doorKm: number, blockWeeks: Week[]): GeneratorInput {
+  return checkpointRaceInput(input, doorKm, Math.min(longestSessionKm(blockWeeks), doorKm))
 }
 
 /**
@@ -238,7 +256,10 @@ export function checkpointTarget(input: GeneratorInput, planStart: string, minBa
       outcome: 'offered', rampWeeks: placed.rampWeeks, remainingWeeks: placed.raceWeeks, targetKm: curve[curve.length - 1], startKm,
     })
     const cp = addWeeks(planStart, placed.rampWeeks)
-    if (raceBlockClean(checkpointRaceInput(input, t, longestSessionKm(ramp.weeks)), cp)) return t
+    // §18's guard, via the probe's own owner — the search pairs a TARGET volume with the ramp's longest session, so
+    // it can produce `longest > weekly`; see `probeCheckpointInput`. The THIRD probe site, found by an arm failing
+    // rather than by reading (code review, 2026-11-07).
+    if (raceBlockClean(probeCheckpointInput(input, t, ramp.weeks), cp)) return t
   }
   return null
 }
