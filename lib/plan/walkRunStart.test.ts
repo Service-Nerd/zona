@@ -149,15 +149,29 @@ describe('INV-PLAN-WALKRUN-START-PROGRESSION — each arm fires on its own', () 
     expect(v[0].expected).toBe('a walk-run start')
   })
 
-  it('…and it is NOT always-on: the same block is its business no longer once the runner has run the bar', () => {
-    // The original intent, preserved. A runner whose DECLARED longest run clears
-    // WALK_RUN_START_MIN_LONGEST_RUN_KM is correctly given continuous running, so a plan with
-    // no walk-run weeks raises nothing. Without this arm the one above would pass on a gate
-    // that fired unconditionally.
+  // Helper: the same stripped block, with the runner's declared figures overridden.
+  const strippedWith = (over: Partial<GeneratorInput>): Plan => {
     const meta = { ...(base.meta as unknown as Record<string, unknown>) }
-    meta.generator_input = { ...(meta.generator_input as GeneratorInput), longest_recent_run_km: 5 }
-    const canRun = { ...base, meta, weeks: base.weeks.filter(w => w.phase === 'base_build') } as unknown as Plan
-    expect(validateWalkRunStart(canRun)).toEqual([])
+    meta.generator_input = { ...(meta.generator_input as GeneratorInput), ...over }
+    return { ...base, meta, weeks: base.weeks.filter(w => w.phase === 'base_build') } as unknown as Plan
+  }
+
+  it('…and it is NOT always-on: a runner above BOTH bars is correctly given continuous running', () => {
+    // The original intent, preserved. Without this arm the one above would pass on a gate that fired
+    // unconditionally. ⚠️ BOTH figures have to clear: the file's fixture is a 0 km/week runner, so
+    // overriding only the longest run leaves them below §116's VOLUME floor and the arm still fires —
+    // which is correct, and is why this arm sets the weekly volume too.
+    expect(validateWalkRunStart(strippedWith({ current_weekly_km: 10, longest_recent_run_km: 5 }))).toEqual([])
+  })
+
+  it('🔴 and it covers the VOLUME half too, which the first cut did not (`/code-review`, 2026-11-07)', () => {
+    // The arm originally tested `lr < bar` directly, so it backstopped only the longest-run half of
+    // `walkRunStartPrescribed`. A runner at cw 4 / lr 4 is BELOW §116's volume floor and ABOVE the
+    // longest-run bar, and the first cut returned [] on them — the same "block that should have had
+    // one" gap, in the other half of the routing condition. It reads the producer's predicate now.
+    const v = validateWalkRunStart(strippedWith({ current_weekly_km: 4, longest_recent_run_km: 4 }))
+    expect(v.map(x => x.code)).toEqual(['INV-PLAN-WALKRUN-START-PROGRESSION'])
+    expect(v[0].message).toContain('§117 Am. 7')
   })
 })
 

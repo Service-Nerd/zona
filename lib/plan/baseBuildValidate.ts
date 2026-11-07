@@ -7,6 +7,8 @@ import type { Plan, GeneratorInput } from '@/types/plan'
 import { stagedRaceOf, stagedDisplay, probeCheckpointInput, raceBlockVerdict, longestSessionKm } from './stagedRacePlan'
 import { baseBuildRatioApplies, baseBuildRatioOf } from './baseVolume'
 import { prepBlockWeeks } from './inputs'
+import { walkRunStartPrescribed } from './walkRunStart'
+import { effectiveStartKm } from './startVolume'
 
 /**
  * §116 — the base-build on-ramp's own validator.
@@ -362,25 +364,38 @@ export function validateWalkRunStart(plan: Plan): Violation[] {
 
   // 🔴 §117 Amendment 7 — THE ARM THAT ASKS WHETHER THE BLOCK SHOULD HAVE EXISTED.
   //
-  // Every arm below validates a walk-run start's INTERNAL progression, and the function
-  // used to return early unless one was already present. So its population excluded the
-  // only case that matters here: a staged block whose runner cannot yet run continuously
-  // and was given continuous running anyway. "The checker's population excludes the cases
-  // at risk" — measured at 108 of 372 such blocks before Am. 7.
+  // Every arm below validates a walk-run start's INTERNAL progression, and the function used to
+  // return early unless one was already present. So its population excluded the only case that
+  // matters here: a staged block whose runner cannot yet run continuously and was given continuous
+  // running anyway. "The checker's population excludes the cases at risk" — measured at 108 of 372
+  // such blocks before Am. 7.
   //
-  // ⚠️ DECLARED FIGURE ONLY, AND ABSENCE IS NOT A VALUE. A runner who told us nothing is
-  // not asserted to be unable to run. On a post-checkpoint continuation
-  // `checkpointRaceInput` has already rewritten `longest_recent_run_km` to the OBSERVED
-  // run, so this reads the observed figure there and cannot false-fire on a stale one.
+  // ⚠️ IT READS `walkRunStartPrescribed`, THE PRODUCER'S OWN PREDICATE, AND THE FIRST CUT DID NOT.
+  // It tested `lr < WALK_RUN_START_MIN_LONGEST_RUN_KM` directly, so it backstopped only the
+  // longest-run HALF of the routing condition: `/code-review` built a staged plan at cw 4 / lr 4
+  // (below §116's volume floor of 6), stripped its walk-run weeks, and this returned `[]` — the same
+  // "block that should have had one" gap, in the other half. Sharing the predicate is correct here:
+  // the risk being guarded is the PRODUCER NOT APPLYING the rule, which a shared predicate catches,
+  // not the rule itself being wrong (which is `deloadCadence.test.ts`'s case and is why THAT checker
+  // must not share).
+  //
+  // ⚠️ ITS POPULATION IS STAGED PLANS ONLY, AND THAT IS A STATED LIMIT, NOT AN OVERSIGHT.
+  // `validateStagedRace` is the only caller, and it returns early on a plan with no `staged_race`, so
+  // §118's own producer (`generateGetRunningPlan`) is outside what this can see. Measured there:
+  // `cw 2 / lr 0` and `cw 4 / lr 0` are BELOW §116's floor and still get continuous `Easy run: 2`,
+  // against §116's own text ("below the floor, including 0, the runner starts with a WALK-RUN start").
+  // Filed as `GETRUNNING-WALKRUN-FLOOR-01`; not introduced by Am. 7 and not fixed by it.
+  //
+  // ⚠️ ABSENCE IS NOT A VALUE — `walkRunStartPrescribed` falls back to the volume floor when the
+  // runner has declared no longest run. On a post-checkpoint continuation `checkpointRaceInput` has
+  // already rewritten the field to the OBSERVED run, so this reads the observed figure there.
   const stagedBlock = wr.length > 0 || weeks.some(w => w.phase === 'base_build')
-  if (stagedBlock && wr.length === 0 && !carried) {
-    const lr = input?.longest_recent_run_km
-    if (typeof lr === 'number' && lr < C.WALK_RUN_START_MIN_LONGEST_RUN_KM) {
-      const first = weeks.find(w => w.phase === 'base_build')
-      push(first?.n ?? 1,
-        `The runner's declared longest run is ${lr}km, under ${C.WALK_RUN_START_MIN_LONGEST_RUN_KM}km, but this block starts with continuous running (§117 Am. 7).`,
-        'continuous running', 'a walk-run start')
-    }
+  if (stagedBlock && wr.length === 0 && !carried
+      && input && walkRunStartPrescribed(effectiveStartKm(input), input.longest_recent_run_km)) {
+    const first = weeks.find(w => w.phase === 'base_build')
+    push(first?.n ?? 1,
+      `This runner is routed to the walk-run start (declared longest run ${String(input.longest_recent_run_km)}km, weekly ${String(input.current_weekly_km)}km), but the block starts with continuous running (§117 Am. 7).`,
+      'continuous running', 'a walk-run start')
   }
 
   if (wr.length === 0 && !carried) return v

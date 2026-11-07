@@ -196,6 +196,33 @@ before planning against any number below (an item is a snapshot of the code on t
   ⚠️ **`week1CeilingKm` was written for this and DELETED** — a helper with no consumer is the decorative-config class.
   Re-derive it where the lever lands.
 
+- 🏃 **COACHING BOARD** `GETRUNNING-WALKRUN-FLOOR-01` — **§118's own producer has no walk-run path, so a runner
+  BELOW §116's floor gets continuous running from it — against the floor note's own text.** Found by
+  `/code-review` of `WEEK1-FROM-LONGEST-RUN-01`, 2026-11-07, and the probe found something sharper than the
+  review did. §116's floor note reads: *"Below `BASE_BUILD_ONRAMP_MIN_START_KM`, including 0, the runner starts
+  with a WALK-RUN start."* Measured through `runEngine` with `acceptBaseBuild`:
+  | declared | what week 1 actually is |
+  |---|---|
+  | `cw 0 / lr 0` | ✅ `walk_run_start`, three 30-minute walk-run sessions |
+  | **`cw 2 / lr 0`** | 🔴 `base_build`, **continuous `Easy run: 2`** |
+  | **`cw 4 / lr 0`** | 🔴 `base_build`, **two continuous `Easy run: 2`** |
+  | `cw 10 / lr 0` | `base_build`, `Long easy: 3.5` + two `Easy run: 2.1`, continuous |
+  | `cw 20 / lr 0` | `base_build`, **`Long easy: 7`** + two `Easy run: 4.3`, continuous |
+  **Only `cw 0` is served.** `generateGetRunningPlan` delegates to `generateBaseBuildPlan`, which has no
+  walk-run branch; the `cw 0` case works only because `getRunningApplies` is false there and the staged path
+  picks it up instead.
+  ⚠️ **TWO QUESTIONS, AND THEY SHOULD NOT BE ANSWERED TOGETHER.** The `cw < 6` rows are a **defect against
+  documented intent** (§116's floor note), board-exempt to fix, and the fix is a real one: §118's producer
+  needs a walk-run composition path it does not have. The `lr 0` rows at cw 10–20 are the **same question
+  §117 Am. 7 answered for staged blocks**, and extending it here carries the volume-reduction hazard that
+  forced Am. 7's own narrowing — a 20 km/week runner restarted at 6. **That half is the board's.**
+  ⚠️ **NOT REACHABLE BY THE NEW INVARIANT, AND THE LIMIT IS STATED IN THE CODE:** `validateWalkRunStart`'s
+  only caller is `validateStagedRace`, which returns early on a plan with no `staged_race`.
+  📏 **0 affected plans in production today** (no stored plan has this shape), so it is latent — reachable
+  via the Adjust sheet's rebuild of a plain base-build plan.
+  🔻 **This supersedes the claim in `SHORTDIST-RUNWALK-SCOPE-01` that "Am. 7 widened the base-build
+  on-ramp's gate".** It did not; it widened the staged block's start only.
+
 - 🏃 **COACHING BOARD** `SHORTDIST-RUNWALK-SCOPE-01` — **a 5K or 10K runner whose longest run is 0 is prescribed a
   16-MINUTE CONTINUOUS long run, and §117's run-walk prescription cannot reach them by construction.**
   Filed at the `WEEK1-FROM-LONGEST-RUN-01` sitting, 2026-11-07. Measured: at `cw 6 / lr 0` the 5K and 10K **generate
@@ -207,6 +234,9 @@ before planning against any number below (an item is a snapshot of the code on t
   **`raceDistanceKey(distanceKm) === 'MARATHON'`**, and `runWalkPrescriptionApplies` additionally requires
   `longest > 0`, so the never-run runner is excluded twice over. Am. 7 widened the **base-build on-ramp's** gate; this
   runner is on an ordinary **race-plan** path with neither a readiness floor nor an on-ramp.
+  🔴 **CORRECTED by `/code-review` the same day: an earlier draft of this item said "Am. 7 widened the
+  base-build on-ramp's gate". IT DID NOT** — Am. 7 widened the STAGED block's start only, and §118's own
+  producer has no walk-run path at all. See `GETRUNNING-WALKRUN-FLOOR-01` above.
   **So serving them reopens a DISTANCE SCOPE**, which is a prescription decision for the board, not an amendment.
   ⚠️ **The 5K/10K have no long-run readiness floor at all** — §113's `LONG_RUN_READINESS_MIN_RACE_KM` starts above
   them — so the options are not symmetrical: a floor would REFUSE them, a run-walk prescription would SERVE them.

@@ -1362,6 +1362,13 @@ export function probeLiveness(sampleSize = 64): LivenessReport {
                 const ramp = pl.weeks.find(w => w.phase === 'base_build')
                 if (ramp) for (const s of runsOf(ramp)) delete s.run_walk_strategy
               } },
+            // §117 Amendment 7 (Coaching Board 2026-11-07) — THE ARM THAT ASKS WHETHER THE BLOCK SHOULD HAVE
+            // EXISTED. Every mutation above perturbs a walk-run start that is PRESENT; this one removes it from a
+            // runner who must have one. ⚠️ Added because this file's own comment says "one mutation per arm" and
+            // the liveness gate tracks invariant CODES, not arms — so a new arm on an existing code is invisible
+            // to it by construction, and the convention is the only thing that covers it.
+            { name: 'walk-run: the start is missing from a runner who cannot yet run continuously (§117 Am. 7)',
+              apply: pl => { pl.weeks = pl.weeks.filter(w => w.phase !== 'walk_run_start') } },
           ]
           for (const m of WR_MUTATIONS) {
             const pl = JSON.parse(JSON.stringify(wr)) as Plan

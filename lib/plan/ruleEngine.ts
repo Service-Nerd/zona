@@ -464,7 +464,7 @@ function buildVolumeSequence(
   // Clamp start volume to a band relative to peakKm.
   // Floor prevents starting too low for the target; ceiling prevents
   // starting too close to peak (no room to ramp).
-  // ⚠️ §2 Am.2 CONSIDERED BOUNDING THIS BY `week1CeilingKm` AND IT WAS REVERTED ON
+  // ⚠️ §2 Am. 3 CONSIDERED BOUNDING THIS BY A WEEK-1 CEILING AND IT WAS REVERTED ON
   // MEASUREMENT (`WEEK1-FROM-LONGEST-RUN-01`, 2026-11-07). The curve is NOT the
   // producer of the week-1 leap: at a declared 6 km/week with a 5 km longest run the
   // curve opens at 6 and the runner is DELIVERED 13 (40+32+32 minutes of placed

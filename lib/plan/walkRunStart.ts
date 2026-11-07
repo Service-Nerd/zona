@@ -47,20 +47,42 @@ export function walkRunStartWeeks(): number {
 }
 
 /**
- * Does this runner start with walk-run? Below §116's running floor (including 0), OR —
- * §117 Amendment 7 — when their own declared longest run says they cannot yet run
- * continuously, whatever their weekly volume.
+ * Is this runner below §116's RUNNING floor? Volume only, and deliberately so.
  *
- * ⚠️ `longestRunKm` IS REQUIRED, NOT OPTIONAL, and may be passed `undefined`. An optional
- * parameter here would be the unwired-parameter class: four call sites exist and a default
- * would have let any of them silently keep the volume-only behaviour. Every caller answers.
- *
- * ⚠️ ABSENCE IS NOT A VALUE. A runner who has not told us their longest run is NOT treated
- * as someone who cannot run — the gate falls back to volume alone. Only a declared figure
- * below the bar routes them to walk-run.
+ * ⚠️ THIS IS THE *WHETHER* QUESTION — whether a running ramp can serve them at all, which decides
+ * `stagingApplies` and `longRunRefusalDoor`'s floor seed. It must stay volume-only: §116 Amendment 11's
+ * narrowing (code review, 2026-11-06) exists because *"a volume ramp is not a long-run ramp"*, and a
+ * high-volume runner with a short long run is refused by §113 ON PURPOSE, with §113's own lever
+ * (*"build up to one 5 km run"*) and §118's offer attached.
  */
-export function walkRunStartApplies(startKm: number, longestRunKm: number | undefined): boolean {
-  if (startKm < GENERATION_CONFIG.BASE_BUILD_ONRAMP_MIN_START_KM) return true
+export function walkRunStartApplies(startKm: number): boolean {
+  return startKm < GENERATION_CONFIG.BASE_BUILD_ONRAMP_MIN_START_KM
+}
+
+/**
+ * §117 Amendment 7 — once a base-build block IS being built, does it START with walk-run?
+ *
+ * ⚠️ THIS IS THE *WHAT* QUESTION, and splitting it from the *whether* question above is the whole content of
+ * the correction below. Readiness to RUN is answered by the longest run (§117 Am. 5), so a runner whose own
+ * declared longest run says they cannot yet run continuously gets the walk-run start even when their weekly
+ * volume sits on §116's floor.
+ *
+ * 🔴 AM. 7's FIRST CUT WIDENED `walkRunStartApplies` ITSELF, AND `/code-review` MEASURED WHAT THAT COST.
+ * One gate answered both questions, so the longest-run signal also opened STAGING: across two grids,
+ * **527 inputs went `refusal -> base_build`, and only 77 of them were at a volume of 6–8 km/week.
+ * 450 were at 10–30**, including a 30 km/week runner handed a block that starts at 6. HEAD~1 refused those
+ * eight high-volume cases deliberately; the widened gate served them a 9-week walk-run plan off one
+ * mis-set longest-run slider (the wizard's ruler starts at 0, step 1, and only `longest <= weekly` is
+ * enforced, so nothing else catches the drop — §2's arms bound increases).
+ * ⚠️ **I had reported all 527 as "protective" because every one moved in the same DIRECTION. Direction is
+ * not appropriateness.** The measured defect was 108 blocks, every one at `effectiveStartKm` 6, already
+ * being staged and merely starting with continuous runs. This predicate fixes those and touches nothing else.
+ *
+ * ⚠️ ABSENCE IS NOT A VALUE. A runner who has not told us their longest run is not asserted to be unable to
+ * run; the answer falls back to the volume floor alone.
+ */
+export function walkRunStartPrescribed(startKm: number, longestRunKm: number | undefined): boolean {
+  if (walkRunStartApplies(startKm)) return true
   if (typeof longestRunKm !== 'number') return false
   return longestRunKm < GENERATION_CONFIG.WALK_RUN_START_MIN_LONGEST_RUN_KM
 }

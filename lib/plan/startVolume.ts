@@ -67,8 +67,14 @@ export function effectiveStartKm(input: GeneratorInput): number {
  * ⚠️ NOT `effectiveStartKm`. §2's week-1 amendment (`WEEK1-FLOOR-SHORT-DIST-01`,
  * 2026-09-20) ruled the step is assessed against the runner's DECLARED weekly
  * volume, because "the runner never sees" the effective start and the week-1
- * floor overrides it before a plan exists. `week1Leap` already reads this
- * quantity; it is extracted here so the PRODUCER can read the same one.
+ * floor overrides it before a plan exists.
+ *
+ * ⚠️ ONE CONSUMER TODAY: `week1Leap` (the AUDIT). The first version of this header said it
+ * was extracted "so the PRODUCER can read the same one", and `/code-review` was right that
+ * no producer does — the bound that would have read it was measured and reverted the same
+ * hour (see `ruleEngine.ts`'s initFloor comment). It is extracted anyway because the
+ * expression was inline in the audit and the next lever needs exactly this quantity, and
+ * because `configConsumer.test.ts` is substring-based and would not have caught the claim.
  */
 export function week1StepBaseKm(input: GeneratorInput): number {
   const declared = input.current_weekly_km ?? 0

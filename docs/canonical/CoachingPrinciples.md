@@ -11620,42 +11620,62 @@ single owner, and the measurement that tells the next sitting where to look.**
 
 ### §117 Amendment 7 — THE WALK-RUN START IS GATED ON THE LONGEST RUN, NOT ON WEEKLY VOLUME *(Coaching Board 2026-11-07, `WEEK1-FROM-LONGEST-RUN-01`)*
 
-**Principle.** `walkRunStartApplies` reads **two** signals: the runner is below §116's
-running floor (`BASE_BUILD_ONRAMP_MIN_START_KM`, including 0), **or** their declared
-longest run is below `WALK_RUN_START_MIN_LONGEST_RUN_KM` (2 km). Either routes them to
-the walk-run start.
+**Principle.** Two questions, two predicates. **`walkRunStartApplies` (volume only) answers whether a
+RUNNING ramp can serve this runner at all** and governs `stagingApplies` and `longRunRefusalDoor`'s floor
+seed. **`walkRunStartPrescribed` answers what a block that is already being built STARTS with**: the
+walk-run start, when the runner is below §116's floor **or** their declared longest run is below
+`WALK_RUN_START_MIN_LONGEST_RUN_KM` (2 km).
 
-🔴 **Two of this board's own rulings used different discriminators for the same question,
-eighteen days apart, and both are Willy's.** §117 Amendment 5 (2026-10-06) ratified that
-*"readiness to RUN is answered by the longest run, not by weekly volume."* The §116 floor
-note (2026-10-24) was then signed with a **volume** trigger. The floor note's own stated
-reason names the longest run and then proxies it:
+🔴 **Two of this board's own rulings used different discriminators for the same question, eighteen days
+apart, and both are Willy's.** §117 Amendment 5 (2026-10-06) ratified that *"readiness to RUN is answered
+by the longest run, not by weekly volume."* The §116 floor note (2026-10-24) was then signed with a
+**volume** trigger. The floor note's own stated reason names the longest run and then proxies it:
 
-> *"a runner at 8 km/week over 4 days is already running 2 km at a time; run-walk is for
-> someone who cannot, and that runner is below this floor."*
+> *"a runner at 8 km/week over 4 days is already running 2 km at a time; run-walk is for someone who
+> cannot, and that runner is below this floor."*
 
-⚠️ **The intent is the longest run; the implementation was volume; and the step between
-them is an assumption about how the week is distributed.** A runner who declares 6 km/week
-and a longest run of 0 falsifies it directly. Willy at this sitting: *"my volume trigger
-was wrong and I am withdrawing it, not amending it."*
+⚠️ **The intent is the longest run; the implementation was volume; and the step between them is an
+assumption about how the week is distributed.** A runner who declares 6 km/week and a longest run of 0
+falsifies it directly. Willy at this sitting: *"my volume trigger was wrong and I am withdrawing it, not
+amending it."*
 
-**Measured, 2,520 probe inputs varying volume and longest run INDEPENDENTLY** — every
-standing corpus derives the longest run from volume (`useCaseEnvelope`:
-`min(cw × 0.45, dist × 0.75)`), so **none of them can reach this cell**:
+🔴 **AND THE FIRST CUT OF THIS AMENDMENT WIDENED THE WRONG PREDICATE. `/code-review` MEASURED THE COST.**
+It widened `walkRunStartApplies` itself, so one gate answered both questions and the longest-run signal
+also opened **staging**. Across two grids, **527 inputs went `refusal → base_build` — and only 77 were at
+6–8 km/week. 450 were at 10–30**, including a 30 km/week runner handed a block that starts at 6 km/week,
+off one mis-set longest-run slider (the wizard's ruler starts at 0, step 1, and only `longest ≤ weekly` is
+enforced; §2's arms bound increases, so nothing checks the drop). **That is precisely the hazard §116
+Amendment 11's own narrowing exists to refuse** — *"a volume ramp is not a long-run ramp"* — and §113
+refuses those runners deliberately, with its own lever and §118's offer attached.
 
-| | before | after |
+⚠️ **I had reported all 527 as "protective" because every one moved in the same DIRECTION. Direction is not
+appropriateness**, and that is the same correction this board made to me the previous day on `§111 Am. 4`
+(existence where the condition pointed at adequacy).
+
+**Measured, 12,096 engine inputs across two grids, varying volume and the longest run INDEPENDENTLY** —
+⚠️ every standing corpus derives the longest run from volume (`useCaseEnvelope`:
+`min(cw × 0.45, dist × 0.75)`), so **none of them can reach this cell** (`ENVELOPE-LRR-BLIND-01`'s class):
+
+| | before | after (narrowed) |
 |---|---|---|
-| staged blocks whose runner declared a longest run < 2 km | 372 | 488 |
+| engine outcomes — `plan` / `base_build` / `refusal` | 5325 / 2284 / 455 | **identical, byte for byte** |
+| inputs changing outcome | — | **0. Served → refused 0, refused → served 0** |
+| staged blocks whose runner declared a longest run < 2 km | 372 | 372 |
 | …given **continuous** running (four 1.5 km easy runs a week) | **108** | **0** |
-| …given the walk-run start | 264 | **488** |
-| designed refusals | 1123 | **1123 — nobody newly refused** |
-| runners gaining a staged offer who previously had none | — | **+116** |
+| …given the walk-run start | 264 | **372** |
+
+**So the amendment now fixes exactly the measured defect — 108 blocks, every one at `effectiveStartKm` 6,
+already being staged and merely starting with continuous runs — and changes nothing else at all.**
 
 ⚠️ **2 km is not a new numeric** — it is the figure already in the floor note's prose.
-⚠️ **Absence is never written as a value:** a runner who has not told us their longest run
-is not treated as someone who cannot run; the gate falls back to volume alone.
-⚠️ **At the checkpoint the gate reads the OBSERVED longest run**, not the declared one,
-which is the better signal and was already available at that call site.
+⚠️ **Absence is never written as a value:** a runner who has not told us their longest run is not treated
+as someone who cannot run; the answer falls back to the volume floor alone.
+⚠️ **At the checkpoint the gate reads the OBSERVED longest run**, not the declared one, which is the
+better signal and was already available at that call site.
+🔻 **NOT COVERED, and the first filing of this said it was:** §118's own producer
+(`generateGetRunningPlan`) has no walk-run path at all. Measured: `cw 2 / lr 0` and `cw 4 / lr 0` are
+**below §116's floor** and still get continuous `Easy run: 2`, against this floor note's own text. Filed as
+`GETRUNNING-WALKRUN-FLOOR-01` — not introduced by Am. 7 and not fixed by it.
 
 ## 118. The get-running plan — what we offer the runner no race plan can serve
 

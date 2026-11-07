@@ -75,7 +75,8 @@ function week1PerRunStep(weeks: Week[], startKm: number, week1Km: number): numbe
  * detail, or null. `weeks` are the plan's training weeks; `w1` is week 1's `weekly_km`.
  */
 export function week1Leap(weeks: Week[], input: GeneratorInput, w1: number): string | null {
-  // §2 Am.2 — the declared-volume base is now a single owner the PRODUCER reads too (`startVolume.ts`).
+  // §2 Am. 3 — the declared-volume base is extracted to one owner (`startVolume.ts -> week1StepBaseKm`).
+  // ⚠️ NO PRODUCER READS IT YET, and the first version of this comment said one did. See that function's header.
   const start = week1StepBaseKm(input)
   // WEEK1-LEAP-ABS-01 (2026-09-19) — A PERCENTAGE NEEDS AN ABSOLUTE FLOOR.
   //

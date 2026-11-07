@@ -1747,23 +1747,28 @@ export const GENERATION_CONFIG = {
   // at the sitting was "no new numeric"; naming an existing one is the
   // Configuration Singularity fix, not a new value.
   //
-  // 🔴 WHY THE ENGINE NEEDS THEM. Week 1 is `max(startKm, peakKm * FLOOR%)` and
-  // `BUILD_VOL_INIT_FLOOR_VS_PEAK` is a fraction of the PEAK, so it overrode the
-  // runner's declared week upward with no bound. Measured at a fixed 5 km longest
-  // run: week 1 is **13 km at a declared 5, 6, 8 AND 10 km/week — the same number
-  // every time**, so the step read 2.60x / 2.17x / 1.63x / 1.30x purely because
-  // the denominator moved. The engine was not consulting the declared week at all
-  // until it exceeded the floor (cw 14), which is exactly where the measured leap
-  // rate fell to zero: 0% at cw 0-4, 20% at 6, 35.9% at 8, 2.7% at 10, 0% at 14+.
+  // 🔴 WHY THEY ARE NAMED EVEN THOUGH NO PRODUCER READS THEM YET. Week 1 is
+  // `max(startKm, peakKm * BUILD_VOL_INIT_FLOOR_VS_PEAK%)`, so the floor is a fraction of the
+  // PEAK and overrode the declared week with no bound. Measured at a fixed 5 km longest run:
+  // week 1 is **13 km at a declared 5, 6, 8 AND 10 km/week — the same number every time**, so
+  // the step read 2.60x / 2.17x / 1.63x / 1.30x purely because the denominator moved, and the
+  // declared week was not consulted until it exceeded the floor (cw 14) — exactly where the
+  // measured leap rate falls to zero: 0% at cw 0-4, 20% at 6, 35.9% at 8, 2.7% at 10, 0% at 14+.
   //
-  // ⚠️ THE CHECKER AND THE PRODUCER NOW SHARE THIS DEFINITION DELIBERATELY, AND
-  // THAT MAKES `WEEK1-LEAP`'s RATIO ARM A BACKSTOP THAT CANNOT FIRE ON THE CURVE.
-  // That is the intent — a correct engine produces no leap — but it means the
-  // arm's liveness is provable only by MUTATION, never by the corpus, exactly as
-  // the per-session arm already is. `deloadCadence.test.ts` records why a checker
-  // sharing its producer's predicate is blind to that producer: here the curve is
-  // bounded at construction instead, and the audit arm remains for every OTHER
-  // path that can set week 1 (foundation compose, staged blocks, reshape).
+  // ⚠️ THE BOUND WAS BUILT AND REVERTED, AND THE FIRST VERSION OF THIS COMMENT DESCRIBED IT AS
+  // SHIPPED (`/code-review`, 2026-11-07). Capping `initFloor` at this ceiling lowered the curve,
+  // lowered the delivered base, and OPENED §111's ratio door for runners the engine was
+  // deliberately refusing: designed refusals 782 -> 664, plans carrying `WEEK1-LEAP` 70 -> 94.
+  // **A bound labelled safety that admitted 118 refused runners.** The leap is ADR-022's
+  // DELIVERED-volume divergence, whose levers that ADR scoped to injury runners by ruling, and
+  // extending them is `WEEK1-DELIVERED-CEILING-01`'s own sitting.
+  //
+  // ⚠️ SO TODAY THE ONLY CONSUMER IS `planQuality.ts`'s AUDIT, and `configConsumer.test.ts`
+  // would not have caught the overclaim because it is substring-based. They are named anyway:
+  // the values were bare literals, so §2's definition of a leap was unreadable outside the
+  // audit, and the next lever needs exactly these two numbers. Values unchanged — Willy's
+  // condition at the sitting was "no new numeric", and naming an existing one is the
+  // Configuration Singularity fix, not a new value.
   WEEK1_STEP_MAX_RATIO:                   1.30,
   // The floor that stops the ratio firing on a tiny base: +2 km is not a leap at
   // any volume. Unchanged from the literal it replaces (`w1 - start > 2`).
