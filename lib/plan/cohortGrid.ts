@@ -326,5 +326,61 @@ export function targetedGrid(): GeneratorInput[] {
                 ...(dayBudgets !== undefined ? { day_budgets: { ...dayBudgets } } : {}),
               } as unknown as GeneratorInput)
             }
+
+  // ── ENVELOPE-LRR-BLIND-01 — THE NEVER-RUN RUNNER, REACHABLE AT LAST ─────────
+  //
+  // 🔴 MEASURED 2026-11-07: **0 of `cohortGrid`'s 41,472 rows carry
+  // `longest_recent_run_km: 0`**, because it is DERIVED (`max(3, cwk * 0.4)`), and this
+  // grid pins it at 12. So no measurement corpus could reach the runner who tells us they
+  // have never run — the cohort §117 Amendment 7 was built for, and the one
+  // `useCaseEnvelope` reports coverage on (`min(cw * 0.45, dist * 0.75)`, also derived).
+  //
+  // ⚠️ APPENDED, NOT CROSSED, which is this grid's own stated purpose: these fields "gate
+  // MECHANISMS (a branch fires or it does not), not cohort CLASSIFICATION — so what they
+  // need is reach, not a full cross". A third axis here would multiply 6,144.
+  //
+  // ⚠️ VOLUME AND LONGEST RUN ARE INDEPENDENT. Varying one while deriving the other cannot
+  // reach the interaction, which is the whole defect being closed.
+  for (const d of TARGETED_DISTANCES)
+    for (const r of [{ cwk: 0, lr: 0 }, { cwk: 6, lr: 0 }, { cwk: 20, lr: 0 }, { cwk: 20, lr: 2 }])
+      out.push({
+        athlete_name: 'Athlete', age: 40, race_name: 'Test',
+        primary_metric: 'distance', plan_start: COHORT_PLAN_START,
+        race_distance_km: d.km, race_date: raceDateIn(d.weeks, 'sun'),
+        goal: 'finish', resting_hr: 55, max_hr: 184,
+        current_weekly_km: r.cwk, longest_recent_run_km: r.lr,
+        recent_quality_training: 'none', hard_session_relationship: 'neutral',
+        training_age: '<6mo', days_available: 4, days_cannot_train: [],
+        injury_history: [], user_declared_level: 'beginner',
+        acknowledged_days_warning: true, acknowledged_prep_warning: true,
+      } as unknown as GeneratorInput)
+
+  // ── GRID-GOAL-INSIDE-LINE-01 — A BENCHMARKED GOAL *INSIDE* §120's 5% LINE ───
+  //
+  // 🔴 MEASURED 2026-11-07: of `cohortGrid`'s **10,368 benchmarked time-target rows, ZERO**
+  // produce `goal_pace_reach.gap_pct <= 5`. So §120 Amendment 2's reachability line — and
+  // Amendment 3's comparator, ruled the same week — had no corpus case on the ADMITTED side
+  // of it. The gate could only ever see goals being withheld, never goals being allowed.
+  //
+  // ⚠️ THE PAIR IS DERIVED, NOT TYPED. Swept benchmark/target combinations and measured
+  // `gap_pct`: a 10 km benchmark of 50:00 with a 49:30 target lands at **3.10%**, inside the
+  // line and not withheld. 49:00 gives 4.10%. Both are kept, because a single case one side
+  // of a boundary cannot show the boundary MOVING.
+  for (const g of [{ target: '0:49:30', tag: 3.1 }, { target: '0:49:00', tag: 4.1 }])
+    for (const cwk of [40, 55])
+      out.push({
+        athlete_name: 'Athlete', age: 35, race_name: 'Test',
+        primary_metric: 'distance', plan_start: COHORT_PLAN_START,
+        race_distance_km: 10, race_date: raceDateIn(26, 'sun'),
+        goal: 'time_target', target_time: g.target,
+        resting_hr: 55, max_hr: 184,
+        current_weekly_km: cwk, longest_recent_run_km: Math.round(cwk * 0.4),
+        recent_quality_training: 'occasional', hard_session_relationship: 'neutral',
+        training_age: '18mo-3yr', days_available: 5, days_cannot_train: [],
+        injury_history: [], user_declared_level: 'intermediate',
+        benchmark: { type: 'race', distance_km: 10, time: '0:50:00', benchmark_date: '2026-09-01' },
+        acknowledged_days_warning: true, acknowledged_prep_warning: true,
+      } as unknown as GeneratorInput)
+
   return out
 }

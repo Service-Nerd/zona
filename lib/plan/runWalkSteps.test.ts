@@ -78,7 +78,16 @@ describe('run-walk is drawn as steps', () => {
   })
 
   it('🔴 the rows: walk says the founder\'s words, glyphs on run/walk only, "then" before the remainder', () => {
-    const s = sessions.find(x => { const st = composeSession({ session: x, catalogueRow: null, goalPace: null } as never); return st && RUN_WALK_SHAPES.has(st.shape) && st.main.duration_mins % (RUN + WALK) !== 0 })
+    // 🔴 THE PREDICATE NEEDED A SECOND CLAUSE, AND A CORPUS WIDENING IS WHAT EXPOSED IT
+    // (`ENVELOPE-LRR-BLIND-01`, 2026-11-07). This asked only for a REMAINDER, so it could
+    // select a session whose repeat block runs ONCE — one walk row — and then assert two.
+    // It passed for months because the first 400 run-walk sessions happened to be long ones.
+    // ⚠️ THE CAP IS THE MECHANISM: `sessions` stops at 400 and walks `targetedGrid` first, so
+    // adding rows there DISPLACED the `cohortGrid` sessions this `find` used to land on —
+    // "a round-robin over corpora only ever consumes their HEADS", recorded three times in
+    // this repo. The rendering this arm checks (two walk glyphs, a "then" bar) is only
+    // MEANINGFUL on a repeat of 2 or more, so that is now stated rather than assumed.
+    const s = sessions.find(x => { const st = composeSession({ session: x, catalogueRow: null, goalPace: null } as never); return st && RUN_WALK_SHAPES.has(st.shape) && st.main.duration_mins % (RUN + WALK) !== 0 && Math.floor(st.main.duration_mins / (RUN + WALK)) >= 2 })
     const st = composeSession({ session: s, catalogueRow: null, goalPace: null } as never)!
     const figures = resolveDisplayFigures(st, { metric: 'duration', units: 'km', sessionDistanceKm: null })
     const rows = buildSessionRows(st, displayDerivedSet(s, st), { metric: 'duration', units: 'km', formatDist: () => '', figures, raceSegmentTarget: '', raceSegmentSecondary: '' } as never)
@@ -92,7 +101,16 @@ describe('run-walk is drawn as steps', () => {
   })
 
   it('🔴 rendered: the glyphs and the "then" bar appear, and the main set takes the session hue', () => {
-    const s = sessions.find(x => { const st = composeSession({ session: x, catalogueRow: null, goalPace: null } as never); return st && RUN_WALK_SHAPES.has(st.shape) && st.main.duration_mins % (RUN + WALK) !== 0 })
+    // 🔴 THE PREDICATE NEEDED A SECOND CLAUSE, AND A CORPUS WIDENING IS WHAT EXPOSED IT
+    // (`ENVELOPE-LRR-BLIND-01`, 2026-11-07). This asked only for a REMAINDER, so it could
+    // select a session whose repeat block runs ONCE — one walk row — and then assert two.
+    // It passed for months because the first 400 run-walk sessions happened to be long ones.
+    // ⚠️ THE CAP IS THE MECHANISM: `sessions` stops at 400 and walks `targetedGrid` first, so
+    // adding rows there DISPLACED the `cohortGrid` sessions this `find` used to land on —
+    // "a round-robin over corpora only ever consumes their HEADS", recorded three times in
+    // this repo. The rendering this arm checks (two walk glyphs, a "then" bar) is only
+    // MEANINGFUL on a repeat of 2 or more, so that is now stated rather than assumed.
+    const s = sessions.find(x => { const st = composeSession({ session: x, catalogueRow: null, goalPace: null } as never); return st && RUN_WALK_SHAPES.has(st.shape) && st.main.duration_mins % (RUN + WALK) !== 0 && Math.floor(st.main.duration_mins / (RUN + WALK)) >= 2 })
     const st = composeSession({ session: s, catalogueRow: null, goalPace: null } as never)!
     const html = renderToStaticMarkup(React.createElement(SessionSteps, {
       structure: st, derivedSet: displayDerivedSet(s, st) as DerivedSet, sessionType: s.type, displayZones: [2], zoneRangeLabel: 'Zone 2',

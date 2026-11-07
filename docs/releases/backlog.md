@@ -453,7 +453,7 @@ before planning against any number below (an item is a snapshot of the code on t
   `2026-04-01` (it feeds the committed cohort-shape baseline) and the `scripts/` corpora. Saturated today, which is a
   fact about the date and not a property the arm checks.
 
-- ⚙️ **NO BOARD** `ENVELOPE-LRR-BLIND-01` — **no corpus can reach a §113-refused half runner, and the envelope says
+- ✅ **SHIPPED 2026-11-07** `ENVELOPE-LRR-BLIND-01` — ✅ **SHIPPED 2026-11-07.** `targetedGrid` gains an lr-0 block (volume and longest run INDEPENDENT, straddling §116's floor) — 6,144 → 6,160. Measured before: **0 of 41,472 `cohortGrid` rows had `lr 0`**. Gated + falsified 3 ways in `targetedGrid.test.ts`.  ~~Original filing:~~ - ⚙️ **NO BOARD** `ENVELOPE-LRR-BLIND-01` — **no corpus can reach a §113-refused half runner, and the envelope says
   "refused 0%".** `measure:envelope` derives `longest_recent_run_km = round(min(weekly × 0.45, dist × 0.75))`; at the
   lowest half volume band (10 km/wk) that is `round(4.5) = 5` — **exactly §113's floor** — so of 33,792 cases
   **0** are sub-floor at 21.1 km, and only **two** (dist, cw, lr) triples below the floor exist at all
@@ -975,7 +975,9 @@ and as `measure-plan-fitness.ts`'s hand-built injury × masters cohort, which ex
 
 **Scope:** a corpus change only — no prescription, no new principle. Ruling deferred until a grid can build the cell.
 
-### 🔲 `GRID-NO-ASSESSED-BEGINNER-01` — neither measurement grid can build a runner the engine ASSESSES as a beginner on intensity *(filed 2026-11-03)* ⚙️ **NO BOARD**
+### ✅ `GRID-NO-ASSESSED-BEGINNER-01` — neither measurement grid can build a runner the engine ASSESSES as a beginner on intensity *(filed 2026-11-03)* ⚙️ **NO BOARD**
+
+> ✅ **CLOSED 2026-11-07 — PREMISE DISSOLVED, no code change.** Re-measured: **13,824 of 41,472 rows assess intensity=beginner**, 27,648 structural. Made false by `COHORT-GRID-UNSET-LEVEL-01` on 2026-11-03 and nobody came back — the `PUSH-UNITS-01` class, which `backlog-touch.py` cannot catch because this item named the grids generically.
 
 Found by `COHORT-GRID-UNSET-LEVEL-01`, measured with `derivedLevelsFor` over both grids:
 
@@ -1387,7 +1389,9 @@ training sessions and `meta.goal_pace_reach` do not.
 
 ---
 
-### 🔲 `GRID-GOAL-INSIDE-LINE-01` — the cohort and targeted grids carry no benchmarked goal inside the 5% line ⚙️ **NO BOARD**
+### ✅ `GRID-GOAL-INSIDE-LINE-01` — the cohort and targeted grids carry no benchmarked goal inside the 5% line ⚙️ **NO BOARD**
+
+> ✅ **SHIPPED 2026-11-07.** A benchmarked goal **inside** §120's 5% line: 10 km off 50:00 with a 49:30 target = **3.10%**, DERIVED by sweeping, not typed. Measured before: **0 of 10,368** benchmarked time-target rows were inside. Gated + falsified.
 
 Every benchmarked time-target case in `cohortGrid` sits 10–14% past fitness, so since §120 Am. 2 the main regression grids
 exercise §22 goal-pace work only for UNBENCHMARKED runners. The sweep's random inputs and the slow-goal grid still reach

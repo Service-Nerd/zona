@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest'
 import { cohortGrid, targetedGrid, COHORT_PLAN_START, isDesignedRefusal } from './cohortGrid'
 import { derivedLevelsFor, generateRulePlan } from './ruleEngine'
 import { validatePlan } from './invariants'
+import { GENERATION_CONFIG } from './generationConfig'
 import type { GeneratorInput, Plan } from '@/types/plan'
 
 /**
@@ -164,5 +165,50 @@ describe('targetedGrid — the fields the main grid cannot reach', () => {
 
     expect(validatePlan(plainPlan, plain).filter(v => v.severity === 'error')).toEqual([])
     expect(validatePlan(cautiousPlan, row).filter(v => v.severity === 'error')).toEqual([])
+  })
+})
+
+/**
+ * ENVELOPE-LRR-BLIND-01 + GRID-GOAL-INSIDE-LINE-01 (2026-11-07) — THE TWO CELLS NO CORPUS
+ * COULD REACH, AND A GATE SO THEY CANNOT SILENTLY LEAVE AGAIN.
+ *
+ * 🔴 Measured before the fix: **0 of `cohortGrid`'s 41,472 rows carried
+ * `longest_recent_run_km: 0`** (it is derived, `max(3, cwk * 0.4)`; `targetedGrid` pinned it at
+ * 12; `useCaseEnvelope` derives it too), and **0 of its 10,368 benchmarked time-target rows
+ * produced `goal_pace_reach.gap_pct <= 5`** — so §120 Am. 2's reachability line had no corpus
+ * case on the ADMITTED side of it, and §117 Am. 7's whole cohort was unreachable.
+ *
+ * ⚠️ WITHOUT THESE ARMS THE ROWS ARE A NOTE, NOT A GATE. Deleting them restores the blindness
+ * and every other check stays green — which is how the blindness arrived in the first place.
+ */
+describe('ENVELOPE-LRR-BLIND-01 + GRID-GOAL-INSIDE-LINE-01 — the unreachable cells are reachable', () => {
+  const grid = targetedGrid() as any[]
+
+  it('1. the never-run runner is in the corpus, at more than one volume', () => {
+    const neverRun = grid.filter(i => i.longest_recent_run_km === 0)
+    expect(neverRun.length, 'no row has longest_recent_run_km 0 — §117 Am. 7 is unreachable again')
+      .toBeGreaterThan(0)
+    // ⚠️ MORE THAN ONE VOLUME, because a single volume cannot show the interaction: the whole
+    // defect was that the longest run was DERIVED from volume.
+    expect(new Set(neverRun.map(i => i.current_weekly_km)).size,
+      'lr 0 at one volume only — volume and longest run must vary INDEPENDENTLY').toBeGreaterThan(1)
+    // And it must straddle §116's running floor, which is where Am. 7's routing turns.
+    expect(neverRun.some(i => i.current_weekly_km < GENERATION_CONFIG.BASE_BUILD_ONRAMP_MIN_START_KM)).toBe(true)
+    expect(neverRun.some(i => i.current_weekly_km >= GENERATION_CONFIG.BASE_BUILD_ONRAMP_MIN_START_KM)).toBe(true)
+  })
+
+  it('2. a benchmarked goal lands INSIDE §120\'s 5% line, measured through the engine', () => {
+    let inside = 0
+    for (const i of grid.filter(x => x.benchmark && x.goal === 'time_target')) {
+      let p: any
+      try { p = generateRulePlan(i, 'paid', i.plan_start) } catch (e) { if (isDesignedRefusal(e)) continue; throw e }
+      const g = p?.meta?.goal_pace_reach
+      if (g && typeof g.gap_pct === 'number' && g.gap_pct <= 5) inside++
+    }
+    // 🔴 NOT A SOURCE ASSERTION. The pair was DERIVED by sweeping benchmark/target
+    // combinations and reading `gap_pct` (10 km off 50:00 with a 49:30 target = 3.10%), so this
+    // arm re-derives it through the engine rather than trusting the fixture's comment.
+    expect(inside, 'no benchmarked goal is inside the 5% line — §120 Am. 2/3 have no admitted case')
+      .toBeGreaterThan(0)
   })
 })
