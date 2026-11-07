@@ -1618,6 +1618,7 @@ producer's owner. Tests: `lib/plan/injuryLongRunCap.test.ts`.
 **Config.**
 - `GENERATION_CONFIG.VDOT_CONSERVATIVE_DISCOUNT_PCT = 3`  (applied to easy + threshold paces only)
 - Staleness is handled by the compounding ramp (`VDOT_STALENESS_FRESH_WEEKS = 4`, `VDOT_STALENESS_PER_4WK_PCT = 1`, `VDOT_STALENESS_MAX_DISCOUNT_PCT = 7`) — **not** by a months threshold.
+- ⚕️ **THE RAMP'S CURVE IS A DECLARED PRIOR, NOT A MEASUREMENT (Coaching Board 2026-11-07, `VDOT-STALENESS-CURVE-01` — INSUFFICIENT EVIDENCE).** The shape — 1% per 4-week block from week 4, capped at 7% — **has no citation**, and this bullet exists so nobody cites it as though it had one. What it costs a 50:00 10K runner on *every prescribed pace*: **+3 s/km at 5 weeks, +5 at 8, +8 at 12, +10 at 16 and beyond (saturated).** Production, read-only: of 12 benchmarked plans carrying a date, **5 sit at 3%, 1 at 4%, 1 at 5%, 3 at the 7% cap**; **7 of 19 plans have no benchmark date at all and never ramp.** 🏃 **The chair declined to call it wrong** — detraining is real and its time course in recreational runners is genuinely uncertain, so a conservative drift is defensible as **a bound on what the engine may ASSUME**, never as a claim about physiology. 📊 **Seiler, carried:** a discount is a claim about a distribution and this is a point estimate with no interval; the number may stand provided this section stops presenting it as measured. ⚕️ **Sims, recorded:** **who races infrequently is not random** — it skews toward caregiving loads, perimenopausal runners managing symptoms, and anyone whose last event was a year ago. **A penalty for not having RACED is not a penalty for having DETRAINED**, and the ramp cannot tell them apart. 🩹 **Willy offered the protective direction as a TIEBREAK, not a reason**, recorded so it is never later cited as evidence. ✅ **What would settle it:** post-hoc HealthKit HR-vs-pace banded by benchmark age (1/3/6/12 months). **Re-open trigger: 20+ benchmarked runners with ≥ 8 weeks of logged runs each** — today there are **126 scored analyses across 2 users**. ⚠️ **Not mechanically checkable, and declared as such:** this is a statement about the state of the evidence, and `validatePlan()` takes a `Plan`.
 - 🔴 **THIS PRINCIPLE'S OWN HEADLINE SENTENCE SAID "more than 6 months old… a further 5%" UNTIL 2026-11-07, WHILE THIS BLOCK SAID STALENESS IS NOT A MONTHS THRESHOLD.** The ratified prose and the ratified config disagreed about when staleness begins **by a factor of six**, and the engine has always used the 4-week ramp. Corrected at the `GOALPACE-REACH-COMPARATOR-01` sitting, where a seat reaching for "six months" would have built a gate on a number the engine abandoned (§120 Am. 3). ⚠️ **The ramp reads the WALL CLOCK deliberately** — `vdotFor`'s own comment: it measures how long ago the runner actually ran, which is a fact about the calendar and not about the plan's anchoring. That is correct for the prescription and it is why a test may pin its generation date on every call and still age (`GOALPACE-5K-CLOCK-01`). ⚕️ **The ramp's CURVE is unevidenced and that is open** — `VDOT-STALENESS-CURVE-01`, filed by Sims at the same sitting.
 
 Implemented in `buildPaceFromVDOT(discountedVdot, rawVdot)` in `lib/plan/ruleEngine.ts`. Easy/quality paces use `discountedVdot`; interval pace uses `rawVdot`. The applied discount is surfaced in `plan.meta.vdot_discount_applied_pct` so the user can see what the engine did and why.
@@ -11564,6 +11565,97 @@ found by the Design Board's prototype. On a run-walk session the warm-up is a **
 Hutchinson: a warm-up's job is a gradual rise, and walking does it. Recorded: Hutchinson asked whether §16's 10 could stand
 to avoid a new number; settled at 5 because a 10 min walk leaves one round on a 23 min session (McMillan). Built 2026-10-22:
 `GENERATION_CONFIG.RUNWALK_WARMUP_WALK_MINS`, read by `composeSession`.
+
+### §2 Amendment 3 — THE TWO NUMBERS THAT DEFINE A LEAP ARE NAMED, AND THE LEAP ITSELF IS ADR-022's DIVERGENCE *(Coaching Board 2026-11-07, `WEEK1-FROM-LONGEST-RUN-01`)*
+
+**Principle.** Arm 1's two numbers — the `1.30×` ratio and the `2 km` floor — are
+`WEEK1_STEP_MAX_RATIO` and `WEEK1_STEP_MIN_ABS_KM`. They were bare literals inside
+`planQuality.ts`, so §2's definition of a leap existed **only in the audit** and no
+producer could read it. The values are unchanged; Willy's condition at the sitting was
+"no new numeric", and naming an existing one is the Configuration Singularity fix.
+The declared-volume base this amendment ratified is now `week1StepBaseKm`, one owner,
+read by the audit and available to any producer.
+
+🔴 **AND THE SITTING'S OWN RCA WAS WRONG, TWICE, WHICH IS THE MORE USEFUL RECORD.**
+
+The board first ruled that the week-1 step should bind at **error severity**. That was
+vacated before it shipped: `error` **throws in dev and test and only `console.error`s in
+production**, so it would have reddened the build on 70 plans and protected **not one
+runner**. *A ruling that cannot reach a runner is not a coaching ruling.*
+
+The re-sitting then located the leap in `buildVolumeSequence`'s opening value, where
+`initFloor = peakKm × BUILD_VOL_INIT_FLOOR_VS_PEAK` overrides the declared week upward
+with no bound. **That was also wrong, and the fix built on it was measured and reverted:**
+
+| | before | after bounding `initFloor` |
+|---|---|---|
+| designed refusals (2,520 probe inputs) | 782 | **664** |
+| plans carrying `WEEK1-LEAP` | 70 | **94** |
+| …at the half / marathon | 4 / 6 | **17 / 17** |
+
+Lowering the curve lowered the delivered base, which **opened §111's ratio door for
+runners the engine was deliberately refusing**, and those newly-admitted runners still
+received a week 1 sized from their longest run. ⚠️ **A bound labelled safety that
+admitted 118 refused runners and gave more of them the leap.**
+
+**Where the leap actually lives.** The curve is not the producer. At a declared 6 km/week
+with a 5 km longest run the curve opens at **6** and the runner is delivered **13** —
+40 + 32 + 32 minutes of placed, duration-anchored sessions. Week 1 is **13 km at a
+declared 5, 6, 8 AND 10 km/week, the same number every time**, so the step reads
+2.60× / 2.17× / 1.63× / 1.30× purely because the denominator moves. Volume does not bind
+until cw 14, which is exactly where the measured leap rate falls to zero: **0% at cw 0–4,
+20% at 6, 35.9% at 8, 2.7% at 10, 0% at 14 and above.**
+
+**That is ADR-022's delivered-volume divergence**, which the ADR names in its own words —
+the load rules are enforced on the internal curve while the runner sees
+`sumWeeklyKm(placed sessions)` — and whose levers the board scoped to **injury runners
+only**: *"healthy divergence stays §52's."* The week-1 leap is the healthy, week-one face
+of a divergence this board has already seen and deliberately left.
+
+⚠️ **So no bound is ratified here.** Extending ADR-022's delivered-ceiling levers to
+healthy runners at week 1 is a prescription change across every distance and it gets its
+own sitting, with these numbers in front of it, not an amendment appended to this one.
+Filed as `WEEK1-DELIVERED-CEILING-01`. **What this amendment ships is the naming, the
+single owner, and the measurement that tells the next sitting where to look.**
+
+### §117 Amendment 7 — THE WALK-RUN START IS GATED ON THE LONGEST RUN, NOT ON WEEKLY VOLUME *(Coaching Board 2026-11-07, `WEEK1-FROM-LONGEST-RUN-01`)*
+
+**Principle.** `walkRunStartApplies` reads **two** signals: the runner is below §116's
+running floor (`BASE_BUILD_ONRAMP_MIN_START_KM`, including 0), **or** their declared
+longest run is below `WALK_RUN_START_MIN_LONGEST_RUN_KM` (2 km). Either routes them to
+the walk-run start.
+
+🔴 **Two of this board's own rulings used different discriminators for the same question,
+eighteen days apart, and both are Willy's.** §117 Amendment 5 (2026-10-06) ratified that
+*"readiness to RUN is answered by the longest run, not by weekly volume."* The §116 floor
+note (2026-10-24) was then signed with a **volume** trigger. The floor note's own stated
+reason names the longest run and then proxies it:
+
+> *"a runner at 8 km/week over 4 days is already running 2 km at a time; run-walk is for
+> someone who cannot, and that runner is below this floor."*
+
+⚠️ **The intent is the longest run; the implementation was volume; and the step between
+them is an assumption about how the week is distributed.** A runner who declares 6 km/week
+and a longest run of 0 falsifies it directly. Willy at this sitting: *"my volume trigger
+was wrong and I am withdrawing it, not amending it."*
+
+**Measured, 2,520 probe inputs varying volume and longest run INDEPENDENTLY** — every
+standing corpus derives the longest run from volume (`useCaseEnvelope`:
+`min(cw × 0.45, dist × 0.75)`), so **none of them can reach this cell**:
+
+| | before | after |
+|---|---|---|
+| staged blocks whose runner declared a longest run < 2 km | 372 | 488 |
+| …given **continuous** running (four 1.5 km easy runs a week) | **108** | **0** |
+| …given the walk-run start | 264 | **488** |
+| designed refusals | 1123 | **1123 — nobody newly refused** |
+| runners gaining a staged offer who previously had none | — | **+116** |
+
+⚠️ **2 km is not a new numeric** — it is the figure already in the floor note's prose.
+⚠️ **Absence is never written as a value:** a runner who has not told us their longest run
+is not treated as someone who cannot run; the gate falls back to volume alone.
+⚠️ **At the checkpoint the gate reads the OBSERVED longest run**, not the declared one,
+which is the better signal and was already available at that call site.
 
 ## 118. The get-running plan — what we offer the runner no race plan can serve
 

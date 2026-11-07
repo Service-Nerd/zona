@@ -76,26 +76,35 @@ describe('§116 Am. 11 (1) — staging follows the REFUSAL, not §111', () => {
     // ⚠️ MY FIRST VERSION OF THIS ARM CLAIMED *"the two causes now coincide by construction"* AND PINNED IT AT
     // cw 15 — true there, FALSE in the band Am. 4 actually moved (`/code-review`, 2026-11-07). At 15 km/week §111's
     // probe does not refuse, so the §113 path reaches its `no_objection` branch and the walk-run gate is never
-    // exercised. **A fixture outside the moved band cannot pin a claim about the moved band.** Both halves are
-    // asserted now, because the behaviour genuinely splits:
-    //   · cw 15, lr 0 → **REFUSED**. §111 is silent and the §113 door seed requires §117's walk-run start, the
-    //     narrowing code review forced on 2026-11-06 after *"at every volume"* gave a 55 km/week runner an 18.3 km
-    //     week-1 long run.
-    //   · cw 6–8, lr 0 → **STAGED**, via §111's own door, which has no such gate. Measured: **82 of 90** such
-    //     runners get a base-build block of CONTINUOUS runs (`Easy run 2.0` × 3) and **0** get the walk-run start.
-    // 🔻 THE SECOND BULLET IS AN OPEN QUESTION, NOT A SETTLED ONE — `WALKRUN-GATE-VOLUME-ONLY-01`. It is NOT new
-    // behaviour and NOT introduced by Am. 4: the MARATHON twin does exactly the same at cw 6–8 with lr 0, and has
-    // since §116 shipped. `walkRunStartApplies` keys on `effectiveStartKm` and never on the longest run, so a runner
-    // declaring they have never run gets continuous running at every distance §111 governs. Pinned here so a change
-    // in either direction is noticed while the board decides.
+    // exercised. **A fixture outside the moved band cannot pin a claim about the moved band.**
+    //
+    // ✅ RE-RULED BY §117 AMENDMENT 7 (Coaching Board 2026-11-07, `WEEK1-FROM-LONGEST-RUN-01`) — AND THIS ARM IS
+    // WHY THE BOARD SAW IT. The previous version pinned `WALKRUN-GATE-VOLUME-ONLY-01` as an open question with the
+    // words *"so a change in either direction is noticed while the board decides"*. The board decided, and the
+    // noticing worked: this arm went red on the ruling. What it used to assert:
+    //   · cw 15, lr 0 → REFUSED, because the §113 door seed required §117's walk-run start and the gate read
+    //     VOLUME only, so a runner declaring they had never run did not qualify for it.
+    //   · cw 6–8, lr 0 → STAGED into CONTINUOUS runs — 82 of 90 such runners, 0 given the walk-run start.
+    // Am. 7 gates the walk-run start on the LONGEST RUN (§117 Am. 5's ratified discriminator), so BOTH are now a
+    // walk-run start. Measured across 8,064 engine inputs: **335 move, every one `refusal -> base_build`,
+    // SERVED -> REFUSED 0, and not one race plan changes (5,325 before and after).**
+    //
+    // ⚠️ THE 2026-11-06 NARROWING IS NOT REOPENED, AND THAT WAS CHECKED RATHER THAN ASSUMED. The hazard it was
+    // forced by — *"at every volume"* giving a 55 km/week runner an 18.3 km week-1 long run, because §116's ramp
+    // sizes its long run from VOLUME and never from theirs — cannot reach this cohort: the walk-run start REPLACES
+    // the ramp's opening and is duration-anchored, so it carries no distance at all. Measured over all 335 newly
+    // staged plans: **0 error-severity violations and a worst week-1 session distance of 0 km.** The `high` runner
+    // below (55 km/week, longest run 2) is untouched because 2 is not under the bar, and still refuses.
     expect(engine(runner(HM, 20, { current_weekly_km: 15, longest_recent_run_km: 0 })).kind,
-      'cw 15: §111 silent, §113 door seed requires the walk-run start, so refused by design').toBe('refusal')
+      'cw 15, lr 0: §117 Am. 7 routes a never-run runner to the walk-run start, so the §113 door seed applies').toBe('base_build')
     const low = engine(runner(HM, 20, { current_weekly_km: 6, longest_recent_run_km: 0 }))
     expect(low.kind, 'cw 6: §111 Am. 4 refuses and stages — the band this amendment moved').toBe('base_build')
     const phases = new Set(((low as { plan: Plan }).plan.weeks ?? []).map(w => w.phase))
+    // ✅ WAS `.toBe(false)`, PINNING `WALKRUN-GATE-VOLUME-ONLY-01` AS OPEN. §117 Amendment 7 CLOSED IT, and the
+    // sentence this replaces said "open, pinned, not endorsed" — which is the whole value of having pinned it.
     expect(phases.has('walk_run_start'),
-      'WALKRUN-GATE-VOLUME-ONLY-01: a runner declaring longest run 0 gets CONTINUOUS runs here, as they do at the marathon. Open, pinned, not endorsed')
-      .toBe(false)
+      '§117 Am. 7: a runner declaring a longest run of 0 gets the WALK-RUN start, not continuous runs')
+      .toBe(true)
   })
 
   it('a never-run runner is staged for a HALF at every runway, and was refused at all of them', () => {
@@ -138,7 +147,7 @@ describe('§116 Am. 11 (1) — staging follows the REFUSAL, not §111', () => {
           // must supply a door — which is what makes it §116 Am. 9's own path rather than the floor seed.
           // 🔴 THE FIRST CUT OMITTED THE LAST CLAUSE and picked up `cw 9, lr 1, rw 12`, where §111 has NO door, so
           // the case is now correctly REFUSED and the arm failed. Gap B is defined by §111 having an answer.
-          if (walkRunStartApplies(effectiveStartKm(input))) continue
+          if (walkRunStartApplies(effectiveStartKm(input), input.longest_recent_run_km)) continue
           const door = longRunRefusalDoor(input, PLAN_START)
           if (door?.kind !== 'base_volume') continue
           try { generateRulePlan(input, 'paid', PLAN_START) } catch (e) {
@@ -170,7 +179,8 @@ describe('§116 Am. 11 (1) — staging follows the REFUSAL, not §111', () => {
     // So the floor seed applies only where the walk-run start does. ⚠️ This NARROWS the board's ruling, which said
     // "at every volume"; the ruling assumed §111 would supply the door, and its reason is still served.
     const high = runner(MARATHON, 12, { current_weekly_km: 55, longest_recent_run_km: 2 })
-    expect(walkRunStartApplies(effectiveStartKm(high)), 'this runner is below the running floor; pick a higher one').toBe(false)
+    expect(walkRunStartApplies(effectiveStartKm(high), high.longest_recent_run_km),
+      'this runner is above the running floor AND has run 2km; §117 Am.7 must not route them to walk-run').toBe(false)
     expect(longRunRefusalDoor(high, PLAN_START)?.kind, '§111 now has a door here, so the case no longer tests the seed')
       .toBe('no_objection')
     const out = engine(high)
@@ -449,7 +459,10 @@ describe('§118 Am. 4 — the offer follows §118\'s scope, not §111\'s branch'
       // is now REFUSED-AND-STAGED, so those two inputs stop being §113 refusals and silently stopped contributing —
       // the `offers > 0` floor below would still have passed on the three non-HM rows alone, which is exactly how a
       // fixture leaves an arm without anyone noticing. Re-pinned above the door, where §113 refuses alone.
-      [MARATHON, 10, 2, 10, 3], [HM, 10, 1, 10, 3], [HM, 12, 2, 12, 4], [MARATHON, 20, 4, 14, 3], [50, 15, 3, 16, 3],
+      // ⚠️ `[HM, 10, 1, …]` RE-PINNED TO lr 2 (§117 Am. 7, 2026-11-07): at lr 1 this runner is now STAGED, so the
+      // row stopped being a §113 refusal and silently stopped contributing — the very failure this comment warns of,
+      // committed by the amendment two lines of code away. lr 2 sits on the bar, where §113 still refuses alone.
+      [MARATHON, 10, 2, 10, 3], [HM, 10, 2, 10, 3], [HM, 12, 2, 12, 4], [MARATHON, 20, 4, 14, 3], [50, 15, 3, 16, 3],
     ] as Array<[number, number, number, number, number]>) {
       const out = engine(runner(dk, runway, {
         current_weekly_km: cw, longest_recent_run_km: lr, days_available: days,
@@ -468,31 +481,64 @@ describe('§118 Am. 4 — the offer follows §118\'s scope, not §111\'s branch'
     }
     expect(offers, 'no §113 refusal carried an offer: this arm measured nothing').toBeGreaterThan(0)
 
-    // The other side of the boundary, same runner, same 15-week offer: at runway 24 the base build leaves 9 weeks
-    // and a half generates; at 22 it leaves 7 and nothing does. If the probe ever goes back to asking at
-    // `planStart`, BOTH of these flip — which is the property the single-valued version could not hold.
+    // 🔴 THE TWO-SIDED 22/24 BOUNDARY IS GONE, AND SAYING SO IS THE POINT OF THIS COMMENT.
     //
-    // ⚠️ cw 6 → 10 (§111 Amendment 4). At 6 km/week the half is now refused by §111 AND STAGED, so this runner
-    // stopped being a §113 refusal at all. Re-derived rather than guessed: the 22/24 boundary is **identical at every
-    // volume from 9 to 20 km/week** (measured 2026-11-07, `reaches_race_door` false at 12/16/20/22 and true at
-    // 24/26/30/36 for all of 9, 10, 12, 15, 20), so the property is volume-independent above the door and the
-    // fixture simply has to sit there.
-    const doorAt = (runway: number) => {
-      const out = engine(runner(HM, runway, { current_weekly_km: 10, longest_recent_run_km: 0 }))
-      expect(out.kind, `HM cw10 lr0 rw${runway} no longer refuses`).toBe('refusal')
+    // §117 Amendment 7 (Coaching Board 2026-11-07, `WEEK1-FROM-LONGEST-RUN-01`) gates the walk-run start on the
+    // LONGEST RUN. The comment above describes the clearing cohort in its own words — *"every one of the 126 has
+    // `longest_recent_run_km: 0` with weekly volume ABOVE §117's walk-run start … so their §113 refusal survives
+    // for a reason that has nothing to do with the runway"* — and **Am. 7 serves exactly those runners**, who are
+    // now staged rather than refused.
+    //
+    // Re-measured on the same 6,600-case grid shape (5 distances × 11 volumes × 5 longest runs × 9 runways × 3 day
+    // counts, longest ≤ weekly):
+    //   · §113 refusals carrying an offer: **936 → 110**
+    //   · of those, CLEARING the race door: **126 → 0**
+    //   · surviving refusals by runway: **10 → 46, 12 → 40, 16 → 24, and NOTHING at 20 or beyond**
+    //   · inputs that are a §113 refusal at BOTH runway 22 and 24: **0**
+    // On every survivor the offer's `weeks` equals the runway, so the base build consumes it and no race block fits.
+    //
+    // ⚠️ SO THIS ARM LOSES ITS DISTINGUISHING POWER AND I AM NOT PRETENDING OTHERWISE. A one-sided `false` cannot
+    // tell "answered at the END of the base build" from "answered at its START" — that was the whole value of the
+    // 22/24 pair. **The clearing variant's coverage now rests entirely on the NEXT arm**, which reaches it through
+    // §111's branch and passes. If that arm is ever deleted, this property has no test anywhere.
+    //
+    // ⚠️ AND IT IS RECORDED AS A MEASURED POPULATION, NEVER "UNREACHABLE BY CONSTRUCTION". That exact overreach was
+    // made twice on this item and refuted both times, once by `/code-review` on this very arm. 0 of 110 is what was
+    // measured on this grid. **If a later change re-opens the cell, the floor below goes red.**
+    const probe113 = (dist: number, cw: number, lr: number, runway: number, days: number) => {
+      const out = engine(runner(dist, runway, { current_weekly_km: cw, longest_recent_run_km: lr, days_available: days }))
+      if (out.kind !== 'refusal') return null
       const body = (out as { body: Record<string, unknown> }).body
-      expect(body.reason, `HM cw10 lr0 rw${runway} refuses for another reason`).toBe('long_run_readiness')
-      const offer = body.get_running as Record<string, unknown> | undefined
-      expect(offer, `HM cw10 lr0 rw${runway} carries no offer`).toBeTruthy()
-      return offer!
+      if (body.reason !== 'long_run_readiness') return null
+      return (body.get_running as Record<string, unknown> | undefined) ?? null
     }
-    const held = doorAt(22)
-    const cleared = doorAt(24)
-    expect(held.reaches_race_door, 'a 22-week runway cannot hold a 15-week base build plus a race block').toBe(false)
-    expect(cleared.reaches_race_door, '§116 Am. 11 leaves this runner unstaged on a 24-week runway, and a race plan DOES open')
-      .toBe(true)
-    expect(held.weeks, 'the two sides differ by runway, not by the length of the base build').toBe(cleared.weeks)
-    expect(String(cleared.line), 'the clearing offer says nothing about a race').toMatch(/race plan/i)
+    // 🔴 DERIVED, NEVER TYPED. My first cut hand-listed three rows read off the grid above and ONE OF THEM WAS NOT A
+    // §113 REFUSAL under this file's own `runner()` defaults — the arm failed 2 of 3 on its own fixture list. Which
+    // rule fires at a given input is the engine's business, exactly as the loop earlier in this file already records.
+    const survivors: Array<{ key: string; offer: Record<string, unknown> }> = []
+    for (const dist of [HM, MARATHON]) {
+      for (const cw of [6, 8, 10, 12, 15]) {
+        for (const lr of [2, 3, 4]) {
+          for (const rw of [10, 12, 16]) {
+            if (lr > cw) continue
+            const offer = probe113(dist, cw, lr, rw, 3)
+            if (offer) survivors.push({ key: `${dist}km cw${cw} lr${lr} rw${rw}`, offer })
+          }
+        }
+      }
+    }
+    // 🔴 NOT VACUOUS. If Am. 7 (or anything after it) removes the rest of the §113 population, this floor fails and
+    // the assertions below stop being evidence of anything.
+    expect(survivors.length, '§113 refusals with an offer have vanished: this arm measures nothing').toBeGreaterThan(0)
+    for (const { key, offer } of survivors) {
+      expect(offer.reaches_race_door, `${key}: the base build fills the runway, so no race block can open`).toBe(false)
+      expect(offer.weeks, `${key}: the offer's block should fill the runway`).toBeTruthy()
+      // SLT 2026-09-20: the non-clearing variant must say NOTHING about a race.
+      expect(String(offer.line), `${key}: the non-clearing offer mentions a race`).not.toMatch(/race|marathon|half/i)
+    }
+    // The cell Am. 7 emptied, asserted as emptied so a re-opening is noticed.
+    expect(probe113(HM, 10, 0, 24, 3), 'lr 0 at a 24-week runway: Am. 7 stages this runner, so there is no §113 refusal to carry an offer')
+      .toBeNull()
   })
 
   it('the clearing variant is still live copy, not dead code, and §111 is the branch that reaches it', () => {

@@ -46,9 +46,23 @@ export function walkRunStartWeeks(): number {
   return walkRunSchedule().length
 }
 
-/** Does this runner start with walk-run? Below §116's running floor, including 0. */
-export function walkRunStartApplies(startKm: number): boolean {
-  return startKm < GENERATION_CONFIG.BASE_BUILD_ONRAMP_MIN_START_KM
+/**
+ * Does this runner start with walk-run? Below §116's running floor (including 0), OR —
+ * §117 Amendment 7 — when their own declared longest run says they cannot yet run
+ * continuously, whatever their weekly volume.
+ *
+ * ⚠️ `longestRunKm` IS REQUIRED, NOT OPTIONAL, and may be passed `undefined`. An optional
+ * parameter here would be the unwired-parameter class: four call sites exist and a default
+ * would have let any of them silently keep the volume-only behaviour. Every caller answers.
+ *
+ * ⚠️ ABSENCE IS NOT A VALUE. A runner who has not told us their longest run is NOT treated
+ * as someone who cannot run — the gate falls back to volume alone. Only a declared figure
+ * below the bar routes them to walk-run.
+ */
+export function walkRunStartApplies(startKm: number, longestRunKm: number | undefined): boolean {
+  if (startKm < GENERATION_CONFIG.BASE_BUILD_ONRAMP_MIN_START_KM) return true
+  if (typeof longestRunKm !== 'number') return false
+  return longestRunKm < GENERATION_CONFIG.WALK_RUN_START_MIN_LONGEST_RUN_KM
 }
 
 const plural = (n: number, one: string) => `${n} ${one}${n === 1 ? '' : 's'}`

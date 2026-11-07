@@ -1566,6 +1566,25 @@ export const GENERATION_CONFIG = {
    *  competitor. */
   BASE_BUILD_ONRAMP_MIN_START_KM: 6,
 
+  /** §117 Amendment 7 (Coaching Board 2026-11-07, `WEEK1-FROM-LONGEST-RUN-01`) — THE
+   *  NUMBER WILLY'S OWN REASON ALREADY NAMED.
+   *
+   *  `BASE_BUILD_ONRAMP_MIN_START_KM`'s principle above reads: "a runner at 8 km/week
+   *  over 4 days is already running 2 km at a time; run-walk is for someone who cannot."
+   *  The INTENT is the longest run. The IMPLEMENTATION was weekly volume, and the step
+   *  between them is an assumption about how the week is distributed — which a runner
+   *  who declares 6 km/week and a longest run of 0 falsifies directly.
+   *
+   *  🔴 MEASURED: 108 of 372 staged blocks whose runner declared a longest run under
+   *  2 km were given CONTINUOUS running — four 1.5 km easy runs a week — because their
+   *  volume sat exactly on the floor. The 264 below the floor got the walk-run start.
+   *  §117 Amendment 5 had already ratified the discriminator ("readiness to RUN is
+   *  answered by the longest run, not by weekly volume") eighteen days before the floor
+   *  note was signed with the volume trigger.
+   *
+   *  ⚠️ 2 km is not a new numeric: it is the figure in the floor note's own prose. */
+  WALK_RUN_START_MIN_LONGEST_RUN_KM: 2,
+
   /** §116 floor note, amended by name (Coaching Board 2026-10-24 Q3, 2026-10-25 L1–L5): below
    *  `BASE_BUILD_ONRAMP_MIN_START_KM`, including 0, the runner starts with a WALK-RUN start. Three sessions a week
    *  (Sims: recovery between impact days matters more than frequency here), never on consecutive days where the days
@@ -1716,6 +1735,39 @@ export const GENERATION_CONFIG = {
   // large weekly step assembled from many small runs, and arm 3 still catches
   // a single session beyond the runner's demonstrated range.
   WEEK1_PER_RUN_STEP_MAX_KM:              1.5,
+
+  // §2 Amendment 3 (Coaching Board 2026-11-07, `WEEK1-FROM-LONGEST-RUN-01`) —
+  // THE TWO NUMBERS THAT DEFINE A LEAP WERE HARDCODED LITERALS, AND THE ENGINE
+  // COULD NOT READ THEM.
+  //
+  // `week1Leap`'s ratio arm read `w1 / start > 1.30 && w1 - start > 2` as bare
+  // literals in `planQuality.ts`. So §2's definition of a leap existed only
+  // inside the AUDIT, and the producer — `buildVolumeSequence` — had no access
+  // to it. These are those two numbers, named and unchanged. Willy's condition
+  // at the sitting was "no new numeric"; naming an existing one is the
+  // Configuration Singularity fix, not a new value.
+  //
+  // 🔴 WHY THE ENGINE NEEDS THEM. Week 1 is `max(startKm, peakKm * FLOOR%)` and
+  // `BUILD_VOL_INIT_FLOOR_VS_PEAK` is a fraction of the PEAK, so it overrode the
+  // runner's declared week upward with no bound. Measured at a fixed 5 km longest
+  // run: week 1 is **13 km at a declared 5, 6, 8 AND 10 km/week — the same number
+  // every time**, so the step read 2.60x / 2.17x / 1.63x / 1.30x purely because
+  // the denominator moved. The engine was not consulting the declared week at all
+  // until it exceeded the floor (cw 14), which is exactly where the measured leap
+  // rate fell to zero: 0% at cw 0-4, 20% at 6, 35.9% at 8, 2.7% at 10, 0% at 14+.
+  //
+  // ⚠️ THE CHECKER AND THE PRODUCER NOW SHARE THIS DEFINITION DELIBERATELY, AND
+  // THAT MAKES `WEEK1-LEAP`'s RATIO ARM A BACKSTOP THAT CANNOT FIRE ON THE CURVE.
+  // That is the intent — a correct engine produces no leap — but it means the
+  // arm's liveness is provable only by MUTATION, never by the corpus, exactly as
+  // the per-session arm already is. `deloadCadence.test.ts` records why a checker
+  // sharing its producer's predicate is blind to that producer: here the curve is
+  // bounded at construction instead, and the audit arm remains for every OTHER
+  // path that can set week 1 (foundation compose, staged blocks, reshape).
+  WEEK1_STEP_MAX_RATIO:                   1.30,
+  // The floor that stops the ratio firing on a tiny base: +2 km is not a leap at
+  // any volume. Unchanged from the literal it replaces (`w1 - start > 2`).
+  WEEK1_STEP_MIN_ABS_KM:                  2,
 
   // §45 Amendment 2 (LR-ABS-CAP-LOWVOL-01, Coaching Board 2026-09-17).
   //

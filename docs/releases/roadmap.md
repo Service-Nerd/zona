@@ -401,12 +401,16 @@ refusal**; the half's own binding points restated; 0 "marathon" strings on a hal
 YESTERDAY's invariant inert** (`INV-PLAN-STAGED-DOOR-RATIO` — measured, not declared), recorded under a new fifth
 liveness reason. ⚠️ **My first flip grid derived the long run from volume and an existing test caught it** —
 `ENVELOPE-LRR-BLIND-01`'s class, fourth time in four days. `cohort:shape` byte-identical on 41,472 cases.
-🔻 **Filed from it:** 🏃 `SHORT-DISTANCE-RAMP-SCOPE-01` — the **5K (45 cases) and 10K (57) are over the cap too** and
+✅ **`SHORT-DISTANCE-RAMP-SCOPE-01` RULED 2026-11-07: §111 is NOT extended below 21 km.** The ratio is the wrong instrument there — the week-1 leap is identical at every distance while the ratio falls. 🔑 The leap's producer is that **week 1 is composed from the longest run and never consults the declared week** (13 km at a declared 5, 6, 8 AND 10), which is **ADR-022's delivered-volume divergence**. Nobody reclassified. Continues as 🏃 `WEEK1-DELIVERED-CEILING-01`.
+
+🔻 **Originally filed as:** 🏃 ~~`SHORT-DISTANCE-RAMP-SCOPE-01`~~ — the **5K (45 cases) and 10K (57) are over the cap too** and
 the board did not rule on them; **the week-1 leap is IDENTICAL at every distance** (+160% at 5 km/week whether the
 runner types 5K or marathon) and only the ratio falls. ⚠️ §111's own text now contradicts itself — the chair's
 **ratio** reasoning transfers to 5K unchanged while the scope sentence justifies itself on **absolute** grounds, and
 one of the two has to give. §116 Am. 11's staged-door objection is currently the only ratio guard below 21 km.
-🩹 `WALKRUN-GATE-VOLUME-ONLY-01` — **a runner who declares they have NEVER RUN gets CONTINUOUS running (82 of 90
+✅ **`WALKRUN-GATE-VOLUME-ONLY-01` RULED AND SHIPPED 2026-11-07 — §117 Amendment 7.** The walk-run start is gated on the LONGEST RUN; Willy withdrew his own volume trigger, 18 days after §117 Am. 5 had already ratified that discriminator. **8,064 engine inputs: 335 move, all `refusal → base_build`, SERVED → REFUSED 0, no race plan changes**; continuous running **108 → 0**; all 335 newly-staged plans carry **0 error-severity violations**. 🔻 The 5K/10K face is NOT covered (§117 is marathon-only by construction) → 🏃 `SHORTDIST-RUNWALK-SCOPE-01`.
+
+🔻 **Originally filed as:** 🩹 ~~`WALKRUN-GATE-VOLUME-ONLY-01`~~ — **a runner who declares they have NEVER RUN gets CONTINUOUS running (82 of 90
 cases, `Easy run 2.0` x 3) if their volume is 6-8 km/week**, because `walkRunStartApplies` keys on volume and never
 on the longest run. ⚠️ **NOT introduced by Am. 4 — the MARATHON twin is identical and has been since 10-25** — but
 those 82 were previously refused, and whether that was safer is a load question. **This is where Willy'"'"'s condition
@@ -420,7 +424,9 @@ IDENTICAL and that is blindness, not safety (⚕️ Sims wanted it a prerequisit
 Detail in `backlog.md`.
 
 **OPEN from the 11-07 sitting** (`GOALPACE-REACH-COMPARATOR-01`, ruled — §120 Am. 3). · 🏃
-`VDOT-STALENESS-CURVE-01` — ⚕️ Sims: §10's staleness ramp declares a benchmark 1% staler every four weeks from week
+🟡 **`VDOT-STALENESS-CURVE-01` RULED 2026-11-07 — INSUFFICIENT EVIDENCE. The curve does not move; §10 records it as a DECLARED PRIOR.** Cost to a 50:00 10K runner: **+3 s/km at 5 weeks, +10 at 16+**; in production 3 of 12 benchmarked plans sit at the 7% cap and **7 of 19 have no benchmark date at all.** **Re-open trigger: 20+ benchmarked runners with ≥ 8 weeks of logged runs each.** Not mechanically checkable, declared.
+
+🔻 **Originally filed as:** ~~`VDOT-STALENESS-CURVE-01`~~ — ⚕️ Sims: §10's staleness ramp declares a benchmark 1% staler every four weeks from week
 four, compounding to 7%, **with no citation for that curve**, and §10's own prose said *"more than 6 months"* until
 this sitting — a factor of six. A runner is penalised for not having RACED rather than for detraining, and who races
 infrequently is not random. Blast radius is **every pace on every benchmarked plan**, and it is the mechanism behind

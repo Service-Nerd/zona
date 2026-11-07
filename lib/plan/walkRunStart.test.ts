@@ -134,8 +134,30 @@ describe('INV-PLAN-WALKRUN-START-PROGRESSION — each arm fires on its own', () 
   it('a missing session', () => expect(mut(p => { delete (p.weeks[0].sessions as Record<string, unknown>)[Object.keys(p.weeks[0].sessions)[0]] })).not.toEqual([]))
   it('a ramp week without the run-walk pattern (L5)', () => expect(mut(p => { for (const r of runs(p.weeks[8])) delete r.run_walk_strategy })).not.toEqual([]))
   it('a running week before the walk-run start ends', () => expect(mut(p => { p.weeks[2].phase = 'base_build' })).not.toEqual([]))
-  it('reads the plan, not the schedule: a plan with no walk-run weeks is not its business', () => {
-    expect(validateWalkRunStart({ ...base, weeks: base.weeks.filter(w => w.phase === 'base_build') })).toEqual([])
+  // RE-RULED by §117 Amendment 7 (Coaching Board 2026-11-07, `WEEK1-FROM-LONGEST-RUN-01`).
+  //
+  // This arm asserted `toEqual([])` — "a plan with no walk-run weeks is not its business" —
+  // and that early return was exactly the blind spot Am. 7 closed: the function could not
+  // see a staged block that SHOULD have had a walk-run start and did not. Measured at 108
+  // of 372 such blocks. The test's real intent (read the PLAN, never `walkRunSchedule`)
+  // survives and is asserted below with a runner who clears the bar.
+  it('a staged block whose runner cannot yet run continuously MUST carry a walk-run start (§117 Am. 7)', () => {
+    const stripped = { ...base, weeks: base.weeks.filter(w => w.phase === 'base_build') }
+    const v = validateWalkRunStart(stripped)
+    expect(v.map(x => x.code)).toEqual(['INV-PLAN-WALKRUN-START-PROGRESSION'])
+    expect(v[0].message).toContain('§117 Am. 7')
+    expect(v[0].expected).toBe('a walk-run start')
+  })
+
+  it('…and it is NOT always-on: the same block is its business no longer once the runner has run the bar', () => {
+    // The original intent, preserved. A runner whose DECLARED longest run clears
+    // WALK_RUN_START_MIN_LONGEST_RUN_KM is correctly given continuous running, so a plan with
+    // no walk-run weeks raises nothing. Without this arm the one above would pass on a gate
+    // that fired unconditionally.
+    const meta = { ...(base.meta as unknown as Record<string, unknown>) }
+    meta.generator_input = { ...(meta.generator_input as GeneratorInput), longest_recent_run_km: 5 }
+    const canRun = { ...base, meta, weeks: base.weeks.filter(w => w.phase === 'base_build') } as unknown as Plan
+    expect(validateWalkRunStart(canRun)).toEqual([])
   })
 })
 

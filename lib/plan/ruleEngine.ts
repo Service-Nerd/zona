@@ -464,6 +464,16 @@ function buildVolumeSequence(
   // Clamp start volume to a band relative to peakKm.
   // Floor prevents starting too low for the target; ceiling prevents
   // starting too close to peak (no room to ramp).
+  // ⚠️ §2 Am.2 CONSIDERED BOUNDING THIS BY `week1CeilingKm` AND IT WAS REVERTED ON
+  // MEASUREMENT (`WEEK1-FROM-LONGEST-RUN-01`, 2026-11-07). The curve is NOT the
+  // producer of the week-1 leap: at a declared 6 km/week with a 5 km longest run the
+  // curve opens at 6 and the runner is DELIVERED 13 (40+32+32 minutes of placed
+  // sessions). Bounding the floor lowered the curve, which lowered the delivered base,
+  // which OPENED §111's ratio door for runners the engine was deliberately refusing:
+  // designed refusals 782 -> 664 across 2,520 probe inputs, and plans carrying
+  // `WEEK1-LEAP` rose 70 -> 94 (half 4 -> 17, marathon 6 -> 17). A safety bound that
+  // admitted 118 refused runners and gave more of them the leap. The leap is ADR-022's
+  // DELIVERED-volume divergence, whose levers are injury-scoped by ruling.
   const initFloor   = peakKm * GENERATION_CONFIG.BUILD_VOL_INIT_FLOOR_VS_PEAK   / 100
   const initCeiling = peakKm * GENERATION_CONFIG.BUILD_VOL_INIT_CEILING_VS_PEAK / 100
   let buildVol = Math.min(Math.max(startKm, initFloor), initCeiling)

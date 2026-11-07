@@ -19,7 +19,7 @@
  */
 
 import { sessionKmSelfPaced } from './sessionDistance'
-import { effectiveStartKm } from './startVolume'
+import { week1StepBaseKm } from './startVolume'
 import { GENERATION_CONFIG as G } from './generationConfig'
 import type { GeneratorInput, Plan, Week, Session } from '@/types/plan'
 
@@ -75,8 +75,8 @@ function week1PerRunStep(weeks: Week[], startKm: number, week1Km: number): numbe
  * detail, or null. `weeks` are the plan's training weeks; `w1` is week 1's `weekly_km`.
  */
 export function week1Leap(weeks: Week[], input: GeneratorInput, w1: number): string | null {
-  const declaredKm = input.current_weekly_km ?? 0
-  const start = declaredKm > 0 ? declaredKm : effectiveStartKm(input)
+  // §2 Am.2 — the declared-volume base is now a single owner the PRODUCER reads too (`startVolume.ts`).
+  const start = week1StepBaseKm(input)
   // WEEK1-LEAP-ABS-01 (2026-09-19) — A PERCENTAGE NEEDS AN ABSOLUTE FLOOR.
   //
   // ⚠️ MEASURED: 17% of everything this predicate flagged was a week-1 increase
@@ -121,7 +121,7 @@ export function week1Leap(weeks: Week[], input: GeneratorInput, w1: number): str
     // only 47 of 75 weekly jumps >= 10 km, because at 40 km/week a +10 km step
     // is just 1.25x. A condition the board made binding, verified by test.
     return `week 1 adds ${(w1 - start).toFixed(1)}km over a declared ${start}km base`
-  } else if (start > 0 && w1 / start > 1.30 && w1 - start > 2
+  } else if (start > 0 && w1 / start > G.WEEK1_STEP_MAX_RATIO && w1 - start > G.WEEK1_STEP_MIN_ABS_KM
              && week1PerRunStep(weeks, start, w1) > G.WEEK1_PER_RUN_STEP_MAX_KM)
     return `week 1 is ${Math.round(w1)}km against a ${start}km base (+${((w1 / start - 1) * 100).toFixed(0)}%)`
   return null

@@ -134,7 +134,8 @@ before planning against any number below (an item is a snapshot of the code on t
   red when the constant reverts. ⚕️ **Sims, recorded not ruled:** this cohort skews female and whether it completes
   the block or churns is unmeasured on 34 stored plans. ↗️ SLT informed for the record, not for permission.
 
-- 🩹 **COACHING BOARD** `WALKRUN-GATE-VOLUME-ONLY-01` — **a runner who declares they have NEVER RUN gets continuous
+- ✅ **RULED AND SHIPPED 2026-11-07 — §117 Amendment 7, merged into `WEEK1-FROM-LONGEST-RUN-01`.** The walk-run start is gated on the LONGEST RUN; Willy withdrew his own volume trigger. Measured on 8,064 engine inputs: **335 move, all `refusal → base_build`, SERVED → REFUSED 0, no race plan changes**; continuous running for low-longest-run staged blocks **108 → 0**. ⚠️ **The 82-of-90 figure below was measured through the staged builder and is superseded by the engine-level counts.** Register: `coaching-rulings.md`.
+- 🩹 ~~**COACHING BOARD** `WALKRUN-GATE-VOLUME-ONLY-01`~~ — **a runner who declares they have NEVER RUN gets continuous
   running, at every distance §111 governs, if their weekly volume is 6–8 km.** `walkRunStartApplies` keys on
   `effectiveStartKm` and **never on `longest_recent_run_km`**, so §117's walk-run start is chosen by volume alone.
   Measured 2026-11-07 on 90 cases (HM, cw 6–8, `longest_recent_run_km: 0`, runways 14–30, 3–5 days, both levels):
@@ -171,7 +172,49 @@ before planning against any number below (an item is a snapshot of the code on t
   10 km/week, `measure:envelope` derives the longest run from volume, `cohortGrid` is byte-identical on 41,472 cases.
   **Every standing harness was blind to a change that moves 290 plans; only a purpose-built grid and production saw it.**
 
-- 🏃 **COACHING BOARD** `SHORT-DISTANCE-RAMP-SCOPE-01` — **the 5K and 10K are over §111's cap too, and so is
+- 🏃 **COACHING BOARD** `WEEK1-DELIVERED-CEILING-01` — **week 1 is composed from the runner's LONGEST RUN and never
+  consults the week they declared, and that is ADR-022's divergence with its levers scoped to injured runners only.**
+  Filed at the `WEEK1-FROM-LONGEST-RUN-01` sitting, 2026-11-07, **deliberately not folded in**: bounding the delivered
+  week is a prescription change at every distance and it needs its own sitting with these numbers in front of it.
+  **Measured, 2,520 probe inputs:** at a fixed 5 km longest run, week 1 is **13 km at a declared 5, 6, 8 AND 10 km/week
+  — the same number every time**, so the §2 step reads **2.60× / 2.17× / 1.63× / 1.30×** purely because the denominator
+  moves. The curve opens at **6** and the runner is handed **13** (40 + 32 + 32 minutes of duration-anchored sessions).
+  Volume does not bind until cw 14, which is exactly where the leap rate falls to zero: **0% at cw 0–4, 20% at 6,
+  35.9% at 8, 2.7% at 10, 0% at 14 and above.**
+  🔴 **DO NOT BOUND THE CURVE. IT WAS TRIED, MEASURED AND REVERTED AT THE SITTING.** Capping
+  `buildVolumeSequence`'s `initFloor` at §2's ceiling lowered the curve, lowered the delivered base, and **opened
+  §111's ratio door for runners the engine was deliberately refusing**: designed refusals **782 → 664**, plans carrying
+  `WEEK1-LEAP` **70 → 94** (half 4 → 17, marathon 6 → 17). **A bound labelled safety that admitted 118 refused runners
+  and gave more of them the leap.** The lever has to act on the DELIVERED week, which is ADR-022's machinery
+  (*"easy runs trim while the §52 long run never does"*).
+  ⚠️ **ADR-022 scoped those levers to knee/shin injury runners by ruling** — *"healthy divergence stays §52's"* — so
+  extending them is a reversal to argue, not a gap to fill. 🩹 **Willy's standing condition applies: served → refused
+  AND refused → served as named cohort counts, before it ships.** 🎯 **McMillan's position from the sitting stands as a
+  constraint: fix the week one, do not take the race away.** ⚕️ Sims: the cohort is first-race, 4–8 km/week, thirties
+  and forties. **Both constants already exist** (`WEEK1_STEP_MAX_RATIO`, `WEEK1_STEP_MIN_ABS_KM`, §2 Am. 3) and
+  `week1StepBaseKm` is the single owner of the base, so the ruling needs no new numeric.
+  ⚠️ **`week1CeilingKm` was written for this and DELETED** — a helper with no consumer is the decorative-config class.
+  Re-derive it where the lever lands.
+
+- 🏃 **COACHING BOARD** `SHORTDIST-RUNWALK-SCOPE-01` — **a 5K or 10K runner whose longest run is 0 is prescribed a
+  16-MINUTE CONTINUOUS long run, and §117's run-walk prescription cannot reach them by construction.**
+  Filed at the `WEEK1-FROM-LONGEST-RUN-01` sitting, 2026-11-07. Measured: at `cw 6 / lr 0` the 5K and 10K **generate
+  normally** — week 1 is a **16-minute long run plus two 12-minute easy runs, continuous, no walk interval** — while
+  the **half and marathon REFUSE the same runner** (`LongRunReadinessError` at lr 0, `BaseVolumeError` at cw 8 / lr 2).
+  🔴 **Type the harder race, get the safer answer — the third appearance of that inversion in three days**
+  (`STAGED-HM-DOOR-01`, `HM-BASE-RATIO-SCOPE-01`, this).
+  ⚠️ **§117 Amendment 7 does NOT cover it and the reason is structural:** `runWalkDistanceApplies` is
+  **`raceDistanceKey(distanceKm) === 'MARATHON'`**, and `runWalkPrescriptionApplies` additionally requires
+  `longest > 0`, so the never-run runner is excluded twice over. Am. 7 widened the **base-build on-ramp's** gate; this
+  runner is on an ordinary **race-plan** path with neither a readiness floor nor an on-ramp.
+  **So serving them reopens a DISTANCE SCOPE**, which is a prescription decision for the board, not an amendment.
+  ⚠️ **The 5K/10K have no long-run readiness floor at all** — §113's `LONG_RUN_READINESS_MIN_RACE_KM` starts above
+  them — so the options are not symmetrical: a floor would REFUSE them, a run-walk prescription would SERVE them.
+  🩹 Willy's framing from the sitting: *"sixteen minutes of continuous running for someone whose longest run is zero
+  is not a step, it is the first injury."* ⚕️ Sims concurred and named the same cohort.
+
+- ✅ **RULED 2026-11-07 — §111 is NOT extended below 21 km, and the submission's own premise was overturned.** The chair refused the extension: the ratio is the wrong instrument below the half, because **the week-1 leap is identical at every distance while the ratio falls**. 🔑 The leap's real producer is that **week 1 is composed from the longest run and never consults the declared week** — 13 km at a declared 5, 6, 8 AND 10. That is **ADR-022's delivered-volume divergence**, injury-scoped by ruling. **Nobody is reclassified; 996 race plans stay race plans.** Continues as `WEEK1-DELIVERED-CEILING-01` below. Register: `coaching-rulings.md`.
+- 🏃 ~~**COACHING BOARD** `SHORT-DISTANCE-RAMP-SCOPE-01`~~ — **the 5K and 10K are over §111's cap too, and so is
   EVERYTHING FROM 12.1 TO 20.9 km, and the board did not rule on any of them because I scoped the submission to the
   half.** 🔴 **ADDED 2026-11-07 by code review: 21 IS NOT THE DISTANCE CLASS.** `raceDistanceKey` puts **12.1–22 km**
   in `HM`, so Am. 4's threshold admits 21–22 and leaves 12.1–20.9 outside §111 — measured worst delivered ratio
@@ -276,7 +319,8 @@ before planning against any number below (an item is a snapshot of the code on t
   the comparator must keep `INV-PLAN-GOAL-PACE-REACHABLE` coherent with that. Related and already open:
   `RECAL-GOAL-REACH-01`, `GRID-GOAL-INSIDE-LINE-01`.
 
-- 🏃 **COACHING BOARD** `VDOT-STALENESS-CURVE-01` *(⚕️ Sims)* — **§10's staleness ramp has no citation, and its own prose disagreed
+- 🟡 **RULED 2026-11-07 — INSUFFICIENT EVIDENCE. The curve does not move; §10 now records it as a DECLARED PRIOR.** 🏃 The chair: *"unevidenced" is not "wrong"* — a conservative drift is a bound on what the engine may ASSUME, never a claim about physiology. 📊 Seiler: a point estimate with no interval may stand provided it stops presenting itself as measured. ⚕️ Sims's asymmetry recorded in §10. **Re-open trigger: 20+ benchmarked runners with ≥ 8 weeks of logged runs each** (today: 126 scored analyses across 2 users). ⚠️ **Not mechanically checkable, declared.** Register: `coaching-rulings.md`. **Stays filed for the re-open trigger only.**
+- 🏃 ~~**COACHING BOARD** `VDOT-STALENESS-CURVE-01`~~ *(⚕️ Sims)* — **§10's staleness ramp has no citation, and its own prose disagreed
   with its config by a factor of six.** Filed by Sims at the `GOALPACE-REACH-COMPARATOR-01` sitting, **recorded and
   deliberately not folded into that ruling.** The engine declares a benchmark 1% staler every 4 weeks from week 4,
   compounding to a 7% cap (`VDOT_STALENESS_FRESH_WEEKS/PER_4WK_PCT/MAX_DISCOUNT_PCT`); §10's headline sentence said

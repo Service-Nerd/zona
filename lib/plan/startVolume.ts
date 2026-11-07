@@ -60,3 +60,27 @@ export function effectiveStartKm(input: GeneratorInput): number {
     ? Math.min(declared, GENERATION_CONFIG.BEGINNER_WEEK1_VOLUME_CAP_KM)
     : declared
 }
+
+/**
+ * §2 Amendment 3 — the base the WEEK-1 step is measured against.
+ *
+ * ⚠️ NOT `effectiveStartKm`. §2's week-1 amendment (`WEEK1-FLOOR-SHORT-DIST-01`,
+ * 2026-09-20) ruled the step is assessed against the runner's DECLARED weekly
+ * volume, because "the runner never sees" the effective start and the week-1
+ * floor overrides it before a plan exists. `week1Leap` already reads this
+ * quantity; it is extracted here so the PRODUCER can read the same one.
+ */
+export function week1StepBaseKm(input: GeneratorInput): number {
+  const declared = input.current_weekly_km ?? 0
+  return declared > 0 ? declared : effectiveStartKm(input)
+}
+
+/* ⚠️ `week1CeilingKm` WAS WRITTEN HERE AND REMOVED THE SAME HOUR, DELIBERATELY.
+ *
+ * It computed §2's permitted week-1 ceiling — `max(base * WEEK1_STEP_MAX_RATIO,
+ * base + WEEK1_STEP_MIN_ABS_KM)` — for `buildVolumeSequence` to bound its opening
+ * value with. The bound was measured, reverted (see `ruleEngine.ts`'s initFloor
+ * comment), and the function left with no call site. A helper with no consumer is
+ * the decorative-config class `configConsumer.test.ts` exists to catch, so it is
+ * gone rather than kept "for when the real fix lands". Re-derive it there.
+ */

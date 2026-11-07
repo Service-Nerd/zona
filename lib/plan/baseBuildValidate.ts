@@ -352,19 +352,43 @@ export function validateWalkRunStart(plan: Plan): Violation[] {
   const weeks = plan.weeks ?? []
   const wr = weeks.filter(w => w.phase === 'walk_run_start')
   const carried = (plan.meta as unknown as Record<string, unknown>).walk_run_carried === true
-  if (wr.length === 0 && !carried) return []
   const v: Violation[] = []
   const C = GENERATION_CONFIG
   const push = (week: number, message: string, actual: string, expected: string) => v.push({
-    code: 'INV-PLAN-WALKRUN-START-PROGRESSION', principle_ref: 'CoachingPrinciples §116 (floor note), §118 Am. 4',
+    code: 'INV-PLAN-WALKRUN-START-PROGRESSION', principle_ref: 'CoachingPrinciples §116 (floor note), §117 Am. 7, §118 Am. 4',
     severity: 'error', week, message, actual, expected,
   })
+  const input = (plan.meta as unknown as { generator_input?: GeneratorInput }).generator_input
+
+  // 🔴 §117 Amendment 7 — THE ARM THAT ASKS WHETHER THE BLOCK SHOULD HAVE EXISTED.
+  //
+  // Every arm below validates a walk-run start's INTERNAL progression, and the function
+  // used to return early unless one was already present. So its population excluded the
+  // only case that matters here: a staged block whose runner cannot yet run continuously
+  // and was given continuous running anyway. "The checker's population excludes the cases
+  // at risk" — measured at 108 of 372 such blocks before Am. 7.
+  //
+  // ⚠️ DECLARED FIGURE ONLY, AND ABSENCE IS NOT A VALUE. A runner who told us nothing is
+  // not asserted to be unable to run. On a post-checkpoint continuation
+  // `checkpointRaceInput` has already rewritten `longest_recent_run_km` to the OBSERVED
+  // run, so this reads the observed figure there and cannot false-fire on a stale one.
+  const stagedBlock = wr.length > 0 || weeks.some(w => w.phase === 'base_build')
+  if (stagedBlock && wr.length === 0 && !carried) {
+    const lr = input?.longest_recent_run_km
+    if (typeof lr === 'number' && lr < C.WALK_RUN_START_MIN_LONGEST_RUN_KM) {
+      const first = weeks.find(w => w.phase === 'base_build')
+      push(first?.n ?? 1,
+        `The runner's declared longest run is ${lr}km, under ${C.WALK_RUN_START_MIN_LONGEST_RUN_KM}km, but this block starts with continuous running (§117 Am. 7).`,
+        'continuous running', 'a walk-run start')
+    }
+  }
+
+  if (wr.length === 0 && !carried) return v
   const isDeload = (w: Week) => w.type === 'deload' || w.badge === 'deload'
   const runs = (w: Week) => (Object.values(w.sessions ?? {}) as (Session | undefined)[])
     .filter((s): s is Session => !!s && s.type !== 'rest' && s.type !== 'cross-train' && s.type !== 'strength')
   // A level's position: run minutes, then a shorter walk ranks higher (5/2 below 6/1).
   const rank = (l: { run_mins: number; walk_mins: number }) => l.run_mins * 10 - l.walk_mins
-  const input = (plan.meta as unknown as { generator_input?: GeneratorInput }).generator_input
   const openDays = 7 - new Set((input?.days_cannot_train ?? []).map(d => String(d).slice(0, 3).toLowerCase())).size
   const wantSessions = Math.min(C.WALK_RUN_START_SESSIONS, openDays)
 
