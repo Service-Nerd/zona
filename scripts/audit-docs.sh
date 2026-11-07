@@ -65,6 +65,59 @@ board_tag_bullet_ids() {
   sed -nE 's/^- (🏃|🧭|💼|👤|⚙️) \*\*[^*]+\*\* `?([A-Z][A-Z0-9]*(-[A-Z0-9]+)+)`?([^A-Z0-9-].*)?$/\2/p' "$1"
 }
 
+# ── THE CLOSED VOCABULARY — ONE LIST, SHARED BY EVERY OPEN-ITEM ARM ─────────
+#
+# 🔴 BACKLOG-STATUS-GLYPH-BLIND-01 (2026-11-07). THE EIGHTH INSTANCE OF "AN AUDIT IS ONLY
+# EVER AS WIDE AS ITS LIST", AND THIS SCRIPT PREDICTED IT THREE TIMES IN ITS OWN COMMENTS:
+# *"normalising the document is the better fix and is still not done."*
+#
+# The open-item population used to be built from a HAND-LISTED SET OF EMOJI
+# (🔻 🔲 🟡 🟠 🟢 🔵 ⏸️ ⚖️ 🧭) plus a second arm for UNMARKED headings. So a heading led by any
+# other glyph — ⚙️ 🏃 👤 📱 🔄 🔧 ⚠️ 🔴 — matched NEITHER: not the emoji list, and not the
+# unmarked arm, whose pattern requires a backtick immediately after the hashes. **Measured:
+# 35 open headings invisible to both arms, 9 of them carrying a shipped feature-registry
+# row**, while this script printed ALL CLEAN.
+#
+# ⚠️ AND THE EXCLUSION WORDS ONLY EVER PROTECTED THE UNMARKED ARM, which is why 🔴 had to be
+# excluded by EMOJI: in the `###` form it was being used for both KILLED (W-06 "WITHDRAWN",
+# W-11 "DEAD") and OPEN-AT-P1 (`PLAN-NOTE-BUDGET-INERT-01`), and no emoji rule can separate
+# those. **Closing by WORDS separates them, because the document already says which it means.**
+#
+# So: ONE arm, ANY leading glyph, and an item is CLOSED only when it SAYS so. A new status
+# glyph can never make the arm blind again, because the arm no longer knows about glyphs.
+_CLOSED_STAMPS='SHIPPED|CLOSED|RESOLVED|WITHDRAWN|SUPERSEDED|DEAD|PARKED|KILLED|VACATED|FALSE PREMISE|BUILT and LIVE'
+_CLOSED_PROSE='for the record|NOT an open item|do not re-propose'
+
+# Every `###`/`####` heading that names an item and does not say it is closed.
+#
+# 🔴 THE CLOSED-WORD TEST MUST NOT READ THE ID, AND THE FIRST CUT OF THIS FUNCTION DID.
+# `QUIT-TAB-DEAD-01`, `ADJUST-TRIGGER-MANUAL-DEAD-01` and `ZONE-DISCIPLINE-BANDS-DEAD-01`
+# all excluded THEMSELVES, because their NAMES contain "DEAD". Matching the spelling instead
+# of the claim — the class this repo has recorded repeatedly, committed here inside the gate
+# written to end a different instance of it. So every backticked span is blanked before the
+# test, and the id is recovered from the original line afterwards.
+#
+# ⚠️ THE STAMP WORDS ARE MATCHED CASE-SENSITIVELY AND THAT IS DELIBERATE. This file writes a
+# closure as a CAPITALISED stamp (**DEAD**, **WITHDRAWN**, ✅ SHIPPED), so requiring caps keeps
+# ordinary prose ("a deadline", "shipped copy") from closing an open item. Only the two
+# sentence-shaped markers are case-insensitive, because they are written as prose.
+heading_open_ids() {
+  awk -v stamps="$_CLOSED_STAMPS" -v prose="$_CLOSED_PROSE" '
+    /^###/ {
+      line = $0
+      bare = line
+      gsub(/`[^`]*`/, "@@", bare)          # the id and any filename cannot vote on status
+      if (index(bare, "\342\234\205") || index(bare, "~~")) next
+      n = split(stamps, w, "|"); for (i = 1; i <= n; i++) if (index(bare, w[i])) next
+      lo = tolower(bare)
+      m = split(prose, q, "|");  for (i = 1; i <= m; i++) if (index(lo, tolower(q[i]))) next
+      # the FIRST backticked span in the original line, and only if it is an id
+      if (match(line, /`[A-Z][A-Z0-9]*(-[A-Z0-9]+)+`/) == 0) next
+      seg = substr(line, RSTART + 1, RLENGTH - 2)
+      print seg
+    }' "$1"
+}
+
 # ── The ship-record window: a MARKER, not a calendar date ───────────────────
 #
 # ⚠️ THIS CHECK READ "ALL CLEAN" WHILE CHECKING NOTHING, and that is why the
@@ -370,7 +423,21 @@ afail=0
 # (SITE-SPACE-01) — …` would have registered **SITE-SPACE-01** as having its own row when it
 # is only named inside another's. That is the `GTM-CHARITY-02` mistake exactly, re-created by
 # the fix for a different one — caught by diffing the accepted set before trusting it.
-sed -nE 's/^\| *`?([A-Z][A-Z0-9]*(-[A-Z0-9]+)+)`? *(\([^)]*\) *)?[—/|].*/\1/p' \
+# 🔴 THE QUALIFIER RUN, NOT ONE QUALIFIER (2026-11-07, BACKLOG-STATUS-GLYPH-BLIND-01).
+# This allowed exactly ONE `(...)` before the separator, and the registry writes runs:
+# `| STEPPER-CONTROL-01 (b)+(c) — ...`. So that row never entered `_reg`, the item sat open
+# with its arms shipped, and the arm below could not say so. ⚠️ **Blind on BOTH sides at
+# once**, which is the same shape this script already records for DASHBOARD-SCREEN-EXTRACT-01:
+# the heading arm could not see the glyph AND the registry arm could not see the qualifier,
+# so fixing either alone changed nothing observable.
+# 🔴 THE QUALIFIER SLOT IS FREE TEXT, NOT A BRACKET (third hole, same session). Rows read
+# `| SESSION-SLOTS-01 Phases 0-2 — ...` and `| STEPPER-CONTROL-01 (b)+(c) — ...`: one
+# unbracketed, one a bracket RUN. The pattern accepted exactly one `(...)` or an immediate
+# em dash, so BOTH were absent from `_reg` and both items sat open with their work shipped.
+# ⚠️ It is bounded by `[^|—]` so it cannot leave the first cell, and only the FIRST id is
+# captured — which is what the 2026-10 comment above was protecting when it tightened this
+# and accidentally made it too tight.
+sed -nE 's/^\| *`?([A-Z][A-Z0-9]*(-[A-Z0-9]+)+)`?[^|—]{0,60}[—|].*/\1/p' \
   docs/canonical/feature-registry.md | sort -u > /tmp/_reg
 # Open headers carry a *(provenance)* block; in-item emphasis bullets do not.
 # Without that discriminator this fires on narrative text, which is how four
@@ -419,30 +486,12 @@ sed -nE 's/^\| *`?([A-Z][A-Z0-9]*(-[A-Z0-9]+)+)`? *(\([^)]*\) *)?[—/|].*/\1/p'
   # arms, so between them they could not see the dominant way an open item is
   # written. Safe to include where 🔴 is not: 🔻 has no killed meaning in either
   # header shape, checked across all 14.
-  grep -oE '^#{3,4} (🔻|🔲|🟡|🟠|🟢|🔵|⏸️|⚖️|🧭) `[A-Z][A-Z0-9]*(-[A-Z0-9]+)+`' docs/releases/backlog.md \
-    | grep -oE '[A-Z][A-Z0-9]*(-[A-Z0-9]+)+'
-  # 🔴 SEVENTH TIME, 2026-10-11, AND THIS ONE HAD NO MARKER AT ALL. Every arm above
-  # keys on a status emoji, so the comment chain above reads as a list of markers
-  # that were missing — 🔻 added 2026-10-10, 🔴 argued about twice. NOBODY ASKED WHAT
-  # HAPPENS WHEN THERE IS NO MARKER. `BASEBUILD-ZONE-CEILING-01` shipped 2026-10-10
-  # (registry row, build-log heading, `feat 9b43e8f7`, closed in `79564b55`'s own
-  # subject) and its heading was a bare "### `ID` — a base-build runner with HR data
-  # still gets no zone ceiling". Invisible to all three arms, ALL CLEAN throughout,
-  # and on 2026-10-11 it was read as live work and put on the FOUNDER'S blocked list.
-  # ⚠️ THE ROADMAP WAS CORRECT THE WHOLE TIME (`- ✅ BASEBUILD-ZONE-CEILING-01`), so the
-  # cross-arm at line ~436 had the evidence and could not use it: that arm needs a
-  # marker too, AND skips any ID with a registry row, AND matches only `(ID)` in a
-  # table cell rather than a bullet. Three independent reasons, one miss.
-  # 📐 Measured before adding: 27 unmarked ID headings, 15 with a registry row, and
-  # 14 of those 15 are "— the original filing, for the record" (the archived filing
-  # kept under a stamped heading) with the 15th already reading ✅ CLOSED. So the
-  # exclusion below is the whole false-positive set, and this arm adds ZERO findings
-  # on a clean tree while catching the class. Falsified by restoring the stale
-  # heading and confirming STILL OPEN fires.
-  grep -E '^#{3,4} `[A-Z][A-Z0-9]*(-[A-Z0-9]+)+`' docs/releases/backlog.md \
-    | grep -viE 'for the record|SHIPPED|CLOSED|RESOLVED|WITHDRAWN|SUPERSEDED|DEAD|PARKED' \
-    | grep -oE '`[A-Z][A-Z0-9]*(-[A-Z0-9]+)+`' | head -1000 \
-    | grep -oE '[A-Z][A-Z0-9]*(-[A-Z0-9]+)+'
+  # ⚠️ BOTH GREPS THAT USED TO LIVE HERE ARE SUPERSEDED BY `heading_open_ids`
+  # (BACKLOG-STATUS-GLYPH-BLIND-01, 2026-11-07 — see the vocabulary block near the top).
+  # The comment history above is kept deliberately: it records seven separate occasions on
+  # which a MISSING GLYPH made this arm blind, and three on which this script said the real
+  # fix was to stop keying on glyphs. The eighth occasion is what finally did it.
+  heading_open_ids docs/releases/backlog.md
   # The board-tag bullet (BACKLOG-BULLET-BLIND-01). FIVE shipped items sat open
   # in this shape while this arm printed ok.
   board_tag_bullet_ids docs/releases/backlog.md
@@ -467,7 +516,21 @@ sed -nE 's/^\| *`?([A-Z][A-Z0-9]*(-[A-Z0-9]+)+)`? *(\([^)]*\) *)?[—/|].*/\1/p'
 #   (§29's discount, §113's long run), so the Coaching Board rules again before the flag may turn on, then phases
 #   C (screens), D (walk-run start) and E (the after-round). Removed 2026-10-25: the item closed when it was switched on.
 # Checked below in BOTH directions.
-_SHIPPED_AND_OPEN_OK=''
+#   ── Declared 2026-11-07, when BACKLOG-STATUS-GLYPH-BLIND-01 made these four visible for the
+#   first time. Each is genuinely BOTH, each names what would end the exemption.
+#   READINESS-SURFACE-01: the Design Board ruled SHIP WITH AMENDMENT and the SLT ruled BUILD;
+#     part is in the registry and the amendment's build is outstanding. Remove when the
+#     amendment ships.
+#   STRENGTH-ENGINE-01: a programme, not an item (ADR-024). Phases have shipped and have rows;
+#     the engine is a side project with phases open. Remove when the last phase ships.
+#   STEPPER-CONTROL-01: arms (a)(b)(c) shipped with a `(b)+(c)` registry row; arm (d) is
+#     BLOCKED ON A DEVICE and only the founder can unblock it. Remove when (d) lands.
+#   TODAY-CTA-CLEARANCE-01: shipped, then REVERTED, then re-opened; BLOCKED ON A DEVICE.
+#     Remove when the re-fix lands or the item is killed.
+# ⚠️ ALL FOUR SHOULD SHRINK, AND THE SCRIPT CANNOT TELL YOU IF THEY DO NOT. Per this repo's
+# own rule, a register's reason column is not a fixed problem: if one of these is still here
+# in a month, that is the finding.
+_SHIPPED_AND_OPEN_OK='READINESS-SURFACE-01 STRENGTH-ENGINE-01 STEPPER-CONTROL-01 TODAY-CTA-CLEARANCE-01'
 for id in $(comm -12 /tmp/_reg /tmp/_open); do
   case " $_SHIPPED_AND_OPEN_OK " in *" $id "*) continue ;; esac
   say "  STILL OPEN $id (has a feature-registry row)"; afail=1; fail=1
@@ -681,8 +744,19 @@ grep -oE '^#{2,4} [^`]*✅[^`]*`[A-Z][A-Z0-9]*(-[A-Z0-9]+)+`' docs/releases/back
 while IFS= read -r id; do
   [ -z "$id" ] && continue
   # A table row naming this id in its FIRST cell, whose SECOND cell has no ✅.
+  # 🔴 THIS ARM READ THE SECOND CELL AND LOOKED FOR ✅, AND BOTH WERE WRONG (2026-11-07).
+  # Its comment says "a status in a status cell", and it was written for a 3-column table. The
+  # strength rows are `name | tier | size | status` and their status reads **🟢 Shipped
+  # 2026-10-17**, so the arm compared `PAID` against ✅ and reported four shipped rows as open.
+  # ⚠️ IT SURFACED ONLY WHEN THE BACKLOG WAS STAMPED, because the cross-check needs a ✅ on the
+  # backlog side to fire at all — a latent false positive sitting behind a latent false negative.
+  # Now: EVERY cell after the first, and CLOSED BY WORDS, the same rule as `heading_open_ids`.
   if awk -F' \\| ' -v id="$id" '
-      /^\|/ && NF >= 3 && index($1, "(" id ")") > 0 && index($2, "✅") == 0 { found=1 }
+      /^\|/ && NF >= 3 && index($1, "(" id ")") > 0 {
+        rest = ""
+        for (k = 2; k <= NF; k++) rest = rest " " $k
+        if (index(rest, "✅") == 0 && rest !~ /Shipped|SHIPPED|Closed|CLOSED|Withdrawn|WITHDRAWN|Dead|DEAD|Killed|KILLED|Vacated|VACATED|Superseded|SUPERSEDED/) found = 1
+      }
       END { exit !found }' docs/releases/roadmap.md; then
     say "  ROADMAP ROW STILL OPEN $id (backlog says ✅)"
     rfail3=1; fail=1

@@ -4373,7 +4373,7 @@ fixed.
 > before then; **contact is the founder's call**. `df2cc6e6`'s race was 2026-09-26, last opened 2026-07-29,
 > no subscription — no action.
 
-### `STRENGTH-ENTRY-01` — strength entry points, icons, paywall and Coach *(filed 2026-10-17; items 1–5 SHIPPED 2026-10-17, item 6 OPEN)*
+### 🔲 `STRENGTH-ENTRY-01` — ITEM 6 ONLY; items 1–5 shipped — strength entry points, icons, paywall and Coach *(filed 2026-10-17; items 1–5 SHIPPED 2026-10-17, item 6 OPEN)*
 
 **Founder, verbatim (in substance):** *"How do I add strength sessions? Is it from the Me menu? Is it obvious? Should
 it be there? … the setup wizard (I think it should definitely be there) … ensure the entry points are clear and we
@@ -4454,25 +4454,25 @@ On a double day the Today headline reads the hero session (*"10km, slowly."*) wh
 Ruled hero-first by the Design Board; the headline was not part of the sitting. Whether it should name the day's
 total is a design question. **Tags:** 🧭 DESIGN BOARD.
 
-### `READINESS-OVERRIDES-01` — recovery easing ignores a session the runner moved *(filed 2026-10-17 · ✅ SHIPPED 2026-10-17, feature registry)*
+### ✅ `READINESS-OVERRIDES-01` — recovery easing ignores a session the runner moved *(filed 2026-10-17 · ✅ SHIPPED 2026-10-17, feature registry)*
 
 `app/api/pre-session-readiness/route.ts` calls `getSessionForDate(plan.weeks, date)` with **no overrides**, so on a
 day the runner moved a hard session onto, readiness sees the plan's original session (or none) and eases the wrong
 thing or nothing. Found by the slots inventory, in the route fixed this morning (`READINESS-WRONG-DAY-01`): my miss.
 **Tags:** ⚙️ NO BOARD (defect).
 
-### `PLAN-MOVE-DELETE-01` — a move can snap another moved session back *(filed 2026-10-17 · ✅ SHIPPED 2026-10-17, feature registry)*
+### ✅ `PLAN-MOVE-DELETE-01` — a move can snap another moved session back *(filed 2026-10-17 · ✅ SHIPPED 2026-10-17, feature registry)*
 
 `PlanCalendar.handleMove` deletes override rows matching `original_day = newDay` in the database but not in its client
 filter, so if the target day's own session had been moved elsewhere, that move is erased server-side while the screen
 still shows it. **Tags:** ⚙️ NO BOARD (defect).
 
-### `AUTOMATCH-MOVED-DATE-01` — auto-match dates a moved session by its original day *(filed 2026-10-17 · ✅ SHIPPED 2026-10-17, feature registry)*
+### ✅ `AUTOMATCH-MOVED-DATE-01` — auto-match dates a moved session by its original day *(filed 2026-10-17 · ✅ SHIPPED 2026-10-17, feature registry)*
 
 `sessionAutoMatch.sessionDateFor(weekStart, session.key)` uses the original day, so a run moved from Tuesday to
 Wednesday is matched against Tuesday's activities. **Tags:** ⚙️ NO BOARD (defect).
 
-### `STRENGTH-KNEE-DOMINANT-01` — 28% of leg sessions have no knee-dominant lift *(filed 2026-10-17 · ✅ SHIPPED 2026-10-17, feature registry)*
+### ✅ `STRENGTH-KNEE-DOMINANT-01` — 28% of leg sessions have no knee-dominant lift *(filed 2026-10-17 · ✅ SHIPPED 2026-10-17, feature registry)*
 
 **Found reviewing the founder's own plan** (general focus, regular, gym kit): weeks 1–4 pair a **Kickstand RDL with a
 Barbell RDL** as the two main lower lifts, so no squat, split squat or step-up for a month. Cause: the single-leg
@@ -4482,7 +4482,7 @@ lift**, spread evenly across focus and experience. Likely fix: re-pattern the si
 so the single-leg slot is always knee-dominant (and the running hinge slot gets its unilateral option).
 **Tags:** 🏃 COACHING BOARD (Blagrove: pattern taxonomy) → ⚙️ build.
 
-### `STRENGTH-PEAK-FILL-01` — the fill step undoes the peak cut *(filed 2026-10-17 · ✅ SHIPPED 2026-10-17, feature registry)*
+### ✅ `STRENGTH-PEAK-FILL-01` — the fill step undoes the peak cut *(filed 2026-10-17 · ✅ SHIPPED 2026-10-17, feature registry)*
 
 S6 cuts one main set in peak weeks ("heavy and low volume"); S10's fill step then adds sets back up to
 `MAIN_SETS_MAX` (4), because it skips only taper and deload. **Measured: 32.0% of peak-week main items sit above the
@@ -4490,7 +4490,7 @@ cut** (founder's plan: bench and pulldown 4×8 in peak; barbell step-up 4×8 bes
 lopsided). Fix: no main-set growth in peak (accessories and core may still fill).
 **Tags:** ⚙️ NO BOARD (restores S6's peak intent).
 
-### `STRENGTH-START-WEEK-01` — the technique block and the jumps gate count from the RUN plan's week 1 *(filed 2026-10-17 · ✅ SHIPPED 2026-10-17, feature registry)*
+### ✅ `STRENGTH-START-WEEK-01` — the technique block and the jumps gate count from the RUN plan's week 1 *(filed 2026-10-17 · ✅ SHIPPED 2026-10-17, feature registry)*
 
 **Found while building STRENGTH-ENTRY-01.** `generate.ts` passes `weekIndex` = the index in the run plan's weeks, and
 `inNoviceBlock` / the plyo gate read it (`weekIndex < NOVICE_BLOCK_WEEKS[experience]`, `weekIndex >= plyoMin`). So a
@@ -4501,7 +4501,7 @@ sheet are both mid-plan doors. **Not live:** strength is still admin-only. Its m
 `/zona-debug` RCA first (the fix needs a strength start date the engine does not have today).
 **Tags:** ⚙️ NO BOARD (restores S6/S8 intent) unless the fix changes the block lengths → 🏃 COACHING BOARD (Blagrove).
 
-### `STRENGTH-PLYO-BUDGET-01` — running-focused jumps land in ONE week of 16, and it is a deload *(filed 2026-10-17 · ✅ SHIPPED 2026-10-17, feature registry)*
+### ✅ `STRENGTH-PLYO-BUDGET-01` — running-focused jumps land in ONE week of 16, and it is a deload *(filed 2026-10-17 · ✅ SHIPPED 2026-10-17, feature registry)*
 
 **Measured 2026-10-17** (real 16-week half plan, running focus, `regular`, 2 × 45 min, gym kit): plyometrics appear
 in **week 8 (a deload) and no other week**. Build and peak weeks get none. Likely cause: plyo is the lowest-priority
@@ -4599,7 +4599,7 @@ beginner's long-run day a warranted ease returns the session unchanged: an adjus
 Found while building READINESS-SURFACE-01 item 3. The fix scales `duration_mins` by the same factor (§59's intent,
 no new prescription). **Tags:** ⚙️ NO BOARD (defect restoring documented intent).
 
-#### `STRENGTH-RECOVERY-01` — recovery softens strength. 🏃 Coaching Board **CORRECT WITH AMENDMENT** (re-sat 2026-10-17) · ✅ BUILT and LIVE 2026-10-18 (migration applied, deployed)
+#### ✅ `STRENGTH-RECOVERY-01` — recovery softens strength. 🏃 Coaching Board **CORRECT WITH AMENDMENT** (re-sat 2026-10-17) · ✅ BUILT and LIVE 2026-10-18 (migration applied, deployed)
 
 ✅ **Built 2026-10-18** (feature registry). Design Board sat on the moment (`recovery-card-strength-2026-10-18.md`),
 founder approved copy A–D: one recovery card a day, the reading against their normal, a line per session that changes,
@@ -7087,7 +7087,7 @@ injury-history runners against the rest. Until then `INJURY_WEEKLY_INCREASE_CAP_
 
 ---
 
-### `LOAD-DEDUPE-MANUAL-01` — ✅ CLOSED 2026-09-27. The two filed items were both wrong, and the RCA found a third ⚙️ NO BOARD
+### ✅ `LOAD-DEDUPE-MANUAL-01` — ✅ CLOSED 2026-09-27. The two filed items were both wrong, and the RCA found a third ⚙️ NO BOARD
 
 🔴 **`RUN-ANALYSIS-ORPHAN-01` WAS NOT A DEFECT AND I FILED IT AS ONE.** I reported *"88 of 145
 `run_analysis` rows reference an activity id not in the log — a second hole in the same
@@ -8461,7 +8461,7 @@ runner-facing.
 
 ## ⚖️ FILED 2026-10-01 — `DOCS-RESIDUAL-01`
 
-### `DOCS-RESIDUAL-01` — a residual on a SHIPPED item has no home in "what's left" ⚙️ **NO BOARD**
+### 🔲 `DOCS-RESIDUAL-01` — a residual on an already-delivered item has no home in "what's left" ⚙️ **NO BOARD**
 
 🔴 **MEASURED 2026-10-01: 105 `🔻` residual markers** — 73 in `backlog.md`, 32 in
 `feature-registry.md` — and **`audit-docs.sh` can see none of them.** It reported **ALL CLEAN**
