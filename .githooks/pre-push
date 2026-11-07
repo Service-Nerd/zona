@@ -1,17 +1,39 @@
 #!/usr/bin/env bash
-# Pre-push: TypeScript type check
-# Runs tsc --noEmit before any push. Filters out iOS/DerivedData noise.
-# Blocks the push only on errors in the actual app source.
+# Pre-push: TypeScript type check, then THE FULL TEST SUITE.
+#
+# ── WHY THE FULL SUITE, AND NOT THE SUITES FOR THE FILES IN THE DIFF ─────────
+# Founder decision, 2026-11-07, on the GOALPACE-5K-CLOCK-01 finding. Every push
+# used to be verified with `tsc` plus the suites for the files touched — a check
+# scoped to the DIFF. That is the same shape as `move-impact-check` and as the
+# pre-commit hook reading staged files only, and it has a measured cost:
+# `lib/plan/goalPace5k.test.ts` went red on a clean tree from a commit that
+# touched nothing in it, and only a full run found it.
+#
+# ⚠️ IT COSTS ABOUT THREE MINUTES, ON EVERY PUSH. That is the trade, taken
+# deliberately. Pushes are batched in this repo (one per wave, not one per
+# commit), so the real cost is a few minutes a day.
+#
+# ── THE ORDER IS NOT ARBITRARY ───────────────────────────────────────────────
+# `tsc` first: it is ~20s and catches the whole class of error that would make
+# the suite fail for an uninteresting reason. Fail cheap before failing slow.
+#
+# ── THE OVERRIDE IS NAMED AND LOUD, ON PURPOSE ───────────────────────────────
+# `git push --no-verify` already exists and skips EVERYTHING — tsc included —
+# silently. So the choice is not "hatch or no hatch", it is "a hatch that says
+# what it skipped, or one that says nothing". `ZONNA_SKIP_SUITE=1` prints the
+# skip in full and still runs tsc. This repo's record is that a guard which
+# fires on ordinary work gets switched off entirely (NOISE-GATE-01, recorded
+# four times), and a visible override is the thing that stops that.
 
-set -euo pipefail
+set -uo pipefail
+
+RUNNER="${ZONNA_TEST_CMD:-npx vitest run}"   # overridable so the hook's own test can inject a runner
+TSC="${ZONNA_TSC_CMD:-npx tsc --noEmit}"     # same, and for the same reason (cf. CAP_CONFIG_PATH)
 
 echo "  tsc --noEmit..."
-
-TSC_OUTPUT=$(npx tsc --noEmit 2>&1 || true)
-
+TSC_OUTPUT=$($TSC 2>&1 || true)
 # Filter out iOS DerivedData errors — those are third-party, not our code
 APP_ERRORS=$(echo "$TSC_OUTPUT" | grep -v "^ios/DerivedData" | grep "error TS" || true)
-
 if [ -n "$APP_ERRORS" ]; then
   echo ""
   echo "✗  TypeScript errors detected. Fix before pushing."
@@ -19,6 +41,33 @@ if [ -n "$APP_ERRORS" ]; then
   echo "$APP_ERRORS"
   exit 1
 fi
-
 echo "  ✓ Type check passed."
+
+if [ "${ZONNA_SKIP_SUITE:-}" = "1" ]; then
+  echo ""
+  echo "⚠️  FULL SUITE SKIPPED — ZONNA_SKIP_SUITE=1 was set."
+  echo "    Nothing has proved the tests pass. If this push breaks main, this is why."
+  echo "    The founder's standing decision (2026-11-07) is that the full suite runs on every push."
+  echo ""
+  exit 0
+fi
+
+echo "  full test suite (~3 min; the whole point is that it is not scoped to the diff)..."
+if ! $RUNNER; then
+  echo ""
+  echo "✗  THE TEST SUITE IS RED. Push blocked."
+  echo ""
+  echo "    If the failure is in code this push did not touch, that is the case this"
+  echo "    hook exists for (GOALPACE-5K-CLOCK-01) — and it is a finding, not a"
+  echo "    reason to bypass. Check whether a FIXTURE expired before blaming a commit:"
+  echo "    a bisect runs every step at today's clock, so a test that went stale reads"
+  echo "    as one the commit broke."
+  echo ""
+  echo "    Deliberate override, which still runs tsc and says so:"
+  echo "      ZONNA_SKIP_SUITE=1 git push"
+  echo ""
+  exit 1
+fi
+
+echo "  ✓ Full suite passed."
 exit 0

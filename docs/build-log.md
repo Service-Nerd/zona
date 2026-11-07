@@ -5,6 +5,15 @@ angle. Feeds the weekly DHTB LinkedIn build-in-public posts — keep it honest, 
 it specific, no polish. The content system adds the voice.
 
 ---
+## 2026-11-07 — PREPUSH-FULL-SUITE-01 · the full suite now blocks every push
+**Shipped:** `git push` runs the whole test suite first and refuses if anything is red. About three minutes, every time.
+**Dev learning:** the hook belongs in `.githooks`, not in the assistant's tooling. `core.hooksPath` points there, so a git-level hook covers **every** push from this machine — mine, and the founder's from a terminal. An assistant-side check would have covered exactly one of those, and the gap would have been invisible.
+**Product/creator learning:** nothing a runner sees. But the reason it exists is a runner-facing class: the thing that went red was in code no diff touched, and a diff-scoped check cannot see it by construction.
+**AI-building learning:** I made both commands the hook runs injectable, which is what made it testable — nine cases instead of nine three-minute waits. The precedent was already here (`verify-cap-config.mjs` takes `CAP_CONFIG_PATH` for exactly this). Two of the nine cases only exist because of recorded lessons rather than imagination: one asserts a red `tsc` short-circuits so you do not wait three minutes to learn something a twenty-second check already knew, and one asserts the runner is **actually invoked**, because a hook that silently never runs it passes every other case in the file.
+**The honest bit:** I gave it an escape hatch the founder did not ask for, and I think that is right rather than cautious: `git push --no-verify` already exists, skips tsc as well, and says nothing. The choice was never "hatch or no hatch" — it was "a hatch that announces itself or one that hides". Flagged it rather than slipping it in.
+**Hook material:** "Three minutes on every push. The bug that justified it was in a file no commit had touched for eleven days."
+**Postable?:** maybe — it is a small discipline post about where a check lives.
+
 ## 2026-11-07 — GOALPACE-5K-CLOCK-01 (review round) · four defects in the gate, and all four reasons in its register were false
 **Shipped:** the benchmark-date gate actually works now. Four defects fixed in the gate I had pushed three hours earlier, plus an item closed for having no subject.
 **Dev learning:** **my forward sweep was measuring a frozen clock.** I justified a four-file debt register by running each file at system times in 2026-12 and 2027-03 and watching them stay green. Three of those files call `setSystemTime(FROZEN_NOW)` themselves, so my prepended `vi.setSystemTime` was overridden and the sweep proved nothing about them. The fourth had saturated at the discount cap two weeks earlier. **All four stated reasons were false, in a register I wrote the same day as the lesson about false records.** The real state: nothing in the repo is at risk, and freezing the clock is a *stronger* remedy than the one my gate demanded — so the gate was pushing correctly-written tests onto the weaker option.

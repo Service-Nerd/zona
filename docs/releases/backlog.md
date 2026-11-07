@@ -156,6 +156,13 @@ before planning against any number below (an item is a snapshot of the code on t
   fixtures contain the banned shape — "an ownership arm matching its own comment"), and it **read comments**, which
   `HOOK-RGBA-COMMENTS-01` records as how a guard gets switched off. Comments are stripped by a stripper that preserves
   string contents, because the twin trap is that a value inside a STRING is code, not prose.
+  ✅ **AND IT IS A GATE NOW (founder decision, 2026-11-07): `.githooks/pre-push` runs `tsc` then the FULL
+  `vitest run` and blocks the push on either.** In `.githooks`, so it covers every push from this machine and not
+  only an assistant's. ~3 minutes, taken deliberately; `tsc` first because it fails cheap. The override is **named
+  and loud** — `ZONNA_SKIP_SUITE=1` prints the skip and still runs `tsc` — because the alternative is
+  `git push --no-verify`, which skips everything silently, and this repo has recorded four times that a guard firing
+  on ordinary work gets switched off. **9 cases in `.githooks/pre-push.test.sh`, wired into `test:githooks`**, with
+  both commands injectable; 🔴 **falsified end-to-end by breaking a test and having a REAL push refused.**
   🔻 **The rule in `CLAUDE.md` STANDS and its evidence has been corrected.** "Run the full suite before a push" is
   still right — running it is what found this — but it did not catch eleven days of redness, because there were none.
   Both second-order asks stay founder calls: whether a ~190s `vitest run` joins the pre-push hook, and who watches CI
