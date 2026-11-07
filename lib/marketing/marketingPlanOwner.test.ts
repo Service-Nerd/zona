@@ -49,10 +49,6 @@ const SELF = 'lib/marketing/marketingPlanOwner.test.ts'
  *  re-checks that shape rather than trusting the entry — an exemption nobody
  *  re-reads is how a gate rots. */
 const SAFE: Record<string, { why: string; proof: RegExp }> = {
-  'lib/marketing/whenItNotices.test.ts': {
-    why: 'asserts the SOURCE of WhenItNotices.tsx contains the call; it generates nothing itself',
-    proof: /toContain\('generateRulePlan\('\)/,
-  },
   'lib/plan/longRunDay.test.ts': {
     why: 'filters !p.staged before picking a plan, so it can never meet a staged entry',
     proof: /!p\.staged/,
@@ -86,6 +82,19 @@ const FIXED_SLUG: Record<string, { why: string; resolve: (src: string) => string
   'components/marketing/WhenItNotices.tsx': {
     why: 'reads its own SOURCE_SLUG constant',
     resolve: sourceSlugConst,
+  },
+  // 🔴 THIS WAS A `SAFE` ENTRY READING *"it generates nothing itself"*, AND IT
+  // GENERATES — code review, 2026-11-07. It resolves a slug out of
+  // `MARKETING_PLANS` and calls `generateRulePlan` to reproduce the component's
+  // own call. Its `proof` regex matched an unrelated `toContain` assertion about
+  // the component's SOURCE, so the one exemption that actually generated was the
+  // one whose shape was never checked — and `SAFE` entries get none of the slug
+  // checks below. **An exemption's reason has to describe the file, not the file
+  // next to it.** Its slug IS non-staged, so nothing was ever at risk; the
+  // misfiling was.
+  'lib/marketing/whenItNotices.test.ts': {
+    why: 'resolves one named slug from MARKETING_PLANS to reproduce the component\'s own call',
+    resolve: src => src.match(/p\.slug === '([^']+)'/)?.[1] ?? null,
   },
 }
 

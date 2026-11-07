@@ -156,6 +156,29 @@ describe('SITE-STAGED-PLAN-01 — a staged page publishes a block, not a race', 
     expect(sr!.checkpointWeek, 'an absent checkpoint_week must be null, never 0').toBeNull()
     expect(sr!.raceWeeks).toBeNull()
     expect(sr!.doorKm).toBe(12)
+
+    // 🔴 AND A MISSING KEY WAS THE ONE CASE THE OLD `?? 0` PATH ALSO HANDLED, so
+    // this arm could not tell the fix from the defect — code review, 2026-11-07.
+    // These three are each `0` under `Number()` and finite, so the first fix
+    // returned 0 for all of them and the page would have rendered *"Week 0 is not
+    // a finish line"* for a blank field. **Falsify an absence check with a value
+    // that LOOKS like a number, not with nothing.**
+    for (const blank of ['', '   ', false, [], {}, 'twelve', NaN, Infinity]) {
+      const odd = {
+        ...plan,
+        meta: { ...(plan.meta as object), staged_race: { door_km: 12, checkpoint_week: blank } },
+      } as unknown as typeof plan
+      expect(stagedRaceOfPlan(odd)!.checkpointWeek,
+        `checkpoint_week ${JSON.stringify(blank) ?? String(blank)} must read as absent, not as a week`).toBeNull()
+    }
+    // ...while a real value, in either spelling, still arrives.
+    for (const [raw, want] of [[16, 16], ['16', 16], [0, 0]] as Array<[unknown, number]>) {
+      const good = {
+        ...plan,
+        meta: { ...(plan.meta as object), staged_race: { door_km: 12, checkpoint_week: raw } },
+      } as unknown as typeof plan
+      expect(stagedRaceOfPlan(good)!.checkpointWeek).toBe(want)
+    }
   })
 
   it('the lighter-week count is counted from the table, not typed', () => {

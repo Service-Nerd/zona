@@ -87,9 +87,19 @@ export interface StagedRace {
  *  a finish line"* — a sentence about a week that does not exist, reading as
  *  deliberate. A field the engine did not write comes back `null` so a caller has
  *  to decide what to do about it. */
+/*  🔴 ...AND THE FIRST FIX STILL WROTE ABSENCE AS A VALUE FOR THREE INPUTS,
+ *  because it COERCED BEFORE CHECKING: `Number('')`, `Number(false)` and
+ *  `Number([])` are all `0` and all finite, so only a literal `null`/`undefined`
+ *  came back null. A `checkpoint_week: ''` would have defeated the page's
+ *  fallback exactly as `?? 0` did, and the arm written for this seam exercised a
+ *  MISSING KEY — which the old `?? 0` path also handled. Code review, 2026-11-07.
+ *  So the type is checked first and the coercion is only ever applied to a
+ *  non-blank string. */
 const num = (v: unknown): number | null => {
+  if (typeof v === 'number') return Number.isFinite(v) ? v : null
+  if (typeof v !== 'string' || v.trim() === '') return null
   const n = Number(v)
-  return v == null || !Number.isFinite(n) ? null : n
+  return Number.isFinite(n) ? n : null
 }
 
 export function stagedRaceOfPlan(plan: Plan): StagedRace | null {
