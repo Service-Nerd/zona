@@ -115,7 +115,7 @@ const VOLUMES = [15, 30, 55]
 // ⚠️ APPENDED, NOT MULTIPLIED, following this file's own ratified pattern —
 // PARITY-HSR-01: *"a ninth cartesian axis would be the wrong fix: 4x on an already
 // slow check"*, applied again by PARITY-DST-01, PARITY-GRID-PRODUCT-VALUES-01 and
-// PARITY-NO-BENCHMARK-01. 72 rows on 6,102 (+1.2%), the same cost as INJURY_EXTRA.
+// PARITY-NO-BENCHMARK-01. **108 rows on 6,102 (+1.8%)** — 6 variants x 6 distances x 3 levels.
 const LOWVOL_EXTRA: ReadonlyArray<{ tag: string; cw: number; lr: number }> = [
   { tag: 'lv-4-0',  cw: 4, lr: 0 },   // never run, below §116's running floor
   { tag: 'lv-5-5',  cw: 5, lr: 5 },   // §111 Am. 4's measured corner: one 5 km run a week
@@ -247,6 +247,30 @@ const EXPECTED_ROWS =
 // changed, so this is the same defect in the same list, one field over.
 const STRIP_META = ['generated_at', 'created_at', 'updated_at', 'last_updated']
 
+/**
+ * 🔴 NESTED CLOCK-DERIVED FIELDS, WHICH `STRIP_META`'S LOOP CANNOT REACH (2026-11-07,
+ * `/code-review`). The loop above deletes top-level and `meta.*` keys only, so
+ * `plan.pre_plan.week_estimate` survives — and it is literally `${todayIso} → ${planStartIso}`
+ * (`ruleEngine.ts:6342`), day-granular, present on 9 of 18 sampled MAIN-grid cases.
+ *
+ * ⚠️ So the main cartesian has been able to flip roughly half its pre-plan rows across a
+ * midnight straddle since it was written, and the commit that added `last_updated` declared
+ * the volatile-field hole closed while this one was still open. **A strip list is only as deep
+ * as its traversal.**
+ */
+const STRIP_PATHS = [['pre_plan', 'week_estimate']] as const
+const stripVolatile = (o: any): void => {
+  for (const f of STRIP_META) {
+    if (o?.meta) delete o.meta[f]
+    delete o?.[f]
+  }
+  for (const path of STRIP_PATHS) {
+    let cur = o
+    for (const k of path.slice(0, -1)) cur = cur?.[k]
+    if (cur) delete cur[path[path.length - 1]]
+  }
+}
+
 async function probe(): Promise<void> {
   // Imported lazily so the orchestrator never loads the engine itself.
   const { generateRulePlan } = await import('../lib/plan/ruleEngine')
@@ -278,10 +302,7 @@ async function probe(): Promise<void> {
                 try {
                   const plan: any = generateRulePlan(input as any, tier as any, PLAN_START)
                   const stable = JSON.parse(JSON.stringify(plan))
-                  for (const f of STRIP_META) {
-                    if (stable?.meta) delete stable.meta[f]
-                    delete stable[f]
-                  }
+                  stripVolatile(stable)
                   rows.push(`${key}\tOK\t${createHash('sha256')
                     .update(JSON.stringify(stable)).digest('hex').slice(0, 16)}`)
                 } catch (e: any) {
@@ -314,10 +335,7 @@ async function probe(): Promise<void> {
           try {
             const plan: any = generateRulePlan(input as any, tier as any, PLAN_START)
             const stable = JSON.parse(JSON.stringify(plan))
-            for (const f of STRIP_META) {
-              if (stable?.meta) delete stable.meta[f]
-              delete stable[f]
-            }
+            stripVolatile(stable)
             rows.push(`${key}\tOK\t${createHash('sha256')
               .update(JSON.stringify(stable)).digest('hex').slice(0, 16)}`)
           } catch (e: any) {
@@ -349,10 +367,7 @@ async function probe(): Promise<void> {
         try {
           const plan: any = generateRulePlan(input as any, tier as any, PLAN_START)
           const stable = JSON.parse(JSON.stringify(plan))
-          for (const f of STRIP_META) {
-            if (stable?.meta) delete stable.meta[f]
-            delete stable[f]
-          }
+          stripVolatile(stable)
           rows.push(`${key}\tOK\t${createHash('sha256')
             .update(JSON.stringify(stable)).digest('hex').slice(0, 16)}`)
         } catch (e: any) {
@@ -385,10 +400,14 @@ async function probe(): Promise<void> {
         }
         const key = [race_distance_km, race_date, user_declared_level, days_available,
           'none', lv.cw, tier, goal, lv.tag].join('|')
-        // 🔴 THIS BLOCK GOES THROUGH `runEngine`, NOT `generateRulePlan`, AND WITHOUT THAT IT
-        // WOULD BE DECORATIVE. Measured 2026-11-07: at every one of these inputs
-        // `generateRulePlan` REFUSES (LongRunReadinessError / BaseVolumeError) while
-        // `runEngine` returns a **base_build staged plan** — which is what the runner receives.
+        // 🔴 THIS BLOCK GOES THROUGH `runEngine`, NOT `generateRulePlan`, AND WITHOUT THAT MOST
+        // OF IT WOULD BE DECORATIVE. Measured 2026-11-07: **24 of the 36 distance x variant
+        // combinations are REFUSED by `generateRulePlan`** (LongRunReadinessError /
+        // BaseVolumeError) while `runEngine` returns a **base_build staged plan** — which is what
+        // the runner receives. ⚠️ **NOT "every one", and the first cut of this comment said every
+        // one:** 5K and 10K generate 6 of 6, so 12 of 36 were never refused at all
+        // (`/code-review`, same day). The claim mattered because `PARITY-STAGED-BLIND-01` was
+        // filed on it.
         // Hashing the refusal MESSAGE cannot detect a change to the staged block, so the first
         // cut of this block reported IDENTICAL even with `BASE_BUILD_ONRAMP_MIN_START_KM`
         // mutated 6 -> 7 directly underneath it.
@@ -401,12 +420,14 @@ async function probe(): Promise<void> {
         // those inputs WERE in range, and all parity ever saw was a refusal message that did
         // not move. Not fixed here — changing the main grid's producer is its own build.
         try {
-          const out: any = runEngine({ input: input as any, tier: tier as any, planStart: PLAN_START, displayUnits: 'km' } as any)
+          // 🔴 `today` PINNED, AND THE FIRST CUT OMITTED IT WHILE THE ITEM I FILED IN THE SAME
+          // COMMIT NAMED THE REQUIREMENT. `runEngine` defaults `today` to `new Date()`, and 36 of
+          // these 108 rows return `kind: 'plan'` carrying `meta.uncovered_runway_weeks` derived
+          // from it — moving today one week changed 12 of 12 sampled rows (6 → 5). Two probes
+          // across a week boundary would have reported 36 false CHANGED. Found by `/code-review`.
+          const out: any = runEngine({ input: input as any, tier: tier as any, planStart: PLAN_START, today: PLAN_START, displayUnits: 'km' } as any)
           const stable = JSON.parse(JSON.stringify(out?.plan ?? out?.body ?? out))
-          for (const f of STRIP_META) {
-            if (stable?.meta) delete stable.meta[f]
-            delete stable[f]
-          }
+          stripVolatile(stable)
           rows.push(`${key}\t${String(out?.kind ?? 'none').toUpperCase()}\t${createHash('sha256')
             .update(JSON.stringify(stable)).digest('hex').slice(0, 16)}`)
         } catch (e: any) {
@@ -447,10 +468,7 @@ async function probe(): Promise<void> {
         try {
           const plan: any = generateRulePlan(input as any, tier as any, PLAN_START)
           const stable = JSON.parse(JSON.stringify(plan))
-          for (const f of STRIP_META) {
-            if (stable?.meta) delete stable.meta[f]
-            delete stable[f]
-          }
+          stripVolatile(stable)
           rows.push(`${key}\tOK\t${createHash('sha256')
             .update(JSON.stringify(stable)).digest('hex').slice(0, 16)}`)
         } catch (e: any) {
@@ -479,10 +497,7 @@ async function probe(): Promise<void> {
         try {
           const plan: any = generateRulePlan(input as any, tier as any, DST_PLAN_START)
           const stable = JSON.parse(JSON.stringify(plan))
-          for (const f of STRIP_META) {
-            if (stable?.meta) delete stable.meta[f]
-            delete stable[f]
-          }
+          stripVolatile(stable)
           rows.push(`${key}\tOK\t${createHash('sha256')
             .update(JSON.stringify(stable)).digest('hex').slice(0, 16)}`)
         } catch (e: any) {
