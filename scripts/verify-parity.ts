@@ -95,6 +95,42 @@ const INJURIES: string[][] = [[], ['Knee'], ['Shin splints']]
 // 72 rows on 5,994 (+1.2%).
 const INJURY_EXTRA: string[][] = [['Achilles'], ['Back'], ['Hip'], ['Plantar fasciitis']]
 const VOLUMES = [15, 30, 55]
+
+// PARITY-GRID-VOLUME-FLOOR-01 — THE GRID'S LOWEST VOLUME IS 15 km/week AND THE
+// AFFECTED BAND WAS 4-8.
+//
+// 🔴 MEASURED 2026-11-07. `verify:parity` reported **IDENTICAL on 6,102 cases** for
+// §111 Amendment 4, a change that moved 80 real inputs and rescued 14 from an
+// outright refusal — because **not one row in this grid could express an affected
+// runner**. Then again the same day for §117 Amendment 7, whose entire population
+// sits at `effectiveStartKm` 6.
+//
+// ⚠️ AND THE LONGEST RUN IS DERIVED, WHICH IS A SECOND BLINDNESS IN THE SAME ROW.
+// The cartesian sets `longest_recent_run_km: max(5, round(cw / 3))`, so it can
+// never reach `lr 0` — the never-run runner — at any volume. That is
+// `ENVELOPE-LRR-BLIND-01`'s class, in this file. Both axes are varied here
+// INDEPENDENTLY, because varying one while deriving the other cannot reach the
+// interaction (recorded: "varying an axis is not reaching the interaction").
+//
+// ⚠️ APPENDED, NOT MULTIPLIED, following this file's own ratified pattern —
+// PARITY-HSR-01: *"a ninth cartesian axis would be the wrong fix: 4x on an already
+// slow check"*, applied again by PARITY-DST-01, PARITY-GRID-PRODUCT-VALUES-01 and
+// PARITY-NO-BENCHMARK-01. 72 rows on 6,102 (+1.2%), the same cost as INJURY_EXTRA.
+const LOWVOL_EXTRA: ReadonlyArray<{ tag: string; cw: number; lr: number }> = [
+  { tag: 'lv-4-0',  cw: 4, lr: 0 },   // never run, below §116's running floor
+  { tag: 'lv-5-5',  cw: 5, lr: 5 },   // §111 Am. 4's measured corner: one 5 km run a week
+  { tag: 'lv-6-0',  cw: 6, lr: 0 },   // ON the floor, never run — §117 Am. 7's whole population
+  { tag: 'lv-6-5',  cw: 6, lr: 5 },   // ON the floor, 2.17x week-1 step (WEEK1-DELIVERED-CEILING-01)
+  { tag: 'lv-8-0',  cw: 8, lr: 0 },   // above the floor, never run
+  { tag: 'lv-8-5',  cw: 8, lr: 5 },   // above the floor, the leap's worst measured band
+]
+
+// 🔴 THE FIRST CUT OF THIS BLOCK WAS cw 4 AND 8 ONLY, AND ITS OWN FALSIFICATION EXPOSED IT.
+// Mutating `BASE_BUILD_ONRAMP_MIN_START_KM` 6 -> 7 — a change that can only bite AT cw 6 —
+// left parity reporting IDENTICAL across all 6,174 rows, because no row sat at 6. So the block
+// written to end this file's volume blindness was itself blind to the exact value both of the
+// day's amendments turn on (`effectiveStartKm` 6). **A falsification aimed at the wrong
+// population proves nothing, and it looks exactly like a working check.** cw 5 and 6 added.
 const TIERS = ['free', 'paid'] as const
 
 // Both goal branches. `finish` and `time_target` diverge early and widely — see
@@ -198,18 +234,29 @@ const EXPECTED_ROWS =
   + DISTANCES.length * LEVELS.length * DST_RACE_DATES.length          // PARITY-DST-01
   + DISTANCES.length * LEVELS.length * INJURY_EXTRA.length            // PARITY-GRID-PRODUCT-VALUES-01
   + DISTANCES.length * LEVELS.length * BENCHMARK_EXTRA.length        // PARITY-NO-BENCHMARK-01
+  + DISTANCES.length * LEVELS.length * LOWVOL_EXTRA.length           // PARITY-GRID-VOLUME-FLOOR-01
 
 /** Wall-clock / run-scoped fields. Present on both sides, different every run. */
-const STRIP_META = ['generated_at', 'created_at', 'updated_at']
+// 🔴 `last_updated` ADDED 2026-11-07, AND IT WAS FOUND BY A FALSIFICATION THAT FAILED.
+// The new low-volume block reported 72 of 72 rows CHANGED with the engine untouched. Two
+// `--probe` runs in the SAME tree differed, and the single differing field across two
+// identical `runEngine` calls was `meta.last_updated` — a millisecond wall-clock stamp the
+// staged path writes and this list did not name. ⚠️ **A gate that cries wolf every run is
+// one that gets switched off**, which this repo records as equivalent to having no gate;
+// `meta.generated_at` made the FIRST version of this whole file report all 2,592 plans as
+// changed, so this is the same defect in the same list, one field over.
+const STRIP_META = ['generated_at', 'created_at', 'updated_at', 'last_updated']
 
 async function probe(): Promise<void> {
   // Imported lazily so the orchestrator never loads the engine itself.
   const { generateRulePlan } = await import('../lib/plan/ruleEngine')
+  // 🔴 `runEngine`, FOR THE LOW-VOLUME BLOCK ONLY, AND THE REASON IS THE WHOLE FINDING BELOW.
+  const { runEngine } = await import('../lib/plan/engine')
   const rows: string[] = []
 
   for (const race_distance_km of DISTANCES)
     for (const race_date of RACE_DATES)
-      for (const fitness_level of LEVELS)
+      for (const user_declared_level of LEVELS)
         for (const days_available of DAYS)
           for (const injury_history of INJURIES)
             for (const current_weekly_km of VOLUMES)
@@ -221,9 +268,9 @@ async function probe(): Promise<void> {
                   ...(goal === 'time_target' ? { target_time: TARGET_TIMES[race_distance_km] } : {}),
                   race_date, race_distance_km, current_weekly_km,
                   longest_recent_run_km: Math.max(5, Math.round(current_weekly_km / 3)),
-                  days_available, fitness_level, injury_history,
+                  days_available, user_declared_level, injury_history,
                 }
-                const key = [race_distance_km, race_date, fitness_level, days_available,
+                const key = [race_distance_km, race_date, user_declared_level, days_available,
                   injury_history.join('+') || 'none', current_weekly_km, tier, goal,
                   // The main grid sends no `hard_session_relationship` at all;
                   // 'unset' is the honest label for that, not 'neutral'.
@@ -246,7 +293,7 @@ async function probe(): Promise<void> {
   // ── PARITY-HSR-01 block — see HSR_EXTRA above for why this is appended
   // rather than folded into the cartesian product.
   for (const race_distance_km of DISTANCES)
-    for (const fitness_level of LEVELS)
+    for (const user_declared_level of LEVELS)
       for (const goal of GOALS)
         for (const hard_session_relationship of HSR_EXTRA) {
           const race_date = RACE_DATES[0]
@@ -259,10 +306,10 @@ async function probe(): Promise<void> {
             ...(goal === 'time_target' ? { target_time: TARGET_TIMES[race_distance_km] } : {}),
             race_date, race_distance_km, current_weekly_km,
             longest_recent_run_km: Math.max(5, Math.round(current_weekly_km / 3)),
-            days_available, fitness_level, injury_history: [],
+            days_available, user_declared_level, injury_history: [],
             hard_session_relationship,
           }
-          const key = [race_distance_km, race_date, fitness_level, days_available,
+          const key = [race_distance_km, race_date, user_declared_level, days_available,
             'none', current_weekly_km, tier, goal, hard_session_relationship].join('|')
           try {
             const plan: any = generateRulePlan(input as any, tier as any, PLAN_START)
@@ -282,7 +329,7 @@ async function probe(): Promise<void> {
   // never carried. One race date / day count / volume / tier / goal, so the
   // injury value is the only thing varying beside distance and level.
   for (const race_distance_km of DISTANCES)
-    for (const fitness_level of LEVELS)
+    for (const user_declared_level of LEVELS)
       for (const injury_history of INJURY_EXTRA) {
         const race_date = RACE_DATES[0]
         const days_available = 4
@@ -293,11 +340,11 @@ async function probe(): Promise<void> {
           preferred_long_run_day: 'sun',
           race_date, race_distance_km, current_weekly_km,
           longest_recent_run_km: Math.max(5, Math.round(current_weekly_km / 3)),
-          days_available, fitness_level, injury_history,
+          days_available, user_declared_level, injury_history,
         }
         // `KEY_FIELDS` is positional and these injury values appear in no other
         // block, so the key is unique without a prefix — same argument as DST.
-        const key = [race_distance_km, race_date, fitness_level, days_available,
+        const key = [race_distance_km, race_date, user_declared_level, days_available,
           injury_history.join('+'), current_weekly_km, tier, 'finish', 'unset'].join('|')
         try {
           const plan: any = generateRulePlan(input as any, tier as any, PLAN_START)
@@ -313,11 +360,65 @@ async function probe(): Promise<void> {
         }
       }
 
+  // ── PARITY-GRID-VOLUME-FLOOR-01 block — see LOWVOL_EXTRA above. Volume and the
+  // longest run varied INDEPENDENTLY, below the cartesian's floor of 15.
+  for (const race_distance_km of DISTANCES)
+    for (const user_declared_level of LEVELS)
+      for (const lv of LOWVOL_EXTRA) {
+        // RACE_DATES[2] (the longest runway), for BENCHMARK_EXTRA's measured reason: at
+        // the nearer dates §44 refuses most distances, and a refused row carries a
+        // message rather than a plan hash, so it can never detect a prescription change.
+        const race_date = RACE_DATES[2]
+        const days_available = 4
+        const tier = 'paid'
+        const goal = 'finish'
+        const input = {
+          goal, age: 40, resting_hr: 55, max_hr: 180,
+          preferred_long_run_day: 'sun',
+          race_date, race_distance_km,
+          current_weekly_km: lv.cw,
+          longest_recent_run_km: lv.lr,
+          days_available, user_declared_level, injury_history: [],
+          // A real low-volume runner acknowledges the prep warning; an envelope that
+          // never does counts every confirmation prompt as a refusal.
+          acknowledged_days_warning: true, acknowledged_prep_warning: true,
+        }
+        const key = [race_distance_km, race_date, user_declared_level, days_available,
+          'none', lv.cw, tier, goal, lv.tag].join('|')
+        // 🔴 THIS BLOCK GOES THROUGH `runEngine`, NOT `generateRulePlan`, AND WITHOUT THAT IT
+        // WOULD BE DECORATIVE. Measured 2026-11-07: at every one of these inputs
+        // `generateRulePlan` REFUSES (LongRunReadinessError / BaseVolumeError) while
+        // `runEngine` returns a **base_build staged plan** — which is what the runner receives.
+        // Hashing the refusal MESSAGE cannot detect a change to the staged block, so the first
+        // cut of this block reported IDENTICAL even with `BASE_BUILD_ONRAMP_MIN_START_KM`
+        // mutated 6 -> 7 directly underneath it.
+        //
+        // ⚠️ AND THAT IS THE DEEPER FINDING, FILED SEPARATELY AS `PARITY-STAGED-BLIND-01`:
+        // the main cartesian above hashes `generateRulePlan`, so **the entire staged / offer
+        // path is invisible to it at EVERY volume** — §111 Am. 4, §117 Am. 7, §116 and §118's
+        // whole NO-RUNNER-TURNED-AWAY family. That is why §111 Am. 4 reported IDENTICAL on
+        // 6,102 cases while 80 inputs changed and 14 were rescued from an outright refusal:
+        // those inputs WERE in range, and all parity ever saw was a refusal message that did
+        // not move. Not fixed here — changing the main grid's producer is its own build.
+        try {
+          const out: any = runEngine({ input: input as any, tier: tier as any, planStart: PLAN_START, displayUnits: 'km' } as any)
+          const stable = JSON.parse(JSON.stringify(out?.plan ?? out?.body ?? out))
+          for (const f of STRIP_META) {
+            if (stable?.meta) delete stable.meta[f]
+            delete stable[f]
+          }
+          rows.push(`${key}\t${String(out?.kind ?? 'none').toUpperCase()}\t${createHash('sha256')
+            .update(JSON.stringify(stable)).digest('hex').slice(0, 16)}`)
+        } catch (e: any) {
+          rows.push(`${key}\tTHREW\t${String(e?.message ?? e).replace(/\s+/g, ' ').slice(0, 140)}`)
+        }
+      }
+
   // ── PARITY-NO-BENCHMARK-01 block — see BENCHMARK_EXTRA above. Appended rather
   // than multiplied into the cartesian product: every distance x level x the two
   // clock-stable benchmark variants, at one race date / day count / volume.
   for (const race_distance_km of DISTANCES)
-    for (const fitness_level of LEVELS)
+    for (const user_declared_level of LEVELS)
       for (const bm of BENCHMARK_EXTRA) {
         // 🔴 RACE_DATES[2], NOT [0], AND THE REASON IS MEASURED. The first cut used
         // RACE_DATES[0] ('2026-12-06') like the blocks above it, and TWELVE of the
@@ -338,10 +439,10 @@ async function probe(): Promise<void> {
           target_time: TARGET_TIMES[race_distance_km],
           race_date, race_distance_km, current_weekly_km,
           longest_recent_run_km: Math.max(5, Math.round(current_weekly_km / 3)),
-          days_available, fitness_level, injury_history: [],
+          days_available, user_declared_level, injury_history: [],
           benchmark: bm.benchmark,
         }
-        const key = [race_distance_km, race_date, fitness_level, days_available,
+        const key = [race_distance_km, race_date, user_declared_level, days_available,
           'none', current_weekly_km, tier, goal, bm.tag].join('|')
         try {
           const plan: any = generateRulePlan(input as any, tier as any, PLAN_START)
@@ -359,7 +460,7 @@ async function probe(): Promise<void> {
 
   // ── PARITY-DST-01 block — tight runways that cross spring-forward.
   for (const race_distance_km of DISTANCES)
-    for (const fitness_level of LEVELS)
+    for (const user_declared_level of LEVELS)
       for (const race_date of DST_RACE_DATES) {
         const days_available = 4
         const current_weekly_km = 30
@@ -369,11 +470,11 @@ async function probe(): Promise<void> {
           preferred_long_run_day: 'sun',
           race_date, race_distance_km, current_weekly_km,
           longest_recent_run_km: Math.max(5, Math.round(current_weekly_km / 3)),
-          days_available, fitness_level, injury_history: [],
+          days_available, user_declared_level, injury_history: [],
         }
         // No 'dst' prefix: `KEY_FIELDS` is positional, and the race dates in
         // this block appear nowhere else, so the key is already unique.
-        const key = [race_distance_km, race_date, fitness_level, days_available,
+        const key = [race_distance_km, race_date, user_declared_level, days_available,
           'none', current_weekly_km, tier, 'finish', 'unset'].join('|')
         try {
           const plan: any = generateRulePlan(input as any, tier as any, DST_PLAN_START)

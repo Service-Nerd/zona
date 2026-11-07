@@ -199,7 +199,7 @@ before planning against any number below (an item is a snapshot of the code on t
   runner at 6–8 km/week completes a 2 km continuous run. We have no such runner.
   ⚠️ **Pinned, not endorsed**, in `stagedHmDoor.test.ts` — so a change in either direction is noticed while it is open.
 
-- ⚙️ **NO BOARD** `PARITY-GRID-VOLUME-FLOOR-01` — **`verify:parity` reported IDENTICAL on 6,102 cases for a change
+- ✅ **SHIPPED 2026-11-07** `PARITY-GRID-VOLUME-FLOOR-01` — `LOWVOL_EXTRA`: 6 variants × 6 distances × 3 levels = **72 rows, 6,102 → 6,210**, volume and longest run varied INDEPENDENTLY, routed through `runEngine` because `generateRulePlan` refuses every one of them. Falsified: engine-untouched IDENTICAL, cw-6 mutation **60 changed, all `lv-` rows, `volume 15/30/55 = 0`**. 🔻 The main grid is still staged-blind → `PARITY-STAGED-BLIND-01`. ~~Original filing:~~ **`verify:parity` reported IDENTICAL on 6,102 cases for a change
   that demonstrably re-routes 290 plans, and it was guaranteed to.** `scripts/verify-parity.ts` has
   `const VOLUMES = [15, 30, 55]`: its **lowest weekly volume is 15 km/week**, and §111 Am. 4's affected band is
   **4–8**. The grid cannot express a single affected runner, so IDENTICAL was certain before a line was written.
@@ -215,6 +215,28 @@ before planning against any number below (an item is a snapshot of the code on t
   ⚠️ Measured corpora that DO reach the band: none of the standing ones. `review:cohort`'s lowest HM band is
   10 km/week, `measure:envelope` derives the longest run from volume, `cohortGrid` is byte-identical on 41,472 cases.
   **Every standing harness was blind to a change that moves 290 plans; only a purpose-built grid and production saw it.**
+
+- ⚙️ **NO BOARD** `PARITY-STAGED-BLIND-01` — **`verify:parity` hashes `generateRulePlan`, so the entire
+  STAGED / OFFER path is invisible to it at EVERY volume.** Found 2026-11-07 while building
+  `PARITY-GRID-VOLUME-FLOOR-01`, and **filed rather than half-built** because it changes what a
+  long-standing check compares.
+  **Measured through both producers at the same inputs:**
+  | input | `generateRulePlan` (what parity hashes) | `runEngine` (what the runner gets) |
+  |---|---|---|
+  | 42.2 km, cw 6, lr 0 | `REFUSED: LongRunReadinessError` | **`base_build`** |
+  | 42.2 km, cw 6, lr 5 | `REFUSED: BaseVolumeError` | **`base_build`** |
+  | 21.1 km, cw 8, lr 5 | `REFUSED: BaseVolumeError` | **`base_build`** |
+  A refused row stores the refusal **message**, so any change to the staged block it offers is
+  undetectable. **That is why §111 Amendment 4 reported IDENTICAL on 6,102 cases while 80 inputs
+  changed and 14 were rescued from an outright refusal** — those inputs were in range the whole time.
+  🔻 **Scope: §116, §117, §118 and the whole NO-RUNNER-TURNED-AWAY family have never been covered by
+  the parity gate.** The new `LOWVOL_EXTRA` block (72 rows) goes through `runEngine` and is the only
+  part that is.
+  ⚠️ **Not a one-line swap.** Routing the main cartesian through `runEngine` changes 6,138 rows'
+  producer, so every baseline hash moves once, and `runEngine` needs `today` pinned as well as
+  `planStart` or the staged path is clock-dependent (`meta.last_updated` already caught that once).
+  **Decide whether parity hashes what the ENGINE generates or what the RUNNER receives** — they are
+  different questions and the file currently answers the first while its name suggests the second.
 
 - 🏃 **COACHING BOARD** `WEEK1-DELIVERED-CEILING-01` — **week 1 is composed from the runner's LONGEST RUN and never
   consults the week they declared, and that is ADR-022's divergence with its levers scoped to injured runners only.**
@@ -978,7 +1000,9 @@ baseline**, so it needs a declared reason — and `targetedGrid` is already 39% 
 
 ---
 
-### 🔲 `PARITY-GRID-UNSET-LEVEL-01` — the parity grid sets `fitness_level` on all 6,102 cases, so it is blind to the production shape of every level-gated rule *(filed 2026-11-03)* ⚙️ **NO BOARD**
+### ✅ `PARITY-GRID-UNSET-LEVEL-01` — the parity grid sets `fitness_level` on all 6,102 cases, so it is blind to the production shape of every level-gated rule *(filed 2026-11-03)* ⚙️ **NO BOARD**
+
+> ✅ **SHIPPED 2026-11-07.** `verify-parity.ts` sends `user_declared_level`, the field the wizard posts. All 15 `fitness_level` refs replaced; row count unchanged.
 
 `scripts/verify-parity.ts:64` — `LEVELS = ['beginner', 'intermediate', 'experienced']`, and every one of the
 four grids iterates it. The wizard sends `user_declared_level` and never `fitness_level`, so **no parity case
