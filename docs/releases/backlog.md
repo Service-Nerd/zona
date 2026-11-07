@@ -27,6 +27,50 @@ already decided what it is.
 
 ---
 
+## ✅ BACKLOG VERIFICATION — SHIPPED 2026-11-07, all 127 open items re-derived (`BACKLOG-PREMISE-VERIFY-01`)
+
+**The founder asked four times whether this file was up to date. It was mechanically CONSISTENT
+every time — `audit-docs.sh` ALL CLEAN — and that check only ever asks whether a record EXISTS
+and cross-references. It never asks whether a record is TRUE.** `CLAUDE.md` records that
+distinction and nothing acted on it, so items written weeks earlier went on reading as current
+while the code moved underneath them.
+
+**`npm run backlog:verify` is the other half, and it is now in `verify:ci`** — not a command
+someone has to remember. It re-derives, for every open item:
+
+| Check | Result, 2026-11-07 |
+|---|---|
+| **Dead file references** — a named path that exists nowhere in the tree | **1 found and fixed:** `HK-NEVER-SYNCED-COHORT-01` named lib/health/sync.ts (unbackticked here so this record is not itself a live reference), renamed to `lib/health/clientSync.ts` |
+| **Dead symbol references** — a named function/constant `git grep -w` cannot find | **0 of 127.** The items' code references are live |
+| **Named baselines** — the live value printed, so a stated figure is compared not trusted | 25 items name one; 3 stated figures had drifted |
+| **Dead by design** — declared, with a reason and a removal condition | 1: `CONTRACT-LEDGERCARD-01` names a contract **because it is missing** |
+
+**Figures re-derived and corrected in this pass:**
+
+| Item | Filed | Live |
+|---|---|---|
+| `CONTRACT-COVERAGE-03` | 58 uncontracted components | **56** — and ⚠️ `UNCONTRACTED_BASELINE`, the derivation it names, **no longer exists** |
+| `CONTRACT-BACKFILL-01` | 13 of 62 routes | **11 of 71** |
+| `TAP-TARGET-INLINE-44-01` | 17 inline `minHeight: 44` | **16** |
+
+**Confirmed STILL TRUE by re-derivation** (not by reading): `ZONE-DISCIPLINE-BANDS-DEAD-01`
+(0 call sites), `PARITY-GRID-UNSET-LEVEL-01` (`verify-parity.ts:224` still sets the field),
+`RATELIMIT-MODULE-PATH-01` (`lib/ai/rateLimit.ts`), `BASEBUILD-DURATION-01` (the producer's own
+comment), `LR-ALT-42-CONFIG-01` (`planQuality.ts:264`), `GRID-GOAL-INSIDE-LINE-01` (load-bearing
+in `rca1026Gates.test.ts`).
+
+🔻 **THE DECLARED LIMIT, AND IT IS THE MAJORITY: 77 of 127 items state NO NUMBER AT ALL.** They
+are behavioural claims — *"the reorder screen offers days the runner said they cannot train"* —
+and **no script settles them.** What the verifier proves about those 77 is that every file and
+symbol they name is still live; what it cannot prove is that the behaviour still holds. That is
+50 verifiable and 77 not, as a **named split** rather than an unexamined majority, and closing
+the 77 means exercising each behaviour.
+
+⚠️ **A dead reference is not always a dead premise**, which is why nothing is auto-resolved and
+the exemption register carries a reason per entry.
+
+---
+
 ### 🧭 `SITE-CURRENCY-FOLLOWONS-01` — what the website review left open
 
 > ✅ The review itself and 4 of its 8 findings **shipped 2026-11-05** and live in `feature-registry.md` under
@@ -6897,7 +6941,7 @@ data**, and announcing a reshape engine whose firings get reverted is worse than
 > **one carries a named cause**: `error: "Protected health data is inaccessible"`.
 > 🔻 **So the residual is NOT a build.** The product gap it exposes is filed as
 > `HEALTH-ACCESS-DENIED-SURFACE-01` — ✅ **since CLOSED 2026-10-08, will not build: its own measurement showed 2 of the 6 have 76 and 90 successful posts, so naming a cause would be a false accusation.** ⚠️ Also fixed today: this route's
-> header still asserted the OLD rule and named `lib/health/sync.ts`, **a file that does not
+> header still asserted the OLD rule and named `lib/health/clientSync.ts` *(re-measured 2026-11-07: the item said lib/health/sync.ts — unbackticked here deliberately, so `backlog:verify` does not read this correction as a live reference — which was renamed)*, **a file that does not
 > exist** — the same self-contradicting-route defect this item was filed for, pointing the
 > other way, introduced by its own fix (`c2158e08`).
 
@@ -6911,7 +6955,7 @@ item's own premise ("cause unknown") was answered within hours. The cohort SPLIT
 
 ⚠️ **THE 403 IS DELIBERATE** — the route's own comment says *"Free users cannot ingest —
 the iOS sync should not call this for free tier (the gate also lives client-side in
-`lib/health/sync.ts`)"*. So this is **not a defect to fix quietly; it is a line to rule
+`lib/health/clientSync.ts` *(re-measured 2026-11-07: the item said lib/health/sync.ts — unbackticked here deliberately, so `backlog:verify` does not read this correction as a live reference — which was renamed)*)"*. So this is **not a defect to fix quietly; it is a line to rule
 on.** Two things follow, and they are different items:
 
 **(a) 💼 SLT — should a free runner's run history be ingested at all?** `CLAUDE.md` says
@@ -7810,6 +7854,9 @@ about whether the design system absorbs them, and the honest answer may be *"no"
 
 #### 🟡 `TAP-TARGET-INLINE-44-01` — 17 inline `minHeight: 44` literals that should import the owner *(P3, filed 2026-10-05)* ⚙️ **NO BOARD**
 
+> 🔄 **RE-MEASURED 2026-11-07: 17 → 16 inline `minHeight: 44` literals** (`grep -rE "minHeight: *'?44"`
+> over `app/` and `components/`). One was paid since filing.
+
 `components/ui/tapTarget.ts` is the floor's single owner since batch 8a, and the three named
 constants derive from it. **17 inline `minHeight: 44` literals across 14 files do not.**
 
@@ -7855,6 +7902,10 @@ cost is that a change to the scale must be made twice, and nothing says so.
 ---
 
 #### 🟡 `CONTRACT-LEDGERCARD-01` — `LedgerCard` is now the single render path of a FREE feature, and it has no contract *(P3, filed 2026-10-05)* ⚙️ **NO BOARD**
+
+> ✅ **PREMISE CONFIRMED 2026-11-07, and `npm run backlog:verify` flags it by design:** this item
+> names `docs/contracts/components/ledger-card.md` **precisely because it does not exist**. The dead
+> reference IS the finding, not rot. Do not "fix" the path.
 
 **Found by `audit-docs.sh`'s own ratchet while shipping `LEDGER-COACH-SITE-REMOVE-01`**, and the
 finding is about the ratchet as much as the component.
@@ -10040,6 +10091,10 @@ finding, not a regression. 🔻 **Do not fix this while the number is being quot
 saying in the same breath that the definition changed, or the jump reads as decay.
 
 #### 🟡 `CONTRACT-COVERAGE-03` — **58** components still have no contract *(P3, filed 2026-10-02, falling register; count corrected 2026-10-11)* ⚙️ **NO BOARD**
+
+> 🔄 **RE-MEASURED 2026-11-07: 58 → 56 uncontracted components**, from `audit-docs.sh`'s live
+> count. ⚠️ **And `UNCONTRACTED_BASELINE`, the derivation this item names, NO LONGER EXISTS** — the
+> figure now comes from the audit arm. Re-derive from there, never from this line.
 
 📐 **RE-DERIVED 2026-10-11 FROM `audit-docs.sh`, NOT FROM THIS ITEM: the live figure is 58, not 61.**
 `UNCONTRACTED_BASELINE=58` in the script, lowered twice since this was written — 61 → 60
@@ -13629,6 +13684,9 @@ declared surface **or a non-AI route**"* — that escape hatch already anticipat
 is failing, but the naming now understates what the module does.
 
 ### 🅿️ `CONTRACT-BACKFILL-01` — write the **13** remaining API route contracts · **PARKED** *(count corrected 2026-10-11: `audit-docs.sh` reports 13 of 62, not 17)*
+
+> 🔄 **RE-MEASURED 2026-11-07: 13 of 62 → 11 of 71 API routes without a contract.** Two were
+> written and nine routes were added since the item was filed. Live count from `audit-docs.sh`.
 **Board: ⚙️ NO BOARD.** Split from `CONTRACT-COVERAGE-01` (the gate, shipped 2026-09-24).
 
 🔻 **PARKED BY THE FOUNDER 2026-09-24: *"I don't want to carry on with contract work just yet."***
