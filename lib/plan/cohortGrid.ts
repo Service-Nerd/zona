@@ -286,7 +286,8 @@ const TARGETED_DISTANCES = [
  * set it, and a first-timer who declares 'intermediate' goes from 0 quality
  * sessions to 6-10. That path had no coverage anywhere before this grid.
  */
-export function targetedGrid(): GeneratorInput[] {
+/** The cartesian only. Sample THIS; take `targetedGridExtra()` in full beside it. */
+export function targetedGridCore(): GeneratorInput[] {
   const out: GeneratorInput[] = []
   for (const d of TARGETED_DISTANCES)
     for (const injury_history of TARGETED_INJURIES)
@@ -327,6 +328,36 @@ export function targetedGrid(): GeneratorInput[] {
               } as unknown as GeneratorInput)
             }
 
+  return out
+}
+
+/**
+ * The whole grid: the cartesian plus the focused reach blocks.
+ *
+ * ⚠️ CONSUMERS THAT SAMPLE MUST NOT USE THIS. Sample `targetedGridCore()` and concatenate
+ * `targetedGridExtra()` in full — a stride over the combined grid both re-permutes on every
+ * append AND can drop the only rows that reach a cohort. `audit:plans` and `measure:fitness`
+ * do it that way; everything that consumes the grid WHOLE can use this.
+ */
+export function targetedGrid(): GeneratorInput[] {
+  return [...targetedGridCore(), ...targetedGridExtra()]
+}
+
+/**
+ * 🔴 THE FOCUSED BLOCKS, EXPORTED SEPARATELY SO THEY CAN NEVER BE SAMPLED AWAY.
+ *
+ * `audit:plans` takes `stride(targetedGrid(), 1500)` and `measure:fitness` took
+ * `spread(...).slice(0, 6000)`. Both are LENGTH-DEPENDENT: appending 16 rows re-permuted
+ * every sampled row, turned the suite red, and moved a marathon specificity figure 61.6% ->
+ * 47.4% **with no engine file in the diff** (`/code-review`, 2026-11-07).
+ *
+ * ⚠️ AND A STABLE STRIDE ALONE WOULD NOT HAVE BEEN ENOUGH: a block that exists for REACH must
+ * be taken IN FULL, or a 1-in-4 sample would drop the only rows that reach the cohort. So
+ * consumers sample the CARTESIAN and concatenate this wholesale. That is the whole point of a
+ * focused block — `PARITY-HSR-01`'s pattern, which samples nothing.
+ */
+export function targetedGridExtra(): GeneratorInput[] {
+  const out: GeneratorInput[] = []
   // ── ENVELOPE-LRR-BLIND-01 — THE NEVER-RUN RUNNER, REACHABLE AT LAST ─────────
   //
   // 🔴 MEASURED 2026-11-07: **0 of `cohortGrid`'s 41,472 rows carry
@@ -376,9 +407,20 @@ export function targetedGrid(): GeneratorInput[] {
         resting_hr: 55, max_hr: 184,
         current_weekly_km: cwk, longest_recent_run_km: Math.round(cwk * 0.4),
         recent_quality_training: 'occasional', hard_session_relationship: 'neutral',
-        training_age: '18mo-3yr', days_available: 5, days_cannot_train: [],
+        // ⚠️ `'18mo-3yr'` WAS HERE AND IS NOT A `TrainingAge` (`'<6mo' | '6-18mo' | '2-5yr' |
+        // '5yr+'`), so `trainingAgeIsExperienced` read false and §79's re-entry lift and
+        // ADR-021's early-onset gate could not fire on these rows — the same class as the
+        // blocked-days spelling note above (`/code-review`, 2026-11-07).
+        training_age: '2-5yr', days_available: 5, days_cannot_train: [],
         injury_history: [], user_declared_level: 'intermediate',
-        benchmark: { type: 'race', distance_km: 10, time: '0:50:00', benchmark_date: '2026-09-01' },
+        // 🔴 UNDATED, DELIBERATELY. A pinned `benchmark_date` climbs §10's staleness ramp
+        // against the WALL CLOCK: measured, these rows sat at 3.1%/4.1% today, 3.9%/4.9% on
+        // 2026-11-25 and 4.8%/5.7% from 2026-12-23 — so the 49:00 row would leave §120's
+        // admitted side in about two weeks and the arm asserting "inside the line" would go red
+        // on a calendar. `GOALPACE-5K-CLOCK-01` is that exact failure, fixed earlier the same
+        // day, and `pinnedClock.test.ts` cannot see this file. §42: blank means FRESH, so an
+        // undated benchmark takes the stable base discount and never ramps.
+        benchmark: { type: 'race', distance_km: 10, time: '0:50:00' },
         acknowledged_days_warning: true, acknowledged_prep_warning: true,
       } as unknown as GeneratorInput)
 

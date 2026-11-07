@@ -3,6 +3,7 @@ import { cohortGrid, targetedGrid, COHORT_PLAN_START, isDesignedRefusal } from '
 import { derivedLevelsFor, generateRulePlan } from './ruleEngine'
 import { validatePlan } from './invariants'
 import { GENERATION_CONFIG } from './generationConfig'
+import { runEngine } from './engine'
 import type { GeneratorInput, Plan } from '@/types/plan'
 
 /**
@@ -195,6 +196,23 @@ describe('ENVELOPE-LRR-BLIND-01 + GRID-GOAL-INSIDE-LINE-01 — the unreachable c
     // And it must straddle §116's running floor, which is where Am. 7's routing turns.
     expect(neverRun.some(i => i.current_weekly_km < GENERATION_CONFIG.BASE_BUILD_ONRAMP_MIN_START_KM)).toBe(true)
     expect(neverRun.some(i => i.current_weekly_km >= GENERATION_CONFIG.BASE_BUILD_ONRAMP_MIN_START_KM)).toBe(true)
+
+    // 🔴 MEMBERSHIP IS NOT REACH, AND THE FIRST CUT OF THIS ARM ASSERTED ONLY MEMBERSHIP
+    // (`/code-review`, 2026-11-07). **9 of the 12 never-run rows are REFUSED** — "your longest
+    // recent run is 0 km… needs at least 5" — so the arm would have stayed green if all 12
+    // were, and the cohort would be in the corpus while reaching no behaviour at all. What the
+    // rows exist for is §117 Am. 7's routing, so that is what is asserted: at least one
+    // never-run row must reach a block that OPENS WITH WALK-RUN.
+    let walkRunReached = 0
+    for (const i of neverRun) {
+      let out: any
+      try { out = runEngine({ input: i, tier: 'paid', planStart: i.plan_start, today: i.plan_start, displayUnits: 'km' } as never) }
+      catch { continue }
+      const weeks = out?.plan?.weeks ?? []
+      if (weeks.some((w: any) => w.phase === 'walk_run_start')) walkRunReached++
+    }
+    expect(walkRunReached, 'no never-run row reaches a walk-run start: the cohort is in the corpus but exercises nothing')
+      .toBeGreaterThan(0)
   })
 
   it('2. a benchmarked goal lands INSIDE §120\'s 5% line, measured through the engine', () => {

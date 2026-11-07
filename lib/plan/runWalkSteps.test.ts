@@ -72,6 +72,10 @@ describe('run-walk is drawn as steps', () => {
 
   it('a session with no run-walk stamp is untouched', () => {
     const s = { ...sessions[0] }; delete s.run_walk_strategy
+    // ⚠️ PREMISE FIRST. Without this an empty population dies as a TypeError inside
+    // `composeSession` instead of naming the corpus — and this `find` depends on the same
+    // 400-session cap that `ENVELOPE-LRR-BLIND-01`'s rows just displaced (`/code-review`).
+    expect(s, 'no run-walk session with a repeat of >= 2 and a remainder: the 400-session sample moved').toBeTruthy()
     const st = composeSession({ session: s, catalogueRow: null, goalPace: null } as never)!
     expect(st.warmup.walk).toBeUndefined()
     expect(displayDerivedSet(s, st)).toBeNull()
@@ -88,6 +92,10 @@ describe('run-walk is drawn as steps', () => {
     // this repo. The rendering this arm checks (two walk glyphs, a "then" bar) is only
     // MEANINGFUL on a repeat of 2 or more, so that is now stated rather than assumed.
     const s = sessions.find(x => { const st = composeSession({ session: x, catalogueRow: null, goalPace: null } as never); return st && RUN_WALK_SHAPES.has(st.shape) && st.main.duration_mins % (RUN + WALK) !== 0 && Math.floor(st.main.duration_mins / (RUN + WALK)) >= 2 })
+    // ⚠️ PREMISE FIRST. Without this an empty population dies as a TypeError inside
+    // `composeSession` instead of naming the corpus — and this `find` depends on the same
+    // 400-session cap that `ENVELOPE-LRR-BLIND-01`'s rows just displaced (`/code-review`).
+    expect(s, 'no run-walk session with a repeat of >= 2 and a remainder: the 400-session sample moved').toBeTruthy()
     const st = composeSession({ session: s, catalogueRow: null, goalPace: null } as never)!
     const figures = resolveDisplayFigures(st, { metric: 'duration', units: 'km', sessionDistanceKm: null })
     const rows = buildSessionRows(st, displayDerivedSet(s, st), { metric: 'duration', units: 'km', formatDist: () => '', figures, raceSegmentTarget: '', raceSegmentSecondary: '' } as never)
@@ -111,6 +119,10 @@ describe('run-walk is drawn as steps', () => {
     // this repo. The rendering this arm checks (two walk glyphs, a "then" bar) is only
     // MEANINGFUL on a repeat of 2 or more, so that is now stated rather than assumed.
     const s = sessions.find(x => { const st = composeSession({ session: x, catalogueRow: null, goalPace: null } as never); return st && RUN_WALK_SHAPES.has(st.shape) && st.main.duration_mins % (RUN + WALK) !== 0 && Math.floor(st.main.duration_mins / (RUN + WALK)) >= 2 })
+    // ⚠️ PREMISE FIRST. Without this an empty population dies as a TypeError inside
+    // `composeSession` instead of naming the corpus — and this `find` depends on the same
+    // 400-session cap that `ENVELOPE-LRR-BLIND-01`'s rows just displaced (`/code-review`).
+    expect(s, 'no run-walk session with a repeat of >= 2 and a remainder: the 400-session sample moved').toBeTruthy()
     const st = composeSession({ session: s, catalogueRow: null, goalPace: null } as never)!
     const html = renderToStaticMarkup(React.createElement(SessionSteps, {
       structure: st, derivedSet: displayDerivedSet(s, st) as DerivedSet, sessionType: s.type, displayZones: [2], zoneRangeLabel: 'Zone 2',

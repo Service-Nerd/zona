@@ -15,11 +15,11 @@
     "FLAT-CURVE": 3
   },
   "targetedGrid": {
-    "generated": 1500,
-    "refused": 0,
+    "generated": 1510,
+    "refused": 6,
     "BINGE-WEEK": 238,
     "LONG-RUN-SHORT": 105,
-    "NEVER-BUILDS": 32
+    "NEVER-BUILDS": 36
   },
   "charity personas": {
     "generated": 14,

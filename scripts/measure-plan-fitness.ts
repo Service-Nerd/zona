@@ -22,7 +22,7 @@
  */
 import { join } from 'node:path'
 import { CHARITY_PERSONAS, charityInput, CHARITY_PLAN_START } from '../lib/plan/charityCohort'
-import { cohortGrid, targetedGrid, COHORT_PLAN_START } from '../lib/plan/cohortGrid'
+import { cohortGrid, targetedGridCore, targetedGridExtra, COHORT_PLAN_START } from '../lib/plan/cohortGrid'
 import { generateRulePlan } from '../lib/plan/ruleEngine'
 import { GENERATION_CONFIG as G } from '../lib/plan/generationConfig'
 import { isLongRun } from '../lib/plan/sessionRole'
@@ -76,7 +76,16 @@ export function measure() {
   //     mis-composed comparison is a more confident wrong answer.** So each
   //     bucket now reports which grids fed it, and the printed table says so.
   const cohortRows   = spread(cohortGrid()).slice(0, 14000) as GeneratorInput[]
-  const targetedRows = spread(targetedGrid()).slice(0, 6000) as GeneratorInput[]
+  // 🔴 THE WHOLE GRID, NOT A SLICE OF IT (2026-11-07, `/code-review`). `spread` is a COPRIME
+  // STRIDE, so `.slice(0, 6000)` of a 6,144-row grid re-permutes **every** sampled row the
+  // moment the grid's LENGTH changes. Appending 16 rows for `ENVELOPE-LRR-BLIND-01` moved
+  // `INJURY standard` n 3003 -> 2996 and the marathon long-run specificity 61.6% -> 47.4%
+  // **with no engine file in the diff** — a 14.2pp "regression" that was pure sampling
+  // artefact, and it turned the suite red. ⚠️ **A baseline that moves when the corpus GROWS
+  // cannot tell a sampling shift from a prescription change**, which is the one thing this
+  // measurement exists to do. Taking all of it was 97.7% of the rows anyway, and is stable
+  // under every future append. `cohortRows` keeps its slice: 14,000 of 41,472 is a real sample.
+  const targetedRows = [...spread(targetedGridCore()), ...targetedGridExtra()] as GeneratorInput[]
   const pool: GeneratorInput[] = [...cohortRows, ...targetedRows]
   const gridOf = new Map<GeneratorInput, 'cohort' | 'targeted'>()
   for (const r of cohortRows)   gridOf.set(r, 'cohort')

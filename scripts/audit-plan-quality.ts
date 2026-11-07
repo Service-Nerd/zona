@@ -27,7 +27,7 @@
  * This repo's recorded lesson is that when a cohort reads as unreachable, the
  * corpus is the suspect before the rule — so priority one gets a corpus.
  */
-import { cohortGrid, targetedGrid, COHORT_PLAN_START } from '../lib/plan/cohortGrid'
+import { targetedGridCore, targetedGridExtra, cohortGrid, COHORT_PLAN_START } from '../lib/plan/cohortGrid'
 import { CHARITY_PERSONAS, ENGINE_PERSONAS, CHARITY_PLAN_START, charityRaceDate } from '../lib/plan/charityCohort'
 import { generateRulePlan } from '../lib/plan/ruleEngine'
 import { isDesignedRefusal } from '../lib/plan/designedRefusal'
@@ -75,7 +75,13 @@ const stride = (xs: GeneratorInput[], n: number) =>
 const cohorts: Cohort[] = [
   { name: 'BEGINNER MARATHON (priority one)', inputs: beginnerMarathonGrid(), planStart: BEGINNER_MARATHON_PLAN_START },
   { name: 'cohortGrid', inputs: stride(cohortGrid(), 3000), planStart: COHORT_PLAN_START },
-  { name: 'targetedGrid', inputs: stride(targetedGrid(), 1500), planStart: COHORT_PLAN_START },
+  // 🔴 THE CARTESIAN IS SAMPLED; THE FOCUSED BLOCK IS TAKEN IN FULL (2026-11-07).
+  // `stride(targetedGrid(), 1500)` is LENGTH-DEPENDENT: appending 16 rows re-permuted every
+  // sampled row and this script reported five "regressions" with no engine file in the diff
+  // (generated 1500 -> 1498, LONG-RUN-SHORT +19, NEVER-BUILDS +5). ⚠️ And a stable stride
+  // alone would not do: a 1-in-4 sample would drop the only rows that REACH the never-run
+  // cohort, which is the entire reason the block exists.
+  { name: 'targetedGrid', inputs: [...stride(targetedGridCore(), 1500), ...targetedGridExtra()], planStart: COHORT_PLAN_START },
   { name: 'charity personas', planStart: CHARITY_PLAN_START,
     inputs: CHARITY_PERSONAS.map(p => ({ ...p.input, race_date: charityRaceDate(p.weeks, CHARITY_PLAN_START, p.raceDay ?? 'sun') } as GeneratorInput)) },
   // PERSONA-CORPUS-01 (2026-09-19) — realistic runners the GRIDS CANNOT REACH.
