@@ -17,6 +17,80 @@ function tests(dir: string): string[] {
   })
 }
 
+/**
+ * 🔴 A THIRD PATH, AND THIS GATE'S OWN BUILD-LOG ENTRY PREDICTED A GAP LIKE IT: *"the gate only knows two names for a
+ * pinned date."* (GOALPACE-5K-CLOCK-01, 2026-11-07.)
+ *
+ * The arm above enforces PINNED-CLOCK-01's remedy: hand the fixed date to the engine. **That remedy is not
+ * sufficient, and the insufficiency is by design.** `vdotFor`'s own comment states that `applyVdotDiscount` is handed
+ * `new Date()` deliberately — §10's staleness ramp measures how long ago the runner actually RAN, which is a fact
+ * about the wall clock and not about the plan's anchoring — so a test may pin its generation date correctly, as
+ * `goalPace5k.test.ts` always did, and still have a benchmark that AGES.
+ *
+ * What that cost: a fixture 16 days past its benchmark (3% discount) crossed into the 4% block at exactly four weeks,
+ * which moved its goal from 4.66% to 5.44% past fitness, across §120 Amendment 2's 5% line. Three arms went red on a
+ * clean tree from a commit that touched nothing, reporting "expected 0 to be greater than or equal to 3" — a date
+ * reading as a shape regression. A bisect cannot find this: every step runs at today's clock, so a time-dependent
+ * test reads as broken at the commit that introduced it.
+ *
+ * Rule: derive a benchmark date from today (`slowGoalDates`, the established owner), never pin the literal.
+ *
+ * ⚠️ TWO THINGS THE FIRST CUT GOT WRONG, BOTH OF THEM CLASSES ALREADY IN THE RECORD, both caught by running it:
+ *  1. **It matched its own test table.** The detector cases below are string literals containing exactly the shape
+ *     being banned, so the gate reported itself as the offender — "an ownership arm matching its own comment"
+ *     (2026-10-01). The gate file is excluded by name, because its occurrences ARE the fixtures.
+ *  2. **It read comments.** `HOOK-RGBA-COMMENTS-01`: a value inside a comment is PROSE, and a guard that fires on a
+ *     comment recording a measured value gets switched off — which this repo counts as equivalent to having no
+ *     guard. Comments are stripped, and the stripper preserves string contents, because the twin trap is that a
+ *     value inside a STRING is code, not prose.
+ */
+/** Blanks comment bodies without touching string or template contents. */
+export function stripComments(src: string): string {
+  let out = '', i = 0
+  const q = { s: false, d: false, t: false }
+  while (i < src.length) {
+    const c = src[i], n = src[i + 1]
+    const inStr = q.s || q.d || q.t
+    if (!inStr && c === '/' && n === '/') { while (i < src.length && src[i] !== '\n') i++; continue }
+    if (!inStr && c === '/' && n === '*') { i += 2; while (i < src.length && !(src[i] === '*' && src[i + 1] === '/')) i++; i += 2; continue }
+    if (c === '\\' && inStr) { out += src[i] + (src[i + 1] ?? ''); i += 2; continue }
+    if (!q.d && !q.t && c === "'") q.s = !q.s
+    else if (!q.s && !q.t && c === '"') q.d = !q.d
+    else if (!q.s && !q.d && c === '`') q.t = !q.t
+    out += c; i++
+  }
+  return out
+}
+
+export function pinnedBenchmarkDates(src: string): string[] {
+  return Array.from(stripComments(src).matchAll(/benchmark_date["']?\s*:\s*["'](\d{4}-\d{2}-\d{2})["']/g)).map(m => m[1])
+}
+
+/** This gate's own file: its occurrences are the detector's fixtures, not a pinned plan input. */
+const GATE_FILE = 'lib/plan/pinnedClock.test.ts'
+
+/**
+ * ⚠️ A REGISTER, AND IT IS A DECLARED REASON RATHER THAN A FIXED PROBLEM — entered 2026-11-07, swept forward to
+ * 2027-03 before being written. Of the eight test files pinning a literal benchmark date, exactly one flipped
+ * (`goalPace5k`, 3 arms, with a 4th expiring in January); the rest assert nothing near a config cliff. The
+ * conversion of the four still inside the ramp is `TEST-CLOCK-BENCHDATE-SWEEP-01`, filed, not swept here:
+ * TEST-CLOCK-PINSWEEP-01's record is that converting one such file is not a formatting change and each needs its own
+ * verification run. **The value of this arm is not the register — it is that a NEW pinned date fails on the way in.**
+ */
+const PINNED_BENCHMARK_DEBT: Record<string, string> = {
+  // Re-anchored on the line below the literal, and the result is asserted by its own premise arm.
+  'lib/plan/goalPace5k.test.ts': 'the stored runner\'s input is kept VERBATIM for provenance; both dates are overridden from `slowGoalDates()` immediately below it',
+  // Still inside §10's ramp (a date after ~20 weeks ago saturates at VDOT_STALENESS_MAX_DISCOUNT_PCT and cannot move).
+  'lib/plan/goldenPlans.test.ts': 'in the ramp; 11/11 green at system time 2026-12-07 and 2027-03-07 — TEST-CLOCK-BENCHDATE-SWEEP-01',
+  'lib/plan/intensityOrdering.test.ts': 'in the ramp; 6/6 green at 2026-12-07 and 2027-03-07 — TEST-CLOCK-BENCHDATE-SWEEP-01',
+  'lib/plan/raceWeekWeekdayCap.test.ts': 'in the ramp; 5/5 green at 2026-12-07 and 2027-03-07 — TEST-CLOCK-BENCHDATE-SWEEP-01',
+  'lib/plan/reshapeCopy.test.ts': 'in the ramp; 7/7 green at 2026-12-07 and 2027-03-07 — TEST-CLOCK-BENCHDATE-SWEEP-01',
+  // Saturated: the discount is already at its cap for these, so it cannot move again.
+  'lib/plan/ttLongRunSpacing.test.ts': '2026-05-25 — past the ramp, discount saturated at the cap',
+  'lib/plan/v4AnchorAware.test.ts': '2026-04-01 — past the ramp, discount saturated at the cap',
+  'lib/plan/marathonPeakRaceSpecific.test.ts': '2026-04-01 — past the ramp, discount saturated at the cap',
+}
+
 /** Calls to generateRulePlan with only two arguments, in a file that pins a date constant. */
 export function unpinnedCalls(src: string): string[] {
   if (!/^const (TODAY|START)\s*=\s*'\d{4}-\d{2}-\d{2}'/m.test(src)) return []
@@ -31,6 +105,29 @@ describe('PINNED-CLOCK-01 — a pinned test pins the engine', () => {
     const bad = files.flatMap(f => unpinnedCalls(readFileSync(f, 'utf8')).map(c => `${f.replace(process.cwd() + '/', '')}: ${c}`))
     expect(bad).toEqual([])
   })
+  it('🔴 no NEW test pins a benchmark date: the engine ages it against the wall clock by design', () => {
+    const offenders = files.map(f => f.replace(process.cwd() + '/', ''))
+      .filter(f => f !== GATE_FILE && pinnedBenchmarkDates(readFileSync(join(process.cwd(), f), 'utf8')).length > 0)
+    expect(offenders.filter(f => !(f in PINNED_BENCHMARK_DEBT)),
+      'derive it from today with `slowGoalDates()`; see this file\'s header').toEqual([])
+    // The register may not outlive its entries — a stale row reads as debt that is still there.
+    expect(Object.keys(PINNED_BENCHMARK_DEBT).filter(f => !offenders.includes(f)), 'declared, but no longer pinned').toEqual([])
+  })
+
+  it('the benchmark-date detector, both directions', () => {
+    expect(pinnedBenchmarkDates(`benchmark_date: '2026-10-10'`)).toEqual(['2026-10-10'])
+    expect(pinnedBenchmarkDates(`"benchmark_date":"2026-10-10"`), 'the JSON form a stored input is pasted in').toEqual(['2026-10-10'])
+    expect(pinnedBenchmarkDates(`benchmark_date : "2026-10-10"`), 'spacing').toEqual(['2026-10-10'])
+    expect(pinnedBenchmarkDates(`benchmark_date: BENCH_DATE`), 'derived — the remedy, not the defect').toEqual([])
+    expect(pinnedBenchmarkDates(`benchmark_date: benchmarkDate`)).toEqual([])
+    expect(pinnedBenchmarkDates(`// benchmark_date: '2026-10-10' is what it used to be`),
+      'HOOK-RGBA-COMMENTS-01 — a value in a COMMENT is prose, and a guard that fires on one gets switched off').toEqual([])
+    expect(pinnedBenchmarkDates(`/* benchmark_date: '2026-10-10' */`), 'block comments too').toEqual([])
+    expect(pinnedBenchmarkDates(`const u = 'http://x/y' // nothing\nbenchmark_date: '2026-10-10'`),
+      'the stripper must not treat // inside a string as a comment opener').toEqual(['2026-10-10'])
+    expect(stripComments(`const s = '// not a comment'`), 'a comment marker inside a STRING is code').toContain('// not a comment')
+  })
+
   it('the detector', () => {
     expect(unpinnedCalls("const TODAY = '2026-09-21'\ngenerateRulePlan(input, 'paid')")).toHaveLength(1)
     expect(unpinnedCalls("const TODAY = '2026-09-21'\ngenerateRulePlan(input, 'paid', TODAY)")).toEqual([])

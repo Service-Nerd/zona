@@ -10,8 +10,28 @@ import { V1_SESSION_CATALOGUE, isRepStructured } from './sessionCatalogueData'
 import { classifyStimulus } from './sessionRole'
 import { validatePlan } from './invariants'
 import { hasGoalGapSentence } from './goalPaceReach'
+import { slowGoalDates } from './slowGoalGrid'
 
-const FIXTURE: any = {"age":24,"goal":"time_target","max_hr":191,"benchmark":{"time":"0:32:42","type":"race","distance_km":5,"benchmark_date":"2026-10-10"},"race_date":"2026-12-25","race_name":"Christmas parkrun","resting_hr":47,"target_time":"0:28:00","training_age":"6-18mo","max_hr_source":"observed","days_available":4,"race_distance_km":5,"current_weekly_km":20,"days_cannot_train":["monday","wednesday","friday"],"user_declared_level":"beginner","longest_recent_run_km":6,"preferred_long_run_day":"sun","recent_quality_training":"occasional"}
+const STORED: any = {"age":24,"goal":"time_target","max_hr":191,"benchmark":{"time":"0:32:42","type":"race","distance_km":5,"benchmark_date":"2026-10-10"},"race_date":"2026-12-25","race_name":"Christmas parkrun","resting_hr":47,"target_time":"0:28:00","training_age":"6-18mo","max_hr_source":"observed","days_available":4,"race_distance_km":5,"current_weekly_km":20,"days_cannot_train":["monday","wednesday","friday"],"user_declared_level":"beginner","longest_recent_run_km":6,"preferred_long_run_day":"sun","recent_quality_training":"occasional"}
+
+// 🔴 GOALPACE-5K-CLOCK-01 (2026-11-07) — PINNED-CLOCK-01's class, by a THIRD path its gate cannot see.
+// `vdotFor`'s own comment states that §10's staleness ramp is handed `new Date()` DELIBERATELY (it measures how long
+// ago the runner actually ran, which is a fact about the wall clock), so PINNED-CLOCK-01's remedy — hand the
+// generation date to the engine, which this file always did — DOES NOT pin the benchmark's age. The stored benchmark
+// was 16 days old when this file was written: a 3% discount. Pinned, it aged into the 4% block at exactly four weeks
+// (2026-11-07) and moved INSIDE's goal from 4.66% to 5.44% past fitness, across §120 Am. 2's 5% line, so three arms
+// below went red on a clean tree from a commit that touched nothing. Measured by running it: 12/12 at system time
+// 2026-10-27 AND 2026-11-06, 3 red at 2026-11-07, and a FOURTH arm expires in January.
+// The dates are therefore DERIVED, keeping every offset the stored input had: the benchmark keeps its age (and so its
+// discount bucket), the race keeps its 60-day runway from the plan start, and these assertions keep the plan they
+// were written against, permanently. `slowGoalDates` is the established owner — its own header says "a pinned date
+// expires, which is PINNED-CLOCK-01's class".
+const { planStart: PLAN_START, benchmarkDate: BENCH_DATE } = slowGoalDates()
+const isoPlus = (iso: string, days: number) => new Date(Date.parse(`${iso}T00:00:00Z`) + days * 864e5).toISOString().slice(0, 10)
+const RACE_DATE = isoPlus(PLAN_START, 60)      // the stored 2026-10-26 → 2026-12-25: same length, same weekday
+const CONTROL_RACE = isoPlus(PLAN_START, 90)   // the controls' 2026-10-26 → 2027-01-24
+
+const FIXTURE: any = { ...STORED, race_date: RACE_DATE, benchmark: { ...STORED.benchmark, benchmark_date: BENCH_DATE } }
 
 // ⚠️ §120 Amendment 2 (2026-10-27) SUPERSEDES THIS RUNNER'S GOAL-PACE WORK. 28:00 off a 32:42 is 13.9% past current
 // fitness, so goal pace is now WITHHELD for her (asserted below): that is the 26 Oct RCA's own first example. The S1 shape
@@ -20,7 +40,7 @@ const FIXTURE: any = {"age":24,"goal":"time_target","max_hr":191,"benchmark":{"t
 const INSIDE: any = { ...FIXTURE, target_time: '0:31:00' }
 
 describe('§120 Am. 2 — the stored runner, as she is now prescribed', () => {
-  const plan: any = generateRulePlan(FIXTURE, 'free', '2026-10-26')
+  const plan: any = generateRulePlan(FIXTURE, 'free', PLAN_START)
   it('🔴 no goal-pace work for a goal 14% past her fitness, and the gap is named', () => {
     expect(plan.meta.goal_pace_withheld?.gap_pct).toBeGreaterThan(13)
     expect(plan.weeks.flatMap((w: any) => Object.values(w.sessions)).filter((s: any) => s?.stimulus === 'race_pace')).toEqual([])
@@ -37,8 +57,23 @@ const longestContinuousGoalStep = (s: any) => Math.max(0, ...(s.derived_set?.blo
   .flatMap((b: any) => b.steps).filter((st: any) => st.role === 'work' && st.pace_mode === 'target').map((st: any) => mins(st.length)))
 
 describe('GOALPACE-5K-01 — the stored 5K beginner, inside the line', () => {
-  const plan: any = generateRulePlan(INSIDE, 'free', '2026-10-26')
+  const plan: any = generateRulePlan(INSIDE, 'free', PLAN_START)
   const quality = sessionsOf(plan).filter((x: any) => x.s.type === 'quality')
+
+  // 🔴 THE PREMISE OF EVERY ARM BELOW, ASSERTED, because it was implicit and it expired (GOALPACE-5K-CLOCK-01).
+  // These checks only have a subject while this runner is INSIDE §120 Am. 2's line: past it there is no goal-pace
+  // work to be shaped, and all three failed with "expected 0 to be greater than or equal to 3" — which reads as a
+  // shape regression and was a date. The margin is stated so that a config change to the line, or to §10's
+  // discount, fails HERE and says what moved, instead of fourteen lines down saying something else.
+  it('🔴 the premise: this runner is inside the reachability line, with margin', () => {
+    const reach = plan.meta.goal_pace_reach
+    expect(reach, '§120 Am. 2 records the decision on every benchmarked time-target plan').toBeTruthy()
+    expect(plan.meta.goal_pace_withheld, `gap ${reach?.gap_pct}%`).toBeUndefined()
+    expect(reach.gap_pct).toBeLessThan(GENERATION_CONFIG.GOAL_PACE_MAX_STRETCH_PCT)
+    expect(GENERATION_CONFIG.GOAL_PACE_MAX_STRETCH_PCT - reach.gap_pct,
+      `only ${(GENERATION_CONFIG.GOAL_PACE_MAX_STRETCH_PCT - reach.gap_pct).toFixed(2)}pp inside the line: one §10 staleness block is 1pp, so re-anchor the fixture rather than the assertions`)
+      .toBeGreaterThan(0.25)
+  })
 
   it('goal-pace weeks come as the beginner reps row, never a continuous block (S1 as amended)', () => {
     const goal = quality.filter((x: any) => classifyStimulus(x.s) === 'race_pace')
@@ -92,11 +127,11 @@ describe('GOALPACE-5K-01 — the stored 5K beginner, inside the line', () => {
 
 describe('GOALPACE-5K-01 — controls', () => {
   const fmt = (s: number) => `${Math.floor(s / 3600)}:${String(Math.floor(s / 60) % 60).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`
-  const base = { ...FIXTURE, days_cannot_train: [], days_available: 4, current_weekly_km: 35, longest_recent_run_km: 12, race_date: '2027-01-24' }
+  const base = { ...FIXTURE, days_cannot_train: [], days_available: 4, current_weekly_km: 35, longest_recent_run_km: 12, race_date: CONTROL_RACE }
 
   it('a declared-intermediate 5K (the d933dc40 shape) keeps its VO2max work and never gets the beginner row', () => {
     const p: any = generateRulePlan({ ...base, user_declared_level: 'intermediate', training_age: '2-5yr', target_time: '0:26:00',
-      benchmark: { time: '1:00:00', type: 'race', distance_km: 10, benchmark_date: '2026-10-10' } }, 'free', '2026-10-26')
+      benchmark: { time: '1:00:00', type: 'race', distance_km: 10, benchmark_date: BENCH_DATE } }, 'free', PLAN_START)
     const q = sessionsOf(p).filter((x: any) => x.s.type === 'quality')
     expect(q.some((x: any) => V1_SESSION_CATALOGUE.find(r => r.id === x.s.catalogue_id)?.category === 'vo2max')).toBe(true)
     expect(q.some((x: any) => x.s.catalogue_id === 'beginner_goal_pace_reps')).toBe(false)
@@ -104,7 +139,7 @@ describe('GOALPACE-5K-01 — controls', () => {
 
   it('an intermediate 5K within reach still gets goal-pace work, in rep form', () => {
     const p: any = generateRulePlan({ ...base, user_declared_level: 'intermediate', training_age: '2-5yr', target_time: fmt(24 * 60 + 30),
-      benchmark: { time: '0:25:00', type: 'race', distance_km: 5, benchmark_date: '2026-10-10' } }, 'free', '2026-10-26')
+      benchmark: { time: '0:25:00', type: 'race', distance_km: 5, benchmark_date: BENCH_DATE } }, 'free', PLAN_START)
     const goal = sessionsOf(p).filter((x: any) => x.s.type === 'quality' && classifyStimulus(x.s) === 'race_pace'
       && (x.w.phase === 'build' || x.w.phase === 'peak'))
     expect(goal.length).toBeGreaterThan(0)
@@ -119,7 +154,7 @@ describe('GOALPACE-5K-01 — controls', () => {
 // shape that shipped (not an invented one). Pure validator calls: the engine cannot be talked into the old output
 // any more, which is the point.
 describe('GOALPACE-5K-01 — the three new checks fire on the shapes that shipped', () => {
-  const fresh = () => JSON.parse(JSON.stringify(generateRulePlan(INSIDE, 'free', '2026-10-26')))
+  const fresh = () => JSON.parse(JSON.stringify(generateRulePlan(INSIDE, 'free', PLAN_START)))
   const goalSession = (p: any, n: number) => Object.values(p.weeks.find((w: any) => w.n === n).sessions)
     .flat().find((s: any) => s && s.type === 'quality') as any
   const codes = (p: any) => validatePlan(p, INSIDE).map(v => v.code)

@@ -395,11 +395,19 @@ IDENTICAL and that is blindness, not safety (⚕️ Sims wanted it a prerequisit
 `STAGED-DOOR-AT-CAP-01` — the door's modal outcome is exactly 4.00×; no buffer set, on the chair's own standard.
 Detail in `backlog.md`.
 
-**OPEN, and it blocks "the suite is green".** 🏃 `GOALPACE-5K-RED-01` — `lib/plan/goalPace5k.test.ts` is **3 of 12
-red on `main` and has been since 2026-10-27**, 257 commits ago; bisected to `0a110e8d`
-(`GOAL-PACE-REACHABLE-01`), which took **every** goal-pace session away from the 5K beginner the older item was
-written for (0 where the arm asserts ≥ 3) and with it the only live producer of `INV-PLAN-GOAL-PACE-SHAPE` and
-`INV-PLAN-PACE-ZONE-COHERENT`. **Which of the two rulings wins is a coaching question; do not green the test.**
+✅ **CLOSED 2026-11-07 as `GOALPACE-5K-CLOCK-01`, and the item's premise was mine and was WRONG.** It said
+`lib/plan/goalPace5k.test.ts` had been red on `main` **since 2026-10-27, 257 commits ago**. Run at a set system time:
+**12/12 on 2026-10-27, 12/12 on 2026-11-06, 3 red on 2026-11-07** — it went red the morning it was read. 🔴 **A BISECT
+COULD NOT HAVE TOLD ME, AND THAT IS THE LESSON: every step runs at today's clock, so a test that EXPIRED reads as a
+test the commit BROKE.** The two rulings never conflicted — the author had correctly moved the fixture to 4.66%,
+inside §120 Am. 2's 5% line, and §10's staleness ramp added its first 1% block at exactly four weeks past the pinned
+`benchmark_date`. `PINNED-CLOCK-01`'s own entry predicted the gap (*"the gate only knows two names for a pinned
+date"*) and its remedy is **insufficient by design**: `vdotFor` is handed `new Date()` deliberately, so handing the
+generation date to the engine — which this file did, on all five calls — does not pin the benchmark's age. Fixed by
+deriving the dates, plus a **premise arm** (the three failures all depended on an unstated premise) and a third arm on
+`pinnedClock.test.ts`. 🏃 Filed from the measurement: `GOALPACE-REACH-COMPARATOR-01` — the reach gate compares a RACE
+goal against the §10-**discounted** training pace, and **2 of the 14 benchmarked time-target runners in production**
+are withheld by the discount, not by their running. ⚙️ `TEST-CLOCK-BENCHDATE-SWEEP-01` — four files still in the ramp.
 
 **OPEN (re-measured 2026-11-06).** 🏃 `STAGED-HM-DOOR-01` — Coaching Board, and the only one of these about a
 runner rather than the site. · 🧭 `SITE-FREE-COLUMN-COPY-01` — six free gates registered in `OMITTED_FROM_PRICING`

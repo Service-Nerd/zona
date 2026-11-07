@@ -112,24 +112,66 @@ before planning against any number below (an item is a snapshot of the code on t
   the half would turn plans that generate today into refusals, which is why the staged ruling used the arithmetic as a
   door rather than a veto.
 
-- 🏃 **COACHING BOARD** `GOALPACE-5K-RED-01` — 🔴 **THE SUITE ON `main` HAS BEEN RED SINCE 2026-10-27 AND
-  257 COMMITS HAVE BEEN PUSHED OVER IT.** `lib/plan/goalPace5k.test.ts`: **3 of 12 failing**, measured 2026-11-07 on a
-  clean checkout of `7a982d10` (bisected — 11 of 11 green at `0a110e8d^`, 3 of 12 red at `0a110e8d` itself, which is
-  `feat(GOAL-PACE-REACHABLE-01): goal-pace work only while the goal is within 5% of current race fitness`).
-  **GOAL-PACE-REACHABLE-01 took every goal-pace session away from the runner GOALPACE-5K-01 was written for:** the
-  stored 5K beginner now gets **0** where the arm asserts `>= 3`, and the two invariants that arm exists to prove live
-  — `INV-PLAN-GOAL-PACE-SHAPE` and `INV-PLAN-PACE-ZONE-COHERENT` — no longer fire on the shapes that shipped, because
-  the shape is no longer produced.
-  ⚠️ **WHICH RULE WINS IS A COACHING QUESTION, NOT A TEST FIX.** Either the 5% reachability gate is right and these
-  arms must be rewritten against a reachable-goal fixture (and the two invariants re-proved another way, or declared in
-  the liveness baseline), or the gate is too tight and has silently removed goal-pace work from the cohort the earlier
-  ruling served. **Do not make the test green to make the suite green.** Baseline `review:coaching` first.
-  ⚠️ **AND THE REAL FINDING IS THE ELEVEN DAYS.** `verify:ci` runs the full `vitest run`, so CI should have been red
-  throughout; whether it was is **unverified from here** — `gh` is not installed on this machine and the GitHub MCP
-  server is unauthorised. Locally the gap is plain: every push in that window was verified with `tsc` plus the suites
-  for the files touched, which is a check scoped to the diff, and this failure is in code the diffs never touched.
-  **Same shape as the `move-impact-check` class: the defect was never in the file being edited.**
-  🔻 **TWO SECOND-ORDER ASKS, neither of them this item's fix.** (a) **Nothing locally runs the full suite before a push** — `push-docs-check.py` runs the doc audit and `tsc` runs on push, and neither can see this; a full `vitest run` is ~190s, which is a real cost on every push and so a founder call, not mine to impose. (b) **Nobody was watching CI**, and from this machine nobody can: `gh` is not installed and the GitHub MCP server is unauthorised. **A gate that nothing reads is a gate that is not a gate** — the recorded lesson, here applied to the one gate that WAS working.
+- ✅ **SHIPPED 2026-11-07** `GOALPACE-5K-CLOCK-01` *(filed 2026-11-06 as `GOALPACE-5K-RED-01`; **its premise was mine
+  and it was wrong**)* ⚙️ **NO BOARD** — defect fix restoring documented intent.
+  🔴 **THE ITEM SAID `main` HAD BEEN RED SINCE 2026-10-27 AND THAT 257 COMMITS HAD BEEN PUSHED OVER IT. IT WENT RED
+  ON 2026-11-07, THE MORNING IT WAS READ.** Measured by *running* the file at a set system time, not by reasoning:
+  **12/12 at 2026-10-27, 12/12 at 2026-11-06, 3 failed at 2026-11-07.**
+  ⚠️ **AND THE BISECT COULD NOT HAVE TOLD ME. THAT IS THE FINDING.** Every bisect step runs at **today's** clock, so a
+  test that EXPIRED reads as a test the commit BROKE — `0a110e8d` is where the fixture was introduced, not where it
+  failed. A bisect answers "which commit changed the code"; it cannot answer "did the code change".
+  ⚠️ **The coaching question the item raised does not exist.** `GOAL-PACE-REACHABLE-01` did not take goal-pace work
+  from the cohort `GOALPACE-5K-01` served — its author correctly moved the fixture to a target **inside** §120 Am. 2's
+  5% line (31:00 off 32:42 = **4.66%**). §10's staleness ramp then added its first 1% block at exactly four weeks past
+  `benchmark_date: 2026-10-10`, which is 2026-11-07, and 4.66% became **5.44%**. The two rulings never conflicted.
+  **The cause.** `PINNED-CLOCK-01` (2026-10-26) is this class, and its own build-log entry predicted the gap:
+  *"the gate only knows two names for a pinned date."* This is a **third path it cannot see**. `vdotFor`'s own comment
+  states that `applyVdotDiscount` is handed `new Date()` **deliberately** — the staleness ramp measures how long ago
+  the runner actually ran, a fact about the wall clock — so PINNED-CLOCK-01's remedy, *hand the generation date to the
+  engine*, **is insufficient**: `goalPace5k.test.ts` did hand it over, on all five calls, and still drifted.
+  **Shipped.** The stored input keeps its provenance verbatim; both its dates are re-anchored from `slowGoalDates()`
+  preserving every offset (benchmark 14 days old → the same 3% bucket it was authored in; race +60 days from the plan
+  start → the same length, the same weekday), so the assertions keep the plan they were written against. Verified
+  green at system times 2026-12-07, 2027-03-07, 2027-09-07 and 2028-06-07. Plus a **premise arm** — the three arms
+  that failed all depend on this runner being inside the line and **nothing said so**, which is why a date reported
+  itself as *"expected 0 to be greater than or equal to 3"*; it now asserts the recorded `goal_pace_reach.gap_pct` is
+  inside the line with **> 0.25pp** of margin, and at a 0.1pp margin it fires **alone**, before the shape arms.
+  **The gate.** A third arm on `pinnedClock.test.ts`: no test may pin a literal `benchmark_date`. Both arms falsified
+  (a new pinned file is named; a register row that is no longer pinned fails). ⚠️ **Two defects in my own first cut,
+  both classes already in the record, both caught by running it:** it **matched its own test table** (the detector
+  fixtures contain the banned shape — "an ownership arm matching its own comment"), and it **read comments**, which
+  `HOOK-RGBA-COMMENTS-01` records as how a guard gets switched off. Comments are stripped by a stripper that preserves
+  string contents, because the twin trap is that a value inside a STRING is code, not prose.
+  🔻 **The rule in `CLAUDE.md` STANDS and its evidence has been corrected.** "Run the full suite before a push" is
+  still right — running it is what found this — but it did not catch eleven days of redness, because there were none.
+  Both second-order asks stay founder calls: whether a ~190s `vitest run` joins the pre-push hook, and who watches CI
+  (not answerable from here: `gh` is absent and the GitHub MCP server is unauthorised).
+
+- 🏃 **COACHING BOARD** `GOALPACE-REACH-COMPARATOR-01` — **§120 Am. 2 judges a RACE goal against a TRAINING pace, and
+  2 of the 14 benchmarked time-target runners in production are withheld by the discount rather than by their
+  running.** `goalPaceReach` is fed `vdot`, the §10-discounted figure. §10 scopes that discount to *"easy and
+  threshold"* paces in its own ratified words, for the stated reason that *"race-day pace is a peak output, not a
+  sustainable training pace"* — and §19 Stance B already sends **interval** paces to `vdotRaw` on exactly that
+  logic. §120 Am. 2's own text asks whether the goal is within 5% of *"the runner's current **race-fitness** pace"*.
+  ⚠️ **Measured 2026-11-07 on every benchmarked time-target runner in production (n=14, read-only):** 11 withheld
+  live; **2 flip on the comparator** — raw gaps **4.40%** and **4.11%**, inside the line and inside the 3.5–7.3%
+  published improvement mean the amendment itself cites, pushed to 7.48% and 6.40% by the discount. One is targeting
+  **46:00 off a 49:00 10K**. **0 of 14** flip in the next four weeks, so nothing is drifting today.
+  ⚠️ **The arithmetic is the argument:** the 5 was chosen as a published improvement allowance over demonstrated
+  fitness and is applied to a figure already reduced by 3–7%, so the effective allowance against what the runner
+  actually ran is **5% minus the discount** — 1–2% for a stale benchmark. Whether that is the intended instrument is
+  the board's. ⚠️ **Settled ground to respect:** Am. 2 deliberately records the deciding VDOT
+  (`meta.goal_pace_reach.vdot`) so a later recalibration cannot make a correct decision read as wrong — any change to
+  the comparator must keep `INV-PLAN-GOAL-PACE-REACHABLE` coherent with that. Related and already open:
+  `RECAL-GOAL-REACH-01`, `GRID-GOAL-INSIDE-LINE-01`.
+
+- ⚙️ **NO BOARD** `TEST-CLOCK-BENCHDATE-SWEEP-01` — **four test files still pin a benchmark date inside §10's ramp**
+  (`goldenPlans`, `intensityOrdering`, `raceWeekWeekdayCap`, `reshapeCopy`), registered in `pinnedClock.test.ts` with
+  the measurement rather than swept: all four were run forward to 2026-12-07 and 2027-03-07 and **none flipped**, and
+  `TEST-CLOCK-PINSWEEP-01`'s record is that converting one such file is not a formatting change and each needs its own
+  verification run. Three more (`ttLongRunSpacing`, `v4AnchorAware`, `marathonPeakRaceSpecific`) sit past the ramp
+  where the discount is saturated at its cap and cannot move again; `cohortGrid.ts` is the same, which is why
+  `cohort:shape` has not drifted. ⚠️ **Entered the register 2026-11-07 — a declared reason is not a fixed problem.**
 
 - ⚙️ **NO BOARD** `ENVELOPE-LRR-BLIND-01` — **no corpus can reach a §113-refused half runner, and the envelope says
   "refused 0%".** `measure:envelope` derives `longest_recent_run_km = round(min(weekly × 0.45, dist × 0.75))`; at the
