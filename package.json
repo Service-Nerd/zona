@@ -51,7 +51,8 @@
     "button:geometry": "tsx scripts/button-geometry.ts",
     "remediate:raceweek": "tsx scripts/fix-race-week-volume.ts",
     "measure:ramp-attribution": "tsx scripts/measure-delivered-ramp-attribution.ts",
-    "measure:build-specificity": "tsx scripts/measure-build-specificity.ts"
+    "measure:build-specificity": "tsx scripts/measure-build-specificity.ts",
+    "backlog:open": "bash scripts/backlog-open.sh"
   },
   "dependencies": {
     "@capacitor/app": "^8.1.0",

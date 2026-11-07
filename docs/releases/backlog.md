@@ -18524,7 +18524,34 @@ Then the answer is written to `session_completions.fatigue_tag` and **read by no
 
 ---
 
-## 🥇 P0 — FIRSTRUN-MARATHON-01: the first-time marathoner is the product
+## ✅ FIRSTRUN-MARATHON-01 — COMPLETE 2026-10-05, VERIFIED BUILT AND IN PRODUCTION 2026-11-07
+
+> ✅ **ALL SEVEN TOUCHPOINTS DELIVERED, and this heading said otherwise for 33 days.**
+> Verified 2026-11-07 against the code and the live deployment, not against this document,
+> after the founder asked whether it was built:
+>
+> | | evidence |
+> |---|---|
+> | touchpoint 7, the first missed session | registry row 2026-10-05; re-ruled before building because the first ruling's locked line was **false on render for everyone and false FOREVER on one of four paths** |
+> | touchpoints 3–4, the generating moment and first sight | `FIRSTRUN-MOMENTS-01` — **all six sub-items**, complete 2026-10-05 |
+> | touchpoint 5, the pre-plan runway | `FOUNDATION-DECIDE-LATER-01` shipped 2026-09-18; `FOUNDATION-ADD-FAIL-01` closed via `AUTH-BEARER-MISSING-01` |
+> | touchpoints 1–2, sign-up and the wizard | `ONBOARD-SKIP-LABEL-01` shipped; `REFUSAL-SCREEN-01` shipped via `P-15` |
+>
+> **Deployment, checked rather than inferred** (*a push is not a deploy*): `102cd8bf`,
+> `a87f2877`, `5b5f5578` and `41423fa4` are all **ancestors of the deployed production SHA**
+> (`5d7839a4`, Vercel project `zona`, state READY), and the touchpoint-7 sheet is live in
+> `components/dashboard/SessionPopupInner.tsx`.
+>
+> 🔴 **WHY IT READ AS OPEN FOR 33 DAYS.** Every status-bearing CHILD under this heading was
+> stamped ✅. **The parent was not, and no arm in `audit-docs.sh` has ever read a `##`
+> heading** — so the declared P0, the largest item in this file, was outside every open-item
+> population in BOTH directions. `/ship` closed each touchpoint under its own id and has no
+> concept of a parent programme, so nothing was ever asked to close the container.
+> **Measured when it was found: 26 `##` headings name an item, 22 have a shipped registry
+> row, 18 of those were unstamped.** Fixed in `heading_open_ids`
+> (`BACKLOG-PARENT-HEADING-BLIND-01`) and gated by `npm run backlog:open`.
+
+### The original brief, kept for the record — the first-time marathoner is the product
 
 *Filed 2026-09-18 after the founder's call with Jack (Make-A-Wish UK). **This is now the number one priority.** Everything below it waits.*
 

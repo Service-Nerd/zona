@@ -61,62 +61,8 @@ say() { printf '%s\n' "$*"; }
 # punctuation mark over. Found by code review on the fix. Now: any character
 # that cannot be part of an id ends it, which also stops `FOO-01-BAR` being
 # truncated to `FOO-01` (`-` was IN the old set).
-board_tag_bullet_ids() {
-  sed -nE 's/^- (🏃|🧭|💼|👤|⚙️) \*\*[^*]+\*\* `?([A-Z][A-Z0-9]*(-[A-Z0-9]+)+)`?([^A-Z0-9-].*)?$/\2/p' "$1"
-}
-
-# ── THE CLOSED VOCABULARY — ONE LIST, SHARED BY EVERY OPEN-ITEM ARM ─────────
-#
-# 🔴 BACKLOG-STATUS-GLYPH-BLIND-01 (2026-11-07). THE EIGHTH INSTANCE OF "AN AUDIT IS ONLY
-# EVER AS WIDE AS ITS LIST", AND THIS SCRIPT PREDICTED IT THREE TIMES IN ITS OWN COMMENTS:
-# *"normalising the document is the better fix and is still not done."*
-#
-# The open-item population used to be built from a HAND-LISTED SET OF EMOJI
-# (🔻 🔲 🟡 🟠 🟢 🔵 ⏸️ ⚖️ 🧭) plus a second arm for UNMARKED headings. So a heading led by any
-# other glyph — ⚙️ 🏃 👤 📱 🔄 🔧 ⚠️ 🔴 — matched NEITHER: not the emoji list, and not the
-# unmarked arm, whose pattern requires a backtick immediately after the hashes. **Measured:
-# 35 open headings invisible to both arms, 9 of them carrying a shipped feature-registry
-# row**, while this script printed ALL CLEAN.
-#
-# ⚠️ AND THE EXCLUSION WORDS ONLY EVER PROTECTED THE UNMARKED ARM, which is why 🔴 had to be
-# excluded by EMOJI: in the `###` form it was being used for both KILLED (W-06 "WITHDRAWN",
-# W-11 "DEAD") and OPEN-AT-P1 (`PLAN-NOTE-BUDGET-INERT-01`), and no emoji rule can separate
-# those. **Closing by WORDS separates them, because the document already says which it means.**
-#
-# So: ONE arm, ANY leading glyph, and an item is CLOSED only when it SAYS so. A new status
-# glyph can never make the arm blind again, because the arm no longer knows about glyphs.
-_CLOSED_STAMPS='SHIPPED|CLOSED|RESOLVED|WITHDRAWN|SUPERSEDED|DEAD|PARKED|KILLED|VACATED|FALSE PREMISE|BUILT and LIVE'
-_CLOSED_PROSE='for the record|NOT an open item|do not re-propose'
-
-# Every `###`/`####` heading that names an item and does not say it is closed.
-#
-# 🔴 THE CLOSED-WORD TEST MUST NOT READ THE ID, AND THE FIRST CUT OF THIS FUNCTION DID.
-# `QUIT-TAB-DEAD-01`, `ADJUST-TRIGGER-MANUAL-DEAD-01` and `ZONE-DISCIPLINE-BANDS-DEAD-01`
-# all excluded THEMSELVES, because their NAMES contain "DEAD". Matching the spelling instead
-# of the claim — the class this repo has recorded repeatedly, committed here inside the gate
-# written to end a different instance of it. So every backticked span is blanked before the
-# test, and the id is recovered from the original line afterwards.
-#
-# ⚠️ THE STAMP WORDS ARE MATCHED CASE-SENSITIVELY AND THAT IS DELIBERATE. This file writes a
-# closure as a CAPITALISED stamp (**DEAD**, **WITHDRAWN**, ✅ SHIPPED), so requiring caps keeps
-# ordinary prose ("a deadline", "shipped copy") from closing an open item. Only the two
-# sentence-shaped markers are case-insensitive, because they are written as prose.
-heading_open_ids() {
-  awk -v stamps="$_CLOSED_STAMPS" -v prose="$_CLOSED_PROSE" '
-    /^###/ {
-      line = $0
-      bare = line
-      gsub(/`[^`]*`/, "@@", bare)          # the id and any filename cannot vote on status
-      if (index(bare, "\342\234\205") || index(bare, "~~")) next
-      n = split(stamps, w, "|"); for (i = 1; i <= n; i++) if (index(bare, w[i])) next
-      lo = tolower(bare)
-      m = split(prose, q, "|");  for (i = 1; i <= m; i++) if (index(lo, tolower(q[i]))) next
-      # the FIRST backticked span in the original line, and only if it is an id
-      if (match(line, /`[A-Z][A-Z0-9]*(-[A-Z0-9]+)+`/) == 0) next
-      seg = substr(line, RSTART + 1, RLENGTH - 2)
-      print seg
-    }' "$1"
-}
+# ⚠️ SOURCED, NEVER COPIED — see scripts/lib/open-items.sh for why.
+. "$(git rev-parse --show-toplevel)/scripts/lib/open-items.sh"
 
 # ── The ship-record window: a MARKER, not a calendar date ───────────────────
 #
@@ -530,7 +476,10 @@ sed -nE 's/^\| *`?([A-Z][A-Z0-9]*(-[A-Z0-9]+)+)`?[^|—]{0,60}[—|].*/\1/p' \
 # ⚠️ ALL FOUR SHOULD SHRINK, AND THE SCRIPT CANNOT TELL YOU IF THEY DO NOT. Per this repo's
 # own rule, a register's reason column is not a fixed problem: if one of these is still here
 # in a month, that is the finding.
-_SHIPPED_AND_OPEN_OK='READINESS-SURFACE-01 STRENGTH-ENGINE-01 STEPPER-CONTROL-01 TODAY-CTA-CLEARANCE-01'
+#   NATIVE-BATCH-01 (2026-11-07): a STANDING PROCEDURE, not an item — "run on EVERY native
+#     submission". Its registry row records the sweep that produced the checklist; the checklist
+#     itself is a living document and never closes. Remove only if the procedure is retired.
+_SHIPPED_AND_OPEN_OK='READINESS-SURFACE-01 STRENGTH-ENGINE-01 STEPPER-CONTROL-01 TODAY-CTA-CLEARANCE-01 NATIVE-BATCH-01'
 for id in $(comm -12 /tmp/_reg /tmp/_open); do
   case " $_SHIPPED_AND_OPEN_OK " in *" $id "*) continue ;; esac
   say "  STILL OPEN $id (has a feature-registry row)"; afail=1; fail=1
