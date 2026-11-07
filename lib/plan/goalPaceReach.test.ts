@@ -45,6 +45,56 @@ describe('the owner', () => {
   })
 })
 
+// §120 Amendment 3 (Coaching Board 2026-11-07, GOALPACE-REACH-COMPARATOR-01) — the comparator is named, and pinned.
+//
+// Am. 2 said "the runner's current RACE-FITNESS pace" and named no VDOT, while the plan carries two: `meta.vdot` is
+// RAW and `meta.vdot_training_anchor` is the §10-DISCOUNTED anchor. Two of the fourteen benchmarked time-target
+// runners in production turn on which is read, so a sentence nobody wrote was deciding real prescriptions. The board
+// ratified the discounted anchor: the line bounds what a plan may ASK, and a plan asks in the currency its own
+// sessions are priced in.
+//
+// 🔴 WHY THIS IS NOT AN INVARIANT, AND THE REASON IS ALREADY WRITTEN INSIDE THE INVARIANT.
+// `INV-PLAN-GOAL-PACE-REACHABLE`'s own comment records a code-review decision: the withholding is verified against
+// `meta.goal_pace_reach.vdot`, "NOT `vdot_training_anchor`… a recalibration rewrites the anchor and leaves the
+// sessions, so checking against it would call a correct decision wrong the day after a time trial". The two fields
+// are therefore LEGITIMATELY unequal after a recalibration, and a validatePlan arm asserting equality would fire on
+// correct plans. The equality is a property of the STAMP, so it is checked where the stamp is made.
+//
+// ⚠️ SPIKED BEFORE THE RULING, THEN REVERTED, AND THIS IS THE GAP IT FOUND. Swapping the comparator to `vdotRaw` made
+// the invariant error for two DOWNSTREAM reasons in turn — first the record (`8.9% past… goal_pace_withheld absent`),
+// then §25's current-pace long-run finish — while NOTHING said the comparator had moved. Three coupled sites, and the
+// one check that names the cause is this one.
+describe('§120 Am. 3 — the reachability line is decided at the DISCOUNTED anchor', () => {
+  // A stale-enough benchmark that §10's discount is unmistakably applied, so the two VDOTs cannot coincide.
+  const input: any = {
+    age: 38, goal: 'time_target', race_distance_km: 10, target_time: '0:46:00', days_available: 4,
+    current_weekly_km: 35, longest_recent_run_km: 12, user_declared_level: 'intermediate', training_age: '2-5yr',
+    recent_quality_training: 'occasional', race_date: new Date(Date.parse(`${planStart}T00:00:00Z`) + 84 * 864e5).toISOString().slice(0, 10), max_hr: 185, resting_hr: 50,
+    benchmark: { type: 'race', distance_km: 10, time: '0:49:00', benchmark_date: benchmarkDate },
+  }
+  const plan: any = runEngine({ input, tier: 'paid', displayUnits: 'km', planStart, today })
+  const meta = (plan.kind === 'refusal' ? null : plan.plan.meta) as any
+
+  it('🔴 the decision is stamped at `vdot_training_anchor`, never at the raw `meta.vdot`', () => {
+    expect(meta, 'this fixture must generate, or the arm has no subject').toBeTruthy()
+    expect(meta.goal_pace_reach, '§120 Am. 2 records a decision on every benchmarked time-target plan').toBeTruthy()
+    expect(meta.vdot_training_anchor).toBeLessThan(meta.vdot)  // the discount is live, so the two differ
+    // `vdot_training_anchor` is rounded to 1dp and `goal_pace_reach.vdot` to 2dp, so compare within half a tenth.
+    expect(Math.abs(meta.goal_pace_reach.vdot - meta.vdot_training_anchor),
+      `decided at ${meta.goal_pace_reach.vdot}, anchor ${meta.vdot_training_anchor}, raw ${meta.vdot} — §120 Am. 3 pins this to the ANCHOR`)
+      .toBeLessThanOrEqual(0.05)
+    expect(Math.abs(meta.goal_pace_reach.vdot - meta.vdot),
+      'if this is the equal pair, the comparator has been swapped to the raw VDOT and Am. 2\'s measured harm is back')
+      .toBeGreaterThan(0.05)
+  })
+
+  it('the 5 is a COHERENCE bound: the goal is judged against the paces this plan prescribes', () => {
+    // Seiler, at the sitting: applied to a discounted figure, 5% is not the published improvement mean.
+    expect(GENERATION_CONFIG.GOAL_PACE_MAX_STRETCH_PCT).toBe(5)
+    expect(meta.vdot_discount_applied_pct, 'the discount is what makes the two comparators differ').toBeGreaterThan(0)
+  })
+})
+
 describe('past the line the plan trains the fitness the runner has', () => {
   const past = sample.filter(x => x.gap >= 0.15)
   const inside = sample.filter(x => x.gap === 0)

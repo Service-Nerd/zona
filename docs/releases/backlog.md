@@ -147,7 +147,15 @@ before planning against any number below (an item is a snapshot of the code on t
   Both second-order asks stay founder calls: whether a ~190s `vitest run` joins the pre-push hook, and who watches CI
   (not answerable from here: `gh` is absent and the GitHub MCP server is unauthorised).
 
-- 🏃 **COACHING BOARD** `GOALPACE-REACH-COMPARATOR-01` — **§120 Am. 2 judges a RACE goal against a TRAINING pace, and
+- ✅ **RULED 2026-11-07, CORRECT WITH AMENDMENT ON THE STATUS QUO** `GOALPACE-REACH-COMPARATOR-01` 🏃 **COACHING BOARD**
+  — the comparator stays the §10-**discounted** anchor and §120 **Amendment 3** now says so, because *a plan asks in the
+  currency its own sessions are priced in*; Am. 2's measured harm (*"100% of goal-paced sessions faster than the
+  runner's own threshold"*) is measured against that anchor, so judging on raw re-admits it. 📊 Seiler carried: the 5
+  **stops being called the published improvement mean** and is a coherence bound; the number does not move.
+  🔴 The conflict scan found **§10's headline sentence contradicting its own config block** — *"more than 6 months"*
+  against a ramp that starts at **4 weeks**, a factor of six — corrected in the same commit. Check lands at
+  CONSTRUCTION, not in `validatePlan()`, for a reason already written inside the invariant. **No numeric, declared.**
+  Original submission, kept because the measurement is the record: **§120 Am. 2 judged a RACE goal against a TRAINING pace, and
   2 of the 14 benchmarked time-target runners in production are withheld by the discount rather than by their
   running.** `goalPaceReach` is fed `vdot`, the §10-discounted figure. §10 scopes that discount to *"easy and
   threshold"* paces in its own ratified words, for the stated reason that *"race-day pace is a peak output, not a
@@ -164,6 +172,26 @@ before planning against any number below (an item is a snapshot of the code on t
   (`meta.goal_pace_reach.vdot`) so a later recalibration cannot make a correct decision read as wrong — any change to
   the comparator must keep `INV-PLAN-GOAL-PACE-REACHABLE` coherent with that. Related and already open:
   `RECAL-GOAL-REACH-01`, `GRID-GOAL-INSIDE-LINE-01`.
+
+- ⚕️ **COACHING BOARD** `VDOT-STALENESS-CURVE-01` — **§10's staleness ramp has no citation, and its own prose disagreed
+  with its config by a factor of six.** Filed by Sims at the `GOALPACE-REACH-COMPARATOR-01` sitting, **recorded and
+  deliberately not folded into that ruling.** The engine declares a benchmark 1% staler every 4 weeks from week 4,
+  compounding to a 7% cap (`VDOT_STALENESS_FRESH_WEEKS/PER_4WK_PCT/MAX_DISCOUNT_PCT`); §10's headline sentence said
+  *"more than 6 months old… a further 5%"* until 2026-11-07. ⚕️ **Sims: a runner is penalised for not having RACED
+  rather than for detraining, and who races infrequently is not random** — it skews to caregiving loads, perimenopausal
+  runners managing symptoms, and anyone whose last event was a year ago. *"Fitness does not decay on a four-week clock
+  in any literature I know, and certainly not uniformly."* ⚠️ **Blast radius is every pace on every benchmarked plan**,
+  not just goal pace, and it is the mechanism behind `GOALPACE-5K-CLOCK-01`. Evidence that would settle it:
+  post-hoc HealthKit HR-vs-pace for runners whose benchmark is 1, 3, 6 and 12 months old — **collectable, and nobody
+  has looked.** ⚠️ The ramp reading the wall clock is CORRECT for the prescription and is not the question here.
+
+- 🧭 **DESIGN BOARD** `GOALPACE-GAP-LEVER-COPY-01` — **the gap sentence names the loss and not the lever (§40c).**
+  🎯 McMillan's granted arm from the `GOALPACE-REACH-COMPARATOR-01` sitting: a runner targeting 46:00 off a 49:00 10K is
+  told *"Your target is about 7% quicker than your recent run suggests, so sessions are set to what you can run now."*
+  — true in the plan's currency, and **the runner does not hold a currency.** The lever exists and is FREE: a fresh
+  benchmark, i.e. the 5K time trial, which resets §10's ramp. ⚠️ **Wording is the founder's and the surface is the
+  board's**, which is why it was not ratified at the coaching sitting. ⚠️ **Check the benchmark's AGE before writing
+  it** — on a fresh benchmark the lever is "run the race you trained for", not "test again".
 
 - ⚙️ **NO BOARD** `TEST-CLOCK-BENCHDATE-SWEEP-01` — **four test files still pin a benchmark date inside §10's ramp**
   (`goldenPlans`, `intensityOrdering`, `raceWeekWeekdayCap`, `reshapeCopy`), registered in `pinnedClock.test.ts` with

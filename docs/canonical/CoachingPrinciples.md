@@ -1611,13 +1611,14 @@ raised long run, back and plantar separately, and on injury recency, which `inju
 producer's owner. Tests: `lib/plan/injuryLongRunCap.test.ts`.
 ## 10. VDOT conservatism — protect users from themselves (selectively)
 
-**Principle.** Training paces derived from a benchmark are discounted by 3% by default for **easy** and **threshold** paces. Stale benchmarks (more than 6 months old) get a further 5% discount. **Interval (VO2max) paces use the raw benchmark VDOT** — no conservatism discount — because under-stimulating VO2max sessions undermines the adaptation they exist to produce.
+**Principle.** Training paces derived from a benchmark are discounted by 3% by default for **easy** and **threshold** paces. A benchmark older than `VDOT_STALENESS_FRESH_WEEKS` (**4 weeks**) is discounted a further 1% per additional 4-week block, capped at 7% in total. **Interval (VO2max) paces use the raw benchmark VDOT** — no conservatism discount — because under-stimulating VO2max sessions undermines the adaptation they exist to produce.
 
 **Why.** A non-elite runner who PBs a 5K and then trains at 100% of the implied VDOT pace on every easy run is a runner about to get injured. The discount on easy and threshold paces acknowledges that race-day pace is a peak output, not a sustainable training pace, and that fitness drifts — exactly where "going hard on the easy days" risk lives. But VO2max sessions are short, structured, with full recovery; they are MEANT to be hard. Discounting them produces under-stimulus and the runner loses the top-end adaptation. The conservatism principle and the polarised-training principle (§1) point the same way: protect easy days fiercely, train VO2max honestly. *(Doctrine clarified 2026-05-25 / R2/H-01 — Stance B.)*
 
 **Config.**
 - `GENERATION_CONFIG.VDOT_CONSERVATIVE_DISCOUNT_PCT = 3`  (applied to easy + threshold paces only)
-- Staleness is handled by the compounding ramp below (`VDOT_STALENESS_FRESH_WEEKS`, `VDOT_STALENESS_PER_4WK_PCT`, `VDOT_STALENESS_MAX_DISCOUNT_PCT`) — **not** by a months threshold.
+- Staleness is handled by the compounding ramp (`VDOT_STALENESS_FRESH_WEEKS = 4`, `VDOT_STALENESS_PER_4WK_PCT = 1`, `VDOT_STALENESS_MAX_DISCOUNT_PCT = 7`) — **not** by a months threshold.
+- 🔴 **THIS PRINCIPLE'S OWN HEADLINE SENTENCE SAID "more than 6 months old… a further 5%" UNTIL 2026-11-07, WHILE THIS BLOCK SAID STALENESS IS NOT A MONTHS THRESHOLD.** The ratified prose and the ratified config disagreed about when staleness begins **by a factor of six**, and the engine has always used the 4-week ramp. Corrected at the `GOALPACE-REACH-COMPARATOR-01` sitting, where a seat reaching for "six months" would have built a gate on a number the engine abandoned (§120 Am. 3). ⚠️ **The ramp reads the WALL CLOCK deliberately** — `vdotFor`'s own comment: it measures how long ago the runner actually ran, which is a fact about the calendar and not about the plan's anchoring. That is correct for the prescription and it is why a test may pin its generation date on every call and still age (`GOALPACE-5K-CLOCK-01`). ⚕️ **The ramp's CURVE is unevidenced and that is open** — `VDOT-STALENESS-CURVE-01`, filed by Sims at the same sitting.
 
 Implemented in `buildPaceFromVDOT(discountedVdot, rawVdot)` in `lib/plan/ruleEngine.ts`. Easy/quality paces use `discountedVdot`; interval pace uses `rawVdot`. The applied discount is surfaced in `plan.meta.vdot_discount_applied_pct` so the user can see what the engine did and why.
 
@@ -12047,6 +12048,72 @@ unbenchmarked HM; `GOAL_PACE_REHEARSAL_TOLERANCE_PCT = 3`, how close to the goal
 rehearsing it (the width `INV-PLAN-RACE-ANCHOR-MATCHES-GOAL` already uses), so §24b's fitness-paced MP/HM segments on
 5K/10K long runs are not read as goal-pace work. **Owner.** `lib/plan/goalPaceReach.ts` (decided once in `generateRulePlan`, carried as
 `PaceGuide.goalWithheld`). **Check.** `INV-PLAN-GOAL-PACE-REACHABLE`; `lib/plan/goalPaceReach.test.ts`.
+
+---
+
+## §120 Amendment 3 — the line is measured against the plan's own currency (Coaching Board 2026-11-07, GOALPACE-REACH-COMPARATOR-01)
+
+**Principle.** The reachability line in Amendment 2 is measured against the **§10-discounted training anchor**
+(`meta.vdot_training_anchor`), never the raw benchmark VDOT. The question the line answers is *"may this plan ask for a
+pace faster than the paces this same plan prescribes?"* — **a plan asks in the currency its own sessions are priced
+in.**
+
+**Why Amendment 2 needed this said out loud.** Am. 2's text says *"the runner's current **race-fitness** pace"* and
+names no VDOT, and the plan carries two: `meta.vdot` is **raw**, `meta.vdot_training_anchor` is **discounted**. Two of
+the fourteen benchmarked time-target runners in production turn on which one is read, so a sentence nobody wrote was
+deciding real prescriptions. Measured 2026-11-07: 11 of 14 withheld live; **2 of 14 flip on the comparator** (raw gaps
+4.40% and 4.11%, inside the line, pushed to 7.48% and 6.40% by the discount). ⚠️ **Fourteen runners and two of them —
+not a percentage** (Sims).
+
+**Why the discounted anchor, against the argument for raw.** The argument for raw is real and was put: §10 scopes its
+discount to *"easy and threshold"* paces because *"race-day pace is a peak output, not a sustainable training pace"*,
+and §19 Stance B already sends interval paces to the raw VDOT. **It loses on Am. 2's own recorded harm.** That
+amendment exists because *"100% of goal-paced sessions at every distance were faster than the runner's own
+threshold"* — and that threshold is derived from the discounted anchor. Judge reachability on raw while pricing every
+other session from the anchor and the incoherence returns through the back door. Am. 2 also already ruled on the
+evidence: *"production holds no usable improvement case, so this is a boundary of what a plan may ASK, not a
+forecast."* A boundary on asking is measured in the asker's units. ⚠️ **§19 Stance B is NOT a precedent here**: it is
+an argument about the DOSE of an interval session, not about judging a goal, and the analogy was doing work the
+evidence does not.
+
+**The 5 is a coherence bound, not an improvement allowance (Seiler).** Am. 2 justified `GOAL_PACE_MAX_STRETCH_PCT = 5`
+as *"the published 9–10-week mean (3.5–7.3%)"*. Applied to a figure already reduced 3–7%, the effective allowance
+against what the runner demonstrably ran is **5% minus the discount** — 1–2% for a stale benchmark. **The number does
+not move; its justification does.** It bounds the distance between the goal and the plan's own paces. Anyone wanting
+it to mean an improvement allowance must change the comparator, which is this amendment.
+
+**McMillan dissents on what the runner is TOLD, and his arm is granted.** A runner targeting 46:00 off a 49:00 10K
+over eleven weeks is, in his words, *"on"* — and is told their target is quicker than their recent run suggests. That
+sentence is true in the plan's currency and the runner does not hold a currency. His condition: **the gap sentence must
+name the lever, not only the loss (§40c).** The lever is a fresh benchmark — the 5K time trial, which is FREE and
+resets §10's staleness ramp. Filed as `GOALPACE-GAP-LEVER-COPY-01`: runner-facing wording is the founder's and the
+surface is the Design Board's, so it is not ratified here.
+
+**Numeric: none, and the absence is the finding.** No constant changes. What was missing was a **named input**, not a
+number, which is why no layer caught it: `configPrincipleSync` and `configConsumer` both read keys, and a comparator
+is an argument.
+
+**Check: at CONSTRUCTION, not in `validatePlan()`, and the reason is already written in the invariant.**
+`INV-PLAN-GOAL-PACE-REACHABLE`'s own comment records a code-review decision — the decision is verified against
+`meta.goal_pace_reach.vdot`, *"NOT `vdot_training_anchor`… a recalibration rewrites the anchor and leaves the
+sessions, so checking against it would call a correct decision wrong the day after a time trial."* The two fields are
+therefore **legitimately unequal after a recalibration**, and an invariant asserting equality would fire on correct
+plans. The equality is a property of the *stamp*, so it is checked where the stamp is made:
+`lib/plan/goalPaceReach.test.ts`. ⚠️ **Spiked before ruling, then reverted:** swapping the comparator alone made the
+invariant error for two DOWNSTREAM reasons — the record, then §25's current-pace long-run finish — while **nothing
+said the comparator had moved.** That is the check this amendment adds.
+
+⚠️ **The 41,472-case cohort grid is blind to this.** Every metric identical except `meanDeliveredPeakKm` 37.24 → 37.25.
+`GRID-GOAL-INSIDE-LINE-01` is the reason and is now load-bearing: neither the cohort nor the targeted grid carries a
+benchmarked goal inside the line, so **only production could see it.**
+
+⚕️ **Sims's objection is recorded and NOT ruled on here** (`VDOT-STALENESS-CURVE-01`): §10's ramp declares a benchmark
+1% staler every four weeks from week four, compounding to 7%, with no citation for that curve — while §10's own prose
+says *"more than 6 months"*, a different claim by a factor of six. A runner is penalised for not having raced rather
+than for detraining, and who races infrequently is not random. 🩹 Willy offered the conservative direction as a
+**tiebreak, not a reason**, recorded so it cannot later be cited as evidence.
+
+**Owner.** `lib/plan/goalPaceReach.ts`, called once in `generateRulePlan` with `vdot`.
 
 ---
 
