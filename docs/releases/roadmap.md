@@ -397,6 +397,16 @@ IDENTICAL and that is blindness, not safety (⚕️ Sims wanted it a prerequisit
 `STAGED-DOOR-AT-CAP-01` — the door's modal outcome is exactly 4.00×; no buffer set, on the chair's own standard.
 Detail in `backlog.md`.
 
+**OPEN from the 11-07 sitting** (`GOALPACE-REACH-COMPARATOR-01`, ruled — §120 Am. 3). · 🏃
+`VDOT-STALENESS-CURVE-01` — ⚕️ Sims: §10's staleness ramp declares a benchmark 1% staler every four weeks from week
+four, compounding to 7%, **with no citation for that curve**, and §10's own prose said *"more than 6 months"* until
+this sitting — a factor of six. A runner is penalised for not having RACED rather than for detraining, and who races
+infrequently is not random. Blast radius is **every pace on every benchmarked plan**, and it is the mechanism behind
+`GOALPACE-5K-CLOCK-01`. Settled by post-hoc HealthKit HR-vs-pace at 1 / 3 / 6 / 12 months of benchmark age —
+collectable, nobody has looked. · 🧭 `GOALPACE-GAP-LEVER-COPY-01` — 🎯 McMillan's granted arm: the gap sentence names
+the loss and **not the lever (§40c)**, and the lever is FREE (a fresh benchmark, i.e. the 5K time trial). Wording is
+the founder's, surface is the Design Board's. Detail in `backlog.md`.
+
 ✅ **CLOSED 2026-11-07 as `GOALPACE-5K-CLOCK-01`, and the item's premise was mine and was WRONG.** It said
 `lib/plan/goalPace5k.test.ts` had been red on `main` **since 2026-10-27, 257 commits ago**. Run at a set system time:
 **12/12 on 2026-10-27, 12/12 on 2026-11-06, 3 red on 2026-11-07** — it went red the morning it was read. 🔴 **A BISECT

@@ -173,7 +173,7 @@ before planning against any number below (an item is a snapshot of the code on t
   the comparator must keep `INV-PLAN-GOAL-PACE-REACHABLE` coherent with that. Related and already open:
   `RECAL-GOAL-REACH-01`, `GRID-GOAL-INSIDE-LINE-01`.
 
-- ⚕️ **COACHING BOARD** `VDOT-STALENESS-CURVE-01` — **§10's staleness ramp has no citation, and its own prose disagreed
+- 🏃 **COACHING BOARD** `VDOT-STALENESS-CURVE-01` *(⚕️ Sims)* — **§10's staleness ramp has no citation, and its own prose disagreed
   with its config by a factor of six.** Filed by Sims at the `GOALPACE-REACH-COMPARATOR-01` sitting, **recorded and
   deliberately not folded into that ruling.** The engine declares a benchmark 1% staler every 4 weeks from week 4,
   compounding to a 7% cap (`VDOT_STALENESS_FRESH_WEEKS/PER_4WK_PCT/MAX_DISCOUNT_PCT`); §10's headline sentence said
