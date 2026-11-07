@@ -171,8 +171,17 @@ before planning against any number below (an item is a snapshot of the code on t
   10 km/week, `measure:envelope` derives the longest run from volume, `cohortGrid` is byte-identical on 41,472 cases.
   **Every standing harness was blind to a change that moves 290 plans; only a purpose-built grid and production saw it.**
 
-- 🏃 **COACHING BOARD** `SHORT-DISTANCE-RAMP-SCOPE-01` — **the 5K and 10K are over §111's cap too, and the board did
-  not rule on them because I scoped the submission to the half.** Measured 2026-11-07 on the same 920-input grid:
+- 🏃 **COACHING BOARD** `SHORT-DISTANCE-RAMP-SCOPE-01` — **the 5K and 10K are over §111's cap too, and so is
+  EVERYTHING FROM 12.1 TO 20.9 km, and the board did not rule on any of them because I scoped the submission to the
+  half.** 🔴 **ADDED 2026-11-07 by code review: 21 IS NOT THE DISTANCE CLASS.** `raceDistanceKey` puts **12.1–22 km**
+  in `HM`, so Am. 4's threshold admits 21–22 and leaves 12.1–20.9 outside §111 — measured worst delivered ratio
+  **8.50× at 20.9 km**, 8.25× at 20, 7.75× at 16 and 13, against 4.00× at 21. **A 20 km race still gets the plan
+  Am. 4 was ratified to refuse, labelled "half marathon" by the refusal copy while doing it.** My comment in
+  `generationConfig.ts` claimed *"21, NOT 21.1 — the threshold is the distance CLASS"*, which is false; the false
+  reason is corrected, the scope question is the board's.
+  ⚠️ **So this is ONE question with three bands, not two items:** 5K/10K (the original filing), **12.1–20.9 (new)**,
+  and whether the line should sit at the class boundary (12.1) rather than at a bare number.
+  **Original filing follows.** Measured 2026-11-07 on the same 920-input grid:
   **45 of the 5K race plans and 57 of the 10K** exceed 4.0, unchanged by Am. 4. 🔴 **The week-1 leap is IDENTICAL at
   every distance** — +150% at 4 km/week, +160% at 5, +117% at 6, +63% at 8 — because the week-1 floor is 35% of peak
   and both scale with distance together. Only the **ratio** falls (5K peaks flat at 17 km, 10K at 22), so fewer cases

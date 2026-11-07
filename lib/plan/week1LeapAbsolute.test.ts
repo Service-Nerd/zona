@@ -42,27 +42,30 @@ describe('WEEK1-LEAP-ABS-01', () => {
   })
 
   it('2. a LARGE absolute jump is still flagged — the floor removes noise, not the rule', () => {
-    // Reconstructed from the measured worst case. ⚠️ Re-pinned by §111 Am. 4 (see below): it WAS a half at
-    // 10 km/week declared, scaled to ~7 by §29 and handed an 18 km week 1 — which §111 now refuses.
+    // Reconstructed from the measured worst case, re-pinned twice by §111 Am. 4 and then by code review (below).
     const big = {
       athlete_name: 'A', age: 38, race_name: 'T', primary_metric: 'distance',
-      race_date: '2027-02-22', plan_start: '2026-11-02',
-      goal: 'finish', fitness_level: 'intermediate', training_age: '2-5yr',
-      // 🔴 HALF → MARATHON, cw 10 → 18, lr 5 → 10 (§111 Amendment 4, 2026-11-07), and the reason is the ruling
-      // WORKING rather than a fixture breaking.
+      // A 10-week runway from PINNED_PLAN_START_0921 ('2026-09-21') — the measured corner. The old dates gave ~16
+      // weeks, where no production-shaped half plan carries the leap.
+      race_date: '2026-11-29', plan_start: PINNED_PLAN_START_0921,
+      goal: 'finish', user_declared_level: 'beginner', training_age: '2-5yr',
+      // 🔴 HALF → MARATHON → **BACK TO THE HALF**, and the round trip is the lesson (§111 Am. 4, 2026-11-07).
       //
       // At 10 km/week with a 5 km longest run and `training_age: '2-5yr'`, §29's fresh-return heuristic scales the
-      // start to 7, so the HALF now exceeds §111's 4.0 ratio and is REFUSED — this fixture stopped generating.
-      // Raising the volume does not rescue it either: probed across 24 combinations (2 distances × 6 volumes ×
-      // 2 longest runs), **`WEEK1-LEAP` fires on exactly ONE** — the marathon at 18 km/week, effStart 18, w1 26,
-      // jump 8.0.
+      // start to 7, so the half exceeds §111's new 4.0 ratio and is REFUSED — this fixture stopped generating. I
+      // probed for a replacement, found `WEEK1-LEAP` firing on 1 of 24 combinations (a marathon), and **recorded that
+      // the half no longer has a subject above §111's door.**
       //
-      // ⚠️ SO AT THE HALF, `WEEK1-LEAP` NO LONGER HAS A SUBJECT ABOVE §111's DOOR, and that is expected: the leap
-      // and the ratio are the SAME HAZARD measured two ways, both anchored on the week-1 floor at 35% of peak
-      // (🩹 Willy's whole point — *"the injury happens in the ramp, not at the race"*). Capping the ratio caps the
-      // leap. Recorded here so a future reader does not read the absence as the rule having broken.
-      race_distance_km: 42.2,
-      resting_hr: 55, max_hr: 184, current_weekly_km: 18, longest_recent_run_km: 10,
+      // 🔴 THAT RECORDED ABSENCE WAS FALSE AND `/code-review` CAUGHT IT. My probe was wrong twice over: it set
+      // `fitness_level` — the structural override no wizard caller sends (`COHORT-GRID-UNSET-LEVEL-01`, which I had
+      // cited hours earlier) — and its runway floor was 12. Re-measured at production shape across 9,446 generating
+      // half plans, runways from 10: **220 carry `WEEK1-LEAP`**, the lowest at `cw 9 / lr 5 / runway 10`. **A floor
+      // on a grid axis hid the whole population, for the third time in one fix round.**
+      //
+      // So the fixture is a HALF again, at the measured corner: 9 km/week, 5 km longest run, a 10-week runway.
+      // ⚠️ `user_declared_level`, never `fitness_level`, so the arm exercises the shape the wizard posts.
+      race_distance_km: 21.1,
+      resting_hr: 55, max_hr: 184, current_weekly_km: 9, longest_recent_run_km: 5,
       days_available: 4, injury_history: [], hard_session_relationship: 'neutral',
       recent_quality_training: 'occasional',
     } as never

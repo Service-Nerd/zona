@@ -1612,7 +1612,14 @@ export const GENERATION_CONFIG = {
   // this repo is 10 km/week = **3.40×**, admitted with margin (the cap admits >= 8.5 km/week); reckless end — the two
   // LIVE half plans at **5.40× and 6.80×**, refused. Both ends are half-marathon facts.
   //
-  // ⚠️ 21, NOT 21.1 — the threshold is the distance CLASS, and a 21.0 entry is the same runner.
+  // 🔴 21 IS NOT THE DISTANCE CLASS, AND THIS COMMENT SAID IT WAS — code review, 2026-11-07. `raceDistanceKey` puts
+  // **12.1–22 km** in `HM`, so the threshold admits 21–22 and leaves **12.1–20.9 outside §111**. Measured worst
+  // delivered ratio below the line: **8.50× at 20.9 km** (peak 34 off an effective start of 4), 8.25× at 20, 7.75×
+  // at 16 and at 13 — versus 4.00× at 21. **A 20 km race still gets the plan Am. 4 was ratified to refuse**, and the
+  // new `distanceLabelFor` calls it a "half marathon" while doing it.
+  // 🔻 WHETHER THE LINE BELONGS AT 21 OR AT 12.1 IS THE BOARD'S, NOT MINE — it changes who is refused, and 12.1–20.9
+  // is the same cohort as `SHORT-DISTANCE-RAMP-SCOPE-01`, so the two are one question and are filed together. What
+  // is corrected here is the false REASON, which is the part that was mine.
   BASE_BUILD_RATIO_MIN_DISTANCE_KM: 21,  // §111 governs half marathon, marathon and ultra (Am. 4)
 
   // ── Prep-time validation (CoachingPrinciples §44) ──────────────────────────

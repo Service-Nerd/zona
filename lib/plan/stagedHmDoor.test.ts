@@ -285,6 +285,43 @@ describe('§116 Am. 11 (2) — the door lands the block inside §111\'s ratio', 
     }
   })
 
+  it('🔴 §111\'s offer may not promise a race door the runway cannot hold', () => {
+    // 🔴 FOUND BY `/code-review` AFTER §111 Am. 4 SHIPPED (2026-11-07), and it is §113's defect in §111's clothes.
+    //
+    // §113's offer was fixed on 2026-11-06 to answer "does a race plan open?" by GENERATING the block at the
+    // checkpoint, because a volume-only test cannot see §44's prep floor. §111's offer kept the volume-only form
+    // (`endsAtKm >= min_base_km`), and Am. 4 made it reachable at the half — where a SHORT runway makes
+    // `stagingApplies` fail, so this offer is the only thing the runner gets.
+    //
+    // Measured, both directions: at `cw 6 / lr 5 / runway 9`, days 4 and 5, time goal, the volume-only predicate
+    // claimed `reaches_race_door: true` after an **8-week base build on a 9-week runway** — one week for a half
+    // marathon block §44 refuses. With §111's own door AND the race-door probe: **2 → 0**.
+    //
+    // ⚠️ MY FIRST VERIFICATION OF THIS FIX WAS HOLLOW and I found it by falsifying: I checked
+    // `offer.weeks >= runway`, and 8 >= 9 is false, so the probe could never see the case it was written for.
+    // **The arm below asserts the predicate the runner is actually served, not arithmetic about it.**
+    const offersClaimingDoor: string[] = []
+    for (const cw of [4, 5, 6, 7, 8]) for (const lr of [0, 2, 5]) for (const rw of [9, 10, 11, 12]) {
+      if (lr > cw) continue
+      for (const days of [3, 4, 5]) {
+        const out = engine(runner(HM, rw, {
+          current_weekly_km: cw, longest_recent_run_km: lr, days_available: days,
+          goal: 'time_target', target_time: '2:30:00',
+        } as Partial<GeneratorInput>))
+        if (out.kind !== 'refusal') continue
+        const body = (out as { body: Record<string, unknown> }).body
+        if (body.reason !== 'base_volume') continue
+        const offer = body.get_running as Record<string, unknown> | undefined
+        if (!offer || offer.reaches_race_door !== true) continue
+        // It claims the door opens. The base build must therefore leave room for a block that generates.
+        offersClaimingDoor.push(`cw${cw} lr${lr} rw${rw} d${days}: ${offer.weeks}w block on a ${rw}w runway`)
+      }
+    }
+    expect(offersClaimingDoor,
+      'a §111 offer claimed the race door opens where the runway cannot hold the block — the SLT ruled on exactly this: "when it does not happen, the runner concludes you lied, and they will be right"')
+      .toEqual([])
+  })
+
   it('🔴 part 2 STILL FIRES where it is now the only guard, and this arm is the only thing watching it', () => {
     // 🔴 FOUND BY `/code-review` AFTER §111 Am. 4 (2026-11-07), and it is a LOST ARGUMENT, not just a dead rule.
     //
@@ -305,11 +342,17 @@ describe('§116 Am. 11 (2) — the door lands the block inside §111\'s ratio', 
     sr.race_distance_km = 10
     ;(meta.generator_input as Record<string, unknown>).race_distance_km = 10
     expect(baseBuildRatioApplies(10), 'the premise of this arm').toBe(false)
-    const codes = validateStagedRace(p).filter(v => v.code === 'INV-PLAN-STAGED-DOOR-RATIO')
-    // Either it fires, or the door is genuinely compliant — but the rule must be REACHED, which is what the
-    // `target_found` / `stagedDisplay` / build-the-block path above it can silently prevent.
     expect(sr.target_found, 'an exempt plan would make this arm vacuous — part 2 skips `target_found: false`').toBe(true)
-    expect(Array.isArray(codes), 'the validator must return rather than throw on a re-pointed plan').toBe(true)
+    // 🔴 MY FIRST VERSION OF THIS ARM ASSERTED `expect(Array.isArray(codes)).toBe(true)` — UNCONDITIONALLY TRUE.
+    // Falsified by code review: a universal `return []` in `validateStagedDoorRatio`, the exact regression this arm
+    // is cited as guarding in `baseBuildValidate.ts`, left **26 tests and the whole suite green**. I built a hollow
+    // gate while fixing a finding about a hollow gate.
+    // It asserts the violation FIRES now, which means the door must be genuinely over the cap: 6 and 8.5 are
+    // compliant and stay silent, so the number is load-bearing.
+    ;(sr as Record<string, unknown>).door_km = 3
+    const codes = validateStagedRace(p).map(v => v.code)
+    expect(codes, 'part 2 must FIRE on an over-cap door at a distance §111 does not govern — if this goes quiet, the broad `catch { return [] }` in baseBuildValidate has no watcher at all')
+      .toContain('INV-PLAN-STAGED-DOOR-RATIO')
   })
 
   it('§116 Am. 11 part 2 is NARROWED by §111 Am. 4: live at 5K/10K, silent at the half and above', () => {

@@ -130,10 +130,23 @@ export function longestSessionKm(weeks: Week[]): number {
  * checkpoint builds.
  */
 export function checkpointRaceInput(input: GeneratorInput, weeklyKm: number, longestKm: number): GeneratorInput {
+  // 🔴 §18's COHERENCE GUARD APPLIES TO A SYNTHETIC INPUT TOO — code review, 2026-11-07, found by a new arm rather
+  // than by reading. `INV-INPUT-LONGEST-LE-WEEKLY` holds that a single run cannot exceed the week's total, and this
+  // builder set both fields independently: `longestSessionKm` over the WHOLE block can exceed the DOOR week's
+  // volume, so the probe constructed `longest 7.2 > weekly 7` — an input the wizard cannot produce.
+  //
+  // ⚠️ AND IT DID NOT FAIL QUIETLY. `enforceViolations` THROWS on an error-severity violation under
+  // `NODE_ENV=development` / `test`, `raceBlockVerdict` re-throws anything that is not a DESIGNED refusal, so the
+  // probe threw **out of `runEngine`** — a 500 on the dev server and an exception in any test that reached it.
+  // Production only logs, which is why it was invisible there. Live on the §113 offer path since 2026-11-06; §111
+  // Am. 4 and the shared `raceDoorOpens` owner widened the inputs that reach it.
+  //
+  // The clamp is the conservative direction: it can only make the probe's runner look LESS prepared, so an offer it
+  // approves is one a real runner could have earned.
   return {
     ...input,
     current_weekly_km: weeklyKm,
-    longest_recent_run_km: longestKm,
+    longest_recent_run_km: Math.min(longestKm, weeklyKm),
     volume_observed: true,
     // §44's warning was answered at the wizard, before §111 was reached; the handover card carries it otherwise.
     acknowledged_prep_warning: true,

@@ -1315,6 +1315,24 @@ export function probeLiveness(sampleSize = 64): LivenessReport {
             // amendment, and which builds 5.67x off a runner who has never run.
             ;((pl.meta as unknown as Poke).staged_race as Poke).door_km = GENERATION_CONFIG.BASE_BUILD_ONRAMP_MIN_START_KM
             for (const v of validateStagedRace(pl)) if (!woken.has(v.code)) woken.set(v.code, 'staged half: the door dropped to the on-ramp floor')
+            // 🔴 §111 Am. 4 (2026-11-07) BROKE THE LINE ABOVE AND TWO LINES FIX IT. The amendment brought the half
+            // inside §111, so `validateStagedDoorRatio`'s `!baseBuildRatioApplies` guard now excludes 21.1 km and the
+            // mutation above can no longer wake `INV-PLAN-STAGED-DOOR-RATIO` at all.
+            //
+            // ⚠️ I RECORDED THAT AS `superseded` IN THE LIVENESS BASELINE — a new reason category, on a
+            // shrink-only list, for an invariant I argued was unreachable by construction. **Code review found it
+            // was reachable in two lines, and the category and its gate arm have been removed.** The disjointness
+            // claim was true of the ENGINE (no staged plan exists below 21 km) and false of the HARNESS, which can
+            // re-point a generated plan at a distance the engine would never stage. **"Unreachable by construction"
+            // was wrong for the third time in three days, and this time I had written a whole mechanism around it.**
+            //
+            // 5K/10K is where the rule is now the only ratio guard (`SHORT-DISTANCE-RAMP-SCOPE-01`), so that is the
+            // shape to probe. The door must be genuinely over the cap: 6 and 8.5 are compliant and stay silent.
+            const tenK = JSON.parse(JSON.stringify(sh)) as Plan
+            ;((tenK.meta as unknown as Poke).staged_race as Poke).race_distance_km = 10
+            ;((tenK.meta as unknown as Poke).generator_input as Poke).race_distance_km = 10
+            ;((tenK.meta as unknown as Poke).staged_race as Poke).door_km = 3
+            for (const v of validateStagedRace(tenK)) if (!woken.has(v.code)) woken.set(v.code, 'staged block re-pointed at a 10K, door below the cap — where §111 is silent and part 2 is the only guard')
           }
         }
 

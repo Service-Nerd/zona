@@ -398,6 +398,23 @@ export function runEngine(req: EngineRequest): EngineOutcome {
  * which is reached through staging. ⚠️ **Where staging ALSO fails (a runway too short for it), such a runner still
  * receives nothing** — ⚕️ Sims raised it, the chair filed it, and it is not fixed here.
  */
+/**
+ * **Does a race plan ACTUALLY open at the end of this base build?** — the one owner, read by §113's offer and §111's.
+ *
+ * 🔴 WHY IT IS A FUNCTION AND NOT AN EXPRESSION WRITTEN TWICE. §113's offer was fixed on 2026-11-06 to answer this by
+ * GENERATING the race block at the checkpoint, because a volume-only test cannot see §44's prep floor; the first cut
+ * of that fix probed at `planStart`, counted the base-build weeks twice, and promised **168 of 196** runners a race
+ * plan for a date already past. §111's offer still carried the volume-only form, and §111 Am. 4 made it reachable at
+ * the half: measured at `cw 6 / lr 5 / runway 9`, it told the runner `reaches_race_door: true` after **8 weeks of
+ * base building on a 9-week runway** (code review, 2026-11-07). **Two callers, one subtle expression, and the subtle
+ * part has already been wrong once — so it gets an owner rather than a second copy.**
+ */
+function raceDoorOpens(input: GeneratorInput, planStart: string): (plan: Plan, endsAtKm: number, weeks: number) => boolean {
+  return (plan, endsAtKm, weeks) => raceBlockVerdict(
+    checkpointRaceInput(input, endsAtKm, longestSessionKm(plan.weeks)), addWeeksIso(planStart, weeks),
+  ).refusal === null
+}
+
 function getRunningOffer(
   input: GeneratorInput, planStart: string, runway: number, displayUnits: DistanceUnits,
   reaches: (plan: Plan, endsAtKm: number, weeks: number) => boolean,
@@ -554,9 +571,7 @@ function mapRefusal(
       // `planStart` counted the base-build weeks twice: on a 10-week runway the probe asked whether a race plan
       // generates in the 10 weeks that START today, while the base build consumes all ten of them. So the offer
       // could claim *"a race plan opens up at the end of it"* about a race day that has already passed.
-      (plan, endsAtKm, weeks) => raceBlockVerdict(
-        checkpointRaceInput(input, endsAtKm, longestSessionKm(plan.weeks)), addWeeksIso(planStart, weeks),
-      ).refusal === null,
+      raceDoorOpens(input, planStart),
     )
     return {
       kind: 'refusal', status: 422, telemetry,
@@ -592,8 +607,19 @@ function mapRefusal(
     // moved it (`BASEBUILD-ADJUST-REBUILD-01`).
     // §111's door is WEEKLY VOLUME. Unchanged: same predicate, same copy, same owner — the body moved into
     // `getRunningOffer` so §113 could have it too, and this call is byte-equivalent to what was here.
+    // 🔴 §111's OWN DOOR **AND** THE RACE DOOR — code review, 2026-11-07. This read `endsAtKm >= min_base_km`
+    // alone: §111's door IS weekly volume, so that half is right and stays. What it could not see is whether a race
+    // block then GENERATES in the weeks that remain. §111 Am. 4 made the gap reachable at the half, where
+    // `stagingApplies` fails on a short runway and this offer is the only thing the runner gets: at `cw 6 / lr 5 /
+    // runway 9` it promised `reaches_race_door: true` after **8 weeks of base building**, leaving one week for a half
+    // marathon block that §44's prep floor refuses. The SLT ruled on exactly this class — *"when it does not happen,
+    // the runner concludes you lied, and they will be right"* (2026-09-20).
+    // ⚠️ BOTH CONDITIONS, not either: reaching the volume is §111's requirement and the race block generating is
+    // §118's promise. A runner can satisfy one and not the other, which is why the AND is the fix and swapping the
+    // predicate would have traded one false offer for another.
+    const doorOpens = raceDoorOpens(input, planStart)
     const getRunning = getRunningOffer(input, planStart, runway, displayUnits,
-      (_plan, endsAtKm) => endsAtKm >= err.base.min_base_km)
+      (plan, endsAtKm, weeks) => endsAtKm >= err.base.min_base_km && doorOpens(plan, endsAtKm, weeks))
 
     return {
       kind: 'refusal', status: 422, telemetry,

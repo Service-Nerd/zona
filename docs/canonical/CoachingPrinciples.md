@@ -10519,14 +10519,31 @@ hid a whole transition class: **80 changed, all at 21.1 km**; `race:OVERCAP → 
 where the ratio denominator is zero, a label artefact the marathon's own staged blocks already carried, with
 `INV-PLAN-STAGED-DOOR-RATIO` reporting every door compliant. **SERVED → REFUSED: 0.**
 
+🔴 **AND "0 BARE REFUSALS" WAS MEASURED WITH A GRID THAT HAD A RUNWAY FLOOR — code review, 2026-11-07.** Both grids
+above start at runway 10 or higher. At **runway 9** a `cw 6 / lr 5` time-goal runner is refused by §111 and
+`stagingApplies` declines on the runway, so no block is built. ⚠️ **It is not a bare refusal — §118's get-running
+offer attaches — but the offer was LYING: it claimed `reaches_race_door: true` after an 8-week base build on a
+9-week runway**, leaving one week for a half-marathon block §44 refuses. §113's sibling offer was fixed on
+2026-11-06 to answer that question by GENERATING the block; §111's still used a volume-only test, and Am. 4 made the
+gap reachable. Both now read one owner, `raceDoorOpens`, ANDed with §111's own volume door: measured **2 → 0**.
+**The SLT ruled on exactly this class — *"when it does not happen, the runner concludes you lied, and they will be
+right"*.** ⚠️ And fixing it surfaced a THIRD defect: `checkpointRaceInput` built a synthetic probe input with
+`longest 7.2 > weekly 7`, violating §18's coherence guard, and `enforceViolations` THROWS under
+`NODE_ENV=development`/`test` — so the probe threw out of `runEngine`, a 500 on the dev server, invisible in
+production because production only logs. Clamped to §18.
+
 **What the runner reads** *(🎯 McMillan, ⚕️ Sims concurring, discharged)*. The staged block's copy must not inherit
 marathon strings. Measured on a half runner's block: **0 of its strings mention "marathon"** — `race_name` is
 *"Base building"* and the copy is distance-agnostic already.
 
-⚠️ **§113 CAN NO LONGER BE ISOLATED AT THE HALF, and that is a consequence worth stating.** A runner who passes §111
-with room and fails §113 alone (15 km/week, no long run) is **refused**, because the §113 door seed requires §117's
-walk-run start — the narrowing code review forced on 2026-11-06. So every runner the §113 staging path can serve has a
-volume low enough that Am. 4 refuses them too: **the two causes now coincide by construction.**
+⚠️ **§113's INTERACTION WITH THIS AMENDMENT, corrected by code review 2026-11-07.** A runner who passes §111 with
+room and fails §113 alone (15 km/week, no long run) is **refused**, because the §113 door seed requires §117's
+walk-run start — the narrowing code review forced on 2026-11-06. 🔴 **The first version of this paragraph then
+claimed *"the two causes now coincide by construction"*, which is TRUE at 15 km/week and FALSE in the band this
+amendment moved**: at 6–8 km/week the runner is staged via §111's own door, which has no walk-run gate. The claim
+was pinned by a fixture at cw 15 — **outside the moved band, so it could not test the claim it was pinning.** Both
+halves are asserted now, and the 6–8 behaviour is `WALKRUN-GATE-VOLUME-ONLY-01`: open, pinned, not endorsed, and
+**not introduced here** (the marathon twin is identical and has been since 2026-10-25).
 
 ⚕️ **Sims, recorded and not ruled:** this cohort — 4–8 km/week, declared beginner, first half marathon — skews female
 and toward runners coming to the sport in their thirties and forties, where a +180% week one lands on bone that has
