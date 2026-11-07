@@ -129,6 +129,7 @@ before planning against any number below (an item is a snapshot of the code on t
   server is unauthorised. Locally the gap is plain: every push in that window was verified with `tsc` plus the suites
   for the files touched, which is a check scoped to the diff, and this failure is in code the diffs never touched.
   **Same shape as the `move-impact-check` class: the defect was never in the file being edited.**
+  🔻 **TWO SECOND-ORDER ASKS, neither of them this item's fix.** (a) **Nothing locally runs the full suite before a push** — `push-docs-check.py` runs the doc audit and `tsc` runs on push, and neither can see this; a full `vitest run` is ~190s, which is a real cost on every push and so a founder call, not mine to impose. (b) **Nobody was watching CI**, and from this machine nobody can: `gh` is not installed and the GitHub MCP server is unauthorised. **A gate that nothing reads is a gate that is not a gate** — the recorded lesson, here applied to the one gate that WAS working.
 
 - ⚙️ **NO BOARD** `ENVELOPE-LRR-BLIND-01` — **no corpus can reach a §113-refused half runner, and the envelope says
   "refused 0%".** `measure:envelope` derives `longest_recent_run_km = round(min(weekly × 0.45, dist × 0.75))`; at the
