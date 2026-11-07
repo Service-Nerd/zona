@@ -33,7 +33,13 @@ function tests(dir: string): string[] {
  * reading as a shape regression. A bisect cannot find this: every step runs at today's clock, so a time-dependent
  * test reads as broken at the commit that introduced it.
  *
- * Rule: derive a benchmark date from today (`slowGoalDates`, the established owner), never pin the literal.
+ * Rule: derive a benchmark date from today (`slowGoalDates`, the established owner), never pin the literal — or
+ * freeze the clock, which is stronger and is exempted by detection.
+ *
+ * ⚠️ POPULATION LIMIT, STATED: `*.test.ts(x)` under `lib/`, `app/` and `packages/` — **650 files**. It does NOT reach
+ * `lib/plan/cohortGrid.ts:95`'s pinned `2026-04-01`, which feeds the committed cohort-shape baseline, nor the
+ * `scripts/` corpora. Those four are saturated at §10's cap today, so they cannot drift, but **that is a fact about
+ * the date and not a property this arm checks** (/code-review, 2026-11-07).
  *
  * ⚠️ TWO THINGS THE FIRST CUT GOT WRONG, BOTH OF THEM CLASSES ALREADY IN THE RECORD, both caught by running it:
  *  1. **It matched its own test table.** The detector cases below are string literals containing exactly the shape
@@ -43,49 +49,98 @@ function tests(dir: string): string[] {
  *     comment recording a measured value gets switched off — which this repo counts as equivalent to having no
  *     guard. Comments are stripped, and the stripper preserves string contents, because the twin trap is that a
  *     value inside a STRING is code, not prose.
+ *
+ * 🔴 AND THE SECOND CUT HAD A FALSE POSITIVE AND A FALSE NEGATIVE, BOTH FOUND BY `/code-review` AFTER THE PUSH:
+ *  3. **A REGEX LITERAL HOLDING A QUOTE broke the stripper and never recovered.** `/it\'s/` opened a string state
+ *     that nothing closed, so every `//` after it read as string content and comment bodies stopped being stripped —
+ *     **51 of 649 scanned files**, and a commented date in one of them is reported as pinned. That is the exact
+ *     `HOOK-RGBA-COMMENTS-01` class the note above claims to have handled, in the code written to handle it.
+ *     Regex literals are now skipped, recognised by the token that precedes them.
+ *  4. **A PINNED LITERAL BEHIND AN IDENTIFIER PASSED, AND THE TEST TABLE RATIFIED THAT SHAPE AS THE REMEDY.**
+ *     `const BENCH = '2026-11-20'` then `benchmark_date: BENCH` is the defect; `benchmark_date: BENCH_DATE` fed from
+ *     `slowGoalDates()` is the remedy; **the first cut could not tell them apart** and asserted the second. One hop
+ *     through a variable is resolved now, exactly as `design-guard.py` and `coaching-guard.py` resolve a write
+ *     target — the precedent is in this repo and I did not reach for it.
  */
-/** Blanks comment bodies without touching string or template contents. */
+/** Blanks comment bodies without touching string, template or REGEX contents. */
 export function stripComments(src: string): string {
   let out = '', i = 0
+  // A `/` starts a regex only in expression position; after a value it is division. This is the standard heuristic:
+  // look back at the last non-space character. Getting it wrong costs a false positive, which is why it is here.
+  const EXPR_BEFORE = new Set(['(', ',', '=', ':', '[', '!', '&', '|', '?', '{', '}', ';', '\n', '+', '-', '*', '%', '<', '>', '~', '^'])
   const q = { s: false, d: false, t: false }
+  let lastSig = '\n'
   while (i < src.length) {
     const c = src[i], n = src[i + 1]
     const inStr = q.s || q.d || q.t
     if (!inStr && c === '/' && n === '/') { while (i < src.length && src[i] !== '\n') i++; continue }
     if (!inStr && c === '/' && n === '*') { i += 2; while (i < src.length && !(src[i] === '*' && src[i + 1] === '/')) i++; i += 2; continue }
+    if (!inStr && c === '/' && EXPR_BEFORE.has(lastSig)) {
+      // A regex literal: copy it verbatim, honouring escapes and character classes, so a quote inside cannot leak.
+      out += c; i++
+      let cls = false
+      while (i < src.length) {
+        const r = src[i]
+        if (r === '\\') { out += r + (src[i + 1] ?? ''); i += 2; continue }
+        if (r === '\n') break
+        out += r; i++
+        if (r === '[') cls = true
+        else if (r === ']') cls = false
+        else if (r === '/' && !cls) break
+      }
+      lastSig = '/'
+      continue
+    }
     if (c === '\\' && inStr) { out += src[i] + (src[i + 1] ?? ''); i += 2; continue }
     if (!q.d && !q.t && c === "'") q.s = !q.s
     else if (!q.s && !q.t && c === '"') q.d = !q.d
     else if (!q.s && !q.d && c === '`') q.t = !q.t
+    if (!/\s/.test(c) || c === '\n') lastSig = c
     out += c; i++
   }
   return out
 }
 
+/** A test that FREEZES the clock cannot drift, whatever its fixtures say — a STRONGER remedy than deriving the date,
+ *  and the first cut had no exemption for it, so the gate pushed a correctly-written test onto the weaker one. */
+export function freezesTheClock(src: string): boolean {
+  return /setSystemTime\s*\(/.test(stripComments(src))
+}
+
 export function pinnedBenchmarkDates(src: string): string[] {
-  return Array.from(stripComments(src).matchAll(/benchmark_date["']?\s*:\s*["'](\d{4}-\d{2}-\d{2})["']/g)).map(m => m[1])
+  const code = stripComments(src)
+  const direct = Array.from(code.matchAll(/benchmark_date["']?\s*:\s*["'](\d{4}-\d{2}-\d{2})["']/g)).map(m => m[1])
+  // One hop: `benchmark_date: IDENT` where IDENT is bound to a date LITERAL in the same file. A binding fed from
+  // `slowGoalDates()` or any call resolves to nothing, which is the whole discrimination.
+  const viaIdent = Array.from(code.matchAll(/benchmark_date["']?\s*:\s*([A-Za-z_$][\w$]*)/g)).flatMap(m => {
+    const lit = new RegExp(`\\b(?:const|let|var)\\s+${m[1]}\\b[^=\\n]*=\\s*["'](\\d{4}-\\d{2}-\\d{2})["']`).exec(code)
+    return lit ? [lit[1]] : []
+  })
+  return [...direct, ...viaIdent]
 }
 
 /** This gate's own file: its occurrences are the detector's fixtures, not a pinned plan input. */
 const GATE_FILE = 'lib/plan/pinnedClock.test.ts'
 
 /**
- * ⚠️ A REGISTER, AND IT IS A DECLARED REASON RATHER THAN A FIXED PROBLEM — entered 2026-11-07, swept forward to
- * 2027-03 before being written. Of the eight test files pinning a literal benchmark date, exactly one flipped
- * (`goalPace5k`, 3 arms, with a 4th expiring in January); the rest assert nothing near a config cliff. The
- * conversion of the four still inside the ramp is `TEST-CLOCK-BENCHDATE-SWEEP-01`, filed, not swept here:
- * TEST-CLOCK-PINSWEEP-01's record is that converting one such file is not a formatting change and each needs its own
- * verification run. **The value of this arm is not the register — it is that a NEW pinned date fails on the way in.**
+ * ⚠️ A REGISTER — and 🔴 **ALL FOUR OF ITS "IN THE RAMP" REASONS WERE FALSE WHEN FIRST WRITTEN, FOUND BY
+ * `/code-review` AFTER THE PUSH.** Three of those files call `setSystemTime(FROZEN_NOW)` themselves, so **the
+ * forward sweep that justified them was measuring a frozen clock** — my `vi.setSystemTime` prepend was overridden by
+ * their own, and "green at 2027-03" proved nothing about them. The fourth (`reshapeCopy`, 2026-07-01) was already
+ * **saturated** at the 7% cap on 2026-10-21, so it was never in the ramp either. Fourth measurement artefact in
+ * three days, and this one is in a register I wrote the same day as the lesson.
+ *
+ * ⚠️ So the honest state is: **no file in this repo is actually at risk.** The three that freeze the clock are
+ * exempted by DETECTION, not by name, and have left this register; the rest are saturated or overridden.
+ * `TEST-CLOCK-BENCHDATE-SWEEP-01` was filed against the four and **has no subject** — closed, not swept.
+ * **The value of this arm is not the register — it is that a NEW pinned date fails on the way in.**
  */
 const PINNED_BENCHMARK_DEBT: Record<string, string> = {
   // Re-anchored on the line below the literal, and the result is asserted by its own premise arm.
   'lib/plan/goalPace5k.test.ts': 'the stored runner\'s input is kept VERBATIM for provenance; both dates are overridden from `slowGoalDates()` immediately below it',
-  // Still inside §10's ramp (a date after ~20 weeks ago saturates at VDOT_STALENESS_MAX_DISCOUNT_PCT and cannot move).
-  'lib/plan/goldenPlans.test.ts': 'in the ramp; 11/11 green at system time 2026-12-07 and 2027-03-07 — TEST-CLOCK-BENCHDATE-SWEEP-01',
-  'lib/plan/intensityOrdering.test.ts': 'in the ramp; 6/6 green at 2026-12-07 and 2027-03-07 — TEST-CLOCK-BENCHDATE-SWEEP-01',
-  'lib/plan/raceWeekWeekdayCap.test.ts': 'in the ramp; 5/5 green at 2026-12-07 and 2027-03-07 — TEST-CLOCK-BENCHDATE-SWEEP-01',
-  'lib/plan/reshapeCopy.test.ts': 'in the ramp; 7/7 green at 2026-12-07 and 2027-03-07 — TEST-CLOCK-BENCHDATE-SWEEP-01',
-  // Saturated: the discount is already at its cap for these, so it cannot move again.
+  // Saturated: §10's discount is already at VDOT_STALENESS_MAX_DISCOUNT_PCT for these, so it cannot move again, and
+  // a date in the past only gets older. Measured 2026-11-07 (weeks ago → discount): reshapeCopy 18.4 → 7% capped.
+  'lib/plan/reshapeCopy.test.ts': '2026-07-01 — saturated at the cap since 2026-10-21 (NOT "in the ramp", as this row first claimed)',
   'lib/plan/ttLongRunSpacing.test.ts': '2026-05-25 — past the ramp, discount saturated at the cap',
   'lib/plan/v4AnchorAware.test.ts': '2026-04-01 — past the ramp, discount saturated at the cap',
   'lib/plan/marathonPeakRaceSpecific.test.ts': '2026-04-01 — past the ramp, discount saturated at the cap',
@@ -107,19 +162,49 @@ describe('PINNED-CLOCK-01 — a pinned test pins the engine', () => {
   })
   it('🔴 no NEW test pins a benchmark date: the engine ages it against the wall clock by design', () => {
     const offenders = files.map(f => f.replace(process.cwd() + '/', ''))
-      .filter(f => f !== GATE_FILE && pinnedBenchmarkDates(readFileSync(join(process.cwd(), f), 'utf8')).length > 0)
+      .filter(f => {
+        if (f === GATE_FILE) return false
+        const src = readFileSync(join(process.cwd(), f), 'utf8')
+        if (freezesTheClock(src)) return false   // a stronger remedy than deriving the date
+        return pinnedBenchmarkDates(src).length > 0
+      })
     expect(offenders.filter(f => !(f in PINNED_BENCHMARK_DEBT)),
       'derive it from today with `slowGoalDates()`; see this file\'s header').toEqual([])
     // The register may not outlive its entries — a stale row reads as debt that is still there.
     expect(Object.keys(PINNED_BENCHMARK_DEBT).filter(f => !offenders.includes(f)), 'declared, but no longer pinned').toEqual([])
   })
 
+  it('the frozen-clock exemption is EXERCISED, not decorative', () => {
+    // An exemption no file uses is a branch nothing proves. Measured 2026-11-07: of 8 pinned files, 3 freeze.
+    const frozen = files.map(f => f.replace(process.cwd() + '/', ''))
+      .filter(f => f !== GATE_FILE)
+      .filter(f => { const src = readFileSync(join(process.cwd(), f), 'utf8')
+        return pinnedBenchmarkDates(src).length > 0 && freezesTheClock(src) })
+    expect(frozen.sort(), 'these three override any system time a sweep sets, which is why the forward sweep that first justified this register proved nothing about them')
+      .toEqual(['lib/plan/goldenPlans.test.ts', 'lib/plan/intensityOrdering.test.ts', 'lib/plan/raceWeekWeekdayCap.test.ts'])
+  })
+
   it('the benchmark-date detector, both directions', () => {
     expect(pinnedBenchmarkDates(`benchmark_date: '2026-10-10'`)).toEqual(['2026-10-10'])
     expect(pinnedBenchmarkDates(`"benchmark_date":"2026-10-10"`), 'the JSON form a stored input is pasted in').toEqual(['2026-10-10'])
     expect(pinnedBenchmarkDates(`benchmark_date : "2026-10-10"`), 'spacing').toEqual(['2026-10-10'])
-    expect(pinnedBenchmarkDates(`benchmark_date: BENCH_DATE`), 'derived — the remedy, not the defect').toEqual([])
-    expect(pinnedBenchmarkDates(`benchmark_date: benchmarkDate`)).toEqual([])
+    expect(pinnedBenchmarkDates(`benchmark_date: BENCH_DATE`), 'an unbound identifier resolves to nothing').toEqual([])
+    expect(pinnedBenchmarkDates(`const { benchmarkDate } = slowGoalDates()\nbenchmark_date: benchmarkDate`),
+      'fed from the owner — the REMEDY, and it must not be confused with the defect').toEqual([])
+    // 🔴 The false negative /code-review found: one hop through a variable.
+    expect(pinnedBenchmarkDates(`const BENCH = '2026-11-20'\nbenchmark_date: BENCH`),
+      'a pinned literal behind a name is still pinned').toEqual(['2026-11-20'])
+    expect(pinnedBenchmarkDates(`let b = "2026-11-20"\nbenchmark_date: b`), 'let, double quotes').toEqual(['2026-11-20'])
+    // 🔴 The false positive: a regex literal holding a quote used to open a string state nothing closed, so every
+    // comment after it stopped being stripped — 51 of 649 files.
+    expect(pinnedBenchmarkDates(`const re = /it's/\n// benchmark_date: '2026-11-20'\n`),
+      'a regex may hold a quote; the comment after it is still a comment').toEqual([])
+    expect(pinnedBenchmarkDates(`const re = /[/']/\nbenchmark_date: '2026-11-20'`),
+      'a character class holding the delimiter must not swallow the rest of the file').toEqual(['2026-11-20'])
+    expect(pinnedBenchmarkDates(`const x = 10 / 2\n// benchmark_date: '2026-11-20'`),
+      'division is not a regex').toEqual([])
+    expect(freezesTheClock(`vi.setSystemTime(FROZEN_NOW)`), 'freezing the clock is the stronger remedy').toBe(true)
+    expect(freezesTheClock(`// setSystemTime( in a comment is not a remedy`)).toBe(false)
     expect(pinnedBenchmarkDates(`// benchmark_date: '2026-10-10' is what it used to be`),
       'HOOK-RGBA-COMMENTS-01 — a value in a COMMENT is prose, and a guard that fires on one gets switched off').toEqual([])
     expect(pinnedBenchmarkDates(`/* benchmark_date: '2026-10-10' */`), 'block comments too').toEqual([])

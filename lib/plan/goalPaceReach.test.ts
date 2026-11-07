@@ -65,7 +65,13 @@ describe('the owner', () => {
 // then §25's current-pace long-run finish — while NOTHING said the comparator had moved. Three coupled sites, and the
 // one check that names the cause is this one.
 describe('§120 Am. 3 — the reachability line is decided at the DISCOUNTED anchor', () => {
-  // A stale-enough benchmark that §10's discount is unmistakably applied, so the two VDOTs cannot coincide.
+  // ⚠️ THE SEPARATION RESTS ON §10's BASE CONSERVATISM, NOT ON STALENESS, and the first version of this comment said
+  // the opposite ("a stale-enough benchmark"). `slowGoalDates()` puts the benchmark 14 days back, INSIDE
+  // `VDOT_STALENESS_FRESH_WEEKS` (4), so the staleness ramp contributes exactly nothing here: the anchor and the raw
+  // VDOT differ by `VDOT_CONSERVATIVE_DISCOUNT_PCT` (3) alone. That is deliberate — a stale fixture would be a
+  // wall-clock dependency, which is the defect `GOALPACE-5K-CLOCK-01` just removed from the sibling file — but it
+  // means both arms below go red on a CORRECT engine if that base discount ever reaches 0. Asserted, so the failure
+  // says which. (Found by /code-review, 2026-11-07.)
   const input: any = {
     age: 38, goal: 'time_target', race_distance_km: 10, target_time: '0:46:00', days_available: 4,
     current_weekly_km: 35, longest_recent_run_km: 12, user_declared_level: 'intermediate', training_age: '2-5yr',
@@ -77,6 +83,8 @@ describe('§120 Am. 3 — the reachability line is decided at the DISCOUNTED anc
 
   it('🔴 the decision is stamped at `vdot_training_anchor`, never at the raw `meta.vdot`', () => {
     expect(meta, 'this fixture must generate, or the arm has no subject').toBeTruthy()
+    expect(GENERATION_CONFIG.VDOT_CONSERVATIVE_DISCOUNT_PCT,
+      'the anchor/raw separation these two arms rest on IS this constant; at 0 they compare equal figures').toBeGreaterThan(0)
     expect(meta.goal_pace_reach, '§120 Am. 2 records a decision on every benchmarked time-target plan').toBeTruthy()
     expect(meta.vdot_training_anchor).toBeLessThan(meta.vdot)  // the discount is live, so the two differ
     // `vdot_training_anchor` is rounded to 1dp and `goal_pace_reach.vdot` to 2dp, so compare within half a tenth.
@@ -90,6 +98,7 @@ describe('§120 Am. 3 — the reachability line is decided at the DISCOUNTED anc
 
   it('the 5 is a COHERENCE bound: the goal is judged against the paces this plan prescribes', () => {
     // Seiler, at the sitting: applied to a discounted figure, 5% is not the published improvement mean.
+    expect(meta, 'guarded, like its sibling — a refused fixture must say so, not throw a TypeError').toBeTruthy()
     expect(GENERATION_CONFIG.GOAL_PACE_MAX_STRETCH_PCT).toBe(5)
     expect(meta.vdot_discount_applied_pct, 'the discount is what makes the two comparators differ').toBeGreaterThan(0)
   })

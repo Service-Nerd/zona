@@ -22,9 +22,11 @@ const STORED: any = {"age":24,"goal":"time_target","max_hr":191,"benchmark":{"ti
 // (2026-11-07) and moved INSIDE's goal from 4.66% to 5.44% past fitness, across §120 Am. 2's 5% line, so three arms
 // below went red on a clean tree from a commit that touched nothing. Measured by running it: 12/12 at system time
 // 2026-10-27 AND 2026-11-06, 3 red at 2026-11-07, and a FOURTH arm expires in January.
-// The dates are therefore DERIVED, keeping every offset the stored input had: the benchmark keeps its age (and so its
-// discount bucket), the race keeps its 60-day runway from the plan start, and these assertions keep the plan they
-// were written against, permanently. `slowGoalDates` is the established owner — its own header says "a pinned date
+// The dates are therefore DERIVED. ⚠️ Not every offset is identical and the first version of this comment claimed it
+// was: the benchmark moves from the stored 16 days before generation to `slowGoalDates()`'s 14 days before TODAY
+// (15–21 days before the plan start, by weekday). What is preserved is the thing the assertions depend on — the same
+// §10 discount BUCKET (both inside `VDOT_STALENESS_FRESH_WEEKS`, so base 3% and no staleness) — and the race's 60-day
+// runway from the plan start, which keeps the plan's length and the race's weekday exactly. (/code-review, 2026-11-07.) `slowGoalDates` is the established owner — its own header says "a pinned date
 // expires, which is PINNED-CLOCK-01's class".
 const { planStart: PLAN_START, benchmarkDate: BENCH_DATE } = slowGoalDates()
 const isoPlus = (iso: string, days: number) => new Date(Date.parse(`${iso}T00:00:00Z`) + days * 864e5).toISOString().slice(0, 10)
