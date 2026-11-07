@@ -118,6 +118,17 @@ const definitionSite = (id: string) => new RegExp(
  *  Two registers read these same two files and each kept its own idea of what an
  *  item looks like; that is how one blind spot landed in both. */
 const AUDIT_SH = 'scripts/audit-docs.sh'
+/**
+ * ▲ THE EXTRACTOR MOVED 2026-11-07 (`BACKLOG-PARENT-HEADING-BLIND-01`) and THIS ARM CAUGHT IT.
+ *
+ * `audit-docs.sh` and `backlog-open.sh` now both source `scripts/lib/open-items.sh`, so the
+ * shell's definition of a filing has one owner. This arm used to read it out of the audit
+ * script and went red the moment it was no longer there — correctly: had it read the audit
+ * script loosely it would have gone on comparing nothing while the two registers drifted.
+ * It reads the OWNER now, which is strictly better: whichever caller is wired up, the
+ * verdicts this arm compares come from the function that actually decides.
+ */
+const OPEN_ITEMS_SH = 'scripts/lib/open-items.sh'
 
 describe('XREF-DANGLE-01 — promised backlog entries exist', () => {
   const sources = FILES.map(f => ({ file: f, text: readFileSync(join(process.cwd(), f), 'utf8') }))
@@ -183,9 +194,13 @@ describe('XREF-DANGLE-01 — promised backlog entries exist', () => {
     // mean the same thing by "filed" or a promise can dangle here while the audit
     // prints ok. They cannot share a regex — one is sed, one is JS — so this reads
     // the shell's tag set out of the script instead of restating it.
-    const sh = readFileSync(join(process.cwd(), AUDIT_SH), 'utf8')
+    const sh = readFileSync(join(process.cwd(), OPEN_ITEMS_SH), 'utf8')
     const fn = sh.match(/board_tag_bullet_ids\(\) \{[\s\S]*?\n\}/)
-    expect(fn, `${AUDIT_SH} no longer defines board_tag_bullet_ids`).not.toBeNull()
+    expect(fn, `${OPEN_ITEMS_SH} no longer defines board_tag_bullet_ids`).not.toBeNull()
+    // And the audit must still be WIRED to that owner, or this arm would be comparing a
+    // function nothing calls — the hollow-gate shape this repo keeps paying for.
+    const audit = readFileSync(join(process.cwd(), AUDIT_SH), 'utf8')
+    expect(audit, `${AUDIT_SH} must source ${OPEN_ITEMS_SH}`).toContain('scripts/lib/open-items.sh')
     const alt = fn![0].match(/\(([^)]*\|[^)]*)\)/)
     expect(alt, 'the extractor no longer carries a tag alternation').not.toBeNull()
     expect(alt![1].split('|'), 'the two registers disagree about the board tags')
@@ -220,7 +235,7 @@ describe('XREF-DANGLE-01 — promised backlog entries exist', () => {
       for (const [what, line, isFiling] of CASES) {
         const id = line.match(/FIXTURE-[A-Z]+-\d+/)![0]
         expect(definitionSite(id).test(line), `itemXref disagrees on ${what}`).toBe(isFiling)
-        expect(shellIds.has(id), `audit-docs.sh disagrees on ${what}`).toBe(isFiling)
+        expect(shellIds.has(id), `the shell owner disagrees on ${what}`).toBe(isFiling)
       }
     } finally {
       rmSync(dir, { recursive: true, force: true })
