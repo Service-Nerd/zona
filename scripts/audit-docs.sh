@@ -986,7 +986,14 @@ UNCONTRACTED_BASELINE=49   # ⚠️ 50 -> 49, 2026-11-08 (code review, SAME DAY)
 #
 # Falling-only, same discipline as the gated figure above: a component leaving the tree lowers
 # it exactly as a contract does, so say which happened.
-UNCONTRACTED_ANY_BASELINE=71
+#
+# ⚠️ 71 -> 70, 2026-11-08: **A DELETION, NOT A PAYMENT.** `components/shared/Select.tsx` was
+# removed (`SELECT-DEAD-01`) — zero importers, superseded by `WheelPicker` for the year-of-birth
+# step its own docblock named as its first and only use. No contract was written. The other
+# register held at 49 through the change, which is exactly the signature this pair exists to
+# show: a component at zero importers was never inside the `>= 2` population, so a real
+# payment there is still owed.
+UNCONTRACTED_ANY_BASELINE=70
 
 # ── 🔴 TWO NUMBERS, BECAUSE ONE CANNOT TELL A PAYMENT FROM A DROP-OUT ────────
 #

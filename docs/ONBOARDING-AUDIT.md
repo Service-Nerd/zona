@@ -224,7 +224,7 @@ It does **not** appear on Today, Plan, the week card, or the wizard preview. →
 | `Ruler` (+ `.logic`, `.test`) | `components/shared/Ruler.tsx` | continuous numeric |
 | `TextField` | `components/shared/TextField.tsx` | text/number |
 | `SegmentedControl` | `components/shared/SegmentedControl.tsx` | binary/ternary |
-| `Select` | `components/shared/Select.tsx` | dropdown |
+| ~~`Select`~~ | *deleted 2026-11-08* (`SELECT-DEAD-01`) | dropdown — zero importers; `WheelPicker` took the year-of-birth step this row was written for |
 | `Sheet` | `components/shared/Sheet.tsx` | slide-up sheets |
 
 **A wheel picker for approximate values already exists and is the single owner of time entry.**
