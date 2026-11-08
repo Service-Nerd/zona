@@ -26,7 +26,7 @@ import { createClient } from '@supabase/supabase-js'
 import { readFileSync } from 'node:fs'
 import { composePlanWithFoundation } from '../lib/plan/foundationCompose'
 import { withProfileHr, type ProfileHr } from '../lib/plan/rebuildInput'
-import { validatePlan } from '../lib/plan/invariants'
+import { validateRepairedPlan } from '../lib/plan/validateStoredPlan'
 import { easyPaceFromPlan } from '../lib/plan/easyPace'
 import { isLongRun } from '../lib/plan/sessionRole'
 import type { GeneratorInput, Plan } from '../types/plan'
@@ -166,7 +166,8 @@ async function main() {
     const stripped: Plan = { ...plan, weeks: plan.weeks.filter(w => w.n > 0) }
     // REBUILD-HR-FROM-PROFILE-01 — rebuilt foundation weeks take heart rate from the profile, not the stored snapshot.
     const { data: hrRow } = await db.from('user_settings').select('max_hr, resting_hr, max_hr_source').eq('id', row.user_id).maybeSingle()
-    const res = composePlanWithFoundation(stripped, withProfileHr(input, hrRow as ProfileHr | null), new Date().toISOString().slice(0, 10), 'add')
+    const profile = hrRow as ProfileHr | null
+    const res = composePlanWithFoundation(stripped, withProfileHr(input, profile), new Date().toISOString().slice(0, 10), 'add')
     const after = overBudget(res.plan, input)
 
     // ── GUARDS. Every one of these must hold or this plan is skipped. ──────────
@@ -187,8 +188,16 @@ async function main() {
     // up. A guard that blocks a good fix for an unrelated pre-existing reason is a guard
     // that gets switched off. The question is the DELTA.
     const errKey = (v: { code: string; week?: number; day?: string }) => `${v.code}|${v.week ?? ''}|${v.day ?? ''}`
+    // 🔴 STORED-PLAN-VALIDATOR-INPUT-01 (2026-11-08) — THE TWO SIDES OF THIS DELTA USED
+    // DIFFERENT INPUTS. `res.violations` comes from the compose above, which runs on
+    // `withProfileHr(input, profile)`; this line ran on the RAW stored `input`. So an
+    // HR-dependent invariant could appear in `added` purely because the profile's heart
+    // rate differs from the snapshot — a NEW violation attributed to a recompose that did
+    // not cause it, which is the same misattribution the comment above guards against in
+    // the other direction. Both sides now take the profile, and `validateRepairedPlan`
+    // adds §116's kind dispatch and the meta-first level merge that neither side had.
     const beforeErrs = new Set(
-      validatePlan(plan, input).filter(v => v.severity === 'error').map(errKey))
+      validateRepairedPlan(plan, { profile }).filter(v => v.severity === 'error').map(errKey))
     const added = res.violations
       .filter(v => v.severity === 'error' && !beforeErrs.has(errKey(v)))
     if (added.length) problems.push(`${added.length} NEW error-severity violation(s): ${Array.from(new Set(added.map(e => e.code))).join(', ')}`)

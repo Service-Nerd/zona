@@ -154,3 +154,100 @@ describe('STORED-PLAN-DEBT-REPAIR-01 — stored-plan scripts validate by plan KI
       ).not.toMatch(/validateReshapedPlan\(/)
     })
 })
+
+/**
+ * STORED-PLAN-VALIDATOR-INPUT-01 (2026-11-08) — THE OTHER HALF OF THE SAME TWIN.
+ *
+ * 🔴 The gate above closed `validateReshapedPlan`. It could not see the EIGHT scripts
+ * that read `plans` and called `validatePlan(plan, input)` with an input they assembled by
+ * hand — so they skipped BOTH things the owner owns: §116's kind dispatch, and the
+ * meta-first level merge whose absence is `RUNWALK-ASSESSED-LEVEL-01`.
+ *
+ * 🔴 AND FOUR OF THE EIGHT PASSED THE PLAN'S `meta` AS THE INPUT, cast through
+ * `as never`. `(meta.generator_input ?? meta)` and `{ ...meta }` leave
+ * `current_weekly_km`, `longest_recent_run_km`, `days_available` and `days_cannot_train`
+ * ABSENT where the reconstruction sets 0/7/[]; an invariant doing arithmetic on `undefined`
+ * gets NaN and PASSES. Three of them carried an honest caveat saying only the DELTA was
+ * trustworthy, which is exactly why it survived a year: **a declared limit is not a fixed
+ * problem.**
+ *
+ * 🔑 WHAT VIOLATION CLASS THIS FINDS: the ninth such script. Population derived, never
+ * listed, by the same glob as the block above.
+ *
+ * ⚠️ WHAT IT DOES NOT PROVE: that any caller passes the right `profile` or `overlay`, and
+ * nothing about scripts that validate FRESHLY GENERATED plans with the input they generated
+ * from — that is the save path, and `validateSavedPlan` is correct there.
+ */
+describe('STORED-PLAN-VALIDATOR-INPUT-01 — stored-plan scripts do not hand-build the input', () => {
+  const DIR = join(process.cwd(), 'scripts')
+  const stripped = (src: string) => src
+    .replace(/\/\*[\s\S]*?\*\//g, m => m.replace(/[^\n]/g, ' '))
+    .replace(/\/\/[^\n]*/g, m => m.replace(/[^\n]/g, ' '))
+
+  /**
+   * ⚠️ ONE DECLARED EXEMPTION, BY NAME AND WITH ITS REASON. `recal-live-repair.ts` keeps a
+   * single `validatePlan(before, gi)` as the driver of `repairPlan`, which READS those
+   * verdicts and acts on them. The owner's verdict set is MORE correct, which means the
+   * remedies would do something different on a script that writes to production; they were
+   * calibrated against this exact set (9 error-severity violations → 1) on live plans, and
+   * that cannot be re-measured from a dev machine. Moving it is its own item.
+   */
+  /**
+   * ⚠️ AND ONE MORE, FOR A DIFFERENT AND STRONGER REASON. `reenrich-plans.ts` builds the
+   * BASELINE that `repairEnrichedCopy` compares against — `errorBaseline(validatePlan(fresh,
+   * input))` — and `lib/plan/enrichRepair.ts` calls `validatePlan` on the candidate three
+   * times internally. **Both sides of a comparison must use the same function.** Moving only
+   * the baseline would make `violationsIntroducedBy` diff two different constitutions and
+   * report phantom introductions, which is the `test the composition, not the halves` class.
+   * Moving BOTH is an engine-adjacent change that belongs with the repair ladder, not here.
+   */
+  const EXEMPT = new Map([
+    ['recal-live-repair.ts', 'the repairPlan DRIVER reads these verdicts; see the call site'],
+    ['reenrich-plans.ts', 'the baseline for repairEnrichedCopy, which calls validatePlan itself'],
+  ])
+
+  const readsStoredPlans = readdirSync(DIR)
+    .filter(f => f.endsWith('.ts') && !f.endsWith('.test.ts'))
+    .map(f => ({ f, code: stripped(readFileSync(join(DIR, f), 'utf8')) }))
+    .filter(({ code }) => /from\(['"]plans['"]\)/.test(code))
+
+  it('the population is non-empty and reaches the scripts that were moved', () => {
+    expect(readsStoredPlans.length).toBeGreaterThan(5)
+    for (const name of ['backfill-plan-hr.ts', 'repair-plan-zone-strings.ts', 'recompose-foundation.ts']) {
+      expect(readsStoredPlans.some(x => x.f === name), `the glob must reach ${name}`).toBe(true)
+    }
+  })
+
+  it('\u{1F534} no script reads the plans table and calls validatePlan directly', () => {
+    const strays = readsStoredPlans
+      .filter(({ f, code }) => !EXEMPT.has(f) && /\bvalidatePlan\(/.test(code))
+      .map(({ f }) => f)
+    expect(
+      strays,
+      'Use `validateRepairedPlan(plan, { profile })` from lib/plan/validateStoredPlan.ts. It '
+      + 'applies §116\'s kind dispatch AND the meta-first level merge, neither of which a '
+      + 'hand-built input gets. An exemption goes in EXEMPT with its reason:\n' + strays.join('\n'),
+    ).toEqual([])
+  })
+
+  it('the exemption is REAL — an exempt name that no longer needs it is a stale exemption', () => {
+    // `verify the exemption's justification, not the stamp`: an entry whose file has stopped
+    // calling `validatePlan` is dead weight that hides the next genuine offender.
+    // `[...someMap]` / `for (const x of someMap)` fail tsc at this target (CLAUDE.md § TypeScript).
+    for (const name of Array.from(EXEMPT.keys())) {
+      const hit = readsStoredPlans.find(x => x.f === name)
+      expect(hit, `${name} is exempted but is not in the population`).toBeTruthy()
+      expect(/\bvalidatePlan\(/.test(hit!.code),
+        `${name} no longer calls validatePlan — remove it from EXEMPT`).toBe(true)
+    }
+  })
+
+  it('the derivation owner holds the merge, and the invariant layer does not keep a copy', () => {
+    const inv = stripped(readFileSync(join(process.cwd(), 'lib/plan/invariants.ts'), 'utf8'))
+    expect(inv).toMatch(/storedPlanInput\(plan\)/)
+    // The legacy reconstruction must live in ONE place. Its most distinctive line is the
+    // blocked-days default; two copies of it means the extraction was undone.
+    const copies = (inv.match(/days_cannot_train:\s*\[\]/g) ?? []).length
+    expect(copies, 'the legacy input reconstruction belongs to lib/plan/storedPlanInput.ts only').toBe(0)
+  })
+})

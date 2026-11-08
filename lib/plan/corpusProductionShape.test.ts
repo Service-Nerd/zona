@@ -81,9 +81,19 @@ describe('COHORT-GRID-UNSET-LEVEL-01 — corpora carry the production level shap
   const EXEMPT: Record<string, string> = {
     'lib/plan/inputs.ts':
       '§55 enum validation table — the ALLOWED VALUES for the field, not an input carrying it',
+    // STORED-PLAN-VALIDATOR-INPUT-01 (2026-11-08) — THE EXEMPTION MOVED WITH THE CODE. The
+    // reconstruction was inline in `invariants.ts` and is now its own owner, because eight
+    // scripts that validate stored plans were hand-building the input instead and so got
+    // neither the kind dispatch nor this merge. ⚠️ The exemption is the SAME exemption, now
+    // naming the file that holds the writes; `invariants.ts` stays listed because the gate's
+    // own closure still reaches it and a removed-but-still-needed entry is a hole.
+    'lib/plan/storedPlanInput.ts':
+      'THE owner of "what input was this STORED plan built from". `meta.fitness_level` IS the '
+      + 'level the plan was built at, post-declaration, so reading it back is correct — and it '
+      + 'is read meta-FIRST precisely because the persisted input is often absent (§79)',
     'lib/plan/invariants.ts':
-      'validateReshapedPlan reconstructs a legacy input from plan meta; `meta.fitness_level` IS '
-      + 'the level the plan was built at, post-declaration, so reading it back is correct',
+      'validateReshapedPlan delegates the reconstruction to storedPlanInput.ts; any remaining '
+      + 'mention here is the call or its explanatory comment',
     'lib/plan/ruleEngine.ts':
       'the engine STAMPING meta.fitness_level on its own output — the write this whole item '
       + 'relies on, since every checker reads meta first',

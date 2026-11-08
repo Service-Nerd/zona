@@ -48,7 +48,7 @@
 import { createClient } from '@supabase/supabase-js'
 import { readFileSync } from 'node:fs'
 import { computeZones, applyHrToPlan } from '../lib/plan/zones'
-import { validatePlan } from '../lib/plan/invariants'
+import { validateRepairedPlan } from '../lib/plan/validateStoredPlan'
 
 /** The plan damaged by PLAN-VO2MAX-BAND-01, named explicitly rather than matched by shape. */
 const DAMAGED = { planPrefix: '8a2858ab' }
@@ -80,8 +80,11 @@ async function main(): Promise<number> {
     const mhr = meta.max_hr as number | undefined
     if (typeof mhr !== 'number' || mhr <= 0) continue
     const z = computeZones(mhr, meta.resting_hr as number | undefined)
-    const input = (meta.generator_input ?? meta) as never
-    const before = validatePlan(prior as never, input)
+    // STORED-PLAN-VALIDATOR-INPUT-01 (2026-11-08) — one owner: §116's kind dispatch plus the
+    // meta-first level merge. This used to be `(meta.generator_input ?? meta) as never`, so on
+    // a legacy plan the META stood in for the input with four engine-consumed fields absent;
+    // see `lib/plan/storedPlanInput.ts` for why that passes silently rather than failing.
+    const before = validateRepairedPlan(prior as never)
 
     const next = JSON.parse(JSON.stringify(prior)) as Record<string, unknown>
     const notes: string[] = []
@@ -141,7 +144,7 @@ async function main(): Promise<number> {
     }
 
     if (!notes.length) continue
-    const after = validatePlan(next as never, input)
+    const after = validateRepairedPlan(next as never)
     const grew = after.filter(v => !before.some(b => b.code === v.code && b.week === v.week))
     const CODE = 'INV-PLAN-DISPLAY-ZONE-MATCHES-WORK'
     console.log(`\n  ${row.id.slice(0, 8)}  mhr=${mhr} rhr=${meta.resting_hr ?? '(absent)'}`)

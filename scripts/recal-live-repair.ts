@@ -50,7 +50,10 @@ import { fitnessAnchorMap } from '../lib/plan/fitnessAnchorMap'
 import { alignDerivedToStructure } from '../lib/plan/derivedSetAnchors'
 import { repairPlan, REPAIRABLE_CODES } from '../lib/plan/planRepairs'
 import { buildPaceFromVDOT } from '../lib/plan/paceBands'
+import { validateSavedPlan } from '../lib/plan/validateStoredPlan'
+// The one remaining direct caller is the REPAIR DRIVER, exempted by name below.
 import { validatePlan } from '../lib/plan/invariants'
+import { storedPlanInput } from '../lib/plan/storedPlanInput'
 import { getCurrentWeek } from '../lib/plan/weekResolution'
 import { qualityHeaderPace } from '../lib/plan/qualityHeaderPace'
 import { savePlanForUser } from '../lib/plan'
@@ -115,10 +118,17 @@ const env = Object.fromEntries(
 )
 const sb = createClient(env.NEXT_PUBLIC_SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY)
 
+// STORED-PLAN-VALIDATOR-INPUT-01 (2026-11-08) — §116's kind dispatch, which this script had
+// no access to while it called `validatePlan` directly. Same strictness; a base-build or
+// maintenance plan is no longer judged by the race constitution.
+// ⚠️ IT TAKES AN EXPLICIT INPUT AND KEEPS DOING SO, because it serves TWO populations: a
+// STORED plan (where the caller passes `storedPlanInput`, for the level merge) and a
+// FRESHLY GENERATED candidate (where the input is the one it was generated from, and a
+// stored-plan derivation would be the wrong answer).
 const errCodes = (p: Plan, gi: GeneratorInput) =>
-  validatePlan(p, gi).filter(v => v.severity === 'error')
+  validateSavedPlan(p, gi).filter(v => v.severity === 'error')
 
-const stale = (p: Plan, gi: GeneratorInput) => errCodes(p, gi).filter(v => v.code === CODE)
+const stale = (p: Plan) => errCodes(p, storedPlanInput(p)).filter(v => v.code === CODE)
 
 /**
  * ⚠️ THE POPULATION IS WHAT THE REPAIRS CAN FIX, NOT ONE CODE. Selecting on
@@ -127,8 +137,8 @@ const stale = (p: Plan, gi: GeneratorInput) => errCodes(p, gi).filter(v => v.cod
  * still had EIGHT other repairable violations at that moment, invisible to the
  * tool written for them. The list lives in `planRepairs.ts` beside the remedies.
  */
-const repairableViolations = (p: Plan, gi: GeneratorInput) =>
-  errCodes(p, gi).filter(v => (REPAIRABLE_CODES as readonly string[]).includes(v.code))
+const repairableViolations = (p: Plan) =>
+  errCodes(p, storedPlanInput(p)).filter(v => (REPAIRABLE_CODES as readonly string[]).includes(v.code))
 
 /** Work-step paces of a session, in order, for the diff. */
 const steps = (s: Session): string[] =>
@@ -165,7 +175,7 @@ async function verify() {
   for (const r of await load()) {
     const gi = r.plan_json?.meta?.generator_input as GeneratorInput | undefined
     if (!r.plan_json?.weeks?.length || !gi) continue
-    const n = stale(r.plan_json, gi).length
+    const n = stale(r.plan_json).length
     if (n === 0) continue
     dirty++
     console.log(`${r.id.slice(0, 8)}  ${String(n).padStart(2)} stale session(s)  updated_at ${r.updated_at}`)
@@ -247,7 +257,7 @@ async function regenerate() {
       continue
     }
 
-    const errsBefore = errCodes(before, storedInput)
+    const errsBefore = errCodes(before, storedPlanInput(before))
     const errsAfter = errCodes(candidate, input)
     const fnd = (p: Plan) => p.weeks.filter(w => w.n <= 0).length
     const labels = (p: Plan) => Array.from(new Set(p.weeks.filter(w => w.n > 0)
@@ -301,7 +311,7 @@ async function main() {
     const gi = r.plan_json?.meta?.generator_input as GeneratorInput | undefined
     if (!r.plan_json?.weeks?.length || !gi) return false
     if (ONLY && !r.id.startsWith(ONLY)) return false
-    return (REPAIR ? repairableViolations : stale)(r.plan_json, gi).length > 0
+    return (REPAIR ? repairableViolations : stale)(r.plan_json).length > 0
   })
 
   console.log(`${rows.length} stored plans · ${targets.length} carry a ${REPAIR ? 'repairable violation' : 'stale step'}`
@@ -406,6 +416,19 @@ async function main() {
         // Every repair is driven by the invariant's OWN verdicts — see the module
         // header for why that is load-bearing rather than tidy. Four remedies,
         // measured on this runner: 9 error-severity violations become 1.
+        // 🔴 THIS ONE CALL STAYS ON `validatePlan(before, gi)` AND IS THE DECLARED EXEMPTION
+        // (STORED-PLAN-VALIDATOR-INPUT-01, 2026-11-08). Everything else in this script moved
+        // to the owner; this did not, because `repairPlan` READS these verdicts and acts on
+        // them. The owner's input is more correct — §116's dispatch plus the meta-first level
+        // merge — and a more correct verdict set means the remedies DO SOMETHING DIFFERENT, on
+        // a script that writes to production. The remedies were calibrated against this exact
+        // set (9 error-severity violations → 1 on this runner), measured on live plans, and I
+        // cannot re-measure that from here.
+        //
+        // ⚠️ I FIRST CHANGED IT AND WROTE "deliberately the same call as before" NEXT TO THE
+        // CHANGE. It was not the same call. `make the fix read the check's verdicts` cuts both
+        // ways: change the check and you have changed the fix. Moving this is its own item,
+        // with a before/after on real plans, not a line in a refactor.
         const r = repairPlan(after, validatePlan(before, gi), nowPace)
         console.log(`  repairs: ${r.steps} stale step(s) · ${r.headers} header(s) matched to their steps`
           + ` · ${r.stripped} effort-governed pace(s) REMOVED · ${r.segments} long-run segment(s) re-priced`)
@@ -454,7 +477,7 @@ async function main() {
     }
 
     // ── the per-plan diff ────────────────────────────────────────────────────
-    const staleBefore = stale(before, gi)
+    const staleBefore = stale(before)
     const wk = new Map(after.weeks.map(w => [w.n, w]))
     let changed = 0
     for (const w of before.weeks) {
@@ -482,11 +505,11 @@ async function main() {
       }
     }
 
-    const errsBefore = errCodes(before, gi)
-    const errsAfter = errCodes(after, gi)
+    const errsBefore = errCodes(before, storedPlanInput(before))
+    const errsAfter = errCodes(after, storedPlanInput(after))
     const wasKeys = new Set(errsBefore.map(v => `${v.code}|${v.week}|${v.message}`))
     const introduced = errsAfter.filter(v => !wasKeys.has(`${v.code}|${v.week}|${v.message}`))
-    const staleAfter = stale(after, gi)
+    const staleAfter = stale(after)
 
     console.log(`  sessions changed ${changed}`)
     console.log(`  ${CODE}: ${staleBefore.length} -> ${staleAfter.length}`)

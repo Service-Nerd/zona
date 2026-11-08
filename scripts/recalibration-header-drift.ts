@@ -13,7 +13,7 @@
  */
 import { readFileSync } from 'node:fs'
 import { createClient } from '@supabase/supabase-js'
-import { validatePlan } from '../lib/plan/invariants'
+import { validateRepairedPlan } from '../lib/plan/validateStoredPlan'
 for (const line of readFileSync('.env.local', 'utf8').split('\n')) {
   const m = line.match(/^([A-Z_]+)=(.*)$/); if (m) process.env[m[1]] ??= m[2].trim()
 }
@@ -28,7 +28,14 @@ async function main() {
     const gi = p?.meta?.generator_input
     if (!p?.weeks || !gi) { console.log(`${String(r.id).slice(0,8)}  no weeks/input`); continue }
     let hits = 0
-    try { hits = validatePlan(p, gi).filter((v: any) => v.code === 'INV-PLAN-HEADER-PACE-MATCHES-WORK').length } catch { hits = -1 }
+    // STORED-PLAN-VALIDATOR-INPUT-01 (2026-11-08) — one owner: §116's kind dispatch plus the
+    // meta-first level merge. It used to pass `gi` raw, so it had neither.
+    //
+    // ⚠️ I FIRST WROTE THAT THIS ALSO FIXED A LEGACY PLAN REPORTING -1, AND IT DOES NOT:
+    // the `if (!p?.weeks || !gi) continue` four lines up already skips a pre-PV2-A plan, so
+    // the raw `gi` was never undefined HERE. Legacy behaviour is unchanged — it is skipped,
+    // loudly, as before. Stated because a plausible second benefit is still a false claim.
+    try { hits = validateRepairedPlan(p).filter((v: any) => v.code === 'INV-PLAN-HEADER-PACE-MATCHES-WORK').length } catch { hits = -1 }
     const bands = new Set((p.weeks ?? []).flatMap((w: any) => Object.values(w.sessions ?? {})
       .filter((s: any) => s?.type === 'quality' && s?.pace_target).map((s: any) => s.pace_target)))
     const nQ = (p.weeks ?? []).flatMap((w: any) => Object.values(w.sessions ?? {}).filter((s: any) => s?.type === 'quality')).length

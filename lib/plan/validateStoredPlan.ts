@@ -1,6 +1,8 @@
 import type { Plan, GeneratorInput } from '@/types/plan'
 import { validatePlan, validateReshapedPlan, validateMaintenanceBlock, type Violation } from './invariants'
 import { validateBaseBuildBlock, validateStagedRace } from './baseBuildValidate'
+import { storedPlanInput } from './storedPlanInput'
+import { withProfileHr, type ProfileHr } from './rebuildInput'
 
 /**
  * THE SINGLE OWNER of "validate a plan we have already stored", and the only
@@ -139,4 +141,45 @@ export function validateSavedPlan(plan: Plan, input: GeneratorInput): Violation[
     if (v) return v
   }
   return validatePlan(plan, input)
+}
+
+/**
+ * For a REPAIR SCRIPT, which holds a plan already stored and must judge it STRICTLY
+ * (STORED-PLAN-VALIDATOR-INPUT-01, 2026-11-08).
+ *
+ * 🔑 ONE LINE, BECAUSE BOTH HALVES ALREADY EXISTED AND NEITHER WAS BEING USED.
+ * `validateSavedPlan` owns the kind dispatch plus the strict constitution;
+ * `storedPlanInput` owns the input a stored plan was built from. Eight scripts were
+ * hand-rolling the second and skipping the first, which cost them §116's dispatch (so a
+ * base-build plan read as a race plan missing its taper) AND the meta-first level merge.
+ *
+ * ⚠️ STRICT, NOT THE RESHAPE VARIANT, and that is the decision. `validateStoredPlan`
+ * filters out `INV-PLAN-COVERS-RACE-DATE` and `INV-PLAN-RACE-ON-RACE-DAY` because a
+ * reshape of a legacy plan cannot be held to them. A repair script is not a reshape: it
+ * asks "is this plan sound", and silently dropping two whole-plan invariants would weaken
+ * every one of the eight call sites, which all use the strict validator today.
+ *
+ * `overlay` is for the fields a script legitimately knows better than the stored answers do
+ * — the profile's confirmed heart rate (REBUILD-HR-FROM-PROFILE-01), or a benchmark the
+ * runner gave the wizard that `generator_input` never carried. Defined keys only; see
+ * `storedPlanInput`.
+ */
+export function validateRepairedPlan(
+  plan: Plan,
+  opts?: {
+    /** The runner's CURRENT profile heart rate, which `generator_input` does not track
+     *  (REBUILD-HR-FROM-PROFILE-01). Composed through `withProfileHr`, the owner of that
+     *  rule, so the `max_hr_source` handling is not written out a second time here. */
+    profile?: ProfileHr | null
+    /** Anything else the script legitimately knows better than the stored answers — today
+     *  only `recal-live-repair`'s benchmark, which the runner gave the wizard and
+     *  `generator_input` never carried. DEFINED KEYS ONLY; see `storedPlanInput`.
+     *
+     *  ⚠️ NOT FOR A WHOLE INPUT. Passing `{ ...persisted, max_hr }` would let the
+     *  persisted `fitness_level` win over meta's and undo the merge that is the entire
+     *  reason this path exists (§79, RUNWALK-ASSESSED-LEVEL-01). Pass the delta. */
+    overlay?: Partial<GeneratorInput>
+  },
+): Violation[] {
+  return validateSavedPlan(plan, withProfileHr(storedPlanInput(plan, opts?.overlay), opts?.profile))
 }

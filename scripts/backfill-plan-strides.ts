@@ -38,7 +38,7 @@ import { createClient } from '@supabase/supabase-js'
 import { readFileSync } from 'node:fs'
 import { strideCarrierDay, neuromuscularNote, neuromuscularLabel } from '../lib/plan/neuromuscular'
 import { isLongRun } from '../lib/plan/sessionRole'
-import { validatePlan } from '../lib/plan/invariants'
+import { validateRepairedPlan } from '../lib/plan/validateStoredPlan'
 import { GENERATION_CONFIG } from '../lib/plan/generationConfig'
 import type { Day } from '../lib/plan/days'
 
@@ -80,14 +80,18 @@ async function main(): Promise<number> {
   const plan = JSON.parse(JSON.stringify(row.plan_json))   // deep copy; the original stays pristine for the archive
   const meta = (plan.meta ?? {}) as Record<string, unknown>
 
-  // ⚠️ A RECONSTRUCTED INPUT, AND ITS LIMIT IS STATED RATHER THAN HIDDEN.
-  // `meta` does not carry every GeneratorInput field, so this is NOT a faithful
-  // input and the ABSOLUTE violation set it produces may be wrong. What is
-  // trustworthy is the DELTA: the same input is used before and after, so any
-  // difference is caused by this script and nothing else.
-  const input = { ...meta } as never
+  // STORED-PLAN-VALIDATOR-INPUT-01 (2026-11-08) — `validateRepairedPlan` owns the input now.
+  //
+  // ⚠️ THIS USED TO BE `const input = { ...meta } as never`, with a caveat admitting the
+  // ABSOLUTE violation set "may be wrong" and only the DELTA trustworthy. The plan's meta
+  // is not a GeneratorInput: four engine-consumed fields were absent, and the `as never`
+  // cast is what stopped the compiler saying so. The owner brings the real input, §116's
+  // kind dispatch and the meta-first level merge.
+  //
+  // 🔑 THE LIMIT WAS HONESTLY STATED FOR A YEAR AND THAT IS WHY IT SURVIVED. A declared
+  // limit is not a fixed problem.
 
-  const before = validatePlan(plan as never, input)
+  const before = validateRepairedPlan(plan as never)
   const raceWeekN = Math.max(0, ...(plan.weeks as { n: number }[]).map(w => w.n))
 
   const changes: Change[] = []
@@ -133,7 +137,7 @@ async function main(): Promise<number> {
     changes.push({ week: week.n, day: carrier, note, labelFrom, labelTo })
   }
 
-  const after = validatePlan(plan as never, input)
+  const after = validateRepairedPlan(plan as never)
   const newCodes = after.filter(v => !before.some(b => b.code === v.code && b.week === v.week))
 
   console.log(`plan ${row.id.slice(0, 8)}  user ${row.user_id}`)

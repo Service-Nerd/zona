@@ -17,7 +17,7 @@ import { hasAiCopy, stampRebuilt } from '../lib/plan/enrichmentState'
 import { createClient } from '@supabase/supabase-js'
 import fs from 'fs'
 import { generateRulePlan } from '@/lib/plan/ruleEngine'
-import { validatePlan } from '@/lib/plan/invariants'
+import { validateSavedPlan } from '@/lib/plan/validateStoredPlan'
 import { sendApnsPush } from '@/lib/apnpush'
 import type { GeneratorInput, Plan } from '@/types/plan'
 
@@ -85,7 +85,9 @@ const qualityNames = (plan: Plan): string[] => {
   // Generate the new plan.
   // REBUILD-STAMP-ENRICHMENT-01 — the state this rebuild leaves, stated not inferred.
   const next = stampRebuilt(generateRulePlan(INPUT, 'trial', PLAN_START) as never as { meta: Record<string, unknown> }) as never as Plan
-  const errs = validatePlan(next, INPUT).filter(v => v.severity === 'error')
+  // STORED-PLAN-VALIDATOR-INPUT-01 — §116's kind dispatch. `next` is FRESHLY generated from
+  // INPUT, so the save-path policy is the right one: same strictness, plus the dispatch.
+  const errs = validateSavedPlan(next, INPUT).filter(v => v.severity === 'error')
 
   // ── Before / after ──────────────────────────────────────────────────────────
   const line = (s: string) => console.log(s)

@@ -36,7 +36,7 @@
 import { createClient } from '@supabase/supabase-js'
 import { readFileSync } from 'node:fs'
 import { applyHrToPlan } from '../lib/plan/zones'
-import { validatePlan } from '../lib/plan/invariants'
+import { validateRepairedPlan } from '../lib/plan/validateStoredPlan'
 import { PlanSchema } from '../lib/plan/schema'
 
 const CODE = 'INV-PLAN-DISPLAY-ZONE-MATCHES-WORK'
@@ -69,12 +69,21 @@ async function main(): Promise<number> {
     const rhr = meta.resting_hr as number | undefined
     const mhr = meta.max_hr as number | undefined
 
-    // The validating input: `generator_input` when the plan carries it (12 of 22
-    // do), else meta. The ABSOLUTE set may be imperfect on the fallback — what is
-    // trustworthy is the DELTA, because the same input is used on both sides.
-    const input = (meta.generator_input ?? meta) as never
+    // STORED-PLAN-VALIDATOR-INPUT-01 (2026-11-08) — `validateRepairedPlan` owns the input now.
+    //
+    // ⚠️ THIS USED TO BE `const input = (meta.generator_input ?? meta) as never`, and the
+    // caveat beside it read "the ABSOLUTE set may be imperfect on the fallback — what is
+    // trustworthy is the DELTA". On a legacy plan the fallback passed the plan's META as a
+    // GeneratorInput, where `current_weekly_km`, `longest_recent_run_km`, `days_available`
+    // and `days_cannot_train` are ABSENT rather than the 0/7/[] the reconstruction sets —
+    // and an invariant doing arithmetic on `undefined` gets NaN, every comparison against
+    // which is false, so it passes SILENTLY. The owner also brings §116's kind dispatch and
+    // the meta-first level merge, neither of which this script had.
+    //
+    // 🔑 SO THE ABSOLUTE SET IS NOW TRUSTWORTHY TOO, not only the delta. The delta argument
+    // was sound and it was also the reason nobody fixed the input for a year.
 
-    const before = validatePlan(prior as never, input)
+    const before = validateRepairedPlan(prior as never)
     const hasZeroRhr = typeof rhr === 'number' && rhr <= 0
     // The zero-resting repair is independent of DISPLAY-ZONE: those plans are
     // schema-INVALID whether or not the zone check fires.
@@ -106,7 +115,7 @@ async function main(): Promise<number> {
       if (!('resting_hr' in meta)) { skipped++; continue }
       const stripped = JSON.parse(JSON.stringify(prior)) as Record<string, unknown>
       delete (stripped.meta as Record<string, unknown>).resting_hr
-      const afterStrip = validatePlan(stripped as never, input)
+      const afterStrip = validateRepairedPlan(stripped as never)
       const grew = afterStrip.filter(v => !before.some(b => b.code === v.code && b.week === v.week))
       const schemaWas = PlanSchema.safeParse(prior).success
       const schemaNow = PlanSchema.safeParse(stripped).success
@@ -130,7 +139,7 @@ async function main(): Promise<number> {
     }
 
     const next = applyHrToPlan(JSON.parse(JSON.stringify(prior)) as never, rhr, mhr)
-    const after = validatePlan(next as never, input)
+    const after = validateRepairedPlan(next as never)
     const newCodes = after.filter(v => !before.some(b => b.code === v.code && b.week === v.week))
 
     const was = before.filter(v => v.code === CODE).length

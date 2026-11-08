@@ -1148,23 +1148,38 @@ last week did run 20 km that week.
 
 ---
 
-### ⚠️ `STORED-PLAN-VALIDATOR-INPUT-01` — ten repair scripts validate stored plans with a hand-built input ⚙️ **NO BOARD**
+### 🔲 `REENRICH-REPAIR-VALIDATOR-KIND-01` — the repair ladder and its baseline both bypass §116's kind dispatch ⚙️ **NO BOARD**
 
-📐 **Measured 2026-11-03.** 16 scripts read the `plans` table and validate what they read. Five called
-`validateReshapedPlan` and were moved onto `validateStoredPlan` in this commit, with a derived gate in
-`storedPlanDebt.test.ts` so the sixth cannot appear. **Ten more call `validatePlan(plan, input)` directly**
-with an input they assemble themselves — `backfill-plan-hr`, `recal-live-repair`, `repair-plan-zone-strings`,
-`recompose-foundation`, `reenrich-plans`, `backfill-plan-strides`, `gen-fix-01-stage2-regenerate`,
-`recalibration-header-drift`, `_tmp-catch`, and `audit`-adjacent helpers.
+Declared exemption from `STORED-PLAN-VALIDATOR-INPUT-01` (2026-11-08), recorded rather than
+fixed because **both sides of a comparison must use the same function.**
 
-That bypasses **both** things `validateStoredPlan` and `validateReshapedPlan` own: the §116 kind dispatch, and
-the meta-first level merge whose absence is `RUNWALK-ASSESSED-LEVEL-01`. ⚠️ **It mostly fails SAFE** — every
-one of them compares before against after, so a phantom appears on both sides and cancels. The exposure is any
-absolute *"is this clean"* judgement, and `fleet-invalid-debt-01-regen.ts` makes one. **Not urgent; not
-nothing.** Fixing it is mechanical once someone decides whether `validateStoredPlan` should take an optional
-input override.
+`scripts/reenrich-plans.ts` builds `errorBaseline(validatePlan(fresh, input))` and
+`lib/plan/enrichRepair.ts` calls `validatePlan(candidate, input)` three times internally.
+Moving only the baseline onto `validateSavedPlan` would make `violationsIntroducedBy` diff two
+different constitutions and report phantom introductions — the *test the composition, not the
+halves* class. Moving BOTH is an engine-adjacent change.
 
----
+⚠️ **Measured exposure: the race plans this runs on get the right answer today.** `validatePlan`
+IS the race constitution, so the only cohort affected is a base-build or maintenance plan handed
+to the repair ladder, and `hasAiCopy` refuses before that for a plan with no voice. **Not urgent;
+not nothing** — the same framing the parent item carried, and the parent item was right.
+
+⚙️ Fix: move `enrichRepair.ts` and every baseline that feeds it to `validateSavedPlan` in one
+commit, and re-run `lib/plan/enrichRepair.test.ts` plus the golden reframe suite.
+
+### 🔲 `RECAL-REPAIR-DRIVER-VALIDATOR-01` — the one remaining hand-built input, and it drives a production write ⚙️ **NO BOARD**
+
+The second declared exemption from `STORED-PLAN-VALIDATOR-INPUT-01`.
+`scripts/recal-live-repair.ts` keeps one `validatePlan(before, gi)` as the argument to
+`repairPlan`, which **reads those verdicts and acts on them**. The owner's verdict set is more
+correct (§116 dispatch + the meta-first level merge), so switching it means the remedies DO
+SOMETHING DIFFERENT on a script that writes to production.
+
+🔻 **Why it is not just done:** the four remedies were calibrated against this exact set — *9
+error-severity violations → 1* — measured on live plans, and that cannot be re-measured from a dev
+machine. ⚙️ Fix: switch it, then run the script in DRY-RUN against production and diff the
+remedy counts per plan before and after. Held by an arm in `storedPlanDebt.test.ts` that fails if
+the exemption goes stale.
 
 ### 🔲 `REORDER-BLOCKED-DAY-01` — the reorder screen offers days the runner said they cannot train 🧭 **DESIGN BOARD**
 
