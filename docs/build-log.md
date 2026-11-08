@@ -5,6 +5,15 @@ angle. Feeds the weekly DHTB LinkedIn build-in-public posts — keep it honest, 
 it specific, no polish. The content system adds the voice.
 
 ---
+## 2026-11-08 — CHARITY-AUDIENCE-HEADINGS-01 · I built the check where the second failure happened
+**Shipped:** the charity page's audience guard now reads its headings, title and OG strings, not only its FAQ answers.
+**Dev learning:** the page was rewritten twice in one day in September because it was *"marathon-only in its URL, title, FAQs and CTAs"*. Four surfaces. Three weeks later I regressed one FAQ answer, wrote a guard, and the guard reads **that one surface**. **The place the second failure happens is the natural place to put a check and the wrong place to stop** — the original three had no check at all, and the page's own header named them.
+**Product/creator learning:** the original defect would have walked straight past the rule I wrote. The existing arms test for *your / a / the* marathon, because that is the shape of an FAQ answer presuming your race. A page **title** reading "Free marathon coaching for charity runners" contains none of those words. Headings need a stricter rule — no single distance at all — while the body keeps the looser one, because "5K through ultra" is the page being deliberately inclusive. **One rule could not cover both surfaces, and noticing that was the whole build.**
+**AI-building learning:** I re-measured before writing and the surface is clean. Nothing moved. A gate over correct copy reads like a fix in a registry row unless you say otherwise, so the row says otherwise.
+**The honest bit:** my exemption regions had to be cut by source bounds rather than by pattern, because a pattern that permits "Marathon" in the plan cards permits it in an `<H2>` too. And I had to strip comments before scanning — three comments on that page, including the file header, quote the offending phrases verbatim to explain the rule. Fourth time in two days that a check nearly fired on prose about the check.
+**Hook material:** "marathon-only in its URL, title, FAQs and CTAs" — four surfaces named in the file's own header, one of them guarded, for seven weeks.
+**Postable?:** maybe — the "I built the test where I failed, not where the bug lives" angle.
+
 ## 2026-11-08 — W7B-REVIEW-ROUND-01 · a type that understates reality removes the compiler from the conversation
 **Shipped:** the fix round for the second half of W7. Four findings, all mine, none visible to 7,539 green tests.
 **Dev learning:** `skipped_plan_kind` had been in the Zod enum and in production rows for a month and was never added to the `EnrichmentStatus` union. Two consequences, and the second is the interesting one: a consumer comparing `plan.meta.enrichment === 'skipped_plan_kind'` fails `tsc` against a value that is live — and, because the type denied the value existed, writing it needed `as never as { meta: Record<string, unknown> }`. I wrote five of those casts without once asking why they were necessary. **A type that understates reality does not stop the write. It just removes the compiler from the conversation, and then you cast your way past the question it was trying to ask.**

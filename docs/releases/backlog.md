@@ -9264,21 +9264,6 @@ that a noisy gate gets switched off, which is the same as having none — so it 
 against all four live pages before it ships, not after. **Four more comparison pages are
 planned**, which is the argument for doing it before page 5 rather than after page 8.
 
-### `CHARITY-AUDIENCE-HEADINGS-01` — the audience guard reads the answers only ⚙️ **NO BOARD**
-
-`charityPageAudience.test.ts` (shipped `169a8ec`) holds `/charity-runners`' FAQ **answers**
-distance- and season-neutral. 🔴 **The 2026-09-11 defect it exists to prevent was in the
-page's URL, title and CTAs**, not only its FAQs: *"it was marathon-only in its URL, title, FAQs
-and CTAs."* **So the guard covers the surface where the defect recurred and not the surface
-where it originally lived.**
-
-**The fix:** a second arm over headings, hero and CTA copy, with the legitimate distance names
-(the *"Half marathon"* plan card, the `marathon-16-week` link) exempted by **path**, not by
-pattern. The slug itself is already distance-neutral and must stay that way.
-
-⚠️ **Not urgent and genuinely small**, filed because the gap is only visible from inside the
-guard's own comment, which is where residuals go to be forgotten.
-
 ## ⚖️ FILED 2026-10-01 — `PROMPT-UNITS-ADJUST-01`
 
 ### ✅ `PROMPT-UNITS-ADJUST-01` — SHIPPED 2026-10-06 (`20fe34cd`). The falsification did not go red first time ⚙️ **NO BOARD**
