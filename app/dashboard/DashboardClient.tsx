@@ -55,6 +55,7 @@ import { sessionDisplayLabel } from '@/lib/plan/catalogueLink'
 import { easyPaceAsCeiling, splitPaceQualifier } from '@/lib/plan/easyPaceCeiling'
 import { GENERATION_CONFIG } from '@/lib/plan/generationConfig'
 import { resolveMaxHr } from '@/lib/plan/maxHrGuard'
+import { resolveHrSave, hrGuardableAge } from '@/lib/plan/hrSaveResolution'
 import { isLongRun, coachingSessionType } from '@/lib/plan/sessionRole'
 import { buildWeekVoiceContext, getWeekVoiceHeadline, getWeekVoiceItems, PHASE_LABELS, phaseDisplayLabel } from '@/lib/coaching/weekVoice'
 import { planArcSeries } from '@/lib/plan/weekVolume'
@@ -773,12 +774,24 @@ export default function DashboardClient() {
    * the shape of this codebase's most expensive defects.
    */
   const handleHrSave = async (rhr: number, mhr: number) => {
+  // ── PLAN-META-HR-DIVERGENCE-01 (2026-11-08) — ONE OWNER, CALLED BY BOTH SIDES ─────────
+  //
+  // 🔴 This stamped `'user_confirmed'` unconditionally and re-zoned the plan from the RAW
+  // typed max. §50 (HR-MAX-01) does say a value the runner types over the stored one IS a
+  // confirmation — true, and the handler could not tell a typed max from an untouched one. So a
+  // runner opening the sheet to change only their RESTING HR promoted a device-observed FLOOR
+  // to a confirmed max, which is the single thing §50's asymmetry exists to prevent.
+  //
+  // `resolveHrSave` is now the one owner of both answers, and `HRZonesSection` calls it with
+  // the same inputs to decide which zone table to SHOW — so the zones the runner just looked at
+  // and the zones the plan gets are the same computation by construction. `maxHR` here is the
+  // PRE-save stored value (state updates below), which is exactly what the form was handed.
+  const { maxSource: effectiveSource, guardedMax } = resolveHrSave({
+    typedMax: mhr, storedMax: maxHR ?? null,
+    storedSource: maxHRSource ?? undefined, age: hrGuardableAge(birthYear),
+  })
   setRestingHR(rhr); setMaxHR(mhr)
-  // CoachingPrinciples §50 (HR-MAX-01) — a value the runner typed in Profile and
-  // saved IS a confirmation. Tag it 'user_confirmed' so the §50 asymmetry trusts
-  // it even below the age estimate (genuine low-max athletes) instead of treating
-  // it as a device floor.
-  setMaxHRSource('user_confirmed')
+  setMaxHRSource(effectiveSource)
   // `newZ2` removed 2026-09-24 — it was a second copy of the Z2 boundary living
   // in a React component, and the only reason it existed is that `computeZones`
   // was private to `ruleEngine.ts`. `applyHrToPlan` owns it now.
@@ -786,7 +799,7 @@ export default function DashboardClient() {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return
     // 1. user_settings is the single source of truth for live HR values
-    await supabase.from('user_settings').upsert({ id: user.id, resting_hr: rhr, max_hr: mhr, max_hr_source: 'user_confirmed', updated_at: new Date().toISOString() })
+    await supabase.from('user_settings').upsert({ id: user.id, resting_hr: rhr, max_hr: mhr, max_hr_source: effectiveSource, updated_at: new Date().toISOString() })
     // 2. P1 — sync plan.meta so the zone2_ceiling fallback path never drifts
     //    from user_settings. Uses savePlanForUser (not savePlanForUser archives
     //    the plan — that's only done in the generate flow). Plain upsert here.
@@ -802,8 +815,15 @@ export default function DashboardClient() {
       // `applyHrToPlan` is the single owner that keeps meta and the sessions in
       // step; it also sets `zone2_ceiling`, so the hand-rolled `newZ2` below is
       // gone rather than left as a second copy of the Z2 boundary.
-      const withHr = applyHrToPlan(plan as never, rhr, mhr) as never as typeof plan
-      const updatedPlan = { ...withHr, meta: { ...withHr.meta, hr_derived_max: mhr, hr_max_source: 'user_confirmed', hr_zone_method: 'karvonen', hr_assumption_note: undefined } }
+      // 🔴 THE GUARDED MAX, not the raw one (PLAN-META-HR-DIVERGENCE-01). This passed `mhr`, so
+      // `applyHrToPlan` rewrote every session's `hr_target` from a number `resolveMaxHr` would
+      // have rejected — while `effectiveMaxHR` guarded the same value for DISPLAY, so the
+      // header and the session band diverged again: exactly the defect PLAN-ZONE-VS-HRTARGET-01
+      // was fixed to close, reached by another route. `user_settings.max_hr` above keeps the RAW
+      // value (the record of what the runner said); the PLAN gets the guarded one, so
+      // `hr_derived_max` finally means what its name says.
+      const withHr = applyHrToPlan(plan as never, rhr, guardedMax) as never as typeof plan
+      const updatedPlan = { ...withHr, meta: { ...withHr.meta, hr_derived_max: guardedMax, hr_max_source: effectiveSource, hr_zone_method: 'karvonen', hr_assumption_note: undefined } }
       setPlan(updatedPlan as any)
       // RESHAPE-FIX-WAVE1: savePlanForUser now throws on persistence failure.
       // This call is deliberately fire-and-forget (the resting-HR save above
@@ -2807,11 +2827,16 @@ export default function DashboardClient() {
   // floor and run ~15% low, contradicting the plan's own guarded targets.
   const effectiveMaxHR = useMemo<number | null>(() => {
     if (maxHR == null) return null
-    const age = birthYear ? new Date().getFullYear() - birthYear : null
-    if (age != null && age >= 10 && age <= 100) {
+    // `hrGuardableAge` is the single owner of this predicate (`lib/plan/hrSaveResolution.ts`);
+    // it existed here and in `HRZonesSection` and was about to exist in a third place.
+    const age = hrGuardableAge(birthYear)
+    if (age != null) {
       return resolveMaxHr(maxHR, age, maxHRSource ?? undefined).effectiveMax
     }
-    // No age to guard against — trust the plan's already-guarded max, else raw.
+    // No age to guard against — trust the plan's already-guarded max, else raw. Since
+    // PLAN-META-HR-DIVERGENCE-01 `hr_derived_max` really is guarded, so this fallback means
+    // what it says; before that fix it could be the raw typed number. 5 of 53 live rows have
+    // no `birth_year`, so this branch is the real one for them.
     return plan?.meta?.hr_derived_max ?? maxHR
   }, [maxHR, maxHRSource, birthYear, plan])
 

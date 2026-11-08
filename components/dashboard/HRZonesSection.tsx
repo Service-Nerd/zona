@@ -13,7 +13,7 @@ import { TextField } from '@/components/shared/TextField'
 import { HEART_RATE_SUB } from '@/components/shared/meDoors'
 import Button from '@/components/ui/Button'
 import ScreenHeader from '@/components/ui/ScreenHeader'
-import { resolveMaxHr } from '@/lib/plan/maxHrGuard'
+import { resolveHrSave, hrGuardableAge } from '@/lib/plan/hrSaveResolution'
 import { useIsNative } from '@/lib/useIsNative'
 import { Capacitor } from '@capacitor/core'
 import dynamic from 'next/dynamic'
@@ -150,14 +150,14 @@ export default function HRZonesSection({ restingHR, maxHR, maxHrSource, birthYea
   // device floor (observed / unattributed, below the age estimate) displays the
   // guarded estimate zones instead. resolveMaxHr is the same single owner the
   // engine and DashboardClient use.
-  const age = birthYear ? new Date().getFullYear() - birthYear : null
-  const editedMax = maxHR == null || mhrNum !== maxHR
-  const displaySource: 'observed' | 'user_confirmed' | undefined =
-    editedMax ? 'user_confirmed' : (maxHrSource ?? undefined)
-  const guardedMax = (valid && age != null && age >= 10 && age <= 100)
-    ? resolveMaxHr(mhrNum, age, displaySource).effectiveMax
-    : mhrNum
-  const maxIsFloored = valid && guardedMax !== mhrNum
+  // PLAN-META-HR-DIVERGENCE-01 — `resolveHrSave` is the ONE owner of this decision, and
+  // `handleHrSave` calls the same function with the same inputs before it re-zones the plan.
+  // Until 2026-11-08 this form computed the guard for DISPLAY and then handed the caller the
+  // raw typed number, so it showed guarded zones and saved the unguarded one.
+  const age = hrGuardableAge(birthYear)
+  const resolved = valid ? resolveHrSave({ typedMax: mhrNum, storedMax: maxHR ?? null, storedSource: maxHrSource ?? undefined, age }) : null
+  const guardedMax = resolved?.guardedMax ?? mhrNum
+  const maxIsFloored = valid && !!resolved?.floored
   const zones = valid ? calculateZones(rhrNum, guardedMax) : []
 
   function handleSave() {

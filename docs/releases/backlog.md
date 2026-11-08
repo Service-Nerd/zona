@@ -14047,29 +14047,46 @@ it never degrades to a hub.
 > ⚠️ **Closing this records a known product limitation rather than pending work.** A reader asking
 > *"does `healthkit_connected_at` mean they're connected?"* must find the answer **no** — which is
 > why this stays written down instead of being deleted.
-### ⚙️ `PLAN-META-HR-DIVERGENCE-01` — `plan.meta` HR can drift from `user_settings`
-**Board: ⚙️ NO BOARD.** Found 2026-09-24 while fixing `PLAN-ZONE-VS-HRTARGET-01`; **founder ruled
-the two paths below are left alone for now.**
+### ✅ `PLAN-META-HR-DIVERGENCE-01` — SHIPPED 2026-11-08. The form showed guarded zones and saved the unguarded number ⚙️ **NO BOARD**
 
-There are **three** HR write paths, not two, and they update different subsets:
+🔑 **Re-measured, and the open half was not staleness.** The item's remedy was right —
+*"`resolveMaxHr()` must guard the max before it reaches `applyHrToPlan`"* — and the reason it
+matters is sharper than the item knew. **`HRZonesSection` resolved §50's guard to decide which
+zone table to SHOW, including a "floored" note telling the runner their max had been rejected, and
+then `handleSave()` handed the caller the RAW typed number.** `handleHrSave` passed it to
+`applyHrToPlan`, which rewrote every session's `hr_target`, and stamped it as `hr_derived_max`,
+while `effectiveMaxHR` guarded the same value again for display. **Header and session band
+diverged — `PLAN-ZONE-VS-HRTARGET-01`'s defect, by another route.**
 
-| path | `user_settings` | `plan.meta` | `session.hr_target` |
-|---|---|---|---|
-| Profile save (`DashboardClient:2654`) | ✅ | ✅ | ✅ **fixed 2026-09-24** |
-| Connect-watch, onboarding (`:2247`) | ✅ | ❌ | ❌ |
-| Reconnect from Me (`:2612`) | ✅ | ❌ | ❌ |
+🔴 **And the provenance was worse than the number.** `handleHrSave` wrote
+`max_hr_source: 'user_confirmed'` **unconditionally**, on the true-but-insufficient reasoning that
+a max the runner types is a confirmation. It could not tell a typed max from an untouched one, so a
+runner opening the sheet to change only their **resting** HR promoted a device-observed FLOOR to a
+confirmed max — the single thing §50's asymmetry exists to prevent. The form knew (`editedMax`);
+the handler had no way to.
 
-⚠️ **The last two are DELIBERATE and their comments say so** — *"the plan may already have Tanaka
-zones baked in; updating user_settings here means all future coaching (and any re-generation) uses
-the real Karvonen values instead."* They never cause the card mismatch, because the plan stays
-internally consistent. **Wiring them would change a live plan's training zones during onboarding,
-against a documented decision and with no board** — and they write an `observed` max, which §50
-treats as a FLOOR, so pushing it in unguarded would drag zones DOWN.
+📐 **Live, production read 2026-11-08:** 53 `user_settings` rows, **37 with a max, 24 `observed`,
+3 below their Tanaka estimate** (the live floor case), 0 above the 15% plausibility tolerance,
+5 with no `birth_year` and so unguardable either way.
 
-**What remains open** is the divergence itself: after either path, `user_settings` and `plan.meta`
-disagree about the same runner. ⚠️ `DashboardClient:1644` sets `maxHR` from `meta`, so the stale
-copy can win in the UI. Whoever picks this up: `resolveMaxHr()` must guard the max **before** it
-reaches `applyHrToPlan`.
+✅ **`lib/plan/hrSaveResolution.ts → resolveHrSave` is the one owner of both answers, and BOTH sides
+call it** — so "the zones the runner just looked at" and "the zones the plan gets" are the same
+computation by construction. Threading the form's answer to the handler would have fixed today's
+instance and left them free to diverge tomorrow. `hrGuardableAge` is the one owner of the
+age predicate, which existed twice and was about to exist three times. ⚠️ `user_settings.max_hr`
+keeps the RAW value deliberately: it is the record of what the runner said, and `resolveMaxHr`
+decides what to trust at each read.
+
+⚠️ **`tsc` could not have caught the original** — a 2-argument callback is assignable to a
+3-argument prop, so widening the signature compiles clean and changes nothing. The gate is
+`lib/plan/hrSaveResolution.test.ts` (13 arms, falsified three ways), not the type.
+
+⚠️ **What this does not prove.** The two device write paths are unchanged, as the founder ruled:
+connect-watch and reconnect still write `user_settings` only. **They are now SAFER rather than
+fixed** — the floor they write stays tagged `observed`, and the Profile save can no longer promote
+it. The `effectiveMaxHR` fallback `plan?.meta?.hr_derived_max ?? maxHR` still wins when there is no
+age, and for those 5 rows that is the real branch; the difference is that `hr_derived_max` is now
+guarded, so the fallback means what its name says.
 
 ### ⚙️ `TEST-LIVENESS-COVERAGE-01` — the mutation harness sees 5.9% of the test suite
 **Board: ⚙️ NO BOARD.** Found 2026-09-24 while building `GATE-FALSIFY-01 (c)`.

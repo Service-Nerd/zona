@@ -47,6 +47,16 @@ interface HrCalibrationSheetProps {
 - **The caller owns the open state.** Render it conditionally; it does not self-gate.
 - **It does not link to the zones screen.** It renders inside it; a link would be a loop.
   `HRZonesSection`'s `onOpenZones` prop was removed for this reason.
+- 🔴 **`onSave` hands over the RAW typed values, and the caller MUST resolve them through
+  `lib/plan/hrSaveResolution.ts → resolveHrSave` before persisting or re-zoning a plan**
+  (PLAN-META-HR-DIVERGENCE-01, 2026-11-08). `HRZonesSection` calls that owner to decide which
+  zone table to SHOW; a caller that does not call it with the same inputs will persist and
+  re-zone from a different number than the runner was just looking at. Two things come out of
+  it: the max's **provenance** (a typed-over max is a §50 confirmation; an untouched one keeps
+  what it arrived with, so editing only the RESTING HR cannot promote a device floor) and the
+  **§50-guarded max** the plan is built from. ⚠️ **The signature cannot enforce this** — it was
+  a 2-argument callback before and after, and `tsc` accepts a narrower callback for a wider
+  prop, so the gate is `lib/plan/hrSaveResolution.test.ts`, not the type.
 
 ## Consumers
 

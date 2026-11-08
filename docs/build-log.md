@@ -5,6 +5,16 @@ angle. Feeds the weekly DHTB LinkedIn build-in-public posts — keep it honest, 
 it specific, no polish. The content system adds the voice.
 
 ---
+## 2026-11-08 — PLAN-META-HR-DIVERGENCE-01 · the form showed guarded zones and saved the unguarded number
+**Shipped:** one owner of what an HR save means, called by both the form and the handler.
+**Dev learning:** `HRZonesSection` runs §50's max-HR guard to decide which zone table to show — it even renders a note saying the max was rejected — and then handed the caller the **raw typed number**. The handler fed that to `applyHrToPlan`, which rewrote every session's HR band from it, while the display guarded the same value again. So the runner looked at one set of zones and got another. The guard existed, was correct, had a single owner, and one of the two producers simply did not call it.
+**Product/creator learning:** the provenance was the worse half. The handler stamped `max_hr_source: 'user_confirmed'` unconditionally, reasoning that a max the runner types is a confirmation. That reasoning is **true and insufficient** — it could not tell a typed max from an untouched one. So editing only your *resting* HR promoted a device-observed floor to a confirmed max, which is the one thing §50's asymmetry exists to prevent. Live: of 53 rows, 24 carry an observed max and 3 sit below their age estimate.
+**AI-building learning:** I first fixed this by threading the form's answer through a third `onSave` argument. That fixes today's instance and leaves the two sides free to compute different answers tomorrow. Reverted it for an owner both call, so "the zones shown" and "the zones saved" are the same computation by construction — and no public prop contract had to change. **`tsc` could never have caught the original either way: a 2-argument callback is assignable to a 3-argument prop, so widening the signature compiles clean and changes nothing.**
+**The honest bit:** I committed the previous item having run only its own test files, and the broader run came back with three reds — including `PINNED-CLOCK-01` firing on a literal `benchmark_date` in a test I had just written, which is a rule written into CLAUDE.md a day earlier. The gate caught me. Nothing was pushed, but the commit existed and was red.
+**Hook material:** a form that renders "your max was rejected" and then saves the rejected number — and the compiler cannot see it, because fewer arguments is always assignable to more.
+**Postable?:** yes
+
+---
 ## 2026-11-08 — PLAN-VDOT-ROUNDTRIP-01 · the item named the expensive fix and the cheap one was free
 **Shipped:** `meta.vdot` and `meta.vdot_training_anchor` are stamped at full precision; the rounding moved to the display.
 **Dev learning:** generation priced every pace band from the unrounded VDOT pair and stamped them rounded to one decimal. So a plan could not describe itself: the Zones screen, `applyRecalibration` and an invariant all rebuild the guide from those two numbers and rebuilt it **one second per km out**. Measured across the wizard's whole 5K range — 313 times at five-second steps — **241 of them, 77%**, rebuild at least one band differently.
