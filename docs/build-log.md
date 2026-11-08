@@ -5,6 +5,16 @@ angle. Feeds the weekly DHTB LinkedIn build-in-public posts — keep it honest, 
 it specific, no polish. The content system adds the voice.
 
 ---
+## 2026-11-08 — PLAN-VDOT-ROUNDTRIP-01 · the item named the expensive fix and the cheap one was free
+**Shipped:** `meta.vdot` and `meta.vdot_training_anchor` are stamped at full precision; the rounding moved to the display.
+**Dev learning:** generation priced every pace band from the unrounded VDOT pair and stamped them rounded to one decimal. So a plan could not describe itself: the Zones screen, `applyRecalibration` and an invariant all rebuild the guide from those two numbers and rebuilt it **one second per km out**. Measured across the wizard's whole 5K range — 313 times at five-second steps — **241 of them, 77%**, rebuild at least one band differently.
+**Product/creator learning:** **the filed item named one direction of the fix and it was the expensive one.** It said pricing *from* the rounded value would move every band by a second and would need a parity run and a declared reason. True. But stamping *full precision* moves nothing the engine generates, because the paces were always computed from those exact values. The item had been sitting since October looking like a risky change. It was a one-line change plus moving a `Math.round` to the display, where ADR-015 already says display formatting belongs.
+**AI-building learning:** my first version of the gate was **vacuous in a way that reads as rigorous** — it compared `buildPaceFromVDOT(vdot, vdotRaw)` against `buildPaceFromVDOT(vdot, vdotRaw)`. Same call, same arguments, cannot differ however the stamp behaves. It had to go through the real `generateRulePlan` to touch the thing that can regress. Then the opposite trap: the corpus arm read **0.0%** because `cohortGrid` carries exactly **one** distinct benchmark. A clean corpus run on a one-value axis is not evidence.
+**The honest bit:** the invariant that was supposed to catch this had already been **weakened** because of it — it compared band strings, false-fired 25,811 times across 14,268 plans, every one by the same second, and was changed to compare numerically instead. A gate that had to be loosened was the symptom and nobody traced it back to the cause for a month.
+**Hook material:** 241 of 313 real benchmark times produced a plan that could not reproduce its own pace bands — and the invariant built to catch it had been turned down because it kept being right.
+**Postable?:** yes
+
+---
 ## 2026-11-08 — STRUCTURAL-NOTE-DAY-BUDGET-01 · the plan told 614 runners their session did not fit a day it was never on
 **Shipped:** the plan-level weekday-overrun note is measured against, and quotes, the limit of the day the session actually sits on.
 **Dev learning:** the wizard turns per-day budgets into one number by taking the **minimum** across the weekdays you run. So a runner who gave Tuesday ninety minutes and the other weekdays thirty-five had their 53-minute *Tuesday* session measured against thirty-five, and the plan said in its own voice that it did not fit the time they had. It fit. They gave it ninety minutes. The owner for this — `weekdayBudgetFor` — was built in October, is used by the per-session note and by the invariant, and was simply never wired into this one producer.

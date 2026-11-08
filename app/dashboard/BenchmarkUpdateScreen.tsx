@@ -5,7 +5,7 @@ import { useState } from 'react'
 import type { Plan, BenchmarkInput } from '@/types/plan'
 import { authedFetch } from '@/lib/supabase/authedFetch'
 import { isLongRun, isQualitySession } from '@/lib/plan/sessionRole'
-import { convertPaceString, type DistanceUnits } from '@/lib/format'
+import { convertPaceString, formatVdot, type DistanceUnits } from '@/lib/format'
 import { BenchmarkFields } from '@/components/shared/BenchmarkFields'
 import { FieldLabel } from '@/components/shared/FieldText'
 import { benchmarkFromFields, benchmarkProblem, type BenchmarkFieldValues } from '@/lib/plan/benchmarkCheck'
@@ -61,7 +61,7 @@ function UpdatedPaceResult({ plan, weeksUpdated, stravaConnected, units }: { pla
         {meta.vdot !== undefined && (
           <div style={{ display: 'flex', alignItems: 'baseline', gap: 'var(--space-2)', marginBottom: 'var(--space-3)' }}>
             <span style={{ fontFamily: 'var(--font-brand)', fontSize: '28px', fontWeight: 600, color: 'var(--moss)' }}>
-              {meta.vdot}
+              {formatVdot(meta.vdot)}
             </span>
             <span style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--mute)' }}>VDOT</span>
           </div>

@@ -743,3 +743,28 @@ export function weightToKg(value: number, units: DistanceUnits = 'km'): number {
 export function weightUnit(units: DistanceUnits = 'km'): 'kg' | 'lb' {
   return units === 'mi' ? 'lb' : 'kg'
 }
+
+/**
+ * The one owner of a VDOT on screen (ADR-015: `lib/format.ts` owns every metric string).
+ *
+ * 🔴 WHY IT EXISTS — PLAN-VDOT-ROUNDTRIP-01 (2026-11-08). `meta.vdot` and
+ * `meta.vdot_training_anchor` used to be rounded to 1dp AT THE STAMP, while generation
+ * priced every band from the unrounded values. So a plan could not describe itself: the Zones
+ * screen, `applyRecalibration` and `INV-PLAN-STEP-PACE-FROM-GUIDE` all rebuild the PaceGuide
+ * from those two numbers, and rebuilt it ONE SECOND PER KM out.
+ *
+ * Measured over the wizard-reachable 5K benchmark space (14:00 to 40:00 at 5-second steps,
+ * 313 times): **241 of them, 77.0%, rebuild at least one band differently from the one the
+ * plan was priced with.** The invariant had already paid for it — it false-fired **25,811
+ * times across 14,268 plans**, every one by exactly that second, and was changed to compare
+ * numerically instead.
+ *
+ * ⚠️ The fix is to round HERE and not at the stamp, because rounding at the stamp destroys
+ * the value the engine actually used. Display precision is a display decision.
+ */
+export function formatVdot(vdot: number | null | undefined): string | null {
+  if (vdot == null || !Number.isFinite(vdot)) return null
+  // 1dp is what the screen has always shown, and it is the precision Daniels' own tables use.
+  // A whole number reads as false precision the other way: 42 and 42.4 train differently.
+  return (Math.round(vdot * 10) / 10).toFixed(1)
+}

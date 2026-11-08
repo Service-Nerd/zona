@@ -6719,16 +6719,42 @@ data**, and announcing a reshape engine whose firings get reverted is worse than
 > the variant params stamped at generation. `INV-PLAN-HEADER-PACE-MATCHES-WORK` skips those rows by
 > design, so nothing is unguarded that was guarded before.
 
-### ⚙️ `PLAN-VDOT-ROUNDTRIP-01` — a plan's own bands are not reproducible from its own metadata *(filed 2026-10-09)* ⚙️ **NO BOARD**
+### ✅ `PLAN-VDOT-ROUNDTRIP-01` — SHIPPED 2026-11-08. Stamped at full precision; rounded at the display ⚙️ **NO BOARD**
 
-> Generation prices from the **unrounded** VDOT and stamps it **rounded to 1dp**, so rebuilding the
-> guide from `meta.vdot` / `meta.vdot_training_anchor` reproduces every band **one second out**.
-> Found when `INV-PLAN-STEP-PACE-FROM-GUIDE` compared band STRINGS and false-fired **25,811 times**
-> across 14,268 plans, every one of them that one second. The invariant now compares numerically at
-> §19's 3%, so this is not blocking — but a plan that cannot describe itself is a trap for the next
-> checker. `applyRecalibration` already prices from the stamped values; generation does not.
-> ⚠️ Changing it moves generated output by ~1 s/km on every band, so it needs a parity run and a
-> declared reason, not a quiet fix.
+🔑 **The item considered one direction and the other one is free.** It warned that pricing FROM the rounded value
+"moves generated output by ~1 s/km on every band". **Stamping full precision moves nothing the engine generates** —
+generation always priced from the unrounded pair — and makes every consumer reproduce it. Rounding is a display
+decision and now lives at the display: `lib/format.ts → formatVdot` (ADR-015's owner), consumed by
+`BenchmarkUpdateScreen`, which rendered `{meta.vdot}` raw.
+
+📐 **Measured over the wizard-reachable 5K space** (14:00–40:00 at 5-second steps, 313 times): **241, 77.0%, rebuilt
+at least one band differently** from the one the plan was priced with. The three live consumers are
+`applyRecalibration`, the Zones screen (`DashboardClient` → `buildPaceFromVDOT(meta.vdot_training_anchor, meta.vdot)`)
+and `INV-PLAN-STEP-PACE-FROM-GUIDE`, which had already paid for it: band-STRING comparison false-fired **25,811 times
+across 14,268 plans**, every one by that second, and was weakened to a numeric 3% comparison.
+
+✅ **Parity run, with the declared reason the item asked for. 36 of 6,210 cases changed — every one a benchmarked row.
+Re-run with `vdot` and `vdot_training_anchor` added to `STRIP_META`: IDENTICAL, 6,210 cases byte-for-byte.** So the
+only thing that moved is the two numbers; no session, pace, volume or note changed. (That `STRIP_META` edit was for the
+measurement and is NOT committed — committing it would blind parity to the next VDOT change.)
+
+🔻 **Filed `CORPUS-BENCHMARK-VARIETY-01`:** no corpus could see this. `cohortGrid` carries **1** distinct benchmark,
+`targetedGrid` **1**, `slowGoalGrid` **5**, `useCaseEnvelope` **0**, the parity grid **1** time (`10 km / 45:00`, twice).
+Anything that varies with the benchmark VALUE is unmeasurable, and the first gate arm written against the corpus read
+**0.0%** where the whole-space figure is 77.0%.
+
+⚠️ **Stored plans keep their 1dp values and stay lossy, deliberately** — a recompute would rewrite the recorded inputs
+of plans already in runners' hands, and every consumer tolerates the second (the invariant compares numerically).
+
+### 🔲 `CORPUS-BENCHMARK-VARIETY-01` — no corpus carries more than five distinct benchmarks ⚙️ **NO BOARD**
+
+Found building `PLAN-VDOT-ROUNDTRIP-01`. Counted 2026-11-08: `cohortGrid` **1**, `targetedGrid` **1**, `slowGoalGrid`
+**5**, `useCaseEnvelope` **0**, `verify-parity`'s `BENCHMARK_EXTRA` **1** time (`10 km / 45:00`, dated and undated). So
+**nothing that varies with the benchmark VALUE is measurable by any standing harness** — VDOT banding, §10's staleness
+ramp, §19's anchors, §120's reachability. The VDOT round-trip is the first thing measured to fall through it: the gate's
+corpus arm reads **0.0%** against a whole-space **77.0%**, and `vdotRoundTrip.test.ts` carries a CEILING arm documenting
+the gap so widening a corpus fails loudly and the arm gets replaced by a floor. Same class as
+`COHORT-GRID-UNSET-LEVEL-01` and `PARITY-GRID-UNSET-LEVEL-01`: the axis exists, and it is held at one value.
 
 ### ✅ `RESHAPE-MOMENT-02` — **SHIPPED 2026-10-08.** The homepage runs the engine 🧭 **DESIGN BOARD** + 🏃 **COACHING BOARD** *(both sat)*
 

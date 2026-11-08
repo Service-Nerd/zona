@@ -10078,8 +10078,34 @@ function buildRulePlanOnce(
     // `vdot_training_anchor` is the conservatism-discounted value used to derive
     // training paces. The gap is `vdot_discount_applied_pct`.
     age: input.age,
-    ...(vdotRaw !== undefined ? { vdot: Math.round(vdotRaw * 10) / 10 } : {}),
-    ...(vdot !== undefined ? { vdot_training_anchor: Math.round(vdot * 10) / 10 } : {}),
+    // ── PLAN-VDOT-ROUNDTRIP-01 (2026-11-08) — STAMPED AT FULL PRECISION ──────────
+    //
+    // 🔴 These were `Math.round(x * 10) / 10`, and generation prices every band from the
+    // UNROUNDED pair (`buildPaceFromVDOT(vdot, vdotRaw)`, ~1,100 lines up). So the plan
+    // could not describe itself: `applyRecalibration`, the Zones screen
+    // (`DashboardClient` → `buildPaceFromVDOT(meta.vdot_training_anchor, meta.vdot)`) and
+    // `INV-PLAN-STEP-PACE-FROM-GUIDE` all rebuild the guide from these two numbers and
+    // rebuilt it ONE SECOND PER KM out. The invariant paid for it first: it compared band
+    // STRINGS and false-fired **25,811 times across 14,268 plans**, every one by that
+    // second, and was changed to compare numerically at §19's 3%.
+    //
+    // ⚠️ DIRECTION MATTERS, AND THE FILED ITEM ONLY CONSIDERED THE OTHER ONE. It warned
+    // that pricing FROM the rounded value "moves generated output by ~1 s/km on every
+    // band". Stamping full precision moves **nothing the engine generates** — the paces
+    // were always computed from these exact values — and makes every consumer reproduce
+    // them. Rounding is a DISPLAY decision and now lives at the display, in
+    // `lib/format.ts → formatVdot` (ADR-015's owner).
+    //
+    // 📐 Measured: over the wizard-reachable 5K space (313 times, 14:00-40:00 at 5-second
+    // steps) **241, 77.0%, rebuilt at least one band differently**. ⚠️ And NO CORPUS COULD
+    // SEE IT: cohortGrid carries 1 distinct benchmark, targetedGrid 1, slowGoalGrid 5,
+    // useCaseEnvelope 0, the parity grid 1 (`CORPUS-BENCHMARK-VARIETY-01`).
+    //
+    // Stored plans keep their 1dp values and stay lossy. Deliberate: a recompute would
+    // rewrite the recorded inputs of plans already in runners' hands, and the consumers
+    // all tolerate the second (the invariant compares numerically).
+    ...(vdotRaw !== undefined ? { vdot: vdotRaw } : {}),
+    ...(vdot !== undefined ? { vdot_training_anchor: vdot } : {}),
     ...(vdotDiscountPct > 0 ? { vdot_discount_applied_pct: vdotDiscountPct } : {}),
     ...(goalPace ? { goal_pace_per_km: goalPace } : {}),
     ...(recalibrationWeeks.length > 0 ? { recalibration_weeks: recalibrationWeeks } : {}),
