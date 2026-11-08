@@ -57,7 +57,7 @@ function resolveSpec(fromRel: string, spec: string): string | null {
 /** Who imports X — walked backwards from the owner, so a route that reaches it through any
  *  number of `lib/` hops is in the population. */
 const importers = new Map<string, Set<string>>()
-for (const [f, src] of srcOf) {
+for (const [f, src] of Array.from(srcOf.entries())) {
   for (const m of Array.from(src.matchAll(/from\s+['"]([^'"]+)['"]/g))) {
     const t = resolveSpec(f, m[1]!)
     if (!t) continue
@@ -68,7 +68,7 @@ for (const [f, src] of srcOf) {
 const reachable = new Set([OWNER])
 const queue = [OWNER]
 while (queue.length) {
-  for (const up of importers.get(queue.shift()!) ?? []) {
+  for (const up of Array.from(importers.get(queue.shift()!) ?? [])) {
     if (!reachable.has(up)) { reachable.add(up); queue.push(up) }
   }
 }

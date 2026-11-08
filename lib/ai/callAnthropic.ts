@@ -114,7 +114,7 @@ export async function callAnthropic(call: AnthropicCall): Promise<AnthropicResul
     //
     // `CALL_TIMEOUT_MS` is derived from `ROUTE_MAX_DURATION_SECONDS`, not from throughput, so
     // it fires BEFORE the platform and the failure lands in the ledger. The arithmetic is
-    // gated: `aiCallTimeout.test.ts` fails if the timeout ever reaches the route ceiling,
+    // gated: `aiRouteMaxDuration.test.ts` fails if the timeout ever reaches the route ceiling,
     // because a timeout at or above it is not a timeout.
     res = await fetch(ANTHROPIC_API_URL, {
       method: 'POST', headers, body: JSON.stringify(body),
@@ -149,6 +149,19 @@ export async function callAnthropic(call: AnthropicCall): Promise<AnthropicResul
   try {
     data = await res.json()
   } catch (e) {
+    // 🔴 A TIMEOUT DURING THE BODY READ IS STILL A TIMEOUT — code review, 2026-11-08.
+    // `AbortSignal.timeout` covers the whole fetch including the body stream, so a slow or
+    // stalled response aborts HERE, after a 200 header. This block recorded that as
+    // `reason: 'api_error', status: 200` — **the exact misattribution the new reason was added
+    // to prevent**, and the worst possible label: a 200 that failed reads as the model's fault.
+    // One predicate, matched on the DOMException NAME, in both places.
+    if (e instanceof Error && e.name === 'TimeoutError') {
+      const ms = Date.now() - startedAt
+      const detail = e.message
+      console.error(`[ai:${surface}] timed out reading the response after ${ms}ms`, detail)
+      await record('ai_call_failed', { surface, model, reason: 'timeout', ms, detail: detail.slice(0, 200) }, userId)
+      return { ok: false, reason: 'timeout', status: res.status, detail }
+    }
     // A 2xx whose body is not JSON. Rare, but it used to read as an empty
     // string at every call site and vanish into the silent fallback.
     const detail = e instanceof Error ? e.message : String(e)

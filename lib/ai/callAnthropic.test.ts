@@ -259,3 +259,36 @@ describe('callAnthropic — the timeout (OPS-FN-DURATION-01)', () => {
     expect(res.ok === false && res.status).toBe(429)
   })
 })
+
+/**
+ * Code review, 2026-11-08 — the two seams the first cut of the timeout missed.
+ */
+describe('callAnthropic — the timeout covers the BODY read too', () => {
+  it('🔴 a TimeoutError thrown by res.json() is `timeout`, not `api_error` with status 200', async () => {
+    // `AbortSignal.timeout` covers the whole fetch INCLUDING the body stream, so a stalled
+    // response aborts after a 200 header. The first cut recorded that as
+    // `reason: 'api_error', status: 200` — the exact misattribution the new reason exists to
+    // prevent, and the worst label available: a 200 that failed reads as the model's fault.
+    const err = new Error('The operation was aborted due to timeout')
+    err.name = 'TimeoutError'
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+      ok: true, status: 200, json: async () => { throw err },
+    }))
+    const res = await callAnthropic({ surface: 'enrich-plan', model: ANTHROPIC_MODEL, maxTokens: 6000, messages: [] })
+    expect(res.ok === false && res.reason).toBe('timeout')
+    expect(recordOpsEvent).toHaveBeenCalledWith(
+      'ai_call_failed', expect.objectContaining({ reason: 'timeout' }), null,
+    )
+  })
+
+  it('a NON-timeout body failure is still `api_error` — the split is not a rename', async () => {
+    // The vacuity arm: without it, "call every body failure a timeout" passes above. A 2xx
+    // whose body is not JSON is a real and different case with its own recorded history.
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+      ok: true, status: 200, json: async () => { throw new SyntaxError('Unexpected token <') },
+    }))
+    const res = await callAnthropic({ surface: 'trend', model: ANTHROPIC_MODEL, maxTokens: 10, messages: [] })
+    expect(res.ok === false && res.reason).toBe('api_error')
+    expect(res.ok === false && res.status).toBe(200)
+  })
+})
