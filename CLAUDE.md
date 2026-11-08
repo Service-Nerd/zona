@@ -709,6 +709,8 @@ twenty minutes and changed what got built.
 
 **When changing any API route or component prop interface**: update `docs/contracts/` in the same commit.
 
+🔑 **AND THE COMPONENT REGISTER CARRIES TWO NUMBERS NOW, BECAUSE ONE COULD NOT TELL A PAYMENT FROM A DROP-OUT** (`CONTRACT-LEDGERCARD-01`, 2026-11-08). `audit-docs.sh` gates **`UNCONTRACTED_BASELINE`** (components with **≥2 importers** and no contract — **50**) *and* **`UNCONTRACTED_ANY_BASELINE`** (uncontracted at **any** importer count — **72**; 20 at exactly one, 2 at zero). **A component falling below the ≥2 line moves the first DOWN and leaves the second FLAT**, which is the signature a real payment does not have — three indistinguishable moves used to sit behind one figure. ⚠️ **Widening the ≥2 proxy was MEASURED AND DECLINED:** *"≥2 importers or named in a tier-tagged registry row"* takes it 50 → 66, and that second test is a loose grep matching a prose mention. 🥇 **Writing a contract is a code review** — W4's seven turned up a header comment that had been false since `--on-card-mute` landed, the only bare palette colour keyword in 376 files, and a prop that reaches the DOM through `...rest` and would read as *fictional* to the gate. 🔻 **And the ANY count immediately found `WaitlistForm.tsx` with ZERO importers** — no page renders it while its API route, Supabase table and deletion trigger are all live (`WAITLIST-UNREACHABLE-01`).
+
 ### References
 
 - Architecture overview: `docs/architecture/architecture.md`

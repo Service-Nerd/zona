@@ -524,7 +524,13 @@ fi
 #   NATIVE-BATCH-01 (2026-11-07): a STANDING PROCEDURE, not an item — "run on EVERY native
 #     submission". Its registry row records the sweep that produced the checklist; the checklist
 #     itself is a living document and never closes. Remove only if the procedure is retired.
-_SHIPPED_AND_OPEN_OK='READINESS-SURFACE-01 STRENGTH-ENGINE-01 STEPPER-CONTROL-01 TODAY-CTA-CLEARANCE-01 NATIVE-BATCH-01'
+#   CONTRACT-COVERAGE-03 (2026-11-08): a FALLING REGISTER, not a finite item. Its own text says
+#     so — "contract one and lower `UNCONTRACTED_BASELINE` in the same commit" — so every
+#     payment earns a registry row while the item stays open at a lower number. W4 paid
+#     56 → 50 with six contracts. ⚠️ **Remove this exemption when the figure reaches 0, OR if a
+#     month passes with no payment** — per this file's own rule, a reason column is not a fixed
+#     problem, and a falling register that stops falling is just debt with a comment on it.
+_SHIPPED_AND_OPEN_OK='READINESS-SURFACE-01 STRENGTH-ENGINE-01 STEPPER-CONTROL-01 TODAY-CTA-CLEARANCE-01 NATIVE-BATCH-01 CONTRACT-COVERAGE-03'
 for id in $(comm -12 /tmp/_reg /tmp/_open); do
   case " $_SHIPPED_AND_OPEN_OK " in *" $id "*) continue ;; esac
   say "  STILL OPEN $id (has a feature-registry row)"; afail=1; fail=1
@@ -880,7 +886,20 @@ say "── CONTRACTS: a SHARED component with no contract at all ──"
 # This asks the inverse: a component under `components/shared/` that EXPORTS a prop
 # interface and is imported by more than one file should have a contract. Existing
 # debt is declared below so it is visible and cannot grow.
-UNCONTRACTED_BASELINE=56   # 58 -> 57, 2026-10-14: `AdjustmentDiff` gained a prop
+UNCONTRACTED_BASELINE=50   # 🔴 56 -> 50, 2026-11-08 (CONTRACT-COVERAGE-03, W4): SIX contracts
+                           # WRITTEN — `TextField` (9 importers), `Wordmark` (8),
+                           # `AppStoreBadge` (8), `ArticlePage` (10), `IconButton` (7),
+                           # `AIMark` (7) — highest reach first, because a contract is a code
+                           # review and the review is worth most where the blast radius is.
+                           # ⚠️ A SEVENTH was written and DOES NOT move this number:
+                           # `LedgerCard` has ONE importer, so it is outside this population.
+                           # Conflating the two is the register-over-counting failure this
+                           # repo records, and it is exactly what `CONTRACT-LEDGERCARD-01`
+                           # was filed about. 📐 The item's "highest reach first" list was
+                           # stale: it ranked `ArticlePage` SIXTH at 6 importers and it is
+                           # FIRST at 10, and it omitted `SegmentedControl`, `ActionRow` and
+                           # `ZoneRings` from the top nine entirely.
+                           # 58 -> 57, 2026-10-14: `AdjustmentDiff` gained a prop
                            # (`stagger`, CONFIRM-STAGGER-01) and had no contract to
                            # update, so CLAUDE.md's same-commit rule had nothing to
                            # bite on. Written; the gate diffs its props against the
@@ -945,7 +964,43 @@ UNCONTRACTED_BASELINE=56   # 58 -> 57, 2026-10-14: `AdjustmentDiff` gained a pro
 # The number RISES on this fix (49 -> 65) and that is a register growing because
 # it RE-COUNTED, not because debt was added. Same declaration discipline as
 # lowering it: both figures, in the comment, derived by running the arm.
+# The ANY-importer figure. 📐 Measured by RUNNING THE ARM, 2026-11-08: **72** uncontracted
+# components in all — 50 at >= 2 importers, 20 at exactly one, and **2 with ZERO importers**.
+#
+# 🔴 I SET THIS TO 70 FIRST, BY ARITHMETIC (50 + 20), AND THE ARM FIRED ON ITS FIRST RUN.
+# The two zero-importer components were outside the script I used to count the 20, which
+# filtered `users -eq 1`. **This is the same "wrote the value before measuring the population"
+# mistake `UNCONTRACTED_BASELINE`'s own comment records about its first value of 14** — in the
+# commit that added a second register to make the first one honest. The arm catching it is the
+# argument for the arm.
+#
+# Falling-only, same discipline as the gated figure above: a component leaving the tree lowers
+# it exactly as a contract does, so say which happened.
+UNCONTRACTED_ANY_BASELINE=72
+
+# ── 🔴 TWO NUMBERS, BECAUSE ONE CANNOT TELL A PAYMENT FROM A DROP-OUT ────────
+#
+# `CONTRACT-LEDGERCARD-01`, answered 2026-11-08. The register went 61 → 60 when
+# `LEDGER-COACH-SITE-REMOVE-01` took `LedgerCard` from two importers to one: it left the
+# `>= 2` POPULATION while still being uncontracted. Lowering the number was right — the
+# register must describe reality — but it reads exactly like a payment, and this arm's own
+# comment already recorded that it *"cannot tell a contract being written from a component
+# being deleted"*. That is now THREE indistinguishable moves behind one figure.
+#
+# ⚠️ THE ITEM ASKED WHETHER TO WIDEN THE THRESHOLD to *"≥2 importers OR named in a
+# tier-tagged registry row"*. 📐 Measured before deciding: **20 components have exactly one
+# importer and no contract, 16 of them named somewhere in the feature registry** — so
+# widening would take the gated figure 50 → 66, a 32% jump, and the "named in a registry row"
+# test is itself a loose grep that matches a prose mention (the mention-vs-filing class this
+# repo has paid for four times). **Declined. The threshold was never the defect.**
+#
+# 🔑 The defect is that one number cannot express the move. So: `missing` stays the gated
+# `>= 2` figure, and `missing_any` counts uncontracted components at ANY importer count.
+# A component dropping out of the population moves `missing` DOWN and leaves `missing_any`
+# UNCHANGED — which is the signature a payment does not have, and it is visible without
+# anyone remembering last week's figure.
 missing=0
+missing_any=0
 for f in $(git ls-files 'components/*.tsx' 'components/**/*.tsx'); do
   [ -f "$f" ] || continue
   case "$f" in *.test.*|*.stories.*) continue;; esac
@@ -953,9 +1008,10 @@ for f in $(git ls-files 'components/*.tsx' 'components/**/*.tsx'); do
   base=$(basename "$f" .tsx)
   # more than one importer, counting BOTH the alias form and a relative path
   users=$(grep -rlE "from '@/${f%.tsx}'|from '\.{1,2}/([A-Za-z0-9_/-]*/)?${base}'" app components 2>/dev/null | grep -v '\.test\.' | grep -v "^$f$" | wc -l | tr -d ' ')
-  [ "$users" -ge 2 ] || continue
-  grep -rqs "^\*\*Component:\*\* \`$f\`" docs/contracts/components/ && continue
-  missing=$((missing+1))
+  if ! grep -rqs "^\*\*Component:\*\* \`$f\`" docs/contracts/components/; then
+    missing_any=$((missing_any+1))
+    [ "$users" -ge 2 ] && missing=$((missing+1))
+  fi
 done
 
 # 🔴 A WRITTEN CONTRACT MUST NOT SILENTLY LOSE ITS COMPONENT. The arm above counts
@@ -1009,6 +1065,20 @@ elif [ "$missing" -lt "$UNCONTRACTED_BASELINE" ]; then
   fail=1
 else
   say "  $missing uncontracted, unchanged (declared debt)"
+fi
+
+# ── the SECOND number, and the pair is the signal (CONTRACT-LEDGERCARD-01) ───
+# ⚠️ GATED TOO, falling-only, because a figure nothing checks drifts — this file's own
+# recorded lesson. The pair is what reads: `missing` down and `missing_any` FLAT is a
+# component leaving the `>= 2` population, not a contract being written.
+if [ "$missing_any" -gt "$UNCONTRACTED_ANY_BASELINE" ]; then
+  say "  GREW (any importer count): $missing_any uncontracted, baseline $UNCONTRACTED_ANY_BASELINE"
+  fail=1
+elif [ "$missing_any" -lt "$UNCONTRACTED_ANY_BASELINE" ]; then
+  say "  debt PAID (any importer count): $missing_any (baseline $UNCONTRACTED_ANY_BASELINE) — lower UNCONTRACTED_ANY_BASELINE"
+  fail=1
+else
+  say "  $missing_any uncontracted at ANY importer count, unchanged ($(( missing_any - missing )) of them below the >= 2 line)"
 fi
 
 say "── coaching rounds: ruling written back ──"

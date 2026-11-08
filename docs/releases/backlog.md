@@ -5292,6 +5292,72 @@ to turn something green. 🔻 **P3: the gate is load-invariant since `SUITE-CONT
 is broken while this waits** — it is a speed and fidelity question, not a correctness one.
 
 
+### 🔴 `WAITLIST-UNREACHABLE-01` — the waitlist form has NO render site; the route and the table are live *(filed 2026-11-08, P2)* 💼 **SLT** (is the waitlist a live surface?) → 🧭 **DESIGN BOARD** (where it renders)
+
+Found 2026-11-08 while writing component contracts (`CONTRACT-COVERAGE-03`), by the new
+ANY-importer count catching a component with **zero** importers.
+
+📐 **Measured:** `components/marketing/WaitlistForm.tsx` is imported by **nothing**. The only
+other references are a class name in `globals.css`, a `buttonGeometry.json` fixture entry and
+`inlineError.markup.test.ts`. **No page, no section, no route renders it.**
+
+⚠️ **AND THE BACK END IS FULLY BUILT.** `app/api/waitlist/route.ts` exists, the
+`supabase/migrations/20260603_waitlist.sql` table exists, and `on_auth_user_deleted` clears
+`waitlist` by email because no FK can reach it (`DB-USER-PURGE-01` names it). **So there is a
+table, a route, a deletion path and a form — and no way for a human to use any of it.**
+
+🔴 **Same class as `LEDGER-REACH-01` and `SMOKE-PLUMBING-01`:** a surface that exists, has
+plumbing, and is unreachable. Both of those took months to notice. This one was invisible to
+every check because the contract register counted only components with **≥2 importers**, so a
+component with zero was outside the population entirely — the hole that
+`CONTRACT-LEDGERCARD-01` was filed about, one importer further down.
+
+**Two questions, in order.** 💼 **SLT first:** is the waitlist a surface we want live at all, or
+is it superseded by the App Store badge's coming-soon state? If it is dead, the route, the
+table, the trigger clause and the form all go, and that is a bigger deletion than it looks.
+🧭 **Then the Design Board**, if it lives: where it renders, and what it says.
+🔻 **Do NOT just add a render site** — a new marketing section is a hard Design Board trigger
+(ADR-023), and shipping a form nobody decided to show is how the first one got here.
+
+### 🔲 `SELECT-DEAD-01` — `components/shared/Select.tsx` has zero importers *(filed 2026-11-08, P3)* ⚙️ **NO BOARD** *(dead code)*
+
+Found the same way. **Zero importers.** `CardSelect` is the select in use (`GeneratePlanScreen`,
+`RaceResultSheet`); `Select` appears to predate it.
+
+⚠️ **Verify before deleting, because this repo's record says an unreachable consumer reads
+exactly like a consumer** (`SMOKE-PLUMBING-01`: `quitDays` had a consumer behind a branch
+nothing could reach, so a grep for *"is it used?"* answered **yes**). Check the dynamic-import
+and re-export paths, not just the static ones.
+
+**Do:** confirm, then delete it with its fixture and markup-test entries, and lower
+`UNCONTRACTED_ANY_BASELINE` in the same commit — ⚠️ **saying it was a DELETION, not a payment**,
+which is the distinction the two registers were just built to make visible.
+
+### 🔲 `GUARD-COLOUR-KEYWORD-01` — a CSS colour KEYWORD walks past both colour guards *(filed 2026-11-08, P3)* ⚙️ **NO BOARD** to measure; 🧭 **DESIGN BOARD** if a token is needed
+
+Found 2026-11-08 writing `docs/contracts/components/app-store-badge.md`.
+
+📐 **Measured across 376 files in `app/` and `components/`: exactly ONE bare palette colour
+keyword** — `color: 'white'` in `AppStoreBadge.tsx`. Everything else matching the shape is
+`none` (23), `transparent` (11), `inherit` (2), `currentColor` (1) or `fill: 'none'` (1), none of
+which are palette values.
+
+**Why both guards miss it:** `.githooks/pre-commit` and `npm run sweep:colours` share
+`scripts/lib/colour-guards.sh`, whose `HEX_RE` and `RGBA_RE` match **numeric** forms. A CSS
+colour keyword is neither, so it is invisible to the commit guard, the tree sweep and the
+banned-value list at once.
+
+⚠️ **It is correct code.** White text on an `--ink` pill is right, and **there is no token for
+"text on ink"**: `--card` is `#FFFFFF` but means a card surface, so using it would be
+semantically wrong while passing every check.
+
+🔻 **Deliberately NOT fixed when found.** Adding a guard arm whose only instance needs an
+immediate exemption is a guard that proves nothing, and this repo records four times that a
+guard firing on correct work gets switched off. **The order is: 🧭 Design Board on whether a
+token exists for text on a dark ground** (there is `--on-card-mute`, so the family has
+precedent), **then** the guard arm, with the keyword list closed and the single instance
+converted rather than exempted.
+
 ### 🔲 `BACKLOG-DUPLICATE-HEADING-01` — 48 ids are filed twice, so closing an item once does not close it *(filed 2026-11-08, P3)* ⚙️ **NO BOARD** *(records)*
 
 Found while stamping `SUITE-POOL-WALLCLOCK-01` in W3. Its first filing was stamped ✅ and
@@ -8046,7 +8112,41 @@ cost is that a change to the scale must be made twice, and nothing says so.
 
 ---
 
-#### 🟡 `CONTRACT-LEDGERCARD-01` — `LedgerCard` is now the single render path of a FREE feature, and it has no contract *(P3, filed 2026-10-05)* ⚙️ **NO BOARD**
+#### ✅ `CONTRACT-LEDGERCARD-01` — `LedgerCard` is now the single render path of a FREE feature, and it has no contract *(P3, filed 2026-10-05)* ⚙️ **NO BOARD** — **SHIPPED 2026-11-08**
+
+✅ **SHIPPED 2026-11-08.** `docs/contracts/components/ledger-card.md` is written, and ⚠️ **it does
+NOT lower `UNCONTRACTED_BASELINE`** — `LedgerCard` has one importer and is outside that
+population. Saying otherwise would be the register-over-counting failure this item was filed
+about.
+🥇 **The contract was a code review, as this repo records they are.** 📐 **It reads 2 of the
+snapshot's 4 fields** — `weeksWithinLines` and `currentWeekStatus`; `advancedThisWeek` is read
+by `DashboardClient`, `SessionPopupInner` and the session-complete OG card, and `tier` by
+nothing. ⚠️ **AND THE ITEM ASKED FOR "the free-tier criteria it renders" — THERE ARE NONE.** The
+gating is in `app/api/discipline-ledger/route.ts` (`tier === 'free'`); a contract claiming tier
+criteria here would have been fiction, which is exactly what `COMPONENT-CONTRACT-GATE-01` exists
+to stop. ⚠️ Also recorded: a `grep -rl LedgerCard` reports `DashboardClient` as a second
+importer and it is **a comment**, not an import — the audit's arm greps the import FORM and is
+right.
+
+🔑 **AND THE THRESHOLD QUESTION IS ANSWERED — DECLINED, WITH A MEASUREMENT.** The item asked
+whether the arm should read *"≥2 importers **or** named in a tier-tagged registry row"*. 📐 **20
+components have exactly one importer and no contract, 16 of them named somewhere in the
+feature registry**, so widening would take the gated figure **50 → 66** — and "named in a
+registry row" is itself a loose grep that matches a prose mention, the mention-vs-filing class
+this repo has paid for four times.
+✅ **The defect was never the threshold: it is that ONE NUMBER CANNOT TELL A PAYMENT FROM A
+DROP-OUT.** `audit-docs.sh` now carries a second gated figure, `missing_any` — uncontracted at
+**any** importer count. A component leaving the `≥2` population moves the gated figure DOWN and
+leaves this one FLAT, which is the signature a real payment does not have, visible without
+anyone remembering last week's number. 📐 **72 at any count: 50 at ≥2, 20 at exactly one, 2 at
+zero.**
+🔴 **I SET THAT SECOND BASELINE TO 70 BY ARITHMETIC AND THE ARM FIRED ON ITS FIRST RUN** — the
+two zero-importer components were outside the script I counted the 20 with. **The same "wrote
+the value before measuring the population" mistake `UNCONTRACTED_BASELINE`'s own comment
+records about its first value of 14, committed in the commit that added a register to make the
+first one honest.**
+🔻 **And the two zero-importer components are now filed:** `WAITLIST-UNREACHABLE-01` (a form,
+a route and a Supabase table, with **no render site**) and `SELECT-DEAD-01`.
 
 > ✅ **PREMISE CONFIRMED 2026-11-07, and `npm run backlog:verify` flags it by design:** this item
 > names `docs/contracts/components/ledger-card.md` **precisely because it does not exist**. The dead
@@ -10309,7 +10409,30 @@ will RAISE the reported debt** — unknown by how much until it is run, and that
 finding, not a regression. 🔻 **Do not fix this while the number is being quoted elsewhere** without
 saying in the same breath that the definition changed, or the jump reads as decay.
 
-#### 🟡 `CONTRACT-COVERAGE-03` — **58** components still have no contract *(P3, filed 2026-10-02, falling register; count corrected 2026-10-11)* ⚙️ **NO BOARD**
+#### 🟡 `CONTRACT-COVERAGE-03` — **50** components still have no contract *(P3, filed 2026-10-02, falling register; paid down 2026-11-08)* ⚙️ **NO BOARD**
+
+> 🔄 **PAID DOWN 2026-11-08 (W4): 56 → 50.** Six contracts written, highest reach first, because
+> a contract is a code review and the review is worth most where the blast radius is:
+> **`ArticlePage` (10 importers) · `TextField` (9) · `Wordmark` (8) · `AppStoreBadge` (8) ·
+> `IconButton` (7) · `AIMark` (7)**. A seventh (`LedgerCard`) was written and does not move this
+> number — one importer, outside the population.
+>
+> 🔴 **THE ITEM'S "HIGHEST REACH FIRST" LIST WAS STALE AND WRONG IN BOTH DIRECTIONS.** It ranked
+> `ArticlePage` **sixth at 6 importers** when it is **first at 10**, put `AIMark` first at 8 when
+> it is 7, and **omitted `SegmentedControl` (6), `ActionRow` (6) and `ZoneRings` (5) from the top
+> nine entirely.** Re-derived by running the arm, as the item's own note says to.
+>
+> 🥇 **Three findings came out of writing them, which is the argument for contracts:**
+> `Wordmark`'s header comment claimed an inline RGBA literal that **had not existed since
+> `--on-card-mute` landed** (corrected in the same commit); `AppStoreBadge` carries the **only
+> bare palette colour keyword in the whole tree**, which walks past both colour guards
+> (`GUARD-COLOUR-KEYWORD-01`); and `IconButton`'s declared `style` prop reaches the DOM through
+> `...rest`, so documenting it would read as *fictional* to the gate — recorded in the contract
+> rather than left as a trap.
+>
+> ⚠️ **A second gated figure now sits beside this one** — see `CONTRACT-LEDGERCARD-01`.
+> **72 uncontracted at ANY importer count**, so a component dropping below the ≥2 line can no
+> longer read as a payment.
 
 > 🔄 **RE-MEASURED 2026-11-07: 58 → 56 uncontracted components**, from `audit-docs.sh`'s live
 > count. ⚠️ **And `UNCONTRACTED_BASELINE`, the derivation this item names, NO LONGER EXISTS** — the
@@ -11233,7 +11356,9 @@ fails every morning for a reason nobody needs to read is a test everybody learns
 the next real failure in that file arrives pre-ignored. This repo has already recorded that a
 guard which cries wolf gets disabled, which is the same as having no guard.
 
-**State at END of 2026-11-08 — W3 (last ship `3b2c504a` — `SUITE-POOL-WALLCLOCK-01`, `CHECK-SLOW-NOISE-01`, `GATE-SPAWN-VOLATILITY-01`, `CI-DURATION-TARGETEDGRID-01`. 747 files / **7,394** tests, ALL GREEN; `check:slow` 0; wall 179.4s.)** 📐 **14 of 54 closed, 40 remain.** 🔑 **THE WORKER POOL, MEASURED AS THE ITEM ASKED — 12 full-suite runs, 4/6/9/10 workers, three each:** 4 → 194.9s wall / 119.2s test-time / 17 over 1s · **6 → 180.4 / 141.3 / 19** · 9 (≈ the old default) → 183.6 / 194.7 / 25 · 10 → 186.1 / 217.5 / 30. 🔴 **THE ITEM'S PREMISE IS HALF WRONG AND THAT IS THE FINDING** — it framed this as a trade (*"fewer workers means each test is faster and the suite probably finishes later"*) and **they trade only BELOW 6**; from 6 to 10 both numbers worsen together, so **6 beats the default on BOTH axes: −3.2s wall and −53.4s test-time (−27%)**, nothing given up. 4 is also the least repeatable setting (7.7s spread vs 1.2s). ⚠️ **Set LOCAL ONLY** (`process.env.CI ? {} : { maxWorkers: 6 }`) because the measurement is local and `ubuntu-latest` has 2–4 cores. ✅ **Re-baselined with the reason stated: 25 → 20 entries, `suiteMs` 84,821 → 142,176, load now 0.98×** — the baseline matches the machine it measures for the first time since September. 🔑 **THE DURATION GATE NO LONGER CRIES WOLF, PROVED NOT ASSUMED: replayed against ELEVEN real reports spanning load 1.39×–2.57×, identical verdict every time.** 🔴 **AND A GREEN GATE ACROSS ELEVEN REPORTS CAN MEAN A DEAD ONE — rule 3 would not fire where the arithmetic said it should.** Two compounding denominators: **`LOAD` included the test being judged**, so a test that grows inflates its own threshold (`targetedGrid` is 14.0% of the suite), **and the baseline was six weeks stale** — 🔴 **and the attribution is the opposite way round from how I first wrote it: self-exclusion is worth 3.50x → 3.01x (0.49) and the FRESH BASELINE 3.01x → 1.37x (1.63, the dominant cause). The thing with no gate was the thing that mattered**. Together rule 3 first fired at **3.5× against a `DRIFT_TOLERANCE` that reads 1.4 in the source.** ✅ `loadForTest` excludes the test from whichever sides it exists on and **BOTH** rules reach it; 🔴 **my first cut moved only rule 3 and `testDurationGate.test.ts` caught it** — that arm exists because rule 3 was right and rule 1 wrong for three weeks, and I re-created the divergence inside the commit meant to fix it. 📐 **3.5× → 3.0× → 1.4×: the declared tolerance is true for the first time.** ✅ **`GATE-SPAWN-VOLATILITY-01`: the spawn is gone, so the `volatile` flags are GONE, not un-flagged** — isolated 483/492/602 → 171/172/211ms, full-suite 1,094/1,108/1,196/**3,172** → **189ms**, spread **6.5× → 1.23×**; both arms fell under the reporting line and left the baseline. ✅ **`CI-DURATION-TARGETEDGRID-01` CLOSED, cause already fixed: both percentages in the item were of a budget that does not apply to that test** (it declares `}, 120_000)`; 73% is really 16.5%), and the drift it feared went the other way — **share 25.89% → 13.94%**. 🔴 **Re-baselining found a defect in the re-baseline command:** `--write` carried `reason` and `budgetMs` and **silently dropped `volatile`**, deleting a declared exemption with no diff line. 🔻 **FILED `BACKLOG-DUPLICATE-HEADING-01`: 48 ids have more than one heading, 8 of them three, 4 currently open** — found because stamping one filing of `SUITE-POOL-WALLCLOCK-01` left the audit correctly reporting it STILL OPEN. ⚠️ **I wrote "12" there first, off a `head -12` of the count.** 🔴 **THE REVIEW ROUND FOUND THREE MORE, AND ONE REFRAMED THE COMMIT** (`W3-REVIEW-ROUND-01`). **`loadForTest` — the central new arithmetic — was never CALLED by a test**: the arms regexed the SCRIPT, so reverting the body to `return whole` left all 13 green, and so did swapping the rule-1 arguments to invert the exclusion. **A source assertion proves a call site exists, not that the call is right.** Five behavioural arms now call it; reverting the body reddens 4. 🔴 **AND OF THE TWO DENOMINATORS, ONLY ONE WAS FIXED IN CODE** — the stale `suiteMs` was fixed by hand-editing a data file with nothing to stop it recurring, and `measuredAt` was written by `--write` and read by nothing. 📐 **Attribution computed, and it is the opposite of what I published in five documents: self-exclusion 3.50× → 3.01× (0.49), the FRESH BASELINE 3.01× → 1.37× (1.63, dominant).** ✅ `baselineStaleVerdict` gates it at **1.15× TEST-COUNT growth** — count, not load, because that is the only axis separating growth from contention; falsified at its exact line (6,430 passes, 6,400 fails). ⚠️ Two further corrections, both mine: *"a newcomer is by definition absent from the baseline total"* is **false** (~0.7%, conservative), and *"named fields make a swap a compile error"* is **false** — found by re-running the mutation instead of trusting my own sentence.
+**State at END of 2026-11-08 — W4 (last ship `3b2c504a` — `CONTRACT-COVERAGE-03` paid down, `CONTRACT-LEDGERCARD-01`. 747 files / **7,404** tests, ALL GREEN.)** 📐 **16 of 54 closed, 38 remain.** ✅ **Seven component contracts written, highest reach first** — `ArticlePage` (10 importers) · `TextField` (9) · `Wordmark` (8) · `AppStoreBadge` (8) · `IconButton` (7) · `AIMark` (7), plus `LedgerCard`: **the gated register 56 → 50**, and ⚠️ **`LedgerCard`'s does NOT move it** (one importer, outside the population — conflating them is the register-over-counting failure the item was filed about). 🔴 **THE ITEM'S OWN "HIGHEST REACH FIRST" LIST WAS STALE IN BOTH DIRECTIONS:** `ArticlePage` ranked **sixth at 6** and is **first at 10**; `SegmentedControl`, `ActionRow` and `ZoneRings` were **absent from the top nine**. 🔑 **THE THRESHOLD QUESTION IS ANSWERED AND DECLINED, WITH A MEASUREMENT:** widening to *"≥2 importers or named in a tier-tagged registry row"* takes the figure **50 → 66** (20 one-importer components, 16 named in the registry), and that second test is a loose grep matching a prose mention. **The threshold was never the defect: ONE NUMBER CANNOT TELL A PAYMENT FROM A DROP-OUT**, three indistinguishable moves behind one figure. ✅ **A second gated figure, `missing_any`** — uncontracted at ANY importer count — so a component leaving the ≥2 line moves the gated number DOWN and leaves this one FLAT. 📐 **72 at any count: 50 at ≥2, 20 at exactly one, 2 at zero.** 🔴 **I SET THAT BASELINE TO 70 BY ARITHMETIC AND THE ARM FIRED ON ITS FIRST RUN** — the same *"wrote the value before measuring the population"* mistake `UNCONTRACTED_BASELINE`'s own comment records about its first value of 14, **committed inside the commit that added a register to make the first one honest.** 🥇 **THREE DEFECTS CAME OUT OF THE WRITING, which is the argument for contracts:** `Wordmark`'s header claimed an inline RGBA literal that **had not existed since `--on-card-mute` landed**; `AppStoreBadge` carries **the only bare palette colour keyword in 376 files** (`color: 'white'`), invisible to the commit guard, the tree sweep AND the banned list because all three match numeric forms; and `IconButton`'s declared `style` reaches the DOM via `...rest`, so documenting it would read as **fictional** to the gate. 🔻 **AND THE NEW COUNT FOUND A GTM SURFACE THAT DOES NOT EXIST: `WAITLIST-UNREACHABLE-01`** — `WaitlistForm.tsx` is imported by **nothing**, no page renders it, while the API route, the Supabase table and the `on_auth_user_deleted` clause are all live. **A table, a route, a deletion path and a form, and no way for a human to use any of it** — the `LEDGER-REACH-01` / `SMOKE-PLUMBING-01` class, 💼 SLT first. Also filed: `SELECT-DEAD-01`, `GUARD-COLOUR-KEYWORD-01`.
+
+**Prior — 2026-11-08 W3 (last ship `3b2c504a` — `SUITE-POOL-WALLCLOCK-01`, `CHECK-SLOW-NOISE-01`, `GATE-SPAWN-VOLATILITY-01`, `CI-DURATION-TARGETEDGRID-01`. 747 files / **7,394** tests, ALL GREEN; `check:slow` 0; wall 179.4s.)** 📐 **14 of 54 closed, 40 remain.** 🔑 **THE WORKER POOL, MEASURED AS THE ITEM ASKED — 12 full-suite runs, 4/6/9/10 workers, three each:** 4 → 194.9s wall / 119.2s test-time / 17 over 1s · **6 → 180.4 / 141.3 / 19** · 9 (≈ the old default) → 183.6 / 194.7 / 25 · 10 → 186.1 / 217.5 / 30. 🔴 **THE ITEM'S PREMISE IS HALF WRONG AND THAT IS THE FINDING** — it framed this as a trade (*"fewer workers means each test is faster and the suite probably finishes later"*) and **they trade only BELOW 6**; from 6 to 10 both numbers worsen together, so **6 beats the default on BOTH axes: −3.2s wall and −53.4s test-time (−27%)**, nothing given up. 4 is also the least repeatable setting (7.7s spread vs 1.2s). ⚠️ **Set LOCAL ONLY** (`process.env.CI ? {} : { maxWorkers: 6 }`) because the measurement is local and `ubuntu-latest` has 2–4 cores. ✅ **Re-baselined with the reason stated: 25 → 20 entries, `suiteMs` 84,821 → 142,176, load now 0.98×** — the baseline matches the machine it measures for the first time since September. 🔑 **THE DURATION GATE NO LONGER CRIES WOLF, PROVED NOT ASSUMED: replayed against ELEVEN real reports spanning load 1.39×–2.57×, identical verdict every time.** 🔴 **AND A GREEN GATE ACROSS ELEVEN REPORTS CAN MEAN A DEAD ONE — rule 3 would not fire where the arithmetic said it should.** Two compounding denominators: **`LOAD` included the test being judged**, so a test that grows inflates its own threshold (`targetedGrid` is 14.0% of the suite), **and the baseline was six weeks stale** — 🔴 **and the attribution is the opposite way round from how I first wrote it: self-exclusion is worth 3.50x → 3.01x (0.49) and the FRESH BASELINE 3.01x → 1.37x (1.63, the dominant cause). The thing with no gate was the thing that mattered**. Together rule 3 first fired at **3.5× against a `DRIFT_TOLERANCE` that reads 1.4 in the source.** ✅ `loadForTest` excludes the test from whichever sides it exists on and **BOTH** rules reach it; 🔴 **my first cut moved only rule 3 and `testDurationGate.test.ts` caught it** — that arm exists because rule 3 was right and rule 1 wrong for three weeks, and I re-created the divergence inside the commit meant to fix it. 📐 **3.5× → 3.0× → 1.4×: the declared tolerance is true for the first time.** ✅ **`GATE-SPAWN-VOLATILITY-01`: the spawn is gone, so the `volatile` flags are GONE, not un-flagged** — isolated 483/492/602 → 171/172/211ms, full-suite 1,094/1,108/1,196/**3,172** → **189ms**, spread **6.5× → 1.23×**; both arms fell under the reporting line and left the baseline. ✅ **`CI-DURATION-TARGETEDGRID-01` CLOSED, cause already fixed: both percentages in the item were of a budget that does not apply to that test** (it declares `}, 120_000)`; 73% is really 16.5%), and the drift it feared went the other way — **share 25.89% → 13.94%**. 🔴 **Re-baselining found a defect in the re-baseline command:** `--write` carried `reason` and `budgetMs` and **silently dropped `volatile`**, deleting a declared exemption with no diff line. 🔻 **FILED `BACKLOG-DUPLICATE-HEADING-01`: 48 ids have more than one heading, 8 of them three, 4 currently open** — found because stamping one filing of `SUITE-POOL-WALLCLOCK-01` left the audit correctly reporting it STILL OPEN. ⚠️ **I wrote "12" there first, off a `head -12` of the count.** 🔴 **THE REVIEW ROUND FOUND THREE MORE, AND ONE REFRAMED THE COMMIT** (`W3-REVIEW-ROUND-01`). **`loadForTest` — the central new arithmetic — was never CALLED by a test**: the arms regexed the SCRIPT, so reverting the body to `return whole` left all 13 green, and so did swapping the rule-1 arguments to invert the exclusion. **A source assertion proves a call site exists, not that the call is right.** Five behavioural arms now call it; reverting the body reddens 4. 🔴 **AND OF THE TWO DENOMINATORS, ONLY ONE WAS FIXED IN CODE** — the stale `suiteMs` was fixed by hand-editing a data file with nothing to stop it recurring, and `measuredAt` was written by `--write` and read by nothing. 📐 **Attribution computed, and it is the opposite of what I published in five documents: self-exclusion 3.50× → 3.01× (0.49), the FRESH BASELINE 3.01× → 1.37× (1.63, dominant).** ✅ `baselineStaleVerdict` gates it at **1.15× TEST-COUNT growth** — count, not load, because that is the only axis separating growth from contention; falsified at its exact line (6,430 passes, 6,400 fails). ⚠️ Two further corrections, both mine: *"a newcomer is by definition absent from the baseline total"* is **false** (~0.7%, conservative), and *"named fields make a swap a compile error"* is **false** — found by re-running the mutation instead of trusting my own sentence.
 
 **Prior — 2026-11-08 W2 (last ship `fc1eed72` — W2 of the NO BOARD programme COMPLETE: `GUARD-TREE-SWEEP-01`, `HOOK-SUITE-HOLLOW-01`, `AUDIT-CONTRACT-MENTION-01`, `DOC-AUDIT-REG-FORMAT-01`, `BACKLOG-TAG-IN-HEADING-01`. 747 files, ALL GREEN.)** 🔴 **THE PROGRAMME IS 54 ITEMS, NOT 46, AND THE NUMBER I GAVE THE FOUNDER WAS DERIVED WITH A BROKEN PREDICATE.** The board tally tested the five boards in a **fixed order**, so an item written *"⚙️ NO BOARD to measure; 🧭 DESIGN BOARD to place it"* or *"💼 SLT (tier), then 🏃 COACHING BOARD"* was filed under whichever board the CODE tested first. The filing rule says to NAME THE ORDER and the document writes the ruling board first, so **the earliest glyph in the line wins: it differs on 12 of 123 open items, all twelve correct under earliest-wins, ⚙️ NO BOARD 46 → 54.** Nothing changed in the backlog. **10 of 54 closed; 44 remain.** 🔴 **A SECOND DEFECT IN THE SAME TALLY, in code shipped the day before:** it found an item's board by scanning for **the first line in the file CONTAINING its id — a mention, not a filing.** `PARITY-STAGED-BLIND-01` is tagged on its own bullet at L219 and read as UNTAGGED because L202 names it inside another item's ✅ SHIPPED bullet; two more were shadowed by a `## ⚖️ FILED …` parent. **The `GTM-CHARITY-02` class, fourth instance.** ✅ **The filing rule finally has a GATE** (`backlog:verify` § 4, in `verify:ci`) — and its count was wrong in BOTH directions: **filed as 23 untagged, the report said 9, the truth was ONE** (`NATIVE-BATCH-01`). ✅ **A tree-wide colour sweep exists** (`npm run sweep:colours`, in `verify:ci`): `scripts/lib/colour-guards.sh` is the single owner of every colour regex, the OG exemption and the comment stripper, and the hook sources the same file so the sweep can never be looser than the commit guard. 📐 **CLEAN: 376 files, 5 rules, 0 hits** — a ratchet, not a fix, exactly as the item predicted. 🔴 **AND IT FOUND THE HOOK'S OWN SUITE HALF-HOLLOW:** `.githooks/pre-commit.test.sh` read the EXIT CODE ONLY, so when the population line was deleted by accident mid-build and the hook died on an unbound variable for every input, **5 of its 11 cases passed** — all five expect `block`, and a hook reduced to `exit 1` scores the same 5. Three arms now assert the hook NAMES ITS RULE (14 cases), falsified against the crashed hook at 5/9. ✅ **The hook runner refuses an uncounted suite and ratchets every count** (`.claude/hooks/case-counts.txt`): **11 hooks · 11 suites · 334 cases · 0 uncounted**, falsified by deleting three REAL `check()` call sites — the gutted suite still exited 0 and still printed `all passed`. 🔄 **Its premise had moved: the item said standardising five output formats was the bulk of the work; 10 of 11 already stated a total and exactly ONE did not.** ✅ **`contracted()` is structural** — 🔴 **the item named a prose MENTION and the worse shape was a PREFIX: `/api/og` was "contracted" by `og-session-complete-card.md`'s own H1**, which is a different route's contract. Debt **11 → 13 of 71**, the DEFINITION changing, said beside the number. Falsified **against the OLD predicate**: one planted prose line drops it 11 → 10. ✅ **The `_reg` parse must now prove it read every row** — widened four times, every time by hand; it found a FIFTH shape immediately (**2 of 800 rows use a hyphen-minus**, latent). ⚠️ **And that residual asked for the registry to be NORMALISED, which is the wrong fix:** one table shape, the only variance a title in the first cell (576 yes, 155 no), so normalising would delete 576 titles or invent 155. 🔴 **THE REVIEW ROUND FOUND ELEVEN DEFECTS IN THE W2 COMMIT, ALL MINE** (`W2-REVIEW-ROUND-01`), and the worst was the escape hatch: `test:hooks -- --write` wrote the baseline **unconditionally, exit 0**, so re-baselining on a FAILING run omitted that suite's row and **permanently disarmed the "suite is GONE" arm for it** — the one path that could silently delete a guard was the one added to make the gate maintainable. 🔴 **The new board-tag gate was ALLOW-BY-DEFAULT**: it called the shell through a helper that swallows failures, so an unrunnable `open_item_boards` gave 0 rows, 0 untagged, **exit 0** — against a lesson filed under that exact name. 🔴 **Three "absence written as a value" in one commit.** ⚠️ **And fixing the `//`-in-a-string hole with a hand-rolled scanner DESYNCED IT** — one apostrophe inside a comment (`the family's one exception`) put the rest of the FILE "inside a string", so it reported a hex inside a `//` comment as live code; now tracked **per line**, because a line comment cannot span lines. 📐 **Measured whether that hole was ever live: NO — 0 hits either way across 376 files.** The published "0 hits" was true by luck, not by the check being sound. ⚡ **752 Python spawns and ~47s per `verify:ci` → one process and 0.74s.**
 

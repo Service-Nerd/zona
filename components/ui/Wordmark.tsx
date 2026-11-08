@@ -6,9 +6,12 @@ import { BRAND } from '@/lib/brand'
  * Architecture rules honoured:
  * - Brand string sourced from BRAND.name (lib/brand.ts) — never hardcoded.
  * - All colour values reference CSS custom properties from app/globals.css.
- *   The only inline RGBA literal is the variant-specific NN tint on white
- *   surfaces; there is no token for "55% opacity white" in globals.css and
- *   the spec calls for that exact value (see step 4 of the rebrand brief).
+ *   🔄 This used to read "the only inline RGBA literal is the variant-specific NN
+ *   tint on white surfaces; there is no token for 55% opacity white". That was
+ *   TRUE WHEN WRITTEN and has been false since `--on-card-mute` landed: there is
+ *   no inline literal here at all now. Corrected 2026-11-08 while writing
+ *   docs/contracts/components/wordmark.md. Verified by `npm run sweep:colours`,
+ *   which reports 0 hardcoded colours across app/ and components/.
  * - The double-letter accent position is derived from BRAND.name at runtime,
  *   not hardcoded. If a future brand rename produces a name without "nn",
  *   the component falls back to plain text rendering.
