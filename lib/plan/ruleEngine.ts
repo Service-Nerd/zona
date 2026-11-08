@@ -7,7 +7,7 @@
 // falls back to fitness-level brackets. HR from Karvonen when resting HR known; otherwise
 // uses HRmax percentages (Tanaka max HR from age).
 
-import { reconcileWeekdayOverrunNotes, weekdayBudgetFor } from './weekdayOverrunNote'
+import { reconcileWeekdayOverrunNotes, weekdayBudgetFor, whenSetPhrase, worstWeekdayOverrun } from './weekdayOverrunNote'
 import type { GeneratorInput, Plan, Week, Session, BenchmarkInput } from '@/types/plan'
 import type { Phase } from '@/types/plan'
 import {
@@ -8775,22 +8775,54 @@ function buildRulePlanOnce(
   // that fires talks about "hard sessions" and their first hard session is week
   // 5. The family had two of its three members. Found by the coaching deviation
   // scan, not by any invariant.
-  type Overrun = { n: number; mins: number; cap: number } | null
+  // ── STRUCTURAL-NOTE-DAY-BUDGET-01 (2026-11-08) — AGAINST THE DAY'S OWN LIMIT ──────
+  //
+  // 🔴 This read `input.max_weekday_mins` for every weekday, and the wizard derives that
+  // field as the MINIMUM across the weekdays the runner actually runs
+  // (`weekPlanToInputs`). So a runner who gave Tuesday 90 minutes and the other weekdays
+  // 35 had their 53-minute TUESDAY session measured against 35 x 1.5 and was told their
+  // plan does not fit the time they have. It fits. They gave it ninety minutes.
+  //
+  // ⚠️ THE FILED ITEM UNDERSTATES THIS, AND THE NUMBER IS WHY IT IS WORTH SAYING. It reads
+  // as a wording defect — "the note quotes the weekday cap, not the day the session sits
+  // on". Measured on 2,055 plans in production shape (budgets + the derived minimum, three
+  // budget shapes): the note fires 810 times, **614 of them (75.8%) with NOTHING over its
+  // own day's budget** — a note that should not exist at all — against 5 that fire
+  // legitimately and quote the wrong number. A false note is a §34 / §40c breach, not a
+  // typo, so this is a defect fix restoring documented intent and board-EXEMPT (ADR-017).
+  //
+  // `weekdayBudgetFor` is the owner OVERRUN-NOTE-ALL-01 (2026-10-26) already built for
+  // exactly this, with `perDay` for the wording; the per-session note and
+  // `INV-PLAN-WEEKDAY-OVERRUN-DECLARED` both use it and this producer was never converted.
+  //
+  // ⚠️ AND "WORST" CHANGES MEANING ONCE THE CAPS DIFFER. Picking the largest `mins` names
+  // the roomy day's session as the worst fit: 95 minutes on a 90-minute Thursday beats 53
+  // on a 35-minute Monday, while only the second is a problem. The comparison has to be
+  // like-for-like, so it is the largest OVERRUN RATIO — which is the quantity the 1.5x
+  // limit itself measures. With a single cap the ratio ordering and the minutes ordering
+  // are identical, so no single-cap plan moves.
+  type Overrun = { n: number; mins: number; cap: number; day: Day; perDay: boolean } | null
   const weekdayOverrun = (matches: (sn: Session) => boolean): Overrun => {
-    const cap = input.max_weekday_mins
-    if (!cap) return null
-    const limit = cap * (1 + GENERATION_CONFIG.LONG_RUN_WEEKDAY_OVERRUN_MAINTENANCE_PCT / 100)
-    let worst: Overrun = null
+    const tolerance = 1 + GENERATION_CONFIG.LONG_RUN_WEEKDAY_OVERRUN_MAINTENANCE_PCT / 100
+    const candidates: NonNullable<Overrun>[] = []
     for (const w of weeks) {
       if (w.type === 'race') continue
       for (const d of ['mon', 'tue', 'wed', 'thu', 'fri'] as Day[]) {
         const sn = w.sessions?.[d]
         if (!sn || !matches(sn)) continue
+        // Each day resolves its own budget: a day with none is skipped rather than
+        // measured against another day's number. The old `if (!cap) return null` also
+        // silenced the whole detector for a caller that sends `day_budgets` alone.
+        const budget = weekdayBudgetFor(input, d)
+        if (!budget) continue
         const mins = sn.duration_mins ?? 0
-        if (mins > limit && (!worst || mins > worst.mins)) worst = { n: w.n, mins, cap }
+        if (mins <= budget.cap * tolerance) continue
+        candidates.push({ n: w.n, mins, cap: budget.cap, day: d, perDay: budget.perDay })
       }
     }
-    return worst
+    // Selection is the owner's, and it is a pure function so it can be made to go red:
+    // reverting it to "largest minutes" leaves every generated-plan gate green.
+    return worstWeekdayOverrun(candidates)
   }
 
   const longRunOverrun: Overrun = weekdayOverrun(sn => isLongRun(sn))
@@ -8849,7 +8881,7 @@ function buildRulePlanOnce(
   // an ENGINE decision (why we did not shorten the label) rather than telling the
   // runner anything they can use. Kept: the clash, and the lever.
   const structuredOverrunNote: string | null = structuredOverrun
-    ? `Your hard sessions do not fit the time you have. You've capped weekdays at ${durationText(structuredOverrun.cap)}, and by week ${structuredOverrun.n} the session this race needs runs about ${durationText(structuredOverrun.mins)}. It stays at full length rather than being trimmed into something easier. The lever is one longer session a week: a weekend morning, or a single weekday you can give more time to.`
+    ? `Your hard sessions do not fit the time you have. You've capped ${whenSetPhrase(structuredOverrun.day, structuredOverrun.perDay)} at ${durationText(structuredOverrun.cap)}, and by week ${structuredOverrun.n} the session this race needs runs about ${durationText(structuredOverrun.mins)}. It stays at full length rather than being trimmed into something easier. The lever is one longer session a week: a weekend morning, or a single weekday you can give more time to.`
     : null
 
   // THE MISSING THIRD NOTE. `structuredOverrunNote` talks about "hard sessions"
@@ -8863,11 +8895,11 @@ function buildRulePlanOnce(
   // this run is simply longer than the time the runner said they had, and the
   // honest thing is to say which day and what the lever is.
   const easyOverrunNote: string | null = easyOverrun
-    ? `Your easy runs do not fit the time you have. You've capped weekdays at ${durationText(easyOverrun.cap)}, but by week ${easyOverrun.n} an easy run lands at about ${durationText(easyOverrun.mins)}. It stays at that length because cutting it would leave the week too short to build on, and the long run would end up carrying too much of it. The lever is one longer weekday, or moving a run to the weekend.`
+    ? `Your easy runs do not fit the time you have. You've capped ${whenSetPhrase(easyOverrun.day, easyOverrun.perDay)} at ${durationText(easyOverrun.cap)}, but by week ${easyOverrun.n} an easy run lands at about ${durationText(easyOverrun.mins)}. It stays at that length because cutting it would leave the week too short to build on, and the long run would end up carrying too much of it. The lever is one longer weekday, or moving a run to the weekend.`
     : null
 
   const longRunOverrunNote: string | null = longRunOverrun
-    ? `This plan is built to get you round on the time you have, and your long run does not fit it. You've kept both weekend days clear of training and capped weekdays at ${durationText(longRunOverrun.cap)}, but by week ${longRunOverrun.n} the long run this race needs is about ${durationText(longRunOverrun.mins)}. It stays in the plan at full length, because a long run cut to ${durationText(longRunOverrun.cap)} stops being a long run. What it can't do is build toward the race on those terms. The lever is one longer session a week: a weekend morning, or a single weekday you can give more time to.`
+    ? `This plan is built to get you round on the time you have, and your long run does not fit it. You've kept both weekend days clear of training and capped ${whenSetPhrase(longRunOverrun.day, longRunOverrun.perDay)} at ${durationText(longRunOverrun.cap)}, but by week ${longRunOverrun.n} the long run this race needs is about ${durationText(longRunOverrun.mins)}. It stays in the plan at full length, because a long run cut to ${durationText(longRunOverrun.cap)} stops being a long run. What it can't do is build toward the race on those terms. The lever is one longer session a week: a weekend morning, or a single weekday you can give more time to.`
     : null
 
   // §82 — easy-run floor protection recurring across weeks. One week is

@@ -27,9 +27,41 @@ export function weekdayBudgetFor(
 }
 
 
-/** "Wednesdays" when the limit is the day's own, "weekdays" when it is the single weekday limit. */
-function whenSet(day: string, perDay: boolean): string {
+/** "Wednesdays" when the limit is the day's own, "weekdays" when it is the single weekday limit.
+ *  Exported for the PLAN-LEVEL §81 notes (STRUCTURAL-NOTE-DAY-BUDGET-01, 2026-11-08): they said
+ *  "you've capped weekdays at 35 min" about a session sitting on a 90-minute Tuesday. One owner of
+ *  the phrase, so the plan-level and per-session sentences cannot name the limit differently. */
+export function whenSetPhrase(day: string, perDay: boolean): string {
   return perDay ? `${DAY_FULL_NAME[day as Day]}s` : 'weekdays'
+}
+
+/** A weekday session over its own day's limit, as the PLAN-LEVEL §81 notes see it. */
+export type WeekdayOverrunCandidate = { n: number; mins: number; cap: number; day: string; perDay: boolean }
+
+/**
+ * Which overrun the plan-level note names: the largest overrun RELATIVE TO ITS OWN DAY.
+ *
+ * ⚠️ "Worst" changes meaning the moment the caps differ per day, and the old producer picked
+ * the largest `mins`. That names the ROOMY day's session as the worst fit: 95 minutes against a
+ * 90-minute Thursday beats 53 against a 35-minute Monday, while only the second is a problem a
+ * runner can act on. The ratio is also the quantity §81 Am. 2's tolerance is expressed in, so
+ * this is the same number the detector already thresholds against.
+ *
+ * With a single weekday cap the two orderings are identical, so no single-cap plan moves — and
+ * that is exactly why this lives here as a pure function: reverting it to `mins` left the
+ * generated-plan gate GREEN, because no plan in any corpus happens to hold two overruns whose
+ * orderings disagree. A decision no measured plan can distinguish is still a decision, and it
+ * gets a check rather than a paragraph saying it cannot have one.
+ */
+export function worstWeekdayOverrun<T extends WeekdayOverrunCandidate>(candidates: readonly T[]): T | null {
+  let worst: T | null = null
+  let worstRatio = 0
+  for (const c of candidates) {
+    if (!(c.cap > 0)) continue
+    const ratio = c.mins / c.cap
+    if (ratio > worstRatio) { worstRatio = ratio; worst = c }
+  }
+  return worst
 }
 
 /** Is the session being shown on the day it was planned for? The note names THAT day's limit, so a moved session
@@ -50,7 +82,7 @@ export function overrunNoteApplies(plannedDay: string, shownAt: string | Date | 
 export function weekdayOverrunNote(a: { minutes: number; cap: number; day: string; perDay: boolean; kind: 'quality' | 'easy' | 'long' }): string | null {
   const m = formatDuration(a.minutes), c = formatDuration(a.cap)
   if (m == null || c == null) return null
-  const head = `About ${m} against the ${c} you set for ${whenSet(a.day, a.perDay)}. `
+  const head = `About ${m} against the ${c} you set for ${whenSetPhrase(a.day, a.perDay)}. `
   const why = a.kind === 'easy' ? 'Any shorter and it stops being a training run, so take it on a day with more room'
     : a.kind === 'long' ? 'The long run is not cut to fit, so take it on a day with more room'
     : 'Quality work is not shrunk to fit the clock, so take this one on a day with more room'

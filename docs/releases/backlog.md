@@ -1328,11 +1328,47 @@ proposing anything.
 
 ---
 
-### 🔲 `STRUCTURAL-NOTE-DAY-BUDGET-01` — the plan note quotes the weekday cap, not the day the session sits on ⚙️ **NO BOARD**
+### ✅ `STRUCTURAL-NOTE-DAY-BUDGET-01` — SHIPPED 2026-11-08, and the item understated it ⚙️ **NO BOARD**
 
-Persona 06 (Tue 90, others 35): "You've capped weekdays at 35 min ... runs about 54 min", while the 54-minute session is on
-Tuesday. OVERRUN-NOTE-ALL-01 fixed the per-session note to read the day's own limit; the plan-level structural note still
-reads `max_weekday_mins`.
+🔴 **It reads as a wording defect. 75.8% of the firings were a note that should not exist at all.** Measured on 2,055
+plans in production shape (per-day budgets plus the derived minimum, three budget shapes): the plan-level §81 note fired
+**810** times, **614 of them (75.8%) with nothing over its own day's budget**, against **5** that fired legitimately and
+quoted the wrong number. After: **196 firings, 0 false.** Persona 06-hm-uneven-weekday, the case the item was filed
+from, now carries **no note**.
+
+`weekdayOverrun` read `input.max_weekday_mins` for every weekday, and the wizard derives that field as the **MINIMUM**
+across running weekdays. A runner who gave Tuesday 90 minutes and the rest 35 had their 53-minute TUESDAY session
+measured against 35 x 1.5 and was told, in the plan's own voice, that it does not fit the time they have. It fits.
+
+`weekdayBudgetFor` — the owner `OVERRUN-NOTE-ALL-01` built in October, used by the per-session note and by
+`INV-PLAN-WEEKDAY-OVERRUN-DECLARED` — was never wired into this producer. The three sentences now name the day
+(`whenSetPhrase`, one owner of the phrase). Board-**EXEMPT** (ADR-017): a false note breaches §34 / §40c, restoring
+documented intent.
+
+⚠️ **"Worst" changes meaning once the caps differ, and no corpus can see it.** Largest-minutes names the roomy day's
+session as the worst fit. Reverting that to `mins` left every generated-plan arm **green** — no corpus holds a plan with
+two overruns whose orderings disagree — so the decision moved into a pure `worstWeekdayOverrun` and got its own arm
+instead of a paragraph saying it could not have one.
+
+⚠️ **What this does not prove.** Nothing about the four OTHER notes quoting the same single cap. Measured in the same
+population: `volumeShortfallNote` fires **1,060** times (→ `SHORTFALL-PINNED-DAY-BUDGET-01`, 🏃 COACHING BOARD, below),
+`peak_shortfall_note` **103** (already inert, `NOTE-SURFACE-INERT-01`), `easyFloorProtectionNote` **0**, and the refusal
+suggestion's *"more room than the 30 min you have allowed"* is **true** for a per-day runner — they did allow 30, on the
+tight days — so it is recorded, not changed.
+
+### 🔲 `SHORTFALL-PINNED-DAY-BUDGET-01` — `volumeShortfallNote` tests "pinned at the limit" against the minimum cap 🏃 **COACHING BOARD** (§40c materiality)
+
+Found building `STRUCTURAL-NOTE-DAY-BUDGET-01`. `volumeShortfallPct` counts a weekday easy run as pinned when
+`duration_mins >= max_weekday_mins - 1`, so a Tuesday run at 85 minutes against a **90-minute** Tuesday budget counts as
+pinned at **35**. Reading the day's own budget instead flips the materiality test on **39 of 2,055** plans, **all one
+way**, and **34 of those are a live `volume_shortfall_note` that would go SILENT**.
+
+⚠️ **Not a defect fix, which is why it is not folded in.** The 25%-pinned gate is §40c's *materiality* test and it also
+gates `volume_shortfall_pct`, so suppressing it means a real `peakIntent` > `peakActual` shortfall ships undeclared.
+Whether "pinned" means *at the tightest day's ceiling* or *at this day's own ceiling* is a doctrine question about what
+counts as the cap materially shaping a plan. ⚠️ `INV-PLAN-VOLUME-SHORTFALL-DECLARED` shares the producer's predicate, so
+whichever way it rules, both move in one commit — and the checker derives its own copy, as the sibling overrun check
+deliberately does.
 
 ---
 
