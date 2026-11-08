@@ -52,3 +52,11 @@ One of four discriminated shapes (the `state` field is the discriminator):
 - **No cron.** Surface is pull-on-view. The Coach tab fetches in `CoachTeaser`.
 - **Free-tier exception.** This is the only AI route that fires for free users. Every other AI route (`/api/daily-coach-note`, `/api/analyse-run`, `/api/post-run-reframe`, etc.) is paid/trial only.
 - **Tier table.** `free_insights` has `(user_id, week_start_date, headline, body, ai_model, created_at)` with composite PK and RLS. Migration: `20260525_free_insights.sql`.
+
+## Execution ceiling
+
+`export const maxDuration = 300` — this route can reach the model, so it states its own ceiling
+rather than inheriting a platform default that has changed twice. The reasoning, the measured
+durations and the client-side `AbortSignal` timeout are owned by
+**`docs/contracts/api/ai-route-duration.md`** and are referenced, never restated here: fourteen
+copies of one number is how the number drifts (`OPS-FN-DURATION-01`, 2026-11-08).

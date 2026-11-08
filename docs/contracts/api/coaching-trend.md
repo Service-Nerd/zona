@@ -106,3 +106,11 @@ This route no longer calls Anthropic directly. It goes through
   route previously could not tell those apart.
 - `noRawAnthropicCalls.test.ts` fails the build if this file names
   `api.anthropic.com` again. Full contract: `docs/contracts/api/ops-ai-spend.md`.
+
+## Execution ceiling
+
+`export const maxDuration = 300` — this route can reach the model, so it states its own ceiling
+rather than inheriting a platform default that has changed twice. The reasoning, the measured
+durations and the client-side `AbortSignal` timeout are owned by
+**`docs/contracts/api/ai-route-duration.md`** and are referenced, never restated here: fourteen
+copies of one number is how the number drifts (`OPS-FN-DURATION-01`, 2026-11-08).

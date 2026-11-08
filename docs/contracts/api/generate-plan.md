@@ -732,3 +732,11 @@ and `enrich()`.
   `enrich()` accepting `units` and never passing it to `buildUserMessage` — inert, and invisible
   until the compiler was made to ask every call site.
 - A failed prefs read falls back to `km` rather than blocking generation.
+
+## Execution ceiling
+
+`export const maxDuration = 300` — this route can reach the model, so it states its own ceiling
+rather than inheriting a platform default that has changed twice. The reasoning, the measured
+durations and the client-side `AbortSignal` timeout are owned by
+**`docs/contracts/api/ai-route-duration.md`** and are referenced, never restated here: fourteen
+copies of one number is how the number drifts (`OPS-FN-DURATION-01`, 2026-11-08).

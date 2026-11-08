@@ -859,6 +859,22 @@ for f in $(find app/api \( -name 'route.ts' -o -name 'route.tsx' \)); do
   contracted "$f" || uncontracted=$((uncontracted+1))
 done
 say "  standing debt: ${uncontracted} of ${total} API routes have no contract (CONTRACT-COVERAGE-01)"
+# 🔴 RATCHETED SINCE 2026-11-08, AND IT WAS NOT BEFORE. This number was REPORTED for weeks and
+# nothing compared it to anything, so it could grow silently — a debt register with no ratchet is
+# a debt register that only ever gets read. Found while PAYING it: `OPS-FN-DURATION-01` changed
+# `/api/post-race-reshape`, the arm above correctly demanded its contract, it was written, and the
+# count went 13 → 12. ⚠️ **A payment that can be silently undone is not a payment.** Same
+# falling-only discipline as `UNCONTRACTED_BASELINE` and `UNCONTRACTED_ANY_BASELINE` above, and
+# the same obligation beside the number: say whether a fall was a contract WRITTEN or a route
+# DELETED, because only the first is progress.
+API_UNCONTRACTED_BASELINE=12   # 13 -> 12, 2026-11-08: `post-race-reshape` CONTRACT WRITTEN (not a route removed)
+if [ "$uncontracted" -gt "$API_UNCONTRACTED_BASELINE" ]; then
+  say "  GREW: ${uncontracted} uncontracted API routes, baseline ${API_UNCONTRACTED_BASELINE} — write the contract for the new route"
+  cfail=1; fail=1
+elif [ "$uncontracted" -lt "$API_UNCONTRACTED_BASELINE" ]; then
+  say "  debt PAID: ${uncontracted} (baseline ${API_UNCONTRACTED_BASELINE}) — lower API_UNCONTRACTED_BASELINE, saying whether a contract was WRITTEN or a route DELETED"
+  cfail=1; fail=1
+fi
 [ "$cfail" = "0" ] && say "  ok"
 
 say "── CONTRACTS: changed components vs docs/contracts/components ──"

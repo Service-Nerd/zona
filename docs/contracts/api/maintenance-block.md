@@ -131,3 +131,11 @@ surface). No request or response shape changed.
   This route already holds `serviceClient` and the user is already authenticated.
 - ⚠️ `units` is **required, not optional**: an optional field lets a new caller omit it silently
   and get kilometres.
+
+## Execution ceiling
+
+`export const maxDuration = 300` — this route can reach the model, so it states its own ceiling
+rather than inheriting a platform default that has changed twice. The reasoning, the measured
+durations and the client-side `AbortSignal` timeout are owned by
+**`docs/contracts/api/ai-route-duration.md`** and are referenced, never restated here: fourteen
+copies of one number is how the number drifts (`OPS-FN-DURATION-01`, 2026-11-08).

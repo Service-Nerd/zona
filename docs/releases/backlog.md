@@ -3858,7 +3858,41 @@ correct side of each pair; **0** live duplicate `(user, activity)` groups, so ST
 this file. The four data checks are the migration's own signature, which is the strongest evidence short
 of a Postgres log.
 
-### 🔲 `USER-SETTINGS-UNREAD-WRITE-01` — **11 more writes to `user_settings` read nobody's error** ⚙️ **NO BOARD** *(defect class)*
+### ✅ `USER-SETTINGS-UNREAD-WRITE-01` — **DONE 2026-11-08.** Not 11 fixes: **one owner.** `lib/supabase/userSettingsWrite.ts` reads the error unconditionally and takes the severity as an ARGUMENT, so *"what should the runner see when this fails?"* is visible in a diff. 17 of 18 raw writes converted; the debt arm became *"no raw write survives"* and the count went **11 → 0** ⚙️ **NO BOARD**
+### 🔲 `USER-SETTINGS-TELL-THE-RUNNER-01` — the four writes a runner MAKES have no error channel in scope *(filed 2026-11-08, P2)* 🧭 **DESIGN BOARD** for the state; 👤 **FOUNDER** for the words
+
+Filed out of `USER-SETTINGS-UNREAD-WRITE-01`, which built the owner and the
+`tell_the_runner` severity. The severity has **one** consumer, and the reason is a measured
+inversion worth stating:
+
+🔴 **THE SITES THAT CAN REPORT A FAILURE ARE THE ONES WHOSE FAILURE MATTERS LEAST.**
+
+| write | runner asked for it? | a lost write means | error channel in scope? |
+|---|---|---|---|
+| `resting_hr` / `max_hr` (HR sheet Save) | **yes, typed it** | every SERVER surface — daily push, trial emails, coach prompts — reads the OLD value while the screen reads React state | 🔴 **none** |
+| `preferred_units` | **yes** | push and emails quote km to a miles runner (`UNITS-PROSE-01`'s class) | 🔴 **none** |
+| `preferred_metric` | **yes** | same | 🔴 **none** |
+| `birth_year` | **yes** | §50's max-HR estimate silently has nothing to guard against | 🔴 **none** |
+| `healthkit_connected_at` | yes | the connect looks done and the server thinks it never happened | ✅ `ConnectRunsScreen.setError` |
+| `push_permission_seen` | no | the prompt reappears | ✅ (unused — a re-ask, not a wrong number) |
+| `connect_runs_seen` | no | the card reappears | ✅ (unused, same) |
+
+⚠️ **`PROFILE-NAME-WRITE-01` IS THE MEASURED PRECEDENT and it is the top row of this table.**
+44 of 46 rows had an empty `first_name` while the greeting read *"Good evening, Duncan"* off auth
+metadata the whole time. The screen was right and the table was empty for months, and nothing
+could have told the runner.
+
+**What is needed:** an error state on the HR sheet, the Me settings rows and the wizard's
+birth-year step. 🧭 **Design Board** — three existing screens gain a state, and the restraint
+doctrine has to rule on whether a failed background save earns a visible one at all (it may
+prefer silence plus a retry). 👤 **Founder** on the sentence: `settingsWriteFailureMessage` already
+holds one draft (*"Couldn't save your X. It's still set on this device, not on your account."*)
+and the voice is his.
+
+🔑 **The mechanism is already built and tested** — `severity: 'tell_the_runner'` plus an
+`onError` callback, with arms proving `log` does NOT call it even when one is passed. This item
+is the four wirings and the decision behind them, not plumbing.
+
 
 *(filed 2026-11-04, from the code review of `PROFILE-NAME-WRITE-01`.)*
 
@@ -4100,6 +4134,59 @@ formats is the bulk of the work and has no behavioural payoff on its own** — w
 filed rather than built.
 
 ---
+
+### 🔲 `OPS-FLUID-COMPUTE-CONFIRM-01` — one dashboard check decides whether the new 300 s ceiling is real 👤 **FOUNDER** *(filed 2026-11-08, P2)*
+
+**Vercel → project `zona` → Settings → Functions → is Fluid compute enabled?** Ten seconds, and it
+is the only thing that can answer it.
+
+🔴 **WHY IT MATTERS, AND WHY A GREEN BUILD IS NOT THE ANSWER.** `OPS-FN-DURATION-01` set
+`maxDuration = 300` on 14 AI routes and `AI_LIMITS.CALL_TIMEOUT_MS = 240_000` inside
+`callAnthropic`. The 300 s ceiling is **conditional on Fluid compute**; without it Vercel
+**clamps** rather than erroring. So if Fluid is off: the real ceiling is lower, the 240 s client
+timeout **never fires**, and every gate written for that item stays green while proving nothing.
+A silent clamp is indistinguishable from a working ceiling from here — `npm run build` exits 0
+either way.
+
+⚠️ **Unanswerable from this machine, which is why it is yours and not mine**: observability
+returns 404 on this project and `get_project` does not expose the flag.
+
+🔑 **What each answer means:** enabled → nothing to do, the ceiling and the timeout are as
+written. Not enabled → one click enables it, and it is worth doing on its own merits (Fluid is
+also what makes the Node runtime the right default and cuts cold starts). ⚠️ **Either way, say
+which**, so the next reader of `docs/contracts/api/ai-route-duration.md` is not deciding from a
+green build.
+
+🔻 **The independent check, when there is traffic:** an `ai_call_failed` row with
+`reason: 'timeout'` is the first evidence this path can report its own failure at all —
+`enrich-plan` p50 is already **59.1 s** and rising.
+
+### 🔲 `AI-ROUTE-HTTP-HOP-CEILING-01` — three callers await an AI route over HTTP with no ceiling of their own *(filed 2026-11-08, P2)* ⚙️ **NO BOARD**
+
+Found by `/code-review` on `OPS-FN-DURATION-01`, which set `maxDuration = 300` on every route in
+`callAnthropic`'s **import closure**. 🔴 **That population is right for the routes that CALL the
+model and wrong for the routes that WAIT on one**, and the two sets do not overlap:
+
+| caller | awaits | its own `maxDuration` | its own fetch timeout |
+|---|---|---|---|
+| `app/api/push/send-weekly-report/route.ts:58` | `GET /api/weekly-report?force=true` | 🔴 none | 🔴 none |
+| `lib/coaching/autoAnalyse.ts:216` | `POST /api/analyse-run` | n/a (a lib) | 🔴 none |
+| `app/api/health/ingest/route.ts` | the same, via `autoMatchAndAnalyse` | 🔴 none | 🔴 none |
+
+⚠️ **AND THE EXPOSURE IS NEW, caused by the fix.** The downstream route may now hold for up to
+`CALL_TIMEOUT_MS` (240 s) where before it was cut off by the platform default. A caller with no
+ceiling of its own is the one that dies instead — and `send-weekly-report` is a **cron**, so its
+death is the Sunday push not going out, which nothing watches.
+
+🔑 **Both halves are needed and the second is the real one:** a `maxDuration` on the caller, and
+an `AbortSignal` on the hop. Measured: `weekly-report`'s own AI call is p50 **3.3 s**, max
+**5.7 s**, and `analyse-run` p50 **1.6 s**, max **2.3 s**, so neither hop should take anywhere near
+240 s — which is exactly why a timeout on them is cheap and the absence is invisible.
+
+⚠️ **A gate is the hard part, and it is why this is filed rather than guessed:** the population is
+*"awaits an HTTP call to a route in the AI closure"*, which needs the URL string resolved through
+`getInternalBaseUrl()` and a template literal. `aiRouteMaxDuration.test.ts` walks an IMPORT graph;
+this needs a call graph through a string. State the population before writing the arm.
 
 ### 🔲 `AI-TIMEOUT-PER-SURFACE-01` — the AI call timeout is one number for two latency regimes *(filed 2026-11-08, P3)* ⚙️ **NO BOARD**
 
@@ -11544,7 +11631,9 @@ fails every morning for a reason nobody needs to read is a test everybody learns
 the next real failure in that file arrives pre-ignored. This repo has already recorded that a
 guard which cries wolf gets disabled, which is the same as having no guard.
 
-**State at END of 2026-11-08 — W6 (last ship `3b0634eb` — the review round on four dead-code and enrichment items. 753 files / **7,495** tests, ALL GREEN; sweep 16,464 plans with no new violations; **167** invariants, liveness **164/167, 0 unclassified**; `verify:parity` vs `b946ce4b` **IDENTICAL, 6,210 cases**.)** 📐 **25 of 54 closed, 29 remain** — `backlog:verify` §4 reads **NO BOARD 40**, down from 44. 🔑 **RE-MEASURING MOVED TWO OF THE FOUR PREMISES, AND ONE OF THEM WOULD HAVE SHIPPED AN INERT GATE.** `MAINT-ENRICH-VALIDATE-01` asked for `repairEnrichedCopy` in the maintenance route; I built it, then measured what it could find — `validateMaintenanceBlock` reads no copy field and the maintenance enricher writes only `coach_debrief` and `coach_notes`, so the ladder returns `clean` for every maintenance plan that will ever exist. Reverted. **The real gap was that maintenance is the one plan kind with no placeholder check anywhere**: a maintenance plan never runs `validatePlan`, so dispatching away from the race constitution (`AUDIT-MAINTENANCE-KIND-01`, correctly) dispatched away from its copy check too, while `TodayScreen` renders `{maintDebrief}` RAW. 🔴 **`ZONE-DISCIPLINE-BANDS-DEAD-01`'s premise was wrong in four records at once** — *"read ONLY by `classifyZoneDiscipline`… its 3 references are its own definition plus two comments"* was a count of the FUNCTION applied to the TABLE; `scripts/trigger-audit.ts` had been reading `.loose` throughout. 🔑 **`ENRICH-RISK-TOKEN-01` was filed as one token and the shape was the finding** — five guard names for seven prose surfaces, with the reason already written one module away in `runnerProse.ts`, and `INV-PLAN-NO-PLACEHOLDER-COPY` unable to see an array-valued field **by construction** while its own `expected` claimed every user-facing field. ⚠️ **Two ratchets fell and NEITHER was a payment** — `UNCONTRACTED_ANY_BASELINE` 71→70 with `UNCONTRACTED_BASELINE` HELD at 49, and `UNDECLARED_USES_BASELINE` 196→195; both say which beside the number. 🔴 **`/code-review` found five, ALL MINE, four written in the previous ninety minutes and none caught by the 7,495 passing tests** — including a uuid in `detail` instead of `recordOpsEvent`'s argument (so `DB-USER-PURGE-01`'s `ON DELETE SET NULL` could not anonymise it, **copied from the race path**), a write-only ops kind, and **my new invariant's `expected` being wider than its scan: the exact defect its sibling commit was written to fix, reproduced one function away inside the hour.** ⚠️ Engine output provably untouched, so the W5 coaching protocol was not re-run; `review:coaching` is owed again at the next wave that changes prescription.
+**State at END of 2026-11-08 — W7 (last ship `9c4cefdd`, ops and infra. **755 files / 7,517 tests, ALL GREEN**; `npm run build` exit 0 — run for real, because route segment config is type-checked only by `next build`; `verify:parity` vs `b946ce4b` IDENTICAL across 6,210 cases.)** 📐 **27 of 54 closed, 27 remain** — `backlog:verify` §4 reads **NO BOARD 39**. 🔴 **BOTH W7 ITEMS WERE WRONG ABOUT THEMSELVES, AND BOTH RE-MEASURES CHANGED WHAT GOT BUILT.** `OPS-FN-DURATION-01` asked for *one lookup* to decide between a one-liner and a DON'T BUILD. The lookup did not settle it (the 300 s default is **conditional on Fluid compute**, unverifiable from here) and the item's own figure was stale by nearly 2×: `enrich-plan` p50 rose **38.3 → 45.4 → 59.1 s** across three months against a stated *"28–35 s"*. 🔑 **And the decisive finding was neither — `callAnthropic` had NO timeout at all**, with `ai_call_failed` at **0 rows ever**, because a function the platform kills cannot log its own death. Ceiling and timeout shipped together: 14 routes (the import CLOSURE, which catches the two slowest, reached only through `lib/`) and `CALL_TIMEOUT_MS` derived from the ceiling rather than from throughput — **the throughput model sized `enrich-plan` at 615 s and is recorded as wrong.** 🔑 **`USER-SETTINGS-UNREAD-WRITE-01` was not 11 fixes but ONE OWNER**: eleven inline handlers would have left the nineteenth write free to drop its error, so `userSettingsWrite.ts` reads it unconditionally and takes the severity as an **argument** — 18 raw writes → 1. ⚠️ **It is also what made the behaviour testable at all** (`environment: 'node'`, so nothing in `DashboardClient` is reachable, which is why 11 swallowed errors shipped green). 🔴 **AND ITS REGISTER WAS WRONG IN BOTH DIRECTIONS, CANCELLING TO THE SAME 11** — counted lines not writes, a 3-line `{ error }` window against an 8-line read, and `slice(0, 120)` printing a prop list instead of the write: **I nearly dismissed two real sites as false positives of my own check.** 🥇 **Writing a contract was a code review twice over:** `post-race-reshape` had none at all (debt **13 → 12**, now RATCHETED — it was reported and compared to nothing), and a `_week_n` defect I had already written up **dissolved when I traced the producer** — the client sends an array position, so five places agree and none of them is wrong. ⚠️ 13 route contracts reference ONE shared `ai-route-duration.md` rather than restating the number fourteen times. 🔴 **AND `/code-review` FOUND NINE, THE TWO WORST MINE FROM THE PREVIOUS HOUR.** I removed `try {} catch {}` blocks that were guarding **`supabase.auth.getUser()`, not the write** — two callers have no catch, so `IdentityCard` would spin forever and `PushOnboardingScreen.skip()` would strand the runner. **Then I wrote a `currentUserId` to fix it and one already existed byte-for-byte in `lib/analytics.ts`, already imported by the same file on line 102** — `tsc` caught it as a duplicate identifier and nothing else would have. 🔴 **My own new gate walked `app/` only**, so four raw writes in `components/dashboard/` reported clean — including the LIVE one, `MeScreen`'s Strava disconnect saying DISCONNECTED while the tokens survived. 🔴 **And the wave's one `tell_the_runner` site could not tell anyone**: `onConnected()` unmounts the screen in the same tick, so the severity had **zero working consumers**. 🔻 Residuals filed, not guessed: `AI-ROUTE-HTTP-HOP-CEILING-01` (**the fix caused that exposure** — the import closure is right for routes that CALL the model and wrong for routes that WAIT on one) and 👤 `OPS-FLUID-COMPUTE-CONFIRM-01` (**without Fluid compute Vercel CLAMPS, so every gate for `OPS-FN-DURATION-01` stays green proving nothing** — one dashboard check, unanswerable from here).
+
+**Prior — State at END of 2026-11-08 — W6 (last ship `3b0634eb` — the review round on four dead-code and enrichment items. 753 files / **7,495** tests, ALL GREEN; sweep 16,464 plans with no new violations; **167** invariants, liveness **164/167, 0 unclassified**; `verify:parity` vs `b946ce4b` **IDENTICAL, 6,210 cases**.)** 📐 **25 of 54 closed, 29 remain** — `backlog:verify` §4 reads **NO BOARD 40**, down from 44. 🔑 **RE-MEASURING MOVED TWO OF THE FOUR PREMISES, AND ONE OF THEM WOULD HAVE SHIPPED AN INERT GATE.** `MAINT-ENRICH-VALIDATE-01` asked for `repairEnrichedCopy` in the maintenance route; I built it, then measured what it could find — `validateMaintenanceBlock` reads no copy field and the maintenance enricher writes only `coach_debrief` and `coach_notes`, so the ladder returns `clean` for every maintenance plan that will ever exist. Reverted. **The real gap was that maintenance is the one plan kind with no placeholder check anywhere**: a maintenance plan never runs `validatePlan`, so dispatching away from the race constitution (`AUDIT-MAINTENANCE-KIND-01`, correctly) dispatched away from its copy check too, while `TodayScreen` renders `{maintDebrief}` RAW. 🔴 **`ZONE-DISCIPLINE-BANDS-DEAD-01`'s premise was wrong in four records at once** — *"read ONLY by `classifyZoneDiscipline`… its 3 references are its own definition plus two comments"* was a count of the FUNCTION applied to the TABLE; `scripts/trigger-audit.ts` had been reading `.loose` throughout. 🔑 **`ENRICH-RISK-TOKEN-01` was filed as one token and the shape was the finding** — five guard names for seven prose surfaces, with the reason already written one module away in `runnerProse.ts`, and `INV-PLAN-NO-PLACEHOLDER-COPY` unable to see an array-valued field **by construction** while its own `expected` claimed every user-facing field. ⚠️ **Two ratchets fell and NEITHER was a payment** — `UNCONTRACTED_ANY_BASELINE` 71→70 with `UNCONTRACTED_BASELINE` HELD at 49, and `UNDECLARED_USES_BASELINE` 196→195; both say which beside the number. 🔴 **`/code-review` found five, ALL MINE, four written in the previous ninety minutes and none caught by the 7,495 passing tests** — including a uuid in `detail` instead of `recordOpsEvent`'s argument (so `DB-USER-PURGE-01`'s `ON DELETE SET NULL` could not anonymise it, **copied from the race path**), a write-only ops kind, and **my new invariant's `expected` being wider than its scan: the exact defect its sibling commit was written to fix, reproduced one function away inside the hour.** ⚠️ Engine output provably untouched, so the W5 coaching protocol was not re-run; `review:coaching` is owed again at the next wave that changes prescription.
 
 **Prior — State at END of 2026-11-08 — W5 (last ship `db0caa5b` — the review round on five stated-number items. 751 files / **7,461** tests, ALL GREEN; sweep 16,464 plans with no new violations; 166 invariants, liveness 163/166.)** 📐 **21 of 54 closed, 33 remain.** ⚠️ **W5 is the first wave to touch ENGINE OUTPUT, so the standing protocol ran in full:** `review:coaching` seven steps green with no measured rate moved, `cohort:shape` and `measure:fitness` byte-identical, and two `verify:parity` runs.
 
@@ -14262,7 +14351,7 @@ to `lib/security/rateLimit.ts` when something else touches that area.
 declared surface **or a non-AI route**"* — that escape hatch already anticipated this, so nothing
 is failing, but the naming now understates what the module does.
 
-### 🅿️ `CONTRACT-BACKFILL-01` — write the **13** remaining API route contracts · **PARKED** *(count corrected 2026-10-11 and again 2026-11-08; `audit-docs.sh` reports 13 of 71)*
+### 🅿️ `CONTRACT-BACKFILL-01` — write the **12** remaining API route contracts · **PARKED** *(count corrected 2026-10-11, 2026-11-08 ×2; `audit-docs.sh` reports **12** of 71 — `post-race-reshape` written 2026-11-08 under `OPS-FN-DURATION-01`, which changed that route and found it had no contract at all)*
 
 > 🔄 **RE-MEASURED 2026-11-07: 13 of 62 → 11 of 71 API routes without a contract.** Two were
 > written and nine routes were added since the item was filed. Live count from `audit-docs.sh`.

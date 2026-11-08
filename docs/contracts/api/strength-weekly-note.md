@@ -22,3 +22,11 @@
 **422** a non-integer `week_n`. **401 / 404** the gate.
 
 **Strength session title (STRENGTH-SESSION-TITLE-01, 2026-10-19).** Any strength session's name comes from `strengthSessionTitle(session)` (`lib/strength-bridge/display.ts`), read from what it holds (*Lower body*, *Upper body and light legs*, else the kind title), never `STRENGTH_KIND_TITLE[kind]`. Gate: `lib/strength-bridge/sessionTitle.test.ts`.
+
+## Execution ceiling
+
+`export const maxDuration = 300` — this route can reach the model, so it states its own ceiling
+rather than inheriting a platform default that has changed twice. The reasoning, the measured
+durations and the client-side `AbortSignal` timeout are owned by
+**`docs/contracts/api/ai-route-duration.md`** and are referenced, never restated here: fourteen
+copies of one number is how the number drifts (`OPS-FN-DURATION-01`, 2026-11-08).

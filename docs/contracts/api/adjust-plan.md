@@ -442,3 +442,11 @@ train, (b) already past, and (c) no distance, time or pace. `reshape_invalid` fi
 `session_reorder` is not the same defect: the runner chooses `toDay`.
 
 Tests: `lib/coaching/planAdjustment.test.ts` § SKIP-MAKEUP-DAY-01, six arms, each falsified.
+
+## Execution ceiling
+
+`export const maxDuration = 300` — this route can reach the model, so it states its own ceiling
+rather than inheriting a platform default that has changed twice. The reasoning, the measured
+durations and the client-side `AbortSignal` timeout are owned by
+**`docs/contracts/api/ai-route-duration.md`** and are referenced, never restated here: fourteen
+copies of one number is how the number drifts (`OPS-FN-DURATION-01`, 2026-11-08).

@@ -216,3 +216,11 @@ It now writes through `lib/supabase/liveRowWrite.ts → writeLiveRow`, against t
 from a structural `{ from: … upsert … }` shape to `SupabaseClient`, which is why its three call
 sites no longer pass `service as never`. Persist failure is still logged and never thrown — the
 runner already has their words on screen.
+
+## Execution ceiling
+
+`export const maxDuration = 300` — this route can reach the model, so it states its own ceiling
+rather than inheriting a platform default that has changed twice. The reasoning, the measured
+durations and the client-side `AbortSignal` timeout are owned by
+**`docs/contracts/api/ai-route-duration.md`** and are referenced, never restated here: fourteen
+copies of one number is how the number drifts (`OPS-FN-DURATION-01`, 2026-11-08).

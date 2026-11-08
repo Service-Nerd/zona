@@ -184,3 +184,11 @@ of 94 Supabase warnings in a day. **A database error now answers `500 { error: '
 The race day's `run_analysis` row is found by `session_day === raceDayKey` (the bare day, `sat`), inside a query already
 scoped by `week_n`. It used to look for `week_N_<day>`, a format `session_day` has never had, so `zoneDirection` was always
 `null` and the debrief never knew which way the race was paced. Gate: `lib/coaching/sessionDayShape.test.ts`.
+
+## Execution ceiling
+
+`export const maxDuration = 300` — this route can reach the model, so it states its own ceiling
+rather than inheriting a platform default that has changed twice. The reasoning, the measured
+durations and the client-side `AbortSignal` timeout are owned by
+**`docs/contracts/api/ai-route-duration.md`** and are referenced, never restated here: fourteen
+copies of one number is how the number drifts (`OPS-FN-DURATION-01`, 2026-11-08).
