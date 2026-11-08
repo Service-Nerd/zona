@@ -886,7 +886,13 @@ say "── CONTRACTS: a SHARED component with no contract at all ──"
 # This asks the inverse: a component under `components/shared/` that EXPORTS a prop
 # interface and is imported by more than one file should have a contract. Existing
 # debt is declared below so it is visible and cannot grow.
-UNCONTRACTED_BASELINE=50   # 🔴 56 -> 50, 2026-11-08 (CONTRACT-COVERAGE-03, W4): SIX contracts
+UNCONTRACTED_BASELINE=49   # ⚠️ 50 -> 49, 2026-11-08 (code review, SAME DAY): a RE-COUNT, not a
+                           # payment. Membership now parses the `**Components:**` LIST form as
+                           # well as the singular header, so `components/marketing/PhoneFrame.tsx`
+                           # — 2 importers, governed only by `marketing-device.md`'s list — stops
+                           # counting as uncontracted. **Exactly one component moved and it was
+                           # already contracted**; no debt was paid by this line.
+                           # 🔴 56 -> 50, 2026-11-08 (CONTRACT-COVERAGE-03, W4): SIX contracts
                            # WRITTEN — `TextField` (9 importers), `Wordmark` (8),
                            # `AppStoreBadge` (8), `ArticlePage` (10), `IconButton` (7),
                            # `AIMark` (7) — highest reach first, because a contract is a code
@@ -974,9 +980,13 @@ UNCONTRACTED_BASELINE=50   # 🔴 56 -> 50, 2026-11-08 (CONTRACT-COVERAGE-03, W4
 # commit that added a second register to make the first one honest. The arm catching it is the
 # argument for the arm.
 #
+# ⚠️ 72 -> 71, 2026-11-08 (code review, same day): a RE-COUNT, not a payment — `PhoneFrame` is
+# governed by the `**Components:**` list form, which membership could not read. Code review
+# predicted 71 before the change was made.
+#
 # Falling-only, same discipline as the gated figure above: a component leaving the tree lowers
 # it exactly as a contract does, so say which happened.
-UNCONTRACTED_ANY_BASELINE=72
+UNCONTRACTED_ANY_BASELINE=71
 
 # ── 🔴 TWO NUMBERS, BECAUSE ONE CANNOT TELL A PAYMENT FROM A DROP-OUT ────────
 #
@@ -996,19 +1006,71 @@ UNCONTRACTED_ANY_BASELINE=72
 #
 # 🔑 The defect is that one number cannot express the move. So: `missing` stays the gated
 # `>= 2` figure, and `missing_any` counts uncontracted components at ANY importer count.
-# A component dropping out of the population moves `missing` DOWN and leaves `missing_any`
-# UNCHANGED — which is the signature a payment does not have, and it is visible without
-# anyone remembering last week's figure.
+# A component dropping out of the `>= 2` population moves `missing` DOWN and leaves
+# `missing_any` UNCHANGED — the signature a payment does not have, visible without anyone
+# remembering last week's figure.
+#
+# ⚠️ AND THAT IS ONE MOVE OF THREE, NOT ALL THREE — the commit message that shipped this pair
+# overclaimed, and code review caught it the same day. Precisely what the pair separates:
+#
+#   | move                                   | `missing` | `missing_any` |
+#   |----------------------------------------|-----------|---------------|
+#   | a contract WRITTEN for a >= 2 component|   down    |     down      |
+#   | a >= 2 component DELETED               |   down    |     down      |  <- still identical
+#   | a component DROPPING below >= 2        |   down    |   unchanged   |  <- now visible
+#   | a 0/1-importer component DELETED       | unchanged |     down      |
+#   | a 0/1-importer component CONTRACTED    | unchanged |     down      |  <- still identical
+#
+# **So a DELETION and a PAYMENT remain indistinguishable at the same importer tier.** That was
+# already true before this change and is unchanged by it; what is new is that the THIRD move —
+# the one `CONTRACT-LEDGERCARD-01` was filed about — now has its own signature. The remaining
+# pair can only be told apart by saying which happened, which is why both baseline comments
+# carry that instruction and why this register is falling-only.
+# ── 🔴 ONE DERIVATION OF "WHAT IS CONTRACTED", BOUNDED (code review, 2026-11-08) ─────
+#
+# Membership used to grep for `^**Component:** \`path\`` only — the singular header. But
+# `marketing-device.md` governs three components through a `**Components:**` BULLET LIST, so
+# `components/marketing/PhoneFrame.tsx` counted as UNCONTRACTED in both registers while having a
+# real contract, and a future list-form contract would have moved neither figure. ⚠️ **The orphan
+# arm below already parses both forms**, in a comment saying a one-form parser *"quietly declines
+# to check the other"* — two arms on the same directory disagreeing about what a contract looks
+# like is the duplicate-derivation defect this repo keeps paying for.
+#
+# 🔴 AND THE FIRST FIX WAS A LOOSE GREP THAT FOUND A FALSE POSITIVE IMMEDIATELY. Widening to
+# `^- .*\`path\`` matched a bullet ANYWHERE in ANY contract — including `ledger-card.md`'s
+# Consumers list, `- \`components/dashboard/MeScreen.tsx\` — so `MeScreen` read as contracted.
+# **A path NAMED in a contract is not a path GOVERNED by one**: the mention-vs-filing class,
+# re-created inside the fix for an instance of it. **Bound the region, never grep the file.**
+#
+# So: one awk pass, the SAME bounding as the orphan arm (a `**Components?:**` header opens the
+# block, a blank line closes it), into a set every component is then tested against by exact
+# match.
+for c in docs/contracts/components/*.md; do
+  [ -e "$c" ] || continue
+  awk '
+    /^\*\*Components?:\*\*/ { inlist=1 }
+    inlist && /`/ { print }
+    inlist && /^$/ { inlist=0 }
+  ' "$c"
+done | grep -oE '`[^`]+`' | tr -d '`' | grep -E '^components/.*\.tsx$' | sort -u > /tmp/_contracted_paths
+# A zero here would make the membership test below accept everything as uncontracted.
+if [ "$(wc -l < /tmp/_contracted_paths | tr -d ' ')" -lt 20 ]; then
+  say "  CONTRACT SET VACUOUS: only $(wc -l < /tmp/_contracted_paths | tr -d ' ') governed paths parsed, expected 20+"
+  fail=1
+fi
+
 missing=0
 missing_any=0
+in_population=0
 for f in $(git ls-files 'components/*.tsx' 'components/**/*.tsx'); do
   [ -f "$f" ] || continue
   case "$f" in *.test.*|*.stories.*) continue;; esac
   grep -q "^export default function\|^export function" "$f" || continue
+  in_population=$((in_population+1))
   base=$(basename "$f" .tsx)
   # more than one importer, counting BOTH the alias form and a relative path
   users=$(grep -rlE "from '@/${f%.tsx}'|from '\.{1,2}/([A-Za-z0-9_/-]*/)?${base}'" app components 2>/dev/null | grep -v '\.test\.' | grep -v "^$f$" | wc -l | tr -d ' ')
-  if ! grep -rqs "^\*\*Component:\*\* \`$f\`" docs/contracts/components/; then
+  if ! grep -qxF "$f" /tmp/_contracted_paths; then
     missing_any=$((missing_any+1))
     [ "$users" -ge 2 ] && missing=$((missing+1))
   fi
@@ -1057,6 +1119,24 @@ fi
 # primitive in the app. The ratchet asked for the lower number rather than
 # letting a paid debt sit as slack, which is the only direction this register is
 # allowed to move on its own.
+# 🔴 A VACUITY FLOOR ON BOTH REGISTERS (code review, 2026-11-08). If the population filter ever
+# stops matching — a codebase-wide move to `export const X = () =>`, a renamed directory — both
+# figures collapse toward 0 and **both arms would instruct LOWERING the baselines**, i.e. the
+# registers would congratulate themselves into nothing. The orphan arm below already carries
+# exactly this guard (`checked_paths -lt 20`) and these two did not.
+#
+# ⚠️ AND THE FIRST CUT OF THIS FLOOR GUARDED THE WRONG NUMBER. It counted `git ls-files` of
+# component files, which the EXPORT FILTER cannot affect — so breaking
+# `^export default function` / `^export function`, the exact scenario code review named, left the
+# floor silent. **Falsified by breaking that filter and watching the floor stay quiet.** It now
+# counts `in_population`: the components that actually passed the filter.
+# 📐 Measured by running it: 140 of 219 component files reach the population today. 100 is a floor no healthy
+# tree crosses and a broken filter always does.
+if [ "$in_population" -lt 100 ]; then
+  say "  CONTRACT REGISTERS VACUOUS: only $in_population components passed the export filter, expected 100+"
+  say "    Both figures below are meaningless. Check the population filter, not the baselines."
+  fail=1
+fi
 if [ "$missing" -gt "$UNCONTRACTED_BASELINE" ]; then
   say "  GREW: $missing shared components with no contract, baseline $UNCONTRACTED_BASELINE"
   fail=1

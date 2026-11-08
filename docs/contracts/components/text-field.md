@@ -62,4 +62,4 @@ replaced are how the 16px rule drifted in the first place.
 
 `lib/contracts/componentContracts.test.ts` (this contract vs the component's props) ·
 `.githooks/pre-commit` + `npm run sweep:colours` (no hardcoded colour) ·
-`lib/ui/typeScale.test.ts` (the 16px declaration is counted, not free).
+`lib/ui/appTypeScale.test.ts` (the 16px declaration is counted, not free — ⚠️ a path reading lib/ui/typeScale.test.ts does not exist, and lib/marketing/typeScale.test.ts has a disjoint population — both named without backticks, since a backticked dead path in a correction note is itself a dead reference; corrected by code review 2026-11-08).

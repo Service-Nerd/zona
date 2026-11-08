@@ -120,6 +120,38 @@ const DEAD_BY_DESIGN = new Map([
 ])
 
 const deadFiles = [], deadSyms = [], withNums = [], noNums = [], baselines = new Map()
+
+/**
+ * 🔴 SECTION 1b — A CONTRACT THAT CITES A FILE THAT DOES NOT EXIST (added 2026-11-08).
+ *
+ * Found by code review on W4's own seven contracts: `wordmark.md` and `text-field.md` both
+ * cited `lib/ui/typeScale.test.ts` (the real app gate is `appTypeScale.test.ts`, and the
+ * similarly-named `lib/marketing/typeScale.test.ts` has a disjoint population), and
+ * `article-page.md` cited `lib/marketing/comparisons.test.ts`, which does not exist — those
+ * assertions are in `articles.test.ts`, already named on the same line.
+ *
+ * ⚠️ **A CONTRACT CITING A GATE THAT DOES NOT EXIST IS WORSE THAN CITING NONE**, and it is the
+ * exact failure `COMPONENT-CONTRACT-GATE-01` was built for, one level up: *"a contract nobody
+ * checks is worse than no contract — it is documentation that reads as authoritative and is
+ * fiction."* That gate compares PROP NAMES; nothing read the prose. **49 contracts remain to be
+ * written, so the cheap moment to gate this is now.**
+ *
+ * ⚠️ Backticked paths only, and only ones that LOOK like repo paths (a slash and a known
+ * extension) — a bare filename in prose is not a reference, and matching one would fire on
+ * ordinary writing, which this repo records four times as how a guard gets switched off.
+ */
+const contractDir = 'docs/contracts'
+const contractFiles = sh('bash', ['-c', `find ${contractDir} -name '*.md' | sort`])
+  .split('\n').map(s => s.trim()).filter(Boolean)
+const deadContractRefs = []
+for (const cf of contractFiles) {
+  const body = readFileSync(cf, 'utf8')
+  for (const m of body.matchAll(/`([a-zA-Z0-9_.-]+(?:\/[a-zA-Z0-9_.-]+)+\.(?:ts|tsx|sh|mjs|py|css|sql))`/g)) {
+    const path = m[1]
+    if (existsSync(path)) continue
+    deadContractRefs.push([cf.replace(`${contractDir}/`, ''), path])
+  }
+}
 for (const [id, body] of bodies) {
   for (const [, p] of body.matchAll(FILE)) {
     if (existsSync(p)) continue
@@ -147,6 +179,11 @@ head('0. DEAD BY DESIGN — declared, with a reason')
 })
 head('1. DEAD FILE REFERENCES (a named path that exists nowhere)')
 deadFiles.length ? deadFiles.forEach(([i, p]) => console.log(`  ${i.padEnd(34)} ${p}`)) : console.log('  none')
+head('1b. A CONTRACT CITING A FILE THAT DOES NOT EXIST')
+deadContractRefs.length
+  ? deadContractRefs.forEach(([c, p]) => console.log(`  ✗ ${c.padEnd(38)} cites ${p}`))
+  : console.log(`  none — ${contractFiles.length} contracts scanned`)
+
 head('2. DEAD SYMBOL REFERENCES (a named function/constant git grep -w cannot find)')
 deadSyms.length ? deadSyms.forEach(([i, s]) => console.log(`  ${i.padEnd(34)} ${s}`)) : console.log('  none')
 head('3. BASELINES NAMED BY AN ITEM — live values, to compare against the stated figure')
@@ -170,4 +207,4 @@ console.log('\n⚠️  A DEAD REFERENCE IS NOT ALWAYS A DEAD PREMISE: an item ca
 console.log('    because it is missing. Nothing here is auto-resolved — read the item.')
 console.log('⚠️  AND SECTION 5 IS THE HONEST LIMIT. This proves references are live and prints')
 console.log('    baselines. It does not prove a behavioural premise still holds.\n')
-process.exit(deadFiles.length + deadSyms.length + untagged.length > 0 ? 1 : 0)
+process.exit(deadFiles.length + deadSyms.length + untagged.length + deadContractRefs.length > 0 ? 1 : 0)

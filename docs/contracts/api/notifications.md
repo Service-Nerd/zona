@@ -2,7 +2,7 @@
 
 **Status:** active (NOTIF-01, scoped 2026-05-25)
 **Tier:** PAID/TRIAL — every notification type is paid-gated; the bell is hidden for free users.
-**Owners:** `lib/notifications.ts` (write helper) · `supabase/migrations/2026MMDD_notifications.sql` (schema) · `app/dashboard/DashboardClient.tsx` (read + render, Phase B).
+**Owners:** `lib/notifications.ts` (write helper) · `supabase/migrations/20260525_notifications.sql` (schema) ⚠️ (**a literal `2026MMDD` placeholder sat here until 2026-11-08** — never filled in when the migration landed) · `app/dashboard/DashboardClient.tsx` (read + render, Phase B).
 
 The notification inbox makes ephemeral pushes durable. Every push the app sends also writes one row here, keyed to the user (not the device). The bell reads these rows; tapping one navigates to the surface it's about.
 

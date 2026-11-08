@@ -59,12 +59,24 @@ it is a Design Board decision, not a prop added here.**
 ## Consumers
 
 10 article routes under `app/`, plus `articleMetadata(article)` exported from the same file,
-which the routes use for their `generateMetadata`. ⚠️ **That second export is why the gate reads
-this component's props from the DEFAULT-export destructure** rather than the first named
-function it finds — the `Sheet.tsx` lesson in `componentContracts.test.ts`.
+which the routes use for their `generateMetadata`.
+
+⚠️ **AND THAT SECOND EXPORT IS A LIVE HAZARD FOR THIS CONTRACT — corrected by code review
+2026-11-08, because the first version of this paragraph described a mechanism that does not
+apply.** It said the gate reads the props from the **default-export** destructure; **this file
+has no default export at all.** `componentContracts.test.ts` falls through to the first
+`export (default )?function X({…}:` it finds, so the comparison is correct **only because
+`ArticlePage` is declared above `articleMetadata` in source order.** Moving `articleMetadata`
+above it would silently point the gate at the wrong function — which is the `Sheet.tsx` defect
+this contract wrongly claimed protection from (there, `NavHeightProvider` was read instead of
+`Sheet`, and the gate *"checked confidently and wrongly"*). **Keep `ArticlePage` first in this
+file.**
 
 ## Gates
 
 `lib/contracts/componentContracts.test.ts` · `lib/marketing/articles.test.ts` (an ungrouped
-guide fails) · `lib/marketing/comparisons.test.ts` (meta title < 60, description < 155) ·
-`lib/marketing/noEmDash.test.ts` · `lib/ui/accentText.test.ts`.
+guide fails, **and** meta title < 60 / description < 155) · `lib/marketing/noEmDash.test.ts` ·
+`lib/ui/accentText.test.ts`.
+
+⚠️ A path reading lib/marketing/comparisons.test.ts was cited here and **does not exist** (named without backticks on purpose — a backticked dead path in a correction note is itself a dead reference, which is how `BACKLOG-PREMISE-VERIFY-01`'s own record tripped its gate twice) — those assertions
+live in `articles.test.ts`, already named on the same line. Corrected by code review 2026-11-08.

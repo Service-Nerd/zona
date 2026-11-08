@@ -170,7 +170,7 @@ above in prose because nothing enforces it; a real type belongs with the
 | Check | Where |
 |---|---|
 | Props match this contract, both directions | `lib/contracts/componentContracts.test.ts` |
-| Me is an index — every row a door | `components/dashboard/meIsAnIndex.test.ts` |
+| Me is an index — every row a door | `components/shared/meIsAnIndex.test.ts` ⚠️ (this said `components/dashboard/` until 2026-11-08 — right filename, wrong directory) |
 | Door navigation semantics | `docs/contracts/components/me-door-navigation.md` |
 
 

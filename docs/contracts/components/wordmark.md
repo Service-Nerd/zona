@@ -55,5 +55,16 @@ change here is an app change AND a website change — the consumer check `/build
 
 ## Gates
 
-`lib/contracts/componentContracts.test.ts` · `lib/ui/typeScale.test.ts` ·
-`npm run sweep:colours` · `.githooks/pre-commit` (brand strings must come from `BRAND`).
+`lib/contracts/componentContracts.test.ts` · `lib/ui/appTypeScale.test.ts` ·
+`npm run sweep:colours`.
+
+🔴 **AND INVARIANT 1 — THE REBRAND DEFENCE — IS UNGATED. Corrected by code review on the day
+this was written.** The first version of this line cited the pre-commit hook as enforcing
+*"brand strings must come from `BRAND`"*. **It does not:** the hook checks palette, fonts,
+`setProperty` and direct `strava_activities` writes, and no test enforces a brand rule either.
+📐 Measured while correcting it: **12 hardcoded brand-name literals in live runner-facing copy**
+under `components/dashboard/`, `components/shared/`, `components/training/` and three preview
+pages. 🔻 **Filed as `BRAND-HARDCODE-01`.** ⚠️ **A contract citing a gate that does not exist is
+worse than citing none** — it reads as authoritative and is fiction, which is the exact failure
+`COMPONENT-CONTRACT-GATE-01` was built for, committed in a contract. This component is itself
+correct: it derives everything from `BRAND.name`.
