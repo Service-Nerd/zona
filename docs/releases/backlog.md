@@ -50,7 +50,7 @@ someone has to remember. It re-derives, for every open item:
 | Item | Filed | Live |
 |---|---|---|
 | `CONTRACT-COVERAGE-03` | 58 uncontracted components | **56** — and ⚠️ `UNCONTRACTED_BASELINE`, the derivation it names, **no longer exists** |
-| `CONTRACT-BACKFILL-01` | 13 of 62 routes | **11 of 71** |
+| `CONTRACT-BACKFILL-01` | 13 of 62 routes | **11 of 71**; **13 of 71** from 2026-11-08, when `AUDIT-CONTRACT-MENTION-01` made the predicate structural |
 | `TAP-TARGET-INLINE-44-01` | 17 inline `minHeight: 44` | **16** |
 
 **Confirmed STILL TRUE by re-derivation** (not by reading): `ZONE-DISCIPLINE-BANDS-DEAD-01`
@@ -3981,7 +3981,21 @@ is not in the register is a kill the next sitting re-proposes.
 
 ---
 
-### ⚙️ `HOOK-SUITE-HOLLOW-01` — the hook runner cannot tell a passing suite from a vacuous one *(filed 2026-10-13, P3)* ⚙️ **NO BOARD**
+### ✅ `HOOK-SUITE-HOLLOW-01` — the hook runner cannot tell a passing suite from a vacuous one *(filed 2026-10-13, P3)* ⚙️ **NO BOARD** — **SHIPPED 2026-11-08**
+
+✅ **SHIPPED 2026-11-08.** 🔄 **AND THE PREMISE HAD MOVED: the item said standardising five
+output formats was the bulk of the work. Re-measured, 10 of 11 suites already state a total**
+and exactly one did not (`ship-record-check.test.py`, which printed `all checks passed`). The
+formats never needed standardising. **What needed fixing was the runner treating silence as
+success.** Three changes: that suite counts (**33 cases**, previously reported as `-`); a suite
+the runner cannot count is now a **FAILURE**, because unverified is never a pass; and
+`.claude/hooks/case-counts.txt` is a **ratchet** — a count may rise and may not silently fall.
+📐 **11 hooks · 11 suites · 334 cases · 0 uncounted.** ✅ **Falsified three ways with real
+mutations, not predictions:** a suite gutted to `print("all checks passed")` → `uncounted`
+fires; **three real `check()` call sites deleted** from `state-block-check.test.py` → *"was 7
+cases, now 4 — cases were REMOVED"*, and note it still exited 0 and still printed `all passed`;
+a baselined suite deleted → *"suite is GONE"*. Re-baseline: `npm run test:hooks -- --write`,
+with the reason in the commit.
 
 **Board: ⚙️ NO BOARD.** Found while building `HOOK-TEST-FIXTEST-01`, deliberately not folded in.
 
@@ -8049,7 +8063,25 @@ invisible until someone notices the marketing phone showing an older Kit than th
 
 ---
 
-### `GUARD-TREE-SWEEP-01` — the colour guards see the diff, never the tree ⚙️ **NO BOARD**
+### ✅ `GUARD-TREE-SWEEP-01` — the colour guards see the diff, never the tree ⚙️ **NO BOARD** — **SHIPPED 2026-11-08**
+
+✅ **SHIPPED 2026-11-08.** `scripts/lib/colour-guards.sh` is the single owner of every colour
+regex, the OG exemption and the comment stripper; `.githooks/pre-commit` (staged) and
+`npm run sweep:colours` (the tree) both source it and neither holds a copy.
+📐 **The sweep is CLEAN: 376 files, 5 rules, 0 hits** — hex, rgba palette, banned values, banned
+fonts, `setProperty`. Exactly what the item's own re-measurement predicted, so this bought a
+ratchet and not a defect. ✅ **12 falsification cases** (`scripts/sweep-colours.test.sh`,
+in `test:githooks`), **6 in the red direction**, including the real `var(--bg, #111)` shape and
+one asserting a hex under `lib/` is OUT of population.
+🔴 **IT FOUND A HOLLOW HALF IN THE HOOK'S OWN SUITE.** `.githooks/pre-commit.test.sh` read the
+EXIT CODE only — so when the population line was deleted by accident mid-build and the hook died
+on an unbound variable for every input, **5 of its 11 cases passed**, because all five expect
+`block`. A hook reduced to `exit 1` scores the same 5. **Three arms added that assert the hook
+NAMES ITS RULE**, falsified against the crashed hook: 5 passed / 9 failed. 14 cases now.
+⚠️ **And the first cut of the owner test re-committed `HOOK-RGBA-COMMENTS-01`** — it grepped the
+whole file for a copy-pasted colour literal and fired on `pre-commit`'s own comment explaining
+the rgba rule. *A colour inside a comment is prose*, in the test written to protect the rule
+that says so.
 
 > 📐 **RE-MEASURED 2026-10-13 AND THE PREMISE HAS MOVED: THIS IS NOW A RATCHET, NOT A BUG FIX.**
 > The item's motivating defect was `var(--bg, #111)` in the dashboard layout, *"the one live
@@ -9494,7 +9526,24 @@ and the prop type, so a file-wide count reads 3 when correct and 4 when not: exa
 of number nobody notices moving. Second arm asserts the survivor is still the **status row**
 with its staleness string, because a count of 1 would stay green if it became a bare door.
 
-#### 🔴 `DOC-AUDIT-REG-FORMAT-01` — the registry has two row formats and the audit read one ⚙️ **NO BOARD**
+#### ✅ `DOC-AUDIT-REG-FORMAT-01` — the registry has two row formats and the audit read one ⚙️ **NO BOARD** — **SHIPPED 2026-11-08**
+
+✅ **SHIPPED 2026-11-08, and NOT the way the item asked.** 🔄 **The residual was recorded as
+*"normalise the registry to one row format"*. Re-measured: that is the wrong fix.** There is one
+table shape here, not two — every row is `| first-cell | tier | date | description |`. The only
+variance is whether the first cell carries a TITLE after the id (**576 rows do, 155 do not**).
+Normalising would mean deleting 576 titles or inventing 155: information destroyed, no check
+improved.
+🔑 **The hazard was never the two forms. It was that a FIFTH form could appear and nothing would
+say so** — the pattern had already been widened four times, every time by someone finding a row
+BY HAND after an item sat open with its work shipped. So: **a completeness arm.** Every row whose
+first cell starts with an id must yield that id, and a shape the pattern cannot read now fails
+loudly, naming the row and its line.
+📐 **It found one on the way in: 2 of 800 rows** — `ENVELOPE-BASELINE-01` and
+`M4-NOT-A-REFUSAL-01` use a **HYPHEN-MINUS** where the register uses an em dash, so `[—|]` never
+matched and both were outside `_reg`. **Latent** (neither item was still open), which is exactly
+how the previous four got in. Rows corrected; arm falsified by planting a sixth shape (a colon)
+and watching `audit-docs.sh` go **exit 0 → 1**.
 
 ⚙️ **NO BOARD** — tooling. **Parse fixed; the document having two formats is what remains.**
 
@@ -10056,7 +10105,30 @@ reproduce it, which is why **two earlier versions of this gate were vacuous** an
 running them showed it. Falsified both ways: make the fix a no-op → red; drop the fake clock
 → red.
 
-#### 🟡 `BACKLOG-TAG-IN-HEADING-01` — the filing rule has no check, and 18 of 23 items were tagged in the BODY *(P3, filed 2026-10-05)* ⚙️ **NO BOARD**
+#### ✅ `BACKLOG-TAG-IN-HEADING-01` — the filing rule has no check, and 18 of 23 items were tagged in the BODY *(P3, filed 2026-10-05)* ⚙️ **NO BOARD** — **SHIPPED 2026-11-08**
+
+✅ **SHIPPED 2026-11-08.** The filing rule has a gate: `backlog:verify` § 4 fails when an open
+item carries no board tag, inside `verify:ci`.
+🔄 **The P3 blocker is gone and the item did not know.** It was filed P3 because *"no parse
+written so far reads all four shapes"* — `scripts/lib/open-items.sh` has read every shape since
+2026-11-07.
+🔴 **AND THE COUNT WAS WRONG IN BOTH DIRECTIONS: filed as 23 untagged, reported as 9, the truth
+was ONE.** `NATIVE-BATCH-01`, now tagged. **The other eight were artefacts of deriving an item's
+board from the first line in the file that CONTAINED its id — a MENTION, not a filing.**
+`PARITY-STAGED-BLIND-01` is tagged on its own bullet at L219 and read as untagged because L202
+names it inside another item's ✅ SHIPPED bullet; two more were shadowed by a `## ⚖️ FILED …`
+parent. **The `GTM-CHARITY-02` class for the fourth time, in code I shipped the day before.**
+🔴 **A SECOND DEFECT, AND IT MOVED THE PROGRAMME'S OWN DENOMINATOR.** The tally tested boards in
+a fixed order, so an item written *"⚙️ NO BOARD to measure; 🧭 DESIGN BOARD to place it"* or
+*"💼 SLT (tier), then 🏃 COACHING BOARD"* was filed under whichever board the CODE tested first.
+The filing rule says to name the ORDER, and the document writes the ruling board first — so
+**the earliest glyph in the line wins. It differs on 12 of 123 open items, all twelve correct
+under earliest-wins, and `⚙️ NO BOARD` goes 46 → 54.**
+✅ **The derivation is OWNED** (`open_item_boards`), because `backlog-open.sh` and
+`backlog-verify.mjs` both need the same answer. Gate falsified: strip one tag → exit 0 → 1,
+naming the item and the line. ⚠️ **The gate is on the tag EXISTING, not on where it sits** —
+failing the ~20 items that state their board in the body would fire on correct decisions, and a
+gate that fires on ordinary work gets switched off.
 
 📐 **Measured 2026-10-05 while tagging the untagged.** 23 items carried no board tag where the rule
 and every parse look — the **heading**. But **18 of the 23 already stated their board in the body**
@@ -10098,7 +10170,23 @@ parser — it is the same first-cell comparison against a second file.
 
 🔻 **ALL THAT REMAINS IS YOURS, AND IT IS ONE DECISION:** whether to backfill the 7 legacy race plans. **My read is that it cannot be done safely** — a stamp reconstructed from flattened meta would be missing fields and **would look complete**, the same trap `BASEBUILD-GENINPUT-REMEDIATION-01` carries. If you agree, both items close as WON'T-FIX with the audit now saying so out loud; if not, the backfill needs a per-field recoverability review first.
 
-#### 🟡 `AUDIT-CONTRACT-MENTION-01` — the contract check counts a passing MENTION as a contract *(P3, filed 2026-10-04)* ⚙️ **NO BOARD**
+#### ✅ `AUDIT-CONTRACT-MENTION-01` — the contract check counts a passing MENTION as a contract *(P3, filed 2026-10-04)* ⚙️ **NO BOARD** — **SHIPPED 2026-11-08**
+
+✅ **SHIPPED 2026-11-08.** `contracted()`'s fallback is structural: the route path must appear in
+an H1/H2 heading or on a `**Route:**` line — the shape all 56 contracts already use — anchored so
+a longer path cannot satisfy a shorter one.
+🔴 **THE ITEM NAMED ONE SHAPE AND THERE WERE TWO, THE SECOND WORSE.** `grep -F` is a SUBSTRING
+match, so **a route whose path is a PREFIX of a longer route's path was always "contracted"**:
+`/api/og`, the main OG image route, was satisfied by `og-session-complete-card.md`'s own H1.
+That is not a mention at all — it is a different route's contract, and no amount of writing
+prose carefully would ever have fixed it.
+📐 **Measured both sides: 47 routes resolve by filename, 11 structurally, 2 by mention only, 11
+have nothing. Debt moves 11 → 13 of 71** — the increase is the finding, and
+`CONTRACT-BACKFILL-01` now says so beside its number.
+✅ **Falsified against the OLD predicate**, which is the only way to show the fix is
+load-bearing rather than coincidentally green: planting one prose line (*"Also see
+`/api/waitlist`"*) in `ops-events.md` drops the old count **11 → 10** and masks a real
+uncontracted route; the new predicate holds at **13**.
 
 ⚙️ **NO BOARD.** Tooling.
 
@@ -11043,7 +11131,9 @@ fails every morning for a reason nobody needs to read is a test everybody learns
 the next real failure in that file arrives pre-ignored. This repo has already recorded that a
 guard which cries wolf gets disabled, which is the same as having no guard.
 
-**State at END of 2026-11-07 (last ship `b344577c` — W1 of the 46-item NO BOARD programme COMPLETE: `PARITY-GRID-VOLUME-FLOOR-01`, `PARITY-GRID-UNSET-LEVEL-01`, `ENVELOPE-LRR-BLIND-01`, `GRID-GOAL-INSIDE-LINE-01`, `GRID-NO-ASSESSED-BEGINNER-01`. 746 files / **7,387** tests, ALL GREEN.)** 👤 **FOUNDER: *"I want all 46 in the No board category built… analyse, plan, sit boards if needed and build skill… Run full autonomous to close these out. Backlog, build log and feature list must be updated on each build."*** 📐 **9 waves planned. W1 = the measurement corpora, the reason three harnesses lied this week. 5 of 46 closed.** ⚠️ **4 of the 46 are NOT buildable here** (`NAV-BLACK-LINE-01` device · `PLAN-COUNTDOWN-SOURCE-01` the founder's screen · `TT-BEFORE-LONG-PATCH-01` a production write · `SITE-SCROLL-DEPTH-01` analytics that do not exist) and **5 carry the wrong tag and are routed** (`ALL-DAYS-BLOCKED-01`, `WIZARD-CONTRADICTORY-VOLUME-01`, `BASEBUILD-DURATION-01`, `LR-ALT-42-CONFIG-01` → 🏃; `TYPESCALE-DECIMAL-GATE-01` → 🧭). 🔑 **RE-MEASURING FIRST CHANGED THREE OF THE FIVE:** `GRID-NO-ASSESSED-BEGINNER-01` **closed with no code** — 13,824 of 41,472 rows already assess intensity=beginner, made true by `COHORT-GRID-UNSET-LEVEL-01` four days earlier, and `backlog-touch.py` cannot catch it because the item named the grids generically. ✅ **`verify:parity` was blind THREE ways** — `fitness_level` on all 6,102 rows, `VOLUMES` floored at 15 against a band of 4–8, and the longest run **DERIVED** so `lr 0` was unreachable. +108 rows (6,210). 🔴 **And the fix exposed three more defects:** the block would have been **decorative** (`generateRulePlan` refuses 24 of its 36 while `runEngine` returns a staged plan); **`STRIP_META` lacked `last_updated`** (72 of 72 CHANGED with the engine untouched); and **its loop never reached nested fields**, so `plan.pre_plan.week_estimate` — `${todayIso} → ${planStartIso}` — could flip half the MAIN grid across a midnight straddle, and had been able to since the file was written. ✅ **`targetedGrid` gains the never-run runner and a goal INSIDE §120's 5% line** (0 of 10,368 benchmarked rows were inside; the pair was derived by sweeping, 10 km off 50:00 with a 49:30 target = 3.10%). 🔴 **I SHIPPED A RED COMMIT AND `/code-review` CAUGHT IT:** both `measure:fitness` and `audit:plans` take a **coprime stride then a fixed slice**, so appending 16 rows re-permuted every sampled row — a **14.2pp marathon-specificity "regression" with no engine file in the diff**. Fixed structurally, not re-baselined: `targetedGridCore()` is sampled, `targetedGridExtra()` is taken **in full**, because a stable stride alone would still drop the only rows that reach the cohort. **Proof: `generated`, `LONG-RUN-SHORT` and `BINGE` all returned to baseline exactly.** Declared re-baselines: fitness n 3003→3075 / 9710→9792 with **every rate flat** (worst 0.6pp; never-builds 9.5→**9.4**); `audit:plans` generated 1500→1510, refused 0→**6**, NEVER-BUILDS 32→**36**, all three exactly the new cohort. 🔴 **Two more review findings worth naming:** a pinned `benchmark_date` was **still climbing §10's ramp** and would have left the admitted side in ~2.5 weeks — `GOALPACE-5K-CLOCK-01`'s exact failure, fixed the same morning, in a file `pinnedClock.test.ts` cannot see (now UNDATED, §42's "blank means fresh"); and `training_age: '18mo-3yr'` **is not a `TrainingAge`**, so §79's re-entry lift and ADR-021's early-onset gate could not fire on those rows. 🔻 **FILED: `PARITY-STAGED-BLIND-01`** — the main parity grid cannot see a staged plan wherever `generateRulePlan` refuses.
+**State at END of 2026-11-08 (last ship `d63a30e6` — W2 of the NO BOARD programme COMPLETE: `GUARD-TREE-SWEEP-01`, `HOOK-SUITE-HOLLOW-01`, `AUDIT-CONTRACT-MENTION-01`, `DOC-AUDIT-REG-FORMAT-01`, `BACKLOG-TAG-IN-HEADING-01`. 747 files, ALL GREEN.)** 🔴 **THE PROGRAMME IS 54 ITEMS, NOT 46, AND THE NUMBER I GAVE THE FOUNDER WAS DERIVED WITH A BROKEN PREDICATE.** The board tally tested the five boards in a **fixed order**, so an item written *"⚙️ NO BOARD to measure; 🧭 DESIGN BOARD to place it"* or *"💼 SLT (tier), then 🏃 COACHING BOARD"* was filed under whichever board the CODE tested first. The filing rule says to NAME THE ORDER and the document writes the ruling board first, so **the earliest glyph in the line wins: it differs on 12 of 123 open items, all twelve correct under earliest-wins, ⚙️ NO BOARD 46 → 54.** Nothing changed in the backlog. **10 of 54 closed; 44 remain.** 🔴 **A SECOND DEFECT IN THE SAME TALLY, in code shipped the day before:** it found an item's board by scanning for **the first line in the file CONTAINING its id — a mention, not a filing.** `PARITY-STAGED-BLIND-01` is tagged on its own bullet at L219 and read as UNTAGGED because L202 names it inside another item's ✅ SHIPPED bullet; two more were shadowed by a `## ⚖️ FILED …` parent. **The `GTM-CHARITY-02` class, fourth instance.** ✅ **The filing rule finally has a GATE** (`backlog:verify` § 4, in `verify:ci`) — and its count was wrong in BOTH directions: **filed as 23 untagged, the report said 9, the truth was ONE** (`NATIVE-BATCH-01`). ✅ **A tree-wide colour sweep exists** (`npm run sweep:colours`, in `verify:ci`): `scripts/lib/colour-guards.sh` is the single owner of every colour regex, the OG exemption and the comment stripper, and the hook sources the same file so the sweep can never be looser than the commit guard. 📐 **CLEAN: 376 files, 5 rules, 0 hits** — a ratchet, not a fix, exactly as the item predicted. 🔴 **AND IT FOUND THE HOOK'S OWN SUITE HALF-HOLLOW:** `.githooks/pre-commit.test.sh` read the EXIT CODE ONLY, so when the population line was deleted by accident mid-build and the hook died on an unbound variable for every input, **5 of its 11 cases passed** — all five expect `block`, and a hook reduced to `exit 1` scores the same 5. Three arms now assert the hook NAMES ITS RULE (14 cases), falsified against the crashed hook at 5/9. ✅ **The hook runner refuses an uncounted suite and ratchets every count** (`.claude/hooks/case-counts.txt`): **11 hooks · 11 suites · 334 cases · 0 uncounted**, falsified by deleting three REAL `check()` call sites — the gutted suite still exited 0 and still printed `all passed`. 🔄 **Its premise had moved: the item said standardising five output formats was the bulk of the work; 10 of 11 already stated a total and exactly ONE did not.** ✅ **`contracted()` is structural** — 🔴 **the item named a prose MENTION and the worse shape was a PREFIX: `/api/og` was "contracted" by `og-session-complete-card.md`'s own H1**, which is a different route's contract. Debt **11 → 13 of 71**, the DEFINITION changing, said beside the number. Falsified **against the OLD predicate**: one planted prose line drops it 11 → 10. ✅ **The `_reg` parse must now prove it read every row** — widened four times, every time by hand; it found a FIFTH shape immediately (**2 of 800 rows use a hyphen-minus**, latent). ⚠️ **And that residual asked for the registry to be NORMALISED, which is the wrong fix:** one table shape, the only variance a title in the first cell (576 yes, 155 no), so normalising would delete 576 titles or invent 155.
+
+**Prior — 2026-11-07 (last ship `b344577c` — W1 of the 46-item NO BOARD programme COMPLETE: `PARITY-GRID-VOLUME-FLOOR-01`, `PARITY-GRID-UNSET-LEVEL-01`, `ENVELOPE-LRR-BLIND-01`, `GRID-GOAL-INSIDE-LINE-01`, `GRID-NO-ASSESSED-BEGINNER-01`. 746 files / **7,387** tests, ALL GREEN.)** 👤 **FOUNDER: *"I want all 46 in the No board category built… analyse, plan, sit boards if needed and build skill… Run full autonomous to close these out. Backlog, build log and feature list must be updated on each build."*** 📐 **9 waves planned. W1 = the measurement corpora, the reason three harnesses lied this week. 5 of 46 closed.** ⚠️ **4 of the 46 are NOT buildable here** (`NAV-BLACK-LINE-01` device · `PLAN-COUNTDOWN-SOURCE-01` the founder's screen · `TT-BEFORE-LONG-PATCH-01` a production write · `SITE-SCROLL-DEPTH-01` analytics that do not exist) and **5 carry the wrong tag and are routed** (`ALL-DAYS-BLOCKED-01`, `WIZARD-CONTRADICTORY-VOLUME-01`, `BASEBUILD-DURATION-01`, `LR-ALT-42-CONFIG-01` → 🏃; `TYPESCALE-DECIMAL-GATE-01` → 🧭). 🔑 **RE-MEASURING FIRST CHANGED THREE OF THE FIVE:** `GRID-NO-ASSESSED-BEGINNER-01` **closed with no code** — 13,824 of 41,472 rows already assess intensity=beginner, made true by `COHORT-GRID-UNSET-LEVEL-01` four days earlier, and `backlog-touch.py` cannot catch it because the item named the grids generically. ✅ **`verify:parity` was blind THREE ways** — `fitness_level` on all 6,102 rows, `VOLUMES` floored at 15 against a band of 4–8, and the longest run **DERIVED** so `lr 0` was unreachable. +108 rows (6,210). 🔴 **And the fix exposed three more defects:** the block would have been **decorative** (`generateRulePlan` refuses 24 of its 36 while `runEngine` returns a staged plan); **`STRIP_META` lacked `last_updated`** (72 of 72 CHANGED with the engine untouched); and **its loop never reached nested fields**, so `plan.pre_plan.week_estimate` — `${todayIso} → ${planStartIso}` — could flip half the MAIN grid across a midnight straddle, and had been able to since the file was written. ✅ **`targetedGrid` gains the never-run runner and a goal INSIDE §120's 5% line** (0 of 10,368 benchmarked rows were inside; the pair was derived by sweeping, 10 km off 50:00 with a 49:30 target = 3.10%). 🔴 **I SHIPPED A RED COMMIT AND `/code-review` CAUGHT IT:** both `measure:fitness` and `audit:plans` take a **coprime stride then a fixed slice**, so appending 16 rows re-permuted every sampled row — a **14.2pp marathon-specificity "regression" with no engine file in the diff**. Fixed structurally, not re-baselined: `targetedGridCore()` is sampled, `targetedGridExtra()` is taken **in full**, because a stable stride alone would still drop the only rows that reach the cohort. **Proof: `generated`, `LONG-RUN-SHORT` and `BINGE` all returned to baseline exactly.** Declared re-baselines: fitness n 3003→3075 / 9710→9792 with **every rate flat** (worst 0.6pp; never-builds 9.5→**9.4**); `audit:plans` generated 1500→1510, refused 0→**6**, NEVER-BUILDS 32→**36**, all three exactly the new cohort. 🔴 **Two more review findings worth naming:** a pinned `benchmark_date` was **still climbing §10's ramp** and would have left the admitted side in ~2.5 weeks — `GOALPACE-5K-CLOCK-01`'s exact failure, fixed the same morning, in a file `pinnedClock.test.ts` cannot see (now UNDATED, §42's "blank means fresh"); and `training_age: '18mo-3yr'` **is not a `TrainingAge`**, so §79's re-entry lift and ADR-021's early-onset gate could not fire on those rows. 🔻 **FILED: `PARITY-STAGED-BLIND-01`** — the main parity grid cannot see a staged plan wherever `generateRulePlan` refuses.
 
 **Prior — 11-07 `8dfc126d` — W1 of the 46-item NO BOARD programme: `PARITY-GRID-VOLUME-FLOOR-01` + `PARITY-GRID-UNSET-LEVEL-01`; before it `060a8434` `BACKLOG-PREMISE-VERIFY-01`, `6573e8bf` `BACKLOG-PARENT-HEADING-BLIND-01`, `27dbf73d` `BACKLOG-STATUS-GLYPH-BLIND-01` and `7c75c2e6` `WEEK1-FROM-LONGEST-RUN-01`. 746 files / **7,385** tests, ALL GREEN.)** 👤 **FOUNDER: *"I want all 46 in the No board category built… analyse, plan, sit boards if needed and build skill. All build must be done with regression tests and code review"* + *"Run full autonomous to close these out."*** 📐 **Programme plan: 9 waves.** ⚠️ **Four of the 46 are NOT buildable here and saying so is part of the plan:** `NAV-BLACK-LINE-01` (device), `PLAN-COUNTDOWN-SOURCE-01` (the founder's screen), `TT-BEFORE-LONG-PATCH-01` (a **production write**), `SITE-SCROLL-DEPTH-01` (analytics that do not exist). ⚠️ **Five carry the wrong tag and are routed in analysis:** `ALL-DAYS-BLOCKED-01`, `WIZARD-CONTRADICTORY-VOLUME-01`, `BASEBUILD-DURATION-01`, `LR-ALT-42-CONFIG-01` → 🏃 Coaching; `TYPESCALE-DECIMAL-GATE-01` → 🧭 Design. ✅ **W1 SHIPPED — THREE BLINDNESSES IN ONE GRID:** `verify-parity.ts` set **`fitness_level` on all 6,102 rows** (the override no wizard sends), floored **`VOLUMES` at 15** against an affected band of **4–8**, and **DERIVED the longest run** so `lr 0` was unreachable at any volume. Fixed with the production field plus a focused `LOWVOL_EXTRA` block — **108 rows, 6,102 → 6,210, +1.8%** — appended not multiplied, per `PARITY-HSR-01`'s own ruling. 🔴 **AND THE FIX EXPOSED THREE MORE DEFECTS.** (a) The block would have been **decorative**: `generateRulePlan` refuses **24 of its 36** combinations while `runEngine` returns a `base_build` staged plan, so hashing a refusal MESSAGE cannot see the staged block → routed through `runEngine`. (b) **`STRIP_META` was missing `last_updated`** — the block reported **72 of 72 CHANGED with the engine untouched**, found by diffing two `--probe` runs field by field. (c) **`STRIP_META`'s loop reaches only top level and `meta.*`**, so `plan.pre_plan.week_estimate` — literally `${todayIso} → ${planStartIso}` — survived on **9 of 18 sampled MAIN-grid cases**: the main cartesian could flip half its pre-plan rows across a midnight straddle, and has been able to since it was written. Now one `stripVolatile` owner with a `STRIP_PATHS` list. ✅ **FALSIFIED AFTER TWO INVALID ATTEMPTS:** the first mutation could only bite at **cw 6** and my block held only cw 4 and 8 — *a falsification aimed at the wrong population*, the lesson filed three commits earlier and repeated; the second read 72/72 CHANGED as success when it was non-determinism. Final: engine untouched → **IDENTICAL on 6,210**; mutated at the cw-6 boundary → **60 changed, every one a `lv-` row, `volume 15/30/55 = 0`.** 🔴 **`/code-review` THEN FOUND FIVE MORE, ALL MINE:** `today` unpinned on the `runEngine` call **while the item I filed in the same commit named that requirement** (36 rows clock-dependent, 12 of 12 sampled moved across a week); the nested-strip hole above; **"at every one of these inputs `generateRulePlan` REFUSES" was FALSE — 5K and 10K generate 6 of 6**, repeated in four documents and the premise `PARITY-STAGED-BLIND-01` was filed on; **the block is 108 rows, not 72**, propagated to three documents; and the previous commit's own verification record still asserted a line that this commit had just made false. 🔻 **FILED, NOT HALF-BUILT: `PARITY-STAGED-BLIND-01`** — the main grid cannot see the staged/offer path wherever `generateRulePlan` refuses, which is why §111 Am. 4 read IDENTICAL on 6,102 cases while 80 inputs changed and 14 were rescued. **Decide whether parity hashes what the ENGINE generates or what the RUNNER receives.**
 
@@ -13718,10 +13808,17 @@ to `lib/security/rateLimit.ts` when something else touches that area.
 declared surface **or a non-AI route**"* — that escape hatch already anticipated this, so nothing
 is failing, but the naming now understates what the module does.
 
-### 🅿️ `CONTRACT-BACKFILL-01` — write the **13** remaining API route contracts · **PARKED** *(count corrected 2026-10-11: `audit-docs.sh` reports 13 of 62, not 17)*
+### 🅿️ `CONTRACT-BACKFILL-01` — write the **13** remaining API route contracts · **PARKED** *(count corrected 2026-10-11 and again 2026-11-08; `audit-docs.sh` reports 13 of 71)*
 
 > 🔄 **RE-MEASURED 2026-11-07: 13 of 62 → 11 of 71 API routes without a contract.** Two were
 > written and nine routes were added since the item was filed. Live count from `audit-docs.sh`.
+>
+> 🔴 **AND THE DEFINITION CHANGED ON 2026-11-08: 11 → 13 of 71, which is NOT decay.**
+> `AUDIT-CONTRACT-MENTION-01` made `contracted()` structural, so a route merely NAMED in another
+> contract no longer counts as documented. Two routes were being covered by a passing match:
+> `/api/ops/onboarding-event` (named in `ops-events.md`'s prose) and — the shape the item did not
+> name — **`/api/og`, whose path is a PREFIX of `/api/og/session-complete-card`**, so a substring
+> grep found a different route's contract. **Quote 13, and say the rule tightened.**
 **Board: ⚙️ NO BOARD.** Split from `CONTRACT-COVERAGE-01` (the gate, shipped 2026-09-24).
 
 🔻 **PARKED BY THE FOUNDER 2026-09-24: *"I don't want to carry on with contract work just yet."***
@@ -20498,7 +20595,7 @@ The 2026-09-17 08:30 digest surfaced three issues. Verified against the live pla
 
 ---
 
-## Native release batching — NATIVE-BATCH-01
+## Native release batching — NATIVE-BATCH-01 ⚙️ **NO BOARD** *(release process; the pre-flight checklist and the pending-binary queue. The ITEMS it batches carry their own tags.)*
 
 **Principle.** Zonna loads the web app from Vercel (`server.url`), so ~everything ships instantly via web deploy with **no** App Store submission. Only *native-layer* work needs a new binary: Capacitor plugins, Swift/native code, entitlements, `Info.plist`, capabilities, app icon/splash, extension targets. **Every native binary costs one App Review cycle (~1–2 days).** So native work is *batched*, never shipped piecemeal — and each submission runs a fixed pre-flight checklist, because the silent-plugin-drop regression class (background push + widget both died on a raw `cap sync`, 2026-08) only bites native builds.
 

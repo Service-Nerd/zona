@@ -27,6 +27,8 @@ HOOKS="$ROOT/.claude/hooks"
 missing=()
 failed=()
 drifted=()
+uncounted=()
+dropped=()
 checked=0
 counts=""
 suites=0
@@ -53,6 +55,25 @@ if [ ${#missing[@]} -gt 0 ]; then
 fi
 
 # ── how many cases did a suite run? ──────────────────────────────────────────
+#
+# 🔴 AND A SUITE THAT STATES NO TOTAL IS NOW A FAILURE (HOOK-SUITE-HOLLOW-01, 2026-11-08).
+# This runner proved two things: every hook has a suite, and every suite exits 0. It could
+# not prove a suite ASSERTS ANYTHING. `ship-record-check.test.py` printed `all checks
+# passed` with no count, so the runner honestly reported `- cases` for it — and a suite
+# reduced to `print("all checks passed")` would have passed identically. **Unverified is
+# never a pass**, which is the rule `verify-cap-config.mjs` already holds for an arm it
+# cannot evaluate.
+#
+# ⚠️ THE ITEM SAID STANDARDISING FIVE OUTPUT FORMATS WAS THE BULK OF THE WORK. Re-measured
+# 2026-11-08: **10 of 11 suites already state a total.** Exactly one did not. The formats
+# did not need standardising; the one silent suite needed a counter and the runner needed to
+# stop treating silence as success.
+#
+# ⚠️ AND THE REPO'S HOLLOW-CHECK LINT CANNOT REACH HERE. `lib/hollowTestShapes.test.ts` lints
+# vitest TypeScript; these are Python scripts, outside its glob by construction. So the one
+# category of test this repo has measured as hollow fifteen times is the category with no
+# lint over it. The case-count ratchet below is the substitute: a gutted suite cannot hide,
+# because its number has to go down.
 # ⚠️ THE SUITES DO NOT AGREE ON A FORMAT and this runner must not pretend they
 # do. Five conventions are in use: "N cases, 0 failure(s)", "N/N passed",
 # "0 failure(s)", "all checks passed", and per-line PASS marks. The first cut
@@ -88,6 +109,58 @@ for suite in "$HOOKS"/*.test.py; do
   fi
 done
 shopt -u nullglob
+
+# ── a suite that states no total is UNVERIFIED, and unverified is not a pass ─
+while IFS= read -r pair; do
+  [ -n "$pair" ] || continue
+  if [ "${pair##*=}" = "-" ]; then uncounted+=("${pair%%=*}"); fi
+done <<< "$counts"
+
+if [ ${#uncounted[@]} -gt 0 ]; then
+  echo
+  echo "SUITES THAT STATE NO CASE TOTAL (${#uncounted[@]}):"
+  for u in "${uncounted[@]}"; do echo "  ✗ .claude/hooks/$u.test.py"; done
+  echo "  A suite the runner cannot count is a suite the runner cannot tell from an empty one."
+  echo "  Print a total it can read: \"N cases, 0 failure(s)\" or \"N/N passed\"."
+fi
+
+# ── the RATCHET: a case count may rise, and may not silently fall ────────────
+#
+# 🔑 The cheap defence against a gutted suite is not a linter, it is the number. A suite
+# reduced to one assertion still exits 0 and still prints a total; what it cannot do is
+# keep the SAME total. Same debt-register shape as `SWEEP-BASELINE-01`, the liveness
+# baseline and `cohort:shape`: the file is the declaration, and lowering it is a statement
+# you make on purpose, in a commit, with a reason.
+BASELINE="$ROOT/.claude/hooks/case-counts.txt"
+if [ -n "${HOOK_CASE_BASELINE:-}" ]; then BASELINE="$HOOK_CASE_BASELINE"; fi
+if [ "${1:-}" = "--write" ]; then
+  printf '%s' "$counts" | grep . | sort > "$BASELINE"
+  echo
+  echo "case-counts.txt rewritten from this run ($(grep -c . "$BASELINE") suites)."
+  echo "Say in the commit which number moved and why. Never re-baseline to turn this green."
+  exit 0
+fi
+if [ -f "$BASELINE" ]; then
+  while IFS= read -r pair; do
+    [ -n "$pair" ] || continue
+    hook="${pair%%=*}"; was="${pair##*=}"
+    now="$(printf '%s' "$counts" | grep "^${hook}=" | head -1 | sed 's/.*=//')"
+    if [ -z "$now" ]; then
+      dropped+=("$hook: baselined at $was cases, suite is GONE")
+    elif [ "$now" = "-" ] || [ "$was" = "-" ]; then
+      :                                    # the uncounted arm above owns this case
+    elif [ "$now" -lt "$was" ] 2>/dev/null; then
+      dropped+=("$hook: was $was cases, now $now — cases were REMOVED")
+    fi
+  done < "$BASELINE"
+fi
+
+if [ ${#dropped[@]} -gt 0 ]; then
+  echo
+  echo "A HOOK SUITE LOST CASES (${#dropped[@]}):"
+  for d in "${dropped[@]}"; do echo "  ✗ $d"; done
+  echo "  If the removal is deliberate: npm run test:hooks -- --write, and say why in the commit."
+fi
 
 # ── documentation: the case counts CLAUDE.md quotes must be the real ones ────
 # ⚠️ WHY. When this runner was written, CLAUDE.md's hook section claimed
@@ -125,9 +198,10 @@ if [ ${#drifted[@]} -gt 0 ]; then
 fi
 
 echo
-echo "$hooks hooks · $suites suites · $cases_total+ cases · ${#missing[@]} untested · ${#failed[@]} failing · $checked doc counts checked, ${#drifted[@]} drifted"
+echo "$hooks hooks · $suites suites · $cases_total cases · ${#missing[@]} untested · ${#failed[@]} failing · ${#uncounted[@]} uncounted · ${#dropped[@]} shrunk · $checked doc counts checked, ${#drifted[@]} drifted"
 
-if [ ${#missing[@]} -gt 0 ] || [ ${#failed[@]} -gt 0 ] || [ ${#drifted[@]} -gt 0 ]; then
+if [ ${#missing[@]} -gt 0 ] || [ ${#failed[@]} -gt 0 ] || [ ${#drifted[@]} -gt 0 ] \
+   || [ ${#uncounted[@]} -gt 0 ] || [ ${#dropped[@]} -gt 0 ]; then
   echo "HOOK TESTS: GAPS FOUND (above)"
   exit 1
 fi

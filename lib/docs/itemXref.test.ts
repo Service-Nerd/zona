@@ -195,13 +195,23 @@ describe('XREF-DANGLE-01 — promised backlog entries exist', () => {
     // prints ok. They cannot share a regex — one is sed, one is JS — so this reads
     // the shell's tag set out of the script instead of restating it.
     const sh = readFileSync(join(process.cwd(), OPEN_ITEMS_SH), 'utf8')
-    const fn = sh.match(/board_tag_bullet_ids\(\) \{[\s\S]*?\n\}/)
-    expect(fn, `${OPEN_ITEMS_SH} no longer defines board_tag_bullet_ids`).not.toBeNull()
+    // 🔄 THE PRODUCER MOVED, 2026-11-08. `board_tag_bullet_ids` is now a one-line wrapper over
+    // `board_tag_bullet_sites`, which emits `lineno<TAB>id` so callers can read an item's own
+    // filing line instead of the first line that merely NAMES it (BACKLOG-TAG-IN-HEADING-01).
+    // The alternation lives in the producer, so this reads the producer — and the verdict half
+    // below now SOURCES the real owner rather than extracting one function body, which is
+    // strictly better: an extracted body is a copy, and a copy is what this arm exists to stop.
+    const fn = sh.match(/board_tag_bullet_sites\(\) \{[\s\S]*?\n\}/)
+    expect(fn, `${OPEN_ITEMS_SH} no longer defines board_tag_bullet_sites`).not.toBeNull()
     // And the audit must still be WIRED to that owner, or this arm would be comparing a
     // function nothing calls — the hollow-gate shape this repo keeps paying for.
     const audit = readFileSync(join(process.cwd(), AUDIT_SH), 'utf8')
     expect(audit, `${AUDIT_SH} must source ${OPEN_ITEMS_SH}`).toContain('scripts/lib/open-items.sh')
-    const alt = fn![0].match(/\(([^)]*\|[^)]*)\)/)
+    // ⚠️ ANCHORED ON THE BULLET PREFIX, not "the first parenthesis". The producer is now an awk
+    // block, so the first `(` in it is `if (` — and an unanchored match captured
+    // `$0 !~ /^- (🏃` as the first tag. **Bound the region, never grep the file**, which is the
+    // lesson this repo has recorded for the hooks' substring bias and paid for again here.
+    const alt = fn![0].match(/\^- \(([^)]*\|[^)]*)\)/)
     expect(alt, 'the extractor no longer carries a tag alternation').not.toBeNull()
     expect(alt![1].split('|'), 'the two registers disagree about the board tags')
       .toEqual([...BOARD_TAGS])
@@ -229,7 +239,7 @@ describe('XREF-DANGLE-01 — promised backlog entries exist', () => {
       const fixture = join(dir, 'fixture.md')
       writeFileSync(fixture, `${CASES.map(c => c[1]).join('\n')}\n`)
       const shellIds = new Set(
-        execSync(`${fn![0]}\nboard_tag_bullet_ids ${JSON.stringify(fixture)}`,
+        execSync(`. ${JSON.stringify(OPEN_ITEMS_SH)}\nboard_tag_bullet_ids ${JSON.stringify(fixture)}`,
           { shell: '/bin/bash', encoding: 'utf8' }).split('\n').filter(Boolean),
       )
       for (const [what, line, isFiling] of CASES) {

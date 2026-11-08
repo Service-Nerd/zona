@@ -24,8 +24,16 @@ const ROOT = execFileSync('git', ['rev-parse', '--show-toplevel'], { encoding: '
 const read = (p: string) => readFileSync(join(ROOT, p), 'utf8')
 
 const LIB = 'scripts/lib/open-items.sh'
-const CALLERS = ['scripts/audit-docs.sh', 'scripts/backlog-open.sh'] as const
-const OWNED = ['heading_open_ids', 'board_tag_bullet_ids', '_CLOSED_STAMPS', '_CLOSED_PROSE'] as const
+const CALLERS = ['scripts/audit-docs.sh', 'scripts/backlog-open.sh', 'scripts/backlog-verify.mjs'] as const
+const OWNED = [
+  'heading_open_ids', 'heading_open_sites',
+  'board_tag_bullet_ids', 'board_tag_bullet_sites',
+  // 🔴 ADDED 2026-11-08 (BACKLOG-TAG-IN-HEADING-01). `backlog-open.sh` held the board
+  // derivation and `backlog-verify.mjs` needed the same answer to GATE the filing rule. Two
+  // copies would disagree about which board owns an item, which is the one thing it says.
+  'open_item_boards',
+  '_CLOSED_STAMPS', '_CLOSED_PROSE',
+] as const
 
 describe('BACKLOG-PARENT-HEADING-BLIND-01 — one owner of "what is open"', () => {
   it('1. the owner exists and defines every name', () => {
@@ -41,7 +49,15 @@ describe('BACKLOG-PARENT-HEADING-BLIND-01 — one owner of "what is open"', () =
     for (const caller of CALLERS) {
       const src = read(caller)
       for (const name of OWNED) {
-        const defines = new RegExp(`(^|\\n)\\s*(${name}\\(\\)\\s*\\{|${name}=)`).test(src)
+        // ⚠️ A JS CALLER REDEFINES DIFFERENTLY, and the first cut of this arm could not see it.
+        // `scripts/backlog-verify.mjs` joined CALLERS on 2026-11-08; `function name() {…}` and
+        // `const name = …` both put a keyword BEFORE the name, so a pattern anchored at the line
+        // start missed them. Falsified by appending a stub to that file and watching this arm
+        // stay GREEN — the same class as every other "the checker's population excludes the
+        // cases at risk" entry in this repo, arriving because the population gained a language.
+        const defines = new RegExp(
+          `(^|\\n)\\s*((function|const|let|var)\\s+)?${name}\\s*(\\(\\)\\s*\\{|=)`,
+        ).test(src)
         expect(defines, `${caller} defines its own ${name}; it must source ${LIB}`).toBe(false)
       }
       expect(src.includes('scripts/lib/open-items.sh'), `${caller} must source ${LIB}`).toBe(true)

@@ -35,6 +35,37 @@ run_case() {           # name  expect(block|pass)  path  content
   rm -rf "$tmp"
 }
 
+# ── 🔴 AN EXIT CODE IS NOT A REASON (added 2026-11-08, GUARD-TREE-SWEEP-01) ──
+#
+# `run_case` above reads the hook's EXIT CODE only. On 2026-11-08, mid-build, the
+# population line (`STAGED=`) was deleted by accident while the colour predicates were
+# being extracted into `scripts/lib/colour-guards.sh`. Under `set -u` the hook then died
+# on an unbound variable and exited non-zero for EVERY input — and **5 of these 11 cases
+# passed**, because every one of them expects `block`. A hook reduced to `exit 1` scores
+# the same 5. The six `pass` cases caught it, which is the whole argument for testing
+# both directions, but half the suite was hollow for as long as it existed.
+#
+# So: a blocking case must also NAME ITS RULE in the output. An exit 1 for the wrong
+# reason is not a passing case.
+run_msg() {            # name  needle  path  content
+  local name="$1" needle="$2" path="$3" content="$4"
+  local tmp out; tmp="$(mktemp -d)"
+  out="$(
+    cd "$tmp" || exit 1
+    git init -q . && git config user.email t@t && git config user.name t
+    mkdir -p "$(dirname "$path")"
+    printf '%s' "$content" > "$path"
+    git add -A >/dev/null 2>&1
+    bash "$HOOK" 2>&1
+  )"
+  rm -rf "$tmp"
+  if printf '%s' "$out" | grep -qF "$needle"; then
+    PASS=$((PASS+1)); printf '  ✓ %s\n' "$name"
+  else
+    FAIL=$((FAIL+1)); printf '  ✗ %s — the hook never said %q (it may have crashed)\n' "$name" "$needle"
+  fi
+}
+
 echo "pre-commit colour guards"
 
 # ── the defect: prose about a measurement must NOT be blocked ──
@@ -81,6 +112,17 @@ run_case "code AFTER a comment on the same line still blocks" block "components/
 '
 run_case "a hex inside a STRING is code, not prose" block "components/x.tsx" \
   'export const LABEL = "brand hex is #B5C0B4"
+'
+
+# ── the blocking cases must name their rule, not merely exit non-zero ──
+run_msg "a hex block SAYS it is a hex colour" "Hardcoded hex colour" "components/x.tsx" \
+  'export const X = () => <div style={{ color: "#B5C0B4" }} />
+'
+run_msg "an rgba block SAYS it is an rgba palette colour" "Hardcoded rgba" "components/x.tsx" \
+  'export const X = () => <div style={{ color: "rgba(91,192,190,0.4)" }} />
+'
+run_msg "a banned-value block SAYS which family" "Banned palette value" "components/x.tsx" \
+  'export const C = "#5BC0BE"
 '
 
 echo "  $PASS passed, $FAIL failed"

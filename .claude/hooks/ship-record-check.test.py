@@ -17,9 +17,17 @@ src = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(src)
 
 failures = []
+ran = 0
 
 
 def check(name, got, want):
+    # 🔴 THE COUNT IS NOT DECORATION (HOOK-SUITE-HOLLOW-01, 2026-11-08). This suite used to
+    # print `all checks passed` with no total, so `scripts/test-hooks.sh` honestly reported
+    # `- cases` for it — and a suite GUTTED to `print("all checks passed")` would have passed
+    # the runner identically. The runner now refuses a suite that states no total, because
+    # unverified is never a pass, and it ratchets the number so a silent drop fails.
+    global ran
+    ran += 1
     if got != want:
         failures.append(f"{name}: got {got!r}, want {want!r}")
 
@@ -129,4 +137,4 @@ if failures:
     for f in failures:
         print("  -", f)
     sys.exit(1)
-print(f"ship-record-check: all checks passed")
+print(f"ship-record-check: {ran} cases, 0 failure(s)")

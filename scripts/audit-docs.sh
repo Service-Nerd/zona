@@ -172,7 +172,7 @@ done <<< "$ids"
 # Falsified on restore: 290 reports GREW and fails; 292 reports "improved";
 # 291 reports "unchanged". The ratchet only ever moves down, in the same commit
 # that pays the debt.
-SHIP_RECORD_DEBT_BASELINE=291
+SHIP_RECORD_DEBT_BASELINE=290   # 291 -> 290, 2026-11-08: no ship was recorded; the _reg parse got WIDER (DOC-AUDIT-REG-FORMAT-01 fixed two hyphen-separator rows), so one more id is now visible as having its row. A register asking to be LOWERED because it re-counted is the only direction it may move on its own.
 say "── ship records: ALL-TIME debt (baseline ${SHIP_RECORD_DEBT_BASELINE}) ──"
 all_ids=$(git log --pretty=format:"%s" \
       | grep -oE "^(feat|fix|perf)\([^)]+\)" | sed -E 's/^(feat|fix|perf)\(//; s/\)$//' \
@@ -385,6 +385,43 @@ afail=0
 # and accidentally made it too tight.
 sed -nE 's/^\| *`?([A-Z][A-Z0-9]*(-[A-Z0-9]+)+)`?[^|—]{0,60}[—|].*/\1/p' \
   docs/canonical/feature-registry.md | sort -u > /tmp/_reg
+
+# ── 🔴 THE PARSE MUST PROVE IT READ EVERY ROW (DOC-AUDIT-REG-FORMAT-01, 2026-11-08) ──
+#
+# The pattern above has been widened FOUR times, each time by someone finding a row it could
+# not see: the pipe separator (68 rows), a parenthetical qualifier (`(part 1)`), a qualifier
+# RUN (`(b)+(c)`), and free text before the dash (`Phases 0-2`). Every one of those was found
+# BY HAND, after an item had sat open with its work shipped, because a parse that misses a row
+# fails SILENTLY — a missing id looks exactly like an id that was never registered.
+#
+# ⚠️ THE ITEM ASKED FOR THE DOCUMENT TO BE NORMALISED TO ONE ROW FORMAT, AND RE-MEASURING
+# 2026-11-08 SAYS THAT IS THE WRONG FIX. There is one table shape here, not two: every row is
+# `| first-cell | tier | date | description |`. The only variance is whether the first cell
+# carries a TITLE after the id (576 rows do, 155 do not). "Normalising" would mean deleting 576
+# titles or inventing 155, which destroys information and improves no check.
+#
+# **The hazard was never the two forms. It was that a FIFTH form could appear and nothing would
+# say so.** So instead: every row whose first cell STARTS with an id must yield that id. A
+# shape the pattern cannot read now fails here, loudly, naming the row.
+#
+# 📐 It found one on the way in: `| ENVELOPE-BASELINE-01 - the fit-for-purpose rate ... |` and
+# `| M4-NOT-A-REFUSAL-01 - a persona ... |` use a HYPHEN-MINUS where the register uses an em
+# dash, so `[—|]` never matched and both rows were outside `_reg`. Latent — neither item was
+# still open — which is exactly how the previous four got in.
+sed -nE 's/^\| *`?([A-Z][A-Z0-9]*(-[A-Z0-9]+)+)`?.*/\1/p' \
+  docs/canonical/feature-registry.md | sort -u > /tmp/_regleading
+_regmissed=$(comm -13 /tmp/_reg /tmp/_regleading)
+if [ -n "$_regmissed" ]; then
+  say "  ✗ THE REGISTRY HAS A ROW FORMAT \`_reg\` CANNOT READ — every open-item arm is blind to these ids:"
+  fail=1
+  for id in $_regmissed; do
+    say "    ✗ $id"
+    grep -nE "^\| *.?$id" docs/canonical/feature-registry.md | head -1 | cut -c1-120 | sed 's/^/        /'
+  done
+  say "    Widen the \`_reg\` pattern in scripts/audit-docs.sh, or normalise the row."
+else
+  say "  registry parse reads all $(wc -l < /tmp/_regleading | tr -d ' ') leading-id rows"
+fi
 # Open headers carry a *(provenance)* block; in-item emphasis bullets do not.
 # Without that discriminator this fires on narrative text, which is how four
 # separate parses of this file produced four different counts.
@@ -723,12 +760,39 @@ say "  code=$(wc -l < /tmp/_a | tr -d ' ') doc=$(wc -l < /tmp/_b | tr -d ' ') or
 # SINGLE OWNER of "is this route documented?" — used by BOTH the per-change arm
 # and the standing-debt count, so the two can never drift (the producer/checker
 # split this repo has paid for repeatedly).
+# 🔴 A PASSING MENTION IS NOT A CONTRACT (AUDIT-CONTRACT-MENTION-01, fixed 2026-11-08).
+# The second arm used to be `grep -rqF "<route path>" docs/contracts/api/`, so a route named
+# ANYWHERE in another contract's prose counted as documented. Found 2026-10-04:
+# `/api/ops/plan-audit` had no contract of its own and was counted because `ops-events.md`
+# names it in a table row — writing the real contract moved the debt figure by ZERO.
+#
+# ⚠️ AND THE ITEM NAMED ONLY THE PROSE FORM. Re-measured 2026-11-08, there are TWO shapes and
+# the second is worse: `grep -F` is a SUBSTRING match, so a route whose path is a PREFIX of a
+# longer route's path is always "contracted". `/api/og` — the main OG image route — was
+# satisfied by `og-session-complete-card.md`'s own H1. It is not a mention at all; it is a
+# different route's contract, and no amount of writing prose carefully would have fixed it.
+#
+# This is the same class `ship-record-check.py` already guards against and this script did not:
+# that hook reads the registry row's FIRST CELL precisely because *"a plain grep called
+# GTM-CHARITY-02 covered because its ID appeared inside another feature's row."* A substring
+# search cannot tell "this document is about X" from "this document mentions X".
+#
+# So the fallback is STRUCTURAL: the path must appear in an H1/H2 heading or on a `**Route:**`
+# line — the shape all 56 contracts already use (`# API Contract — /api/<path>`), mirroring the
+# component arm, which reads each contract's own `**Component:** \`path\`` line. The trailing
+# class forbids a longer path from satisfying a shorter one.
+#
+# 📐 MEASURED BEFORE AND AFTER, because the increase is the finding and not a regression:
+# 47 routes resolve by filename, 11 structurally, **2 by mention only** (`/api/og` and
+# `/api/ops/onboarding-event`), 11 have nothing. Debt moves **11 → 13 of 71**. ⚠️ Anyone
+# quoting the figure across this commit must say the DEFINITION changed, or the jump reads as
+# decay — the item said so when it was filed.
 contracted() {
   local rf="$1" nm rp
   nm=$(printf '%s' "$rf" | sed -E 's#^app/api/##; s#/route\.tsx?$##; s#/#-#g')
   [ -f "docs/contracts/api/${nm}.md" ] && return 0
   rp=$(printf '%s' "$rf" | sed -E 's#^app/##; s#/route\.tsx?$##')
-  grep -rqF "$rp" docs/contracts/api/ 2>/dev/null && return 0
+  grep -rqE "^(#{1,2} .*|\*\*Route:\*\*.*)(/)?${rp}([^A-Za-z0-9/_-]|$)" docs/contracts/api/ 2>/dev/null && return 0
   return 1
 }
 

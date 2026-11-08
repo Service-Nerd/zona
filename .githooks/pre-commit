@@ -9,58 +9,28 @@ set -euo pipefail
 
 FAIL=0
 
-# `app/api/og/**` is excluded from the palette check. `next/og` renders in a
-# satori runtime with no CSS custom properties, so a token resolves to nothing
-# and the image comes out unstyled — CLAUDE.md records this exception for
-# app/api/og/route.tsx and it applies to every OG route. Those files carry the
-# hex WITH the token name in a trailing comment, which is the reviewable form.
-# Without this the hook blocked any commit that so much as touched an OG route,
-# over pre-existing lines, which is how a guard gets switched off entirely.
-PALETTE_EXEMPT_REGEX='^app/api/og/'
+# ── The colour predicates live in ONE place ──────────────────────────────────
+#
+# 🔴 `scripts/lib/colour-guards.sh` is the single owner of every colour regex, the
+# OG exemption and the comment stripper (`GUARD-TREE-SWEEP-01`, 2026-11-08). This
+# hook's job is the POPULATION — staged files — and nothing else. The tree-wide
+# sweep (`npm run sweep:colours`) sources the same file, so the two can never
+# enforce different rules.
+#
+# Resolved from the HOOK'S OWN directory, never from `$PWD`: `pre-commit.test.sh`
+# runs the real hook with cwd set to a scratch git repo, and a relative source
+# would silently find nothing there.
+. "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/scripts/lib/colour-guards.sh"
 
-STAGED=$(git diff --cached --name-only --diff-filter=ACM | grep -E '\.(tsx?|jsx?)$' | grep -vE '^globals\.css$' | grep -E '^(app|components)/' | grep -vE "$PALETTE_EXEMPT_REGEX" || true)
-
-# ── Comment-stripped source, for the colour checks ───────────────────────────
-#
-# 🔴 HOOK-RGBA-COMMENTS-01. Both colour checks below grepped the WHOLE FILE, so
-# a comment RECORDING a measured colour was blocked as a hardcoded palette
-# value: *"the darkest blurred backdrop is rgb(181,192,180)"* is prose about a
-# measurement, not a style.
-#
-# ⚠️ THE GUARDS ARE RIGHT TO EXIST AND WERE NOT LOOSENED. On 2026-09-26 the
-# comment was reworded rather than the rule weakened. But this repo has recorded
-# FOUR times that a guard which fires on ordinary work gets switched off, and
-# documenting a measured colour in a comment is ordinary work here — the hook's
-# own OG exemption says those files carry the hex "WITH the token name in a
-# trailing comment, which is the reviewable form."
-#
-# ⚠️ AND THE ITEM NAMED ONLY `rgba`. The hex check two blocks below had the
-# IDENTICAL hole, which is why the stripper is shared rather than bolted onto
-# one of them. 📐 Measured 2026-10-01 across app/ and components/: **0
-# comment-only occurrences of either**, so the hole is LATENT, not live — and
-# the one live hardcoded hex it did find was `var(--bg, #111)`, a dark-mode
-# fallback that would paint the dashboard near-black under a single LIGHT theme
-# (ADR-008). Fixed in the same commit.
-#
-# Line numbers are PRESERVED: comment text is blanked, never deleted, so the
-# `grep -n` output below still points at the real line.
-strip_comments() {
-  python3 - "$1" <<'PYSTRIP'
-import re, sys
-src = open(sys.argv[1], encoding='utf-8', errors='replace').read()
-blank = lambda m: re.sub(r'[^\n]', ' ', m.group(0))
-src = re.sub(r'/\*[\s\S]*?\*/', blank, src)   # block comments, newlines kept
-src = re.sub(r'//[^\n]*', blank, src)           # line comments
-sys.stdout.write(src)
-PYSTRIP
-}
+# The POPULATION: staged TS/JS under app/ and components/. `globals.css` is the token
+# authority and is excluded here, at selection, so the colour rules never read it.
+STAGED=$(git diff --cached --name-only --diff-filter=ACM | grep -E "$COLOUR_FILE_REGEX" | grep -vE '^globals\.css$' | grep -E '^(app|components)/' | grep -vE "$PALETTE_EXEMPT_REGEX" || true)
 
 # ── Hardcoded hex colours ─────────────────────────────────────────────────────
-HEX_RE='#[0-9A-Fa-f]{3,8}\b'
 HEX_HITS=""
 for f in $STAGED; do
   [ -f "$f" ] || continue
-  if strip_comments "$f" | grep -qE "$HEX_RE"; then
+  if colour_violations hex "$f" | grep -q .; then
     HEX_HITS="$HEX_HITS$f
 "
   fi
@@ -71,7 +41,7 @@ if [ -n "$HEX_HITS" ]; then
   echo "   (A hex inside a COMMENT is prose about a measurement and is allowed.)"
   echo "$HEX_HITS" | while read -r f; do
     [ -n "$f" ] || continue
-    strip_comments "$f" | grep -nE "$HEX_RE" | head -3 | sed "s|^|   $f:|"
+    colour_violations hex "$f" | head -3 | sed "s|^|   $f:|"
   done
   FAIL=1
 fi
@@ -91,12 +61,10 @@ fi
 # Pure white and pure black at alpha are SCRIMS and overlays — there is no token
 # for a scrim and there should not be one. Only a NON-greyscale triple is a
 # palette colour wearing an alpha channel, and that is all this matches.
-RGBA_RE='rgba?\(\s*[0-9]{1,3}\s*,\s*[0-9]{1,3}\s*,\s*[0-9]{1,3}'
-RGBA_SCRIM='rgba?\(\s*(0\s*,\s*0\s*,\s*0|255\s*,\s*255\s*,\s*255)\s*[,)]'
 RGBA_HITS=""
 for f in $STAGED; do
   [ -f "$f" ] || continue
-  if strip_comments "$f" | grep -nE "$RGBA_RE" | grep -vE "$RGBA_SCRIM" | grep -q .; then
+  if colour_violations rgba "$f" | grep -q .; then
     RGBA_HITS="$RGBA_HITS$f
 "
   fi
@@ -107,40 +75,40 @@ if [ -n "$RGBA_HITS" ]; then
   echo "   (Pure white / pure black at alpha are allowed — those are scrims, not palette.)"
   echo "$RGBA_HITS" | while read -r f; do
     [ -n "$f" ] || continue
-    strip_comments "$f" | grep -nE "$RGBA_RE" | grep -vE "$RGBA_SCRIM" | head -3 | sed "s|^|   $f:|"
+    colour_violations rgba "$f" | head -3 | sed "s|^|   $f:|"
   done
   FAIL=1
 fi
 
 # ── Banned fonts ──────────────────────────────────────────────────────────────
-FONT_HITS=$(echo "$STAGED" | xargs grep -lnE 'DM Mono|DM Sans|Space Grotesk|Bebas Neue' 2>/dev/null || true)
+FONT_HITS=$(echo "$STAGED" | xargs grep -lnE "$FONT_RE" 2>/dev/null || true)
 if [ -n "$FONT_HITS" ]; then
   echo ""
   echo "✗  Banned font reference detected. Use var(--font-ui) or var(--font-brand) only."
   echo "$FONT_HITS" | while read -r f; do
-    grep -nE 'DM Mono|DM Sans|Space Grotesk|Bebas Neue' "$f" | head -3 | sed "s|^|   $f:|"
+    colour_violations font "$f" | head -3 | sed "s|^|   $f:|"
   done
   FAIL=1
 fi
 
 # ── setProperty calls (theme switching) ──────────────────────────────────────
-SETP_HITS=$(echo "$STAGED" | xargs grep -lnE '\.style\.setProperty\(' 2>/dev/null || true)
+SETP_HITS=$(echo "$STAGED" | xargs grep -lnE "$SETP_RE" 2>/dev/null || true)
 if [ -n "$SETP_HITS" ]; then
   echo ""
   echo "✗  style.setProperty() detected. Colour switching is not allowed (ADR-008)."
   echo "$SETP_HITS" | while read -r f; do
-    grep -nE '\.style\.setProperty\(' "$f" | head -3 | sed "s|^|   $f:|"
+    colour_violations setp "$f" | head -3 | sed "s|^|   $f:|"
   done
   FAIL=1
 fi
 
 # ── Specifically banned values ────────────────────────────────────────────────
-BANNED_HITS=$(echo "$STAGED" | xargs grep -lnE '#D4501A|#f5f2ee|#F5F2EE|#0B132B|#5BC0BE|rgba?\(212, ?80, ?26|rgba?\(11, ?19, ?43|rgba?\(91, ?192, ?190' 2>/dev/null || true)
+BANNED_HITS=$(echo "$STAGED" | xargs grep -lnE "$BANNED_RE" 2>/dev/null || true)
 if [ -n "$BANNED_HITS" ]; then
   echo ""
   echo "✗  Banned palette value detected (ember orange / warm beige / System B colours)."
   echo "$BANNED_HITS" | while read -r f; do
-    grep -nE '#D4501A|#f5f2ee|#F5F2EE|#0B132B|#5BC0BE|rgba?\(212, ?80, ?26|rgba?\(11, ?19, ?43|rgba?\(91, ?192, ?190' "$f" | head -3 | sed "s|^|   $f:|"
+    colour_violations banned "$f" | head -3 | sed "s|^|   $f:|"
   done
   FAIL=1
 fi

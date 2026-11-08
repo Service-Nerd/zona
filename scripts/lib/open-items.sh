@@ -13,9 +13,37 @@
 # ⚠️ `openItemsSingleOwner.test.ts` fails if either caller defines these names itself.
 set -uo pipefail
 
-board_tag_bullet_ids() {
-  sed -nE 's/^- (🏃|🧭|💼|👤|⚙️) \*\*[^*]+\*\* `?([A-Z][A-Z0-9]*(-[A-Z0-9]+)+)`?([^A-Z0-9-].*)?$/\2/p' "$1"
+# ── SITES, NOT JUST IDS (BACKLOG-TAG-IN-HEADING-01, 2026-11-08) ─────────────
+#
+# 🔴 WHY BOTH SHAPES NOW EMIT `lineno<TAB>id`. `backlog-open.sh` derived each item's BOARD by
+# scanning for the first line in file order that CONTAINED the id — which is a MENTION, not a
+# filing. Measured 2026-11-08: `PARITY-STAGED-BLIND-01` is tagged `⚙️ NO BOARD` on its own
+# bullet at L219 and was reported UNTAGGED, because L202 names it inside a different item's
+# ✅ SHIPPED bullet; `COACHING-ROUND-WARNS-BLIND-01` and `DOCS-RESIDUAL-01` are tagged on
+# their `###` headings and were reported untagged because a `## ⚖️ FILED …` parent names them
+# first. **A substring search cannot tell "this line files X" from "this line mentions X" —
+# the `GTM-CHARITY-02` class, for the fourth time in this repo, in code shipped yesterday.**
+#
+# So the owner emits the SITE it derived the id from, and every caller reads the item's own
+# line. `heading_open_ids` / `board_tag_bullet_ids` keep their id-only contract for the callers
+# that only want the set.
+board_tag_bullet_sites() {
+  # ⚠️ LITERAL GLYPHS, NEVER BYTE ESCAPES. `lib/docs/itemXref.test.ts` reads this
+  # alternation out of the source and compares it against its own tag set, because the two
+  # registers must mean the same thing by "filed" and cannot share a regex (one is shell, one is
+  # JS). Byte escapes made that arm capture the wrong group and go red — caught by the full
+  # suite, 2026-11-08, which is the argument for running it rather than the files you touched.
+  awk '
+    {
+      if ($0 !~ /^- (🏃|🧭|💼|👤|⚙️) \*\*[^*]+\*\* `?[A-Z][A-Z0-9]*(-[A-Z0-9]+)+`?([^A-Z0-9-]|$)/) next
+      if (match($0, /\*\* `?[A-Z][A-Z0-9]*(-[A-Z0-9]+)+/) == 0) next
+      t = substr($0, RSTART, RLENGTH)
+      sub(/^\*\* `?/, "", t)
+      printf "%s\t%s\n", NR, t
+    }' "$1"
 }
+
+board_tag_bullet_ids() { board_tag_bullet_sites "$1" | cut -f2; }
 
 # ── THE CLOSED VOCABULARY — ONE LIST, SHARED BY EVERY OPEN-ITEM ARM ─────────
 #
@@ -53,7 +81,7 @@ _CLOSED_PROSE='for the record|NOT an open item|do not re-propose'
 # closure as a CAPITALISED stamp (**DEAD**, **WITHDRAWN**, ✅ SHIPPED), so requiring caps keeps
 # ordinary prose ("a deadline", "shipped copy") from closing an open item. Only the two
 # sentence-shaped markers are case-insensitive, because they are written as prose.
-heading_open_ids() {
+heading_open_sites() {
   awk -v stamps="$_CLOSED_STAMPS" -v prose="$_CLOSED_PROSE" '
     /^##/ {
       line = $0
@@ -79,14 +107,72 @@ heading_open_ids() {
         if (line ~ /^## .{0,8}(FILED|SHIPPING|Filed|Shipping)/) next
         # a `##` parent names its id WITHOUT backticks by convention, so accept a bare id
         if (match(line, /[A-Z][A-Z0-9]*(-[A-Z0-9]+)+-[0-9][0-9]/) == 0) next
-        print substr(line, RSTART, RLENGTH); next
+        printf "%s\t%s\n", NR, substr(line, RSTART, RLENGTH); next
       }
 
       # `###`/`####` keep the backticked convention: it is what stops a sentence-shaped
       # heading that MENTIONS an id from being read as that id\x27s filing.
       if (line !~ /^###/) next
       if (match(line, /`[A-Z][A-Z0-9]*(-[A-Z0-9]+)+`/) == 0) next
-      print substr(line, RSTART + 1, RLENGTH - 2)
+      printf "%s\t%s\n", NR, substr(line, RSTART + 1, RLENGTH - 2)
     }' "$1"
 }
 
+heading_open_ids() { heading_open_sites "$1" | cut -f2; }
+
+
+
+# ── WHICH BOARD OWNS EACH OPEN ITEM ─────────────────────────────────────────
+#
+# 🔴 THE THIRD DERIVATION TO LAND HERE (BACKLOG-TAG-IN-HEADING-01, 2026-11-08), and it was
+# written twice before it was owned: `backlog-open.sh` held it, and `backlog-verify.mjs`
+# needed it to GATE the filing rule. Two copies of this would disagree about which board owns
+# an item, which is the one thing it exists to say.
+#
+# Emits `id<TAB>BOARD` for every open item. BOARD is one of COACHING · DESIGN · SLT · FOUNDER ·
+# NO BOARD · `?`.
+#
+# TWO RULES, both measured rather than assumed:
+#
+# 1. ⚠️ THE WINDOW IS THE FILING LINE PLUS THE NEXT 8, stopping at the next heading. The
+#    filing rule asks for the tag in the HEADING, because that is where every parse looks —
+#    but 18 of 23 items measured on 2026-10-05 already stated their board in the BODY
+#    (`**Tags:** 🏃 COACHING BOARD`, `**Board: ⚙️ NO BOARD**`). **The decision was made and
+#    was unreadable, which is the worst of both.** Reading the block finds those; the gate in
+#    `backlog-verify.mjs` is what asks for them to be moved up.
+#
+# 2. 🔴 THE EARLIEST GLYPH IN THE LINE WINS, NOT A FIXED TEST ORDER. The filing rule says an
+#    item may carry more than one tag and must then NAME THE ORDER — and the document writes
+#    the RULING board first: *"⚙️ NO BOARD to measure; 🧭 DESIGN BOARD to place it"*, *"💼 SLT
+#    (tier), then 🏃 COACHING BOARD"*. A fixed order tested SLT before NO BOARD and so filed
+#    `HK-NATIVE-BG-INGEST-02` under the SLT. 📐 Measured: it differs on **12 of 123 open
+#    items**, and all twelve read correctly under earliest-wins. **NO BOARD 46 → 54.**
+open_item_boards() {
+  local bl="$1"
+  { heading_open_sites "$bl"; board_tag_bullet_sites "$bl"; } | sort -u -k2,2 \
+  | awk -F'\t' -v BL="$bl" '
+      { site[$1] = $2 }
+      END {
+        n = 0
+        while ((getline l < BL) > 0) { n++; L[n] = l }
+        for (ln in site) {
+          id = site[ln]; b = "?"
+          for (i = ln + 0; i <= ln + 8 && i in L; i++) {
+            if (i > ln + 0 && L[i] ~ /^#/) break
+            line = L[i]; best = 0; cand = "?"
+            # ⚠️ Written out rather than looped: awk has no ordered map and the GLYPH BYTES
+            # are the key fact here. Each board is tested for its position in the line, and
+            # the smallest position wins — see rule 2 above.
+            p = index(line, "🏃");          if (p && (best == 0 || p < best)) { best = p; cand = "COACHING" }
+            p = index(line, "⚕️"); if (p && (best == 0 || p < best)) { best = p; cand = "COACHING" }
+            p = index(line, "🩹");          if (p && (best == 0 || p < best)) { best = p; cand = "COACHING" }
+            p = index(line, "🧭");          if (p && (best == 0 || p < best)) { best = p; cand = "DESIGN" }
+            p = index(line, "💼");          if (p && (best == 0 || p < best)) { best = p; cand = "SLT" }
+            p = index(line, "👤");          if (p && (best == 0 || p < best)) { best = p; cand = "FOUNDER" }
+            p = index(line, "⚙️"); if (p && (best == 0 || p < best)) { best = p; cand = "NO BOARD" }
+            if (cand != "?") { b = cand; printf "%s\t%s\t%s\n", id, b, i; break }
+          }
+          if (b == "?") printf "%s\t?\t%s\n", id, ln
+        }
+      }'
+}

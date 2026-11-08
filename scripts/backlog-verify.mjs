@@ -34,6 +34,36 @@ process.chdir(ROOT)
 const ids = sh('bash', ['-c', '. scripts/lib/open-items.sh; { heading_open_ids docs/releases/backlog.md; board_tag_bullet_ids docs/releases/backlog.md; } | sort -u'])
   .split('\n').map(s => s.trim()).filter(Boolean)
 
+/**
+ * 🔴 SECTION 5 — THE FILING RULE FINALLY HAS A GATE (BACKLOG-TAG-IN-HEADING-01, 2026-11-08).
+ *
+ * `backlog.md` § Filing rule says every item names its board, and then says of itself:
+ * *"This is a note, not a gate. This repo's own record says a rule that holds only while
+ * someone remembers is not a rule — the filing rule has no mechanical check, unlike the two
+ * board guards."* It was right, and it stayed right for seven weeks.
+ *
+ * ⚠️ WHAT BLOCKED IT WAS NEVER THE RULE, IT WAS THE PARSE. The item was filed P3 because
+ * `backlog.md` holds items as `###`/`####` headings, `##` parents, LATER table rows and bare
+ * bullets, and *"no parse written so far reads all four (four attempts on 2026-09-20 gave four
+ * different counts)"*. That is no longer true: `scripts/lib/open-items.sh` has been the single
+ * owner since 2026-11-07 and reads every shape.
+ *
+ * 📐 RE-MEASURED 2026-11-08 AND THE NUMBER WAS WRONG IN BOTH DIRECTIONS. Filed as 23 untagged.
+ * `backlog-open.sh` reported 9. The truth was **ONE** (`NATIVE-BATCH-01`), and the other eight
+ * were artefacts of deriving an item's board from the first line in the file that CONTAINED its
+ * id — a MENTION, not a filing. Fixed in the owner; see `open_item_boards`.
+ *
+ * ⚠️ THE GATE IS ON THE TAG EXISTING, NOT ON WHERE IT SITS. The rule asks for the heading;
+ * 18 of 23 items measured on 2026-10-05 stated their board in the body instead. Failing those
+ * would fire on ~20 items of documented, correct decisions, and a gate that fires on ordinary
+ * work gets switched off — which this repo has recorded four times as equivalent to no gate.
+ * So the block counts, and the heading is the convention this file reports rather than enforces.
+ */
+const boardRows = sh('bash', ['-c', '. scripts/lib/open-items.sh; open_item_boards docs/releases/backlog.md'])
+  .split('\n').filter(Boolean).map(l => l.split('\t'))
+const untagged = boardRows.filter(r => r[1] === '?')
+const byBoard = boardRows.reduce((a, r) => ((a[r[1]] = (a[r[1]] || 0) + 1), a), {})
+
 const lines = readFileSync('docs/releases/backlog.md', 'utf8').split('\n')
 const headIdx = lines.map((l, n) => (/^#{2,4} /.test(l) ? n : -1)).filter(n => n >= 0).concat(lines.length)
 const bodies = new Map()
@@ -100,11 +130,21 @@ head('3. BASELINES NAMED BY AN ITEM — live values, to compare against the stat
 ;[...baselines.entries()].sort().forEach(([k, v]) => {
   const [id, c] = k.split('|'); console.log(`  ${id.padEnd(34)} ${c.padEnd(34)} ${v}`)
 })
-head('4. WHAT IS VERIFIABLE AT ALL')
+head('4. BOARD TAGS — the filing rule, gated')
+Object.keys(byBoard).sort().forEach(b => console.log(`  ${(b === '?' ? 'UNTAGGED' : b).padEnd(12)} ${byBoard[b]}`))
+if (untagged.length) {
+  console.log('\n  ✗ AN OPEN ITEM WITH NO BOARD TAG:')
+  untagged.forEach(([id, , ln]) => console.log(`      L${String(ln).padEnd(7)} ${id}`))
+  console.log('    Add one of 🏃 COACHING BOARD · 🧭 DESIGN BOARD · 💼 SLT · 👤 FOUNDER · ⚙️ NO BOARD')
+  console.log('    to the item\'s heading. More than one? Name the ORDER — the first glyph is the')
+  console.log('    board that rules first, and that is what this reads.')
+}
+
+head('5. WHAT IS VERIFIABLE AT ALL')
 console.log(`  ${withNums.length} items state a number — a figure exists to re-derive`)
 console.log(`  ${noNums.length} items state NO number — behavioural claims, no script settles them`)
 console.log('\n⚠️  A DEAD REFERENCE IS NOT ALWAYS A DEAD PREMISE: an item can name a file precisely')
 console.log('    because it is missing. Nothing here is auto-resolved — read the item.')
 console.log('⚠️  AND SECTION 4 IS THE HONEST LIMIT. This proves references are live and prints')
 console.log('    baselines. It does not prove a behavioural premise still holds.\n')
-process.exit(deadFiles.length + deadSyms.length > 0 ? 1 : 0)
+process.exit(deadFiles.length + deadSyms.length + untagged.length > 0 ? 1 : 0)

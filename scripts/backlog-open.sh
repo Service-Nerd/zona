@@ -22,7 +22,16 @@ BL=docs/releases/backlog.md
 REG=docs/canonical/feature-registry.md
 LOG=docs/build-log.md
 
-{ heading_open_ids "$BL"; board_tag_bullet_ids "$BL"; } | sort -u > /tmp/_bo_open
+# 🔴 SITES, NOT IDS, FOR THE BOARD TALLY (BACKLOG-TAG-IN-HEADING-01, 2026-11-08). The first
+# cut of this block counted every line carrying a board glyph and reported 102 coaching items
+# where there are ~31 — it counted closed headings and body mentions alike. The second cut
+# derived the board PER OPEN ID, which was right, but found that id by scanning for the first
+# line in file order CONTAINING it — a MENTION, not a filing. `PARITY-STAGED-BLIND-01` is
+# tagged on its own bullet at L219 and read as UNTAGGED because L202 names it inside another
+# item's ✅ SHIPPED bullet. **The owner now emits the line it derived each id from, so the board
+# is read off the item's own filing and nothing else.**
+{ heading_open_sites "$BL"; board_tag_bullet_sites "$BL"; } | sort -u -k2,2 > /tmp/_bo_sites
+cut -f2 /tmp/_bo_sites | sort -u > /tmp/_bo_open
 # A registry id in a row's FIRST cell — the same shape `audit-docs.sh` reads.
 sed -nE 's/^\| *`?([A-Z][A-Z0-9]*(-[A-Z0-9]+)+)`?[^|—]{0,60}[—|].*/\1/p' "$REG" | sort -u > /tmp/_bo_reg
 
@@ -34,36 +43,20 @@ printf '  %s items the gate reads as open\n' "$total"
 printf '  %s of those carry a SHIPPED feature-registry row\n' "$shipped"
 printf '    (each must be a declared partial in audit-docs.sh, or it is a missing stamp)\n\n'
 
-# 🔴 THE FIRST CUT OF THIS BLOCK COUNTED EVERY LINE CARRYING A BOARD GLYPH and reported
-# 102 coaching items where there are ~32 — it counted CLOSED headings and body mentions
-# alike. A report that overstates is the thing this whole script exists to stop, so the
-# board is now derived PER OPEN ID from that id's own heading or bullet.
-printf '── by board (derived per open id, from its own heading) ──\n'
-awk -v ids="$(tr '\n' ' ' < /tmp/_bo_open)" '
-  BEGIN { n = split(ids, a, " "); for (i = 1; i <= n; i++) if (a[i] != "") want[a[i]] = 1 }
-  /^#{2,4} / || /^- / {
-    for (id in want) {
-      if (index($0, id) == 0) continue
-      if (id in seen) continue
-      seen[id] = 1
-      b = "?"
-      if (index($0, "\360\237\217\203") || index($0, "\342\232\225") || index($0, "\360\237\251\271")) b = "COACHING"
-      else if (index($0, "\360\237\247\255")) b = "DESIGN"
-      else if (index($0, "\360\237\222\274")) b = "SLT"
-      else if (index($0, "\360\237\221\244")) b = "FOUNDER"
-      else if (index($0, "\342\232\231")) b = "NO BOARD"
-      tally[b]++
-    }
-  }
-  END {
-    order = "COACHING DESIGN SLT FOUNDER NO BOARD ?"
-    printf "  %-10s %s\n", "COACHING", tally["COACHING"] + 0
-    printf "  %-10s %s\n", "DESIGN",   tally["DESIGN"] + 0
-    printf "  %-10s %s\n", "SLT",      tally["SLT"] + 0
-    printf "  %-10s %s\n", "FOUNDER",  tally["FOUNDER"] + 0
-    printf "  %-10s %s\n", "NO BOARD", tally["NO BOARD"] + 0
-    printf "  %-10s %s   <- untagged: the filing rule has no gate (BACKLOG-TAG-IN-HEADING-01)\n", "untagged", tally["?"] + 0
-  }' "$BL"
+printf '── by board (from the OWNER, per item, earliest glyph wins) ──\n'
+# ⚠️ THE DERIVATION IS NOT HERE. `open_item_boards` in `scripts/lib/open-items.sh` owns it,
+# because `backlog-verify.mjs` needs the same answer to GATE the filing rule and two copies
+# would disagree about which board owns an item — the one thing it exists to say.
+open_item_boards "$BL" > /tmp/_bo_boards
+for b in COACHING DESIGN SLT FOUNDER "NO BOARD" "?"; do
+  c=$(cut -f2 /tmp/_bo_boards | grep -cx "$b" || true)
+  label="$b"; [ "$b" = "?" ] && label="untagged"
+  printf '  %-10s %s\n' "$label" "$c"
+done
+if cut -f2 /tmp/_bo_boards | grep -qx '?'; then
+  printf '\n  ── untagged, at their own filing line (the filing rule has no tag here) ──\n'
+  awk -F'\t' '$2 == "?" { printf "    L%-6s %s\n", $3, $1 }' /tmp/_bo_boards
+fi
 
 printf '\n── BLOCKED: nobody here can move these ──\n'
 grep -nE '^#{2,4} .*BLOCKED ON A DEVICE' "$BL" | sed -E 's/^([0-9]+):#+ /  L\1  /' | cut -c1-120 || true
