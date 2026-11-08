@@ -5,6 +5,15 @@ angle. Feeds the weekly DHTB LinkedIn build-in-public posts — keep it honest, 
 it specific, no polish. The content system adds the voice.
 
 ---
+## 2026-11-08 — SEO-PRICE-ATTRIBUTION-01 · my check passed the real defect, re-planted word for word
+**Shipped:** the article price gate now checks that a figure belongs to the product the sentence is *about*, not merely to somebody — including per-column inside the comparison table.
+**Dev learning:** the existing gate proves every £ figure comes from a declared owner. It cannot prove the owner is the right company, which is how page 4's draft priced Coopah at TrainAsONE's £9.99 and passed. My fix checked sentences that **name** a competitor. Then I re-planted the real defect to falsify it, and **it stayed green** — because the live article writes *"It costs £14.99 a month"* under an `h2('Coopah')`. The subject of the sentence is the heading. **Attributing to the nearest heading when the sentence names nobody took the inspected population from 45 sentences to 68, +51%, with zero false positives.**
+**Product/creator learning:** my first, naive rule nagged on 2 of 9 inspected sentences and both were correct copy: a funding figure (£1.5m) and a derived delta (£40 less than Runna's annual). The temptation is to loosen the rule. The right answer was to **reuse the catalogue's own derivations** — so "legal" means that competitor's declared prices plus the two figures computed from them, not "a number near its name". A looser rule would have let the next real swap through.
+**AI-building learning:** I measured against all four live pages *before* shipping, because the item told me to and because this repo has twice recorded a nagging gate being switched off entirely. That measurement is what found the two false positives, and the heading finding came from the falsification. **Both halves of the work came from doing the thing before writing the claim, rather than after.**
+**The honest bit:** to undo one mutation I ran `git checkout` on the test file. It was unstaged. **It deleted the whole arm I had just written** — 170 lines, gone. "Stage before you verify" is a lesson I already had written down and did not apply. I retyped it, then staged, then falsified four ways.
+**Hook material:** I planted the exact bug the gate was built for, and the gate passed. The bug's subject was in the heading, not the sentence.
+**Postable?:** yes — "falsify with the real copy, not a sentence you invent" is the whole post.
+
 ## 2026-11-08 — CHARITY-AUDIENCE-HEADINGS-01 · I built the check where the second failure happened
 **Shipped:** the charity page's audience guard now reads its headings, title and OG strings, not only its FAQ answers.
 **Dev learning:** the page was rewritten twice in one day in September because it was *"marathon-only in its URL, title, FAQs and CTAs"*. Four surfaces. Three weeks later I regressed one FAQ answer, wrote a guard, and the guard reads **that one surface**. **The place the second failure happens is the natural place to put a check and the wrong place to stop** — the original three had no check at all, and the page's own header named them.

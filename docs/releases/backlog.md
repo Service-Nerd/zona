@@ -9241,31 +9241,6 @@ until there is a second batch to justify it.
 ⚠️ **Raised three times in conversation on 2026-10-01 and never ruled on**, which is exactly why
 it is now an item with a status instead of a sentence in a shipped entry.
 
-### `SEO-PRICE-ATTRIBUTION-01` — the price gate cannot tell which product a figure belongs to ⚙️ **NO BOARD**
-
-`articles.test.ts` proves every £ figure in an article comes from `COMPETITOR_FACTS` or
-`PRICING`. **It cannot prove the figure belongs to the product the sentence names.**
-
-🔴 **Measured on page 4, in the copy as submitted:** *"Coopah is £9.99 a month, billed
-annually"* — £9.99 is **TrainAsONE's** declared monthly, so the gate passed it. Only the
-adjacent *"about £120 a year"* failed, and that was luck: £120 happened to be nobody's price.
-**The defect that reached the gate was the correct kind of number about the wrong company.**
-
-✅ **Half of it is now closed** (`5c91d02`): for a `free` product the question is decidable,
-because the correct number of £ figures in a sentence about it is zero. *"Garmin Coach is £9.99
-a month"* fails that arm and passes every other.
-
-**Still open: paid against paid.** £14.99 in a sentence about Runna passes everything.
-
-**Sketch, not a decision.** Sentence-scoped attribution: for each sentence, if exactly one
-competitor is named and it carries a £ figure, that figure must be that competitor's. Bail on
-sentences naming two or more. ⚠️ **The risk is a check that nags**, and this repo records twice
-that a noisy gate gets switched off, which is the same as having none — so it needs measuring
-against all four live pages before it ships, not after. **Four more comparison pages are
-planned**, which is the argument for doing it before page 5 rather than after page 8.
-
-## ⚖️ FILED 2026-10-01 — `PROMPT-UNITS-ADJUST-01`
-
 ### ✅ `PROMPT-UNITS-ADJUST-01` — SHIPPED 2026-10-06 (`20fe34cd`). The falsification did not go red first time ⚙️ **NO BOARD**
 
 > ✅ **SHIPPED.** The route reads `getUserDisplayPrefs` and threads `units` into

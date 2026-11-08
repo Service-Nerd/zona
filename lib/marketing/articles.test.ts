@@ -207,6 +207,181 @@ describe('comparison articles — house style', () => {
     expect(offenders, 'a free product named in the same sentence as a price').toEqual([])
   })
 
+  /**
+   * SEO-PRICE-ATTRIBUTION-01 (2026-11-08) — THE FIGURE MUST BELONG TO THE PRODUCT THE
+   * SENTENCE IS ABOUT, not merely to somebody.
+   *
+   * 🔴 THE DEFECT THAT REACHED THE GATE WAS THE CORRECT KIND OF NUMBER ABOUT THE WRONG
+   * COMPANY. Page 4's draft priced Coopah at £9.99 — **TrainAsONE's** declared monthly — so
+   * the owner arm above passed it. Only the adjacent "about £120 a year" failed, and that
+   * was luck: £120 happened to be nobody's price.
+   *
+   * 🔑 THE SAME MONEY REGEX AND THE SAME DERIVATIONS AS THE OWNER ARM, deliberately. What
+   * changes is only the question — from "is this figure owned" to "is it owned by THIS
+   * product". A second regex here would be a second answer to "what is a price", and
+   * `£1.5m in seed funding` is exactly the case that would diverge.
+   *
+   * 📐 MEASURED AGAINST ALL FOUR LIVE PAGES BEFORE SHIPPING, which the item demanded in as
+   * many words — "it needs measuring against all four live pages before it ships, not
+   * after" — because this repo records twice that a nagging gate gets switched off, which is
+   * the same as having none. **45 sentences attributed by name, 23 by heading, 1 table with
+   * 3 priced cells. FLAGGED: 0.**
+   *
+   * ⚠️ AND THE FIRST, NAIVE VERSION NAGGED ON 2 OF 9 — both false. "roughly £1.5m in seed
+   * funding" is not a price (the owner arm's `(?!\s*m\b)` already knew), and "£40 a year
+   * less than Runna's annual plan" is `annualGapToOurs('runna')`, a DERIVED delta. The fix
+   * was not to loosen the rule but to **reuse the catalogue's own derivations**, so what is
+   * legal for a competitor is its declared prices and the two figures derived FROM them —
+   * not "any number near a competitor's name".
+   */
+  type CompetitorKey = keyof typeof COMPETITOR_FACTS
+
+  /** The same expression the owner arm uses. One answer to "what is a price". */
+  const MONEY = /£\d+(?:\.\d+)?(?![\d.]|\s*m\b)/g
+
+  /** Our own figures and the coach market, legal anywhere: never a claim about a competitor. */
+  const oursAndMarket = () => new Set<string>([
+    PRICING.monthly.display, PRICING.annual.display, PRICING.annual.perMonthDisplay,
+    PRICING.monthly.perWeekDisplay, PRICING.annual.perWeekDisplay,
+    coachMarket().low, coachMarket().high, coachMarket().typical, coachMarket().lowYear,
+  ])
+
+  /** What a competitor may legally be quoted at: its declared prices, plus the two figures
+   *  the catalogue DERIVES from them. */
+  const ownFigures = (k: CompetitorKey) => new Set<string>([
+    COMPETITOR_FACTS[k].monthly, COMPETITOR_FACTS[k].annual,
+    COMPETITOR_FACTS[k].monthly ? twelveMonthsAtMonthly(k) : null,
+    COMPETITOR_FACTS[k].annual ? annualGapToOurs(k) : null,
+  ].filter((x): x is string => !!x))
+
+  const competitorKeys = () => Object.keys(COMPETITOR_FACTS) as CompetitorKey[]
+
+  /**
+   * Who a sentence is ABOUT: the competitor it names, or — when it names none — the one its
+   * section heading names.
+   *
+   * 🔴 THE HEADING HALF IS NOT A REFINEMENT, IT IS WHERE THE REAL DEFECT LIVES, AND I ONLY
+   * FOUND THAT BY FALSIFYING WITH THE ACTUAL COPY INSTEAD OF A SENTENCE I INVENTED. The item
+   * records page 4's draft as "Coopah is £9.99 a month". The live article does not write it
+   * that way: under `h2('Coopah')` it reads "**It costs** £14.99 a month…". So the first
+   * version of this arm — sentence names only — **passed the real defect re-planted
+   * verbatim**, because the subject of that sentence is the heading above it.
+   *
+   * 📐 Heading attribution takes the inspected population from 45 sentences to 68, **+51%,
+   * with 0 false positives** across all four live pages.
+   *
+   * ⚠️ A heading naming two or more products CLEARS the subject rather than guessing, for the
+   * same reason the sentence rule bails on two: the table arm is where multi-product
+   * attribution is decidable.
+   *
+   * ⚠️ `h2` is the whole heading vocabulary — `ArticleBlock` is `p | h2 | table` and its own
+   * comment says "the bar for a fourth kind stays where it was". My first cut also tested
+   * `h3`; `tsc` refused it, and a branch for a kind that does not exist can never run.
+   */
+  function attributedSentences(): Array<{ slug: string; key: CompetitorKey; via: string; sentence: string }> {
+    const out: Array<{ slug: string; key: CompetitorKey; via: string; sentence: string }> = []
+    for (const a of MARKETING_ARTICLES) {
+      let subject: CompetitorKey | null = null
+      // Metadata sits above every heading, so it is sentence-attributed only.
+      for (const text of [a.metaDescription, a.hubSummary])
+        for (const sentence of text.split(/(?<=[.!?])\s+/)) {
+          const named = competitorKeys().filter(k => sentence.includes(COMPETITOR_FACTS[k].name))
+          if (named.length === 1) out.push({ slug: a.slug, key: named[0], via: 'sentence', sentence })
+        }
+      for (const b of a.body) {
+        if (b.kind === 'h2') {
+          const named = competitorKeys().filter(k => copyOf(b).includes(COMPETITOR_FACTS[k].name))
+          subject = named.length === 1 ? named[0] : null
+          continue
+        }
+        if (b.kind === 'table') continue  // its own arm, per column
+        for (const sentence of copyOf(b).split(/(?<=[.!?])\s+/)) {
+          const named = competitorKeys().filter(k => sentence.includes(COMPETITOR_FACTS[k].name))
+          if (named.length === 1) out.push({ slug: a.slug, key: named[0], via: 'sentence', sentence })
+          else if (named.length === 0 && subject) out.push({ slug: a.slug, key: subject, via: 'heading', sentence })
+        }
+      }
+    }
+    return out
+  }
+
+  it('population: the attribution arms inspect a real and non-empty set', () => {
+    const attributed = attributedSentences()
+    const bySentence = attributed.filter(x => x.via === 'sentence').length
+    const byHeading = attributed.filter(x => x.via === 'heading').length
+    const priced = attributed.filter(x => (x.sentence.match(MONEY) ?? []).length).length
+    expect(bySentence, 'sentences naming exactly one competitor').toBeGreaterThanOrEqual(20)
+    // ⚠️ THE HEADING ROUTE IS ASSERTED SEPARATELY, because it is the one that catches the
+    // real shape, and a change that silently stopped it working would leave the total
+    // looking healthy. Measured 2026-11-08: 45 by sentence, 23 by heading.
+    expect(byHeading, 'sentences attributed to their section heading').toBeGreaterThanOrEqual(10)
+    expect(priced, 'of those, sentences carrying a price').toBeGreaterThanOrEqual(4)
+    // Every paid competitor must have a figure to compare against, or its arm is vacuous.
+    for (const k of competitorKeys()) {
+      if (COMPETITOR_FACTS[k].free) continue
+      expect(ownFigures(k).size, `${k} has no declared figure to compare against`).toBeGreaterThan(0)
+    }
+  })
+
+  it('🔴 a price in a sentence about ONE competitor must be THAT competitor’s', () => {
+    // ⚠️ BAIL ON TWO OR MORE NAMED, by design. "Coopah is £14.99 and Runna is £15.99" is a
+    // legitimate sentence whose figures cannot be attributed by proximity, and guessing
+    // would produce the noise that gets a gate disabled. The TABLE arm below is how the
+    // multi-product case is checked instead — per COLUMN, where attribution IS decidable.
+    const ours = oursAndMarket()
+    const offenders: string[] = []
+    for (const { slug, key, via, sentence } of attributedSentences()) {
+      const own = ownFigures(key)
+      for (const fig of sentence.match(MONEY) ?? [])
+        if (!own.has(fig) && !ours.has(fig))
+          offenders.push(`${slug}: ${fig} in a sentence about ${COMPETITOR_FACTS[key].name} (by ${via}), `
+            + `which is ${Array.from(own).join('/') || 'free'} — "${sentence.trim().slice(0, 90)}"`)
+    }
+    expect(
+      Array.from(new Set(offenders)),
+      'the owner arm proves a figure belongs to SOMEBODY; this proves it belongs to the '
+      + "product the sentence is about. Page 4 quoted Coopah at TrainAsONE's £9.99 and passed "
+      + 'every other check',
+    ).toEqual([])
+  })
+
+  it('🔴 in a comparison TABLE, every price sits in its own product’s column', () => {
+    // 🔑 THIS IS WHERE A SWAP IS MOST LIKELY AND MOST DECIDABLE. The sentence arm bails on
+    // two or more products; a table is three prices side by side, and the header row maps
+    // column INDEX to product, so attribution needs no guessing at all.
+    const ours = oursAndMarket()
+    let mappedTables = 0, pricedCells = 0
+    const offenders: string[] = []
+    for (const a of MARKETING_ARTICLES)
+      for (const b of a.body) {
+        if (b.kind !== 'table') continue
+        const owner = b.head.map(h =>
+          h === BRAND.name ? 'ours' as const
+            : competitorKeys().find(k => h.includes(COMPETITOR_FACTS[k].name)) ?? null)
+        if (!owner.some(o => o && o !== 'ours')) continue
+        mappedTables++
+        b.rows.forEach(row => row.forEach((cell, i) => {
+          const figs = cell.match(MONEY) ?? []
+          if (!figs.length) return
+          pricedCells++
+          const o = owner[i]
+          // A LABEL column carrying a price is its own defect: nobody owns it.
+          if (o == null) {
+            offenders.push(`${a.slug}: ${figs.join(',')} in the unowned column ${i} — "${cell.slice(0, 60)}"`)
+            return
+          }
+          const legal = o === 'ours' ? ours : ownFigures(o)
+          for (const fig of figs)
+            if (!legal.has(fig))
+              offenders.push(`${a.slug}: ${fig} in the "${b.head[i]}" column — "${cell.slice(0, 60)}"`)
+        }))
+      }
+    // The population, or a table that stopped being parseable passes silently.
+    expect(mappedTables, 'comparison tables with a competitor column').toBeGreaterThanOrEqual(1)
+    expect(pricedCells, 'cells carrying a price').toBeGreaterThanOrEqual(3)
+    expect(Array.from(new Set(offenders)), 'a price in the wrong product’s column').toEqual([])
+  })
+
   it('the brand name is interpolated, never typed as a literal', () => {
     // CLAUDE.md: never hardcode a brand name. These articles name the product
     // repeatedly, so a rename that missed them would advertise a dead brand.
