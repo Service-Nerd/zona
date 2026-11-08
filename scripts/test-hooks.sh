@@ -134,6 +134,20 @@ fi
 BASELINE="$ROOT/.claude/hooks/case-counts.txt"
 if [ -n "${HOOK_CASE_BASELINE:-}" ]; then BASELINE="$HOOK_CASE_BASELINE"; fi
 if [ "${1:-}" = "--write" ]; then
+  # 🔴 `--write` MUST REFUSE A RUN THAT IS NOT GREEN (code review, 2026-11-08). The first cut
+  # wrote the baseline unconditionally and exited 0, so `npm run test:hooks -- --write` on a
+  # run with a FAILING suite printed `✗ … FAILED`, returned success, and wrote a baseline with
+  # that suite's row MISSING — which permanently disarms the "suite is GONE" arm for it.
+  # **The escape hatch was the one path that could silently delete a guard.** Falsified with a
+  # planted failing suite.
+  if [ ${#failed[@]} -gt 0 ] || [ ${#missing[@]} -gt 0 ] || [ ${#uncounted[@]} -gt 0 ]; then
+    echo
+    echo "REFUSING TO RE-BASELINE: this run is not green."
+    echo "  ${#failed[@]} failing · ${#missing[@]} untested · ${#uncounted[@]} uncounted"
+    echo "  A baseline written from a broken run omits the broken suites, which disarms the"
+    echo "  ratchet for exactly the suites that need it. Fix the run, then --write."
+    exit 1
+  fi
   printf '%s' "$counts" | grep . | sort > "$BASELINE"
   echo
   echo "case-counts.txt rewritten from this run ($(grep -c . "$BASELINE") suites)."
@@ -189,6 +203,31 @@ if [ -f "$DOC" ]; then
     fi
   done <<< "$counts"
 fi
+
+# ── the SHELL suites quote counts in CLAUDE.md too, and nothing read them ────
+#
+# 🔴 Measured by code review, 2026-11-08: CLAUDE.md said `.githooks/pre-commit.test.sh` runs
+# **11 cases** while the line directly below it (edited in the same commit) said 14, and the
+# suite runs 14. The doc-count arm above reads `.claude/hooks/*.test.py` ONLY, so neither shell
+# suite's number was ever compared against anything. **A number in a doc drifts; a number a
+# script checks does not** — the same sentence this file already carries, applied to the
+# population it had left out.
+for suite in .githooks/pre-commit.test.sh .githooks/pre-push.test.sh scripts/sweep-colours.test.sh; do
+  [ -f "$ROOT/$suite" ] || continue
+  base="$(basename "$suite")"
+  # ⚠️ READ THE WHOLE LINE, NOT A 30-CHARACTER WINDOW. The first cut of this arm reused the
+  # python arm's `[^0-9]{0,24}` span and **silently matched nothing** for `pre-commit.test.sh`,
+  # whose prose puts ~80 characters between the filename and the number. Falsified by planting
+  # the wrong number and watching the arm stay GREEN — an arm that cannot find its claim is an
+  # arm that always passes, which is this repo'"'"'s most-recorded hollow shape.
+  claim="$(grep -F "$base" "$DOC" 2>/dev/null | grep -oE '[0-9]+ cases' | head -1 \
+           | grep -oE '[0-9]+')"
+  [ -n "$claim" ] || continue
+  real="$(bash "$ROOT/$suite" 2>&1 | grep -oE '[0-9]+ passed' | tail -1 | grep -oE '[0-9]+')"
+  [ -n "$real" ] || { uncounted+=("$base"); continue; }
+  checked=$((checked + 1))
+  [ "$claim" = "$real" ] || drifted+=("$base: CLAUDE.md says $claim, the suite runs $real")
+done
 
 if [ ${#drifted[@]} -gt 0 ]; then
   echo

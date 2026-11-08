@@ -408,20 +408,28 @@ sed -nE 's/^\| *`?([A-Z][A-Z0-9]*(-[A-Z0-9]+)+)`?[^|—]{0,60}[—|].*/\1/p' \
 # `| M4-NOT-A-REFUSAL-01 - a persona ... |` use a HYPHEN-MINUS where the register uses an em
 # dash, so `[—|]` never matched and both rows were outside `_reg`. Latent — neither item was
 # still open — which is exactly how the previous four got in.
+# ⚠️ ROWS AND IDS ARE DIFFERENT NUMBERS AND THE FIRST CUT OF THIS LINE CONFLATED THEM
+# (code review, 2026-11-08). It printed "reads all N leading-id rows" from a `sort -u` list,
+# which is a count of IDS: 805 unique ids across **848** such rows, because 20 ids carry more
+# than one row (multi-part ships). Both figures are meaningful and neither is the other, so
+# both are printed. ⚠️ The 576/155 title split quoted in CLAUDE.md is a third population —
+# rows whose first cell is followed by an em dash or a pipe, 731 of the 848 — and the
+# remaining 117 are the continuation and header rows this arm's own pattern skips.
 sed -nE 's/^\| *`?([A-Z][A-Z0-9]*(-[A-Z0-9]+)+)`?.*/\1/p' \
-  docs/canonical/feature-registry.md | sort -u > /tmp/_regleading
+  docs/canonical/feature-registry.md > /tmp/_regleading_rows
+sort -u /tmp/_regleading_rows > /tmp/_regleading
 _regmissed=$(comm -13 /tmp/_reg /tmp/_regleading)
+_regfail=0
 if [ -n "$_regmissed" ]; then
   say "  ✗ THE REGISTRY HAS A ROW FORMAT \`_reg\` CANNOT READ — every open-item arm is blind to these ids:"
-  fail=1
+  _regfail=1; fail=1
   for id in $_regmissed; do
     say "    ✗ $id"
     grep -nE "^\| *.?$id" docs/canonical/feature-registry.md | head -1 | cut -c1-120 | sed 's/^/        /'
   done
   say "    Widen the \`_reg\` pattern in scripts/audit-docs.sh, or normalise the row."
-else
-  say "  registry parse reads all $(wc -l < /tmp/_regleading | tr -d ' ') leading-id rows"
 fi
+[ "$_regfail" = "0" ] && say "  registry parse reads every leading-id row: $(wc -l < /tmp/_regleading_rows | tr -d ' ') rows, $(wc -l < /tmp/_regleading | tr -d ' ') distinct ids"
 # Open headers carry a *(provenance)* block; in-item emphasis bullets do not.
 # Without that discriminator this fires on narrative text, which is how four
 # separate parses of this file produced four different counts.

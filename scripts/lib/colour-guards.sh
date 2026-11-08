@@ -49,16 +49,29 @@ BANNED_RE='#D4501A|#f5f2ee|#F5F2EE|#0B132B|#5BC0BE|rgba?\(212, ?80, ?26|rgba?\(1
 FONT_RE='DM Mono|DM Sans|Space Grotesk|Bebas Neue'
 SETP_RE='\.style\.setProperty\('
 
-strip_comments() {
-  python3 -I - "$1" <<'PYSTRIP'
-import re, sys
-src = open(sys.argv[1], encoding='utf-8', errors='replace').read()
-blank = lambda m: re.sub(r'[^\n]', ' ', m.group(0))
-src = re.sub(r'/\*[\s\S]*?\*/', blank, src)   # block comments, newlines kept
-src = re.sub(r'//[^\n]*', blank, src)         # line comments
-sys.stdout.write(src)
-PYSTRIP
-}
+
+# ── ONE IMPLEMENTATION OF "BLANK THE COMMENTS", IN PYTHON ───────────────────
+#
+# 🔴 `scripts/lib/strip-comments.py` is a STRING-AWARE scanner, not two regexes (code review,
+# 2026-11-08). Two regexes treat `//` INSIDE A STRING as a comment and blank the rest of the
+# line, so a hex sitting beside any URL — `{ url: "https://a.b", bg: "#B5C0B4" }` — was
+# invisible to both the hook and the sweep. Latent (0 live lines matched) and the whole
+# "376 files, 0 hits" claim rested on it. Read that file's docstring for the reasoning,
+# including why it must still blank a real comment (`HOOK-RGBA-COMMENTS-01`).
+#
+# ⚠️ Resolved from THIS file's directory. The hook runs with cwd set to a scratch git repo in
+# `.githooks/pre-commit.test.sh`, and a path relative to cwd would silently find nothing —
+# which under `set -u` makes the guard fail for the wrong reason.
+_STRIP_PY="$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")" && pwd)/strip-comments.py"
+
+strip_comments() { python3 -I "$_STRIP_PY" "$1"; }
+
+# strip_comments_stream — paths on stdin, `path:lineno:text` out, ONE python process for the
+# whole tree. **The regexes stay in grep**: the stream is piped through the same `$HEX_RE` /
+# `$RGBA_RE` the hook uses, so this is a faster READER of the owner's rules, never a copy.
+# `sweep-colours.sh` originally spawned the stripper once per file per rule — 752 processes,
+# ~47s on every `verify:ci` run, for a ratchet that finds nothing.
+strip_comments_stream() { xargs python3 -I "$_STRIP_PY" --stream; }
 
 # colour_violations <kind> <file>  →  prints `line:text` for each hit, exits 1 if any.
 # kinds: hex | rgba | banned | font | setp

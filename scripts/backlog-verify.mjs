@@ -59,8 +59,31 @@ const ids = sh('bash', ['-c', '. scripts/lib/open-items.sh; { heading_open_ids d
  * work gets switched off — which this repo has recorded four times as equivalent to no gate.
  * So the block counts, and the heading is the convention this file reports rather than enforces.
  */
-const boardRows = sh('bash', ['-c', '. scripts/lib/open-items.sh; open_item_boards docs/releases/backlog.md'])
-  .split('\n').filter(Boolean).map(l => l.split('\t'))
+// 🔴 NOT THROUGH `sh()` — AN ALLOW-BY-DEFAULT GATE IS NOT A GATE (code review, 2026-11-08).
+// `sh()` swallows a child failure and returns `''`, so if `open_item_boards` could not run —
+// a syntax error, a renamed function, a missing file — this gate saw **0 rows, 0 untagged**
+// and exited 0. **The failure mode of the check was indistinguishable from a clean document**,
+// which is the class this repo has recorded as "unverified is never a pass" and which my own
+// `feedback_an_allow_by_default_arm_is_not_a_check` memory names outright. Falsified with a
+// failing `bash` stub. It now throws, and an empty row set is itself a failure because the
+// backlog always has open items.
+let boardRows
+try {
+  boardRows = execFileSync('bash',
+    ['-c', '. scripts/lib/open-items.sh; open_item_boards docs/releases/backlog.md'],
+    { encoding: 'utf8' })
+    .split('\n').filter(Boolean).map(l => l.split('\t'))
+} catch (e) {
+  console.error('\n✗ open_item_boards FAILED TO RUN — the board-tag gate cannot be evaluated.')
+  console.error(`  ${e instanceof Error ? e.message : String(e)}`)
+  console.error('  Unverified is never a pass. Fix scripts/lib/open-items.sh.')
+  process.exit(1)
+}
+if (boardRows.length === 0) {
+  console.error('\n✗ open_item_boards returned NO ROWS. The backlog always has open items, so')
+  console.error('  an empty result is a broken derivation, not a clean document.')
+  process.exit(1)
+}
 const untagged = boardRows.filter(r => r[1] === '?')
 const byBoard = boardRows.reduce((a, r) => ((a[r[1]] = (a[r[1]] || 0) + 1), a), {})
 
@@ -145,6 +168,6 @@ console.log(`  ${withNums.length} items state a number — a figure exists to re
 console.log(`  ${noNums.length} items state NO number — behavioural claims, no script settles them`)
 console.log('\n⚠️  A DEAD REFERENCE IS NOT ALWAYS A DEAD PREMISE: an item can name a file precisely')
 console.log('    because it is missing. Nothing here is auto-resolved — read the item.')
-console.log('⚠️  AND SECTION 4 IS THE HONEST LIMIT. This proves references are live and prints')
+console.log('⚠️  AND SECTION 5 IS THE HONEST LIMIT. This proves references are live and prints')
 console.log('    baselines. It does not prove a behavioural premise still holds.\n')
 process.exit(deadFiles.length + deadSyms.length + untagged.length > 0 ? 1 : 0)

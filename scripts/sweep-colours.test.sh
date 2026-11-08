@@ -27,9 +27,21 @@ run_case() {
     git init -q . && git config user.email t@t && git config user.name t
     mkdir -p "$(dirname "$path")"
     printf '%s' "$content" > "$path"
+    # ⚠️ A CLEAN IN-POPULATION COMPANION, so an EXCLUSION case still has a population. Without
+    # it, "an OG route keeps its hex" and "a hex under lib/" selected ZERO files and tripped the
+    # population floor — the case would have passed for the wrong reason, or failed for one.
+    # It is token-only, so it can never contribute a hit.
+    mkdir -p components
+    printf 'export const Companion = () => <div style={{ color: "var(--ink)" }} />\n' \
+      > components/__sweep_companion.tsx
     git add -A >/dev/null 2>&1
   )
-  out="$(cd "$tmp" && bash "$SWEEP" 2>&1)"; rc=$?
+  # ⚠️ THE POPULATION FLOOR IS LOWERED FOR THESE CASES, DELIBERATELY AND VISIBLY. The sweep
+  # refuses a population under 50 files, because an empty one reports CLEAN and means nothing
+  # (code review, 2026-11-08). A scratch repo holds one file, so the floor is injected at 1 —
+  # the `CAP_CONFIG_PATH` pattern — and the floor itself gets its own cases below, run at the
+  # DEFAULT, or lowering it here would quietly delete the arm it exists to test.
+  out="$(cd "$tmp" && COLOUR_SWEEP_MIN_POPULATION=1 bash "$SWEEP" 2>&1)"; rc=$?
   [ $rc -ne 0 ] && got=hit || got=clean
   rm -rf "$tmp"
   if [ "$got" != "$expect" ]; then
@@ -81,12 +93,79 @@ run_case "an OG route keeps its hex (satori has no CSS vars)" clean "CLEAN" \
 run_case "a token-only component is CLEAN" clean "CLEAN" \
   "components/x.tsx" 'export const X = () => <div style={{ color: "var(--ink)" }} />
 '
+# 🔴 THE `//`-IN-A-STRING CASE (code review, 2026-11-08). Two regexes treat `//` inside a
+# string as a comment start and blank the rest of the line, so a hex sitting beside ANY url was
+# invisible to both the hook and the sweep. Latent at the time — 0 live lines matched — and the
+# whole "376 files, 0 hits" claim rested on it.
+run_case "a hex AFTER a url on the same line is a HIT" hit "HARDCODED HEX" \
+  "components/x.tsx" 'export const T = { docs: "https://example.com", bg: "#B5C0B4" }
+'
+run_case "a url alone is still CLEAN" clean "CLEAN" \
+  "components/x.tsx" 'export const T = { docs: "https://example.com" }
+'
+# 🔴 AND THE DESYNC CASE, which is why quote state is tracked PER LINE. A file-wide scanner
+# meets one unbalanced apostrophe — JSX text, a regex literal — and treats everything after it
+# as a string, so comments stop being recognised **for the rest of the file**. Measured on
+# `buttonOwnership.test.ts`: desynced by line ~400, reporting a hex inside a `//` comment at
+# line 688 as live code. A hand-rolled tokenizer fails silently and in the dangerous direction.
+run_case "an unbalanced apostrophe does not blind later comments" clean "CLEAN" \
+  "components/x.tsx" 'export const P = () => <p>it isnt here</p>
+export const Q = () => <p>the family'"'"'s one exception</p>
+// a later comment recording #B5C0B4 is still prose
+'
+run_case "and a hex in CODE after that apostrophe is still a HIT" hit "HARDCODED HEX" \
+  "components/x.tsx" 'export const Q = () => <p>the family'"'"'s one exception</p>
+export const R = "#B5C0B4"
+'
+# ⚠️ A SCRIM INSIDE A TEMPLATE LITERAL — the form the generating-ceremony shimmer used.
+run_case "a palette rgba inside a template literal is a HIT" hit "rgba" \
+  "components/x.tsx" 'export const G = `linear-gradient(90deg, rgba(91,192,190,0.2), transparent)`
+'
+
 # 🔴 THE POPULATION, NOT JUST THE RULE. A hex under lib/ is outside this sweep by
 # design — the palette rules govern app/ and components/ — and asserting it keeps the
 # sweep from being quietly widened into the thing that fires on ordinary work.
 run_case "a hex under lib/ is out of population" clean "CLEAN" \
   "lib/colours.ts" 'export const OG = "#F3F0EB"
 '
+
+
+# ── 🔴 THE FLOOR ITSELF, AT THE DEFAULT (code review, 2026-11-08) ──
+# `CLEAN — 0 files, 5 rules, 0 hits`, exit 0, was the first cut's answer to a population that
+# selected nothing: a renamed directory, a changed glob, a run from the wrong place. **Absence
+# written as a value**, in the check whose entire job is to notice what nobody is looking at.
+floor_case() {                   # name  expect(refuse|ran)  path  content
+  local name="$1" expect="$2" path="$3" content="$4"
+  local tmp out got; tmp="$(mktemp -d)"
+  out="$(
+    cd "$tmp" || exit 1
+    git init -q . && git config user.email t@t && git config user.name t
+    mkdir -p "$(dirname "$path")" 2>/dev/null
+    [ -n "$content" ] && printf '%s' "$content" > "$path"
+    git add -A >/dev/null 2>&1
+    bash "$SWEEP" 2>&1
+  )"
+  rm -rf "$tmp"
+  if printf '%s' "$out" | grep -qF "POPULATION TOO SMALL"; then got=refuse; else got=ran; fi
+  if [ "$got" = "$expect" ]; then
+    PASS=$((PASS+1)); printf '  ✓ %s\n' "$name"
+  else
+    FAIL=$((FAIL+1)); printf '  ✗ %s — expected %s, got %s\n' "$name" "$expect" "$got"
+  fi
+}
+floor_case "an EMPTY population is refused, not reported CLEAN" refuse "components/x.tsx" ''
+floor_case "a one-file population is refused at the default floor" refuse "components/x.tsx" \
+  'export const X = () => null
+'
+# And the real tree must clear it, or the floor is set wrong — this is the arm that would have
+# caught a floor of 500.
+if bash "$SWEEP" --quiet 2>/dev/null || [ $? -eq 1 ]; then
+  if bash "$SWEEP" 2>&1 | grep -qF "POPULATION TOO SMALL"; then
+    FAIL=$((FAIL+1)); printf '  ✗ the REAL repo must clear the floor — it does not\n'
+  else
+    PASS=$((PASS+1)); printf '  ✓ the real repo clears the floor\n'
+  fi
+fi
 
 echo
 echo "  $PASS passed, $FAIL failed"

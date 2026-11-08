@@ -149,7 +149,14 @@ heading_open_ids() { heading_open_sites "$1" | cut -f2; }
 #    items**, and all twelve read correctly under earliest-wins. **NO BOARD 46 → 54.**
 open_item_boards() {
   local bl="$1"
-  { heading_open_sites "$bl"; board_tag_bullet_sites "$bl"; } | sort -u -k2,2 \
+  # 🔴 DETERMINISTIC, AND `sort -u -k2,2` WAS NOT (code review, 2026-11-08). That compares only
+  # the id and `-u` keeps an ARBITRARY one of the tied lines, so an id with two filing sites
+  # could keep either — and the board, and therefore the gate's verdict, could flip between runs
+  # with no change to the document. Measured latent: 0 ids currently have two sites. Now the
+  # FIRST site in file order wins, always, which is also the right answer: an item's canonical
+  # filing is its first, and a later restatement is the mention this function exists to ignore.
+  { heading_open_sites "$bl"; board_tag_bullet_sites "$bl"; } \
+  | sort -t"$(printf '\t')" -k1,1n | awk -F'\t' '!seen[$2]++' \
   | awk -F'\t' -v BL="$bl" '
       { site[$1] = $2 }
       END {
@@ -159,6 +166,12 @@ open_item_boards() {
           id = site[ln]; b = "?"
           for (i = ln + 0; i <= ln + 8 && i in L; i++) {
             if (i > ln + 0 && L[i] ~ /^#/) break
+            # 🔴 AND IT MUST STOP AT ANOTHER ITEM'"'"'S FILING (code review, 2026-11-08). Stopping
+            # only at `^#` let an untagged `###` item inherit the tag from a NEIGHBOURING board-tag
+            # bullet inside the window — the mention-vs-filing class re-entering through the very
+            # window added to fix it. Verified latent: none of the 6 late-tag rows reads another
+            # item'"'"'s bullet. A board-tag bullet is a filing, so it ends the previous one.
+            if (i > ln + 0 && L[i] ~ /^- .*\*\*.*\*\* *`?[A-Z][A-Z0-9]*(-[A-Z0-9]+)+/) break
             line = L[i]; best = 0; cand = "?"
             # ⚠️ Written out rather than looped: awk has no ordered map and the GLYPH BYTES
             # are the key fact here. Each board is tested for its position in the line, and

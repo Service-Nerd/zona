@@ -20,7 +20,7 @@ FAIL=0
 # Resolved from the HOOK'S OWN directory, never from `$PWD`: `pre-commit.test.sh`
 # runs the real hook with cwd set to a scratch git repo, and a relative source
 # would silently find nothing there.
-. "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/scripts/lib/colour-guards.sh"
+. "$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")/.." && pwd)/scripts/lib/colour-guards.sh"
 
 # The POPULATION: staged TS/JS under app/ and components/. `globals.css` is the token
 # authority and is excluded here, at selection, so the colour rules never read it.
