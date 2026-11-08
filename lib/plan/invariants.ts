@@ -7014,8 +7014,27 @@ export function validatePlan(plan: Plan, rawInput: GeneratorInput): Violation[] 
       // producer put it there or a human did. Either way the plan now says
       // "Target Race" to a runner, which is what this check exists to surface.
       if (k !== 'coach_intro' && k !== 'plan_intro' && k !== 'notes'
-          && k !== 'race_name' && !k.endsWith('_note')) continue
-      if (typeof m[k] === 'string') scan.push([`meta.${k}`, m[k] as string])
+          && k !== 'race_name' && k !== 'confidence_risks' && !k.endsWith('_note')) continue
+      if (typeof m[k] === 'string') { scan.push([`meta.${k}`, m[k] as string]); continue }
+      // 🔴 THE POPULATION HOLE WAS STILL OPEN, ONE TYPE OVER (ENRICH-RISK-TOKEN-01,
+      // 2026-11-08). The comment above names both of this check's failure classes — a
+      // hand-typed VOCABULARY and a POPULATION with no `meta.*` prose in it — and the
+      // population fix added `meta.*` STRINGS. `meta.confidence_risks` is a `string[]`, so
+      // `typeof m[k] === 'string'` excluded it **by construction**: it could not have
+      // entered this scan even with its key in the filter above, which it also was not.
+      //
+      // ⚠️ SO THIS CHECK'S OWN `expected` STRING WAS WIDER THAN ITS SCAN. It says "only
+      // session.coach_notes may carry a token" — a claim about every user-facing field —
+      // while two of the seven the enricher writes were outside the population. The other,
+      // `session.label`, WAS scanned and merely unguarded at the boundary; this one was
+      // invisible to both layers at once. Measured: 0 live, 2 in `plan_archive`.
+      //
+      // Indexed, so a violation names WHICH sentence rather than the field.
+      if (Array.isArray(m[k])) {
+        (m[k] as unknown[]).forEach((v, i) => {
+          if (typeof v === 'string') scan.push([`meta.${k}[${i}]`, v])
+        })
+      }
     }
     for (const w of plan.weeks) {
       scan.push([`w${w.n}.label`, w.label])

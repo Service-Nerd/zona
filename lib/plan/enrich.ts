@@ -691,7 +691,13 @@ export interface WeekCopyRejection {
    * happens again, so meta carries no week number at all.
    */
   weekN: number | null
-  field: 'label' | 'theme' | 'coach_intro' | 'notes' | 'coach_notes'
+  /**
+   * 🔴 FIVE NAMES FOR SEVEN FIELDS, FOR A MONTH (ENRICH-RISK-TOKEN-01, 2026-11-08).
+   * The enricher writes seven prose surfaces; this union named five of them, and the two it
+   * left out are the two the merge never checked: `confidence_risks` and `session.label`.
+   * The union is the list, so widening it is what makes the omission visible.
+   */
+  field: 'label' | 'theme' | 'coach_intro' | 'notes' | 'coach_notes' | 'confidence_risks' | 'session_label'
   /** The offending placeholder, for the ops event. Never the whole sentence. */
   token: string
 }
@@ -780,7 +786,39 @@ export function mergePlan(
   // Paid-only meta fields (INV-PLAN-008)
   if (tier === 'paid') {
     if (enriched.meta.confidence_score != null) plan.meta.confidence_score = enriched.meta.confidence_score
-    if (enriched.meta.confidence_risks?.length) plan.meta.confidence_risks = enriched.meta.confidence_risks
+    // 🔴 ENRICH-RISK-TOKEN-01 (2026-11-08) — THE FIELD NOBODY ADDED TO THE LIST.
+    //
+    // `runnerProse.ts` wrote the reason down one module away, for the em-dash rule, before
+    // this was found: *"The enriched plan's prose fields are `coach_notes`, `coach_intro`,
+    // `theme`, `confidence_risks` TODAY. A hand-kept list is blind to the field nobody adds
+    // to it."* The token rejector above IS that hand-kept list, and this is that field.
+    //
+    // `confidence_risks` has ONE render site — `ConfidenceBadge` on the plan reveal in
+    // `GeneratePlanScreen` — and no token pass, so a `{{token}}` here shows LITERALLY.
+    // Measured 2026-11-08: 0 of 42 live risk items carry one, 2 in `plan_archive`, both the
+    // same runner and the same sentence ("Zone 3 discipline ({{session_hr}}) is
+    // non-negotiable."), archived on 10-28 and 11-04 — so it was his live plan for at least
+    // a week. ⚠️ `plan_enrich_week_copy_rejected` has fired 34 times in 11 days, including
+    // on `meta.coach_intro`: the model emits tokens in plan-level prose routinely and this
+    // was the one field with nothing to catch them.
+    //
+    // ⚠️ PER ITEM, NOT PER FIELD, and that is a real difference from the week path. There
+    // the field is one string, so the unit of prose and the unit of rejection are the same
+    // thing. Here the field is up to three INDEPENDENT sentences and there is no engine copy
+    // to fall back to — the rule engine writes no risks — so rejecting the array would take
+    // two complete sentences down with one broken one and leave the runner nothing. Dropping
+    // the item restores the prompt's intent for that item and keeps the rest.
+    //
+    // An emptied array is not set at all, which is the same state as the model not sending
+    // it: `ConfidenceBadge` already renders with no risks for the score-only case.
+    const risks = enriched.meta.confidence_risks ?? []
+    const clean: string[] = []
+    for (const r of risks) {
+      const token = firstPlaceholder(r)
+      if (token) { onRejectWeekCopy?.({ weekN: null, field: 'confidence_risks', token }); continue }
+      clean.push(r)
+    }
+    if (clean.length) plan.meta.confidence_risks = clean
   }
 
   // Weeks
@@ -858,7 +896,24 @@ export function mergePlan(
       if (isTimeTrial(session)) continue
       // ENRICH-LABEL-CLASS-01 — a rename may carry voice, not a different
       // physiological claim. See `preserveLabelClass`.
-      if (es.label) session.label = preserveLabelClass(session.label, es.label)
+      //
+      // 🔴 AND THE TOKEN CHECK WAS MISSING HERE TOO (ENRICH-RISK-TOKEN-01, 2026-11-08).
+      // `INV-PLAN-NO-PLACEHOLDER-COPY` scans `session.label` and its own `expected` string
+      // says *"only session.coach_notes may carry a token"* — so the INVARIANT has always
+      // judged this field and the MERGE never did. In production that invariant is `warn` and
+      // logged, so a token here would reach the runner and be recorded rather than refused.
+      //
+      // ⚠️ ZERO INSTANCES, EVER — 0 in 41 live plans and 0 in 80 archived. This is
+      // preventive and the number is stated so nobody reads a fixed defect into it. It is
+      // guarded anyway for the reason the week path already records about `week.label`:
+      // *"Production carries 0 label tokens today; that is luck, not a guarantee."* A session
+      // label renders RAW on Today, Plan and Session Detail, with no prose owner — the worst
+      // exposure of the seven fields and the one with no boundary.
+      if (es.label) {
+        const labelToken = firstPlaceholder(es.label)
+        if (labelToken) onRejectWeekCopy?.({ weekN: week.n, field: 'session_label', token: labelToken })
+        else session.label = preserveLabelClass(session.label, es.label)
+      }
       // §28 — keep the engine's stride line if the enricher's rewrite dropped it
       // (session.coach_notes still holds the engine notes at this point).
       // §120 Amendment 2 (GOAL-PACE-REACHABLE-01) — on a plan whose goal pace was WITHHELD, a note that quotes
