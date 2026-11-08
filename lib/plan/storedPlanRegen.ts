@@ -39,6 +39,6 @@ export function regenerateFromStored(plan: Plan, profile: ProfileHr | null | und
   // never writes it, so the stamp is harmless there; `rca-1026-regen.ts` rebuild mode writes
   // it, which is the case this exists for. Its PATCH mode clones the stored plan instead and
   // copies three named meta fields, never `enrichment`.
-  const fresh = stampRebuilt(composePlanWithFoundation(generateRulePlan(input, tier, planStart, undefined, planStart), input, composeToday, 'add').plan as never as { meta: Record<string, unknown> }) as never as Plan
+  const fresh = stampRebuilt(composePlanWithFoundation(generateRulePlan(input, tier, planStart, undefined, planStart), input, composeToday, 'add').plan)
   return { input, tier, fresh }
 }

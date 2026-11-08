@@ -12,6 +12,7 @@ import { join } from 'node:path'
 import { judgeEnrichHealth, enrichmentStateOf, hasAiCopy, NOT_RECORDED, NOT_ELIGIBLE, type EnrichStateRow } from './enrichHealth'
 import { REBUILT, stampRebuilt } from '@/lib/plan/enrichmentState'
 import { PlanMetaSchema } from '@/lib/plan/schema'
+import type { PlanMeta } from '@/types/plan'
 
 /** The minimum PlanMetaSchema accepts, so the enum arm below tests the ENUM and nothing else. */
 const META_FIXTURE = {
@@ -211,10 +212,47 @@ describe('REBUILD-STAMP-ENRICHMENT-01', () => {
   })
 
   it('stampRebuilt writes the state and touches nothing else', () => {
-    const plan = { meta: { enrichment: 'failed_api_error', tier: 'paid', race_name: 'X' } }
+    const plan = { meta: { enrichment: 'failed_api_error', tier: 'paid', race_name: 'X' } as unknown as PlanMeta }
     const out = stampRebuilt(plan)
     expect(out.meta.enrichment).toBe(REBUILT)
     expect(out.meta).toEqual({ enrichment: REBUILT, tier: 'paid', race_name: 'X' })
+  })
+
+  // 🔴 THE ARM CODE REVIEW ASKED FOR, AND THE DEFECT WAS LIVE FOR AN HOUR.
+  // The first cut of `stampRebuilt` wrote `skipped_rebuild` UNCONDITIONALLY, so a plan that
+  // was never eligible for voice became eligible-and-without-voice the moment a repair
+  // script touched it — and `fleet-invalid-debt-01-regen.ts` regenerates free-tier and
+  // base-build plans. The digest's unwindowed count would have gained a permanent false
+  // line reading "a runner has no AI coaching". Measured by review: `eligible: 1,
+  // withoutVoice: 1, alert: true` where the honest answer is ineligible.
+  it('🔴 a rebuild does NOT make an ineligible plan eligible', () => {
+    const stamp = (meta: Record<string, unknown>) =>
+      stampRebuilt({ meta: meta as unknown as PlanMeta }).meta.enrichment
+    // Free tier was never going to be enriched: `skipped` is that reason, and it is filtered
+    // out of the denominator.
+    expect(stamp({ tier: 'free' })).toBe('skipped')
+    // Not a race block: a DIFFERENT reason, which is why the two values exist separately.
+    expect(stamp({ tier: 'paid', plan_kind: 'base_build' })).toBe('skipped_plan_kind')
+    expect(stamp({ tier: 'free', plan_kind: 'base_build' })).toBe('skipped_plan_kind')
+    expect(stamp({ tier: 'paid', plan_kind: 'maintenance' })).toBe('skipped_plan_kind')
+    // A paid or trial RACE plan is the only case the new value describes.
+    expect(stamp({ tier: 'paid' })).toBe(REBUILT)
+    expect(stamp({ tier: 'trial' })).toBe(REBUILT)
+    // And the judgement follows: an ineligible stamp stays out of the denominator.
+    const v = judgeEnrichHealth([row('applied', 'a'), row('skipped', 'b'), row('skipped_plan_kind', 'c')])
+    expect(v.eligible).toBe(1)
+    expect(v.withoutVoice).toBe(0)
+    expect(v.alert).toBe(false)
+  })
+
+  it('…and ONE owner decides it — `enrichmentStateOf` and `stampRebuilt` cannot disagree', () => {
+    const src = readFileSync(join(__dirname, 'enrichHealth.ts'), 'utf8')
+      .replace(/\/\*[\s\S]*?\*\//g, m => m.replace(/[^\n]/g, ' '))
+      .replace(/(^|[^:])\/\/[^\n]*/g, (m, p1) => p1 + ' '.repeat(m.length - p1.length))
+    expect(src).toMatch(/neverEnrichedByDesign\(/)
+    // The predicate must not be written out a second time here — the shape this whole
+    // commit was about.
+    expect(src).not.toMatch(/tier === 'free' \|\|/)
   })
 
   it('\u{1F534} the stamp is ELIGIBLE and reads as WITHOUT VOICE — a rebuilt paid runner has none', () => {

@@ -84,7 +84,7 @@ const qualityNames = (plan: Plan): string[] => {
 
   // Generate the new plan.
   // REBUILD-STAMP-ENRICHMENT-01 — the state this rebuild leaves, stated not inferred.
-  const next = stampRebuilt(generateRulePlan(INPUT, 'trial', PLAN_START) as never as { meta: Record<string, unknown> }) as never as Plan
+  const next = stampRebuilt(generateRulePlan(INPUT, 'trial', PLAN_START))
   // STORED-PLAN-VALIDATOR-INPUT-01 — §116's kind dispatch. `next` is FRESHLY generated from
   // INPUT, so the save-path policy is the right one: same strictness, plus the dispatch.
   const errs = validateSavedPlan(next, INPUT).filter(v => v.severity === 'error')

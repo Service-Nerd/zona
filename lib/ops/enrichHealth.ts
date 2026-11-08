@@ -28,7 +28,7 @@
 // happened; `meta.enrichment` is the thing the runner HAS.
 import type { Plan } from '@/types/plan'
 
-import { ENRICHED_STATES, hasAiCopy } from '@/lib/plan/enrichmentState'
+import { ENRICHED_STATES, hasAiCopy, neverEnrichedByDesign } from '@/lib/plan/enrichmentState'
 // Re-exported: the digest SQL mirror and existing callers name them from here.
 export { ENRICHED_STATES, hasAiCopy }
 
@@ -119,6 +119,8 @@ export function enrichmentStateOf(plan: Pick<Plan, 'meta'> | null | undefined): 
   const meta = plan?.meta
   if (meta?.enrichment != null) return meta.enrichment
   if (!meta?.generator_input || typeof meta.generator_input !== 'object') return null
-  if (meta.tier === 'free' || (meta.plan_kind && meta.plan_kind !== 'race')) return null
+  // ONE eligibility owner, shared with `stampRebuilt` (code review, 2026-11-08): the stamp
+  // had its own copy of this rule and the copy said "no".
+  if (neverEnrichedByDesign(meta)) return null
   return NOT_RECORDED
 }

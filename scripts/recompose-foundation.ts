@@ -26,7 +26,8 @@ import { createClient } from '@supabase/supabase-js'
 import { readFileSync } from 'node:fs'
 import { composePlanWithFoundation } from '../lib/plan/foundationCompose'
 import { withProfileHr, type ProfileHr } from '../lib/plan/rebuildInput'
-import { validateRepairedPlan } from '../lib/plan/validateStoredPlan'
+import { validateSavedPlan } from '../lib/plan/validateStoredPlan'
+import { storedPlanInput } from '../lib/plan/storedPlanInput'
 import { easyPaceFromPlan } from '../lib/plan/easyPace'
 import { isLongRun } from '../lib/plan/sessionRole'
 import type { GeneratorInput, Plan } from '../types/plan'
@@ -167,7 +168,22 @@ async function main() {
     // REBUILD-HR-FROM-PROFILE-01 — rebuilt foundation weeks take heart rate from the profile, not the stored snapshot.
     const { data: hrRow } = await db.from('user_settings').select('max_hr, resting_hr, max_hr_source').eq('id', row.user_id).maybeSingle()
     const profile = hrRow as ProfileHr | null
-    const res = composePlanWithFoundation(stripped, withProfileHr(input, profile), new Date().toISOString().slice(0, 10), 'add')
+    // 🔴 CODE REVIEW, 2026-11-08 — MY FIRST FIX CLOSED HALF THE ASYMMETRY AND WROTE
+    // "Both sides now take the profile" over the other half. It did fix the HR side. But
+    // `res.violations` came from a compose running on the RAW persisted `input` (no
+    // `fitness_level`) while the before-set had moved to `storedPlanInput`, which fills the
+    // three §79 level fields from meta. So a benchmark aged past one of §10's staleness
+    // steps re-derives a different level on the AFTER side only, a level-gated invariant
+    // reads as newly ADDED, and a legitimate remediation is skipped — which is exactly the
+    // misattribution the comment thirty lines below guards against in the other direction.
+    //
+    // ⚠️ SO THE COMPOSE TAKES THE SAME INPUT THE JUDGEMENT DOES, and that is a BEHAVIOUR
+    // CHANGE to a repair script, declared: the rebuilt foundation weeks are now composed at
+    // the level the plan was actually built at, rather than at whatever the persisted
+    // snapshot happened to carry. It is the correct input (§79, RUNWALK-ASSESSED-LEVEL-01)
+    // and it is un-measured on live plans from here, so DRY-RUN before any --apply.
+    const vInput = withProfileHr(storedPlanInput(plan), profile)
+    const res = composePlanWithFoundation(stripped, vInput, new Date().toISOString().slice(0, 10), 'add')
     const after = overBudget(res.plan, input)
 
     // ── GUARDS. Every one of these must hold or this plan is skipped. ──────────
@@ -196,8 +212,9 @@ async function main() {
     // not cause it, which is the same misattribution the comment above guards against in
     // the other direction. Both sides now take the profile, and `validateRepairedPlan`
     // adds §116's kind dispatch and the meta-first level merge that neither side had.
+    // The SAME input, by construction rather than by two calls that agree today.
     const beforeErrs = new Set(
-      validateRepairedPlan(plan, { profile }).filter(v => v.severity === 'error').map(errKey))
+      validateSavedPlan(plan, vInput).filter(v => v.severity === 'error').map(errKey))
     const added = res.violations
       .filter(v => v.severity === 'error' && !beforeErrs.has(errKey(v)))
     if (added.length) problems.push(`${added.length} NEW error-severity violation(s): ${Array.from(new Set(added.map(e => e.code))).join(', ')}`)

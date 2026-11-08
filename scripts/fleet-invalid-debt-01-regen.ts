@@ -122,7 +122,7 @@ async function main() {
       const tier = ((meta.tier as string) === 'free' ? 'free' : (meta.tier as string) === 'paid' ? 'paid' : 'trial') as 'free' | 'trial' | 'paid'
       const rule = generateRulePlan(input, tier, planStart, undefined, planStart)
       // REBUILD-STAMP-ENRICHMENT-01 — the state this rebuild leaves, stated not inferred.
-      candidate = stampRebuilt(composePlanWithFoundation(rule, input, planStart, 'add').plan as never as { meta: Record<string, unknown> }) as never as Plan
+      candidate = stampRebuilt(composePlanWithFoundation(rule, input, planStart, 'add').plan)
     } catch (e) {
       skips.regen_threw = (skips.regen_threw ?? 0) + 1
       console.log(`SKIP  ${short}  [regen-threw] ${(e as Error).message.split('\n')[0]}`)

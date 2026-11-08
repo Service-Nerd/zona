@@ -171,15 +171,17 @@ export function validateRepairedPlan(
      *  (REBUILD-HR-FROM-PROFILE-01). Composed through `withProfileHr`, the owner of that
      *  rule, so the `max_hr_source` handling is not written out a second time here. */
     profile?: ProfileHr | null
-    /** Anything else the script legitimately knows better than the stored answers — today
-     *  only `recal-live-repair`'s benchmark, which the runner gave the wizard and
-     *  `generator_input` never carried. DEFINED KEYS ONLY; see `storedPlanInput`.
-     *
-     *  ⚠️ NOT FOR A WHOLE INPUT. Passing `{ ...persisted, max_hr }` would let the
-     *  persisted `fitness_level` win over meta's and undo the merge that is the entire
-     *  reason this path exists (§79, RUNWALK-ASSESSED-LEVEL-01). Pass the delta. */
-    overlay?: Partial<GeneratorInput>
   },
 ): Violation[] {
-  return validateSavedPlan(plan, withProfileHr(storedPlanInput(plan, opts?.overlay), opts?.profile))
+  return validateSavedPlan(plan, withProfileHr(storedPlanInput(plan), opts?.profile))
 }
+
+// 🔴 THERE WAS AN `overlay?: Partial<GeneratorInput>` HERE AND IT HAD ZERO CALLERS —
+// decorative config by this repo's own definition, found by code review the hour it shipped.
+// Its docstring named `recal-live-repair`'s benchmark injection as the consumer, and that
+// script does not call this function; it kept `validateSavedPlan(p, storedPlanInput(p))`.
+// **I wrote a parameter, documented its footguns at length, and never wired it.** When a
+// caller genuinely needs a field the stored answers do not carry, add it back with that
+// caller in the same commit — and the warning that earned its keep is worth repeating here:
+// pass the DELTA, never a whole input, or the persisted `fitness_level` wins over meta's and
+// undoes the merge this path exists for (§79, RUNWALK-ASSESSED-LEVEL-01).

@@ -9701,8 +9701,6 @@ const RESHAPE_SKIP_INVARIANTS = new Set<string>([
 ])
 
 export function validateReshapedPlan(plan: Plan, reshapedWeekN?: number): Violation[] {
-  const m = plan.meta
-
   // ADR-020 / CB-2 (2026-09-03) — prefer the PERSISTED generator input.
   //
   // 🔑 THE DERIVATION MOVED OUT (STORED-PLAN-VALIDATOR-INPUT-01, 2026-11-08) and this is

@@ -27,7 +27,7 @@ import type { GeneratorInput, Plan } from '@/types/plan'
  * the input's own `fitness_level` is frequently absent (the assessed path, §79),
  * which would re-derive the quality ceiling from the wrong level.
  */
-export function storedPlanInput(plan: Plan, overlay?: Partial<GeneratorInput>): GeneratorInput {
+export function storedPlanInput(plan: Plan): GeneratorInput {
   const m = plan.meta
   const persisted = m.generator_input
   const base: GeneratorInput = persisted
@@ -60,13 +60,5 @@ export function storedPlanInput(plan: Plan, overlay?: Partial<GeneratorInput>): 
         benchmark:             m.benchmark,
         days_cannot_train:     [], // absent on legacy meta — blocked-days invariant skipped
       }
-  if (!overlay) return base
-  // ⚠️ DEFINED KEYS ONLY, NEVER A BARE SPREAD. `{ ...base, ...overlay }` lets an
-  // overlay key that is present-and-`undefined` ERASE a value the merge above just
-  // established — and a caller building `{ max_hr: row?.max_hr }` from a missing
-  // profile row produces exactly that shape. Absence must not be written as a value.
-  const out: GeneratorInput = { ...base }
-  const bag = out as unknown as Record<string, unknown>
-  for (const [k, v] of Object.entries(overlay)) if (v !== undefined) bag[k] = v
-  return out
+  return base
 }

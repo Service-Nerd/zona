@@ -530,6 +530,20 @@ export type EnrichmentStatus =
   | 'failed_unparseable'
   | 'failed_invalid_copy'
   | 'failed'
+  // 🔴 THESE TWO WERE IN THE ZOD ENUM AND IN PRODUCTION ROWS AND NOT IN THIS UNION
+  // (found by code review, 2026-11-08). `skipped_plan_kind` has been written by
+  // `stagedRacePlan.ts`, `getRunningPlan.ts` and the staged producer since 2026-10-10;
+  // `skipped_rebuild` arrived with REBUILD-STAMP-ENRICHMENT-01. The schema accepted both,
+  // the database holds both, and the type said neither existed — so a consumer writing
+  // `plan.meta.enrichment === 'skipped_plan_kind'` fails `tsc`, and an exhaustive switch
+  // silently has no arm for a value that is live. It is also what forced the
+  // `as never as { meta: Record<string, unknown> }` casts at the stamp call sites, which
+  // are now gone.
+  //
+  // ⚠️ `lib/plan/enrichmentStateUnion.test.ts` holds the Zod enum and this union equal in
+  // BOTH directions, because one of them drifting is invisible until a consumer needs it.
+  | 'skipped_plan_kind'
+  | 'skipped_rebuild'
 
 export interface PlanMeta {
   // Core identity

@@ -251,7 +251,7 @@ async function regenerate() {
     try {
       const rule = generateRulePlan(input, tier, planStart, undefined, TODAY)
       // REBUILD-STAMP-ENRICHMENT-01 — the state this rebuild leaves, stated not inferred.
-      candidate = stampRebuilt(composePlanWithFoundation(rule, input, TODAY, 'add').plan as never as { meta: Record<string, unknown> }) as never as Plan
+      candidate = stampRebuilt(composePlanWithFoundation(rule, input, TODAY, 'add').plan)
     } catch (e) {
       console.log(`  SKIP — regeneration threw: ${(e as Error).message.split('\n')[0]}`)
       continue

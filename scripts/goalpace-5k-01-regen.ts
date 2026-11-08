@@ -138,7 +138,7 @@ async function main() {
     if (refusal) throw new Error(`refused: ${refusal}`)
     if (overrideWeeks.length) throw new Error('refused: runner has moved sessions (session_overrides)')
     // REBUILD-STAMP-ENRICHMENT-01 — a rebuild drops model copy; say so in the plan.
-    candidate = stampRebuilt(fresh as never as { meta: Record<string, unknown> }) as never as Plan
+    candidate = stampRebuilt(fresh)
   } else {
     // A week is open to change only if it has not begun.
     const future = new Set(plan.weeks.filter(w => w.date > TODAY).map(w => w.n))
