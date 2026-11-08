@@ -37,7 +37,7 @@
  *   npx tsx scripts/recal-live-repair.ts --apply              # write
  *   npx tsx scripts/recal-live-repair.ts --verify             # read back; see § VERIFY
  */
-import { hasAiCopy } from '../lib/plan/enrichmentState'
+import { hasAiCopy, stampRebuilt } from '../lib/plan/enrichmentState'
 import { createClient } from '@supabase/supabase-js'
 import * as fs from 'fs'
 import {
@@ -240,7 +240,8 @@ async function regenerate() {
     let candidate: Plan
     try {
       const rule = generateRulePlan(input, tier, planStart, undefined, TODAY)
-      candidate = composePlanWithFoundation(rule, input, TODAY, 'add').plan
+      // REBUILD-STAMP-ENRICHMENT-01 — the state this rebuild leaves, stated not inferred.
+      candidate = stampRebuilt(composePlanWithFoundation(rule, input, TODAY, 'add').plan as never as { meta: Record<string, unknown> }) as never as Plan
     } catch (e) {
       console.log(`  SKIP — regeneration threw: ${(e as Error).message.split('\n')[0]}`)
       continue

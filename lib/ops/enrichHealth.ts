@@ -105,7 +105,14 @@ export const NOT_RECORDED = 'not_recorded'
  * legacy and were skipped by this check, by the digest and by
  * `scripts/reenrich-plans.ts`, which reads this same function. A plan that carries
  * `meta.generator_input` (PV2-A) cannot predate the field, so an absent state there
- * is `not_recorded`: eligible, and without voice. Free plans and maintenance /
+ * is `not_recorded`: eligible, and without voice.
+ *
+ * ⚠️ THE INFERENCE IS NOW LEGACY-ONLY, AND STILL NECESSARY (REBUILD-STAMP-ENRICHMENT-01,
+ * 2026-11-08). Every rebuild writer stamps `skipped_rebuild` at the write, so a plan rebuilt
+ * from that date self-describes and this branch is not reached for it. It is kept because
+ * **13 of 41 stored plans carried no stamp** when that shipped and nothing backfills them
+ * (live-plan policy). Retiring the inference for NEW rebuilds is what the item asked for and
+ * is not the same as removing it. Free plans and maintenance /
  * base-build plans are never enriched and stay `null`.
  */
 export function enrichmentStateOf(plan: Pick<Plan, 'meta'> | null | undefined): string | null {

@@ -27,6 +27,7 @@ import { validateStoredPlan } from '../lib/plan/validateStoredPlan'
 import type { Plan, GeneratorInput } from '../types/plan'
 import { regenRefusalReason } from '../lib/ops/regenEligibility'
 import { hasAiCopy } from '../lib/plan/enrichmentState'
+import { stampRebuilt } from '../lib/plan/enrichmentState'
 import { withProfileHr, type ProfileHr } from '../lib/plan/rebuildInput'
 
 const APPLY = process.argv.includes('--apply')
@@ -120,7 +121,8 @@ async function main() {
       const input = { ...withProfileHr(gi!, profileById.get(user)), plan_start: planStart } as GeneratorInput
       const tier = ((meta.tier as string) === 'free' ? 'free' : (meta.tier as string) === 'paid' ? 'paid' : 'trial') as 'free' | 'trial' | 'paid'
       const rule = generateRulePlan(input, tier, planStart, undefined, planStart)
-      candidate = composePlanWithFoundation(rule, input, planStart, 'add').plan
+      // REBUILD-STAMP-ENRICHMENT-01 — the state this rebuild leaves, stated not inferred.
+      candidate = stampRebuilt(composePlanWithFoundation(rule, input, planStart, 'add').plan as never as { meta: Record<string, unknown> }) as never as Plan
     } catch (e) {
       skips.regen_threw = (skips.regen_threw ?? 0) + 1
       console.log(`SKIP  ${short}  [regen-threw] ${(e as Error).message.split('\n')[0]}`)

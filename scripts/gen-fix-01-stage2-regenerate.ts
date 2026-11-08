@@ -13,7 +13,7 @@
  * Requires .env.local (SUPABASE_SERVICE_ROLE_KEY, APNS_* for the push). Identifies
  * User A by the incident plan signature — no id committed.
  */
-import { hasAiCopy } from '../lib/plan/enrichmentState'
+import { hasAiCopy, stampRebuilt } from '../lib/plan/enrichmentState'
 import { createClient } from '@supabase/supabase-js'
 import fs from 'fs'
 import { generateRulePlan } from '@/lib/plan/ruleEngine'
@@ -83,7 +83,8 @@ const qualityNames = (plan: Plan): string[] => {
   const current = match[0].plan_json as Plan
 
   // Generate the new plan.
-  const next = generateRulePlan(INPUT, 'trial', PLAN_START) as Plan
+  // REBUILD-STAMP-ENRICHMENT-01 — the state this rebuild leaves, stated not inferred.
+  const next = stampRebuilt(generateRulePlan(INPUT, 'trial', PLAN_START) as never as { meta: Record<string, unknown> }) as never as Plan
   const errs = validatePlan(next, INPUT).filter(v => v.severity === 'error')
 
   // ── Before / after ──────────────────────────────────────────────────────────

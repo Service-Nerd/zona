@@ -1587,13 +1587,27 @@ fingerprint is a weekday session at exactly its day's budget, **276 of 551**.
 
 ---
 
-### 🔲 `REBUILD-STAMP-ENRICHMENT-01` — a script rebuild should write an explicit enrichment state ⚙️ **NO BOARD**
+### 🔲 `GOALPACE-REGEN-OWNER-01` — a one-off regen script reimplements `regenerateFromStored`, carrying the bug the owner was written to fix ⚙️ **NO BOARD**
 
-From the REBUILD-VOICE-LOSS-01 code review. Rebuild scripts save a plan with no `meta.enrichment`, and the health check,
-digest and restore script now infer `not_recorded` from `generator_input` + tier + `plan_kind` (TS, and a hand-mirrored
-SQL copy). Stamping the state at the writer would retire the inference for new rebuilds. Two inference edges remain and
-are measured at 0 today: a staged plan rebuilt without its `skipped_plan_kind`, and a plan from the few hours on
-2026-08-06 between PV2-A (`generator_input`) and GEN-FIX-02 (`enrichment`).
+Found building `REBUILD-STAMP-ENRICHMENT-01` (2026-11-08). `lib/plan/storedPlanRegen.ts →
+regenerateFromStored` exists precisely so two scripts share one construction, and its docblock
+records the defect it fixed: *"passing the plan start as 'today' gave a 0-day gap and NO
+foundation weeks, so every plan with a runway read as 'the engine moves the calendar'
+(2026-10-27: a91d8fde and 3cc7c3a9 were refused for exactly this)."*
+
+`scripts/goalpace-5k-01-regen.ts:126` builds `fresh` inline and **passes `planStart` as the
+compose "today"** — the fixed bug, live in a sibling script. Every other line of the
+construction is identical to the owner's.
+
+⚠️ **IT FAILS LOUDLY, WHICH IS WHY THIS IS P3 AND NOT P1.** `sameCalendar` catches the missing
+foundation weeks and the script throws `refused: the fixed engine moves the calendar` — so it
+cannot write a wrong plan, it can only refuse a right one, **with a message that names the
+engine for the script's own defect**. The script is a completed one-off (GOALPACE-5K-CLOCK-01).
+
+⚙️ Fix: call `regenerateFromStored`. ⚠️ `fleet-invalid-debt-01-regen.ts` diverges the same way
+and must NOT be moved — its comment declares the choice (*"anchored to the ORIGINAL plan_start
+so main-week identity is unchanged. gap 0 → no new foundation prefix"*), and `recal-live-repair.ts`
+composes from TODAY deliberately because it re-plans from today.
 
 ### ✅ `MAINT-ENRICH-VALIDATE-01` — **DONE 2026-11-08 `27f0375c`.** The item named the race path's MECHANISM; the gap was the constitution. The ladder would have been **inert by construction**. Maintenance was the one plan kind with no placeholder check anywhere ⚙️ **NO BOARD**
 

@@ -309,6 +309,30 @@ export const PlanMetaSchema = z.object({
                   // value is deliberately NOT 'skipped' so it lands in the metric's
                   // eligible set and surfaces as without-voice, carrying its reason.
                   'skipped_plan_kind',
+
+                  // 🔴 'skipped_rebuild' — A REPAIR SCRIPT REGENERATED THIS PLAN AND ITS
+                  // MODEL COPY WAS DROPPED, DELIBERATELY (REBUILD-STAMP-ENRICHMENT-01,
+                  // 2026-11-08).
+                  //
+                  // Every rebuild script refuses to run on a plan that still carries AI copy
+                  // (`hasAiCopy`, enforced by `enrichHealth.test.ts` test 11), so this value is
+                  // never written over a voice that was working. What it records is the state
+                  // the rebuild LEAVES: rule copy, not re-enriched.
+                  //
+                  // Before this value, a rebuild wrote `candidate = fresh` — the rule engine's
+                  // plan, whose meta carries no `enrichment` at all — so the field went ABSENT
+                  // and `enrichmentStateOf` had to INFER `not_recorded` from
+                  // `generator_input` + tier + plan_kind, in TypeScript and again in a
+                  // hand-mirrored SQL copy in the digest runbook. Two inferences with a human
+                  // in between is the `deloadCadence` / `tierResolution` class; a writer that
+                  // states its own result needs neither.
+                  //
+                  // ⚠️ ELIGIBLE, like 'skipped_plan_kind' and for the same reason. A paid
+                  // runner holding a rebuilt plan HAS NO VOICE, so the value is deliberately
+                  // NOT in NOT_ELIGIBLE: it lands in the health check's eligible denominator
+                  // and surfaces as without-voice, carrying its reason.
+                  // `scripts/reenrich-plans.ts` is the remediation that clears it.
+                  'skipped_rebuild',
                 ]).optional(),
 
   // ADR-020 Option A — gap classification from composePlanWithFoundation.

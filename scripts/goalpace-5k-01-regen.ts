@@ -25,6 +25,7 @@
  * Run:  NODE_ENV=production npx tsx scripts/goalpace-5k-01-regen.ts --plan <id> [--apply]
  */
 import { hasAiCopy } from '../lib/plan/enrichmentState'
+import { stampRebuilt } from '../lib/plan/enrichmentState'
 import { createClient } from '@supabase/supabase-js'
 import * as fs from 'fs'
 import { generateRulePlan } from '../lib/plan/ruleEngine'
@@ -136,7 +137,8 @@ async function main() {
     }, TODAY)
     if (refusal) throw new Error(`refused: ${refusal}`)
     if (overrideWeeks.length) throw new Error('refused: runner has moved sessions (session_overrides)')
-    candidate = fresh
+    // REBUILD-STAMP-ENRICHMENT-01 — a rebuild drops model copy; say so in the plan.
+    candidate = stampRebuilt(fresh as never as { meta: Record<string, unknown> }) as never as Plan
   } else {
     // A week is open to change only if it has not begun.
     const future = new Set(plan.weeks.filter(w => w.date > TODAY).map(w => w.n))

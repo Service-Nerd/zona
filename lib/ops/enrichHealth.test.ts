@@ -9,7 +9,15 @@
 import { describe, it, expect } from 'vitest'
 import { readFileSync, readdirSync, statSync } from 'node:fs'
 import { join } from 'node:path'
-import { judgeEnrichHealth, enrichmentStateOf, hasAiCopy, NOT_RECORDED, type EnrichStateRow } from './enrichHealth'
+import { judgeEnrichHealth, enrichmentStateOf, hasAiCopy, NOT_RECORDED, NOT_ELIGIBLE, type EnrichStateRow } from './enrichHealth'
+import { REBUILT, stampRebuilt } from '@/lib/plan/enrichmentState'
+import { PlanMetaSchema } from '@/lib/plan/schema'
+
+/** The minimum PlanMetaSchema accepts, so the enum arm below tests the ENUM and nothing else. */
+const META_FIXTURE = {
+  athlete: 'A', race_name: 'X', race_date: '2027-04-01',
+  race_distance_km: 42.2, plan_start: '2026-12-01', last_updated: '2026-11-08',
+}
 
 const row = (enrichment: string | null, user = 'u', at = '2026-10-02T10:00:00Z'): EnrichStateRow =>
   ({ user_id: user, created_at: at, enrichment })
@@ -139,15 +147,105 @@ describe('OPS-ENRICH-HEALTH-01', () => {
   // plan and WRITES it to `plans` must consult `hasAiCopy`, directly or through
   // `regenRefusalReason` (whose `hasAiCopy` field is required).
   it('11. every script that regenerates and writes a live plan consults hasAiCopy', () => {
-    const dir = join(__dirname, '..', '..', 'scripts')
-    const writers = readdirSync(dir).filter(n => /\.tsx?$/.test(n)).map(n => join(dir, n))
-      .filter(f => {
-        const s = readFileSync(f, 'utf8')
-        return /generateRulePlan\(|regenerateFromStored\(/.test(s)
-          && (/savePlanForUser\(/.test(s) || /from\('plans'\)\s*\.\s*(upsert|update)\(/.test(s))
-      })
+    const writers = rebuildWriters()
     expect(writers.length, 'population: the five known rebuild scripts').toBeGreaterThanOrEqual(5)
     const unguarded = writers.filter(f => !/hasAiCopy\(/.test(readFileSync(f, 'utf8'))).map(f => f.split('/').pop())
     expect(unguarded).toEqual([])
+  })
+})
+
+/**
+ * The scripts that REGENERATE a plan and WRITE it. Shared by test 11 (does it refuse to
+ * destroy a working voice?) and the REBUILD-STAMP arm below (does it record what it left?).
+ *
+ * ⚠️ ONE DERIVATION, DELIBERATELY. Two arms asking different questions of the same
+ * population used to hold two copies of this filter, and a copy is how a population silently
+ * stops matching the thing at risk — the `deloadCadence` shape, in a test file.
+ */
+function rebuildWriters(): string[] {
+  const dir = join(__dirname, '..', '..', 'scripts')
+  return readdirSync(dir).filter(n => /\.tsx?$/.test(n)).map(n => join(dir, n))
+    .filter(f => {
+      const s = readFileSync(f, 'utf8')
+      return /generateRulePlan\(|regenerateFromStored\(/.test(s)
+        && (/savePlanForUser\(/.test(s) || /from\('plans'\)\s*\.\s*(upsert|update)\(/.test(s))
+    })
+}
+
+/**
+ * REBUILD-STAMP-ENRICHMENT-01 (2026-11-08) — a rebuild states its own enrichment state.
+ *
+ * 🔑 WHAT VIOLATION CLASS CAN THESE FIND? A new rebuild script that writes
+ * `candidate = fresh` and leaves `meta.enrichment` ABSENT — which is what all five did until
+ * today, and the reason `enrichmentStateOf` carries an inference duplicated in a
+ * hand-mirrored SQL copy in the digest runbook. Also: the value being quietly added to
+ * NOT_ELIGIBLE, which would make a rebuilt PAID runner invisible to the health check with a
+ * tidier-looking field — the exact mistake `skipped_plan_kind`'s own comment records.
+ *
+ * ⚠️ WHAT IT DOES NOT PROVE. It does not prove any stored plan carries the stamp: nothing
+ * backfills, by live-plan policy, and 13 of 41 stored plans were unstamped when this shipped.
+ * It also cannot prove a rebuild script was RUN.
+ */
+describe('REBUILD-STAMP-ENRICHMENT-01', () => {
+  it('every rebuild writer stamps the state, directly or through the regeneration owner', () => {
+    const writers = rebuildWriters()
+    expect(writers.length, 'population: the five known rebuild scripts').toBeGreaterThanOrEqual(5)
+    const unstamped = writers.filter(f => {
+      const s = readFileSync(f, 'utf8')
+      // `regenerateFromStored` stamps its own output, so a caller of it needs nothing more.
+      return !/stampRebuilt\(/.test(s) && !/regenerateFromStored\(/.test(s)
+    }).map(f => f.split('/').pop())
+    expect(
+      unstamped,
+      'Call `stampRebuilt` on the plan being WRITTEN (lib/plan/enrichmentState.ts), or build it '
+      + 'with `regenerateFromStored`, which stamps. Leaving `meta.enrichment` absent makes the '
+      + "health check INFER the state from generator_input + tier + plan_kind:\n" + unstamped.join('\n'),
+    ).toEqual([])
+  })
+
+  it('the regeneration owner stamps its own output, so its callers cannot forget', () => {
+    const src = readFileSync(join(__dirname, '..', 'plan', 'storedPlanRegen.ts'), 'utf8')
+      .replace(/\/\*[\s\S]*?\*\//g, m => m.replace(/[^\n]/g, ' '))
+      .replace(/(^|[^:])\/\/[^\n]*/g, (m, p1) => p1 + ' '.repeat(m.length - p1.length))
+    expect(src).toMatch(/stampRebuilt\(/)
+  })
+
+  it('stampRebuilt writes the state and touches nothing else', () => {
+    const plan = { meta: { enrichment: 'failed_api_error', tier: 'paid', race_name: 'X' } }
+    const out = stampRebuilt(plan)
+    expect(out.meta.enrichment).toBe(REBUILT)
+    expect(out.meta).toEqual({ enrichment: REBUILT, tier: 'paid', race_name: 'X' })
+  })
+
+  it('\u{1F534} the stamp is ELIGIBLE and reads as WITHOUT VOICE — a rebuilt paid runner has none', () => {
+    // `skipped_plan_kind`'s comment makes the argument in full: stamping a value that lands in
+    // NOT_ELIGIBLE keeps the runner invisible with a tidier field.
+    expect(NOT_ELIGIBLE as readonly string[]).not.toContain(REBUILT)
+    const v = judgeEnrichHealth([row('applied', 'a'), row(REBUILT, 'b')])
+    expect(v.eligible).toBe(2)
+    expect(v.withoutVoice).toBe(1)
+    expect(v.affected.map(r => r.enrichment)).toEqual([REBUILT])
+    expect(v.alert).toBe(true)
+  })
+
+  it('a stamped plan is read verbatim, never through the inference', () => {
+    const gi = { race_distance_km: 42.2 }
+    expect(enrichmentStateOf({ meta: { enrichment: REBUILT, tier: 'paid', generator_input: gi } } as never)).toBe(REBUILT)
+    // The inference stays for the 13 of 41 stored plans that carry no stamp.
+    expect(enrichmentStateOf({ meta: { tier: 'paid', generator_input: gi } } as never)).toBe(NOT_RECORDED)
+  })
+
+  // 🔴 MY FIRST CUT OF THIS ARM WAS HOLLOW AND THE MUTATION FOUND IT. It read
+  // `expect(schema).toContain("'skipped_rebuild'")` against the raw source — so deleting the
+  // enum entry left the arm GREEN, because the string still sits in the explanatory comment
+  // I had written directly above it. **A source assertion passes on a comment**
+  // (HOOK-RGBA-COMMENTS-01), and this is the fourth time in two days I have asserted against
+  // prose I had just typed. So it PARSES the schema instead: a value that is not in the enum
+  // cannot be stamped onto a plan that still validates, which is the property that matters.
+  it('a stamped plan PARSES — the value is in the enum, not merely in a comment', () => {
+    const ok = PlanMetaSchema.safeParse({ ...META_FIXTURE, enrichment: REBUILT })
+    expect(ok.success, ok.success ? '' : JSON.stringify(ok.error.issues.slice(0, 3))).toBe(true)
+    // The negative half: an undeclared value must be REFUSED, or the arm above proves nothing.
+    expect(PlanMetaSchema.safeParse({ ...META_FIXTURE, enrichment: 'skipped_invented' }).success).toBe(false)
   })
 })

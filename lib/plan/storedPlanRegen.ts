@@ -9,6 +9,7 @@ import type { GeneratorInput, Plan } from '@/types/plan'
 import { generateRulePlan } from './ruleEngine'
 import { composePlanWithFoundation } from './foundationCompose'
 import { withProfileHr, type ProfileHr } from './rebuildInput'
+import { stampRebuilt } from './enrichmentState'
 
 export interface StoredRegen {
   /** The stored answers with the profile's heart rate laid over them (REBUILD-HR-FROM-PROFILE-01). */
@@ -32,6 +33,12 @@ export function regenerateFromStored(plan: Plan, profile: ProfileHr | null | und
   // from it reproduces the same runway.
   const storedFoundation = plan.weeks.filter(w => w.n <= 0)
   const composeToday = storedFoundation.length ? String(storedFoundation[0].date) : planStart
-  const fresh = composePlanWithFoundation(generateRulePlan(input, tier, planStart, undefined, planStart), input, composeToday, 'add').plan
+  // REBUILD-STAMP-ENRICHMENT-01 — stamped HERE, at the construction, so every caller that
+  // persists `fresh` records the state instead of leaving it absent for an inference to
+  // guess. ⚠️ `reenrich-plans.ts --repair-copy` takes `fresh` as a rule-copy REFERENCE and
+  // never writes it, so the stamp is harmless there; `rca-1026-regen.ts` rebuild mode writes
+  // it, which is the case this exists for. Its PATCH mode clones the stored plan instead and
+  // copies three named meta fields, never `enrichment`.
+  const fresh = stampRebuilt(composePlanWithFoundation(generateRulePlan(input, tier, planStart, undefined, planStart), input, composeToday, 'add').plan as never as { meta: Record<string, unknown> }) as never as Plan
   return { input, tier, fresh }
 }
