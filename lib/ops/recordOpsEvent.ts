@@ -198,6 +198,17 @@ export type OpsEventKind =
   // ⚠️ Counted and reported, never alerting — the `preSignupRedemptions` /
   // `OPS-SUBS-UNHANDLED-SEEN-01` treatment. A rejection is the system working.
   | 'plan_enrich_week_copy_rejected'
+  // MAINT-ENRICH-VALIDATE-01 (2026-11-08) — the MAINTENANCE enricher put a `{{placeholder}}`
+  // in a week's `coach_debrief`, which its own prompt forbids ("Use ONLY this exact token,
+  // only in coach_notes"), so the merge kept the week without one.
+  //
+  // ⚠️ A SEPARATE KIND FROM THE RACE PATH'S, DELIBERATELY. Two enrichers, two prompts: one
+  // counter across both tells you a rule is being broken and not which prompt to change, and
+  // the rate is the only thing that will ever answer that.
+  //
+  // ⚠️ Expected to be silent for a while — there were 0 maintenance plans in production when
+  // this shipped, so a FIRST firing is the first evidence this path has run at all.
+  | 'maintenance_enrich_copy_rejected'
   // GTM-CHARITY-03 (2026-09-11) — a RevenueCat webhook event the handler has no
   // mapping for. It used to reply "received" and do nothing, which is why a
   // comp grant could fail without a trace: the subscriptions row was never

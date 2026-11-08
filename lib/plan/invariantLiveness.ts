@@ -989,6 +989,15 @@ const MAINTENANCE_MUTATIONS: { name: string; apply: (w: Week[]) => void }[] = [
         (w as unknown as Record<string, unknown>).reengagement = true
     } },
   { name: 'maint: strip every session', apply: ws => { for (const w of ws) w.sessions = {} as Week['sessions'] } },
+  // MAINT-ENRICH-VALIDATE-01 (2026-11-08) — a `{{placeholder}}` in the week's AI-written
+  // debrief, which `TodayScreen` renders RAW. ⚠️ Mutating `coach_debrief` ALONE, not the
+  // session notes: `coach_notes` is the designed carrier and 2,009 live tokens sit there
+  // correctly, so a mutation that touched both would wake the rule for the wrong reason and
+  // tell us nothing about the field that is actually unguarded.
+  { name: 'maint: leave a token in the weekly debrief', apply: ws => {
+      for (const w of ws) (w as unknown as Record<string, unknown>).coach_debrief =
+        'Hold everything under {{zone2_ceiling}} bpm this week.'
+    } },
 ]
 
 export function probeLiveness(sampleSize = 64): LivenessReport {

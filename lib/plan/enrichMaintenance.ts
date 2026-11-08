@@ -13,6 +13,8 @@
 import { z } from 'zod'
 import type { Week, RaceResult } from '@/types/plan'
 import { ANTHROPIC_MODEL } from '@/lib/ai/models'
+import { firstPlaceholder } from './renderGuidance'
+import { recordOpsEvent } from '@/lib/ops/recordOpsEvent'
 import { callAnthropic } from '@/lib/ai/callAnthropic'
 import { BRAND } from '@/lib/brand'
 import { promptDistanceFormatters } from '@/lib/coaching/prompts/promptFormat'
@@ -149,7 +151,21 @@ export async function enrichMaintenanceBlock(
     return weeks
   }
 
-  return mergeWeeks(weeks, result.data)
+  const rejected: MaintCopyRejection[] = []
+  const merged = mergeWeeks(weeks, result.data, r => rejected.push(r))
+  if (rejected.length > 0) {
+    // The tokens, not the sentences — enough to see WHICH rule the model broke without
+    // logging runner-facing prose into the ops ledger. Same shape and same reasoning as
+    // `plan_enrich_week_copy_rejected`, under its own kind because this is a different
+    // enricher with a different prompt: one counter for two prompts cannot tell you which
+    // one needs changing.
+    void recordOpsEvent('maintenance_enrich_copy_rejected', {
+      user_id: userId,
+      count: rejected.length,
+      fields: rejected.map(r => `w${r.weekN}.${r.field}:${r.token}`).slice(0, 12),
+    })
+  }
+  return merged
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -189,14 +205,59 @@ ${JSON.stringify(slimWeeks, null, 0)}
 Return the enriched JSON object now — coach_debrief per week, coach_notes per session.`
 }
 
-function mergeWeeks(original: Week[], enriched: z.infer<typeof MaintEnrichmentSchema>): Week[] {
+/** A `coach_debrief` the merge refused, for attribution by the caller. */
+export interface MaintCopyRejection { weekN: number; field: 'coach_debrief'; token: string }
+
+/**
+ * 🔴 MAINT-ENRICH-VALIDATE-01 (2026-11-08) — MAINTENANCE WAS THE ONE PLAN KIND WITH NO
+ * PLACEHOLDER CHECK ANYWHERE, and the item that found it named the wrong mechanism.
+ *
+ * It was filed as "no copy-repair step, unlike the race path (`repairEnrichedCopy`)". That
+ * describes the race path's MECHANISM, not this path's gap, and building the ladder here would
+ * have been inert by construction: `validateMaintenanceBlock` reads `s.type`, `s.category`,
+ * `s.label`, `w.weekly_km`, `w.phase`, `w.reengagement` and `w.n` — **not one copy field** —
+ * while this enricher writes **only** `coach_debrief` and `coach_notes`. The two sets do not
+ * intersect, so the ladder would have returned `clean` for every maintenance plan forever.
+ *
+ * ⚠️ THE REAL EXPOSURE IS ONE LAYER DOWN AND IT IS THREE LAYERS BLIND:
+ *   · the prompt forbids it — *"Use ONLY this exact token, only in coach_notes"* — and
+ *     **a rule stated only in a prompt is a request** (WEEK-THEME-TOKEN-ENRICH-01, recorded
+ *     three times now);
+ *   · this merge had no check;
+ *   · `validateMaintenanceBlock` has no copy rule, and a maintenance plan **never runs
+ *     `validatePlan`** (`validateStoredPlan`/`validateSavedPlan` dispatch away from it), so
+ *     `INV-PLAN-NO-PLACEHOLDER-COPY` could not reach it either.
+ *
+ * And `coach_debrief` renders **RAW** — `TodayScreen.tsx:1764`, `{maintDebrief}`, no prose
+ * owner, moss AI rail — so a `{{zone2_ceiling}}` there puts the literal braces on the Today
+ * screen of a paid post-race runner.
+ *
+ * ⚠️ `coach_notes` IS THE DESIGNED CARRIER and is deliberately not checked: the prompt asks
+ * for `{{zone2_ceiling}}` there by name and `renderGuidance` resolves it. Same exemption, same
+ * reason, as `INV-PLAN-NO-PLACEHOLDER-COPY`'s.
+ *
+ * 📐 LATENT: 0 maintenance plans in production, 1 in `plan_archive` (2026-09-17, 0 of its
+ * copy fields carrying a token). A fix at the boundary reaches 100% of the future population.
+ */
+function mergeWeeks(
+  original: Week[],
+  enriched: z.infer<typeof MaintEnrichmentSchema>,
+  onReject?: (r: MaintCopyRejection) => void,
+): Week[] {
   // Deep clone — never mutate the rule-engine output.
   const weeks: Week[] = JSON.parse(JSON.stringify(original))
 
   for (const ew of enriched.weeks) {
     const week = weeks.find(w => w.n === ew.n)
     if (!week) continue
-    if (ew.coach_debrief) week.coach_debrief = ew.coach_debrief
+    if (ew.coach_debrief) {
+      const token = firstPlaceholder(ew.coach_debrief)
+      // A refusal leaves the week with whatever debrief it had, which for a rule-engine week
+      // is none at all. ADR-006's silent degrade, with ENRICH-ATTRIB-01's amendment: the
+      // caller is told, so a prompt the model keeps breaking is tunable rather than invisible.
+      if (token) onReject?.({ weekN: ew.n, field: 'coach_debrief', token })
+      else week.coach_debrief = ew.coach_debrief
+    }
     if (!ew.sessions) continue
     for (const [day, es] of Object.entries(ew.sessions)) {
       const session = week.sessions?.[day as keyof typeof week.sessions]

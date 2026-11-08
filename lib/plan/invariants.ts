@@ -227,6 +227,7 @@ export const INVARIANT_CODES = [
   'INV-MAINT-CADENCE',
   'INV-MAINT-INJURY-EASY-ONLY',
   'INV-MAINT-REENGAGEMENT-WINDOW',
+  'INV-MAINT-NO-PLACEHOLDER-COPY',
 ] as const
 
 /**
@@ -9903,6 +9904,54 @@ export function validateMaintenanceBlock(
         actual: (s as any).category,
         expected: 'no race_specific or ultra_specific sessions in maintenance',
       })
+    }
+
+    // 🔴 INV-MAINT-NO-PLACEHOLDER-COPY (warn) — MAINT-ENRICH-VALIDATE-01, 2026-11-08.
+    //
+    // THE MAINTENANCE CONSTITUTION HAD NO COPY RULE AT ALL, and the reason it went unnoticed
+    // for a year is that `INV-PLAN-NO-PLACEHOLDER-COPY` reads exactly like the coverage:
+    // its `expected` says *"only session.coach_notes may carry a token"*, a claim about every
+    // user-facing field. But it lives in `validatePlan`, and a maintenance plan NEVER RUNS
+    // `validatePlan` — `validateStoredPlan` and `validateSavedPlan` dispatch to this function
+    // instead (AUDIT-MAINTENANCE-KIND-01, correctly: the race long tail does not describe a
+    // block with no start line). **Dispatching away from the race constitution dispatched away
+    // from its copy check too, and nothing replaced it.**
+    //
+    // ⚠️ WHY THIS MATTERS MORE HERE THAN THERE: `coach_debrief` is the maintenance block's
+    // one AI-written week-level field and `TodayScreen` renders it RAW (`{maintDebrief}`, no
+    // prose owner), so an unresolved token is literal braces on screen rather than a gap.
+    // `enrichMaintenance.ts` refuses it at the boundary now; this is the layer that judges a
+    // plan already STORED, which the boundary cannot reach.
+    //
+    // ⚠️ `coach_notes` IS THE CARRIER AND IS EXEMPT, same as the race check's — the prompt
+    // asks for `{{zone2_ceiling}}` there by name and `renderGuidance` resolves it. `label` and
+    // `theme` are engine-authored here (the prompt says "themes are context only, do not
+    // rewrite them"), so scanning them is free coverage: a token in either is a producer
+    // defect, not a model one.
+    //
+    // `warn`, matching `INV-PLAN-NO-PLACEHOLDER-COPY`. Making the maintenance twin stricter
+    // than the race original would be a divergence with no argument behind it.
+    {
+      const MAINT_TOKEN_RE = /\{\{[^}]*\}\}/
+      const copy: Array<[string, string | undefined]> = [
+        [`w${w.n}.coach_debrief`, (w as unknown as { coach_debrief?: string }).coach_debrief],
+        [`w${w.n}.label`, w.label],
+        [`w${w.n}.theme`, w.theme],
+      ]
+      for (const [where, text] of copy) {
+        if (!text) continue
+        const tok = text.match(MAINT_TOKEN_RE)?.[0]
+        if (!tok) continue
+        violations.push({
+          code: 'INV-MAINT-NO-PLACEHOLDER-COPY',
+          principle_ref: 'CoachingPrinciples §75',
+          severity: 'warn',
+          week: w.n,
+          message: `Unresolved template token "${tok}" in maintenance copy at ${where}: "${text.slice(0, 160)}"`,
+          actual: tok,
+          expected: 'a resolved value — only session.coach_notes may carry a token',
+        })
+      }
     }
   }
 
