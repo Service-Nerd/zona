@@ -48,8 +48,10 @@ app whose proposition is encouragement.
 3. **`unknown` is never styled as a soft `held`.** No HR, or a free-tier runner without
    `activity_intelligence`, means we say nothing — `zoneVerdictLabel('unknown')` returns `null`
    and the surface falls back to a neutral word.
-4. 🔴 **Bind to `ZONE_DRIFT_ABOVE_CEILING_PCT` (20), never `ZONE_DISCIPLINE_BANDS`.** The latter
-   is the obvious thing to reach for and is **dead** — its only reader has no call sites.
+4. 🔴 **Bind to `ZONE_DRIFT_ABOVE_CEILING_PCT` (20).** The obvious alternative was an 85/70/50
+   band table whose only reader had no call sites; it was **deleted 2026-11-08**
+   (`ZONE-DISCIPLINE-BANDS-DEAD-01`). ⚠️ The condition stays because its reason outlives the
+   constant: **a ratified numeric is not the same thing as a live one.**
 5. **Compliance COPY is not this pattern.** The sentence ("3 of 4 runs held the zone") belongs to
    P-04 and is pattern-setting under §4A.
 
@@ -5219,15 +5221,21 @@ rate means no score and no verdict — "No heart rate on this run, so it isn't
 scored." The previous copy noted the gap *beside a confident number* that had
 substituted a passing grade for the missing axis.
 
-> ⚠️ **KNOWN GAP — the same number is banded twice.** This card bands
-> `hrInZonePct` through `scoreBandLabel` (**80 / 60 / 40** → On target · Close ·
-> Slightly off · Off target). The Coach screen bands the *same* measurement
-> through `ZONE_DISCIPLINE_BANDS` (**85 / 70 / 50** → disciplined · decent · loose
-> · freelancing). So a run at 82% reads **"On target"** post-run and contributes
-> to **"decent"** on Coach; 65% reads **"Close"** but **"loose"**. Two
-> vocabularies and two threshold sets for one fact. Unifying them is a coaching
-> decision (bands are ratified numerics), so it is filed as
-> **ZONE-BAND-VOCAB-01** rather than fixed in a display change.
+> ✅ **THE "KNOWN GAP" HERE WAS NOT A GAP, AND THIS BLOCK OUTLIVED ITS OWN
+> CORRECTION BY 56 DAYS.** It said this card bands `hrInZonePct` through
+> `scoreBandLabel` (**80 / 60 / 40**) while the Coach screen banded the *same*
+> measurement through an 85/70/50 table — so a run at 82% read "On target"
+> post-run and "decent" on Coach. **The second vocabulary was never rendered.**
+> Measured 2026-09-13: the Coach screen shows `zoneDisciplinePercent` as a bare
+> NUMBER, and the classifier had no call sites, which is why **ZONE-BAND-VOCAB-01
+> was CLOSED the same day, PREMISE VOID** — and the table itself was deleted on
+> 2026-11-08 (`ZONE-DISCIPLINE-BANDS-DEAD-01`). `scoreBandLabel` is the only
+> vocabulary the runner meets.
+>
+> ⚠️ **Kept, as a record, because of how it survived.** Every doc check this repo
+> owns asks whether a record EXISTS and cross-references; none reads whether it is
+> TRUE. This paragraph referred a reader to a closed item and asserted a live
+> second vocabulary, in a doctrine file, under a green audit, for eight weeks.
 
 **Harness:** `/post-run-preview` renders the real `RunFeedbackCard` across five
 states (no HR, zone held, zone drifted, manual, scored-without-Kit). 404s in

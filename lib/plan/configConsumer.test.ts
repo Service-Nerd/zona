@@ -279,9 +279,16 @@ describe('Configuration Singularity — every numeric has a consumer, not just a
  * `main_set_structure` — those vary per row type and would need a per-type
  * scan. (2) Like the scan above it is substring-based and biased toward
  * passing: a key named only in a comment counts as consumed, and a key read
- * only by a DEAD function in the same module counts as consumed. That second
- * one is real and has a name — `ZONE_DISCIPLINE_BANDS` is read by
- * `classifyZoneDiscipline`, which has no call sites, so this check passes it.
+ * only by a DEAD function in the same module counts as consumed.
+ *
+ * 🔴 THAT SECOND LIMIT HAD A NAMED INSTANCE FOR 56 DAYS AND NOW HAS NONE.
+ * `ZONE_DISCIPLINE_BANDS` was read by `classifyZoneDiscipline`, which had no call
+ * sites, so this check passed it — stated here, in writing, from the day it shipped.
+ * **The gate knew and could not act**, and that is the whole point of declaring a
+ * limit: it is what the deletion item (ZONE-DISCIPLINE-BANDS-DEAD-01, 2026-11-08) was
+ * filed from. ⚠️ The LIMIT is unchanged and still real — closing it needs call-graph
+ * reachability, not grep — so the next instance will pass exactly the same way, with
+ * nothing to name it. A declared limit with no live example is the dangerous kind.
  */
 describe('Configuration Singularity — the surfaces the first scan did not cover', () => {
   const files = ROOTS.flatMap(r => sourceFiles(r)).map(f => ({ f, text: readFileSync(f, 'utf8') }))

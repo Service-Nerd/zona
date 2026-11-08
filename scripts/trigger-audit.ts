@@ -27,7 +27,7 @@
 import { createClient } from '@supabase/supabase-js'
 import {
   LOAD_RATIO, SHADOW_LOAD_THRESHOLD_PCT, EF_DECLINE_THRESHOLD_PCT,
-  ZONE_DISCIPLINE_BANDS, FATIGUE_ACCUMULATION_THRESHOLD, FATIGUE_HIGH_TAGS,
+  FATIGUE_ACCUMULATION_THRESHOLD, FATIGUE_HIGH_TAGS,
   LONG_RUN_SHORTFALL_CONSECUTIVE, LONG_RUN_SHORTFALL_COMPLETION_PCT,
   ZONE_DRIFT_ABOVE_CEILING_PCT,
 } from '../lib/coaching/constants'
@@ -58,7 +58,13 @@ async function main() {
   // ── 1. zone_drift ─────────────────────────────────────────────────────────
   // Keys on zoneDisciplineScore() = km-weighted mean of hr_in_zone_pct.
   // SAME non-directional quantity R30 was fixed for on 2026-09-13.
-  const drifters = withHr.filter((r: any) => r.hr_in_zone_pct < ZONE_DISCIPLINE_BANDS.loose)
+  // ZONE-DISCIPLINE-BANDS-DEAD-01 (2026-11-08) -- PINNED, NOT READ FROM CONFIG, and deleting
+  // the band table is only half the reason. This 50 is a record of what the trigger USED TO
+  // KEY ON before 2026-09-13, so the whole value of the sentence below is that the number is
+  // the historical one. Read from live config it would silently restate itself if anyone ever
+  // retuned the band -- a note about the past, rewritten by the present.
+  const ZONE_DRIFT_OLD_THRESHOLD_PCT = 50
+  const drifters = withHr.filter((r: any) => r.hr_in_zone_pct < ZONE_DRIFT_OLD_THRESHOLD_PCT)
   const wrongWay = drifters.filter((r: any) => (r.hr_below_floor_pct ?? 0) > (r.hr_above_ceiling_pct ?? 0))
   // Live check, not a stored verdict: confirm the directional function actually
   // discriminates. If someone collapses it back into zoneDisciplineScore this
@@ -72,7 +78,7 @@ async function main() {
     keysOn: `zoneDriftScore > ${ZONE_DRIFT_ABOVE_CEILING_PCT}% (mean hr_above_ceiling_pct, DIRECTIONAL)`,
     verdict: directional ? 'PASS' : 'STRUCTURAL DEFECT',
     note: directional
-      ? `FIXED 2026-09-13 (§12 Amendment 1). Was \`zoneDisciplineScore < ${ZONE_DISCIPLINE_BANDS.loose}\` — `
+      ? `FIXED 2026-09-13 (§12 Amendment 1). Was \`zoneDisciplineScore < ${ZONE_DRIFT_OLD_THRESHOLD_PCT}\` — `
         + `the mean of hr_in_zone_pct, a BAND — while §12 prescribes a CAP. `
         + `${wrongWay.length}/${drifters.length} runs under the old threshold were predominantly too EASY, `
         + `and the trigger silently rewrote every easy/long coach note to "Easy sessions trending hard". `

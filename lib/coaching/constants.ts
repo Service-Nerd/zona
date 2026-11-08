@@ -149,13 +149,6 @@ export const TRIAL_SUMMARY_MIN_RUNS = 8
 // and the restraint doctrine both prefer to a hedged sentence.
 export const ZONE_BLOCK_VERDICT_MIN_RUNS = 3
 
-export const ZONE_DISCIPLINE_BANDS = {
-  disciplined: 85,
-  decent:      70,
-  loose:       50,
-  // < 50 = freelancing
-} as const
-
 // Acute:chronic load ratio thresholds
 export const LOAD_RATIO = {
   watch: 1.3,

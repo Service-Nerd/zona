@@ -144,7 +144,14 @@ const CONSTANTS_DEBT: Record<string, string> = {
   MAX_VOLUME_INCREASE_PCT:         'ALIAS 2026-10-08 — re-exports GENERATION_CONFIG.MAX_WEEKLY_VOLUME_INCREASE_PCT, documented there',
   // DEAD = a deletion question, not a doctrine one. The board declined to write a
   // principle for a value nothing can reach.
-  ZONE_DISCIPLINE_BANDS:           'DEAD 2026-10-08 — read ONLY by `classifyZoneDiscipline`, which has NO call sites (verified: its 3 references are its own definition plus two comments saying so). Board: delete it, do not document it. Filed as ZONE-DISCIPLINE-BANDS-DEAD-01',
+  //
+  // 🥇 THERE IS NO DEAD ENTRY TODAY, AND THAT IS WHAT PAYING ONE DOWN LOOKS LIKE.
+  // `ZONE_DISCIPLINE_BANDS` was the only one; it was DELETED on 2026-11-08
+  // (ZONE-DISCIPLINE-BANDS-DEAD-01) along with `classifyZoneDiscipline`, its one reader.
+  // ⚠️ Its own reason was WRONG about the table while being right about the function:
+  // it said "read ONLY by classifyZoneDiscipline", and `scripts/trigger-audit.ts` was
+  // reading `.loose` the whole time. The audit's 50 is now a pinned local literal,
+  // because it records what the trigger used to key on and must not follow the config.
 }
 
 const missing = keys.filter(k => !documented(k))
@@ -200,6 +207,27 @@ describe('Configuration Singularity — every numeric points back to a principle
     expect(
       resolved,
       `These now have a principle — remove them from CONSTANTS_DEBT: ${resolved.join(', ')}`,
+    ).toEqual([])
+  })
+
+  // 🔴 ZONE-DISCIPLINE-BANDS-DEAD-01 (2026-11-08) — THE SECOND WAY A REGISTER GOES STALE,
+  // AND THE ARM ABOVE CANNOT SEE IT. That arm asks "has this key gained a principle?" — the
+  // only exit it knew. A **DEAD** entry does not exit by gaining a principle; it exits by the
+  // constant being DELETED, and on that day the entry becomes a sentence about a symbol that
+  // does not exist. `ZONE_DISCIPLINE_BANDS` was deleted today and its entry would have sat
+  // here describing it indefinitely, with every arm green.
+  //
+  // ⚠️ The register already names FOUR states and only DEBT shrinks. **This arm is what makes
+  // DEAD shrink too**, and it is the whole reason the state is worth distinguishing: a label
+  // with no mechanism for leaving is a label that never leaves. Same class as `audit-docs.sh`
+  // proving a record EXISTS and never that it is TRUE.
+  it('🔴 …and no entry describes a constant that has been deleted', () => {
+    const fictional = Object.keys(CONSTANTS_DEBT).filter(k => !CONSTANTS_EXPORTS.includes(k))
+    expect(
+      fictional,
+      `These are no longer exported by lib/coaching/constants.ts — remove them from ` +
+      `CONSTANTS_DEBT. A register entry for a symbol that does not exist reads as tracked ` +
+      `debt and is fiction: ${fictional.join(', ')}`,
     ).toEqual([])
   })
 

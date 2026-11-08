@@ -12,10 +12,13 @@
 // the cut sits inside that gap. Hutchinson's condition on P-01 was that the
 // threshold be board-ratified before the design system encodes it. It already is.
 //
-// 🔴 DO NOT REACH FOR `ZONE_DISCIPLINE_BANDS` (85/70/50). It is the obvious
-// thing to grab and it is DEAD: its only reader, `classifyZoneDiscipline`, has
-// no call sites (documented at loadCalc.ts:182). Binding the design system to a
-// dead constant would be the decorative-config defect wearing a colour.
+// 🔴 THE OBVIOUS ALTERNATIVE WAS A DEAD 85/70/50 BAND TABLE, AND IT IS GONE NOW
+// (ZONE-DISCIPLINE-BANDS-DEAD-01, 2026-11-08): deleted with `classifyZoneDiscipline`,
+// its one reader, which never had a call site. Binding the design system to it would
+// have been the decorative-config defect wearing a colour. ⚠️ Recorded rather than
+// dropped, because the reason this condition exists outlives the constant: a RATIFIED
+// numeric is not the same thing as a LIVE one, and P-01 was one grep away from the
+// wrong one.
 //
 // ⚠️ SCOPE IS RESOLUTION A (SLT): this pair means zone discipline on COMPLETION
 // states only. Prescriptive surfaces — the race-session accent `--s-race`, the
