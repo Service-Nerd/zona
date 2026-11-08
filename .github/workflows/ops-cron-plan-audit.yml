@@ -23,10 +23,34 @@
 
 name: ops-cron-plan-audit
 
+# WHEN IT ACTUALLY RUNS, AND WHY NOBODY RECOGNISED THE RUN
+# (OPS-AUDIT-CADENCE-DOC-01, measured 2026-11-08 from ops_events where
+#  detail->>'source' = 'plan-audit-summary'):
+#
+#   54 runs over 54 consecutive days, 2026-09-16 -> 2026-11-08, ZERO gaps.
+#   Landings       11:46 - 17:27 UTC
+#   Lag vs 07:45   241 - 582 min  (4h01m - 9h42m), mean 374, p50 379, p95 504
+#                  29 of 54 runs over 6h late; 6 over 8h
+#   Interval       21.8h - 26.9h, and OVER 24h on 25 of 53 intervals
+#
+# This is GitHub Actions best-effort scheduling on free runners. It is not a
+# fault and there is nothing in this file that can fix it. It is recorded here
+# because the daily digest reported "ran once and has not run since" -- true
+# within a calendar day, false about the world -- and a reader checking at
+# 09:00 UTC is asking about a run that will not happen for five more hours.
+#
+# The route therefore publishes `hours_since_previous_run` in its summary event
+# (lib/ops/planAuditCadence.ts), so a reader compares an INTERVAL rather than
+# doing calendar arithmetic against a schedule that does not hold.
+#
+# A POST-DEPLOY RUN WAS CONSIDERED AND DECLINED: this audit reads STORED PLANS,
+# not the build, so it cannot speak to a build nobody has exercised yet.
+
 on:
   schedule:
-    # 07:45 UTC daily — 15 min after the reshape-integrity probe so the two
+    # 07:45 UTC nominal — 15 min after the reshape-integrity probe so the two
     # never contend, and clear of the push (:15/:30) and email (08:00) crons.
+    # See the measured landings above: the nominal time is not the real one.
     - cron: '45 7 * * *'
   workflow_dispatch:
 

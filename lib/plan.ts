@@ -104,7 +104,11 @@ export async function savePlanForUser(
   // (+confirm/revert), `recalibrate-zones`, `recalibrate-taper`,
   // `maintenance-block`, `confirm-adjustment` and `revert-adjustment` writing
   // unchecked, with `ops/plan-audit` — a DAILY cron — as the only net. That
-  // DETECTS rather than prevents, so an invalid plan could be live 24 hours.
+  // DETECTS rather than prevents, so an invalid plan could be live until the next
+  // audit. ⚠️ THAT IS NOT 24 HOURS, and this line said it was until 2026-11-08
+  // (OPS-AUDIT-CADENCE-DOC-01). Measured over 54 consecutive runs, the interval
+  // between audits is 21.8-26.9 h and EXCEEDS 24 h on 25 of 53 intervals, because
+  // GitHub Actions schedules best-effort and the 07:45 job lands 11:46-17:27.
   //
   // Here rather than on the routes: one owner covers every current writer and
   // every future one. Nine copies of one rule is a D-08 violation whose tenth

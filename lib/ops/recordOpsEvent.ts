@@ -16,8 +16,10 @@ export type OpsEventKind =
   // `post-race-reshape` (+confirm/revert), `recalibrate-zones`,
   // `recalibrate-taper`, `maintenance-block`, `confirm-adjustment` and
   // `revert-adjustment` all persisted unchecked, and the only net was
-  // `ops/plan-audit` — a DAILY cron, so an invalid plan could be live for 24
-  // hours before anything noticed.
+  // `ops/plan-audit` — a DAILY cron, so an invalid plan could be live until the
+  // next audit before anything noticed. ⚠️ MEASURED 2026-11-08, that window is
+  // 21.8-26.9 h and over 24 h on 25 of 53 intervals, not the flat "24 hours" this
+  // line claimed (OPS-AUDIT-CADENCE-DOC-01).
   //
   // The check lives in `savePlanForUser` rather than on the nine routes: one
   // owner covers every current writer AND every future one, where nine copies

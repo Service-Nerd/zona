@@ -118,6 +118,11 @@ a code already present was already triaged.
   // `lib/ops/planAuditGoalGap.ts` is the owner. PRESENT EVERY RUN, zeros included (unlike `repairable`): a count that
   // is 0 today and 40 tomorrow is the signal. Plans built before 2026-10-27 carry neither field and count in neither.
   goal_gap: { decided: number; withheld: number; median_gap_pct: number | null },
+  // OPS-AUDIT-CADENCE-DOC-01 (2026-11-08) — hours between the previous `plan-audit-summary`
+  // row and this run, to one decimal. `lib/ops/planAuditCadence.ts` is the owner; the previous
+  // summary's timestamp comes from the same history rows, so there is no second query.
+  // ⚠️ ABSENT, NEVER ZERO — see below. A reader must treat absence as UNKNOWN, not as fine.
+  hours_since_previous_run?: number,
   unchanged: number,               // breaching, same code set as last time — not re-reported
   changed:   number,
   flagged:   Array<{ user_id: string; codes: string[]; state: 'new' | 'changed' | 'resolved' }>,
@@ -238,6 +243,52 @@ than silence.
 
 Owner: `lib/ops/planAuditCodeStep.ts` (pure, so it is testable without the route). Gated by
 `lib/ops/planAuditCodeStep.test.ts` — 7 arms, falsified 5 ways.
+
+## The cadence field — `hours_since_previous_run` (OPS-AUDIT-CADENCE-DOC-01, 2026-11-08)
+
+🔴 **THE DIGEST ASKED *"did the audit run today?"* AND REPORTED *"ran once and has not run
+since"* — true within a calendar day and false about the world.** The workflow is scheduled
+`45 7 * * *`, and GitHub Actions best-effort scheduling on free runners lands it hours later, so
+a reader checking at 09:00 UTC is asking about a run that will not happen for five more hours.
+
+📐 **MEASURED over 54 consecutive days (2026-09-16 → 2026-11-08), zero gaps:**
+
+| | |
+|---|---|
+| Landings | **11:46 – 17:27 UTC** |
+| Lag vs 07:45 | **241 – 582 min** (4 h 01 m – 9 h 42 m); mean 374, p50 379, p95 504 |
+| Over 6 h late | 29 of 54 runs; over 8 h, 6 |
+| Interval between runs | **21.8 h – 26.9 h**, and over 24 h on **25 of 53** intervals |
+
+🔑 **So the route publishes the INTERVAL and the reader stops doing calendar arithmetic.**
+Hours-since is a property of the data; "did it run today" is a property of whichever clock the
+reader happens to hold.
+
+⚠️ **ABSENT, NEVER ZERO.** `?? 0` on a staleness field asserts *"it ran a moment ago"*, which
+is the most dangerous available value for this particular number — the absence-as-a-value class
+this repo has paid for repeatedly. **Absence means UNKNOWN and must never be read as fine.**
+
+🔻 **AND ABSENCE IS A FUNCTION OF FLEET SIZE, NOT OF TIME.** The previous summary is read
+out of a 1,000-row window over `kind='plan_rule_invalid'`, which also holds one row per breaching
+plan per run. At ~16 rows a day that window is about two months; as the fleet grows it shrinks in
+days, and the field goes absent before anything is wrong.
+
+🔻 **NO THRESHOLD, DELIBERATELY** — no `stale`, no `late`, no verdict. A line drawn at a day
+would fire on 25 of 53 ordinary intervals, which is NOISE-GATE-01; and the route's own
+`newest_invalid_plan_age_days` block already makes the argument that *"a hardcoded window would
+rot silently the first time the deploy cadence changed"*.
+
+🔻 **NO LAG-AGAINST-SCHEDULE FIELD, EITHER.** The route cannot tell a cron POST from a
+`workflow_dispatch` or a hand-run GET, so a per-run *"late by N minutes"* would be computed
+against a schedule that may not have triggered it — a number whose meaning depends on provenance
+the route does not have. That measurement is stated once, with its method and date, in
+`.github/workflows/ops-cron-plan-audit.yml`'s header.
+
+⚠️ **THE OTHER HALF OF THE ITEM IS OUTSIDE THIS REPO.** The daily digest is a cloud routine; it
+must be changed to read this field instead of asking "today". Publishing the number is what makes
+that change possible, and it is not the same thing as having made it.
+
+---
 
 ## The age fields — `newest_invalid_plan_age_days` means CREATION (PLAN-AUDIT-AGE-SOURCE-01)
 

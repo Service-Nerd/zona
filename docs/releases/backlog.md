@@ -13077,24 +13077,6 @@ server-side composition is working.
 
 </details>
 
-### ⚙️ `OPS-AUDIT-CADENCE-DOC-01` — the 07:45 cron actually lands 12:04–14:33
-
-The audit has run **nine consecutive days, exactly once each, no gaps** (summary events
-under `detail.source='plan-audit-summary'`, recorded on every run including clean ones).
-The digest's *"ran once and has not run since"* was true only within one calendar day.
-
-Scheduled `45 7 * * *`; actual landings **12:04–14:33 UTC**, mean lag ≈ 5 h, range
-4 h 19 m – 6 h 48 m. GitHub Actions best-effort scheduling on free runners — not a fault,
-but it is why nobody recognised the run.
-
-**Recommendation: do NOT add a post-deploy run.** One plan has been created since the last
-audit; the audit reads *stored plans*, not the build, so it cannot speak to a build nobody
-exercised. Two cheaper fixes: (1) record the lag in the workflow header; (2) the daily
-digest should compare `plan-audit-summary` against the **previous day** rather than asking
-"did it run today" — a cloud-routine change, not repo code.
-
----
-
 ## ⚖️ FILED 2026-09-23 SHIPPING `PACE-UNITS-01`
 
 ### ✅ `UNITS-PROSE-01` — **CLOSED 2026-09-23.** All four phases shipped.

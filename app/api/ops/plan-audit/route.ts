@@ -13,6 +13,7 @@ import {
 import { summarisePlanAges, type PlanAgeRow } from '@/lib/ops/planAuditAges'
 import { summariseCodeStep } from '@/lib/ops/planAuditCodeStep'
 import { summariseGoalGap } from '@/lib/ops/planAuditGoalGap'
+import { cadenceSinceLastRun } from '@/lib/ops/planAuditCadence'
 import type { Plan } from '@/types/plan'
 
 // GET/POST /api/ops/plan-audit — PLAN-AUDIT-01 daily constitutional audit.
@@ -109,11 +110,17 @@ export async function POST(req: NextRequest) {
   // this loop already has rather than a second query. `null` means no baseline in
   // the window, and `summariseCodeStep` then declines to call anything new.
   let prevCodesSeen: string[] | null = null
+  // OPS-AUDIT-CADENCE-DOC-01 — the previous SUMMARY's timestamp, from the same rows.
+  // Captured independently of `codes_seen`: a previous run that recorded no codes still
+  // happened, and keying the cadence off the code set would make a clean day look like a
+  // missed one.
+  let prevSummaryAt: string | null = null
   for (const row of history ?? []) {
     const d = row.detail as Record<string, unknown> | null
     if (!d) continue
     if (d.source === 'plan-audit-summary') {
       if (prevCodesSeen == null && Array.isArray(d.codes_seen)) prevCodesSeen = d.codes_seen as string[]
+      if (prevSummaryAt == null) prevSummaryAt = row.created_at as string
       continue
     }
     if (d.source !== 'plan-audit') continue
@@ -348,6 +355,12 @@ export async function POST(req: NextRequest) {
     ...(repairable ? { repairable } : {}),
     // RCA-1026 monitoring — runners told their goal is past their fitness (§120 Am. 2). Present every run.
     ...summariseGoalGap(checkedPlans),
+    // OPS-AUDIT-CADENCE-DOC-01 — hours since the previous run, so the digest reads an
+    // INTERVAL instead of asking "did it run today". The schedule is 07:45 UTC and the
+    // run lands 11:46-17:27, so a morning digest was reliably asking about a run that
+    // had not happened yet. Absent, never zero, when there is no previous summary in
+    // the window above; see the module for why absence cannot mean "fine".
+    ...cadenceSinceLastRun({ now: new Date(), previousRunAt: prevSummaryAt }),
   }
 
   // A SUMMARY EVENT, so a digest has one row to read instead of N per-user rows.
