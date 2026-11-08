@@ -153,8 +153,21 @@ describe('SUITE-CONTENTION-01 — rule 1 measures the code, not the machine', ()
     // Both rules now reach the SAME load factor through the same module, which is the
     // structural reason they cannot diverge again — the previous divergence was two
     // independent expressions, one of which nobody compared to the other.
-    expect(SCRIPT).toMatch(/newSlowVerdict\(s\.ms,\s*LOAD/)
-    expect(SCRIPT).toMatch(/driftVerdict\(s\.ms,\s*b\.ms,\s*LOAD/)
+    // 🔄 WIDENED 2026-11-08 (CHECK-SLOW-NOISE-01) AND THE CLAIM IS STRONGER, NOT LOOSER.
+    // Both rules used to be handed the suite-wide `LOAD`. That factor includes the test being
+    // judged, so a test that grows inflates its own denominator: measured, `targetedGrid` is
+    // 14.0% of the suite and rule 3 first fired at **3.5x** against a declared tolerance of
+    // 1.4x. Both now reach `loadForTest` in the same module — rule 1 with `baselineMs: 0`,
+    // because a newcomer is absent from the baseline total by definition.
+    //
+    // 🔴 THIS ARM CAUGHT THE FIRST CUT, WHICH MOVED ONLY RULE 3 and so re-created the very
+    // divergence it was written for. Keep it asserting that BOTH reach the same owner.
+    expect(SCRIPT).toMatch(/newSlowVerdict\(s\.ms,\s*newLoad/)
+    expect(SCRIPT).toMatch(/driftVerdict\(s\.ms,\s*b\.ms,\s*testLoad/)
+    expect(SCRIPT, 'rule 1 must reach the shared per-test load owner')
+      .toMatch(/newLoad = [^\n]*loadForTest\(/)
+    expect(SCRIPT, 'rule 3 must reach the shared per-test load owner')
+      .toMatch(/testLoad = [^\n]*loadForTest\(/)
     expect(SCRIPT, 'the rules must come from the module, not be redefined here')
       .toContain("from '../lib/ops/testDurationRules'")
     expect(SCRIPT, 'the script must not re-export the rules — that is what ran the gate')
@@ -188,19 +201,43 @@ describe('SUITE-CONTENTION-01 — rule 1 measures the code, not the machine', ()
       expect(newSlowVerdict(9_000, 1.84).verdict).toBe('fails')
     })
 
-    it('⚠️ both `hooksGate` arms are declared, and every volatile entry states a MEASURED cost', () => {
-      // A flag with a vague reason is the debt-register failure this repo records: the
-      // reason column IS the answer, so it has to carry something checkable.
+    it('🔄 the volatile set is EMPTY now, and that is the fix landing', () => {
+      // 🔴 THIS ARM USED TO ASSERT `.toBe(2)` — both `hooksGate` arms. It went red on
+      // 2026-11-08 and the red was CORRECT: `GATE-SPAWN-VOLATILITY-01` removed the `npx
+      // eslint` spawn, so the two arms dropped from 1,094 / 1,106 ms to **189 ms** and fell
+      // below the 1,000 ms reporting line entirely. They are not un-flagged; they are not in
+      // the baseline at all. 📐 The spread that justified the flag collapsed from **6.5x**
+      // (483/492/602 isolated vs 1,094/1,108/1,196/3,172 in-suite) to **1.23x** (171/172/211
+      // isolated vs 189 in-suite). **The declaration was the bound; this is the fix.**
+      //
+      // ⚠️ AN EMPTY POPULATION MUST NOT MAKE AN ARM VACUOUS. The per-entry standard below
+      // still runs for whatever lands next, and the FLAG'S MECHANISM is proven by the
+      // `driftVerdict` arms above and the script-branch arm below, neither of which depends
+      // on an entry existing. If this count ever goes up, the entry must earn it.
       const base = JSON.parse(readFileSync('lib/plan/__fixtures__/testDurationBaseline.json', 'utf8'))
       const vol = (base.tests as { file: string; reason: string; volatile?: true }[])
         .filter(e => e.volatile)
-      expect(vol.length, 'the volatile set changed — is the new entry really spawn-bound?').toBe(2)
+      expect(vol.length, 'the volatile set changed — is the new entry really spawn-bound, and was the spawn avoidable?').toBe(0)
       for (const e of vol) {
-        expect(e.file).toBe('lib/hooksGate.test.ts')
         expect(e.reason, `${e.file}: a volatile entry must name the ISOLATED cost`)
           .toMatch(/ISOLATION|isolated/i)
         expect(e.reason, `${e.file}: and why rule 3's premise fails for it`)
           .toMatch(/spawn/i)
+      }
+    })
+
+    it('🔴 `--write` must CARRY a volatile declaration, not silently delete it', () => {
+      // Found 2026-11-08 while re-baselining for SUITE-POOL-WALLCLOCK-01. `reason` and
+      // `budgetMs` survived a re-baseline and `volatile` did NOT, with nothing saying so — so
+      // `npm run check:slow -- --write`, the routine maintenance command, silently removed a
+      // declared exemption, and rule 3 would then start crying wolf on the one shape its
+      // premise is known to be false for. **An exemption a routine command can delete without
+      // a diff line is not a declaration.** All three are carried now; removing one is an
+      // edit someone makes on purpose.
+      const carry = SCRIPT.slice(SCRIPT.indexOf('if (write) {'), SCRIPT.indexOf('writeFileSync('))
+      for (const field of ['reason', 'budgetMs', 'volatile']) {
+        expect(carry, `--write must carry ${field} forward from the previous entry`)
+          .toContain(`prev?.${field}`)
       }
     })
 

@@ -75,6 +75,49 @@ export function newSlowVerdict(
 }
 
 /**
+ * The load factor RULE 3 must use for ONE test: the rest of the suite's growth, excluding
+ * the test being judged from both sides.
+ *
+ * 🔴 WHY, MEASURED (2026-11-08, `CHECK-SLOW-NOISE-01`). `LOAD = SUITE_MS / BASE_SUITE_MS`
+ * includes the test under evaluation, so **a test that grows inflates the denominator it is
+ * measured against and partially hides itself.** The bigger its share, the more it hides.
+ *
+ * 📐 Falsified against a real 9-worker report: `targetedGrid`'s main arm is **14.0% of the
+ * suite** and rule 3 first fired at **k = 3.5x**, not at the declared `DRIFT_TOLERANCE` of
+ * 1.4x. Predicted 3.47 from the share and measured 3.5 by stepping k through 2 / 3 / 3.5 / 4 /
+ * 5. **A tolerance that reads 1.4 in the source and behaves as 3.5 on the largest test in the
+ * suite is not a tolerance.** Excluding self moves it to ~3.0; the remaining gap is a
+ * LEGITIMATE share decline (25.9% of the suite when baselined, 14.0% now) and rule 3 is right
+ * to allow that.
+ *
+ * ⚠️ IT DEGRADES, NEVER DISAPPEARS. If either exclusion leaves a non-positive total — a
+ * single-test suite, a baseline entry larger than the recorded total — it falls back to the
+ * whole-suite ratio, which is the old behaviour. A gate switched off by an edge case is this
+ * repo's most-recorded gate failure.
+ *
+ * 🔴 BOTH RULES USE IT, AND THE FIRST CUT OF THIS CHANGE DID NOT — caught by
+ * `testDurationGate.test.ts`'s own arm *"rule 3 still normalises, so the two rules cannot
+ * drift apart again"*, which exists because rule 3 was right and rule 1 was wrong for three
+ * weeks and nothing compared them. Moving only rule 3 onto a per-test load **re-created that
+ * divergence inside the commit that was meant to improve it.** Rule 1 judges a test with no
+ * baseline entry, so it passes `baselineMs: 0` — the baseline total legitimately never
+ * included a newcomer, so only the numerator excludes it. **Exclude the test from whichever
+ * sides it exists on; one owner, two callers.**
+ */
+export function loadForTest(
+  suiteMs: number,
+  baseSuiteMs: number,
+  ms: number,
+  baselineMs: number,
+): number {
+  const whole = safe(baseSuiteMs > 0 ? suiteMs / baseSuiteMs : 1)
+  const restNow = suiteMs - ms
+  const restBase = baseSuiteMs - baselineMs
+  if (!(restNow > 0) || !(restBase > 0)) return whole
+  return safe(restNow / restBase)
+}
+
+/**
  * RULE 3 — has a baselined test taken a STEP UP in its share of the suite?
  *
  * ⚠️ `baselineMs * load` is what this test WOULD have cost at the baseline share under

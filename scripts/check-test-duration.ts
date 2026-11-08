@@ -84,7 +84,7 @@ const REPORT_MS = (() => {
 // instead of a failure. Found by a falsification that stayed green, not by review.
 // See `lib/ops/testDurationRules.ts`. SUITE-CONTENTION-01, 2026-10-15.
 import {
-  newSlowVerdict, driftVerdict, NEW_FAIL_MS_MULTIPLE, DRIFT_TOLERANCE,
+  newSlowVerdict, driftVerdict, loadForTest, NEW_FAIL_MS_MULTIPLE, DRIFT_TOLERANCE,
 } from '../lib/ops/testDurationRules'
 
 /** Orientation only — CI-TIMEOUT-01's measured runner ratio, in isolation. */
@@ -172,7 +172,19 @@ if (write) {
       ? (JSON.parse(readFileSync(BASELINE, 'utf8')).tests as BaselineEntry[])
           .find(b => b.file === s.file && b.title === s.title)
       : undefined
-    return { ...s, reason: prev?.reason ?? 'TODO — state why this test is allowed to be slow.', ...(prev?.budgetMs ? { budgetMs: prev.budgetMs } : {}) }
+    // 🔴 `volatile` IS CARRIED FORWARD, AND IT WAS NOT (found 2026-11-08 while re-baselining
+    // for SUITE-POOL-WALLCLOCK-01). `reason` and `budgetMs` survived a re-baseline and
+    // `volatile` did not, with nothing saying so — so the maintenance command silently
+    // DELETED a declared exemption, and rule 3 would then start crying wolf on the one shape
+    // its premise is known to be false for. A declared exemption that a routine command can
+    // remove without a diff line is not a declaration. Carried, like the other two; removing
+    // one is now an edit someone makes on purpose.
+    return {
+      ...s,
+      reason: prev?.reason ?? 'TODO — state why this test is allowed to be slow.',
+      ...(prev?.budgetMs ? { budgetMs: prev.budgetMs } : {}),
+      ...(prev?.volatile ? { volatile: prev.volatile } : {}),
+    }
   })
   writeFileSync(
     BASELINE,
@@ -225,14 +237,18 @@ for (const s of slow) {
   console.log(`          (orientation only: x${CI_RATIO_FOR_ORIENTATION} isolated-CI ratio = ~${ci} ms — NOT a gate, see header)`)
 
   if (!b) {
-    const v = newSlowVerdict(s.ms, LOAD, REPORT_MS)
+    // ⚠️ THE SAME OWNER AS RULE 3, with `baselineMs: 0` — a newcomer is by definition absent
+    // from the baseline total, so only the numerator excludes it. Rule 1 self-masks the same
+    // way rule 3 did: a new slow test inflates `SUITE_MS` and so lowers its own normalised ms.
+    const newLoad = BASE_SUITE_MS ? loadForTest(SUITE_MS, BASE_SUITE_MS, s.ms, 0) : LOAD
+    const v = newSlowVerdict(s.ms, newLoad, REPORT_MS)
     if (v.verdict === 'listed') {
-      console.log(`          (listed, not gated: ${v.normalisedMs} ms at this run's ${LOAD.toFixed(2)}x load, under ${v.failsAboveMs} ms — too close to the reporting line to call)`)
+      console.log(`          (listed, not gated: ${v.normalisedMs} ms at this test's ${newLoad.toFixed(2)}x rest-of-suite load, under ${v.failsAboveMs} ms — too close to the reporting line to call)`)
       continue
     }
     failures.push(
       `NEW SLOW TEST — ${s.file} · "${s.title}" at ${s.ms} ms ` +
-      `(${v.normalisedMs} ms normalised for this run's ${LOAD.toFixed(2)}x load).\n` +
+      `(${v.normalisedMs} ms normalised for this run's ${newLoad.toFixed(2)}x rest-of-suite load).\n` +
       `    Make it faster, or add it to ${BASELINE} with a reason. Deciding now is cheap;\n` +
       `    discovering it on a loaded CI runner in six weeks is not.`,
     )
@@ -253,15 +269,20 @@ for (const s of slow) {
   // ⚠️ SHARE, NOT MILLISECONDS. `b.ms * LOAD` is what this test WOULD have cost
   // at the baseline share under today's load. Comparing against that removes the
   // machine from the measurement and leaves the code.
-  const expectedMs = b.ms * LOAD
+  // ⚠️ A PER-TEST LOAD, NOT THE SUITE'S (CHECK-SLOW-NOISE-01, 2026-11-08). The suite-wide
+  // ratio includes the test being judged, so a test that grows inflates its own denominator.
+  // Measured: `targetedGrid` is 14% of the suite and rule 3 first fired at 3.5x against a
+  // declared tolerance of 1.4x. `loadForTest` excludes it from both sides.
+  const testLoad = BASE_SUITE_MS ? loadForTest(SUITE_MS, BASE_SUITE_MS, s.ms, b.ms) : LOAD
+  const expectedMs = b.ms * testLoad
   if (b.volatile) {
     console.log(`          (rule 3 skipped: declared process-spawn volatile — ${b.reason.slice(0, 70)}…)`)
-  } else if (driftVerdict(s.ms, b.ms, LOAD, b.volatile) === 'fails') {
+  } else if (driftVerdict(s.ms, b.ms, testLoad, b.volatile) === 'fails') {
     const shareNow = SUITE_MS > 0 ? ((s.ms / SUITE_MS) * 100).toFixed(2) : '?'
     const shareBase = BASE_SUITE_MS ? ((b.ms / BASE_SUITE_MS) * 100).toFixed(2) : '?'
     failures.push(
       `STEP CHANGE — ${s.file} · "${s.title}" went ${b.ms} -> ${s.ms} ms ` +
-      `(share ${shareBase}% -> ${shareNow}% of the suite, >${DRIFT_TOLERANCE}x at this run's ${LOAD.toFixed(2)}x load).\n` +
+      `(share ${shareBase}% -> ${shareNow}% of the suite, >${DRIFT_TOLERANCE}x at this test's ${testLoad.toFixed(2)}x rest-of-suite load).\n` +
       `    This is a step change, not noise. Say what grew and why, then re-baseline.`,
     )
   }

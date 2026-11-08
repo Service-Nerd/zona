@@ -4246,7 +4246,40 @@ comment lines** — the matcher was asserting the line width. Falsified both way
 normalisation turns 4 arms red on the incident case, and normalising the hard wall too turns the
 wall arm red.
 
-### 🔵 `SUITE-POOL-WALLCLOCK-01` — narrowing the worker pool halves per-test time; the wall-clock cost is unmeasured *(filed 2026-10-15, P3)* ⚙️ **NO BOARD** *(tooling)*
+### ✅ `SUITE-POOL-WALLCLOCK-01` — narrowing the worker pool halves per-test time; the wall-clock cost is unmeasured *(filed 2026-10-15, P3)* ⚙️ **NO BOARD** *(tooling)* — **SHIPPED 2026-11-08**
+
+✅ **SHIPPED 2026-11-08. Measured as specified: 4 / 6 / 9 / 10 workers, three runs each, 12 full
+suite runs, 7,393 tests, on a 10-core machine.**
+
+| workers | wall (mean) | spread | test-time | over 1 s |
+|---|---|---|---|---|
+| 4 | 194.9 s | **7.7 s** | **119.2 s** | **17** |
+| **6** | **180.4 s** | 1.2 s | 141.3 s | 19 |
+| 9 *(≈ the old default)* | 183.6 s | 1.3 s | 194.7 s | 25 |
+| 10 | 186.1 s | 1.3 s | 217.5 s | 30 |
+
+🔑 **THE ITEM'S PREMISE IS HALF WRONG, AND THAT IS THE FINDING.** It framed this as a trade —
+*"fewer workers means each test is faster and the suite probably finishes later"*. **They trade
+only BELOW 6.** From 6 to 10 both numbers get worse together, so **6 beats the old default of 9
+on BOTH axes: −3.2 s wall (−1.7%) and −53.4 s of test time (−27%)**, with tests over the 1 s
+reporting line going 25 → 19. Nothing is given up. ⚠️ **4 is also the least repeatable setting
+measured** — a 7.7 s wall spread against 1.2 s at 6.
+⚠️ **LOCAL ONLY, BECAUSE THE MEASUREMENT IS LOCAL.** `ubuntu-latest` is a 2–4 core runner and 6
+could exceed its core count; applying a 10-core result there is the denominator error this repo
+has paid for repeatedly. CI keeps vitest's own default until someone measures it on a runner —
+`...(process.env.CI ? {} : { maxWorkers: 6 })`, with the table written beside it.
+✅ **Re-baselined as the item instructed, with the reason stated: 25 → 20 entries, `suiteMs`
+84,821 → 142,176, `measuredAt` 2026-09-24 → 2026-11-08.** Load is now **0.98x** — the baseline
+matches the machine it measures for the first time since September, which is what made rule 3's
+declared 1.4x tolerance true (see `CHECK-SLOW-NOISE-01`).
+🔴 **AND RE-BASELINING FOUND A DEFECT IN THE RE-BASELINE COMMAND ITSELF:** `--write` carried
+`reason` and `budgetMs` forward and **silently dropped `volatile`**. So the routine maintenance
+command deleted a declared exemption with no diff line, and rule 3 would then cry wolf on the
+one shape its premise is known to be false for. **An exemption a routine command can delete
+without saying so is not a declaration.** All three carry now, gated and falsified.
+⚠️ **Two new baseline entries arrived with `TODO` reasons and were given real ones** —
+`peakNotePaceClaim` and `strengthSweep`, both corpus sweeps. A TODO in the reason column is
+precisely what the register exists to prevent.
 
 Measured during `SUITE-CONTENTION-01`: `--maxWorkers=4` takes the suite's total test-time from
 **182,181 ms to 81,725 ms** on the identical population, and the count of tests over the 1,000 ms
@@ -5124,7 +5157,33 @@ and `long_run_shortfall` stays silent with its field now built, so that zero is 
 🔻 **Not touched:** `--unmasked` is still documented in the header and prints *"not yet
 implemented"* (`TRIGGER-BACKTEST-02`), which is pre-existing and honest.
 
-### 🔵 `GATE-SPAWN-VOLATILITY-01` — `hooksGate` shells out to `npx`, so its duration is a coin flip *(filed 2026-10-15, P3)* ⚙️ **NO BOARD** *(tooling)*
+### ✅ `GATE-SPAWN-VOLATILITY-01` — `hooksGate` shells out to `npx`, so its duration is a coin flip *(filed 2026-10-15, P3)* ⚙️ **NO BOARD** *(tooling)* — **SHIPPED 2026-11-08**
+
+✅ **SHIPPED 2026-11-08.** `lib/hooksGate.test.ts` lints in process through eslint's Node API
+(`new ESLint({ useEslintrc: false, overrideConfigFile })` → `lintText`) instead of spawning
+`npx eslint` twice. The cost was never eslint; it was `npx` resolving a binary and a cold Node
+process while the worker pool fought for cores.
+📐 **THE SPREAD COLLAPSED, WHICH IS THE FALSIFICATION THE ITEM DEMANDED** — *"the justification
+for the flag is a 6.5x spread, so the fix is only real if that number moves"*:
+
+| | isolated | full suite | spread |
+|---|---|---|---|
+| before | 483 / 492 / 602 ms | 1,094 / 1,108 / 1,196 / **3,172** ms | **6.5x** |
+| after | 171 / 172 / 211 ms | **189 ms** | **1.23x** |
+
+🔑 **So `volatile: true` is GONE, not un-flagged.** Both arms fell below the 1,000 ms reporting
+line and left the duration baseline entirely — exactly what the item asked for (*"lets the
+`volatile` flag be dropped rather than carried"*). The real loss it recorded is repaid: rule 3
+can see those arms again.
+⚠️ **What the spawn was buying is kept by a THIRD arm.** Linting in process proves the CONFIG
+finds the violation; it cannot prove that config is the one `npm run verify:hooks` runs, and a
+test that lints a config nothing uses is the hollow shape this repo keeps paying for. So the new
+arm asserts the script still names `.eslintrc.hooks.json` and `--no-eslintrc`. Falsified both
+ways: turn the rule off → arm 1 red; repoint `verify:hooks` → arm 3 red.
+⚠️ **`eslint` ships no types and `@types/eslint` was deliberately NOT installed** — a dev
+dependency for one test file's types is weight. The four-field surface is declared locally and
+the import carries `@ts-expect-error`, never `@ts-ignore`, so if eslint ever gains types that
+line goes red and the suppression is deleted rather than outliving its reason.
 
 `lib/hooksGate.test.ts` runs `npx eslint --no-eslintrc --config ./.eslintrc.hooks.json` on one temp
 fixture, twice. 📐 **Measured: 483 / 492 / 602 ms in isolation against 1,094 / 1,108 / 1,196 /
@@ -5202,9 +5261,22 @@ comment lines** — the matcher was asserting the line width. Falsified both way
 normalisation turns 4 arms red on the incident case, and normalising the hard wall too turns the
 wall arm red.
 
-### 🔵 `SUITE-POOL-WALLCLOCK-01` — narrowing the worker pool halves per-test time; the wall-clock cost is unmeasured *(filed 2026-10-15, P3)* ⚙️ **NO BOARD** *(tooling)*
+### ✅ `SUITE-POOL-WALLCLOCK-01` — **SHIPPED 2026-11-08** · *a SECOND filing of the same item; the live record is the one above* ⚙️ **NO BOARD** *(tooling)*
 
-Measured during `SUITE-CONTENTION-01`: `--maxWorkers=4` takes the suite's total test-time from
+⚠️ **THIS IS A DUPLICATE HEADING AND IT IS WHY CLOSING AN ITEM ONCE IS NOT CLOSING IT.**
+`audit-docs.sh` reported `STILL OPEN SUITE-POOL-WALLCLOCK-01 (has a feature-registry row)`
+after the first filing was stamped, because an item reads open while ANY of its filings
+does — correctly. 📐 Measured 2026-11-08: **48 ids carry more than one item heading** in
+this file, **8 of them three** (`STICKY-INERT-SCREENS-01`, `SITE-BTN-INVERT-01`,
+`QUIT-TAB-DEAD-01`, `ME-DOORS-01`, `LEDGER-FATIGUE-HONESTY-01`, `DESIGN-CD1-TAXONOMY-01`,
+`DANGER-TEXT-CONTRAST-01`, `BACKTEST-SECOND-ASSEMBLY-01`). ⚠️ **I first wrote 12 here,
+off a `head -12` of the count** — the truncated-output error this repo keeps recording.
+`scripts/lib/open-items.sh` dedups so the OPEN COUNT is not inflated, and the surviving
+site is the first one still reading open — so a half-stamped item stays visible rather
+than disappearing. 🔻 **Filed as `BACKLOG-DUPLICATE-HEADING-01`** (below) rather than
+folded in: de-duplicating 12 items is a document edit with its own blast radius.
+
+~~Original filing, for the record:~~ Measured during `SUITE-CONTENTION-01`: `--maxWorkers=4` takes the suite's total test-time from
 **182,181 ms to 81,725 ms** on the identical population, and the count of tests over the 1,000 ms
 reporting line from **27 to 12**. So per-test fidelity improves sharply with *less* parallelism.
 
@@ -5218,6 +5290,36 @@ reason into `vitest.config.ts` beside the setting. ⚠️ **If a pool setting is
 baseline entry moves** — re-baseline with the declared reason, per `cohort:shape`'s rule, and never
 to turn something green. 🔻 **P3: the gate is load-invariant since `SUITE-CONTENTION-01`, so nothing
 is broken while this waits** — it is a speed and fidelity question, not a correctness one.
+
+
+### 🔲 `BACKLOG-DUPLICATE-HEADING-01` — 48 ids are filed twice, so closing an item once does not close it *(filed 2026-11-08, P3)* ⚙️ **NO BOARD** *(records)*
+
+Found while stamping `SUITE-POOL-WALLCLOCK-01` in W3. Its first filing was stamped ✅ and
+`audit-docs.sh` still reported **`STILL OPEN SUITE-POOL-WALLCLOCK-01 (has a feature-registry
+row)`** — correctly, because an item reads open while **any** of its headings does, and it had
+a second filing 1,015 lines away.
+
+📐 **Measured: 48 ids carry more than one item heading, 8 of them three.** Of those 48, **4 are
+currently open per the gate** (`COACHING-ROUND-WARNS-BLIND-01`, `DOCS-RESIDUAL-01`,
+`SESSION-JOURNEY-01`, `TODAY-CTA-CLEARANCE-01`), so the live exposure is small — but every one
+of them is an item that can be half-closed without anything saying so.
+
+✅ **The open COUNT is already safe.** `scripts/lib/open-items.sh` dedups per id
+(`BACKLOG-TAG-IN-HEADING-01`, 2026-11-08) and keeps the first site still reading open, so a
+half-stamped item stays visible rather than vanishing, and nothing is double-counted. **This is
+a document problem, not a gate problem.**
+
+⚠️ **Most of the 48 are legitimate and must NOT be merged.** The convention in this file is a
+second `### ✅` heading carrying *"original filing, for the record"* — the shipped record and the
+problem statement as written. The ones that matter are the pairs where **one side is stamped and
+the other is not.**
+
+**The build, if it is picked up.** A gate, not a sweep: fail when an id has two headings whose
+CLOSED status disagrees. That is cheap, it is the only shape that can mislead, and it leaves the
+legitimate archive pairs alone. ⚠️ **A blanket "no duplicate heading" rule would fire on 44
+correct records**, which is the cry-wolf shape this repo records as equivalent to no gate.
+🔻 **P3: nothing is broken while this waits** — the count is right and the four open pairs are
+named above.
 
 ### ✅ `QUALITY-TYPE-NO-OWNER-01` — **SHIPPED 2026-10-24.** 42 hand-written answers to *"is this a quality session"*, now three owners *(filed 2026-10-15, P2)* 🏃 **COACHING BOARD**
 
@@ -11131,7 +11233,9 @@ fails every morning for a reason nobody needs to read is a test everybody learns
 the next real failure in that file arrives pre-ignored. This repo has already recorded that a
 guard which cries wolf gets disabled, which is the same as having no guard.
 
-**State at END of 2026-11-08 (last ship `fc1eed72` — W2 of the NO BOARD programme COMPLETE: `GUARD-TREE-SWEEP-01`, `HOOK-SUITE-HOLLOW-01`, `AUDIT-CONTRACT-MENTION-01`, `DOC-AUDIT-REG-FORMAT-01`, `BACKLOG-TAG-IN-HEADING-01`. 747 files, ALL GREEN.)** 🔴 **THE PROGRAMME IS 54 ITEMS, NOT 46, AND THE NUMBER I GAVE THE FOUNDER WAS DERIVED WITH A BROKEN PREDICATE.** The board tally tested the five boards in a **fixed order**, so an item written *"⚙️ NO BOARD to measure; 🧭 DESIGN BOARD to place it"* or *"💼 SLT (tier), then 🏃 COACHING BOARD"* was filed under whichever board the CODE tested first. The filing rule says to NAME THE ORDER and the document writes the ruling board first, so **the earliest glyph in the line wins: it differs on 12 of 123 open items, all twelve correct under earliest-wins, ⚙️ NO BOARD 46 → 54.** Nothing changed in the backlog. **10 of 54 closed; 44 remain.** 🔴 **A SECOND DEFECT IN THE SAME TALLY, in code shipped the day before:** it found an item's board by scanning for **the first line in the file CONTAINING its id — a mention, not a filing.** `PARITY-STAGED-BLIND-01` is tagged on its own bullet at L219 and read as UNTAGGED because L202 names it inside another item's ✅ SHIPPED bullet; two more were shadowed by a `## ⚖️ FILED …` parent. **The `GTM-CHARITY-02` class, fourth instance.** ✅ **The filing rule finally has a GATE** (`backlog:verify` § 4, in `verify:ci`) — and its count was wrong in BOTH directions: **filed as 23 untagged, the report said 9, the truth was ONE** (`NATIVE-BATCH-01`). ✅ **A tree-wide colour sweep exists** (`npm run sweep:colours`, in `verify:ci`): `scripts/lib/colour-guards.sh` is the single owner of every colour regex, the OG exemption and the comment stripper, and the hook sources the same file so the sweep can never be looser than the commit guard. 📐 **CLEAN: 376 files, 5 rules, 0 hits** — a ratchet, not a fix, exactly as the item predicted. 🔴 **AND IT FOUND THE HOOK'S OWN SUITE HALF-HOLLOW:** `.githooks/pre-commit.test.sh` read the EXIT CODE ONLY, so when the population line was deleted by accident mid-build and the hook died on an unbound variable for every input, **5 of its 11 cases passed** — all five expect `block`, and a hook reduced to `exit 1` scores the same 5. Three arms now assert the hook NAMES ITS RULE (14 cases), falsified against the crashed hook at 5/9. ✅ **The hook runner refuses an uncounted suite and ratchets every count** (`.claude/hooks/case-counts.txt`): **11 hooks · 11 suites · 334 cases · 0 uncounted**, falsified by deleting three REAL `check()` call sites — the gutted suite still exited 0 and still printed `all passed`. 🔄 **Its premise had moved: the item said standardising five output formats was the bulk of the work; 10 of 11 already stated a total and exactly ONE did not.** ✅ **`contracted()` is structural** — 🔴 **the item named a prose MENTION and the worse shape was a PREFIX: `/api/og` was "contracted" by `og-session-complete-card.md`'s own H1**, which is a different route's contract. Debt **11 → 13 of 71**, the DEFINITION changing, said beside the number. Falsified **against the OLD predicate**: one planted prose line drops it 11 → 10. ✅ **The `_reg` parse must now prove it read every row** — widened four times, every time by hand; it found a FIFTH shape immediately (**2 of 800 rows use a hyphen-minus**, latent). ⚠️ **And that residual asked for the registry to be NORMALISED, which is the wrong fix:** one table shape, the only variance a title in the first cell (576 yes, 155 no), so normalising would delete 576 titles or invent 155. 🔴 **THE REVIEW ROUND FOUND ELEVEN DEFECTS IN THE W2 COMMIT, ALL MINE** (`W2-REVIEW-ROUND-01`), and the worst was the escape hatch: `test:hooks -- --write` wrote the baseline **unconditionally, exit 0**, so re-baselining on a FAILING run omitted that suite's row and **permanently disarmed the "suite is GONE" arm for it** — the one path that could silently delete a guard was the one added to make the gate maintainable. 🔴 **The new board-tag gate was ALLOW-BY-DEFAULT**: it called the shell through a helper that swallows failures, so an unrunnable `open_item_boards` gave 0 rows, 0 untagged, **exit 0** — against a lesson filed under that exact name. 🔴 **Three "absence written as a value" in one commit.** ⚠️ **And fixing the `//`-in-a-string hole with a hand-rolled scanner DESYNCED IT** — one apostrophe inside a comment (`the family's one exception`) put the rest of the FILE "inside a string", so it reported a hex inside a `//` comment as live code; now tracked **per line**, because a line comment cannot span lines. 📐 **Measured whether that hole was ever live: NO — 0 hits either way across 376 files.** The published "0 hits" was true by luck, not by the check being sound. ⚡ **752 Python spawns and ~47s per `verify:ci` → one process and 0.74s.**
+**State at END of 2026-11-08 — W3 (last ship `fc1eed72` — `SUITE-POOL-WALLCLOCK-01`, `CHECK-SLOW-NOISE-01`, `GATE-SPAWN-VOLATILITY-01`, `CI-DURATION-TARGETEDGRID-01`. 747 files / **7,394** tests, ALL GREEN; `check:slow` 0; wall 179.4s.)** 📐 **14 of 54 closed, 40 remain.** 🔑 **THE WORKER POOL, MEASURED AS THE ITEM ASKED — 12 full-suite runs, 4/6/9/10 workers, three each:** 4 → 194.9s wall / 119.2s test-time / 17 over 1s · **6 → 180.4 / 141.3 / 19** · 9 (≈ the old default) → 183.6 / 194.7 / 25 · 10 → 186.1 / 217.5 / 30. 🔴 **THE ITEM'S PREMISE IS HALF WRONG AND THAT IS THE FINDING** — it framed this as a trade (*"fewer workers means each test is faster and the suite probably finishes later"*) and **they trade only BELOW 6**; from 6 to 10 both numbers worsen together, so **6 beats the default on BOTH axes: −3.2s wall and −53.4s test-time (−27%)**, nothing given up. 4 is also the least repeatable setting (7.7s spread vs 1.2s). ⚠️ **Set LOCAL ONLY** (`process.env.CI ? {} : { maxWorkers: 6 }`) because the measurement is local and `ubuntu-latest` has 2–4 cores. ✅ **Re-baselined with the reason stated: 25 → 20 entries, `suiteMs` 84,821 → 142,176, load now 0.98×** — the baseline matches the machine it measures for the first time since September. 🔑 **THE DURATION GATE NO LONGER CRIES WOLF, PROVED NOT ASSUMED: replayed against ELEVEN real reports spanning load 1.39×–2.57×, identical verdict every time.** 🔴 **AND A GREEN GATE ACROSS ELEVEN REPORTS CAN MEAN A DEAD ONE — rule 3 would not fire where the arithmetic said it should.** Two compounding denominators: **`LOAD` included the test being judged**, so a test that grows inflates its own threshold (`targetedGrid` is 14.0% of the suite — worth 1.4 → 3.0 alone), **plus a six-week-stale baseline** (1.68×). Together rule 3 first fired at **3.5× against a `DRIFT_TOLERANCE` that reads 1.4 in the source.** ✅ `loadForTest` excludes the test from whichever sides it exists on and **BOTH** rules reach it; 🔴 **my first cut moved only rule 3 and `testDurationGate.test.ts` caught it** — that arm exists because rule 3 was right and rule 1 wrong for three weeks, and I re-created the divergence inside the commit meant to fix it. 📐 **3.5× → 3.0× → 1.4×: the declared tolerance is true for the first time.** ✅ **`GATE-SPAWN-VOLATILITY-01`: the spawn is gone, so the `volatile` flags are GONE, not un-flagged** — isolated 483/492/602 → 171/172/211ms, full-suite 1,094/1,108/1,196/**3,172** → **189ms**, spread **6.5× → 1.23×**; both arms fell under the reporting line and left the baseline. ✅ **`CI-DURATION-TARGETEDGRID-01` CLOSED, cause already fixed: both percentages in the item were of a budget that does not apply to that test** (it declares `}, 120_000)`; 73% is really 16.5%), and the drift it feared went the other way — **share 25.89% → 13.94%**. 🔴 **Re-baselining found a defect in the re-baseline command:** `--write` carried `reason` and `budgetMs` and **silently dropped `volatile`**, deleting a declared exemption with no diff line. 🔻 **FILED `BACKLOG-DUPLICATE-HEADING-01`: 48 ids have more than one heading, 8 of them three, 4 currently open** — found because stamping one filing of `SUITE-POOL-WALLCLOCK-01` left the audit correctly reporting it STILL OPEN. ⚠️ **I wrote "12" there first, off a `head -12` of the count.**
+
+**Prior — 2026-11-08 W2 (last ship `fc1eed72` — W2 of the NO BOARD programme COMPLETE: `GUARD-TREE-SWEEP-01`, `HOOK-SUITE-HOLLOW-01`, `AUDIT-CONTRACT-MENTION-01`, `DOC-AUDIT-REG-FORMAT-01`, `BACKLOG-TAG-IN-HEADING-01`. 747 files, ALL GREEN.)** 🔴 **THE PROGRAMME IS 54 ITEMS, NOT 46, AND THE NUMBER I GAVE THE FOUNDER WAS DERIVED WITH A BROKEN PREDICATE.** The board tally tested the five boards in a **fixed order**, so an item written *"⚙️ NO BOARD to measure; 🧭 DESIGN BOARD to place it"* or *"💼 SLT (tier), then 🏃 COACHING BOARD"* was filed under whichever board the CODE tested first. The filing rule says to NAME THE ORDER and the document writes the ruling board first, so **the earliest glyph in the line wins: it differs on 12 of 123 open items, all twelve correct under earliest-wins, ⚙️ NO BOARD 46 → 54.** Nothing changed in the backlog. **10 of 54 closed; 44 remain.** 🔴 **A SECOND DEFECT IN THE SAME TALLY, in code shipped the day before:** it found an item's board by scanning for **the first line in the file CONTAINING its id — a mention, not a filing.** `PARITY-STAGED-BLIND-01` is tagged on its own bullet at L219 and read as UNTAGGED because L202 names it inside another item's ✅ SHIPPED bullet; two more were shadowed by a `## ⚖️ FILED …` parent. **The `GTM-CHARITY-02` class, fourth instance.** ✅ **The filing rule finally has a GATE** (`backlog:verify` § 4, in `verify:ci`) — and its count was wrong in BOTH directions: **filed as 23 untagged, the report said 9, the truth was ONE** (`NATIVE-BATCH-01`). ✅ **A tree-wide colour sweep exists** (`npm run sweep:colours`, in `verify:ci`): `scripts/lib/colour-guards.sh` is the single owner of every colour regex, the OG exemption and the comment stripper, and the hook sources the same file so the sweep can never be looser than the commit guard. 📐 **CLEAN: 376 files, 5 rules, 0 hits** — a ratchet, not a fix, exactly as the item predicted. 🔴 **AND IT FOUND THE HOOK'S OWN SUITE HALF-HOLLOW:** `.githooks/pre-commit.test.sh` read the EXIT CODE ONLY, so when the population line was deleted by accident mid-build and the hook died on an unbound variable for every input, **5 of its 11 cases passed** — all five expect `block`, and a hook reduced to `exit 1` scores the same 5. Three arms now assert the hook NAMES ITS RULE (14 cases), falsified against the crashed hook at 5/9. ✅ **The hook runner refuses an uncounted suite and ratchets every count** (`.claude/hooks/case-counts.txt`): **11 hooks · 11 suites · 334 cases · 0 uncounted**, falsified by deleting three REAL `check()` call sites — the gutted suite still exited 0 and still printed `all passed`. 🔄 **Its premise had moved: the item said standardising five output formats was the bulk of the work; 10 of 11 already stated a total and exactly ONE did not.** ✅ **`contracted()` is structural** — 🔴 **the item named a prose MENTION and the worse shape was a PREFIX: `/api/og` was "contracted" by `og-session-complete-card.md`'s own H1**, which is a different route's contract. Debt **11 → 13 of 71**, the DEFINITION changing, said beside the number. Falsified **against the OLD predicate**: one planted prose line drops it 11 → 10. ✅ **The `_reg` parse must now prove it read every row** — widened four times, every time by hand; it found a FIFTH shape immediately (**2 of 800 rows use a hyphen-minus**, latent). ⚠️ **And that residual asked for the registry to be NORMALISED, which is the wrong fix:** one table shape, the only variance a title in the first cell (576 yes, 155 no), so normalising would delete 576 titles or invent 155. 🔴 **THE REVIEW ROUND FOUND ELEVEN DEFECTS IN THE W2 COMMIT, ALL MINE** (`W2-REVIEW-ROUND-01`), and the worst was the escape hatch: `test:hooks -- --write` wrote the baseline **unconditionally, exit 0**, so re-baselining on a FAILING run omitted that suite's row and **permanently disarmed the "suite is GONE" arm for it** — the one path that could silently delete a guard was the one added to make the gate maintainable. 🔴 **The new board-tag gate was ALLOW-BY-DEFAULT**: it called the shell through a helper that swallows failures, so an unrunnable `open_item_boards` gave 0 rows, 0 untagged, **exit 0** — against a lesson filed under that exact name. 🔴 **Three "absence written as a value" in one commit.** ⚠️ **And fixing the `//`-in-a-string hole with a hand-rolled scanner DESYNCED IT** — one apostrophe inside a comment (`the family's one exception`) put the rest of the FILE "inside a string", so it reported a hex inside a `//` comment as live code; now tracked **per line**, because a line comment cannot span lines. 📐 **Measured whether that hole was ever live: NO — 0 hits either way across 376 files.** The published "0 hits" was true by luck, not by the check being sound. ⚡ **752 Python spawns and ~47s per `verify:ci` → one process and 0.74s.**
 
 **Prior — 2026-11-07 (last ship `b344577c` — W1 of the 46-item NO BOARD programme COMPLETE: `PARITY-GRID-VOLUME-FLOOR-01`, `PARITY-GRID-UNSET-LEVEL-01`, `ENVELOPE-LRR-BLIND-01`, `GRID-GOAL-INSIDE-LINE-01`, `GRID-NO-ASSESSED-BEGINNER-01`. 746 files / **7,387** tests, ALL GREEN.)** 👤 **FOUNDER: *"I want all 46 in the No board category built… analyse, plan, sit boards if needed and build skill… Run full autonomous to close these out. Backlog, build log and feature list must be updated on each build."*** 📐 **9 waves planned. W1 = the measurement corpora, the reason three harnesses lied this week. 5 of 46 closed.** ⚠️ **4 of the 46 are NOT buildable here** (`NAV-BLACK-LINE-01` device · `PLAN-COUNTDOWN-SOURCE-01` the founder's screen · `TT-BEFORE-LONG-PATCH-01` a production write · `SITE-SCROLL-DEPTH-01` analytics that do not exist) and **5 carry the wrong tag and are routed** (`ALL-DAYS-BLOCKED-01`, `WIZARD-CONTRADICTORY-VOLUME-01`, `BASEBUILD-DURATION-01`, `LR-ALT-42-CONFIG-01` → 🏃; `TYPESCALE-DECIMAL-GATE-01` → 🧭). 🔑 **RE-MEASURING FIRST CHANGED THREE OF THE FIVE:** `GRID-NO-ASSESSED-BEGINNER-01` **closed with no code** — 13,824 of 41,472 rows already assess intensity=beginner, made true by `COHORT-GRID-UNSET-LEVEL-01` four days earlier, and `backlog-touch.py` cannot catch it because the item named the grids generically. ✅ **`verify:parity` was blind THREE ways** — `fitness_level` on all 6,102 rows, `VOLUMES` floored at 15 against a band of 4–8, and the longest run **DERIVED** so `lr 0` was unreachable. +108 rows (6,210). 🔴 **And the fix exposed three more defects:** the block would have been **decorative** (`generateRulePlan` refuses 24 of its 36 while `runEngine` returns a staged plan); **`STRIP_META` lacked `last_updated`** (72 of 72 CHANGED with the engine untouched); and **its loop never reached nested fields**, so `plan.pre_plan.week_estimate` — `${todayIso} → ${planStartIso}` — could flip half the MAIN grid across a midnight straddle, and had been able to since the file was written. ✅ **`targetedGrid` gains the never-run runner and a goal INSIDE §120's 5% line** (0 of 10,368 benchmarked rows were inside; the pair was derived by sweeping, 10 km off 50:00 with a 49:30 target = 3.10%). 🔴 **I SHIPPED A RED COMMIT AND `/code-review` CAUGHT IT:** both `measure:fitness` and `audit:plans` take a **coprime stride then a fixed slice**, so appending 16 rows re-permuted every sampled row — a **14.2pp marathon-specificity "regression" with no engine file in the diff**. Fixed structurally, not re-baselined: `targetedGridCore()` is sampled, `targetedGridExtra()` is taken **in full**, because a stable stride alone would still drop the only rows that reach the cohort. **Proof: `generated`, `LONG-RUN-SHORT` and `BINGE` all returned to baseline exactly.** Declared re-baselines: fitness n 3003→3075 / 9710→9792 with **every rate flat** (worst 0.6pp; never-builds 9.5→**9.4**); `audit:plans` generated 1500→1510, refused 0→**6**, NEVER-BUILDS 32→**36**, all three exactly the new cohort. 🔴 **Two more review findings worth naming:** a pinned `benchmark_date` was **still climbing §10's ramp** and would have left the admitted side in ~2.5 weeks — `GOALPACE-5K-CLOCK-01`'s exact failure, fixed the same morning, in a file `pinnedClock.test.ts` cannot see (now UNDATED, §42's "blank means fresh"); and `training_age: '18mo-3yr'` **is not a `TrainingAge`**, so §79's re-entry lift and ADR-021's early-onset gate could not fire on those rows. 🔻 **FILED: `PARITY-STAGED-BLIND-01`** — the main parity grid cannot see a staged plan wherever `generateRulePlan` refuses.
 
@@ -14774,7 +14878,23 @@ Plan screen with his account: if it really says 214, there is a third countdown 
 named, and that is a two-writer split of the kind that has bitten this repo before. If it says 81,
 this closes and only the **vocabulary** problem remains, which is already ruled as **S5**.
 
-### 🔧 `CI-DURATION-TARGETEDGRID-01` — `npm run verify` is non-deterministic at the duration wall ⚙️ **NO BOARD**
+### ✅ `CI-DURATION-TARGETEDGRID-01` — `npm run verify` is non-deterministic at the duration wall ⚙️ **NO BOARD** — **CLOSED 2026-11-08, cause already fixed**
+
+✅ **CLOSED 2026-11-08. The cause was fixed by a later ship and the item did not know.** It was
+filed on *"21,949 ms — 73% of the 30,000 ms budget, HARD WALL"* against a run that passed at
+*"19,402 ms — 64.7%"*. **Both percentages were of a budget that does not apply to this test:**
+`targetedGrid` declares `}, 120_000)` at its call site, and the gate now reads
+`b.budgetMs ?? TEST_TIMEOUT_MS` with `budgetMs: 120000` on the baseline entry. The same number
+is **16.5% of its real budget.**
+✅ **Verified directly rather than read:** planting 30,000 ms on that test produces **no hard-wall
+finding**; planting 90,000 ms (over 70% of 120,000) produces one. The wrong-denominator defect
+the symptom came from is gone.
+📐 **And the drift the item was right to worry about was measured: 21,963 → 19,822 ms, share
+25.89% → 13.94% of the suite.** It got *cheaper*, both absolutely and relatively — the opposite
+of the creep it predicted. ⚠️ **Its instruction was honoured, not dodged:** nothing was
+re-baselined to go green; the baseline moved because the WORKER POOL changed
+(`SUITE-POOL-WALLCLOCK-01`) and that reason is stated in `vitest.config.ts`, the baseline file
+and the commit.
 **Board: none.** Tooling, no user-facing surface, no prescription change.
 
 Two `npm run verify` runs over **identical code**, twenty minutes apart on the same machine:
@@ -15124,7 +15244,35 @@ problem to solve. The ruling changes only whether they come back.
 
 ---
 
-### 🟡 `CHECK-SLOW-NOISE-01` — the duration gate cries wolf under machine load ⚙️ **NO BOARD**
+### ✅ `CHECK-SLOW-NOISE-01` — the duration gate cries wolf under machine load ⚙️ **NO BOARD** — **SHIPPED 2026-11-08**
+
+✅ **SHIPPED 2026-11-08, and the cry-wolf half was already fixed by two later ships.** The item's
+three-verdicts-on-an-unchanged-tree symptom came from rules 1 and 3 comparing ABSOLUTE ms
+(`SUITE-CONTENTION-01` load-normalised both) and from the hard wall using the GLOBAL 30,000 ms
+timeout for a test that declares its own 120,000 (`budgetMs`, same period).
+📐 **Proved rather than assumed: the gate was replayed against ELEVEN real reports spanning load
+1.39x to 2.57x** — four worker-pool settings, three runs each — and returned the **identical
+verdict every time: PASS, 0 findings.**
+🔴 **AND A GREEN GATE ACROSS ELEVEN REPORTS CAN ALSO MEAN A DEAD ONE, SO ALL THREE RULES WERE
+FALSIFIED — AND RULE 3 DID NOT FIRE WHERE THE ARITHMETIC SAID IT SHOULD.** Two compounding
+causes, neither named in this item:
+- **`LOAD` included the test being judged**, so a test that grows inflates the denominator it is
+  measured against and partially hides itself. `targetedGrid`'s main arm is **14.0% of the
+  suite**, and that alone moved the trigger from the declared 1.4x to **3.0x**.
+- **The baseline was measured 2026-09-24 at `suiteMs: 84,821` against a live ~142,000**, so every
+  rule-3 threshold carried a stale **1.68x** multiplier on top.
+  Combined, rule 3 first fired at **k = 3.5x against a `DRIFT_TOLERANCE` that reads 1.4 in the
+  source.** **A tolerance that behaves as 3.5 on the largest test in the suite is not a
+  tolerance.**
+✅ **`loadForTest` excludes the test from whichever sides it exists on**, and BOTH rules reach it
+— rule 1 with `baselineMs: 0`, because a newcomer is absent from the baseline total by
+definition. 🔴 **The first cut moved only rule 3, and `testDurationGate.test.ts`'s own arm
+caught it** — *"rule 3 still normalises, so the two rules cannot drift apart again"* exists
+because rule 3 was right and rule 1 was wrong for three weeks with nothing comparing them, and
+I re-created that divergence inside the commit meant to improve it.
+📐 **Measured end state: 3.5x (as filed) → 3.0x (self-excluded) → 1.4x (fresh baseline). The
+declared tolerance is true for the first time.** Falsified by stepping k through 1.3 / 1.4 / 1.5
+/ 1.6 / 1.8 / 2.0.
 
 Filed 2026-09-21. **Not urgent, and it is a credibility problem rather than a correctness one.**
 

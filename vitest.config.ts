@@ -73,5 +73,37 @@ export default defineConfig({
     // Anything above this is printed with its duration. Set at 1 s because that
     // is where the local/CI ratio starts to matter: 1 s here is ~3.5 s there.
     slowTestThreshold: 1_000,
+
+    // ── SUITE-POOL-WALLCLOCK-01 (2026-11-08) — MEASURED, 12 RUNS ─────────────
+    //
+    // The question the item filed was a trade-off: `--maxWorkers=4` improved per-test
+    // fidelity sharply, and *"fewer workers means each test is faster and the suite
+    // probably finishes later"* — the wall clock was never measured, and it is the
+    // number anyone waiting on `npm run verify` actually cares about.
+    //
+    // 📐 Measured on this 10-core machine, three runs per setting, 7,393 tests:
+    //
+    //   workers   wall (mean)   spread   test-time   over 1 s
+    //        4       194.9 s     7.7 s     119.2 s         17
+    //        6       180.4 s     1.2 s     141.3 s         19   ← both axes best
+    //        9       183.6 s     1.3 s     194.7 s         25   (≈ the old default)
+    //       10       186.1 s     1.3 s     217.5 s         30
+    //
+    // 🔑 THE ITEM'S PREMISE IS HALF WRONG, AND THAT IS THE FINDING. The two numbers
+    // trade against each other only BELOW 6. Between 6 and 10 there is no trade at
+    // all: wall clock and per-test fidelity both get worse together. Against the old
+    // default of 9 this is **-3.2 s wall (-1.7%) and -53.4 s of test time (-27%)**,
+    // with tests over the 1 s reporting line going 25 -> 19. Nothing is given up.
+    // 4 is also the LEAST repeatable setting measured — a 7.7 s spread against 1.2 s.
+    //
+    // ⚠️ LOCAL ONLY, BECAUSE THE MEASUREMENT IS LOCAL. `ubuntu-latest` is a 2-4 core
+    // runner and 6 could be more workers than it has cores. Applying a 10-core result
+    // there is the denominator error this repo has paid for repeatedly, so CI keeps
+    // vitest's own default until someone measures it on a runner.
+    //
+    // ⚠️ EVERY DURATION BASELINE ENTRY MOVES WITH THIS, and they were re-measured in
+    // the same commit with that reason stated — `check:slow` normalises by the suite
+    // total, so the entries are a share, and the share changes when the pool does.
+    ...(process.env.CI ? {} : { maxWorkers: 6 }),
   },
 })
