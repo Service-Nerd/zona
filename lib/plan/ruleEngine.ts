@@ -10192,19 +10192,46 @@ function buildRulePlanOnce(
   //      303 violations without this pass, 0 with it.
   // The lesson is not "always add a final pass" — it is that the answer changed
   // when the conditions did, and only re-measuring caught it.
-  // §82 Amendment 2 (S9-EASY-MINUTES-01) — this pass can cut a held easy run below the km floor, so a week it does that
-  // to restates its volume, and re-derives its copy only if the copy's overload claim ("highest volume", "fitness is
-  // built") has become false. Measured without it: 317 of 5,560 slow-grid weeks stated a total more than 0.5 km over
-  // their own sessions (worst 5.3). Scoped to that cut on purpose: restating every week this pass touches moved 17
-  // cohort plans it already left stale, and is WEEKLY-KM-AFTER-CAP-01's to rule on.
+  // ── WEEKLY-KM-AFTER-CAP-01 (2026-11-08) — A WEEK RESTATES ITS TOTAL WHENEVER THIS PASS
+  //    CHANGES ITS SESSIONS, NOT ONLY WHEN IT CUTS ONE BELOW THE KM FLOOR ───────────────────
+  //
+  // §82 Amendment 2 (S9-EASY-MINUTES-01) added the restate for ONE case: a held easy run cut
+  // below the km floor. Measured then: 317 of 5,560 slow-grid weeks stated a total more than
+  // 0.5 km over their own sessions, worst 5.3. Every other change this pass makes — trimming
+  // an easy run to its day, shortening a race-week shakeout — left `weekly_km` stating a figure
+  // the week no longer contains, and **nothing could see it**: there is no invariant that a
+  // week's stated total matches the sum of its own sessions (there is now —
+  // `INV-PLAN-WEEKLY-KM-MATCHES-SESSIONS`).
+  //
+  // ⚠️ THE FOUNDATION EXCLUSION THE ITEM ASKS FOR DOES NOT BELONG HERE, AND A GUARD HERE WOULD
+  // BE DEAD. A foundation week's `weekly_km` is its BUDGET by design (FRESH-FLOOR-01) and must
+  // not be restated from its sessions — subtracting a held run's kilometres trips
+  // `INV-PLAN-FOUNDATION-BLOCK`'s +10% step into the following week (observed on a real sweep
+  // plan, 731f2878). But foundation weeks are composed by `composePlanWithFoundation` AFTER
+  // generation (ADR-020), so this pass cannot see one: a `w.phase === 'foundation'` guard here
+  // fires zero times. Measured, with the guard temporarily instrumented: 0 skips across 8,499
+  // plans and 126,168 weeks of three corpora. **The exemption belongs in the INVARIANT**, which
+  // runs on composed plans via `validateStoredPlan` and is where the +10% step was tripped —
+  // and it is there, named. A check that provably changes nothing reads as a safeguard while
+  // guarding nothing, which is this file's own recorded lesson about this very pass.
+  //
+  // ⚠️ THE COPY RE-DERIVATION IS WHY THIS WAS NOT A ONE-LINE CHANGE. A week whose total drops
+  // can stop being the biggest week in the block while its label still says "highest volume" —
+  // `INV-PLAN-COPY-MATCHES-SESSIONS`'s territory, and the reason the original restate was
+  // scoped narrowly rather than widened. It runs on every restated week now, not only the
+  // floor-cut ones.
   const heldFloorKm = sessionFloorsFor(input.longest_recent_run_km).easy
   weeks.forEach((w, idx) => {
     if (!w.sessions) return
-    const kmBefore = Object.fromEntries(Object.entries(w.sessions).map(([d, x]) => [d, x?.distance_km ?? null]))
+    // Every field this pass can move, not only `distance_km`: a duration-anchored session
+    // (95.8% of a beginner's, SESSION-KM-01) is priced from `duration_mins`, so a week trimmed
+    // only in minutes was invisible to a distance-only before/after.
+    const before = JSON.stringify(Object.entries(w.sessions).map(([d, x]) =>
+      [d, x?.distance_km ?? null, x?.duration_mins ?? null]))
     applyWeekdayMinsCap(w.sessions, input, w.type === 'race')
-    const cutBelowFloor = Object.entries(w.sessions).some(([d, x]) => x?.type === 'easy' && x.distance_km != null
-      && x.distance_km < heldFloorKm && (kmBefore[d] == null || x.distance_km < (kmBefore[d] as number)))
-    if (!cutBelowFloor) return
+    const after = JSON.stringify(Object.entries(w.sessions).map(([d, x]) =>
+      [d, x?.distance_km ?? null, x?.duration_mins ?? null]))
+    if (before === after) return
     w.weekly_km = sumWeeklyKm(w.sessions, pace)
     const prevNonDeload = weeks.slice(0, idx).reverse().find(p => p.type !== 'deload')
     const claimsOverload = /highest volume|fitness is built/.test(`${w.label ?? ''} | ${w.theme ?? ''}`.toLowerCase())

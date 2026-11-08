@@ -1528,14 +1528,41 @@ re-reads the weeks as they are.
 
 ---
 
-### 🔲 `WEEKLY-KM-AFTER-CAP-01` — `weekly_km` is not restated after every pass that changes a week's sessions ⚙️ **NO BOARD** (honesty of a stated number)
+### ✅ `WEEKLY-KM-AFTER-CAP-01` — SHIPPED 2026-11-08. The restate, and the check that never existed ⚙️ **NO BOARD**
 
-Found building S9-EASY-MINUTES-01. (1) The engine's final `applyWeekdayMinsCap` pass changes sessions without restating
-`weekly_km` for any reason other than a §82 Am. 2 held run (that case is now restated): restating every changed week moved
-**17 of 3,000** cohort plans, which were already stating a stale total, and broke week copy that claims "highest volume".
-(2) A foundation week's `weekly_km` is its budget by design (FRESH-FLOOR-01), and stays so when a held run shortens a day;
-subtracting the held km tripped `INV-PLAN-FOUNDATION-BLOCK`'s +10% step into the next week (sweep, real plan 731f2878).
-Measure the stale population first; then restate with the copy re-derivation the held-run case uses.
+🔴 **WHAT WAS MISSING WAS THE CHECK, NOT JUST THE RESTATE.** There was **no invariant anywhere**
+that a week's `weekly_km` equals the sum of its own sessions — so every pass that resized a
+session after the total was computed left a figure the week no longer contained, silently, because
+a stale number looks exactly like a correct one. `INV-PLAN-WEEKLY-KM-MATCHES-SESSIONS` now exists
+(166 invariants, woken by the existing mutation battery).
+
+📐 **Measured, same sample size on both sides.** The final cap pass changes sessions on **1,002 of
+38,994 slow-grid weeks** and **436 of 41,206 `cohortGrid` weeks**; `targetedGrid` **0**. Past the
+1 km rounding width: **21 of 2,625 slow-grid plans and 2 of 2,875 `cohortGrid` plans, worst 2 km.**
+**0 after.** ⚠️ **An earlier probe of mine said "worst 5 km" and that was NOT the defect's size** —
+it measured every week the pass moved, including the floor-cut weeks §82 Am. 2 already restated
+correctly.
+
+⚠️ **`verify:parity` returned IDENTICAL, 6,210 cases byte-for-byte, and that must not be read as
+"the change does nothing".** The parity grid is the shape that reaches 0 of these weeks, exactly as
+`targetedGrid` does. The item's own "17 of 3,000 cohort plans" matches my 16 weeks-moved figure, so
+it was counting moves, not defects.
+
+⚠️ **Part (2)'s foundation guard belongs in the INVARIANT, and a guard in the pass would be DEAD.**
+A foundation week's `weekly_km` is its budget (FRESH-FLOOR-01) and must not be restated — but
+`composePlanWithFoundation` runs AFTER generation (ADR-020), so the engine's pass cannot see one:
+measured **0 skips across 8,499 plans and 126,168 weeks** with the guard instrumented. The
+exemption is in the invariant, which `validateStoredPlan` runs on composed plans, and the property
+sweep exercised it over **24,160 foundation weeks** with no new violations.
+
+✅ Gate `lib/plan/weeklyKmAfterCap.test.ts` — 6 arms, **falsified twice** (reverting the restate:
+3 plans, and the recompute arm and `validatePlan` agree on all 3 — producer and checker, not one of
+them twice; removing the foundation exemption). ⚠️ **Its population proxy was `floor_protected` and
+that is 0 on the slow grid** — the arm failed on its first run and was right to; the trim's real
+fingerprint is a weekday session at exactly its day's budget, **276 of 551**.
+
+📐 `review:coaching` seven steps green, no measured rate moved · `cohort:shape` and
+`measure:fitness` byte-identical · sweep 16,464 plans, no new violations.
 
 ---
 

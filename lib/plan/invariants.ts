@@ -19,6 +19,9 @@ import { easyPaceFromPlan } from './easyPace'
 import { fitnessAnchorMap } from './fitnessAnchorMap'
 import { alignDerivedToStructure } from './derivedSetAnchors'
 import { buildPaceFromVDOT, paceBandStr, bandCeiling } from './paceBands'
+import { sessionKmOrZero } from './sessionDistance'
+import { buildFallbackPace } from './ruleEngine'
+import type { FitnessLevel } from './fitnessAssessment'
 import { qualityCeilingFor } from './qualityCeiling'
 import { FUELLING_PRACTICE_NOTE, ULTRA_FUELLING_PREFIX } from './fuellingNotes'
 import { GENERATION_CONFIG, raceDistanceKey } from './generationConfig'
@@ -184,6 +187,7 @@ export const INVARIANT_CODES = [
   'INV-PLAN-MAX-HR-NOT-BELOW-ESTIMATE-FLOOR',
   'INV-PLAN-USER-LEVEL-NO-UPWARD-TONNAGE',
   'INV-PLAN-FOUNDATION-BLOCK',
+  'INV-PLAN-WEEKLY-KM-MATCHES-SESSIONS',
   'INV-PLAN-RUNWALK-PRESCRIBED',
   'INV-PLAN-RUNWALK-CAP-NOT-REDUCED',
   'INV-PLAN-RUNWALK-PRESCRIBED-WHEN-UNREADY',
@@ -5157,6 +5161,75 @@ export function validatePlan(plan: Plan, rawInput: GeneratorInput): Violation[] 
         message: `${pinned} of ${weekdayEasy} weekday easy runs are pinned at the ${input.max_weekday_mins}-minute limit, so the cap is materially shaping this plan — but no volume_shortfall_note was set. A suppressed target is stated, never absorbed silently.`,
         actual: 'no volume_shortfall_note',
         expected: 'a note stating the cost and naming the lever',
+      })
+    }
+  }
+
+  // INV-PLAN-WEEKLY-KM-MATCHES-SESSIONS (WEEKLY-KM-AFTER-CAP-01, 2026-11-08)
+  //
+  // 🔴 A WEEK'S STATED TOTAL IS THE NUMBER THE RUNNER READS, AND NOTHING CHECKED IT. There was
+  // no invariant anywhere that `week.weekly_km` equals the sum of that week's own sessions, so
+  // every pass that resized a session after the total was computed left a figure the week no
+  // longer contained — silently, because a stale number looks exactly like a correct one.
+  // Measured on the slow-goal grid: the final weekday-cap pass changed sessions on **1,002
+  // weeks** and the stated total was wrong on **949 of them, by up to 5 km**; on `cohortGrid`,
+  // 436 changed and 16 moved. §82 Amendment 2 had restated ONE case (a held easy run cut below
+  // the km floor); every other change was uncovered.
+  //
+  // ⚠️ THE PACE IS THE PRODUCER'S OWN, NOT A RE-DERIVATION. `sumWeeklyKm` prices a
+  // duration-anchored session at `pace.minPerKmEasy`, and beginners are 95.8% duration-anchored
+  // (SESSION-KM-01), so a checker without that exact number cannot reproduce the sum. It is
+  // rebuilt from the plan's own stamped inputs — `buildPaceFromVDOT(meta.vdot_training_anchor,
+  // meta.vdot)` for a benchmarked runner, `buildFallbackPace(meta.fitness_level)` otherwise —
+  // which is the same pattern INV-PLAN-STEP-PACE-FROM-GUIDE uses. ⚠️ **This is only EXACT
+  // because of PLAN-VDOT-ROUNDTRIP-01, shipped the same day**: while the stamp was rounded to
+  // 1dp the rebuilt pace differed by up to a second per km, and this check would have had to
+  // carry a tolerance wide enough to hide a real 1 km error. A plan that cannot describe itself
+  // makes every checker downstream weaker; that is what the trap was.
+  //
+  // ⚠️ FOUNDATION WEEKS ARE EXEMPT, BY DESIGN AND NOT BY TOLERANCE. A foundation week's
+  // `weekly_km` is its BUDGET (FRESH-FLOOR-01) and deliberately does not follow its sessions
+  // when a held run shortens a day — subtracting the held kilometres trips
+  // INV-PLAN-FOUNDATION-BLOCK's +10% step into the following week (real sweep plan 731f2878).
+  // They reach this check and only this check: `composePlanWithFoundation` runs AFTER generation
+  // (ADR-020), so the engine's own cap pass never sees one, and a guard there would be dead.
+  {
+    const guide = plan.meta.vdot != null && plan.meta.vdot_training_anchor != null
+      ? buildPaceFromVDOT(plan.meta.vdot_training_anchor, plan.meta.vdot)
+      : plan.meta.fitness_level != null
+        ? buildFallbackPace(plan.meta.fitness_level as FitnessLevel)
+        : null
+    for (const w of plan.weeks) {
+      if (w.phase === 'foundation') continue
+      if (w.weekly_km == null || !w.sessions) continue
+      // Unresolvable: no pace basis at all. Skipped rather than measured against a guess —
+      // and NOT silently, because a plan with neither a VDOT nor a stamped level is itself
+      // odd; `INV-PLAN-STEP-PACE-FROM-GUIDE` skips the same plans for the same reason.
+      if (guide == null) continue
+      let total = 0
+      let unpriceable = false
+      for (const sn of Object.values(w.sessions)) {
+        if (!sn || sn.type === 'strength' || sn.type === 'rest' || sn.type === 'race') continue
+        // The PRODUCER's resolver and the producer's pace: `sumWeeklyKm` is `sessionKmOrZero`
+        // over `pace.minPerKmEasy`. Deliberately not `sessionKmSelfPaced`, which prices a
+        // structured session from its steps — a better number, and a different one.
+        if (sn.distance_km == null && sn.duration_mins == null) { unpriceable = true; break }
+        total += sessionKmOrZero(sn, guide.minPerKmEasy)
+      }
+      if (unpriceable) continue
+      const stated = w.weekly_km
+      const actual = Math.round(total)
+      // 1 km, not 0.5: `sumWeeklyKm` rounds the total once and so does this, so the two can
+      // legitimately straddle a rounding boundary by 1. The defects measured were up to 5 km.
+      if (Math.abs(stated - actual) <= 1) continue
+      violations.push({
+        code: 'INV-PLAN-WEEKLY-KM-MATCHES-SESSIONS',
+        principle_ref: 'CoachingPrinciples §90 ("the runner sees sumWeeklyKm, not the curve"), §40c',
+        severity: 'warn',
+        week: w.n,
+        message: `Week ${w.n} states ${stated}km but its own sessions come to ${actual}km. A pass resized a session and the week was never restated, so the figure the runner reads is not the week they were given.`,
+        actual: `${stated}km stated, ${actual}km in the sessions`,
+        expected: 'the stated total within 1km of the sum of its own sessions',
       })
     }
   }

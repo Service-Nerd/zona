@@ -5,6 +5,16 @@ angle. Feeds the weekly DHTB LinkedIn build-in-public posts — keep it honest, 
 it specific, no polish. The content system adds the voice.
 
 ---
+## 2026-11-08 — WEEKLY-KM-AFTER-CAP-01 · nothing checked that a week's total matched the week
+**Shipped:** the final weekday-cap pass restates a week's volume whenever it changes that week's sessions, and a new invariant checks the two agree.
+**Dev learning:** the restate was the easy half. **There was no invariant anywhere that `week.weekly_km` equals the sum of its own sessions.** Every pass that resized a session after the total was computed left a figure the week no longer contained, and a stale number looks exactly like a correct one — there is no symptom. §82 Amendment 2 had covered one case out of all of them. 1,002 of 38,994 slow-grid weeks were being resized by that pass; 21 of 2,625 plans ended up stating a total more than a kilometre from their own sessions.
+**Product/creator learning:** the item's second half asked for a foundation-week exclusion in the pass. **That guard would have fired zero times** — foundation weeks are composed *after* generation, so the pass cannot see one. I measured it with the guard instrumented: 0 skips across 8,499 plans and 126,168 weeks. The exclusion was real, but it belonged in the invariant, which runs on composed plans and is where the +10% step was actually tripped. **An item can be right about the rule and wrong about where it goes.**
+**AI-building learning:** `verify:parity` came back **IDENTICAL, 6,210 cases byte-for-byte**, and I nearly stopped there. The parity grid is the shape that reaches zero of these weeks — `targetedGrid` is the same, measured at 0 of 45,968. The number that mattered came from instrumenting the pass itself, not from the standing harness. Then my regression test's population proxy was `floor_protected`, which is **zero** on the slow grid; the arm failed on its first run and was right to. The trim's real fingerprint is a weekday session sitting at exactly its day's budget: 276 of 551.
+**The honest bit:** an earlier probe of mine reported "worst 5 km" and I had already written it into two documents before I realised it measured the wrong thing — it included the floor-cut weeks the old code restated correctly. The defect's worst gap is 2 km. **A number from a probe you wrote an hour ago is still a number you have to re-derive.**
+**Hook material:** a kilometre-and-a-half wrong on the one number a runner reads off their week — and the standing regression harness returned "byte-for-byte unchanged" because its grid cannot reach the runners it happens to.
+**Postable?:** yes
+
+---
 ## 2026-11-08 — PLAN-META-HR-DIVERGENCE-01 · the form showed guarded zones and saved the unguarded number
 **Shipped:** one owner of what an HR save means, called by both the form and the handler.
 **Dev learning:** `HRZonesSection` runs §50's max-HR guard to decide which zone table to show — it even renders a note saying the max was rejected — and then handed the caller the **raw typed number**. The handler fed that to `applyHrToPlan`, which rewrote every session's HR band from it, while the display guarded the same value again. So the runner looked at one set of zones and got another. The guard existed, was correct, had a single owner, and one of the two producers simply did not call it.
