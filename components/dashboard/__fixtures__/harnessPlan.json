@@ -12,7 +12,7 @@
     "max_hr": 178,
     "zone2_ceiling": 146,
     "version": "2.0",
-    "last_updated": "2026-11-05",
+    "last_updated": "2026-11-08",
     "notes": "Standard plan — 21.1km, 14 weeks",
     "primary_metric": "distance",
     "fitness_level": "beginner",
@@ -33,7 +33,7 @@
     "days_available": 3,
     "hard_session_relationship": "love",
     "terrain": "mixed",
-    "generated_at": "2026-11-05T21:09:21.090Z",
+    "generated_at": "2026-11-08T14:44:55.073Z",
     "generator_version": "2.0",
     "generator_input": {
       "age": 43,
@@ -71,8 +71,8 @@
     "terrain_effort_note": "Off-road, let effort and HR lead: the pace targets are a road reference, not a number to chase.",
     "hard_pref_note": "You said you like hard sessions. The plan earns longer peak runs and more intensity as your training history deepens — not before your legs have proven they will take it.",
     "age": 43,
-    "vdot": 32.1,
-    "vdot_training_anchor": 29.9,
+    "vdot": 32.10217728302869,
+    "vdot_training_anchor": 29.855024873216678,
     "vdot_discount_applied_pct": 7,
     "recalibration_weeks": [
       4,

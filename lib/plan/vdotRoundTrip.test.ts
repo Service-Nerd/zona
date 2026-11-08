@@ -21,6 +21,9 @@ import type { GeneratorInput, Plan } from '@/types/plan'
  * comparison. A gate that had to be loosened is the symptom; this is the cause.
  */
 
+/** The benchmark date, derived from today by the owner the gate names — never a literal. */
+const BENCH_DATE = slowGoalDates().benchmarkDate
+
 const r1 = (x: number) => Math.round(x * 10) / 10
 const BANDS = ['easyPaceStr', 'qualityPaceStr', 'cvPaceStr', 'intervalPaceStr',
                'marathonPaceStr', 'hmPaceStr'] as const
@@ -30,7 +33,7 @@ function wizard5kSpace(): { time: string; input: GeneratorInput }[] {
   const out: { time: string; input: GeneratorInput }[] = []
   for (let sec = 14 * 60; sec <= 40 * 60; sec += 5) {
     const time = `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, '0')}`
-    out.push({ time, input: { benchmark: { distance_km: 5, time, date: '2026-10-01' } } as unknown as GeneratorInput })
+    out.push({ time, input: { benchmark: { type: 'race', distance_km: 5, time, benchmark_date: BENCH_DATE } } as unknown as GeneratorInput })
   }
   return out
 }
@@ -46,7 +49,12 @@ describe('PLAN-VDOT-ROUNDTRIP-01 — the stamp reproduces the bands it was price
       current_weekly_km: 35, longest_recent_run_km: 14,
       recent_quality_training: 'occasional', hard_session_relationship: 'neutral',
       training_age: '2-5yr', days_available: 4, days_cannot_train: [], injury_history: [],
-      benchmark: { type: 'race', distance_km: 5, time, benchmark_date: '2026-04-20' },
+      // ⚠️ DERIVED, NEVER PINNED. `PINNED-CLOCK-01` caught this file on its first broad run with
+      // a literal `benchmark_date`, and it was right: §10's staleness ramp measures how long ago
+      // the runner actually RAN, so `vdotFor` is handed `new Date()` deliberately and a pinned
+      // date crosses a discount step as the calendar moves (GOALPACE-5K-CLOCK-01, where a
+      // fixture went red by one commit after eleven days of being read as 257).
+      benchmark: { type: 'race', distance_km: 5, time, benchmark_date: BENCH_DATE },
     } as unknown as GeneratorInput
   }
 
@@ -90,7 +98,7 @@ describe('PLAN-VDOT-ROUNDTRIP-01 — the stamp reproduces the bands it was price
       + `metadata:\n${bad.slice(0, 5).join('\n')}`).toBe(0)
   })
 
-  it('the 1dp stamp it replaced really did lose bands: 241 of 313', () => {
+  it('the 1dp stamp it replaced really did lose bands: measured 241 of 313', () => {
     // ⚠️ THE ARM ABOVE WOULD PASS ON A `buildPaceFromVDOT` THAT IGNORED ITS ARGUMENTS.
     // This one asserts the sensitivity is real, so the round-trip arm cannot be vacuous.
     let priced = 0, lossy = 0
@@ -103,7 +111,13 @@ describe('PLAN-VDOT-ROUNDTRIP-01 — the stamp reproduces the bands it was price
       if (BANDS.some(b => exact[b] != null && String(exact[b]) !== String(old[b]))) lossy++
     }
     expect(priced).toBe(313)
-    expect(lossy).toBe(241)
+    // ⚠️ A FLOOR, NOT AN EQUALITY. Measured 241 of 313 (77.0%) on 2026-11-08. The exact count
+    // depends on §10's discount, which depends on the benchmark's AGE — constant here because
+    // `BENCH_DATE` is derived from today, but a §10 amendment would move it for a reason that
+    // has nothing to do with this defect, and the arm's job is only to prove the old stamp was
+    // measurably lossy so the round-trip arm above cannot pass on an insensitive producer.
+    expect(lossy, 'the 1dp stamp is no longer lossy at all, so the arm above proves nothing')
+      .toBeGreaterThan(150)
   })
 
   it('a generated plan\'s stamp rebuilds that plan\'s own session pace strings', () => {
