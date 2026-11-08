@@ -118,6 +118,10 @@ No migration was needed: `claimed_at` already records the fact and already survi
 
 **10 attempts per user per hour** (`CHARITY_REDEEM_LIMIT` / `CHARITY_REDEEM_WINDOW_SECONDS`,
 `lib/charity/code.ts`), via the shared `checkRateLimit()` on key `charity:redeem:<user_id>`.
+⚠️ **The limiter moved to `lib/security/rateLimit.ts` on 2026-11-08** (`RATELIMIT-MODULE-PATH-01`): it was at
+`lib/ai/rateLimit.ts`, which stopped being accurate the moment this route became its second caller. The limit
+constants stay HERE, beside the feature, in `lib/charity/code.ts` — which is why `AI_ROUTE_LIMITS` was correctly
+left where it is rather than renamed.
 Exceeded → **429** `Too many attempts. Wait a few minutes and try again.`
 
 Checked **after** normalisation, so a blank submit does not spend an attempt, and **before** any
