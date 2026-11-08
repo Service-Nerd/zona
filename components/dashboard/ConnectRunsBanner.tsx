@@ -12,6 +12,8 @@
 
 import PendingAdjustmentBanner from '@/components/shared/PendingAdjustmentBanner'
 import { createClient } from '@/lib/supabase/client'
+import { writeUserSettings } from '@/lib/supabase/userSettingsWrite'
+import { currentUserId } from '@/lib/analytics'
 import { Capacitor } from '@capacitor/core'
 import { useEffect, useState } from 'react'
 
@@ -55,17 +57,18 @@ export default function ConnectRunsBanner() {
 
   async function dismiss() {
     setVisible(false)  // optimistic — instant fade
-    try {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) return
-      await supabase.from('user_settings').upsert({
-        id: user.id,
-        connect_runs_banner_dismissed_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      })
-    } catch {
-      // Stamp failed — next session-day open will retry. Acceptable.
-    }
+    // ⚠️ THE ONE OF THE FOUR WHOSE OLD BEHAVIOUR WAS ALREADY RIGHT, and its comment said so:
+    // a lost stamp means the banner returns on the next session-day open, which is a re-ask and
+    // not a wrong number. Converted anyway so the policy has one owner — the error is now
+    // LOGGED rather than swallowed, and the optimistic `setVisible(false)` above deliberately
+    // stands either way, because re-showing a dismissed banner in the same session would be
+    // worse than losing the stamp.
+    const uid = await currentUserId(supabase)
+    if (!uid) return
+    await writeUserSettings(supabase, uid, {
+      connect_runs_banner_dismissed_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    }, { what: 'banner dismissal', severity: 'log' })
   }
 
   if (!visible) return null

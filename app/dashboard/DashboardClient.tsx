@@ -48,6 +48,9 @@ import { trackEvent } from '@/lib/analytics'
 import AdjustmentDiff from '@/components/shared/AdjustmentDiff'
 import ExternalLink from '@/components/shared/ExternalLink'
 import { authedFetch } from '@/lib/supabase/authedFetch'
+// USER-SETTINGS-UNREAD-WRITE-01 — the ONE owner of a client write to `user_settings`.
+// Eighteen hand-written copies lived here and eleven dropped their `{ error }`.
+import { writeUserSettings, updateUserSettings } from '@/lib/supabase/userSettingsWrite'
 import { fetchPlanFromUrl, fetchPlanForUser, savePlanForUser, PlanReadError, DEFAULT_GIST_URL, EMPTY_PLAN, getCurrentWeek, getCurrentWeekIndex, isDatePastWeek, parseLocalDate, readPlanJson } from '@/lib/plan'
 import { resolveEffectiveDay, SESSION_OVERRIDE_COLUMNS } from '@/lib/plan/effectiveSessions'
 import { RUN_ANALYSIS_CARD_COLUMNS, type RunAnalysisCardRow } from '@/lib/coaching/runAnalysisColumns'
@@ -799,7 +802,14 @@ export default function DashboardClient() {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return
     // 1. user_settings is the single source of truth for live HR values
-    await supabase.from('user_settings').upsert({ id: user.id, resting_hr: rhr, max_hr: mhr, max_hr_source: effectiveSource, updated_at: new Date().toISOString() })
+    await writeUserSettings(supabase, user.id,
+      { resting_hr: rhr, max_hr: mhr, max_hr_source: effectiveSource, updated_at: new Date().toISOString() },
+      // 🔴 The runner TYPED these and tapped Save, and every SERVER surface — daily push,
+      // trial emails, coach prompts — can only read the table while this screen reads React
+      // state. A lost write here is `PROFILE-NAME-WRITE-01` exactly: correct on screen,
+      // empty in the row, for months. ⚠️ `tell_the_runner` is the right severity and there is
+      // NO ERROR CHANNEL IN SCOPE on this screen — filed as USER-SETTINGS-TELL-THE-RUNNER-01.
+      { what: 'heart rate', severity: 'log' })
     // 2. P1 — sync plan.meta so the zone2_ceiling fallback path never drifts
     //    from user_settings. Uses savePlanForUser (not savePlanForUser archives
     //    the plan — that's only done in the generate flow). Plain upsert here.
@@ -1866,8 +1876,9 @@ export default function DashboardClient() {
           // PROFILE-NAME-WRITE-01 sweep — still non-blocking, no longer SILENT. Three writes on
           // this table were `void`-swallowed; this one starts the trial, so a failure that says
           // nothing is the worst of them.
-          void supabase.from('user_settings').upsert({ id: user.id, trial_started_at: trialStartedAt, updated_at: new Date().toISOString() })
-            .then(({ error }) => { if (error) console.error('[trial_started_at] write failed', error.message) })
+          void writeUserSettings(supabase, user.id,
+            { trial_started_at: trialStartedAt, updated_at: new Date().toISOString() },
+            { what: 'trial start', severity: 'log' })
         }
 
         // Paid access — resolved by `resolveTier`, the SAME pure function
@@ -1945,8 +1956,8 @@ export default function DashboardClient() {
         if (!data?.timezone || data.timezone === 'UTC') {
           const tz = Intl.DateTimeFormat().resolvedOptions().timeZone
           if (tz && tz !== 'UTC') {
-            void supabase.from('user_settings').update({ timezone: tz }).eq('id', user.id)
-              .then(({ error }) => { if (error) console.error('[timezone] write failed', error.message) })
+            void updateUserSettings(supabase, user.id, { timezone: tz },
+              { what: 'timezone', severity: 'log' })
           }
         }
 
@@ -2987,8 +2998,9 @@ export default function DashboardClient() {
           setOrientationSeen(true)
           try {
             const { data: { user } } = await supabase.auth.getUser()
-            if (user) void supabase.from('user_settings').upsert({ id: user.id, orientation_seen: true, updated_at: new Date().toISOString() })
-              .then(({ error }) => { if (error) console.error('[orientation_seen] write failed', error.message) })
+            if (user) void writeUserSettings(supabase, user.id,
+              { orientation_seen: true, updated_at: new Date().toISOString() },
+              { what: 'orientation state', severity: 'log' })
           } catch {}
         }}
       />
@@ -3022,18 +3034,22 @@ export default function DashboardClient() {
           if (newMhr != null) setMaxHR(newMhr)
           if (writingDeviceMax) setMaxHRSource('observed')
           if (newRhr != null || newMhr != null) {
-            try {
-              const { data: { user } } = await supabase.auth.getUser()
-              if (user) {
-                await supabase.from('user_settings').upsert({
-                  id:         user.id,
-                  resting_hr: newRhr ?? undefined,
-                  max_hr:     newMhr ?? undefined,
-                  ...(writingDeviceMax ? { max_hr_source: 'observed' } : {}),
-                  updated_at: new Date().toISOString(),
-                })
-              }
-            } catch {}
+            // `currentUserId` cannot throw. The `try {} catch {}` that used to wrap this was
+            // guarding the LOOKUP as much as the write, and removing it un-guarded a network
+            // call — code review, 2026-11-08.
+            const uid = await currentUserId(supabase)
+            // The device offered these; the runner did not ask to persist them, and the next
+            // HealthKit read re-derives them. `log` is the honest severity.
+            // ⚠️ THE `try {} catch {}` IS GONE, NOT KEPT. The owner handles a THROWN transport
+            // error and a RETURNED `{ error }` on one policy — and those two spellings are
+            // exactly why the register that found these eleven had to match the EFFECT rather
+            // than `void`, which is one spelling of "nobody reads the result".
+            if (uid) await writeUserSettings(supabase, uid, {
+              resting_hr: newRhr ?? undefined,
+              max_hr:     newMhr ?? undefined,
+              ...(writingDeviceMax ? { max_hr_source: 'observed' } : {}),
+              updated_at: new Date().toISOString(),
+            }, { what: 'heart rate from your device', severity: 'log' })
           }
         }}
       />
@@ -3353,7 +3369,9 @@ export default function DashboardClient() {
                 if (!u) return
                 const now = new Date().toISOString()
                 setZoneDriftDismissedAt(now)
-                await supabase.from('user_settings').upsert({ id: u.id, zone_drift_dismissed_at: now, updated_at: now })
+                // A dismissal: a lost write costs the runner a re-prompt, not a wrong number.
+                await writeUserSettings(supabase, u.id, { zone_drift_dismissed_at: now, updated_at: now },
+                  { what: 'dismissal', severity: 'log' })
               }
 
               // R32 dismiss handler — 21-day window
@@ -3362,7 +3380,8 @@ export default function DashboardClient() {
                 if (!u) return
                 const now = new Date().toISOString()
                 setBenchmarkRecalDismissedAt(now)
-                await supabase.from('user_settings').upsert({ id: u.id, benchmark_recal_dismissed_at: now, updated_at: now })
+                await writeUserSettings(supabase, u.id, { benchmark_recal_dismissed_at: now, updated_at: now },
+                  { what: 'dismissal', severity: 'log' })
               }
 
               return (
@@ -3442,7 +3461,7 @@ export default function DashboardClient() {
         {screen === 'me'       && <MeScreen onOpenModify={plan && canModifyPlan(plan) ? () => { setPlanReadback(null); setModifyOrigin('me'); setModifyOpen(true); setScreen('plan') } : undefined} strengthAvailable={strengthDoorAvailable} strength={strength.status === 'off' || strength.status === 'loading' ? null : {
           subtitle: strengthSubtitle(strength.profile),
           onOpen: () => openStrengthSetup('me'),
-        }} openSection={meOpenSection} onOpenSectionConsumed={() => setMeOpenSection(null)} tierReason={tierReason} healthkitConnectedAt={healthkitConnectedAt} lastAppleHealthArrival={lastArrivalBySource.apple_health} lastStravaArrival={lastArrivalBySource.strava} stravaConnected={stravaConnected} plan={plan} initials={initials} athlete={plan?.meta?.athlete ?? ''} theme={theme} onThemeChange={() => { /* theme system retired — ADR-008 */ }} preferredUnits={preferredUnits} onUnitsChange={async (u: 'km' | 'mi') => { setPreferredUnits(u); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, preferred_units: u, updated_at: new Date().toISOString() }) } catch {} }} preferredMetric={preferredMetric} onMetricChange={async (m: 'distance' | 'duration') => { setPreferredMetric(m); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, preferred_metric: m, updated_at: new Date().toISOString() }) } catch {} }} restingHR={restingHR} maxHR={maxHR} maxHrSource={maxHRSource} birthYear={birthYear} onDeviceHRFound={async (rhr: number | null, mhr: number | null) => {
+        }} openSection={meOpenSection} onOpenSectionConsumed={() => setMeOpenSection(null)} tierReason={tierReason} healthkitConnectedAt={healthkitConnectedAt} lastAppleHealthArrival={lastArrivalBySource.apple_health} lastStravaArrival={lastArrivalBySource.strava} stravaConnected={stravaConnected} plan={plan} initials={initials} athlete={plan?.meta?.athlete ?? ''} theme={theme} onThemeChange={() => { /* theme system retired — ADR-008 */ }} preferredUnits={preferredUnits} onUnitsChange={async (u: 'km' | 'mi') => { setPreferredUnits(u); const uid = await currentUserId(supabase); if (uid) await writeUserSettings(supabase, uid, { preferred_units: u, updated_at: new Date().toISOString() }, { what: 'unit preference', severity: 'log' }) }} preferredMetric={preferredMetric} onMetricChange={async (m: 'distance' | 'duration') => { setPreferredMetric(m); const uid = await currentUserId(supabase); if (uid) await writeUserSettings(supabase, uid, { preferred_metric: m, updated_at: new Date().toISOString() }, { what: 'metric preference', severity: 'log' }) }} restingHR={restingHR} maxHR={maxHR} maxHrSource={maxHRSource} birthYear={birthYear} onDeviceHRFound={async (rhr: number | null, mhr: number | null) => {
   // §50 (HR-MAX-01) — device reconnect from Settings. Fill only missing values;
   // tag a fresh device max 'observed' (a floor) so the guard rejects it below the
   // age estimate. Never clobber a user_confirmed value. Display refreshes via
@@ -3454,18 +3473,16 @@ export default function DashboardClient() {
   if (newMhr != null) setMaxHR(newMhr)
   if (writingDeviceMax) setMaxHRSource('observed')
   if (newRhr != null || newMhr != null) {
-    try {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (user) await supabase.from('user_settings').upsert({
-        id: user.id,
-        resting_hr: newRhr ?? undefined,
-        max_hr: newMhr ?? undefined,
-        ...(writingDeviceMax ? { max_hr_source: 'observed' } : {}),
-        updated_at: new Date().toISOString(),
-      })
-    } catch {}
+    const uid = await currentUserId(supabase)
+    // Same site one screen over (Me → device reconnect). Same severity, same reason.
+    if (uid) await writeUserSettings(supabase, uid, {
+      resting_hr: newRhr ?? undefined,
+      max_hr: newMhr ?? undefined,
+      ...(writingDeviceMax ? { max_hr_source: 'observed' } : {}),
+      updated_at: new Date().toISOString(),
+    }, { what: 'heart rate from your device', severity: 'log' })
   }
-}} firstName={firstName} lastName={lastName} profileEmail={profileEmail} onSaveName={async (name: string) => { setFirstName(name); try { const { data: { user } } = await supabase.auth.getUser(); if (!user) return false; const { error } = await supabase.from('user_settings').upsert({ id: user.id, first_name: name, updated_at: new Date().toISOString() }); if (error) { setFirstName(firstName); return false } return true } catch { setFirstName(firstName); return false } }} onOpenGenerate={() => setScreen('generate')} onOpenBenchmark={() => setScreen('benchmark')} onOpenReshape={() => setScreen('reshape')} onOpenFounderNote={() => setScreen('founder')} onRecheckEntitlement={runEntitlementRecheck} onActiveSectionChange={setMeActiveSection} onOpenZones={(returnTo?: string, editHr?: boolean) => { setZonesReturnSection(returnTo ?? null); setHrSheetOpen(!!editHr); setScreen('zones') }} charityGrantEndsAt={charityGrantEndsAt} onUpgrade={() => openUpgrade('me')} hasPaidAccess={hasPaidAccess} trialDaysLeft={trialDaysLeft} dynamicAdjustmentsEnabled={dynamicAdjustmentsEnabled} onDynamicAdjustmentsChange={async (enabled: boolean) => { setDynamicAdjustmentsEnabled(enabled); try { const { data: { user } } = await supabase.auth.getUser(); if (!user) { setDynamicAdjustmentsEnabled(!enabled); return } const { error } = await supabase.from('user_settings').upsert({ id: user.id, dynamic_adjustments_enabled: enabled, updated_at: new Date().toISOString() }); if (error) { console.error('[dynamic_adjustments_enabled] write failed', error.message); setDynamicAdjustmentsEnabled(!enabled) } } catch { setDynamicAdjustmentsEnabled(!enabled) } }} dailyPushEnabled={dailyPushEnabled} onDailyPushEnabledChange={async (enabled: boolean) => { setDailyPushEnabled(enabled); try { const { data: { user } } = await supabase.auth.getUser(); if (!user) { setDailyPushEnabled(!enabled); return } const { error } = await supabase.from('user_settings').upsert({ id: user.id, daily_push_enabled: enabled, updated_at: new Date().toISOString() }); if (error) { console.error('[daily_push_enabled] write failed', error.message); setDailyPushEnabled(!enabled) } } catch { setDailyPushEnabled(!enabled) } }} lastAdjustmentCheckAt={lastAdjustmentCheckAt} lastAdjustmentCheckFoundChange={lastAdjustmentCheckFoundChange} hasPendingAdjustment={!!pendingAdjustment} recentChanges={recentChanges} />}
+}} firstName={firstName} lastName={lastName} profileEmail={profileEmail} onSaveName={async (name: string) => { setFirstName(name); const uid = await currentUserId(supabase); if (!uid) { setFirstName(firstName); return false } const ok = await writeUserSettings(supabase, uid, { first_name: name, updated_at: new Date().toISOString() }, { what: 'name', severity: 'log' }); if (!ok) setFirstName(firstName); return ok }} onOpenGenerate={() => setScreen('generate')} onOpenBenchmark={() => setScreen('benchmark')} onOpenReshape={() => setScreen('reshape')} onOpenFounderNote={() => setScreen('founder')} onRecheckEntitlement={runEntitlementRecheck} onActiveSectionChange={setMeActiveSection} onOpenZones={(returnTo?: string, editHr?: boolean) => { setZonesReturnSection(returnTo ?? null); setHrSheetOpen(!!editHr); setScreen('zones') }} charityGrantEndsAt={charityGrantEndsAt} onUpgrade={() => openUpgrade('me')} hasPaidAccess={hasPaidAccess} trialDaysLeft={trialDaysLeft} dynamicAdjustmentsEnabled={dynamicAdjustmentsEnabled} onDynamicAdjustmentsChange={async (enabled: boolean) => { setDynamicAdjustmentsEnabled(enabled); const uid = await currentUserId(supabase); if (!uid) { setDynamicAdjustmentsEnabled(!enabled); return } if (!await writeUserSettings(supabase, uid, { dynamic_adjustments_enabled: enabled, updated_at: new Date().toISOString() }, { what: 'adjustment setting', severity: 'log' })) setDynamicAdjustmentsEnabled(!enabled) }} dailyPushEnabled={dailyPushEnabled} onDailyPushEnabledChange={async (enabled: boolean) => { setDailyPushEnabled(enabled); const uid = await currentUserId(supabase); if (!uid) { setDailyPushEnabled(!enabled); return } if (!await writeUserSettings(supabase, uid, { daily_push_enabled: enabled, updated_at: new Date().toISOString() }, { what: 'notification setting', severity: 'log' })) setDailyPushEnabled(!enabled) }} lastAdjustmentCheckAt={lastAdjustmentCheckAt} lastAdjustmentCheckFoundChange={lastAdjustmentCheckFoundChange} hasPendingAdjustment={!!pendingAdjustment} recentChanges={recentChanges} />}
         {/* Calendar screen retired per brand-product-alignment v2 */}
         {screen === 'session'  && activeSessionData && <SessionScreen session={activeSessionData} aiNotes={sessionNotesAreAiAuthored(activeSessionData, plan?.meta, plan?.weeks?.find(w => w.n === activeSessionData.weekN))} preloadedRuns={stravaRuns ?? []} onBack={() => setScreen(sessionOrigin)} onSaved={refreshCompletions} preferredUnits={preferredUnits} preferredMetric={preferredMetric} onSessionMetricChange={handleSessionMetricChange} savedMetricOverride={sessionMetricOverrides[`${activeSessionData.weekN}_${activeSessionData.key}`] ?? null} zone2Ceiling={effectiveZone2Ceiling ?? undefined} restingHR={restingHR} maxHR={effectiveMaxHR} aerobicPace={aerobicPace} stravaLoading={stravaLoading} runAnalysis={(activeSessionData?.weekN != null ? runAnalysisMap[activeSessionData.weekN]?.[activeSessionData?.key ?? ''] : null) ?? null} driftContext={buildDriftContext(plan, runAnalysisMap, activeSessionData?.weekN, activeSessionData?.key)} hasPaidAccess={hasPaidAccess} onUpgrade={() => openUpgrade('session')} onOpenCoach={() => setScreen('coach')} goalPace={(plan?.meta as any)?.goal_pace_per_km ?? null} guidance={guidanceMap.get(activeSessionData?.type ?? '') ?? null} nextSession={activeNextSession} onLinkedComplete={(data) => { setPostRunOrigin('session'); setActivePostRunData(data); setScreen('post-run') }} autoMatch={activeAutoMatch} />}
         {screen === 'strength-session' && activeStrength && (() => {
@@ -3531,7 +3548,7 @@ export default function DashboardClient() {
           if (wN == null) return
           setRunAnalysisMap(prev => ({ ...prev, [wN]: { ...(prev[wN] ?? {}), [sessionDay]: row } }))
         }} preferredUnits={preferredUnits} zone2Ceiling={effectiveZone2Ceiling} hasPaidAccess={hasPaidAccess} onOpenCoach={() => setScreen('coach')} runAnalysis={(activePostRunData.weekN != null ? runAnalysisMap[activePostRunData.weekN]?.[activePostRunData.session?.key ?? ''] : null) ?? null} aerobicPace={aerobicPace} goalPace={(plan?.meta as any)?.goal_pace_per_km ?? null} />}
-        {screen === 'generate' && <GeneratePlanScreen preferredUnits={preferredUnits} charityCohort={charityCohort} onBack={() => setScreen(plan && plan !== EMPTY_PLAN ? 'me' : 'today')} firstName={firstName} lastName={lastName} restingHR={restingHR} maxHR={maxHR} maxHrSource={maxHRSource} birthYear={birthYear} onBirthYearSave={async (y) => { setBirthYear(y); if (userId) await supabase.from('user_settings').update({ birth_year: y, date_of_birth: null }).eq('id', userId) }} onPlanSaved={handlePlanSaved} onPlanEnriched={handlePlanEnriched} isOnboarding={!plan || plan === EMPTY_PLAN} hasExistingPlan={!!(plan && plan !== EMPTY_PLAN)} hasPaidAccess={hasPaidAccess} onUpgrade={() => openUpgrade('wizard')} onRecheckEntitlement={runEntitlementRecheck}
+        {screen === 'generate' && <GeneratePlanScreen preferredUnits={preferredUnits} charityCohort={charityCohort} onBack={() => setScreen(plan && plan !== EMPTY_PLAN ? 'me' : 'today')} firstName={firstName} lastName={lastName} restingHR={restingHR} maxHR={maxHR} maxHrSource={maxHRSource} birthYear={birthYear} onBirthYearSave={async (y) => { setBirthYear(y); if (userId) await updateUserSettings(supabase, userId, { birth_year: y, date_of_birth: null }, { what: 'year of birth', severity: 'log' }) }} onPlanSaved={handlePlanSaved} onPlanEnriched={handlePlanEnriched} isOnboarding={!plan || plan === EMPTY_PLAN} hasExistingPlan={!!(plan && plan !== EMPTY_PLAN)} hasPaidAccess={hasPaidAccess} onUpgrade={() => openUpgrade('wizard')} onRecheckEntitlement={runEntitlementRecheck}
           // STRENGTH-ENTRY-01 — asked only of a runner who can have strength and has none yet.
           // The save runs after the run plan's and is not awaited; the route records its own
           // failures, and the doors on Me and Plan stay open to try again.
@@ -3849,12 +3866,31 @@ function ConnectRunsScreen({ onConnected, onSkip, onHRFound }: {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) return
       const nowIso = new Date().toISOString()
-      await supabase.from('user_settings').upsert({
-        id: user.id,
+      // 🔴 THE ONE `tell_the_runner` IN THIS WAVE, and the only reason it can be is that
+      // `ConnectRunsScreen` HAS an error channel (`setError`, rendered below). The runner has
+      // just connected Apple Health; if this write is lost the connection LOOKS done and the
+      // server thinks it never happened — they get asked again, and nothing ingests meanwhile.
+      //
+      // ⚠️ AND THAT IS THE INVERSION WORTH RECORDING: of the four writes a runner explicitly
+      // MAKES — heart rate, units, metric, year of birth — **not one has an error channel in
+      // scope**, while the three that do are device and permission flags whose loss costs a
+      // re-prompt. The sites that can report are the ones whose failure matters least.
+      // Filed as USER-SETTINGS-TELL-THE-RUNNER-01 (🧭 Design Board, 👤 founder on the words).
+      const stamped = await writeUserSettings(supabase, user.id, {
         healthkit_connected_at: nowIso,
         connect_runs_seen:      true,
         updated_at:             nowIso,
-      })
+      }, { what: 'Apple Health connection', severity: 'tell_the_runner', onError: setError })
+      // 🔴 AND THE SEVERITY COULD NOT ACTUALLY TELL ANYONE — code review, 2026-11-08.
+      // `onConnected()` below unmounts this screen in the same tick, so the `setError` it just
+      // called was discarded and the wave's ONLY `tell_the_runner` site had **zero working
+      // consumers**. A severity nothing can exercise is decorative config in a new costume.
+      //
+      // ⚠️ The repair is a behaviour decision, not plumbing: **do not advance past a connection
+      // the server has no record of.** HealthKit auth succeeded, so retrying costs the runner one
+      // tap and re-runs the stamp and the first sync; advancing would have shown them a
+      // confirmed connection while every server surface still believed they had never connected.
+      if (!stamped) return
       void syncOnAppOpen('connect').catch((e) => {
         console.warn('[HealthKit] first sync after connect failed:', e)
       })
@@ -3881,11 +3917,13 @@ function ConnectRunsScreen({ onConnected, onSkip, onHRFound }: {
     try {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) return
-      await supabase.from('user_settings').upsert({
-        id: user.id,
+      // A seen-flag on the SKIP path: a lost write means the card reappears, which is a
+      // re-ask and not a wrong number. `log` — and deliberately NOT `tell_the_runner`, unlike
+      // the connect write above: a runner who just chose "skip" must not be handed an error.
+      await writeUserSettings(supabase, user.id, {
         connect_runs_seen: false,
         updated_at: new Date().toISOString(),
-      })
+      }, { what: 'skip choice', severity: 'log' })
       onSkip()
     } finally {
       setPending(null)
@@ -4026,15 +4064,16 @@ function PushOnboardingScreen({ onEnabled, onSkip }: {
   const supabase = createClient()
 
   async function stampFlag(value: boolean) {
-    try {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) return
-      await supabase.from('user_settings').upsert({
-        id: user.id,
-        push_permission_seen: value,
-        updated_at: new Date().toISOString(),
-      })
-    } catch {}
+    // 🔴 NOTHING HERE MAY THROW. `skip()` below is `try … finally` with NO catch, so a
+    // rejection would mean `onSkip()` never runs and the runner is stranded on this screen.
+    // The `try {} catch {}` I removed was guarding this lookup — code review, 2026-11-08.
+    const uid = await currentUserId(supabase)
+    if (!uid) return
+    // A seen-flag: a lost write means the prompt reappears, which is a re-ask and not a
+    // wrong number. `log`, and the runner is told nothing — they did not ask for this.
+    await writeUserSettings(supabase, uid,
+      { push_permission_seen: value, updated_at: new Date().toISOString() },
+      { what: 'notification preference', severity: 'log' })
   }
 
   async function enableNotifications() {

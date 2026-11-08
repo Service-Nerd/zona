@@ -14,6 +14,8 @@ import { BRAND } from '@/lib/brand'
 import { syncOnAppOpen } from '@/lib/health/clientSync'
 import { connectionFreshness, connectionStaleCopy, connectionToneVar } from '@/lib/ui/connectionFreshness'
 import { createClient } from '@/lib/supabase/client'
+import { writeUserSettings } from '@/lib/supabase/userSettingsWrite'
+import { currentUserId } from '@/lib/analytics'
 import { Capacitor } from '@capacitor/core'
 import { useEffect, useState } from 'react'
 
@@ -72,15 +74,17 @@ export default function AppleHealthConnectionRow({ onHRFound, lastArrival }: {
         console.warn('[HealthKit] auth not granted (denial, unavailable, or framework not linked)')
         return
       }
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) return
+      const uid = await currentUserId(supabase)
+      if (!uid) return
       const nowIso = new Date().toISOString()
-      await supabase.from('user_settings').upsert({
-        id: user.id,
+      // Code review 2026-11-08: the USER-SETTINGS-UNREAD-WRITE-01 gate walked `app/` only, so
+      // this file was outside its population. `setConnectedAt(nowIso)` ran after an unread
+      // write, so the row could say "never connected" while the screen said connected.
+      const stamped = await writeUserSettings(supabase, uid, {
         healthkit_connected_at: nowIso,
         updated_at: nowIso,
-      })
-      setConnectedAt(nowIso)
+      }, { what: 'Apple Health connection', severity: 'log' })
+      if (stamped) setConnectedAt(nowIso)
       // First sync — best-effort, don't block UI
       void syncOnAppOpen('connect').catch((e) => {
         console.warn('[HealthKit] first sync after connect failed:', e)
@@ -105,14 +109,14 @@ export default function AppleHealthConnectionRow({ onHRFound, lastArrival }: {
   async function disconnect() {
     setBusy(true)
     try {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) return
-      await supabase.from('user_settings').upsert({
-        id: user.id,
+      const uid = await currentUserId(supabase)
+      if (!uid) return
+      // Same shape as the connect above, one function down: only say it is disconnected if it is.
+      const cleared = await writeUserSettings(supabase, uid, {
         healthkit_connected_at: null,
         updated_at: new Date().toISOString(),
-      })
-      setConnectedAt(null)
+      }, { what: 'Apple Health disconnection', severity: 'log' })
+      if (cleared) setConnectedAt(null)
     } finally { setBusy(false) }
   }
 

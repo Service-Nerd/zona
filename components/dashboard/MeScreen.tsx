@@ -46,6 +46,8 @@ import { SectionLabel } from '@/components/shared/SectionLabel'
 import { authedFetch } from '@/lib/supabase/authedFetch'
 import { clearNativeState } from '@/lib/native/sharedStore'
 import { createClient } from '@/lib/supabase/client'
+import { writeUserSettings } from '@/lib/supabase/userSettingsWrite'
+import { currentUserId } from '@/lib/analytics'
 import { formatDate } from '@/lib/format'
 import { getCurrentWeekIndex, readPlanJson } from '@/lib/plan'
 import { Z_LAYERS } from '@/lib/ui/zLayers'
@@ -375,16 +377,22 @@ function StravaConnectionRow({ lastArrival }: {
   async function disconnect() {
     setDisconnecting(true)
     try {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) return
-      await supabase.from('user_settings').upsert({
-        id: user.id,
+      const uid = await currentUserId(supabase)
+      if (!uid) return
+      // 🔴 THE LIVE CASE OF USER-SETTINGS-UNREAD-WRITE-01, found by code review on
+      // 2026-11-08 when the gate for that item turned out to walk `app/` only. `setConnected
+      // (false)` ran after an unread write, so a RETURNED `{ error }` — an RLS refusal, say —
+      // left the screen saying DISCONNECTED while the Strava tokens survived in the row. A
+      // thrown error was covered by the `finally`; a returned one was not, which is the pair
+      // the owner exists to handle on one policy.
+      const cleared = await writeUserSettings(supabase, uid, {
         strava_access_token: null,
         strava_refresh_token: null,
         strava_token_expires_at: null,
         updated_at: new Date().toISOString(),
-      })
-      setConnected(false)
+      }, { what: 'Strava disconnection', severity: 'log' })
+      // Only say it is disconnected if it IS.
+      if (cleared) setConnected(false)
     } finally { setDisconnecting(false) }
   }
 

@@ -41,35 +41,104 @@ describe('PROFILE-NAME-WRITE-01', () => {
   // does anything with `{ error }`. It is scoped to the TABLE rather than to the name
   // columns on purpose: the first version of this arm found three defects that were not
   // part of the bug it was written for, and only because of that scope.
-  it('every write to user_settings reads its own error', () => {
+  it('🔴 no raw write to user_settings survives in the client — one owner, one error policy', () => {
+    // 🥇 THE ARM GOT STRONGER AND THE DEBT WENT TO ZERO, in the same commit
+    // (USER-SETTINGS-UNREAD-WRITE-01, 2026-11-08). This used to count writes that drop their
+    // `{ error }` and hold the number at 11 as declared debt. Eleven inline fixes would have
+    // left the nineteenth write free to drop its error again, so the write itself moved behind
+    // one owner — `lib/supabase/userSettingsWrite.ts`, which reads the error unconditionally.
+    // The check is now the `noRawAnthropicCalls.test.ts` shape: not "does each site handle it"
+    // but "can a site exist that doesn't".
+    //
+    // 🔴 THREE DEFECTS IN THE OLD REGISTER, all found by trying to ACT on its list rather than
+    // by reading it, and stated because every one of them is a recorded class:
+    //   1. IT COUNTED LINES, NOT WRITES. One JSX line here is 1,224 characters and carries TWO
+    //      writes (`preferred_units`, `preferred_metric`). Counted once → UNDER-reported.
+    //   2. THE `{ error }` WINDOW WAS THREE LINES, and the wizard's onboarding write reads its
+    //      error EIGHT lines down via `Promise.allSettled` → a correctly-handled write reported
+    //      as debt → OVER-reported. ⚠️ The two cancelled to the same total of 11, which is
+    //      exactly how a wrong register survives: the number looked stable for four days.
+    //   3. THE MESSAGE WAS `line.slice(0, 120)`, so for those long lines it printed a prop list
+    //      and no write at all. **I nearly dismissed two real sites as false positives of my
+    //      own check.** A register whose output does not show what it found gets ignored.
     const src = stripComments(fs.readFileSync(CLIENT, 'utf8'))
-    const lines = src.split('\n')
+
+    /**
+     * The one write that stays raw, with its reason. ⚠️ A NAMED LIST, not a pattern: it is
+     * inside `Promise.allSettled` so a failed settings write cannot take the PLAN write down
+     * with it, and its error is read 8 lines below as `onboardWrite.value.error`, logged, and
+     * reported to `/api/ops/onboarding-event` — richer than the owner's policy, not poorer.
+     * Keyed by the write's own TEXT, never by line number (`buttonGeometry`'s `file:line`
+     * baseline silently stopped looking once a line was inserted above it).
+     */
+    const RAW_BY_DESIGN = ['upsert(onboardPatch)']
+
     const offenders: string[] = []
-    lines.forEach((l, i) => {
-      if (!/\.from\(['"]user_settings['"]\)/.test(l)) return
-      if (!/\.(upsert|update|insert|delete)\(/.test(l)) return
-      // Statement-scoped, never line-scoped: a chained `.then` sits on the NEXT line, and
-      // a line-only test reported the three fixed writes as unfixed. Bound the region.
-      const stmt = lines.slice(i, i + 3).join('\n')
-      const reads = /\{\s*error(\s*:[^}]*)?\s*\}\s*=/.test(stmt)       // const { error } = await …
-        || /\.then\(\(\{\s*error\s*\}\)/.test(stmt)                   // ….then(({ error }) => …
-      if (!reads) offenders.push(`${i + 1}: ${l.trim().slice(0, 120)}`)
+    let writes = 0
+    src.split('\n').forEach((l, i) => {
+      // PER WRITE, not per line — `matchAll`, because one line here holds two.
+      for (const m of Array.from(l.matchAll(/\.from\(['"]user_settings['"]\)\s*\.(upsert|update|insert|delete)\(/g))) {
+        writes++
+        const at = m.index!
+        const write = l.slice(at, at + 150)
+        if (RAW_BY_DESIGN.some(x => write.includes(x))) continue
+        // THE WRITE, not the first 120 characters of whatever line it sits on.
+        offenders.push(`${i + 1}: …${write.trim()}`)
+      }
     })
 
-    // 🔻 DECLARED DEBT, NOT A PASS — the SWEEP-BASELINE-01 pattern.
-    //
-    // Scoping this arm to the EFFECT rather than to `void` found 11 further writes to
-    // this table whose `{ error }` nothing reads. They are NOT part of the reported bug
-    // and none has been analysed: each needs its own answer to "what should the runner
-    // see when this fails?", and changing 11 call sites without that answer is fixing
-    // them without understanding them. Filed as `USER-SETTINGS-UNREAD-WRITE-01`.
-    //
-    // ⚠️ A declared reason is not a fixed problem. This number may only FALL. It is a
-    // COUNT and not a list of line numbers on purpose — a list re-keys itself every time
-    // a line is inserted above it, which this repo has already paid for once
-    // (`buttonGeometry`'s `file:line` baseline silently stopped looking).
-    const BASELINE = 11
-    expect(offenders.length, `\n${offenders.join('\n')}\n`).toBeLessThanOrEqual(BASELINE)
+    // The population, or this passes on nothing — `an empty population renders as a clean
+    // result`. 18 raw writes before this commit, 1 after.
+    expect(writes, 'the write regex matched nothing — check the regex, not the file').toBeGreaterThan(0)
+    expect(
+      offenders,
+      'Use `writeUserSettings` / `updateUserSettings` (lib/supabase/userSettingsWrite.ts), which '
+      + 'reads the error and takes the severity as an argument. A raw write that is right anyway '
+      + 'goes in RAW_BY_DESIGN with its reason:\n' + offenders.join('\n'),
+    ).toEqual([])
+  })
+
+  it('…and the owner is the only module that writes the table from the client', () => {
+    // The other half: an owner nothing uses is decorative, and a second client-side writer
+    // somewhere else in `app/` would reopen the class one directory over.
+    const owner = 'lib/supabase/userSettingsWrite.ts'
+    const files: string[] = []
+    const walk = (d: string) => {
+      for (const n of fs.readdirSync(d)) {
+        const f = path.join(d, n)
+        if (fs.statSync(f).isDirectory()) walk(f)
+        else if (/\.tsx?$/.test(n) && !/\.test\./.test(n)) files.push(f)
+      }
+    }
+    // 🔴 IT WALKED `app/` ONLY, AND THAT IS THE DEFECT CLASS THIS COMMIT KEEPS CITING — code
+    // review, 2026-11-08, the day it shipped. **Four raw writes live in `components/dashboard/`**
+    // and the arm reported clean over all of them: `MeScreen`'s Strava disconnect (the LIVE one —
+    // `setConnected(false)` ran after an unread write, so an RLS refusal left the screen saying
+    // disconnected while the tokens survived), both halves of `AppleHealthConnectionRow`, and
+    // `ConnectRunsBanner`. **A checker whose population excludes the cases at risk**, written by
+    // someone who had just quoted that rule twice in the same diff.
+    for (const root of ['app', 'components']) walk(path.join(process.cwd(), root))
+    expect(files.length, 'the population is derived and must not be empty').toBeGreaterThan(50)
+    // ⚠️ AND THE POPULATION IS ASSERTED TO REACH THE DIRECTORY THAT WAS MISSING, not just to be
+    // non-empty: `app/` alone already passed the count above, which is exactly why the count
+    // alone was no protection.
+    expect(files.some(f => f.includes('/components/dashboard/')),
+      'the walk must reach components/dashboard — the four writes it originally missed live there')
+      .toBe(true)
+
+    const strays = files.filter(f => {
+      const rel = f.replace(process.cwd() + '/', '')
+      if (rel === owner) return false
+      const text = stripComments(fs.readFileSync(f, 'utf8'))
+      if (!/\.from\(['"]user_settings['"]\)\s*\.(upsert|update|insert|delete)\(/.test(text)) return false
+      // ⚠️ SERVER routes are OUT OF SCOPE and that is the decision, not an oversight: they
+      // hold the service-role client, can call `recordOpsEvent` directly, and several must
+      // fail the REQUEST rather than log. The owner is the CLIENT's policy.
+      if (rel.startsWith('app/api/')) return false
+      return !/upsert\(onboardPatch\)/.test(text) || /from\(['"]user_settings['"]\)\s*\.(upsert|update)\((?!onboardPatch)/.test(text)
+    })
+    expect(strays.map(f => f.replace(process.cwd() + '/', '')),
+      'a client surface writes user_settings without the owner').toEqual([])
   })
 
   it('the server route back-fills the name and READS the error of its own write', () => {
