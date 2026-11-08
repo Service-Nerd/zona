@@ -207,7 +207,7 @@ describe('MAINT-ENRICH-VALIDATE-01 — coach_debrief is token-checked at the bou
     // a token check mentioned in a comment is not a token check (HOOK-RGBA-COMMENTS-01).
     const src = readFileSync(join(process.cwd(), 'lib/plan/enrichMaintenance.ts'), 'utf8')
       .replace(/\/\/.*$/gm, '').replace(/\/\*[\s\S]*?\*\//g, '')
-    expect(src).toContain("firstPlaceholder")
+    expect(src, 'the owner is CALLED, not merely named').toMatch(/\bfirstPlaceholder\(/)
     expect(src, 'no second definition of "this copy carries a token"').not.toMatch(/\{\{\[\^}\]\*\}\}/)
   })
 })

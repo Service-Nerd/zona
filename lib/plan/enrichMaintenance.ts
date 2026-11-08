@@ -159,11 +159,14 @@ export async function enrichMaintenanceBlock(
     // `plan_enrich_week_copy_rejected`, under its own kind because this is a different
     // enricher with a different prompt: one counter for two prompts cannot tell you which
     // one needs changing.
+    // The `userId` ARGUMENT, so `ops_events.user_id` is populated and
+    // `DB-USER-PURGE-01`'s argued `ON DELETE SET NULL` can reach it. A uuid in `detail` is
+    // JSONB that no constraint anonymises — which is what the race twin above did until
+    // code review caught the pair on 2026-11-08.
     void recordOpsEvent('maintenance_enrich_copy_rejected', {
-      user_id: userId,
       count: rejected.length,
       fields: rejected.map(r => `w${r.weekN}.${r.field}:${r.token}`).slice(0, 12),
-    })
+    }, userId)
   }
   return merged
 }

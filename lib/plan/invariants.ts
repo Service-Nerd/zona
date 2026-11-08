@@ -9933,10 +9933,18 @@ export function validateMaintenanceBlock(
     // than the race original would be a divergence with no argument behind it.
     {
       const MAINT_TOKEN_RE = /\{\{[^}]*\}\}/
+      //
+      // 🔴 `session.label` IS IN THE POPULATION, AND IT WAS NOT IN THE FIRST CUT — code
+      // review, same day. The `expected` string below claims *"only session.coach_notes may
+      // carry a token"*, and the scan read no session field at all. **That is the exact
+      // defect this commit's sibling was written to fix** (`INV-PLAN-NO-PLACEHOLDER-COPY`'s
+      // expected was wider than its population, one TYPE over), reproduced one function away
+      // within the hour. The race twin scans `session.label`; so does this one now.
       const copy: Array<[string, string | undefined]> = [
         [`w${w.n}.coach_debrief`, (w as unknown as { coach_debrief?: string }).coach_debrief],
         [`w${w.n}.label`, w.label],
         [`w${w.n}.theme`, w.theme],
+        ...placed.map(([day, sess]) => [`w${w.n}.${day}.label`, sess?.label] as [string, string | undefined]),
       ]
       for (const [where, text] of copy) {
         if (!text) continue

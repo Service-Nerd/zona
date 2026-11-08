@@ -106,6 +106,8 @@ racing. Three ways out:
    🔴 **A SECOND, DEAD THRESHOLD EXISTS and is the trap:** `ZONE_DISCIPLINE_BANDS` (85/70/50) is read
    only by `classifyZoneDiscipline`, which has **no call sites**. It is the obvious thing to reach
    for. **Bind to `ZONE_DRIFT_ABOVE_CEILING_PCT`.**
+   *(✅ Both were DELETED on 2026-11-08, `ZONE-DISCIPLINE-BANDS-DEAD-01`. The constraint stands;
+   the trap is gone. Left as written because this is the record of the sitting, not a live doc.)*
 3. The race-week collision resolved explicitly by one of A / B / C, written down.
 4. Documented in `ui-patterns.md`, so the next component inherits the meaning instead of guessing.
 

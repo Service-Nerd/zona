@@ -451,14 +451,22 @@ export async function enrich(
   const weekCopyRejected: WeekCopyRejection[] = []
   const merged = mergePlan(plan, result.data, tier, r => weekCopyRejected.push(r))
   if (weekCopyRejected.length > 0) {
+    // 🔴 THE `userId` ARGUMENT, NOT A `detail` KEY — code review, 2026-11-08. This read
+    // `{ user_id: userId, ... }` inside `detail`, so `ops_events.user_id` was NULL on every
+    // one of these rows. Two consequences, and the second is the serious one:
+    //   · a per-user query misses them, which is how you would ever ask "is it THIS runner's
+    //     plan the model keeps breaking?";
+    //   · `DB-USER-PURGE-01` anonymises this table on account deletion by an argued
+    //     `ON DELETE SET NULL` on `user_id`, deliberately, so the AI-spend ledger survives.
+    //     **A uuid buried in JSONB is outside what that constraint can reach**, so deleting
+    //     the account would have left it there.
     void recordOpsEvent('plan_enrich_week_copy_rejected', {
-      user_id: userId,
       count: weekCopyRejected.length,
       // The tokens, not the sentences — enough to see WHICH rule the model broke
       // without logging runner-facing prose into the ops ledger.
       fields: weekCopyRejected.map(r =>
         `${r.weekN == null ? 'meta' : `w${r.weekN}`}.${r.field}:${r.token}`).slice(0, 12),
-    })
+    }, userId)
   }
   return { plan: merged, outcome: { status: 'applied' } }
 }

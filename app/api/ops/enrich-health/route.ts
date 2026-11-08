@@ -81,15 +81,26 @@ export async function POST(req: NextRequest) {
   // see a screen). `OPS-SUBS-UNHANDLED-SEEN-01`'s rule applies — counted and
   // reported, never alerting: a rejection is the guard WORKING, so it must not
   // move `healthy`.
+  //
+  // ⚠️ TWO KINDS SINCE 2026-11-08, AND THEY ARE REPORTED SEPARATELY ON PURPOSE
+  // (MAINT-ENRICH-VALIDATE-01). The race enricher and the maintenance enricher have
+  // different prompts; one counter across both tells you a rule is being broken and not
+  // which prompt to change, which is the only question the rate can answer.
   const since = new Date(Date.now() - 30 * 86_400_000).toISOString()
   const { data: rejectRows, error: rejectErr } = await supabase
     .from('ops_events')
     .select('created_at')
     .eq('kind', 'plan_enrich_week_copy_rejected')
     .gte('created_at', since)
+  const { data: maintRejectRows, error: maintRejectErr } = await supabase
+    .from('ops_events')
+    .select('created_at')
+    .eq('kind', 'maintenance_enrich_copy_rejected')
+    .gte('created_at', since)
   // A failed count must read as UNKNOWN, never as zero — "no rows" and "did not
   // look" are the pair this repo keeps confusing (`OPS-SUBS-UNHANDLED-SEEN-01`).
   const weekCopyRejected30d: number | null = rejectErr ? null : (rejectRows?.length ?? 0)
+  const maintCopyRejected30d: number | null = maintRejectErr ? null : (maintRejectRows?.length ?? 0)
 
   console.log(
     `[ops/enrich-health] alert=${verdict.alert} without_voice=${verdict.withoutVoice}`
@@ -106,7 +117,17 @@ export async function POST(req: NextRequest) {
     // could not be read, which is not the same as none.
     boundary: {
       weekCopyRejected30d,
-      meaning: 'model-authored week label/theme carrying a {{placeholder}}, refused by the merge; engine copy kept',
+      // 🔴 THIS STRING SAID "week label/theme" AND THE UNION BEHIND IT NOW CARRIES SEVEN
+      // FIELDS (code review, 2026-11-08). `ENRICH-META-TOKEN-01` added `notes` and
+      // `coach_intro`; `ENRICH-RISK-TOKEN-01` added `confidence_risks` and `session_label`.
+      // A reader's stated MEANING going stale against the thing it counts mis-attributes
+      // which prompt rule broke — which is the whole and only use of this number.
+      meaning: 'model-authored plan prose (meta.notes, meta.coach_intro, meta.confidence_risks, '
+        + 'week label/theme, session label) carrying a {{placeholder}}, refused by the merge; '
+        + 'engine copy kept. session.coach_notes is the designed carrier and is never counted',
+      maintCopyRejected30d,
+      maintMeaning: 'a maintenance week coach_debrief carrying a {{placeholder}}, refused by the '
+        + 'merge; the week keeps no debrief. Separate prompt, so separate counter',
     },
   })
 }

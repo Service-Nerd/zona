@@ -92,6 +92,31 @@ describe('INV-MAINT-NO-PLACEHOLDER-COPY — the population, which is the whole f
     expect(placeholderCodes(validateSavedPlan(p, {} as GeneratorInput))).toEqual([])
   })
 
+  it('🔴 session.label is in the population too, and it was not in the first cut', () => {
+    // Code review, same day: the `expected` string says "only session.coach_notes may carry
+    // a token" while the scan read no session field at all — the exact expected-wider-than-
+    // population defect this commit's sibling was written to fix, reproduced within the hour.
+    const p = maintenancePlan()
+    const firstDay = Object.keys(p.weeks[0].sessions ?? {})[0]!
+    ;(p.weeks[0].sessions as Record<string, { label?: string }>)[firstDay]!.label = 'Easy {{session_distance}} km'
+    const v = validateSavedPlan(p, {} as GeneratorInput)
+    expect(placeholderCodes(v)).toEqual(['INV-MAINT-NO-PLACEHOLDER-COPY'])
+    expect(v.find(x => x.code === 'INV-MAINT-NO-PLACEHOLDER-COPY')!.message).toContain(`.${firstDay}.label`)
+  })
+
+  it('🔴 the `expected` string names exactly the one field the scan exempts', () => {
+    // The arm that makes the claim falsifiable rather than aspirational: every field name the
+    // `expected` promises is either scanned or is the named carrier.
+    const src = readFileSync(join(process.cwd(), 'lib/plan/invariants.ts'), 'utf8')
+    const at = src.indexOf("code: 'INV-MAINT-NO-PLACEHOLDER-COPY'")
+    expect(at, 'the violation block really was found').toBeGreaterThan(0)
+    const block = src.slice(src.lastIndexOf('const copy:', at), src.indexOf('}', at + 200))
+    for (const scanned of ['coach_debrief', '.label', '.theme']) {
+      expect(block, `${scanned} must be in the scan`).toContain(scanned)
+    }
+    expect(block, 'coach_notes is the carrier and must NOT be scanned').not.toMatch(/coach_notes\]/)
+  })
+
   it('engine-authored label and theme are scanned too — free coverage, a producer defect', () => {
     const p = maintenancePlan()
     p.weeks[1].theme = 'Back to {{session_distance}} km.'
@@ -120,5 +145,71 @@ describe('INV-MAINT-NO-PLACEHOLDER-COPY — the population, which is the whole f
     }
     expect(schema).toContain('coach_debrief')
     expect(schema).toContain('coach_notes')
+  })
+})
+
+/**
+ * MAINT-ENRICH-VALIDATE-01 — the attribution, found by `/code-review` on the day it shipped.
+ *
+ * 🔴 TWO DEFECTS, AND I COPIED THE FIRST FROM THE RACE PATH. `maintenance_enrich_copy_rejected`
+ * was WRITE-ONLY (a writer and a union member, no reader) — the inert-field class the race
+ * twin's own test arm exists to prevent. And both calls passed the runner's uuid inside
+ * `detail` instead of `recordOpsEvent`'s third argument, so `ops_events.user_id` was NULL:
+ * a per-user query misses the rows, and `DB-USER-PURGE-01`'s argued `ON DELETE SET NULL`
+ * cannot anonymise a uuid buried in JSONB. Fixed as a pair.
+ */
+describe('MAINT-ENRICH-VALIDATE-01 — the rejection is attributed, and reachable', () => {
+  const strip = (s: string) => s.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^[ \t]*\/\/.*$/gm, '')
+  const read = (...parts: string[]) => strip(readFileSync(join(process.cwd(), ...parts), 'utf8'))
+
+  it('the kind is a UNION MEMBER, not a mention', () => {
+    expect(read('lib', 'ops', 'recordOpsEvent.ts'))
+      .toMatch(/^\s*\|\s*'maintenance_enrich_copy_rejected'\s*$/m)
+  })
+
+  it('🔴 it HAS A READER — an ops kind with none is the inert-field class', () => {
+    const route = read('app', 'api', 'ops', 'enrich-health', 'route.ts')
+    expect(route, 'the route must QUERY the kind, not merely mention it')
+      .toMatch(/\.eq\(\s*'kind'\s*,\s*'maintenance_enrich_copy_rejected'\s*\)/)
+    expect(route).toMatch(/\bmaintCopyRejected30d\b/)
+    expect(route, 'a rejection is the guard working and must not move `healthy`')
+      .toMatch(/healthy: !verdict\.alert/)
+    // A failed count reads as UNKNOWN, never zero — "no rows" and "did not look" are the
+    // pair this repo keeps confusing.
+    expect(route).toMatch(/maintRejectErr \? null :/)
+  })
+
+  it('🔴 the uuid goes in the ARGUMENT, so the deletion constraint can reach it', () => {
+    // `DB-USER-PURGE-01`: `ops_events.user_id` is an argued SET NULL, not a cascade, so the
+    // AI-spend ledger survives a deletion anonymised. A uuid in `detail` is outside it.
+    // Both enrichers, because this was a copied mistake.
+    for (const f of [['lib', 'plan', 'enrichMaintenance.ts'], ['lib', 'plan', 'enrich.ts']]) {
+      const src = read(...f)
+      const calls = Array.from(src.matchAll(/recordOpsEvent\(\s*'[a-z_]*enrich[a-z_]*copy_rejected'[\s\S]{0,600}?\n {4}\}, userId\)/g))
+      expect(calls.length, `${f.join('/')}: the copy-rejection event must pass userId as the third argument`).toBe(1)
+      expect(calls[0]![0], `${f.join('/')}: no uuid inside detail`).not.toMatch(/user_id:/)
+    }
+  })
+
+  it("the reader's stated MEANING names what the union actually carries", () => {
+    // 🔴 It said "week label/theme" while the union had grown to seven fields across three
+    // items. A reader's description going stale against the thing it counts mis-attributes
+    // which prompt rule broke, which is this number's only use.
+    const route = read('app', 'api', 'ops', 'enrich-health', 'route.ts')
+    const union = read('lib', 'plan', 'enrich.ts')
+    // ⚠️ BOUNDED FROM `boundary: {`, not from the first `meaning:`. The first cut sliced to
+    // `indexOf('maintCopyRejected30d')`, which with comments stripped finds the CONST
+    // DECLARATION above the object — a negative-length slice, so the arm read an empty string.
+    // Caught by its own "really was read" assertion, which is why that assertion is here.
+    const boundaryAt = route.indexOf('boundary: {')
+    const meaning = route.slice(route.indexOf('meaning:', boundaryAt), route.indexOf('})', boundaryAt))
+    expect(meaning.length, 'the meaning string really was read').toBeGreaterThan(50)
+    for (const field of ['notes', 'coach_intro', 'confidence_risks', 'label', 'theme']) {
+      expect(union, `${field} must be in the rejection union for this arm to mean anything`)
+        .toContain(`'${field}'`)
+    }
+    for (const named of ['coach_intro', 'confidence_risks', 'label', 'theme', 'coach_notes']) {
+      expect(meaning, `the meaning must name ${named}`).toContain(named)
+    }
   })
 })

@@ -106,10 +106,12 @@ ceiling; too-hard at 23, 40, 47 … 94%. The threshold sits **inside that gap**.
 n = 42 rows with HR data — *"Thin. The direction is unambiguous but the exact cut should be
 re-measured once the cohort grows."*
 
-🔴 **AND A SECOND, DEAD THRESHOLD EXISTS, which is the trap.** `ZONE_DISCIPLINE_BANDS`
-(`disciplined: 85, decent: 70, loose: 50`) is read only by `classifyZoneDiscipline`, which
-**has no call sites** — confirmed, and documented at `loadCalc.ts:182`. It is the obvious
-thing someone would reach for. **P-01 must bind to `ZONE_DRIFT_ABOVE_CEILING_PCT`.**
+✅ **A SECOND, DEAD THRESHOLD USED TO EXIST AND WAS THE TRAP — DELETED 2026-11-08**
+(`ZONE-DISCIPLINE-BANDS-DEAD-01`). `ZONE_DISCIPLINE_BANDS` (`disciplined: 85, decent: 70,
+loose: 50`) was the obvious thing to reach for, and its only reader, `classifyZoneDiscipline`,
+never had a call site. **P-01 binds to `ZONE_DRIFT_ABOVE_CEILING_PCT`**, and the constraint is
+recorded rather than dropped because its reason outlives the constant: **a RATIFIED numeric is
+not the same thing as a LIVE one**, and this proof was one grep away from the wrong one.
 
 **Consequence: P-01 does not need a new board sitting.** Hutchinson's condition becomes
 "use the ratified one, and do not use the dead one."
@@ -192,7 +194,7 @@ carries only a `days_available < 2` check and a comment recording the removal.
 ## What changed as a result
 
 1. **P-01's argument is narrowed** — palette *strategy* convergence, measured; not value identity, falsified.
-2. **P-01 loses a blocker** — the threshold is ratified; it gains a constraint (bind to `ZONE_DRIFT_ABOVE_CEILING_PCT`, never `ZONE_DISCIPLINE_BANDS`).
+2. **P-01 loses a blocker** — the threshold is ratified; it gains a constraint (bind to `ZONE_DRIFT_ABOVE_CEILING_PCT`; the 85/70/50 band table that was the alternative is gone as of 2026-11-08).
 3. **"No make-up runs." is rejected outright**, not held for verification.
 4. **The "ceilings on every easy run" caveat is withdrawn** — 100%, measured.
 5. **P-13(b) gains its evidence** — a banned colour is live in the ceremony.
