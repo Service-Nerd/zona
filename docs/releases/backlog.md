@@ -1595,7 +1595,7 @@ SQL copy). Stamping the state at the writer would retire the inference for new r
 are measured at 0 today: a staged plan rebuilt without its `skipped_plan_kind`, and a plan from the few hours on
 2026-08-06 between PV2-A (`generator_input`) and GEN-FIX-02 (`enrichment`).
 
-### 🔲 `MAINT-ENRICH-VALIDATE-01` — maintenance enrichment has no copy-repair step ⚙️ **NO BOARD**
+### ✅ `MAINT-ENRICH-VALIDATE-01` — **DONE 2026-11-08 `27f0375c`.** The item named the race path's MECHANISM; the gap was the constitution. The ladder would have been **inert by construction**. Maintenance was the one plan kind with no placeholder check anywhere ⚙️ **NO BOARD**
 
 Found building ENRICH-RESTORE-REPAIR-01. `app/api/maintenance-block/route.ts` runs `enrichMaintenanceBlock` and saves
 through `savePlanForUser`, which validates but only LOGS in production; nothing reverts maintenance copy that breaks an
@@ -1926,7 +1926,7 @@ come back wrong or missing, and the 6-rep weight is offered for 10. Fix: `POST /
 prescribed reps on the row (a column, with grants, MIGRATION-GRANTS-01), and the view prefers it. Build 6 adds a migration
 to strength completions anyway. **Blocks `STRENGTH_RELEASE` → 'paid'** with the screen work in build 5.
 
-### 🔲 `ENRICH-RISK-TOKEN-01` — the enricher can leave a `{{token}}` in `confidence_risks`, which nothing fills ⚙️ **NO BOARD**
+### ✅ `ENRICH-RISK-TOKEN-01` — **DONE 2026-11-08 `9962df72`.** The merge's rejector was a hand-kept list of FIVE for SEVEN prose surfaces; `session.label` was the second gap and was never filed. 0 live risk items carry a token, **2 archived — live for a week, not latent.** The invariant could not see an array-valued field by construction ⚙️ **NO BOARD**
 
 Found validating the 28 Oct voice restore: 3cc7c3a9's third risk reads *"Zone 3 discipline ({{session_hr}}) is
 non-negotiable."* Session `coach_notes` tokens are resolved at render by `renderGuidance`; `confidence_risks` renders only
@@ -5444,7 +5444,7 @@ table, the trigger clause and the form all go, and that is a bigger deletion tha
 🔻 **Do NOT just add a render site** — a new marketing section is a hard Design Board trigger
 (ADR-023), and shipping a form nobody decided to show is how the first one got here.
 
-### 🔲 `SELECT-DEAD-01` — `components/shared/Select.tsx` has zero importers *(filed 2026-11-08, P3)* ⚙️ **NO BOARD** *(dead code)*
+### ✅ `SELECT-DEAD-01` — **DONE 2026-11-08 `86832b17`.** Zero importers confirmed (both `Select` hits in `app/` are English prose; no barrel, no dynamic import, no lazy). `UNCONTRACTED_BASELINE` held at 49 while `UNCONTRACTED_ANY_BASELINE` fell 71 → 70 — the signature the register pair was built to show, declared as a DELETION ⚙️ **NO BOARD**
 
 Found the same way. **Zero importers.** `CardSelect` is the select in use (`GeneratePlanScreen`,
 `RaceResultSheet`); `Select` appears to predate it.
@@ -6948,7 +6948,7 @@ the gap so widening a corpus fails loudly and the arm gets replaced by a floor. 
 >
 > Post-artifact: `property-validate-plans` exit 0 — **14,268 plans, no new violations.**
 
-### 🟡 `ZONE-DISCIPLINE-BANDS-DEAD-01` — a config table read only by a function with no call sites *(filed 2026-10-08, P3)* ⚙️ **NO BOARD**
+### ✅ `ZONE-DISCIPLINE-BANDS-DEAD-01` — **DONE 2026-11-08 `74cdce0e`.** The function was dead; the TABLE was not — `scripts/trigger-audit.ts` read `.loose` throughout. 26 lines deleted, the audit's 50 pinned as a historical literal, and a new arm so a DEAD register entry cannot describe a deleted symbol ⚙️ **NO BOARD**
 
 > 🔻 **Routed OUT of `RESHAPE-PRINCIPLE-DEBT-01`'s sitting**: the board declined to write a
 > principle for a value nothing can reach. `ZONE_DISCIPLINE_BANDS` (`{disciplined: 85,

@@ -39,10 +39,26 @@ names runners is not public. `GET` delegates to `POST`.
   },
   "boundary": {                     // WEEK-THEME-TOKEN-ENRICH-01, 2026-10-10
     "weekCopyRejected30d": 0,       // null when the count could NOT be read
-    "meaning": "model-authored week label/theme carrying a {{placeholder}}, refused by the merge; engine copy kept"
+    "meaning": "model-authored plan prose (meta.notes, meta.coach_intro, meta.confidence_risks, week label/theme, session label) carrying a {{placeholder}}, refused by the merge; engine copy kept. session.coach_notes is the designed carrier and is never counted",
+    "maintCopyRejected30d": 0,      // MAINT-ENRICH-VALIDATE-01, 2026-11-08; null as above
+    "maintMeaning": "a maintenance week coach_debrief carrying a {{placeholder}}, refused by the merge; the week keeps no debrief. Separate prompt, so separate counter"
   }
 }
 ```
+
+🔴 **`meaning` SAID "week label/theme" FOR A MONTH WHILE THE UNION BEHIND IT GREW TO SEVEN
+FIELDS** (code review, 2026-11-08). `ENRICH-META-TOKEN-01` added `meta.notes` and
+`meta.coach_intro`; `ENRICH-RISK-TOKEN-01` added `meta.confidence_risks` and `session.label`.
+**A reader's stated meaning going stale against the thing it counts mis-attributes which prompt
+rule broke, and that is the number's only use.** Gated by an arm in
+`maintenancePlaceholderCopy.test.ts` requiring the string to name every field in the union.
+
+⚠️ **TWO COUNTERS, NOT ONE SUM** (`MAINT-ENRICH-VALIDATE-01`). The race enricher and the
+maintenance enricher have different prompts. One figure across both tells you a rule is being
+broken and **not which prompt to change**, which is the only question a rejection rate can
+answer. `maintCopyRejected30d` is expected to sit at 0 for a while: there were 0 maintenance
+plans in production when it shipped, so a first firing is the first evidence that path has run
+at all.
 
 ⚠️ **`boundary` IS NOT PART OF THE VERDICT, AND THAT SEPARATION IS THE CONTRACT.** It is the
 only `ops_events` read in this route, and it exists because a new ops kind with no reader is the
@@ -51,7 +67,7 @@ not see a screen). Three rules bind it:
 
 | Rule | Why |
 |---|---|
-| **It is never a rate and never a denominator** | the `denominator` note below is about exactly this mistake. `weekCopyRejected30d` is a count of refusals at the merge boundary, not a share of anything |
+| **It is never a rate and never a denominator** | the `denominator` note below is about exactly this mistake. `weekCopyRejected30d` and `maintCopyRejected30d` are counts of refusals at the merge boundary, not a share of anything |
 | **It must not move `healthy`** | a rejection is the guard **working** — `OPS-SUBS-UNHANDLED-SEEN-01`'s rule: counted and reported, never alerting |
 | **`null` means "could not read", not "none"** | *"no rows"* and *"did not look"* are the pair this repo keeps confusing, which is the whole of `OPS-SUBS-UNHANDLED-SEEN-01` |
 
