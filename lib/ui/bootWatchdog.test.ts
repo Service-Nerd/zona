@@ -82,7 +82,7 @@ describe('BootStalled renders the §8 Empty State with its one action', () => {
 
 const R = vi.hoisted(() => ({ events: [] as unknown[][], allow: true, user: null as null | { id: string } }))
 vi.mock('@/lib/ops/recordOpsEvent', () => ({ recordOpsEvent: async (...a: unknown[]) => { R.events.push(a) } }))
-vi.mock('@/lib/ai/rateLimit', () => ({ checkRateLimit: async () => R.allow }))
+vi.mock('@/lib/security/rateLimit', () => ({ checkRateLimit: async () => R.allow }))
 vi.mock('@/lib/supabase/getUserFromRequest', () => ({ getUserFromRequest: async () => R.user }))
 const post = async (body: unknown) => {
   const { POST } = await import('@/app/api/ops/boot-report/route')

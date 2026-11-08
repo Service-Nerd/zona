@@ -14335,22 +14335,6 @@ both artifacts on disk. A predicate about **live data** has no local before/afte
 state what each outcome means **including what it returns if nothing happened**. *"No rows
 returned"* from an `UPDATE` is not *"zero rows matched"*, and that misread happened the same day.
 
-### ⚙️ `RATELIMIT-MODULE-PATH-01` — the shared rate limiter still lives under `lib/ai/`
-**Board: ⚙️ NO BOARD.** Opened 2026-09-24 by `CHARITY-REDEEM-RATELIMIT-01`.
-
-`check_rate_limit(p_key, p_limit, p_window_seconds)` was always generic — only the `ai:` key
-prefix and the wrapper's name were AI-specific. `checkRateLimit()` is now the shared owner and
-`/api/charity/redeem` is its first non-AI caller, but the module is still `lib/ai/rateLimit.ts`
-and the route limits still sit in `lib/ai/limits.ts` under the name `AI_ROUTE_LIMITS`.
-
-**Deliberately not moved in the same change:** a rename touches every existing import for zero
-behavioural gain, and mixing it with a security fix would make the diff hard to review. Move it
-to `lib/security/rateLimit.ts` when something else touches that area.
-
-⚠️ Minor consequence today: `callAnthropic.test.ts` asserts *"every `AI_ROUTE_LIMITS` key is a
-declared surface **or a non-AI route**"* — that escape hatch already anticipated this, so nothing
-is failing, but the naming now understates what the module does.
-
 ### 🅿️ `CONTRACT-BACKFILL-01` — write the **12** remaining API route contracts · **PARKED** *(count corrected 2026-10-11, 2026-11-08 ×2; `audit-docs.sh` reports **12** of 71 — `post-race-reshape` written 2026-11-08 under `OPS-FN-DURATION-01`, which changed that route and found it had no contract at all)*
 
 > 🔄 **RE-MEASURED 2026-11-07: 13 of 62 → 11 of 71 API routes without a contract.** Two were

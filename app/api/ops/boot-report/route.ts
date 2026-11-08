@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getUserFromRequest } from '@/lib/supabase/getUserFromRequest'
 import { recordOpsEvent } from '@/lib/ops/recordOpsEvent'
-import { checkRateLimit } from '@/lib/ai/rateLimit'
+import { checkRateLimit } from '@/lib/security/rateLimit'
 import {
   BOOT_STALL_GATES, BOOT_ERR_KINDS, BOOT_STAGES, BOOT_ELAPSED_MAX_MS, BOOT_REPORT_LIMIT, BOOT_REPORT_WINDOW_SECONDS,
   type BootStallGate, type BootErrKind, type BootStage,

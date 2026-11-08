@@ -32,7 +32,7 @@ describe('checkRateLimit — the generic owner the route calls', () => {
   beforeEach(() => { rpc.mockReset(); vi.resetModules() })
 
   it('passes the caller key through verbatim, namespace and all', async () => {
-    const { checkRateLimit } = await import('@/lib/ai/rateLimit')
+    const { checkRateLimit } = await import('@/lib/security/rateLimit')
     rpc.mockResolvedValue({ data: true, error: null })
     await checkRateLimit('charity:redeem:user-123', 10, 3600)
     expect(rpc).toHaveBeenCalledWith('check_rate_limit', {
@@ -41,7 +41,7 @@ describe('checkRateLimit — the generic owner the route calls', () => {
   })
 
   it('denies when the limiter says the window is spent', async () => {
-    const { checkRateLimit } = await import('@/lib/ai/rateLimit')
+    const { checkRateLimit } = await import('@/lib/security/rateLimit')
     rpc.mockResolvedValue({ data: false, error: null })
     expect(await checkRateLimit('charity:redeem:u', 10, 3600)).toBe(false)
   })
@@ -49,7 +49,7 @@ describe('checkRateLimit — the generic owner the route calls', () => {
   // 🔴 A FALSE DENIAL WITHHOLDS A GIFT. Fail-open is the deliberate trade, and it
   // matters more here than on the AI routes it was written for.
   it('fails OPEN when the limiter itself is broken', async () => {
-    const { checkRateLimit } = await import('@/lib/ai/rateLimit')
+    const { checkRateLimit } = await import('@/lib/security/rateLimit')
     rpc.mockResolvedValue({ data: null, error: { message: 'RPC missing' } })
     expect(await checkRateLimit('charity:redeem:u', 10, 3600)).toBe(true)
     rpc.mockRejectedValue(new Error('DB unreachable'))

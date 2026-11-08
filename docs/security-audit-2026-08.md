@@ -78,7 +78,9 @@ can script `post-race-reshape` (Sonnet, `max_tokens: 2048`), `generate-plan`, or
 
 **Fix:** per-user, per-route fixed-window rate limit backed by Supabase
 (`ai_rate_limits` table + `check_rate_limit()` RPC, migration
-`20260819_ai_rate_limits.sql`). Helper `lib/ai/rateLimit.ts`; limits in
+`20260819_ai_rate_limits.sql`). Limiter `lib/security/rateLimit.ts` (moved there from
+`lib/ai/rateLimit.ts` on 2026-11-08 by `RATELIMIT-MODULE-PATH-01` once it had non-AI
+callers; the `ai:` key namespace stayed behind in `lib/ai/rateLimit.ts`); AI limits in
 `lib/ai/limits.ts` (expensive generation/reshape routes get a tighter 10/hr
 budget, others 30/hr). Applied to all 11 Anthropic-calling user routes via
 `guardAiRequest` (body routes) / `enforceAiRateLimit` (no-body routes). Fails

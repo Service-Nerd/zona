@@ -19,7 +19,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { getUserFromRequest } from '@/lib/supabase/getUserFromRequest'
 import { normaliseCode, CHARITY_REDEEM_LIMIT, CHARITY_REDEEM_WINDOW_SECONDS } from '@/lib/charity/code'
-import { checkRateLimit } from '@/lib/ai/rateLimit'
+import { checkRateLimit } from '@/lib/security/rateLimit'
 import { initialGrantExpiry } from '@/lib/charity/grantWindow'
 
 export async function POST(req: NextRequest) {
