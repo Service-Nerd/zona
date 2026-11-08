@@ -84,7 +84,8 @@ const REPORT_MS = (() => {
 // instead of a failure. Found by a falsification that stayed green, not by review.
 // See `lib/ops/testDurationRules.ts`. SUITE-CONTENTION-01, 2026-10-15.
 import {
-  newSlowVerdict, driftVerdict, loadForTest, NEW_FAIL_MS_MULTIPLE, DRIFT_TOLERANCE,
+  newSlowVerdict, driftVerdict, loadForTest, baselineStaleVerdict,
+  NEW_FAIL_MS_MULTIPLE, DRIFT_TOLERANCE, BASELINE_STALE_GROWTH,
 } from '../lib/ops/testDurationRules'
 
 /** Orientation only — CI-TIMEOUT-01's measured runner ratio, in isolation. */
@@ -119,6 +120,7 @@ interface BaselineEntry {
 }
 
 let SUITE_MS = 0
+let TEST_COUNT = 0
 function readSlowTests(): Array<{ file: string; title: string; ms: number }> {
   if (!existsSync(REPORT)) {
     console.error(`✗ ${REPORT} not found. Run \`npm run test\` first (it writes the report).`)
@@ -154,6 +156,7 @@ function readSlowTests(): Array<{ file: string; title: string; ms: number }> {
     }
   }
   SUITE_MS = suiteMs
+  TEST_COUNT = total
   // An empty report is a probe that reached nothing, not a fast suite.
   if (total === 0) {
     console.error('✗ the report contains no tests at all. That is a broken report, not a fast suite.')
@@ -188,7 +191,7 @@ if (write) {
   })
   writeFileSync(
     BASELINE,
-    JSON.stringify({ measuredAt: new Date().toISOString().slice(0, 10), testTimeoutMs: TEST_TIMEOUT_MS, suiteMs: SUITE_MS, tests: entries }, null, 2) + '\n',
+    JSON.stringify({ measuredAt: new Date().toISOString().slice(0, 10), testTimeoutMs: TEST_TIMEOUT_MS, suiteMs: SUITE_MS, testCount: TEST_COUNT, tests: entries }, null, 2) + '\n',
   )
   console.log(`✓ wrote ${entries.length} entries to ${BASELINE}.`)
   console.log('  Say in the commit WHICH number moved and why. Never re-baseline to go green.')
@@ -226,6 +229,33 @@ if (BASE_SUITE_MS) {
 const hardMs = Math.round(TEST_TIMEOUT_MS * HARD_FRACTION)
 const failures: string[] = []
 
+// ── 🔴 THE DENOMINATOR MUST NOT BE ALLOWED TO GO STALE IN SILENCE ────────────
+//
+// Code review, 2026-11-08. Of the two denominators that made rule 3's declared 1.4x behave
+// as 3.5x, `loadForTest` fixed one in code and the other — a six-week-old `suiteMs` — was
+// fixed by HAND-EDITING this baseline, with nothing to stop it recurring. 📐 And it was the
+// DOMINANT one: 3.50x -> 3.01x from self-exclusion, 3.01x -> 1.37x from the fresh baseline.
+// **The thing with no gate was the thing that mattered.**
+//
+// ⚠️ It cannot be gated on `LOAD`, which mixes contention with growth on purpose. TEST COUNT
+// separates them: contention scales a fixed set of durations, growth adds tests. See
+// `BASELINE_STALE_GROWTH`.
+const stale = baselineStaleVerdict(TEST_COUNT, baselineDoc.testCount as number | undefined)
+if (stale.verdict === 'unknown') {
+  console.log(`⚠️  This baseline records no testCount, so its freshness cannot be checked.`)
+  console.log(`    Re-run \`npm run check:slow -- --write\` to start recording it.`)
+} else if (stale.verdict === 'fails') {
+  failures.push(
+    `STALE BASELINE — the suite has ${TEST_COUNT} tests against the baseline's ` +
+    `${baselineDoc.testCount} (${stale.growth!.toFixed(2)}x, over ${BASELINE_STALE_GROWTH}x).\n` +
+    `    Rule 3's effective tolerance is DRIFT_TOLERANCE x rest-of-suite growth, so a stale\n` +
+    `    denominator silently inflates every threshold — measured at 1.63x of a 2.12x gap.\n` +
+    `    Re-measure: \`npm run test && npm run check:slow -- --write\`, with the reason stated.`,
+  )
+} else {
+  console.log(`Baseline freshness: ${TEST_COUNT} tests against ${baselineDoc.testCount} (${stale.growth!.toFixed(2)}x, limit ${BASELINE_STALE_GROWTH}x).`)
+}
+
 console.log(`\nBudget ${TEST_TIMEOUT_MS} ms · hard wall ${hardMs} ms (${HARD_FRACTION * 100}%) · report at ${REPORT_MS} ms\n`)
 
 for (const s of slow) {
@@ -240,7 +270,7 @@ for (const s of slow) {
     // ⚠️ THE SAME OWNER AS RULE 3, with `baselineMs: 0` — a newcomer is by definition absent
     // from the baseline total, so only the numerator excludes it. Rule 1 self-masks the same
     // way rule 3 did: a new slow test inflates `SUITE_MS` and so lowers its own normalised ms.
-    const newLoad = BASE_SUITE_MS ? loadForTest(SUITE_MS, BASE_SUITE_MS, s.ms, 0) : LOAD
+    const newLoad = BASE_SUITE_MS ? loadForTest({ suiteMs: SUITE_MS, baseSuiteMs: BASE_SUITE_MS, ms: s.ms, baselineMs: 0 }) : LOAD
     const v = newSlowVerdict(s.ms, newLoad, REPORT_MS)
     if (v.verdict === 'listed') {
       console.log(`          (listed, not gated: ${v.normalisedMs} ms at this test's ${newLoad.toFixed(2)}x rest-of-suite load, under ${v.failsAboveMs} ms — too close to the reporting line to call)`)
@@ -273,7 +303,7 @@ for (const s of slow) {
   // ratio includes the test being judged, so a test that grows inflates its own denominator.
   // Measured: `targetedGrid` is 14% of the suite and rule 3 first fired at 3.5x against a
   // declared tolerance of 1.4x. `loadForTest` excludes it from both sides.
-  const testLoad = BASE_SUITE_MS ? loadForTest(SUITE_MS, BASE_SUITE_MS, s.ms, b.ms) : LOAD
+  const testLoad = BASE_SUITE_MS ? loadForTest({ suiteMs: SUITE_MS, baseSuiteMs: BASE_SUITE_MS, ms: s.ms, baselineMs: b.ms }) : LOAD
   const expectedMs = b.ms * testLoad
   if (b.volatile) {
     console.log(`          (rule 3 skipped: declared process-spawn volatile — ${b.reason.slice(0, 70)}…)`)

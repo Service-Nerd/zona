@@ -75,6 +75,50 @@ export function newSlowVerdict(
 }
 
 /**
+ * How stale may the baseline's DENOMINATOR be before rule 3 stops meaning anything?
+ *
+ * 🔴 CODE REVIEW, 2026-11-08: OF THE TWO COMPOUNDING DENOMINATORS, ONLY ONE WAS FIXED IN
+ * CODE. `loadForTest` fixed self-masking. The other — a baseline whose `suiteMs` was six
+ * weeks and ~3,000 tests old — was fixed **by hand-editing the data file**, and nothing
+ * stopped it happening again. Measured attribution, and it is the opposite way round from
+ * how I first wrote it up: rule 3's trigger on `targetedGrid` went **3.50x → 3.01x** from
+ * self-exclusion (worth 0.49) and **3.01x → 1.37x** from the fresh baseline (worth
+ * **1.63** — the dominant cause). **The thing with no gate was the thing that mattered.**
+ *
+ * ⚠️ IT CANNOT BE GATED ON THE LOAD FACTOR, which is why it had no gate. `load` mixes
+ * machine contention with suite growth deliberately, and firing on a high load is exactly
+ * the cry-wolf behaviour `SUITE-CONTENTION-01` was written to remove — a 3.32x contended run
+ * is normal here.
+ *
+ * 🔑 TEST COUNT SEPARATES THEM. Contention scales the durations of a FIXED set of tests;
+ * suite growth adds tests. A count is load-independent, so it is the one axis that can be
+ * gated without noise.
+ *
+ * 📐 15%: the baseline recorded 2026-09-24 held ~4,300 tests against 7,394 today — **+72%**,
+ * so a 15% line would have asked for a re-measure around early October, roughly every
+ * thousand tests added. Smaller would fire inside a single large wave; much larger lets the
+ * denominator drift the full 1.63x again before anyone is told.
+ */
+export const BASELINE_STALE_GROWTH = 1.15
+
+/**
+ * `fails` when the suite has grown enough tests that the baseline's `suiteMs` no longer
+ * describes it. Degrades to `ok` when either count is missing — a baseline written before
+ * `testCount` existed must not fail the build, only stop claiming freshness.
+ */
+export function baselineStaleVerdict(
+  testCount: number | undefined,
+  baselineTestCount: number | undefined,
+  threshold: number = BASELINE_STALE_GROWTH,
+): { verdict: 'fails' | 'ok' | 'unknown'; growth: number | null } {
+  if (!baselineTestCount || !testCount || baselineTestCount <= 0) {
+    return { verdict: 'unknown', growth: null }
+  }
+  const growth = testCount / baselineTestCount
+  return { verdict: growth > threshold ? 'fails' : 'ok', growth }
+}
+
+/**
  * The load factor RULE 3 must use for ONE test: the rest of the suite's growth, excluding
  * the test being judged from both sides.
  *
@@ -100,15 +144,39 @@ export function newSlowVerdict(
  * drift apart again"*, which exists because rule 3 was right and rule 1 was wrong for three
  * weeks and nothing compared them. Moving only rule 3 onto a per-test load **re-created that
  * divergence inside the commit that was meant to improve it.** Rule 1 judges a test with no
- * baseline entry, so it passes `baselineMs: 0` — the baseline total legitimately never
- * included a newcomer, so only the numerator excludes it. **Exclude the test from whichever
+ * baseline entry, so it passes `baselineMs: 0` and only the numerator excludes it.
+ * ⚠️ **AND THAT IS AN APPROXIMATION, NOT A DEFINITION — the first write-up called it one**
+ * (code review, 2026-11-08). `suiteMs` sums EVERY test; baseline ENTRIES exist only above
+ * `slowTestThreshold`. So a test that was under 1,000 ms when the baseline was written and
+ * later crosses the line gets `baselineMs: 0` while its old cost is still inside `restBase`,
+ * which makes the denominator slightly too large and the verdict slightly too lenient.
+ * 📐 Measured today: ~0.7% of the baseline total, and it scales with `slowTestThreshold`,
+ * not with the suite. Conservative direction, small, and stated rather than claimed away.
+ *
+ * 🔴 IT TAKES A NAMED OBJECT, NOT FOUR POSITIONAL NUMBERS, AND THAT IS THE POINT. Code review
+ * found that swapping the rule-1 call to `(SUITE_MS, BASE_SUITE_MS, 0, s.ms)` **inverts the
+ * exclusion** — it subtracts the newcomer's cost from the BASELINE total instead, which lowers
+ * the denominator, raises the load and hides a slow newcomer — and **every arm stayed green**,
+ * because a test of the function cannot see its call site and a source regex matches either
+ * order. Four interchangeable `number` parameters make that swap invisible at the call site.
+ *
+ * ⚠️ AND NAMED FIELDS DO **NOT** MAKE IT A COMPILE ERROR — the first version of this very
+ * paragraph claimed they did, which is false and was checked rather than assumed: swapping
+ * `ms: 0, baselineMs: s.ms` type-checks cleanly. What the object buys is that the call site
+ * **says what each number is**, so the inversion is legible in a diff, and a source arm can
+ * anchor on `baselineMs: 0` instead of on an argument position. The mechanical catch is
+ * `testDurationGate.test.ts`'s arm, which was verified to go red on exactly that swap. **Exclude the test from whichever
  * sides it exists on; one owner, two callers.**
  */
 export function loadForTest(
-  suiteMs: number,
-  baseSuiteMs: number,
-  ms: number,
-  baselineMs: number,
+  { suiteMs, baseSuiteMs, ms, baselineMs }: {
+    suiteMs: number
+    baseSuiteMs: number
+    /** this test's duration in THIS run */
+    ms: number
+    /** its recorded baseline duration, or 0 for a test with no entry */
+    baselineMs: number
+  },
 ): number {
   const whole = safe(baseSuiteMs > 0 ? suiteMs / baseSuiteMs : 1)
   const restNow = suiteMs - ms

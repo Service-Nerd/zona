@@ -5,7 +5,10 @@ import { readFileSync } from 'node:fs'
 // and calls `process.exit`, so these arms passed only while the gate happened to be
 // green, and a mutation that turned it red killed the worker and reported "no tests"
 // instead of a failure. Found by a falsification that stayed green.
-import { newSlowVerdict, driftVerdict } from '@/lib/ops/testDurationRules'
+import {
+  newSlowVerdict, driftVerdict, loadForTest, baselineStaleVerdict,
+  DRIFT_TOLERANCE, BASELINE_STALE_GROWTH,
+} from '@/lib/ops/testDurationRules'
 
 /**
  * SUITE-CONTENTION-01 — `check:slow`'s rule 1 is load-normalised, and the script
@@ -164,10 +167,12 @@ describe('SUITE-CONTENTION-01 — rule 1 measures the code, not the machine', ()
     // divergence it was written for. Keep it asserting that BOTH reach the same owner.
     expect(SCRIPT).toMatch(/newSlowVerdict\(s\.ms,\s*newLoad/)
     expect(SCRIPT).toMatch(/driftVerdict\(s\.ms,\s*b\.ms,\s*testLoad/)
+    // ⚠️ NAMED FIELDS, so these cannot assert an argument ORDER and do not need to: swapping
+    // the pairs is a compile error now, not a silent inversion (see `loadForTest`'s docblock).
     expect(SCRIPT, 'rule 1 must reach the shared per-test load owner')
-      .toMatch(/newLoad = [^\n]*loadForTest\(/)
-    expect(SCRIPT, 'rule 3 must reach the shared per-test load owner')
-      .toMatch(/testLoad = [^\n]*loadForTest\(/)
+      .toMatch(/newLoad = [^\n]*loadForTest\(\{[^}]*baselineMs: 0/)
+    expect(SCRIPT, 'rule 3 must pass the test\'s OWN baseline, not zero')
+      .toMatch(/testLoad = [^\n]*loadForTest\(\{[^}]*baselineMs: b\.ms/)
     expect(SCRIPT, 'the rules must come from the module, not be redefined here')
       .toContain("from '../lib/ops/testDurationRules'")
     expect(SCRIPT, 'the script must not re-export the rules — that is what ran the gate')
@@ -185,6 +190,126 @@ describe('SUITE-CONTENTION-01 — rule 1 measures the code, not the machine', ()
    * 3,172 ms** in the full suite — a **6.5x** swing on a run whose aggregate moved
    * **1.84x**, with no change to the test.
    */
+  // ── 🔴 `loadForTest` IS CALLED HERE, AND THE FIRST CUT ONLY REGEXED THE SOURCE ──────
+  //
+  // Code review, 2026-11-08: the arms added with this function asserted that the SCRIPT
+  // contains `newLoad = … loadForTest(` and `testLoad = … loadForTest(`. Both stayed green
+  // when the function body was reverted to `return whole` — a full undo of the fix — and
+  // also when the rule-1 arguments were SWAPPED to `loadForTest(SUITE_MS, BASE_SUITE_MS, 0,
+  // s.ms)`, which inverts the exclusion and masks slow newcomers. **A source assertion
+  // proves a call site exists; it cannot prove the call is right.** These arms call it.
+  describe('loadForTest — the per-test denominator', () => {
+    it('1. excludes the test from BOTH sides when it has a baseline entry', () => {
+      // Rest-of-suite is unchanged (100 both sides), so the load is exactly 1 — the test
+      // itself tripled and that is rule 3's business, not the denominator's.
+      expect(loadForTest({ suiteMs: 130, baseSuiteMs: 110, ms: 30, baselineMs: 10 })).toBeCloseTo(1, 6)
+      // And the whole-suite ratio it replaces would have said 1.18x, inflating the threshold.
+      expect(130 / 110).toBeCloseTo(1.1818, 3)
+    })
+
+    it('2. excludes a NEWCOMER from the numerator only', () => {
+      // `baselineMs: 0` — the entry does not exist, so nothing comes off the baseline side.
+      expect(loadForTest({ suiteMs: 150, baseSuiteMs: 100, ms: 50, baselineMs: 0 })).toBeCloseTo(1, 6)
+      // 🔴 THE ARGUMENT ORDER IS LOAD-BEARING AND A SWAP IS SILENT. Inverting it subtracts
+      // the newcomer's cost from the BASELINE total instead, which lowers the denominator,
+      // raises the load, and so hides a slow newcomer. Pinned as a distinct number.
+      expect(loadForTest({ suiteMs: 150, baseSuiteMs: 100, ms: 0, baselineMs: 50 })).toBeCloseTo(3, 6)
+    })
+
+    it('3. a growing test can no longer inflate its own threshold — THE REAL INCIDENT', () => {
+      // 📐 The measured case, with the numbers from the report rather than a toy share.
+      // `targetedGrid`'s main arm, baselined at 21,963 ms in an 84,821 ms suite, measured at
+      // 27,291 ms in a 195,052 ms one. The rest of the suite is 167,761 ms either way.
+      const B_MS = 21_963, B_SUITE = 84_821, REST_NOW = 195_052 - 27_291
+      const fires = (load: (ms: number) => number) => {
+        for (let k = 1; k < 6; k += 0.001) {
+          const ms = 27_291 * k
+          if (driftVerdict(ms, B_MS, load(ms)) === 'fails') return Number(k.toFixed(3))
+        }
+        return Infinity
+      }
+      // The OLD factor: the suite total INCLUDES the grown test, so it rises with k.
+      const whole = fires(ms => (REST_NOW + ms) / B_SUITE)
+      // The NEW one: the test is off both sides, so the factor is constant.
+      const perTest = fires(ms => loadForTest({ suiteMs: REST_NOW + ms, baseSuiteMs: B_SUITE, ms, baselineMs: B_MS }))
+      expect(whole).toBeCloseTo(3.496, 2)
+      expect(perTest).toBeCloseTo(3.007, 2)
+      // 🔴 AND THE HONEST ATTRIBUTION, WHICH THE FIRST WRITE-UP HAD BACKWARDS. Self-exclusion
+      // is worth 0.49 of the 2.12 gap; the remaining 1.63 was the six-week-stale `suiteMs`,
+      // which `loadForTest` cannot touch and `baselineStaleVerdict` now gates.
+      expect(whole - perTest).toBeCloseTo(0.49, 1)
+      expect(perTest - 1.375).toBeCloseTo(1.63, 1)
+    })
+
+    it('4. fires at the DECLARED tolerance once the denominator is honest', () => {
+      // The claim the source makes. k just under and just over 1.4, rest-of-suite flat.
+      const base = 1_000, rest = 10_000
+      for (const [k, want] of [[1.39, 'ok'], [1.41, 'fails']] as const) {
+        const ms = base * k
+        const load = loadForTest({ suiteMs: rest + ms, baseSuiteMs: rest + base, ms, baselineMs: base })
+        expect(driftVerdict(ms, base, load), `k=${k}`).toBe(want)
+      }
+      expect(DRIFT_TOLERANCE).toBe(1.4)
+    })
+
+    it('5. DEGRADES to the whole-suite ratio, never to no check', () => {
+      // The documented branch, unreachable from the real callers and so untested until now.
+      // A single-test suite: excluding it leaves 0, which must not divide a measurement away.
+      expect(loadForTest({ suiteMs: 50, baseSuiteMs: 40, ms: 50, baselineMs: 40 })).toBeCloseTo(50 / 40, 6)
+      expect(loadForTest({ suiteMs: 50, baseSuiteMs: 40, ms: 60, baselineMs: 10 })).toBeCloseTo(50 / 40, 6)   // restNow negative
+      expect(loadForTest({ suiteMs: 50, baseSuiteMs: 40, ms: 10, baselineMs: 60 })).toBeCloseTo(50 / 40, 6)   // restBase negative
+      // And a zero/nonsense baseline total degrades to 1, not to Infinity or NaN.
+      expect(loadForTest({ suiteMs: 50, baseSuiteMs: 0, ms: 10, baselineMs: 5 })).toBe(1)
+      expect(Number.isFinite(loadForTest({ suiteMs: 50, baseSuiteMs: Number.NaN, ms: 10, baselineMs: 5 }))).toBe(true)
+    })
+  })
+
+  // ── 🔴 THE OTHER DENOMINATOR, WHICH HAD NO GATE AND WAS THE BIGGER ONE ─────────────
+  describe('baselineStaleVerdict — the denominator cannot rot in silence', () => {
+    it('fires on growth past the declared line, and not before', () => {
+      expect(BASELINE_STALE_GROWTH).toBe(1.15)
+      expect(baselineStaleVerdict(1_150, 1_000).verdict).toBe('ok')      // exactly the line
+      expect(baselineStaleVerdict(1_151, 1_000).verdict).toBe('fails')
+      expect(baselineStaleVerdict(900, 1_000).verdict).toBe('ok')        // a shrinking suite is fine
+      expect(baselineStaleVerdict(1_200, 1_000).growth).toBeCloseTo(1.2, 6)
+    })
+
+    it('⚠️ it must NOT be gateable on load — that is why it reads COUNT', () => {
+      // Contention scales durations on a FIXED set of tests, so the count is unchanged and
+      // this stays silent. Firing on a busy machine is the cry-wolf behaviour
+      // SUITE-CONTENTION-01 was written to remove: a 3.32x contended run is normal here.
+      expect(baselineStaleVerdict(7_394, 7_394).verdict).toBe('ok')
+      // And the real stale case: ~4,300 tests at the 2026-09-24 baseline against 7,394.
+      expect(baselineStaleVerdict(7_394, 4_300).verdict).toBe('fails')
+    })
+
+    it('a baseline with no testCount is UNKNOWN, never a silent pass', () => {
+      // Degrades: a baseline written before the field existed must not fail the build. But it
+      // must also not claim freshness, so the verdict is a third value the script prints.
+      expect(baselineStaleVerdict(7_394, undefined).verdict).toBe('unknown')
+      expect(baselineStaleVerdict(undefined, 7_394).verdict).toBe('unknown')
+      expect(baselineStaleVerdict(7_394, 0).verdict).toBe('unknown')
+      expect(baselineStaleVerdict(7_394, undefined).growth).toBeNull()
+    })
+
+    it('the committed baseline records a testCount and is fresh', () => {
+      const base = JSON.parse(readFileSync('lib/plan/__fixtures__/testDurationBaseline.json', 'utf8'))
+      expect(typeof base.testCount, 'the baseline must record testCount or freshness is unknowable').toBe('number')
+      expect(base.testCount).toBeGreaterThan(0)
+      // ⚠️ A register with a TODO reason is the debt-register failure this repo records.
+      for (const e of base.tests as { file: string; reason: string }[]) {
+        expect(e.reason, `${e.file}: a baseline entry must state WHY, not TODO`).not.toMatch(/^TODO/)
+      }
+    })
+
+    it('the script reaches it, and treats unknown as unknown', () => {
+      expect(SCRIPT).toMatch(/baselineStaleVerdict\(TEST_COUNT, baselineDoc\.testCount/)
+      expect(SCRIPT, 'an unknown freshness must be SAID, not silently passed')
+        .toContain("stale.verdict === 'unknown'")
+      expect(SCRIPT, 'and --write must start recording the count').toMatch(/testCount: TEST_COUNT/)
+    })
+  })
+
   describe('rule 3 and process-spawn volatility', () => {
     it('a genuine step change still FAILS at any load', () => {
       // 1,000 -> 3,000 ms is a doubling of share at 1.5x load. That is the rule working.
