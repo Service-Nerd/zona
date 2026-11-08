@@ -483,10 +483,25 @@ before planning against any number below (an item is a snapshot of the code on t
   numbers (28px ×8, 56, 64, 112, 18 ×2, 20). ⚠️ **Deliberately NOT swept by `SITE-SPACE-GATE-02`**, which exempts
   them by name: pushing a 112px band onto the element scale is a 64px change and the wrong family besides. **A gate
   that quietly reassigns a value to another family is worse than one that cannot see it.**
-- ⚙️ **NO BOARD** `SITE-SPACE-OVERLIMIT-01` — **8 spacing values whose nearest-token shift exceeds the board's 4px
-  limit**, so the sweep left them and the gate registers them with reasons: `/support`, `/privacy`, `/terms` page
-  padding (80 ×3, 64 ×3), `SiteFooter` 40, `charity-runners` 56. Per `SITE-WAVE-4` these return to the board rather
-  than being swept. ⚠️ **A declared reason is not a fixed problem** — these entered the register 2026-11-05.
+- 🧭 **DESIGN BOARD** (re-tagged 2026-11-08; was ⚙️ NO BOARD, which the item's own body contradicted)
+  `SITE-SPACE-OVERLIMIT-01` — spacing values whose nearest-token shift exceeds the board's 4px limit, so the sweep
+  left them. **Per `SITE-WAVE-4` these return to the board rather than being swept, which is a 🧭 question: a
+  visible change of up to 32px on five live pages.** The ⚙️ tag was wrong and is corrected.
+  - 🔴 **RE-MEASURED 2026-11-08: NINETEEN instances across seven files, not eight across five.** The item inherited
+    its figure of 8 from the register's REASONS, and the register was four BARE VALUES — a permission for that
+    number on every marketing surface. So 64's reason said *"/support, /privacy, /terms page padding"* while it also
+    covered `SiteHeader` ×2 and `charity-runners` ×2, and 56's covered **`PhoneFrame` ×5** that no reason mentioned
+    at all. ⚠️ **`ALLOWED_IN_FILE`'s own comment already said why this was wrong** — *"the bare-value `ALLOWED`
+    exempts a number on EVERY surface, which is wider than any of its reasons"* — so the mechanism and the warning
+    both existed and the four overlimit values sat in the loose half anyway.
+  - ✅ **HALF OF IT IS CLOSED, AND IT MOVED NO PIXELS** (`93dc7dd2`+, 2026-11-08, ⚙️ NO BOARD as a defect fix
+    against the gate's own documented intent): `OVERLIMIT_BY_FILE` replaces the bare register, the bare one is
+    asserted EMPTY, and two arms hold it honest — every row must match a real instance (a stale row hides the next
+    offender) and the total must equal the measured **19**. **A new instance of one of these four values on a new
+    file now FAILS**, so the debt is frozen where it is instead of being a standing permission.
+  - 🔻 **For the board:** should these 19 be swept onto the scale, at up to 32px of visible movement, or should the
+    scale gain a value? `/support`, `/privacy` and `/terms` are three pages sharing one padding pair, which is an
+    argument for a token rather than for three exemptions.
 - 🧭 **DESIGN BOARD** `SITE-SUBMEASURE-SPRAWL-01` — sub-column widths on the marketing site run 520 / 540 / 560 /
   600 / 620 / 640 / 720, hand-typed. ⚠️ **Not a defect against any ruling** (the register: *"720px for prose stays,
   the measure was never the defect"*), which is why `SITE-MEASURE-THIRD-02` left them alone — sweeping them is a

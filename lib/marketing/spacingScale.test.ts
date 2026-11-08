@@ -120,7 +120,8 @@ const SCALE = [4, 8, 12, 16, 24, 32, 48]
 function governed(file: string, v: number): boolean {
   if (v <= 5) return false                                   // line-box artefact
   if (SCALE.includes(v)) return false                        // already on the scale
-  if (ALLOWED[String(v)]) return false                       // declared debt
+  if (ALLOWED[String(v)]) return false                       // declared debt (now empty; see below)
+  if (OVERLIMIT_BY_FILE[file]?.[String(v)]) return false     // overlimit debt, FILE-SCOPED
   if (ALLOWED_IN_FILE[file]?.[String(v)]) return false       // another system owns it
   return true
 }
@@ -140,15 +141,50 @@ function isBandRhythm(src: string, m: RegExpMatchArray): boolean {
     && /(^|\s)24px(\s|$)/.test(m[3])
 }
 
-/** Values knowingly left hand-typed, with the reason. Debt register, not a hole.
- *  ⚠️ `A DECLARED REASON IS NOT A FIXED PROBLEM` — every row here is a value
- *  whose nearest-token shift EXCEEDS the board's 4px limit, so it returns to the
- *  board rather than being swept by me. Filed as `SITE-SPACE-OVERLIMIT-01`. */
-const ALLOWED: Record<string, string> = {
-  '40': 'SiteFooter top padding; an 8px shift to --space-7 exceeds the 4px limit',
-  '56': 'an 8px shift to --space-7 exceeds the board\'s 4px limit; returns to the board',
-  '64': '/support, /privacy, /terms page padding; 16px from --space-7',
-  '80': '/support, /privacy, /terms page padding; 32px from --space-7',
+/**
+ * Values knowingly left hand-typed, with the reason. Debt register, not a hole.
+ * Every entry is a value whose nearest-token shift EXCEEDS the board's 4px limit, so it
+ * returns to the board rather than being swept here. Filed as `SITE-SPACE-OVERLIMIT-01`.
+ *
+ * 🔴 IT WAS FOUR BARE VALUES AND ITS REASONS NAMED THREE FILES WHILE IT EXEMPTED SEVEN
+ * (SITE-SPACE-OVERLIMIT-01, re-measured 2026-11-08). The register said *"/support, /privacy,
+ * /terms page padding"* for 64 and 80 — and because a bare value exempts a number on EVERY
+ * surface, 64 was also covering `SiteHeader` ×2 and `charity-runners` ×2, and 56 was covering
+ * `PhoneFrame` ×5 that no reason mentioned at all. **8 instances were described; 19 were
+ * exempt.** The backlog item inherited the figure of 8 from the reasons.
+ *
+ * ⚠️ `ALLOWED_IN_FILE`'s own comment already said why this was wrong — *"the bare-value
+ * `ALLOWED` above exempts a number on EVERY surface, which is wider than any of its
+ * reasons"* — so the mechanism and the warning both existed and the four overlimit values
+ * were in the loose half anyway. `VERIFY THE EXEMPTION'S JUSTIFICATION, NOT THE STAMP.`
+ *
+ * 🔑 SO THE REGISTER IS FILE-SCOPED NOW AND NOT ONE PIXEL MOVED. Whether these 19 should be
+ * swept onto the scale is a VISIBLE change of up to 32px and belongs to the Design Board,
+ * which is what the item always said and what its ⚙️ NO BOARD tag disagreed with. This half
+ * — making the exemption describe what it exempts — is a defect fix against the gate's own
+ * documented intent.
+ */
+const ALLOWED: Record<string, string> = {}
+
+/**
+ * The 19 overlimit instances, by file, measured 2026-11-08.
+ *
+ * ⚠️ A NEW instance of one of these values on a NEW file now FAILS, which is the whole point
+ * of the file scope: the debt is frozen where it is rather than being a standing permission
+ * for four numbers everywhere.
+ */
+const OVERLIMIT_BY_FILE: Record<string, Record<string, string>> = {
+  'app/support/page.tsx':   { '64': 'page padding; 16px from --space-7', '80': 'page padding; 32px from --space-7' },
+  'app/privacy/page.tsx':   { '64': 'page padding; 16px from --space-7', '80': 'page padding; 32px from --space-7' },
+  'app/terms/page.tsx':     { '64': 'page padding; 16px from --space-7', '80': 'page padding; 32px from --space-7' },
+  'app/charity-runners/page.tsx': {
+    '56': 'section marginTop; an 8px shift to --space-7 exceeds the 4px limit',
+    '64': 'section padding; 16px from --space-7',
+    '80': 'section padding; 32px from --space-7',
+  },
+  'components/marketing/PhoneFrame.tsx': { '56': 'device-frame geometry, not the element scale — 5 instances' },
+  'components/marketing/SiteFooter.tsx': { '40': 'top padding; an 8px shift to --space-7 exceeds the 4px limit' },
+  'components/marketing/SiteHeader.tsx': { '64': 'header height and padding; 16px from --space-7' },
 }
 
 /** Values exempt on ONE named file, because they belong to another system.
@@ -223,6 +259,42 @@ describe('spacing scale — SITE-WAVE-4', () => {
     }
     expect(SURFACES.length).toBeGreaterThan(20)
     expect(SURFACES.some(f => f.includes('what-is-zone-2-running'))).toBe(true)
+  })
+
+  /**
+   * SITE-SPACE-OVERLIMIT-01 (2026-11-08) — THE REGISTER MUST DESCRIBE WHAT IT EXEMPTS.
+   *
+   * 🔑 The arm above proves no NEW off-scale value appears. This one proves the register is
+   * not quietly wider than its reasons, which is how it came to describe 8 instances while
+   * exempting 19: a bare value is a permission for that number on every surface, forever.
+   *
+   * ⚠️ BOTH DIRECTIONS. A row for a file that no longer carries the value is a STALE
+   * exemption and hides the next genuine offender — the same shape as a dead entry in a debt
+   * register, and the reason `storedPlanDebt.test.ts` grew a stale-exemption arm the same day.
+   */
+  it('every file-scoped overlimit exemption still matches a real instance', () => {
+    const stale: string[] = []
+    let instances = 0
+    for (const [file, vals] of Object.entries(OVERLIMIT_BY_FILE)) {
+      const full = path.join(ROOT, file)
+      if (!fs.existsSync(full)) { stale.push(`${file}: the file is gone`); continue }
+      const src = fs.readFileSync(full, 'utf8')
+      for (const v of Object.keys(vals)) {
+        const hits = Array.from(src.matchAll(new RegExp(`(?<![\\d.])${v}px`, 'g'))).length
+        if (!hits) stale.push(`${file}: ${v}px is exempt and no longer appears`)
+        instances += hits
+      }
+    }
+    expect(stale, 'a stale exemption is a hole: delete the row').toEqual([])
+    // 📐 The measured total, so the register cannot grow silently. 19 on 2026-11-08.
+    expect(instances, 'overlimit instances covered by the register').toBe(19)
+  })
+
+  it('the bare-value register is EMPTY — an overlimit value is file-scoped or it fails', () => {
+    // The mechanism that caused the over-exemption, closed rather than documented. A future
+    // entry here would re-open a permission for one number on every marketing surface.
+    expect(Object.keys(ALLOWED),
+      'put the value in OVERLIMIT_BY_FILE with its file, not in the bare register').toEqual([])
   })
 
   it('the \u22645px exemption is real, not an accident', () => {
