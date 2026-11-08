@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { readFileSync, existsSync } from 'fs'
 import { dirname, join, resolve, relative } from 'path'
-import { cohortGrid, targetedGrid } from './cohortGrid'
+import { cohortGrid, targetedGrid, derivedWeekdayCap } from './cohortGrid'
 import { slowGoalGrid, slowGoalDates } from './slowGoalGrid'
 import { PLAN_PERSONAS, charityInput } from './charityCohort'
 import { fullEnvelope } from './useCaseEnvelope'
@@ -253,5 +253,67 @@ describe('COHORT-GRID-UNSET-LEVEL-01 — corpora carry the production level shap
   it('targetedGrid holds both structural bands, so its declared-level axis bites', () => {
     const bands = new Set(targetedGrid().map(i => derivedLevelsFor(i as unknown as GeneratorInput).structural))
     expect(Array.from(bands).sort()).toEqual(['beginner', 'intermediate'])
+  })
+})
+
+/**
+ * GRID-DAY-BUDGET-NO-CAP-01 — the SECOND field, same class.
+ *
+ * `day_budgets` and `max_weekday_mins` are not independent inputs: the wizard derives
+ * the second from the first (`weekPlanToInputs`, the MINIMUM across the weekdays the
+ * runner actually runs) and posts both. A corpus that sends only the budgets measures a
+ * runner the product cannot build, and specifically makes every rule gated on
+ * `input.max_weekday_mins != null` read as unexercised.
+ *
+ * 🔴 WHAT IT COST: the plan-level §81 weekday-overrun detector opens
+ * `if (!cap) return null`. `targetedGrid` was the ONLY corpus anywhere carrying per-day
+ * budgets, and on all 3,072 of its budgeted rows that detector returned null — so the
+ * corpus built to reach per-day budgets was the one corpus structurally blind to the
+ * note those budgets break. Measured: 614 of 810 firings of that note are FALSE in
+ * production shape (STRUCTURAL-NOTE-DAY-BUDGET-01), and no corpus could see one.
+ *
+ * ⚠️ NARROWER THAN THE FIRST READ. `scripts/property-validate-plans.ts:511` already does
+ * `max_weekday_mins: Math.min(...Object.values(db))`, and the coach-review canonical cases
+ * carry `// = min(day_budgets), what the wizard sends today` beside the value. ONE corpus
+ * was wrong, not six — stated because the `fitness_level` arm above found six and the
+ * temptation is to assume the same breadth twice.
+ */
+describe('GRID-DAY-BUDGET-NO-CAP-01 — day_budgets never travels without its derived cap', () => {
+  for (const c of CORPORA) {
+    it(`${c.name}: every row with day_budgets carries max_weekday_mins = min(running weekdays)`, () => {
+      const rows = c.rows()
+      expect(rows.length).toBeGreaterThan(0)
+      const budgeted = rows.filter(r => r.day_budgets != null)
+      // Not every corpus sets per-day budgets, and that is fine — the claim is
+      // conditional. But the arm must say which corpora it actually exercised, or a
+      // grid that drops the axis turns this green by selecting nothing.
+      const offenders = budgeted.filter(r => {
+        const want = derivedWeekdayCap(
+          r.day_budgets as Record<'mon', number>,
+          (r.days_cannot_train as string[]) ?? [],
+        )
+        return r.max_weekday_mins !== want
+      })
+      expect(
+        offenders.length,
+        `${offenders.length} of ${budgeted.length} budgeted rows in ${c.name} do not carry the `
+        + 'cap the wizard derives from those budgets. `weekPlanToInputs` sends both; a corpus '
+        + 'that sends only `day_budgets` leaves `input.max_weekday_mins` undefined, and every '
+        + 'rule gated on it — the plan-level §81 overrun detector among them — reads as '
+        + `exercised while firing for nobody. First offender: ${JSON.stringify(offenders[0] ?? null)}`,
+      ).toBe(0)
+    })
+  }
+
+  /** The population, asserted. `targetedGrid` is the only corpus with per-day budgets today,
+   *  so if it ever stops carrying them the arm above passes on an empty set and says nothing. */
+  it('targetedGrid is still the corpus that exercises per-day budgets', () => {
+    const rows = targetedGrid()
+    const budgeted = rows.filter(r => (r as { day_budgets?: unknown }).day_budgets != null)
+    expect(budgeted.length).toBeGreaterThan(0)
+    // And the cap it derives is the minimum, not one of the roomier days: the whole
+    // defect is that 30 is quoted at a session sitting on the 60-minute Thursday.
+    expect(new Set(budgeted.map(r => (r as { max_weekday_mins?: number }).max_weekday_mins)))
+      .toEqual(new Set([30]))
   })
 })

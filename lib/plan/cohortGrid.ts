@@ -256,6 +256,34 @@ const TARGETED_DECLARED = [undefined, 'beginner', 'intermediate', 'experienced']
 const TARGETED_WEEKS_AT_VOLUME = [undefined, 1, 4, 12] as const
 const TARGETED_FOUNDATION = [undefined, 'add', 'skip', 'start_now'] as const
 const TARGETED_DAY_BUDGETS = [undefined, { mon: 30, tue: 45, wed: 30, thu: 60, fri: 30 }] as const
+// GRID-DAY-BUDGET-NO-CAP-01 (2026-11-08) — the PRODUCTION pairing, derived, not typed.
+//
+// The wizard never sends `day_budgets` alone: `weekPlanToInputs` derives
+// `max_weekday_mins` as the MINIMUM across the weekdays the runner actually runs and
+// sends both. This axis sent the budgets with no cap, so `input.max_weekday_mins` was
+// undefined on 3,072 of 6,144 rows — and every rule gated on the single cap existing
+// read as unexercised. The plan-level §81 weekday-overrun detector opens
+// `if (!cap) return null`, so it returned null for ALL of them: the corpus with the only
+// per-day budgets anywhere was the one corpus blind to the detector those budgets break.
+//
+// ⚠️ NARROWER THAN IT FIRST LOOKED. `scripts/property-validate-plans.ts` and the
+// coach-review canonical cases (persona 06's Tue 90) already derive the minimum
+// correctly. ONE corpus, not six — the COHORT-GRID-UNSET-LEVEL-01 class in a second
+// field, and `corpusProductionShape.test.ts` now holds this pairing too.
+const WEEKDAY_KEYS = ['mon', 'tue', 'wed', 'thu', 'fri'] as const
+/** `max_weekday_mins` exactly as `weekPlanToInputs` derives it: the minimum over the
+ *  weekdays the runner actually runs. `undefined` when no weekday carries a budget. */
+export function derivedWeekdayCap(
+  budgets: Partial<Record<typeof WEEKDAY_KEYS[number], number>> | undefined,
+  daysCannotTrain: readonly string[] = [],
+): number | undefined {
+  if (!budgets) return undefined
+  const rest = new Set(daysCannotTrain.map(d => String(d).slice(0, 3).toLowerCase()))
+  const mins = WEEKDAY_KEYS.filter(d => !rest.has(d))
+    .map(d => budgets[d])
+    .filter((m): m is number => typeof m === 'number' && Number.isFinite(m) && m > 0)
+  return mins.length > 0 ? Math.min(...mins) : undefined
+}
 // LIVENESS-DEBT-01 (2026-09-17). A SIXTH axis, and it is here for the reason the
 // other five are: `INV-PLAN-OVERDO-BRAKE` is gated on
 // `hard_session_relationship === 'overdo'`, NEITHER grid ever set anything but
@@ -324,7 +352,11 @@ export function targetedGridCore(): GeneratorInput[] {
                 ...(declared !== undefined ? { user_declared_level: declared } : {}),
                 ...(weeksAtVolume !== undefined ? { weeks_at_current_volume: weeksAtVolume } : {}),
                 ...(foundation !== undefined ? { foundation_decision: foundation } : {}),
-                ...(dayBudgets !== undefined ? { day_budgets: { ...dayBudgets } } : {}),
+                // Both fields, always: see GRID-DAY-BUDGET-NO-CAP-01 above.
+                ...(dayBudgets !== undefined
+                  ? { day_budgets: { ...dayBudgets },
+                      max_weekday_mins: derivedWeekdayCap(dayBudgets, []) }
+                  : {}),
               } as unknown as GeneratorInput)
             }
 

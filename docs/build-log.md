@@ -5,6 +5,16 @@ angle. Feeds the weekly DHTB LinkedIn build-in-public posts — keep it honest, 
 it specific, no polish. The content system adds the voice.
 
 ---
+## 2026-11-08 — GRID-DAY-BUDGET-NO-CAP-01 · the corpus built to reach a feature was the one thing blind to it
+**Shipped:** `targetedGrid`'s per-day budget axis now sends the cap the wizard derives from those budgets, and `corpusProductionShape.test.ts` holds the pairing.
+**Dev learning:** `day_budgets` and `max_weekday_mins` are not independent inputs — the wizard derives the second from the first as the minimum over running weekdays and posts both. The grid sent only the budgets. The plan-level §81 overrun detector opens `if (!cap) return null`, so on all **3,072** budgeted rows it returned null. **The only corpus in the repo carrying per-day budgets was the one corpus that could not see the note those budgets break.**
+**Product/creator learning:** I assumed the breadth of the last instance. `COHORT-GRID-UNSET-LEVEL-01` found `fitness_level` wrong in **six** corpora, so I went looking for six. It was **one**: the property sweep already derives the minimum correctly, and the coach-review cases carry a comment saying so beside the value. Writing "one, not six" into the gate's own docblock, with why, is cheaper than the next person re-running my search.
+**AI-building learning:** the fix moves **nothing**. `measure:fitness`, `audit:plans`, `cohort:shape` and all thirteen `targetedGrid` consumers came back byte-identical. That is not a reason it was not worth doing — it is the exact finding: the shape was wrong and **no gate could see it in either direction**, which is why the shape itself now has a gate.
+**The honest bit:** I found this while analysing a different item and nearly folded it in. Mixing a corpus change and an engine change in one commit would have made both baseline deltas unattributable, so it went first, alone, and measured zero. Twenty minutes to learn that the answer was zero, and the zero is the record.
+**Hook material:** 3,072 of 3,072 rows in a shape the product cannot post — and the arm that proves it printed exactly that number the first time it was made to fail.
+**Postable?:** maybe
+
+---
 ## 2026-11-08 — W4-REVIEW-ROUND-01 · I overclaimed what the fix fixed, and the floor guarded the wrong number
 **Shipped:** the fix round for W4. Seven findings, all mine; two of them changed what the original commit means.
 **Dev learning:** the commit said the new register pair lets you tell a payment from a drop-out. **It separates the drop-out move and nothing else.** A contract *written* and a component *deleted* at the same importer tier still move both numbers identically — that was true before the change and is unchanged by it. The script now carries a five-row table of which moves each figure can see, because the honest version of a claim about a check is a table, not a sentence.
