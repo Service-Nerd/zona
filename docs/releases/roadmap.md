@@ -713,12 +713,23 @@ iOS-only (US/UK/anglosphere). **🚀 LIVE ON THE APP STORE — v1.7 approved and
 >    the account-pause risk was live with zero runners. 🔴 **I RECOMMENDED THIS ITEM WITHOUT
 >    RE-MEASURING IT** — the backlog's own standing rule, invoked three times today on other
 >    people's items and not applied to this one. The founder had to tell me.
->    🔻 **The second half is still open and is now the whole item** → `OPS-FN-DURATION-01`:
->    Pro's higher ceiling is **opt-in per route** via `maxDuration`, and **no route in `app/`
->    sets it** (measured), while plan enrichment runs **28–35 s**. ⚠️ **The premise needs
->    checking before the work:** this item says Pro lifts the ceiling 60 s → 300 s, and current
->    Vercel guidance says the default is **300 s on all plans**, which would make it moot.
->    Unverified here — the Vercel docs connector is not authorised.
+>    ✅ **The second half — `OPS-FN-DURATION-01` — CLOSED 2026-11-08, and it was NOT the
+>    DON'T BUILD the lookup was supposed to make it.** The lookup: the default **is** now 300 s
+>    on all plans (up from 60 s Hobby / 90 s Pro), **but only with Fluid compute enabled**, and
+>    that cannot be verified from this machine — observability returns 404 and the project API
+>    does not expose it. 🔴 **AND THIS ITEM'S OWN NUMBER WAS STALE BY NEARLY 2×, in the
+>    direction that matters.** It said plan enrichment runs 28–35 s. Measured from
+>    `ops_events.ai_call` (103 real calls): p50 **42.7 s**, p95 **57.0 s**, max **64.4 s**, and
+>    **RISING** — p50 went **38.3 → 45.4 → 59.1 s** across 2026-09/10/11, with 3 calls already
+>    over 60 s. 🔑 **The decisive finding was a different one: `callAnthropic` had NO timeout
+>    at all**, so a hung connection ran until the platform killed the function — and
+>    `ai_call_failed` had **0 rows, ever**, because a function the platform kills cannot log its
+>    own death. So the ceiling and the client timeout shipped together: **14 routes** (the
+>    import closure of `callAnthropic`, which includes two that reach it only through `lib/`)
+>    declare `maxDuration = 300`, and `AI_LIMITS.CALL_TIMEOUT_MS = 240_000` fires **before** the
+>    platform so the failure lands in the ledger as its own `reason: 'timeout'`.
+>    ⚠️ Per-surface tightening filed, not guessed → `AI-TIMEOUT-PER-SURFACE-01` (five surfaces
+>    have n ≤ 10 and `enrich-maintenance` has **zero** samples).
 > 2. 🔴 **`OPS-SUPABASE-PLAN-01`** — Supabase is on **Free**. 📐 **RE-MEASURED 2026-10-14 against
 >    the live database, and the CAPACITY ARGUMENT IS NOT THE REASON:** **48 users · 35 plans ·
 >    51 archives · 612 health samples · 340 activities · 9,200 ops_events**. The item predicted a

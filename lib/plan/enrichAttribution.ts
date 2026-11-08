@@ -69,7 +69,7 @@ export function violationsIntroducedBy(
  * The split exists so a failure can be triaged from the plan row alone rather
  * than by correlating against logs that have since rolled off:
  *   - failed_no_api_key  → deploy config (the env var is missing)
- *   - failed_api_error   → upstream: non-2xx from Anthropic, or transport threw
+ *   - failed_api_error   → upstream: non-2xx from Anthropic, transport threw, or we timed out
  *   - failed_unparseable → the model: not JSON, or JSON that failed the schema
  * `failed_invalid_copy` is set by the route, not here — it is our own revert
  * decision rather than one of the enricher's outcomes.
@@ -78,7 +78,10 @@ export function statusForReason(reason: EnrichFailureReason): EnrichmentStatus {
   switch (reason) {
     case 'no_api_key':     return 'failed_no_api_key'
     case 'api_error':
-    case 'fetch_failed':   return 'failed_api_error'
+    case 'fetch_failed':
+    // OPS-FN-DURATION-01 — a timeout is the transport bucket. The precise name lives in
+    // `ai_call_failed.reason`, which is what `aiSpend` groups by; see `EnrichFailureReason`.
+    case 'timeout':        return 'failed_api_error'
     case 'parse_error':
     case 'schema_invalid': return 'failed_unparseable'
   }

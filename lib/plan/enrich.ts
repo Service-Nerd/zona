@@ -215,6 +215,15 @@ export type EnrichFailureReason =
   | 'no_api_key'     // ANTHROPIC_API_KEY absent from the environment
   | 'api_error'      // Anthropic returned a non-2xx
   | 'fetch_failed'   // network/transport threw
+  // OPS-FN-DURATION-01 (2026-11-08) — the client gave up waiting (`AI_LIMITS.CALL_TIMEOUT_MS`).
+  // ⚠️ IT IS DISTINCT HERE AND LUMPED IN `statusForReason`, which is the decision and not an
+  // omission: the LEDGER (`ai_call_failed.reason`) is where the distinction has to be precise,
+  // because that is what `aiSpend` groups by and what tells you whether to raise the timeout or
+  // shrink the prompt. `meta.enrichment` is a three-bucket TRIAGE status persisted on every
+  // plan row, and widening a persisted vocabulary reaches `enrichmentStateOf`,
+  // `judgeEnrichHealth`, `/api/ops/enrich-health` and the digest SQL mirror — a far larger
+  // change than this item, for a distinction the ledger already carries.
+  | 'timeout'
   | 'parse_error'    // response was not JSON after fence-stripping
   | 'schema_invalid' // JSON parsed but failed EnrichedPlanSchema
 

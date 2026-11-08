@@ -4101,7 +4101,44 @@ filed rather than built.
 
 ---
 
-### ⚙️ `OPS-FN-DURATION-01` — no route sets `maxDuration`, and the item's own premise may be stale *(filed 2026-10-14, P2)* ⚙️ **NO BOARD**
+### 🔲 `AI-TIMEOUT-PER-SURFACE-01` — the AI call timeout is one number for two latency regimes *(filed 2026-11-08, P3)* ⚙️ **NO BOARD**
+
+Filed out of `OPS-FN-DURATION-01`, which set a single `AI_LIMITS.CALL_TIMEOUT_MS = 240_000`
+derived from the route ceiling. That number's job is to fire before the platform does so the
+failure is attributable, and it does that. **It is deliberately not sized per surface**, and the
+cost is stated: a hung `daily-coach-note` (p95 **1.3 s**) holds a function for four minutes.
+
+📐 **Measured 2026-11-08** (`ops_events.ai_call`, 749 calls carrying `ms`):
+
+| surface | n | p50 | p95 | max |
+|---|---|---|---|---|
+| `enrich-plan` | 103 | 42.7 s | 57.0 s | **64.4 s** |
+| `weekly-report` | 36 | 3.3 s | 5.0 s | 5.7 s |
+| `plan-weekly-note` | 62 | 1.5 s | 1.9 s | 2.6 s |
+| `analyse-run` | 48 | 1.6 s | 2.1 s | 2.3 s |
+| `trend` | 145 | 0.8 s | 1.3 s | 3.6 s |
+| `daily-coach-note` | 334 | 0.9 s | 1.3 s | 2.0 s |
+
+🔴 **WHY IT WAS NOT DONE NOW, rather than forgotten:** four surfaces have **n ≤ 5**
+(`adjust-plan` 5, `phase-summary` 3, `weekly-free-insight` 3, `strength-weekly-note` 10) and
+**`enrich-maintenance` has ZERO samples** — there are no maintenance plans in production. A
+per-surface value for those is a guess wearing a measurement, which is the shape this backlog's
+own rule warns about.
+
+⚠️ **AND THE OBVIOUS MODEL IS WRONG — measured, so nobody re-derives it.** Sizing the timeout as
+`maxTokens / rate` using the pooled p05 throughput (**22.8 output tok/s**) gives `enrich-plan`'s
+14,000-token ceiling **615 s**, which is absurd. The pooled rate is dominated by small calls that
+are **LATENCY-bound** (29 tokens in 931 ms, so most of it is overhead) while `enrich-plan`
+actually streams at **96–113 tok/s**. Two regimes behind one average. A per-surface model has to
+be `fixed overhead + tokens / marginal rate`, fitted per regime, **not** a single divisor.
+
+🔑 **Reopens when:** `enrich-maintenance` has samples (a real post-race runner), or any surface
+accumulates n ≥ 30. Until then the one number is honest and the gate holds its two real
+properties: it fires before the platform ceiling, and it is ≥ 3× the slowest call ever recorded
+(because `enrich-plan`'s p50 rose 38.3 → 45.4 → 59.1 s across three months and a tighter value
+would start cutting plans).
+
+### ✅ `OPS-FN-DURATION-01` — **DONE 2026-11-08.** NOT a DON'T BUILD: the 300 s default is **conditional on Fluid compute**, unverifiable from here, and the item's own *"28–35 s"* was stale by nearly 2× — `enrich-plan` p50 rose **38.3 → 45.4 → 59.1 s** across three months, max **64.4 s**. 14 routes declare `maxDuration`, and `callAnthropic` has a timeout for the first time ⚙️ **NO BOARD**
 
 **Board: ⚙️ NO BOARD.** Infrastructure. The residual of `OPS-VERCEL-PLAN-01`, which **closed
 2026-10-14** when the founder confirmed he had bought **Vercel Pro** — verified

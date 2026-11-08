@@ -190,3 +190,72 @@ describe('the surface vocabulary is single-owned', () => {
     expect(unused, `declared but never called: ${unused.join(', ')}`).toEqual([])
   })
 })
+
+/**
+ * OPS-FN-DURATION-01 (2026-11-08) — THE CALL HAD NO TIMEOUT, AND THE CONSEQUENCE WAS SILENCE.
+ *
+ * 🔴 There was no `AbortSignal`, no `AbortController`, nothing: a hung connection ran until the
+ * platform killed the function. ⚠️ **And a function the platform kills cannot log its own
+ * death** — `ai_call_failed` had **0 rows, ever**, which reads as "nothing has ever failed".
+ * That is the `TELEMETRY-BLIND-01` shape landing on the one failure a duration ceiling governs.
+ *
+ * BEHAVIOURAL, not a source assertion, because a source assertion passes on a comment —
+ * `SHEET-RAF-FALLBACK-01` is this repo's recorded precedent for exactly that substitution.
+ */
+describe('callAnthropic — the timeout (OPS-FN-DURATION-01)', () => {
+  it('passes an AbortSignal on every call, sized from the config', () => {
+    const fetchMock = vi.fn().mockResolvedValue(okBody('hi'))
+    vi.stubGlobal('fetch', fetchMock)
+    return callAnthropic({ surface: 'trend', model: ANTHROPIC_MODEL, maxTokens: 10, messages: [] })
+      .then(() => {
+        const [, init] = fetchMock.mock.calls[0]
+        expect(init.signal, 'a fetch with no signal cannot be aborted').toBeInstanceOf(AbortSignal)
+        expect(init.signal.aborted, 'and it must not already be aborted').toBe(false)
+      })
+  })
+
+  it('🔴 a TimeoutError becomes reason `timeout`, not `fetch_failed`', async () => {
+    // What `AbortSignal.timeout` actually rejects with: a DOMException named TimeoutError.
+    const err = new Error('The operation was aborted due to timeout')
+    err.name = 'TimeoutError'
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(err))
+
+    const res = await callAnthropic({ surface: 'enrich-plan', model: ANTHROPIC_MODEL, maxTokens: 6000, messages: [] })
+    expect(res.ok).toBe(false)
+    expect(res.ok === false && res.reason).toBe('timeout')
+    // ⚠️ THE LEDGER IS THE WHOLE POINT. `aiSpend` groups failures BY REASON, so this is what
+    // tells you whether to raise the timeout or shrink the prompt.
+    expect(recordOpsEvent).toHaveBeenCalledWith(
+      'ai_call_failed',
+      expect.objectContaining({ surface: 'enrich-plan', reason: 'timeout' }),
+      null,
+    )
+  })
+
+  it('…and it records how long it waited, so the number is tunable from data', () => {
+    const err = new Error('aborted')
+    err.name = 'TimeoutError'
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(err))
+    return callAnthropic({ surface: 'trend', model: ANTHROPIC_MODEL, maxTokens: 10, messages: [] }).then(() => {
+      const detail = recordOpsEvent.mock.calls.find(c => c[0] === 'ai_call_failed')![1]
+      expect(typeof detail.ms, 'a failure with no duration cannot be compared to a ceiling').toBe('number')
+    })
+  })
+
+  it('a NON-timeout transport error is still `fetch_failed` — the split is not a rename', async () => {
+    // The vacuity arm: without it, "call everything a timeout" passes the arms above.
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new TypeError('Failed to fetch')))
+    const res = await callAnthropic({ surface: 'trend', model: ANTHROPIC_MODEL, maxTokens: 10, messages: [] })
+    expect(res.ok === false && res.reason).toBe('fetch_failed')
+    expect(recordOpsEvent).toHaveBeenCalledWith(
+      'ai_call_failed', expect.objectContaining({ reason: 'fetch_failed' }), null,
+    )
+  })
+
+  it('a 429 is NOT a timeout either — an api_error keeps its status', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: false, status: 429, text: async () => 'slow down' }))
+    const res = await callAnthropic({ surface: 'trend', model: ANTHROPIC_MODEL, maxTokens: 10, messages: [] })
+    expect(res.ok === false && res.reason).toBe('api_error')
+    expect(res.ok === false && res.status).toBe(429)
+  })
+})

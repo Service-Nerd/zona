@@ -23,6 +23,19 @@ import { BRAND } from '@/lib/brand'
 import { notifyUser } from '@/lib/webpush'
 import { recordNotification } from '@/lib/notifications'
 
+// OPS-FN-DURATION-01 (2026-11-08) — this route can reach the model, so it states its own
+// ceiling instead of inheriting a platform default that has changed twice (60 s Hobby /
+// 90 s Pro → 300 s on all plans, conditional on Fluid compute, which cannot be verified
+// from the dev machine). 300 is the MAXIMUM on Hobby and the DEFAULT on Pro, so it is valid
+// on either, and an in-code value overrides vercel.json, the dashboard and the Fluid
+// defaults. It is a ceiling, not a reservation — Vercel bills active CPU.
+//
+// The literal is deliberate: Next.js route segment config must be statically analysable, so
+// it cannot read AI_LIMITS.ROUTE_MAX_DURATION_SECONDS. `aiRouteMaxDuration.test.ts` is the
+// link — it fails if this number and that constant ever disagree, and if any route in
+// callAnthropic's import closure has no maxDuration at all.
+export const maxDuration = 300
+
 // POST /api/adjust-plan
 // Auth-gated (paid/trial). Checks adjustment triggers for the current week.
 // If a trigger fires: saves to plan_adjustments (status: pending).

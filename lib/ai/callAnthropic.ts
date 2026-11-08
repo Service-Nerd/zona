@@ -1,4 +1,5 @@
 import { recordOpsEvent } from '@/lib/ops/recordOpsEvent'
+import { AI_LIMITS } from './limits'
 import { usageCostUsd, ZERO_USAGE, type AiUsage } from './pricing'
 import type { AiSurface } from './surfaces'
 
@@ -33,7 +34,12 @@ import type { AiSurface } from './surfaces'
  * (`api_error` / `fetch_failed`) rather than a second set of names.
  */
 
-export type AiFailureReason = 'api_error' | 'fetch_failed'
+// OPS-FN-DURATION-01 (2026-11-08) — `timeout` is its own reason, not a `fetch_failed`.
+// An `AbortSignal.timeout` rejection IS a fetch rejection, so folding it into `fetch_failed`
+// would have worked and told us nothing: "Anthropic refused us" and "we gave up waiting" need
+// different fixes, and `aiSpend` already groups failures BY REASON, so a shared name would
+// have hidden the new one inside a count that already exists.
+export type AiFailureReason = 'api_error' | 'fetch_failed' | 'timeout'
 
 export type AnthropicResult =
   | { ok: true; text: string; data: any; usage: AiUsage }
@@ -101,12 +107,31 @@ export async function callAnthropic(call: AnthropicCall): Promise<AnthropicResul
   let res: Response
   const startedAt = Date.now()
   try {
-    res = await fetch(ANTHROPIC_API_URL, { method: 'POST', headers, body: JSON.stringify(body) })
+    // 🔴 OPS-FN-DURATION-01 (2026-11-08) — THERE WAS NO TIMEOUT HERE AT ALL, and the
+    // consequence was not a slow request: it was an INVISIBLE one. A hung connection ran until
+    // the platform killed the function, and **a function the platform kills cannot log its own
+    // death** — `ai_call_failed` had 0 rows, ever, which read as "nothing has ever failed".
+    //
+    // `CALL_TIMEOUT_MS` is derived from `ROUTE_MAX_DURATION_SECONDS`, not from throughput, so
+    // it fires BEFORE the platform and the failure lands in the ledger. The arithmetic is
+    // gated: `aiCallTimeout.test.ts` fails if the timeout ever reaches the route ceiling,
+    // because a timeout at or above it is not a timeout.
+    res = await fetch(ANTHROPIC_API_URL, {
+      method: 'POST', headers, body: JSON.stringify(body),
+      signal: AbortSignal.timeout(AI_LIMITS.CALL_TIMEOUT_MS),
+    })
   } catch (e) {
     const detail = e instanceof Error ? e.message : String(e)
-    console.error(`[ai:${surface}] fetch failed`, detail)
-    await record('ai_call_failed', { surface, model, reason: 'fetch_failed', detail: detail.slice(0, 200) }, userId)
-    return { ok: false, reason: 'fetch_failed', status: null, detail }
+    // `AbortSignal.timeout` rejects with a DOMException named `TimeoutError`. Matched on the
+    // NAME, never the message: the message is runtime wording and differs between Node
+    // versions and undici releases, which is this repo's `never match a refusal by its
+    // MESSAGE` lesson.
+    const timedOut = e instanceof Error && e.name === 'TimeoutError'
+    const reason: AiFailureReason = timedOut ? 'timeout' : 'fetch_failed'
+    const ms = Date.now() - startedAt
+    console.error(`[ai:${surface}] ${timedOut ? `timed out after ${ms}ms` : 'fetch failed'}`, detail)
+    await record('ai_call_failed', { surface, model, reason, ms, detail: detail.slice(0, 200) }, userId)
+    return { ok: false, reason, status: null, detail }
   }
 
   if (!res.ok) {
