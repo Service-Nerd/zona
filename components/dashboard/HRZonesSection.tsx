@@ -13,7 +13,8 @@ import { TextField } from '@/components/shared/TextField'
 import { HEART_RATE_SUB } from '@/components/shared/meDoors'
 import Button from '@/components/ui/Button'
 import ScreenHeader from '@/components/ui/ScreenHeader'
-import { resolveHrSave, hrGuardableAge } from '@/lib/plan/hrSaveResolution'
+import { resolveMaxHr } from '@/lib/plan/maxHrGuard'
+import { hrGuardableAge } from '@/lib/plan/hrSaveResolution'
 import { useIsNative } from '@/lib/useIsNative'
 import { Capacitor } from '@capacitor/core'
 import dynamic from 'next/dynamic'
@@ -150,14 +151,23 @@ export default function HRZonesSection({ restingHR, maxHR, maxHrSource, birthYea
   // device floor (observed / unattributed, below the age estimate) displays the
   // guarded estimate zones instead. resolveMaxHr is the same single owner the
   // engine and DashboardClient use.
-  // PLAN-META-HR-DIVERGENCE-01 — `resolveHrSave` is the ONE owner of this decision, and
-  // `handleHrSave` calls the same function with the same inputs before it re-zones the plan.
-  // Until 2026-11-08 this form computed the guard for DISPLAY and then handed the caller the
-  // raw typed number, so it showed guarded zones and saved the unguarded one.
+  // §50 asymmetry (HR-MAX-01) — the zones shown here must not contradict the plan's guarded
+  // targets. A value the user has typed over the stored one is a confirmation (trust it); an
+  // unedited stored value keeps its provenance, so a device floor (observed / unattributed,
+  // below the age estimate) displays the guarded estimate zones instead — and the warning below
+  // then tells the runner that saving will confirm the lower number. ⚠️ THIS IS DELIBERATELY NOT
+  // `resolveHrSave`: that owner answers "what does the plan get after a SAVE", which for a
+  // confirmed max is the upper bound only. These two answers differ on purpose, the founder-
+  // approved copy below explains the difference, and PLAN-META-HR-DIVERGENCE-01's first cut
+  // collapsed them into one and broke the "tap Save to confirm it" affordance.
   const age = hrGuardableAge(birthYear)
-  const resolved = valid ? resolveHrSave({ typedMax: mhrNum, storedMax: maxHR ?? null, storedSource: maxHrSource ?? undefined, age }) : null
-  const guardedMax = resolved?.guardedMax ?? mhrNum
-  const maxIsFloored = valid && !!resolved?.floored
+  const editedMax = maxHR == null || mhrNum !== maxHR
+  const displaySource: 'observed' | 'user_confirmed' | undefined =
+    editedMax ? 'user_confirmed' : (maxHrSource ?? undefined)
+  const guardedMax = (valid && age != null)
+    ? resolveMaxHr(mhrNum, age, displaySource).effectiveMax
+    : mhrNum
+  const maxIsFloored = valid && guardedMax !== mhrNum
   const zones = valid ? calculateZones(rhrNum, guardedMax) : []
 
   function handleSave() {

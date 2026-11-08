@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { generateRulePlan } from './ruleEngine'
+import { generateRulePlan, applyRecalibration } from './ruleEngine'
 import { validatePlan } from './invariants'
 import { cohortGrid, targetedGrid, COHORT_PLAN_START } from './cohortGrid'
 import { slowGoalGrid, slowGoalDates } from './slowGoalGrid'
@@ -167,6 +167,55 @@ describe('WEEKLY-KM-AFTER-CAP-01 — a week states the week it contains', () => 
     }
     target.weekly_km = (target.weekly_km ?? 10) + 20
     expect(validatePlan(plan, inputFor(plan)).filter(v => v.code === CODE), 'an unpriceable week must be skipped, not guessed at').toEqual([])
+  })
+
+  /**
+   * 🔴 A RECALIBRATED PLAN MUST BE SKIPPED, AND MY FIRST EXEMPTION DID NOT SKIP IT.
+   *
+   * `applyRecalibration` rewrites `meta.vdot_training_anchor` for the whole plan and
+   * deliberately does NOT re-derive `duration_mins` (§125 Am. 5, RECAL-EASY-DURATION-01), so the
+   * pace this invariant rebuilds is no longer the pace any week was sized at. `/code-review`
+   * measured **1,709 firings across 384 recalibrated `cohortGrid` plans**, every one carrying a
+   * message that named a cause that was not true.
+   *
+   * ⚠️ My first exemption keyed on `meta.recalibrations_applied` and the firings DID NOT GO AWAY
+   * — reproduced at 1,715. That field is written by `app/api/recalibrate-zones/route.ts`, not by
+   * `applyRecalibration`, and only when `recalibration_week_n != null`. The exact condition is
+   * the pace BASIS having moved: the raw VDOT the input implies against the one the plan stamps.
+   */
+  it('🔴 a recalibrated plan is skipped: its pace basis is no longer the one its weeks used', () => {
+    const rows = cohortGrid().filter(i => i.benchmark != null)
+    expect(rows.length).toBeGreaterThan(0)
+    let recalibrated = 0, fired = 0
+    for (let i = 0; i < 60; i++) {
+      const input = rows[(i * 1013) % rows.length]!
+      let p: Plan
+      try { p = generateRulePlan(input, 'trial', COHORT_PLAN_START, undefined, COHORT_PLAN_START) } catch { continue }
+      // A faster time trial applied from week 3 — the shape code review measured.
+      const bm = { ...(input.benchmark as unknown as Record<string, unknown>), time: '22:00', distance_km: 5 }
+      let r: Plan
+      try { r = applyRecalibration(p, bm as never, 3) } catch { continue }
+      recalibrated++
+      fired += validatePlan(r, input).filter(v => v.code === CODE).length
+    }
+    // A FLOOR on the population: an exemption no case reaches is a branch nothing proves, and
+    // this one was wrong on its first cut.
+    expect(recalibrated, 'no plan recalibrated, so the exemption was never exercised').toBeGreaterThan(30)
+    expect(fired, `${CODE} fired ${fired} times on recalibrated plans; the pace basis moved, the weeks did not`).toBe(0)
+  })
+
+  it('🔴 a junk fitness_level does not throw OUT of validatePlan', () => {
+    // `/code-review`: `buildFallbackPace` indexes `PACE_GUIDE[fitness]` and reads
+    // `.minPerKmQuality` off it, so a `meta.fitness_level` outside the three-member union threw
+    // a TypeError out of `validatePlan`. `savePlanForUser` validates on every save and the plan
+    // audit validates every stored plan, so ONE such plan becomes unsaveable AND unauditable —
+    // a check that takes the whole write path down with it.
+    const plan = JSON.parse(JSON.stringify(generated(cohortGrid(), 1, COHORT_PLAN_START)[0]!)) as Plan
+    const meta = plan.meta as unknown as Record<string, unknown>
+    delete meta.vdot
+    delete meta.vdot_training_anchor
+    meta.fitness_level = 'elite'   // not in the union; a legacy or hand-edited plan
+    expect(() => validatePlan(plan, inputFor(plan)), 'validatePlan must not throw on an unknown level').not.toThrow()
   })
 
   it('targetedGrid reaches none of this, which is why parity returned IDENTICAL', () => {

@@ -774,21 +774,21 @@ export default function DashboardClient() {
    * the shape of this codebase's most expensive defects.
    */
   const handleHrSave = async (rhr: number, mhr: number) => {
-  // ── PLAN-META-HR-DIVERGENCE-01 (2026-11-08) — ONE OWNER, CALLED BY BOTH SIDES ─────────
+  // ── PLAN-META-HR-DIVERGENCE-01 (2026-11-08) — §50's UPPER BOUND REACHES THE PLAN ──────
   //
-  // 🔴 This stamped `'user_confirmed'` unconditionally and re-zoned the plan from the RAW
-  // typed max. §50 (HR-MAX-01) does say a value the runner types over the stored one IS a
-  // confirmation — true, and the handler could not tell a typed max from an untouched one. So a
-  // runner opening the sheet to change only their RESTING HR promoted a device-observed FLOOR
-  // to a confirmed max, which is the single thing §50's asymmetry exists to prevent.
+  // 🔴 This re-zoned the plan from the RAW typed max while `effectiveMaxHR` guarded the same
+  // value for display, so §50's plausibility ceiling applied to what the runner SEES and not to
+  // what the plan is built from. `resolveHrSave` is the one owner of the answer.
   //
-  // `resolveHrSave` is now the one owner of both answers, and `HRZonesSection` calls it with
-  // the same inputs to decide which zone table to SHOW — so the zones the runner just looked at
-  // and the zones the plan gets are the same computation by construction. `maxHR` here is the
-  // PRE-save stored value (state updates below), which is exactly what the form was handed.
+  // ⚠️ THE PROVENANCE IS STILL UNCONDITIONAL, AND THAT IS DELIBERATE. My first cut made it
+  // conditional on the max having been edited; `/code-review` found it breaks the form's own
+  // founder-approved affordance — *"If {typed} really is your max, tap Save to confirm it"* —
+  // and `git log -S` showed that copy and this stamp landed in the SAME commit (`c44e0e53`,
+  // HR-MAX-01). A save IS a confirmation; the display and the save differ on purpose and the
+  // copy explains the difference. Whether an UNEDITED save should also confirm is a §50 doctrine
+  // question, filed as `HR-SAVE-UNEDITED-CONFIRMS-01` for the Coaching Board.
   const { maxSource: effectiveSource, guardedMax } = resolveHrSave({
-    typedMax: mhr, storedMax: maxHR ?? null,
-    storedSource: maxHRSource ?? undefined, age: hrGuardableAge(birthYear),
+    typedMax: mhr, age: hrGuardableAge(birthYear),
   })
   setRestingHR(rhr); setMaxHR(mhr)
   setMaxHRSource(effectiveSource)

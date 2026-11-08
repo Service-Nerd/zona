@@ -20,8 +20,7 @@ import { fitnessAnchorMap } from './fitnessAnchorMap'
 import { alignDerivedToStructure } from './derivedSetAnchors'
 import { buildPaceFromVDOT, paceBandStr, bandCeiling } from './paceBands'
 import { sessionKmOrZero } from './sessionDistance'
-import { buildFallbackPace } from './ruleEngine'
-import type { FitnessLevel } from './fitnessAssessment'
+import { buildFallbackPace, vdotFor } from './ruleEngine'
 import { qualityCeilingFor } from './qualityCeiling'
 import { FUELLING_PRACTICE_NOTE, ULTRA_FUELLING_PREFIX } from './fuellingNotes'
 import { GENERATION_CONFIG, raceDistanceKey } from './generationConfig'
@@ -5193,13 +5192,41 @@ export function validatePlan(plan: Plan, rawInput: GeneratorInput): Violation[] 
   // INV-PLAN-FOUNDATION-BLOCK's +10% step into the following week (real sweep plan 731f2878).
   // They reach this check and only this check: `composePlanWithFoundation` runs AFTER generation
   // (ADR-020), so the engine's own cap pass never sees one, and a guard there would be dead.
+  //
+  // 🔴 A RECALIBRATED PLAN IS SKIPPED ENTIRELY, AND THE REASON IS THAT THIS CHECK CANNOT SEE
+  // ITS OWN PREMISE (`/code-review`, 2026-11-08). `applyRecalibration` rewrites
+  // `meta.vdot_training_anchor` for the WHOLE plan and deliberately does NOT re-derive
+  // `duration_mins` (§125 Am. 5, RECAL-EASY-DURATION-01), so the pace rebuilt here is no longer
+  // the pace any week was sized at. Measured: **0 firings before recalibration, 1,709 across 384
+  // recalibrated `cohortGrid` plans** — including week 1 of a `fromWeekN: 3` recalibration, a week
+  // the recalibration never touched. ⚠️ Every one of those would have carried the message "a pass
+  // resized a session and the week was never restated", which is **false**, and a violation that
+  // misdescribes its cause is worse than no violation: it sends the next reader to the wrong file.
   {
+    // 🔴 THE MARKER HAD TO BE THE VDOT ITSELF, NOT `recalibrations_applied`. My first cut keyed
+    // on that field and the firings did not go away — 1,715 of them — because the field is set by
+    // `app/api/recalibrate-zones/route.ts`, NOT by `applyRecalibration`, and only when
+    // `recalibration_week_n != null`. An ad-hoc benchmark update saves with no marker at all.
+    //
+    // The exact condition is that the plan's pace BASIS is no longer the one its weeks were
+    // written at: the raw VDOT the input implies against the raw VDOT the plan stamps. It needs
+    // no new field, covers every recalibration path, and compares the UNDISCOUNTED value so
+    // §10's wall-clock staleness ramp cannot make it drift. ⚠️ Exact only because of
+    // PLAN-VDOT-ROUNDTRIP-01, shipped the same day — at 1dp this comparison was fuzzy too.
+    const inputVdotRaw = vdotFor(input).vdotRaw
+    const repriced = (inputVdotRaw ?? null) !== (plan.meta.vdot ?? null)
+    // ⚠️ MEMBERSHIP CHECKED, not cast. `buildFallbackPace` indexes `PACE_GUIDE[fitness]` and
+    // reads `.minPerKmQuality` off it, so a `meta.fitness_level` outside the three-member union
+    // throws OUT of `validatePlan` — and `savePlanForUser` validates on every save, so one such
+    // plan would become unsaveable and unauditable. `/code-review` found this; the sibling guide
+    // rebuild at §19 avoids it by using the VDOT path only.
+    const level = plan.meta.fitness_level
     const guide = plan.meta.vdot != null && plan.meta.vdot_training_anchor != null
       ? buildPaceFromVDOT(plan.meta.vdot_training_anchor, plan.meta.vdot)
-      : plan.meta.fitness_level != null
-        ? buildFallbackPace(plan.meta.fitness_level as FitnessLevel)
+      : (level === 'beginner' || level === 'intermediate' || level === 'experienced')
+        ? buildFallbackPace(level)
         : null
-    for (const w of plan.weeks) {
+    for (const w of repriced ? [] : plan.weeks) {
       if (w.phase === 'foundation') continue
       if (w.weekly_km == null || !w.sessions) continue
       // Unresolvable: no pace basis at all. Skipped rather than measured against a guess —
@@ -5227,7 +5254,11 @@ export function validatePlan(plan: Plan, rawInput: GeneratorInput): Violation[] 
         principle_ref: 'CoachingPrinciples §90 ("the runner sees sumWeeklyKm, not the curve"), §40c',
         severity: 'warn',
         week: w.n,
-        message: `Week ${w.n} states ${stated}km but its own sessions come to ${actual}km. A pass resized a session and the week was never restated, so the figure the runner reads is not the week they were given.`,
+        // ⚠️ THE MESSAGE NAMES THE DISAGREEMENT, NOT A CAUSE. The first version asserted "a pass
+        // resized a session and the week was never restated" — true for the defect this was
+        // written for, and false for all 1,709 recalibration firings `/code-review` measured.
+        // A check knows what disagrees; it does not know why.
+        message: `Week ${w.n} states ${stated}km but its own sessions come to ${actual}km, so the figure the runner reads is not the week they were given. Either a pass resized a session without restating the week, or the pace the week was sized at is no longer the pace this plan stamps.`,
         actual: `${stated}km stated, ${actual}km in the sessions`,
         expected: 'the stated total within 1km of the sum of its own sessions',
       })

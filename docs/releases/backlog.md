@@ -1356,6 +1356,27 @@ population: `volumeShortfallNote` fires **1,060** times (→ `SHORTFALL-PINNED-D
 suggestion's *"more room than the 30 min you have allowed"* is **true** for a per-day runner — they did allow 30, on the
 tight days — so it is recorded, not changed.
 
+### 🔲 `HR-SAVE-UNEDITED-CONFIRMS-01` — does saving the HR form confirm a max the runner never touched? 🏃 **COACHING BOARD** (§50 asymmetry)
+
+Found in the `/code-review` round on `PLAN-META-HR-DIVERGENCE-01`, where **I had already changed this
+behaviour and had to reverse it.** `handleHrSave` stamps `max_hr_source: 'user_confirmed'` on every
+save. §50's own copy promises it — the form says *"Zones use {estimate}. If {typed} really is your
+max, tap Save to confirm it"* — and `git log -S` shows that sentence and the unconditional stamp
+**landed in the same commit** (`c44e0e53`, HR-MAX-01, 2026-08-31). So a save IS a confirmation, by
+design, and making it conditional left a genuine low-max athlete no route to confirm at all.
+
+**The open question is the other case:** a runner who opens the sheet to change only their RESTING
+HR also saves, and that promotes a device-observed FLOOR to a confirmed max — which §50's asymmetry
+exists to prevent, because an observed value below the estimate says nothing about the ceiling and
+trusting it drags every zone DOWN. The warning IS on screen whenever the max is floored, so the
+runner has been told; whether being told is sufficient is the board's call, not a defect fix.
+
+📐 **Live, 2026-11-08:** 53 `user_settings` rows, 37 with a max, **24 `observed`**, **3 below their
+Tanaka estimate**. So the population at risk today is 3, and grows as device maxes accumulate.
+⚠️ **If the board rules it needs an explicit act, the remedy is a touched-field flag on the max
+input, not `editedMax`** — re-typing the same number leaves `mhrNum === maxHR` and reads as
+untouched, so the obvious fix does not work.
+
 ### 🔲 `SHORTFALL-PINNED-DAY-BUDGET-01` — `volumeShortfallNote` tests "pinned at the limit" against the minimum cap 🏃 **COACHING BOARD** (§40c materiality)
 
 Found building `STRUCTURAL-NOTE-DAY-BUDGET-01`. `volumeShortfallPct` counts a weekday easy run as pinned when
@@ -14085,12 +14106,15 @@ then `handleSave()` handed the caller the RAW typed number.** `handleHrSave` pas
 while `effectiveMaxHR` guarded the same value again for display. **Header and session band
 diverged — `PLAN-ZONE-VS-HRTARGET-01`'s defect, by another route.**
 
-🔴 **And the provenance was worse than the number.** `handleHrSave` wrote
-`max_hr_source: 'user_confirmed'` **unconditionally**, on the true-but-insufficient reasoning that
-a max the runner types is a confirmation. It could not tell a typed max from an untouched one, so a
-runner opening the sheet to change only their **resting** HR promoted a device-observed FLOOR to a
-confirmed max — the single thing §50's asymmetry exists to prevent. The form knew (`editedMax`);
-the handler had no way to.
+🔴 **AND MY SECOND "DEFECT" WAS A MISREADING, REVERSED IN THE FIX ROUND.** I made
+`max_hr_source` conditional on the max having been edited, reasoning that editing only the RESTING
+HR should not promote a device floor. `/code-review` found it breaks the form's own warning — *"If
+{typed} really is your max, tap Save to confirm it"* — and `git log -S` settled it: **that copy and
+the unconditional `user_confirmed` stamp landed in the SAME commit** (`c44e0e53`, HR-MAX-01,
+2026-08-31). **A save IS a confirmation; the display and the save differ on purpose and the copy
+explains the difference.** My change turned the sentence into a lie and left a genuine low-max
+athlete no route to confirm. Reverted to the committed design. The hazard is real and is now
+`HR-SAVE-UNEDITED-CONFIRMS-01` (🏃 COACHING BOARD) with the live numbers attached.
 
 📐 **Live, production read 2026-11-08:** 53 `user_settings` rows, **37 with a max, 24 `observed`,
 3 below their Tanaka estimate** (the live floor case), 0 above the 15% plausibility tolerance,
@@ -14108,12 +14132,13 @@ decides what to trust at each read.
 3-argument prop, so widening the signature compiles clean and changes nothing. The gate is
 `lib/plan/hrSaveResolution.test.ts` (13 arms, falsified three ways), not the type.
 
-⚠️ **What this does not prove.** The two device write paths are unchanged, as the founder ruled:
-connect-watch and reconnect still write `user_settings` only. **They are now SAFER rather than
-fixed** — the floor they write stays tagged `observed`, and the Profile save can no longer promote
-it. The `effectiveMaxHR` fallback `plan?.meta?.hr_derived_max ?? maxHR` still wins when there is no
-age, and for those 5 rows that is the real branch; the difference is that `hr_derived_max` is now
-guarded, so the fallback means what its name says.
+⚠️ **What this does not prove, corrected after the review.** The shipped change is **only** that
+§50's UPPER plausibility bound now reaches the plan and not just the screen — and **0 of 37 live
+maxes are above that bound**, so it is latent rather than realised. The two device write paths are
+unchanged, as the founder ruled, and the Profile save still promotes whatever it is given, because
+that is the ratified design. The `effectiveMaxHR` fallback `plan?.meta?.hr_derived_max ?? maxHR`
+still wins when there is no age (5 of 53 rows); what changed is that `hr_derived_max` is now the
+guarded number, so the fallback means what its name says.
 
 ### ⚙️ `TEST-LIVENESS-COVERAGE-01` — the mutation harness sees 5.9% of the test suite
 **Board: ⚙️ NO BOARD.** Found 2026-09-24 while building `GATE-FALSIFY-01 (c)`.

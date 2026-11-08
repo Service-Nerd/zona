@@ -305,6 +305,35 @@ describe('GRID-DAY-BUDGET-NO-CAP-01 — day_budgets never travels without its de
     })
   }
 
+  /**
+   * 🔴 `derivedWeekdayCap` IS NOT THE WHOLE PRODUCTION DERIVATION, so the condition that keeps
+   * it equivalent is asserted rather than assumed (`/code-review`, 2026-11-08).
+   *
+   * The wizard takes `min(dayBudgets[d] ?? weekdayDefaultMins)` — it falls back to the single
+   * chip the runner picked for "a weekday". This helper has no default, so a PARTIAL shape such
+   * as `{ tue: 90 }` against a 35-minute default yields 90 here and 35 in production, and the
+   * arms above would certify that as production shape. It is latent only because every budget
+   * shape in `cohortGrid.ts` covers all five weekdays. This is the arm that makes that a
+   * requirement instead of a coincidence.
+   */
+  it('every budgeted row budgets EVERY weekday, which is what makes the derived cap equivalent', () => {
+    const rows = targetedGrid().filter(r => (r as { day_budgets?: unknown }).day_budgets != null)
+    expect(rows.length).toBeGreaterThan(0)
+    const partial = rows.filter(r => {
+      const b = (r as { day_budgets: Record<string, number> }).day_budgets
+      const rest = new Set(((r as { days_cannot_train?: string[] }).days_cannot_train ?? [])
+        .map(d => String(d).slice(0, 3).toLowerCase()))
+      return (['mon', 'tue', 'wed', 'thu', 'fri'] as const).some(d => !rest.has(d) && b[d] == null)
+    })
+    expect(
+      partial.length,
+      `${partial.length} budgeted rows leave a running weekday without a budget. `
+      + '`derivedWeekdayCap` has no `weekdayDefaultMins` to fall back to, so its answer would '
+      + 'diverge from the wizard\'s and the pairing arms above would certify a shape production '
+      + 'cannot post. Either budget every running weekday, or teach the helper the default.',
+    ).toBe(0)
+  })
+
   /** The population, asserted. `targetedGrid` is the only corpus with per-day budgets today,
    *  so if it ever stops carrying them the arm above passes on an empty set and says nothing. */
   it('targetedGrid is still the corpus that exercises per-day budgets', () => {

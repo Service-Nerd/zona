@@ -271,8 +271,15 @@ const TARGETED_DAY_BUDGETS = [undefined, { mon: 30, tue: 45, wed: 30, thu: 60, f
 // correctly. ONE corpus, not six — the COHORT-GRID-UNSET-LEVEL-01 class in a second
 // field, and `corpusProductionShape.test.ts` now holds this pairing too.
 const WEEKDAY_KEYS = ['mon', 'tue', 'wed', 'thu', 'fri'] as const
-/** `max_weekday_mins` exactly as `weekPlanToInputs` derives it: the minimum over the
- *  weekdays the runner actually runs. `undefined` when no weekday carries a budget. */
+/** `max_weekday_mins` as `weekPlanToInputs` derives it FOR A FULLY-BUDGETED WEEK: the minimum
+ *  over the weekdays the runner actually runs. `undefined` when no weekday carries a budget.
+ *
+ *  ⚠️ NOT THE WHOLE PRODUCTION DERIVATION, and `/code-review` was right to say so. The wizard
+ *  takes `min(dayBudgets[d] ?? weekdayDefaultMins)` — it falls back to the single chip the
+ *  runner picked for "a weekday". This helper has no default to fall back to, so a PARTIAL shape
+ *  such as `{ tue: 90 }` against a 35-minute default yields 90 here and 35 in production, and the
+ *  `GRID-DAY-BUDGET-NO-CAP-01` arm would certify that as production shape. Latent only because
+ *  every shape in this file budgets all five weekdays — asserted below, so it stays latent. */
 export function derivedWeekdayCap(
   budgets: Partial<Record<typeof WEEKDAY_KEYS[number], number>> | undefined,
   daysCannotTrain: readonly string[] = [],

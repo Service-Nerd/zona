@@ -10220,7 +10220,6 @@ function buildRulePlanOnce(
   // `INV-PLAN-COPY-MATCHES-SESSIONS`'s territory, and the reason the original restate was
   // scoped narrowly rather than widened. It runs on every restated week now, not only the
   // floor-cut ones.
-  const heldFloorKm = sessionFloorsFor(input.longest_recent_run_km).easy
   weeks.forEach((w, idx) => {
     if (!w.sessions) return
     // Every field this pass can move, not only `distance_km`: a duration-anchored session

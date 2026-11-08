@@ -6,85 +6,66 @@ import { tanakaMaxHR } from './maxHrGuard'
 import { GENERATION_CONFIG } from './generationConfig'
 
 /**
- * PLAN-META-HR-DIVERGENCE-01 — the form's zones and the plan's zones are ONE computation.
+ * PLAN-META-HR-DIVERGENCE-01 — §50's plausibility ceiling reaches the PLAN, not only the screen.
  *
- * 🔴 The two defects this is the gate for, both silent:
- *   1. `HRZonesSection` resolved §50's guard to pick the zone table it SHOWS — including a
- *      "floored" note — then handed the caller the RAW typed max, which `applyHrToPlan` used to
- *      rewrite every session's `hr_target`. The form showed guarded zones and saved unguarded.
- *   2. `handleHrSave` stamped `max_hr_source: 'user_confirmed'` UNCONDITIONALLY, so editing only
- *      the RESTING HR promoted a device-observed FLOOR to a confirmed max — the one thing §50's
- *      asymmetry exists to prevent.
+ * 🔴 THE DEFECT: `handleHrSave` passed the RAW typed max to `applyHrToPlan`, which rewrote every
+ * session's `hr_target` and stamped `meta.hr_derived_max`, while `effectiveMaxHR` guarded the same
+ * value for display. So an implausibly high max was rejected on the screen and baked into the plan.
  *
- * 📐 Live 2026-11-08: 53 `user_settings` rows, 37 with a max, **24 `observed`**, **3 below their
- * Tanaka estimate** (the live floor case), 0 above the 15% tolerance, 5 with no `birth_year`.
+ * 🔴 AND WHAT THIS DELIBERATELY IS NOT. My first cut also made the provenance conditional on the
+ * max having been edited. `/code-review` found that breaks the form's founder-approved affordance
+ * — *"If {typed} really is your max, tap Save to confirm it"* — and `git log -S` settled it: that
+ * copy and the unconditional `user_confirmed` stamp landed in the SAME commit (`c44e0e53`,
+ * HR-MAX-01, 2026-08-31). **A save IS a confirmation. The display and the save differ on purpose
+ * and the copy explains the difference.** Whether an UNEDITED save should also confirm is a §50
+ * doctrine question → `HR-SAVE-UNEDITED-CONFIRMS-01` (Coaching Board).
  *
- * ⚠️ `tsc` could not have caught (1): a 2-argument callback is assignable to a 3-argument prop.
+ * 📐 Live 2026-11-08: 53 `user_settings` rows, 37 with a max, 24 `observed`, 3 below their Tanaka
+ * estimate, **0 above the 15% tolerance** — so this defect is latent, not realised. Said plainly.
  */
 
 const AGE = 40
 const EST = tanakaMaxHR(AGE)           // 180
 const TOL = GENERATION_CONFIG.MAX_HR_PLAUSIBILITY_DEVIATION_PCT / 100
 
-describe('resolveHrSave — provenance', () => {
-  it('a typed-over max is a confirmation, and §50 trusts it below the estimate', () => {
-    const r = resolveHrSave({ typedMax: 168, storedMax: 190, storedSource: 'observed', age: AGE })
-    expect(r.maxSource).toBe('user_confirmed')
-    // Genuine low-max athletes: a confirmed max below Tanaka is trusted, by §50's asymmetry.
-    expect(r.guardedMax).toBe(168)
-    expect(r.floored).toBe(false)
-  })
-
-  it('🔴 an UNTOUCHED observed max is NOT promoted to a confirmation', () => {
-    // THE DEFECT. Saving with the max unchanged used to stamp 'user_confirmed' and bake the
-    // device floor into every session band. The max is the same number the form was handed.
-    const r = resolveHrSave({ typedMax: 168, storedMax: 168, storedSource: 'observed', age: AGE })
-    expect(r.maxSource).toBe('observed')
-    // And §50 then does its job: an observed value below the estimate is a floor, so the
-    // plan is zoned from the estimate instead of being dragged down to 168.
-    expect(r.guardedMax).toBe(EST)
-    expect(r.floored).toBe(true)
-  })
-
-  it('a stored max with NO provenance defaults to observed, the safe direction', () => {
-    // An unattributed max is a floor, not a confirmation. Defaulting the other way would
-    // trust every legacy row below the estimate — absence written as a confirmation.
-    const r = resolveHrSave({ typedMax: 168, storedMax: 168, storedSource: undefined, age: AGE })
-    expect(r.maxSource).toBe('observed')
-    expect(r.guardedMax).toBe(EST)
-  })
-
-  it('a runner who has never set a max is confirming the one they just typed', () => {
-    const r = resolveHrSave({ typedMax: 168, storedMax: null, storedSource: undefined, age: AGE })
-    expect(r.maxSource).toBe('user_confirmed')
-    expect(r.guardedMax).toBe(168)
-  })
-})
-
 describe('resolveHrSave — the number the plan is built from', () => {
-  it('🔴 an implausibly high typed max does not reach the plan, confirmed or not', () => {
-    // The upper bound applies to a user_confirmed value too: above the tolerance it is a
-    // sensor artefact, not an effort. Before this, `applyHrToPlan` got the raw number while
-    // `effectiveMaxHR` guarded it for display — so the header and the band disagreed.
+  it('🔴 an implausibly high max does not reach the plan, even confirmed', () => {
+    // §50: above the tolerance a rate is a sensor artefact, not an effort. This is the arm the
+    // whole item is for — the display already rejected it and the plan did not.
     const tooHigh = Math.ceil(EST * (1 + TOL)) + 5
-    const r = resolveHrSave({ typedMax: tooHigh, storedMax: 180, storedSource: 'user_confirmed', age: AGE })
-    expect(r.maxSource).toBe('user_confirmed')
+    const r = resolveHrSave({ typedMax: tooHigh, age: AGE })
     expect(r.guardedMax).toBe(EST)
     expect(r.floored).toBe(true)
   })
 
-  it('a plausible typed max passes through untouched', () => {
-    const r = resolveHrSave({ typedMax: 192, storedMax: 180, storedSource: 'observed', age: AGE })
+  it('a below-estimate max is TRUSTED, because a save is a confirmation', () => {
+    // ⚠️ The arm that pins the behaviour code review restored. Flooring this would re-break the
+    // "tap Save to confirm it" affordance and leave a genuine low-max athlete no route at all.
+    const r = resolveHrSave({ typedMax: 150, age: AGE })
+    expect(r.guardedMax).toBe(150)
+    expect(r.floored).toBe(false)
+    expect(r.maxSource).toBe('user_confirmed')
+  })
+
+  it('a plausible max passes through untouched', () => {
+    const r = resolveHrSave({ typedMax: 192, age: AGE })
     expect(r.guardedMax).toBe(192)
     expect(r.floored).toBe(false)
   })
 
   it('no guardable age → the typed max stands, and nothing is claimed to be floored', () => {
-    // 5 of 53 live rows have no `birth_year`. Tanaka is meaningless without one, so the guard
-    // is not applied rather than applied to a fabricated age.
-    const r = resolveHrSave({ typedMax: 240, storedMax: null, storedSource: undefined, age: null })
+    // 5 of 53 live rows have no `birth_year`. Tanaka is meaningless without one, so the guard is
+    // not applied rather than applied to a fabricated age.
+    const r = resolveHrSave({ typedMax: 240, age: null })
     expect(r.guardedMax).toBe(240)
     expect(r.floored).toBe(false)
+  })
+
+  it('the provenance is unconditional, and that is asserted rather than assumed', () => {
+    for (const typedMax of [150, 180, 192, 240]) {
+      expect(resolveHrSave({ typedMax, age: AGE }).maxSource,
+        'a save is a confirmation (§50 / HR-MAX-01); the form\'s copy promises it').toBe('user_confirmed')
+    }
   })
 })
 
@@ -96,7 +77,7 @@ describe('hrGuardableAge — one owner of "is there an age to guard against"', (
   it('null, zero and an out-of-window year yield null, not a fabricated age', () => {
     expect(hrGuardableAge(null, NOW)).toBeNull()
     expect(hrGuardableAge(undefined, NOW)).toBeNull()
-    expect(hrGuardableAge(0, NOW)).toBeNull()        // falsy year is absence, not year 0
+    expect(hrGuardableAge(0, NOW)).toBeNull()        // a falsy year is absence, not year 0
     expect(hrGuardableAge(2020, NOW)).toBeNull()     // age 6
     expect(hrGuardableAge(1900, NOW)).toBeNull()     // age 126
   })
@@ -106,34 +87,30 @@ describe('hrGuardableAge — one owner of "is there an age to guard against"', (
   })
 })
 
-describe('both producers call the owner — the guarantee is structural, not a convention', () => {
+describe('the handler reaches the owner — the guarantee is structural', () => {
   const read = (p: string) => readFileSync(join(process.cwd(), p), 'utf8')
   /** Comments stripped: this repo has recorded a check matching its own explanatory comment
-   *  nine times, and two of those were in the gate written to prevent it. */
+   *  nine times, twice inside the gate written to prevent it. */
   const code = (src: string) =>
     src.replace(/\/\*[\s\S]*?\*\//g, '').split('\n').filter(l => !l.trim().startsWith('//')).join('\n')
 
-  it('the form and the handler both call resolveHrSave', () => {
-    // ⚠️ A SOURCE ASSERTION, AND IT IS THE WEAKEST ARM HERE — `vitest.config.ts` is
-    // `environment: 'node'` with no jsdom, so a React handler cannot be invoked. The arms
-    // above are behavioural on the owner; this one only proves the owner is REACHED. It is
-    // here because the defect was precisely that one side did not reach it.
-    for (const f of ['components/dashboard/HRZonesSection.tsx', 'app/dashboard/DashboardClient.tsx']) {
-      expect(code(read(f)), `${f} must resolve the save through the owner`).toContain('resolveHrSave(')
-    }
-  })
-
-  it('the handler no longer hardcodes the provenance it writes', () => {
-    const src = code(read('app/dashboard/DashboardClient.tsx'))
-    // The unconditional stamp. `effectiveSource` comes from the owner; a literal on the
-    // user_settings write is the defect returning.
-    expect(src).not.toContain("max_hr_source: 'user_confirmed', updated_at")
-    expect(src).toContain('max_hr_source: effectiveSource')
-  })
-
   it('applyHrToPlan is handed the guarded max, not the raw one', () => {
+    // ⚠️ A SOURCE ASSERTION, AND THE WEAKEST ARM HERE — `vitest.config.ts` is `environment:
+    // 'node'` with no jsdom, so a React handler cannot be invoked. The arms above are behavioural
+    // on the owner; this one only proves the owner is REACHED, which is what was missing.
     const src = code(read('app/dashboard/DashboardClient.tsx'))
     expect(src).not.toMatch(/applyHrToPlan\(plan as never, rhr, mhr\)/)
     expect(src).toMatch(/applyHrToPlan\(plan as never, rhr, guardedMax\)/)
+    expect(src).toContain('resolveHrSave(')
+  })
+
+  it('🔴 the FORM keeps its own display rule, and must not be routed through the save owner', () => {
+    // The display floors an unedited device max; the save trusts it. Collapsing the two is
+    // exactly what code review reversed, so the divergence is pinned on purpose.
+    const src = code(read('components/dashboard/HRZonesSection.tsx'))
+    expect(src, 'the form must resolve DISPLAY through resolveMaxHr with its own displaySource')
+      .toMatch(/resolveMaxHr\(mhrNum, age, displaySource\)/)
+    expect(src, 'routing the form through resolveHrSave re-breaks the "tap Save to confirm it" affordance')
+      .not.toContain('resolveHrSave(')
   })
 })
