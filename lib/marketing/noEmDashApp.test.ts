@@ -70,6 +70,10 @@ const DEV_FACING: Record<string, string> = {
   'lib/plan/planShapeInvariants.ts': 'the same, for plan shape',
   'lib/plan/baseBuildValidate.ts': 'the same, for base-build blocks',
   'lib/plan/planQuality.ts': 'the quality scorecard, printed by npm run review:coaching',
+  // Same category as planQuality above, and for the same reason: it RENDERS
+  // invariants.ts's own messages (already exempt on the line above) into
+  // coaching-review/*/*.md for the board. Nothing it emits reaches a runner.
+  'lib/plan/violationReport.ts': 'renders validatePlan() verdicts into the board review packets printed by npm run review:coaching',
   'lib/plan/principleCoverage.ts': 'principle-to-invariant coverage report, developer-facing',
   'lib/plan/invariantLiveness.ts': 'the mutation battery\'s own descriptions of what it breaks',
   'lib/plan/useCaseEnvelope.ts': 'measurement-corpus case descriptions',

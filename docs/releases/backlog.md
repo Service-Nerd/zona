@@ -6322,7 +6322,51 @@ board owns it if the remedy changes what the runner is prescribed.
 
 ## ⚖️ FILED 2026-10-11 — `COACHING-ROUND-WARNS-BLIND-01`, from the board sitting
 
-### 🟡 `COACHING-ROUND-WARNS-BLIND-01` — the round tells the board to weigh warns and does not write the warns *(filed 2026-10-11, P2)* ⚙️ **NO BOARD** *(tooling)*
+### ✅ `COACHING-ROUND-WARNS-BLIND-01` — **SHIPPED 2026-11-09.** The round tells the board to weigh warns and now writes every one of them *(filed 2026-10-11, P2)* ⚙️ **NO BOARD** *(tooling)*
+
+✅ **BUILT 2026-11-09.** `lib/plan/violationReport.ts` is the single owner of *"render a `validatePlan()`
+verdict for a human"*; both board rounds use it. **Premise re-measured and it held exactly** —
+`grep -c "INV-PLAN"` over the round's packet → **0** on 11-02, 11-03, 11-06, 11-07, 11-08 **and the round run
+this morning**, the one that satisfied the founder's *"review:coaching before and after"* instruction
+three times over. 📐 **Today's round: 74 warns across 25 cases, 83 readable lines now where there were 0.**
+The item's three worst cases are still the three worst (`E5` 15, `M4` 9, `PV2-G` 8) and **still all
+time-constrained runners.**
+
+🔑 **THE TALLY IS THE FINDING, AND IT WAS UNREACHABLE BY CONSTRUCTION BEFORE TODAY.** A per-case count
+cannot show a pattern. `INV-PLAN-LARGEST-SESSIONS-SPACED` fires **26 times across 13 of the 25 cases** —
+over half the round, §7, every one *"likely forced by available days"*; `INV-PLAN-LR-MAX-WEEKLY-PCT`
+fires **23 times in just 2 cases** (`E5` 14, `E6` 9), which is a different claim entirely and reads
+identically in a column of numbers.
+
+🔴 **AND THE ITEM NAMED ONE ROUND OF TWO.** `foundation-review-round.ts` had the identical defect —
+`codes: errors.map(…)`, **errors only**, beside a warn column summing to **1,338 firings across 486
+plans**, naming none. Twenty times the unreadable mass of the item's own subject, in the sibling packet
+the same board reads, and it is the only packet that has ever shown the board a foundation week
+(`COACH-REVIEW-2026-09-23`). ⚠️ **Scope call, declared:** the coaching round gets full per-violation
+detail; the foundation round gets the tally plus per-plan warn codes, because 1,338 detail lines is the
+cry-wolf shape this repo records as equivalent to no record.
+
+🔴 **A THIRD FINDING THE CONSUMER CHECK TURNED UP: the CI workflow uploaded ONE of the two packets.**
+`coaching-review-trigger.yml` runs the whole protocol and its artifact path was
+`coaching-review/*/generated-plans.md`, so the 1,338 warns were generated on every doctrine push and
+never shipped to the board. **A packet that is not uploaded is a packet that cannot be weighed, which is
+this item's own shape, one layer out.** Both paths now.
+
+⚠️ **The tally could have shipped as the same defect in a new costume**, so it does not: it is derived
+from the violations, never from the `warns` column, and `tallyMatches` makes a round **exit 1** if the
+two disagree. Gate: `lib/plan/violationReport.test.ts`, **23 arms**, including the item's own
+falsification (remove one warn from one case, the tally moves) and a source arm — **comments stripped**,
+with a precondition that fails if a round stops filtering warns, so the arm cannot go vacuous.
+📐 **Falsified three ways, all made to go red:** a tally that counts distinct codes only (5 arms red), a
+round that drops the import (1 arm red), and a planted count/tally mismatch in the **real** script
+(`exit=1`, restored `exit=0`).
+
+🔻 **WHAT THIS DOES NOT PROVE.** The warns are now readable; **nobody has read them.** 74 findings and
+1,338 firings are in front of the board for the first time and not one has been ruled on — three of the
+nine codes (§7's spacing, §52's long-run share, §94's delivered ramp) account for **64 of the 74**, and
+`DELIVERED-RAMP-REAL-DRIVER-01` is already **INSUFFICIENT EVIDENCE** on exactly that question. Reading
+them is a coaching sitting, not tooling, and it is filed below.
+
 
 🔴 **FOUND BY TRYING TO DO WHAT THE FILE ASKS.** `coaching-review/<date>/review.md` closes with
 *"Warns are the board's to weigh"* — and **neither it nor `generated-plans.md` records a single warn
@@ -6345,6 +6389,27 @@ pattern rather than as six separate ones. ⚠️ **Falsify by removing one warn 
 confirming the tally moves** — a count that cannot move is the thing being fixed.
 🔻 **Not an error-severity gap:** every one of the 29 cases is 0 errors, and that half of the
 protocol works. This is the half the board was asked to judge.
+
+### 🔲 `ROUND-WARNS-UNRULED-01` — 74 warns are legible now and none has been weighed *(filed 2026-11-09, P2)* 🏃 **COACHING BOARD**
+
+📐 **The packet the board was always asked to weigh exists for the first time** (`COACHING-ROUND-WARNS-BLIND-01`,
+same day). Nine codes, 74 firings, 25 cases; the foundation packet carries the same nine at ×18.
+Regenerate both with `npm run review:coaching` — the packets are gitignored by design, so the
+numbers below are from the 2026-11-09 round and re-derive on any run of `scripts/coaching-review-round.ts`.
+
+**Three codes are 64 of the 74**, and the shape of each is a different question:
+
+| Code | Firings | Cases | Reads as |
+|---|---|---|---|
+| `INV-PLAN-LARGEST-SESSIONS-SPACED` (§7) | 26 | **13 of 25** | a structural consequence of the available-days input, not a per-plan defect — its own message says *"likely forced by available days"* |
+| `INV-PLAN-LR-MAX-WEEKLY-PCT` (§52, §114) | 23 | **2** (`E5` 14, `E6` 9) | two runners, deep — a cohort finding, not a plan-wide one |
+| `INV-PLAN-DELIVERED-RAMP` (§94, §100) | 15 | **13** | ⚠️ **already `INSUFFICIENT EVIDENCE`** — `DELIVERED-RAMP-REAL-DRIVER-01` asks for an attribution pass and has not had one |
+
+⚠️ **The sitting must not re-derive what is already ruled.** §7's *"likely forced"* wording, §52 Am. 1's
+exemption and §94 Am. 2's freeze are all in `coaching-rulings.md`. The question is only: **of these nine,
+which is a plan we would not hand over, and which is a warn doing its job?**
+🔻 **Nothing is broken while this waits** — every case is 0 errors, and this half of the protocol has been
+unread since the round was written. It is now *readable*, which is the precondition, not the answer.
 
 ---
 

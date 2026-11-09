@@ -45,6 +45,7 @@ import path from 'node:path'
 import { generateRulePlan } from '../lib/plan/ruleEngine'
 import { composePlanWithFoundation } from '../lib/plan/foundationCompose'
 import { validatePlan } from '../lib/plan/invariants'
+import { tallyByCode, renderTally, tallyMatches, codesOf, type CaseViolations } from '../lib/plan/violationReport'
 import { isDesignedRefusal } from '../lib/plan/designedRefusal'
 import { CANONICAL_CASES } from './generate-coaching-review'
 import { PLAN_PERSONAS, charityInput, CHARITY_PLAN_START } from '../lib/plan/charityCohort'
@@ -64,10 +65,13 @@ const DECISIONS = ['add', 'skip', 'start_now'] as const
 interface Row {
   id: string; distanceKm: number; gapDays: number; decision: string
   fbWeeks: number; uncovered: number | undefined; noteOK: boolean
-  errors: number; warns: number; status: string; codes: string[]
+  errors: number; warns: number; status: string; codes: string[]; warnCodes: string[]
 }
 
 const rows: Row[] = []
+// COACHING-ROUND-WARNS-BLIND-01 — the verdicts themselves. The tally is built
+// from THIS, never from `Row.warns`, so removing one warn moves it.
+const verdicts: CaseViolations[] = []
 let hardFail = false
 
 function shiftDate(iso: string, days: number): string {
@@ -87,13 +91,13 @@ function run(label: string, input: GeneratorInput, tier: 'free' | 'trial' | 'pai
   } catch (e) {
     if (isDesignedRefusal(e)) {
       rows.push({ id: label, distanceKm: input.race_distance_km, gapDays, decision,
-        fbWeeks: 0, uncovered: undefined, noteOK: true, errors: 0, warns: 0,
+        fbWeeks: 0, uncovered: undefined, noteOK: true, errors: 0, warns: 0, warnCodes: [],
         status: '⛔ refused (by design)', codes: [] })
       return
     }
     hardFail = true
     rows.push({ id: label, distanceKm: input.race_distance_km, gapDays, decision,
-      fbWeeks: 0, uncovered: undefined, noteOK: false, errors: 1, warns: 0,
+      fbWeeks: 0, uncovered: undefined, noteOK: false, errors: 1, warns: 0, warnCodes: [],
       status: `💥 threw: ${String((e as Error)?.message ?? e).split('\n')[0].slice(0, 70)}`, codes: [] })
     return
   }
@@ -118,8 +122,12 @@ function run(label: string, input: GeneratorInput, tier: 'free' | 'trial' | 'pai
     id: label, distanceKm: input.race_distance_km, gapDays, decision,
     fbWeeks, uncovered, noteOK, errors: errors.length, warns: warns.length,
     status: errors.length ? '❌ error' : !noteOK ? '🔇 silent void' : '✅',
-    codes: Array.from(new Set(errors.map(e => e.code))),
+    codes: codesOf(v, 'error'),
+    // COACHING-ROUND-WARNS-BLIND-01 — this column was `errors.map(...)` while a
+    // warn column counted 1,338 firings across 486 plans and named none of them.
+    warnCodes: codesOf(v, 'warn'),
   })
+  verdicts.push({ label: `${label} ${gapDays}d ${decision}`, violations: v })
 }
 
 // ── the corpus ──────────────────────────────────────────────────────────────
@@ -196,12 +204,37 @@ for (const g of GAPS) {
   lines.push(`| ${g}d | ${at.length} | ${wb.length} | ${mean} | ${unc} | ${at.filter(r => r.errors > 0).length} |`)
 }
 lines.push('')
+// COACHING-ROUND-WARNS-BLIND-01 — the warn column summed to 1,338 across 486
+// plans and named none of them, so the board could not weigh what it was asked
+// to. The TALLY is the readable artifact at this volume: 1,338 detail lines
+// would be the cry-wolf shape this repo records as equivalent to no record.
+// Per-plan codes go in the table below; the full message lives in the tally's §.
+const warnTally = tallyByCode(verdicts, 'warn')
+const errorTally = tallyByCode(verdicts, 'error')
+// ⚠️ A tally that disagrees with the counts beside it is unweighable in exactly
+// the way this change exists to fix — a hard failure, not a note.
+// ⚠️ A `💥 threw` row carries a SYNTHETIC errors:1 and produced no verdict, so it
+// is excluded — comparing against it would report a round bug where a plan threw.
+const weighed = composedRows.filter(r => !r.status.startsWith('💥'))
+if (!tallyMatches(warnTally, weighed.map(r => r.warns))
+    || !tallyMatches(errorTally, weighed.map(r => r.errors))) {
+  hardFail = true
+  lines.push('> ❌ The violation tally does not account for every violation counted below.')
+  lines.push('> This is a bug in the round, not in a plan.')
+  lines.push('')
+}
+lines.push(...renderTally(errorTally, 'Error codes, by frequency'))
+lines.push(...renderTally(warnTally, 'Warn codes, by frequency'))
+
 lines.push('## Every plan')
 lines.push('')
-lines.push('| case | km | gap | decision | fb wks | uncovered | note | err | warn | status |')
+lines.push('| case | km | gap | decision | fb wks | uncovered | note | err | warn codes | status |')
 lines.push('|---|---|---|---|---|---|---|---|---|---|')
 for (const r of rows) {
-  lines.push(`| ${r.id} | ${r.distanceKm} | ${r.gapDays}d | ${r.decision} | ${r.fbWeeks} | ${r.uncovered ?? '—'} | ${r.noteOK ? 'ok' : '**MISSING**'} | ${r.errors} | ${r.warns} | ${r.status} |`)
+  const w = r.warnCodes.length
+    ? `${r.warns} · ${r.warnCodes.map(c => c.replace('INV-PLAN-', '')).join(', ')}`
+    : String(r.warns)
+  lines.push(`| ${r.id} | ${r.distanceKm} | ${r.gapDays}d | ${r.decision} | ${r.fbWeeks} | ${r.uncovered ?? '—'} | ${r.noteOK ? 'ok' : '**MISSING**'} | ${r.errors} | ${w} | ${r.status} |`)
 }
 
 fs.mkdirSync(outDir, { recursive: true })

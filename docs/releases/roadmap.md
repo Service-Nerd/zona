@@ -1111,11 +1111,21 @@ with the Coaching Board (the week-1 floor for someone who has never run, and
   commit that wrote the 91.8 baseline. ⚠️ §47 is error-severity and `validatePlan` only THROWS
   in dev/test — in production it logs and **the plan is served**. P2, 🏃 Coaching Board if the
   remedy changes prescription. `backlog.md`.
-- 🟡 `COACHING-ROUND-WARNS-BLIND-01` — **the coaching round tells the board to weigh warns and never
-  writes them.** `review.md` closes with *"warns are the board's to weigh"*; `grep -c "INV-PLAN"` on
-  `generated-plans.md` returns **0**. Only per-case counts exist. Unweighed on 2026-10-11: E5 **15**,
-  M4 **9**, PV2-G **8**, HM-1:55 **6** — the three worst all time-constrained runners, the same
-  cohort as `WEEKDAY-OVERRUN-BOUND-01`. P2, tooling, no board. `backlog.md`.
+- ✅ `COACHING-ROUND-WARNS-BLIND-01` — **SHIPPED 2026-11-09.** The round closed with *"warns are the
+  board's to weigh"* and `grep -c "INV-PLAN"` on `generated-plans.md` returned **0** on every round from
+  10-11 to 11-09. `lib/plan/violationReport.ts` now owns rendering a verdict for a human; **74 warns
+  across 25 cases are written out in full and tallied by code.** 🔑 **The tally is the finding a count
+  could never show:** §7 spacing fires **26 times in 13 of 25 cases**, §52's long-run share **23 times
+  in 2**. 🔴 **The item named one round of two** — `foundation-review-round.ts` had the identical defect
+  beside **1,338 warns across 486 plans** — **and the CI workflow uploaded one packet of the two**, so
+  those 1,338 were generated on every doctrine push and never reached the board. 23 arms, falsified
+  three ways including a planted mismatch in the real script (`exit=1`). → `ROUND-WARNS-UNRULED-01`.
+- 🔲 `ROUND-WARNS-UNRULED-01` — **74 warns are legible for the first time and none has been weighed.**
+  Nine codes; **three are 64 of the 74** and each is a different question: §7 spacing (13 of 25 cases,
+  its own message says *"likely forced by available days"*), §52 long-run share (2 cases, deep), §94
+  delivered ramp (13 cases — **already `INSUFFICIENT EVIDENCE`** pending an attribution pass). The
+  sitting's question is only *which of these is a plan we would not hand over*. P2, 🏃 **Coaching
+  Board**. `backlog.md`.
 - ✅ `AUDIT-HEADING-UNMARKED-01` — **SHIPPED 2026-10-11.** Every backlog arm in `audit-docs.sh`
   keyed on a status emoji; an UNMARKED heading was invisible to all of them, so
   `BASEBUILD-ZONE-CEILING-01` sat open for a day past its ship under ALL CLEAN and was handed to

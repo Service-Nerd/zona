@@ -21,6 +21,7 @@ import path from 'node:path'
 import { generateRulePlan } from '../lib/plan/ruleEngine'
 import { validatePlan } from '../lib/plan/invariants'
 import { CANONICAL_CASES, renderCase, type Case } from './generate-coaching-review'
+import { violationBlock, tallyByCode, renderTally, tallyMatches, type CaseViolations } from '../lib/plan/violationReport'
 import { PLAN_PERSONAS, charityInput, CHARITY_PLAN_START, type CharityPersona } from '../lib/plan/charityCohort'
 import type { GeneratorInput } from '../types/plan'
 
@@ -45,6 +46,10 @@ interface Row { id: string; distanceKm: number; errors: number; warns: number; s
 
 const rows: Row[] = []
 const packets: string[] = []
+// COACHING-ROUND-WARNS-BLIND-01 — the verdicts themselves, not just their count.
+// The tally is built from THIS, never from `Row.warns`, so removing one warn
+// from one case moves it.
+const verdicts: CaseViolations[] = []
 let hardFail = false
 
 function run(label: string, input: GeneratorInput, tier: 'free' | 'trial' | 'paid', planStart: string,
@@ -62,10 +67,14 @@ function run(label: string, input: GeneratorInput, tier: 'free' | 'trial' | 'pai
       if (errors.length) hardFail = true
       rows.push({ id: label, distanceKm: input.race_distance_km, errors: errors.length, warns: warns.length, status: errors.length ? '❌ error' : '✅' })
     }
-    packets.push(renderCase(renderAs, plan))
-    if (errors.length) {
-      packets.push('\n> **ERROR VIOLATIONS**\n' + errors.map(e => `> - [${e.code}] wk${e.week ?? '—'} ${e.message}`).join('\n') + '\n')
-    }
+    verdicts.push({ label, violations: v })
+    // Both severities in full, appended to the case's own packet (a separate
+    // `packets` entry would emit a stray `---` for a clean case). The warns are
+    // what the summary asks the board to weigh, and until 2026-11-09 they were
+    // a number in a table and nothing else.
+    packets.push(renderCase(renderAs, plan)
+      + violationBlock('ERROR VIOLATIONS', errors)
+      + violationBlock("WARNS — the board's to weigh", warns))
   } catch (e: any) {
     const msg = String(e?.message ?? e).split('\n')[0]
     const refusal = isDesignedRefusal(e)   // REFUSAL-COPY-02 — type, not wording
@@ -98,6 +107,17 @@ for (const p of PLAN_PERSONAS) {
 // ── Write the round ──────────────────────────────────────────────────────────
 fs.mkdirSync(outDir, { recursive: true })
 
+// COACHING-ROUND-WARNS-BLIND-01 — the frequency table, so a warn firing in six
+// cases reads as ONE pattern rather than six numbers in six rows.
+const warnTally = tallyByCode(verdicts, 'warn')
+const errorTally = tallyByCode(verdicts, 'error')
+
+// ⚠️ A tally that disagrees with the counts printed beside it is unweighable in
+// exactly the way this change exists to fix, so it is a hard failure, not a note.
+const tallyOK = tallyMatches(warnTally, rows.map(r => r.warns))
+  && tallyMatches(errorTally, rows.filter(r => !r.status.startsWith('💥')).map(r => r.errors))
+if (!tallyOK) hardFail = true
+
 const summary = [
   `# Coaching review round — ${DATE}`,
   '',
@@ -110,10 +130,14 @@ const summary = [
   '|---|---|---|---|---|',
   ...rows.map(r => `| ${r.id} | ${r.distanceKm}km | ${r.errors} | ${r.warns} | ${r.status} |`),
   '',
-  hardFail
+  hardFail && !tallyOK
+    ? '> ❌ The warn tally does not account for every warn counted above — the packet cannot be weighed. This is a bug in the round, not in a plan.'
+    : hardFail
     ? '> ❌ At least one plan errored or an honesty guard weakened — a doctrine change may have broken a case. Investigate before the board sits.'
-    : '> ✅ Every case generated with 0 error violations, or refused by design. Warns are the board\'s to weigh.',
+    : '> ✅ Every case generated with 0 error violations, or refused by design. Warns are the board\'s to weigh — **every one of them is written out below, by code, week and message.**',
   '',
+  ...renderTally(errorTally, 'Error codes, by frequency'),
+  ...renderTally(warnTally, 'Warn codes, by frequency'),
 ].join('\n')
 
 fs.writeFileSync(path.join(outDir, 'generated-plans.md'), summary + '\n\n---\n\n' + packets.join('\n\n---\n\n'))
