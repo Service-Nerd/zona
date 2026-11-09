@@ -41,6 +41,14 @@ export interface TallyRow {
   readonly cases: number
   /** The case with the most firings of this code, and how many. */
   readonly worst: { label: string; count: number }
+  /** 🔴 ONE FIRING, IN FULL (code review, 2026-11-09). Without this the tally
+   *  carries code / § / counts and NOTHING a coach can weigh — and three places
+   *  in the shipping commit claimed otherwise ("the full message lives in the
+   *  tally's §", "written out below, by code, week and message", "the per-case
+   *  blocks are the detail"). All three were false for the FOUNDATION packet,
+   *  which has 1,338 firings and no per-case blocks by design. An exemplar makes
+   *  the claim true at 9 lines instead of 1,338. */
+  readonly example: { week: number | undefined; message: string }
 }
 
 /** One violation, as a line a coach can act on. `day` and the actual/expected
@@ -97,6 +105,7 @@ export function tallyByCode(
       count,
       cases: e.perCase.size,
       worst,
+      example: { week: e.v.week, message: e.v.message },
     })
   }
   return rows.sort((a, b) => b.count - a.count || a.code.localeCompare(b.code))
@@ -115,6 +124,12 @@ export function renderTally(rows: readonly TallyRow[], heading: string): string[
     '|---|---|---|---|---|',
     ...rows.map(r =>
       `| ${r.code} | ${r.principle_ref || '—'} | ${r.count} | ${r.cases} | ${r.worst.label} (${r.worst.count}) |`),
+    '',
+    // One firing of each, in full. A table of counts is not something a coach can
+    // weigh, and the packets that carry no per-case detail have only this.
+    '**One firing of each, in full:**',
+    '',
+    ...rows.map(r => `- \`${r.code}\` · wk${r.example.week ?? '—'} · ${r.example.message}`),
     '',
   ]
 }

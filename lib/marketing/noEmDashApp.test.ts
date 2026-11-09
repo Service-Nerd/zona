@@ -59,8 +59,16 @@ const SKIP_DIRS = ['lib/coaching/prompts']
  *  ⚠️ FILE-SCOPED, NOT PATTERN-SCOPED, AND THAT IS THE SAFER DIRECTION HERE. A
  *  pattern broad enough to clear 150 invariant messages would also clear a real
  *  sentence that happened to match it. A file list can only ever be wrong about
- *  the files it names, and every one of these is checked below by the arm that
- *  asserts the list has not grown silently.
+ *  the files it names.
+ *
+ *  🔴 THIS HEADER PROMISED "the arm that asserts the list has not grown silently"
+ *  AND THERE WAS NO SUCH ARM (code review, 2026-11-09). `DEV_FACING` was read at
+ *  exactly two skip sites, repo-wide, so an entry could be added — or go stale —
+ *  with nothing to say so. **A doc describing a check that does not exist is the
+ *  worst kind of record: it stops anyone looking.** Three arms now, at the bottom
+ *  of this file: every key is a live file · every exempted file genuinely contains
+ *  an em dash, so a stale entry fails rather than sitting as an unexplained hole ·
+ *  and the count is ratcheted, so the next entry is a deliberate act.
  *
  *  ⚠️ MEASURED, NOT ASSERTED: the runner-facing subset was taken by GENERATING
  *  all nine published plans and walking every rendered string (48 with an em
@@ -344,6 +352,30 @@ describe('BRAND-EMDASH-APP-01 — no em dash in a sentence the runner reads', ()
     expect(jsxOffenders(),
       'em dash in runner-facing JSX text. Use a colon, comma, semicolon or full stop')
       .toEqual([])
+  })
+
+  // ── DEV_FACING: THE ARM THE HEADER PROMISED (code review, 2026-11-09) ─────
+  it('every DEV_FACING key is a live file', () => {
+    for (const rel of Object.keys(DEV_FACING)) {
+      expect(existsSync(join(process.cwd(), rel)), `${rel} is exempted and does not exist`).toBe(true)
+    }
+  })
+
+  it('every DEV_FACING file genuinely contains an em dash — a stale exemption fails', () => {
+    // An entry whose file no longer has one is not harmless: it is an
+    // unexplained hole waiting for a shape nobody is thinking about, which is
+    // the exact reasoning that deleted the mis-pairing exemption above.
+    for (const [rel, why] of Object.entries(DEV_FACING)) {
+      expect(readFileSync(join(process.cwd(), rel), 'utf8').includes('\u2014'),
+        `${rel} is exempted ("${why}") but has no em dash — remove the entry`).toBe(true)
+    }
+  })
+
+  it('the DEV_FACING list is ratcheted — a new exemption is a deliberate act', () => {
+    // Raise this WITH THE REASON IN THE COMMIT. It may rise; it must not rise
+    // silently, and it must not fall silently either (a removed entry means a
+    // file became runner-facing or was deleted, and both want a look).
+    expect(Object.keys(DEV_FACING).length, 'DEV_FACING entries').toBe(15)
   })
 
   it('the JSX pass reads a real corpus, and a separator is NOT a sentence', () => {

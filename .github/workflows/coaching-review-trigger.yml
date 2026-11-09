@@ -99,8 +99,8 @@ jobs:
             echo ""
             echo "A doctrine file changed on main. The GENERATE step has run; the REVIEW step is yours:"
             echo ""
-            echo "1. Download the **coaching-review-${DATE}** artifact (or regenerate locally: \`npm run review:coaching\`)."
-            echo "2. Run \`/coaching-board\` over \`generated-plans.md\` and \`foundation-composed-plans.md\` — the warn tally at the top of each is the pattern; the per-case blocks are the detail."
+            echo "1. Download the **coaching-review-${GITHUB_RUN_ID}** artifact (or regenerate locally: \`npm run review:coaching\`)."
+            echo "2. Run \`/coaching-board\` over \`generated-plans.md\` and \`foundation-composed-plans.md\`. The warn tally in each gives every code, its § and one firing in full; \`generated-plans.md\` also carries every firing per case (the foundation packet has one table row per plan, no blocks: 1,338 firings)."
             echo "3. Commit the ruling to \`coaching-review/${DATE}/review.md\` + \`backlog.md\`."
             echo ""
             echo '```'

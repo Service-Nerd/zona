@@ -28,8 +28,9 @@ function v(p: Partial<Violation> & { code: string }): Violation {
 const SPACED = 'INV-PLAN-LARGEST-SESSIONS-SPACED'
 const RAMP = 'INV-PLAN-DELIVERED-RAMP'
 
-/** Two cases: A fires SPACED twice and RAMP once, B fires SPACED once. */
-function corpus(): CaseViolations[] {
+/** Two cases: A fires SPACED twice and RAMP once, B fires SPACED once.
+ *  Mutable `violations` so an arm can remove a firing and re-tally. */
+function corpus(): { label: string; violations: Violation[] }[] {
   return [
     { label: 'A', violations: [v({ code: SPACED, week: 3 }), v({ code: SPACED, week: 5 }), v({ code: RAMP, week: 4, principle_ref: 'CoachingPrinciples §94' })] },
     { label: 'B', violations: [v({ code: SPACED, week: 2 })] },
@@ -110,8 +111,7 @@ describe('tallyByCode — the pattern, not the count', () => {
   it('MOVES when one warn is removed from one case', () => {
     const before = tallyByCode(corpus(), 'warn').find(r => r.code === SPACED)!
     const after = corpus()
-    ;(after[0] as { violations: Violation[] }).violations =
-      after[0].violations.filter((x, i) => i !== 0)
+    after[0].violations = after[0].violations.filter((_, i) => i !== 0)
     const row = tallyByCode(after, 'warn').find(r => r.code === SPACED)!
     expect(before.count).toBe(3)
     expect(row.count).toBe(2)
@@ -120,8 +120,7 @@ describe('tallyByCode — the pattern, not the count', () => {
 
   it('DROPS a code entirely when its last firing is removed', () => {
     const after = corpus()
-    ;(after[0] as { violations: Violation[] }).violations =
-      after[0].violations.filter(x => x.code !== RAMP)
+    after[0].violations = after[0].violations.filter(x => x.code !== RAMP)
     expect(tallyByCode(after, 'warn').map(r => r.code)).toEqual([SPACED])
   })
 })
@@ -129,6 +128,29 @@ describe('tallyByCode — the pattern, not the count', () => {
 describe('renderTally', () => {
   it('renders nothing when nothing fired — no empty table', () => {
     expect(renderTally([], 'Warn codes')).toEqual([])
+  })
+
+  // 🔴 CODE REVIEW, 2026-11-09. The first cut of the tally carried code / § /
+  // counts and nothing a coach could weigh, while THREE places in the same
+  // commit claimed "the full message lives in the tally". True for the coaching
+  // packet (it has per-case blocks); FALSE for the foundation packet, which has
+  // 1,338 firings and no blocks by design. Measured on the real output then:
+  // `grep -c "largest sessions"` -> 0. So the tally carries one firing in full.
+  it('🔴 carries one firing of each code IN FULL — week and message, not just a count', () => {
+    const md = renderTally(tallyByCode(corpus(), 'warn'), 'Warn codes').join('\n')
+    expect(md).toContain('the two largest sessions are 1 day apart')
+    expect(md).toMatch(/wk\d/)
+  })
+
+  it('the exemplar is a REAL firing of that code, not the first violation seen', () => {
+    const rows = tallyByCode([
+      { label: 'A', violations: [v({ code: RAMP, week: 9, message: 'ramp rose 12%' })] },
+      { label: 'B', violations: [v({ code: SPACED, week: 2, message: 'spacing is 1 day' })] },
+    ], 'warn')
+    expect(rows.find(r => r.code === RAMP)!.example)
+      .toEqual({ week: 9, message: 'ramp rose 12%' })
+    expect(rows.find(r => r.code === SPACED)!.example)
+      .toEqual({ week: 2, message: 'spacing is 1 day' })
   })
 
   it('states the total and the distinct-code count', () => {

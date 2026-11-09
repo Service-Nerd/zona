@@ -208,7 +208,13 @@ lines.push('')
 // plans and named none of them, so the board could not weigh what it was asked
 // to. The TALLY is the readable artifact at this volume: 1,338 detail lines
 // would be the cry-wolf shape this repo records as equivalent to no record.
-// Per-plan codes go in the table below; the full message lives in the tally's §.
+// Per-plan codes go in the table below; the tally carries each code's § AND one
+// firing in full (week + message).
+// ⚠️ THIS COMMENT ONCE SAID "the full message lives in the tally's §" AND THE
+// TALLY HAD NO MESSAGE — a § reference is not a message, and on the real output
+// `grep -c "largest sessions"` was 0 (code review, 2026-11-09). There are no
+// per-case blocks in THIS packet by design, so the exemplar is the only prose a
+// reader of it ever gets.
 const warnTally = tallyByCode(verdicts, 'warn')
 const errorTally = tallyByCode(verdicts, 'error')
 // ⚠️ A tally that disagrees with the counts beside it is unweighable in exactly

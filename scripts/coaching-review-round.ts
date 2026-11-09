@@ -134,7 +134,7 @@ const summary = [
     ? '> ❌ The warn tally does not account for every warn counted above — the packet cannot be weighed. This is a bug in the round, not in a plan.'
     : hardFail
     ? '> ❌ At least one plan errored or an honesty guard weakened — a doctrine change may have broken a case. Investigate before the board sits.'
-    : '> ✅ Every case generated with 0 error violations, or refused by design. Warns are the board\'s to weigh — **every one of them is written out below, by code, week and message.**',
+    : '> ✅ Every case generated with 0 error violations, or refused by design. Warns are the board\'s to weigh — the tally below gives every code, its §, and one firing in full; `generated-plans.md` carries all of them per case. (This summary is also seeded into `review.md`, which has the tally and not the per-case blocks.)',
   '',
   ...renderTally(errorTally, 'Error codes, by frequency'),
   ...renderTally(warnTally, 'Warn codes, by frequency'),

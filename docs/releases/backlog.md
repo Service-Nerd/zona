@@ -6361,6 +6361,28 @@ with a precondition that fails if a round stops filtering warns, so the arm cann
 round that drops the import (1 arm red), and a planted count/tally mismatch in the **real** script
 (`exit=1`, restored `exit=0`).
 
+🔴 **`/code-review` FOUND FIVE AND THREE WERE ONE MISTAKE: I WROTE A CLAIM ABOUT THE FOUNDATION PACKET
+THAT WAS FALSE, IN THREE PLACES.** The tally carried code / § / counts and **no message**, while the
+script comment said *"the full message lives in the tally's §"*, the round's verdict line said *"written
+out below, by code, week and message"* (and that line is seeded into `review.md`, which has the tally and
+**no** per-case blocks), and the workflow summary said *"the per-case blocks are the detail"* — for a
+packet that has **no per-case blocks by design**. ⚠️ **A § reference is not a message.** Measured on the
+real output: `grep -c "largest sessions"` → **0**. **The thing I built to make a verdict weighable
+shipped with the same gap one level down**, and the scope call I had declared honestly is what hid it:
+deciding not to print 1,338 detail lines was right, and then I described the result as if I had.
+**`tallyByCode` now carries one firing of each code IN FULL** — 9 lines, week and message — so the claim
+is true in both packets and in `review.md`. Verified on the real output: all nine messages present.
+🔴 **FINDING 5 WAS A DOC DESCRIBING A CHECK THAT DOES NOT EXIST**, which is the worst kind because it
+stops anyone looking: `noEmDashApp.test.ts`'s `DEV_FACING` header promised *"every one of these is
+checked below by the arm that asserts the list has not grown silently"* and, repo-wide, the list was read
+at **exactly two skip sites**. Three arms now — every key is a live file · **every exempted file
+genuinely contains an em dash**, so a stale entry fails rather than sitting as an unexplained hole · and
+the count is ratcheted at **15**. ⚠️ **My first falsification of the liveness arm stayed green because I
+aimed it at a file that has seven em dashes**; re-aimed at a real zero-em-dash file it goes red.
+🔻 Finding 4 was pre-existing and is now load-bearing: the CI step summary told the board to download
+`coaching-review-${DATE}` and the upload publishes `coaching-review-${GITHUB_RUN_ID}` — the only route to
+the newly-uploaded second packet. Fixed.
+
 🔻 **WHAT THIS DOES NOT PROVE.** The warns are now readable; **nobody has read them.** 74 findings and
 1,338 firings are in front of the board for the first time and not one has been ruled on — three of the
 nine codes (§7's spacing, §52's long-run share, §94's delivered ramp) account for **64 of the 74**, and
