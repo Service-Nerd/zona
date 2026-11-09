@@ -174,17 +174,11 @@ const ALLOWED: Record<string, string> = {}
  * for four numbers everywhere.
  */
 const OVERLIMIT_BY_FILE: Record<string, Record<string, string>> = {
-  'app/support/page.tsx':   { '64': 'page padding; 16px from --space-7', '80': 'page padding; 32px from --space-7' },
-  'app/privacy/page.tsx':   { '64': 'page padding; 16px from --space-7', '80': 'page padding; 32px from --space-7' },
-  'app/terms/page.tsx':     { '64': 'page padding; 16px from --space-7', '80': 'page padding; 32px from --space-7' },
-  'app/charity-runners/page.tsx': {
-    '56': 'section marginTop; an 8px shift to --space-7 exceeds the 4px limit',
-    '64': 'section padding; 16px from --space-7',
-    '80': 'section padding; 32px from --space-7',
-  },
-  'components/marketing/PhoneFrame.tsx': { '56': 'device-frame geometry, not the element scale — 5 instances' },
+  'app/support/page.tsx':   { '64': 'marginTop; 16px from --space-7', '80': 'bottom padding; 32px from --space-7' },
+  'app/privacy/page.tsx':   { '64': 'marginTop; 16px from --space-7', '80': 'bottom padding; 32px from --space-7' },
+  'app/terms/page.tsx':     { '64': 'marginTop; 16px from --space-7', '80': 'bottom padding; 32px from --space-7' },
+  'app/charity-runners/page.tsx': { '56': 'section marginTop; an 8px shift to --space-7 exceeds the 4px limit' },
   'components/marketing/SiteFooter.tsx': { '40': 'top padding; an 8px shift to --space-7 exceeds the 4px limit' },
-  'components/marketing/SiteHeader.tsx': { '64': 'header height and padding; 16px from --space-7' },
 }
 
 /** Values exempt on ONE named file, because they belong to another system.
@@ -272,22 +266,63 @@ describe('spacing scale — SITE-WAVE-4', () => {
    * exemption and hides the next genuine offender — the same shape as a dead entry in a debt
    * register, and the reason `storedPlanDebt.test.ts` grew a stale-exemption arm the same day.
    */
-  it('every file-scoped overlimit exemption still matches a real instance', () => {
-    const stale: string[] = []
-    let instances = 0
-    for (const [file, vals] of Object.entries(OVERLIMIT_BY_FILE)) {
-      const full = path.join(ROOT, file)
-      if (!fs.existsSync(full)) { stale.push(`${file}: the file is gone`); continue }
-      const src = fs.readFileSync(full, 'utf8')
-      for (const v of Object.keys(vals)) {
-        const hits = Array.from(src.matchAll(new RegExp(`(?<![\\d.])${v}px`, 'g'))).length
-        if (!hits) stale.push(`${file}: ${v}px is exempt and no longer appears`)
-        instances += hits
+  it('🔴 every overlimit exemption exempts something the GATE ACTUALLY GOVERNS', () => {
+    // 🔴 THE FIRST VERSION OF THIS ARM GREPPED RAW FILE TEXT AND COULD NOT SEE THE DEFECT IT
+    // WAS WRITTEN FOR (code review, 2026-11-08). I registered **19** instances; the gate
+    // governs **8**. The other eleven were:
+    //   · `PhoneFrame.tsx` ×5 — the file is in `MOCKUPS` and excluded from `SURFACES` entirely,
+    //     and its `56px` are 3 COMMENTS plus 2 `fontSize` values, which are not spacing at all
+    //   · `SiteHeader.tsx` ×2 — one `//` comment, counted twice by a raw grep
+    //   · `charity-runners` `64`/`80` — band rhythm (W-07's family) and a `scrollMarginTop`
+    // **So I shipped the same over-exemption the commit says it closes, in the register that
+    // replaced it**, and my own honesty arm was blind to it because it asked the filesystem
+    // instead of asking the gate. `HOOK-RGBA-COMMENTS-01` as well: a raw count can be moved by
+    // editing a comment, so `toBe(19)` was never load-bearing.
+    //
+    // 🔑 THE ARM NOW WALKS THE GATE'S OWN POPULATION — `SURFACES`, `src()` (comment-stripped),
+    // the same two property regexes and the same band-rhythm exclusions — and asks `governed()`
+    // with the register momentarily ignored. An exemption that exempts nothing FAILS.
+    const governedNow: Array<[string, number]> = []
+    for (const f of SURFACES) {
+      const text = src(f)
+      for (const m of Array.from(text.matchAll(SPACING_PROP))) {
+        if (isBandRhythm(text, m)) continue
+        for (const px of m[3].match(/\d+px/g) ?? []) {
+          const v = Number(px.replace('px', ''))
+          // `governed()` minus the overlimit register: what WOULD be flagged without it.
+          if (v <= 5 || SCALE.includes(v) || ALLOWED[String(v)] || ALLOWED_IN_FILE[f]?.[String(v)]) continue
+          governedNow.push([f, v])
+        }
+      }
+      for (const m of Array.from(text.matchAll(SPACING_PROP_BARE))) {
+        if (isBandRhythmBare(text, m)) continue
+        const v = Number(m[3])
+        if (!Number.isFinite(v) || v <= 5 || SCALE.includes(v) || ALLOWED[String(v)] || ALLOWED_IN_FILE[f]?.[String(v)]) continue
+        governedNow.push([f, v])
       }
     }
-    expect(stale, 'a stale exemption is a hole: delete the row').toEqual([])
-    // 📐 The measured total, so the register cannot grow silently. 19 on 2026-11-08.
-    expect(instances, 'overlimit instances covered by the register').toBe(19)
+    expect(governedNow.length, 'the derivation found nothing — an empty population passes everything')
+      .toBeGreaterThan(0)
+
+    // Every REGISTERED pair must be one the gate would flag. A row that exempts nothing is a
+    // stale exemption and hides the next genuine offender.
+    const stale: string[] = []
+    for (const [file, vals] of Object.entries(OVERLIMIT_BY_FILE))
+      for (const v of Object.keys(vals))
+        if (!governedNow.some(([f, n]) => f === file && n === Number(v)))
+          stale.push(`${file}: ${v}px is exempt and the gate does not govern it there`)
+    expect(stale, 'delete the row — see the comment above for the eleven that did this').toEqual([])
+
+    // And every GOVERNED pair must be registered, or the main arm would already be red.
+    const unregistered = governedNow
+      .filter(([f, v]) => !OVERLIMIT_BY_FILE[f]?.[String(v)])
+      .map(([f, v]) => `${f}: ${v}px`)
+    expect(Array.from(new Set(unregistered)), 'a new off-scale value: fix it or register it').toEqual([])
+
+    // 📐 The measured figure, derived from the gate rather than from a grep, so a comment
+    // cannot move it. 8 on 2026-11-08.
+    expect(new Set(governedNow.map(([f, v]) => `${f}|${v}`)).size,
+      'distinct file+value pairs the overlimit register carries').toBe(8)
   })
 
   it('the bare-value register is EMPTY — an overlimit value is file-scoped or it fails', () => {

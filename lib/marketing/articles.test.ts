@@ -283,7 +283,12 @@ describe('comparison articles — house style', () => {
     for (const a of MARKETING_ARTICLES) {
       let subject: CompetitorKey | null = null
       // Metadata sits above every heading, so it is sentence-attributed only.
-      for (const text of [a.metaDescription, a.hubSummary])
+      // ⚠️ ALL FIVE METADATA STRINGS, not two (code review, 2026-11-08). The first cut read
+      // `metaDescription` and `hubSummary` only, leaving `metaTitle`, `ogTitle` and
+      // `ogDescription` — three PUBLISHED surfaces, the ones a search result and a share card
+      // show — outside both the owner arm's population and all three of these. Latent today
+      // (no £ figure appears in any of them) and the cheap moment to close it is now.
+      for (const text of [a.metaTitle, a.metaDescription, a.ogTitle, a.ogDescription, a.hubSummary])
         for (const sentence of text.split(/(?<=[.!?])\s+/)) {
           const named = competitorKeys().filter(k => sentence.includes(COMPETITOR_FACTS[k].name))
           if (named.length === 1) out.push({ slug: a.slug, key: named[0], via: 'sentence', sentence })

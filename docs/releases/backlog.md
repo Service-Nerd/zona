@@ -2170,17 +2170,18 @@ the 68.7-minute design estimate the item explicitly forbids using.
 **Unblocks on:** a TestFlight build in real use, then re-run the row count. See § Native
 release batching.
 
-- 🔴 **Verify still open — THE PREDICATE WAS BROKEN AND IS CORRECTED (2026-11-08).** It read
-  `grep -rn "refresh" ios/App/App/*.swift` → *no hit = still open*. **That returns FIVE hits
-  today and would therefore report Phase 2 as BUILT.** Every hit is a comment: Apple's
-  `AppDelegate` boilerplate, a widget-refresh note in `SharedStorePlugin`, and three lines in
-  `HealthObserverPlugin` that exist **precisely because Phase 2 is unbuilt** (*"No token
-  refresh. Supabase ROTATES refresh tokens on use…"*). A predicate that the absence of the
-  feature makes FAIL is worse than none.
-- ✅ **Use the one `nativeIngestContract.test.ts` already enforces:**
-  `grep -rnE "refresh_?[Tt]oken" ios/App/App/*.swift` → **no hit = still open.**
+- **Verify still open:** `grep -rlE "refresh_?[Tt]oken" ios/App/App/*.swift` → **0 = still open.**
   Verified to DISTINGUISH, not merely to run: 0 hits today, and 1 hit after planting
   `let refreshToken = store.string(forKey: "refresh_token")`.
+- 🔴 **THE PREVIOUS PREDICATE WAS BROKEN IN THE DIRECTION THAT CLOSES THE ITEM, and the
+  correction is recorded here rather than above so the scanner reads ONE predicate.** It was
+  `grep -rn "refresh" …` → *no hit = still open*, and it returns FIVE hits: Apple's
+  `AppDelegate` boilerplate, a widget-refresh note in `SharedStorePlugin`, and three lines in
+  `HealthObserverPlugin` that exist **precisely because Phase 2 is unbuilt** (*"No token
+  refresh. Supabase ROTATES refresh tokens on use…"*). **So it reported the work DONE.** ⚠️ And
+  because that narrative line also opened with the phrase, `backlog:verify` § 6's first run
+  executed the BROKEN one and reported it green: **two predicates on one item, and the scanner
+  took the first.**
 
 
 ---

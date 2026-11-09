@@ -24,7 +24,7 @@
  * `docs/contracts/components/ledger-card.md` precisely BECAUSE it does not exist — the absence is
  * the finding. Findings are reported, never auto-resolved.
  */
-import { readFileSync, existsSync } from 'node:fs'
+import { readFileSync, existsSync, readdirSync } from 'node:fs'
 import { execFileSync } from 'node:child_process'
 
 const sh = (cmd, args) => { try { return execFileSync(cmd, args, { encoding: 'utf8' }) } catch { return '' } }
@@ -200,7 +200,75 @@ for (const [id, body] of bodies) {
  * the count still matches. It cannot tell a correct question from a plausible one.
  */
 const PRED = /\*?\*?Verify still open:?\*?\*?:?\s*(.*)$/
-const SAFE_HEAD = /^(grep|test|ls|find|git remote get-url)\b/
+const SAFE_PROGS = new Set(['grep', 'test', 'ls', 'find', 'git'])
+
+/**
+ * 🔴 NO SHELL AT ALL — THE ONLY FIX THAT IS NOT A BLACKLIST (code review, 2026-11-08).
+ *
+ * The first cut allow-listed the first TOKEN and handed the whole string to `bash -c`, so
+ * `grep -c x /dev/null; echo ARBITRARY-COMMAND-RAN` was admitted and ran both halves. **This
+ * script is second in `verify:ci`.** ⚠️ **And my falsification tested a command whose head was
+ * `rm`, which the head test already caught** — a falsification aimed at the shape the check
+ * handles proves nothing, which this repo records by name.
+ *
+ * My second cut refused any shell metacharacter, and that was WRONG IN THE OTHER DIRECTION:
+ * `grep -c "sex\|gender"` and `grep -ci 'menstrual\|cycle'` are ordinary greps whose PATTERNS
+ * contain `|` and quotes, so 6 runnable predicates became unrunnable and the count fell 20→14.
+ * **A guard that reclassifies correct work as unverifiable is the noise failure, one step
+ * removed.**
+ *
+ * So the command is TOKENISED and run with `execFileSync(prog, args)`. There is no shell to
+ * inject into: a `;` inside a quoted pattern is data, and a `;` outside quotes cannot be
+ * expressed at all and is refused with its reason. Globs are expanded here, deliberately
+ * narrowly, because `ios/App/App/*.swift` is a real predicate.
+ */
+const UNSHELLABLE = /[;&|`$(){}<>]/
+
+/** POSIX-ish tokeniser: single quotes literal, double quotes with backslash escapes, bare
+ *  words with backslash escapes. Returns null when a shell would be required. */
+function tokenise(cmd) {
+  const out = []
+  let i = 0, cur = '', started = false
+  while (i < cmd.length) {
+    const c = cmd[i]
+    if (c === ' ' || c === '\t') { if (started) { out.push(cur); cur = ''; started = false } ; i++; continue }
+    started = true
+    if (c === "'") {
+      const end = cmd.indexOf("'", i + 1)
+      if (end < 0) return null
+      cur += cmd.slice(i + 1, end); i = end + 1; continue
+    }
+    if (c === '"') {
+      i++
+      while (i < cmd.length && cmd[i] !== '"') {
+        if (cmd[i] === '\\' && i + 1 < cmd.length) { cur += cmd[i + 1]; i += 2; continue }
+        cur += cmd[i]; i++
+      }
+      if (i >= cmd.length) return null
+      i++; continue
+    }
+    if (c === '\\' && i + 1 < cmd.length) { cur += '\\' + cmd[i + 1]; i += 2; continue }
+    // An UNQUOTED metacharacter needs a shell, which is exactly what this refuses.
+    if (UNSHELLABLE.test(c)) return null
+    cur += c; i++
+  }
+  if (started) out.push(cur)
+  return out
+}
+
+/** Expand `dir/*.ext` against the filesystem. Narrow by design: one `*` segment, no `**`. */
+function expandGlob(tok) {
+  if (!tok.includes('*')) return [tok]
+  const at = tok.lastIndexOf('/')
+  const dir = at < 0 ? '.' : tok.slice(0, at)
+  const pat = tok.slice(at + 1)
+  if (pat.includes('*') === false || dir.includes('*')) return [tok]
+  let names = []
+  try { names = readdirSync(dir) } catch { return [tok] }
+  const re = new RegExp('^' + pat.replace(/[.+^${}()|[\]\\]/g, '\\$&').replace(/\*/g, '[^/]*') + '$')
+  const hits = names.filter(nm => re.test(nm)).sort().map(nm => (at < 0 ? nm : `${dir}/${nm}`))
+  return hits.length ? hits : [tok]
+}
 
 /**
  * 🔴 THE POPULATION IS THE FILE, NOT THE ITEM BODIES, AND MEASURING THAT WAS THE BUILD.
@@ -227,8 +295,19 @@ let nearestId = '(file)'
  * about the check is `HOOK-RGBA-COMMENTS-01`, and this is its fifth appearance in two days.**
  * A real predicate opens its line after the bullet or blockquote markup.
  */
+/**
+ * 🔴 THE PREFIX CLASS STOPPED AT AN EMOJI, SO THE ITEM THAT MOTIVATED THIS BUILD WAS NEVER
+ * SCANNED (code review, 2026-11-08). `HK-NATIVE-BG-INGEST-02`'s corrected predicate reads
+ * `- ✅ **Use the one …:**` on one line and the command on the NEXT, and its sibling opens
+ * `- 🔴 **Verify still open — …**`. Neither matched: the class `[-*>\s|]*` has no emoji, and
+ * the command had to share the phrase's line.
+ *
+ * ⚠️ **THE BUILD'S OWN MOTIVATING CASE, OUTSIDE ITS OWN POPULATION.** Fixed by allowing any
+ * non-word prefix characters, and by looking for the command on the predicate line OR the one
+ * after it.
+ */
 const opensLine = line =>
-  /^[-*>\s|]*\**`?\*?Verify still open/.test(line)
+  /^[^A-Za-z]{0,24}\*?\*?`?\*?Verify still open/.test(line)
 
 /**
  * 🔴 A CLOSED ITEM'S PREDICATE MUST NOT BE SCANNED, AND THE FIRST RUN PROVED WHY.
@@ -243,7 +322,17 @@ const opensLine = line =>
  * blockquote bullet — carrying ✅ or a ~~strikethrough~~.
  */
 const LEAD = /^(?:#{2,4} |>?\s*[-*] |> \*\*)/
-const isClosedLead = l => /✅|~~/.test(l)
+/**
+ * 🔴 `~~` ANYWHERE ON A LEAD LINE READ AS CLOSED, AND IT SILENTLY DROPPED AN OPEN ITEM
+ * (code review, 2026-11-08). `ENGINE-03` is ⛔ and OPEN, and its lead line contains
+ * `~~struck prose~~` describing a superseded phase — so its runnable predicate vanished from
+ * all three buckets, which directly contradicts this section's own promise that nothing is
+ * silently skipped.
+ *
+ * A record is closed when it is TICKED, or when its own IDENTIFIER is struck through. Struck
+ * prose in the middle of a line is an editorial mark, not a status.
+ */
+const isClosedLead = l => /✅/.test(l) || /~~[^~]*\*\*[A-Z][A-Z0-9-]{3,}/.test(l) || /~~\*?\*?`?[A-Z][A-Z0-9-]{3,}/.test(l)
 let leadClosed = false
 
 allLines.forEach((line, n) => {
@@ -272,37 +361,66 @@ allLines.forEach((line, n) => {
   const id = `${nearestId}:L${n + 1}`
   // The command is the FIRST backticked span; the stated outcome is the prose after it. A line
   // with no backticks is a prose gate ("Gate: 50+ paying users") and is reported, not run.
-  const cmdM = /`([^`]+)`/.exec(rest)
-  if (!cmdM) { predManual.push([id, 'prose gate', rest.replace(/\*\*/g, '').trim().slice(0, 80)]); return }
-  const cmd = cmdM[1].trim()
+  // ⚠️ THE COMMAND MAY BE ON THE NEXT LINE. A wrapped markdown bullet puts the backticked
+  // command on the continuation, which is how HK-NATIVE-BG-INGEST-02's corrected predicate is
+  // written. One line of lookahead, joined before the search.
+  const joined = `${rest} ${(allLines[n + 1] ?? '').trim()}`
+  // ⚠️ A BACKTICKED SPAN IS NOT NECESSARILY A COMMAND, and reporting one as "not allow-listed"
+  // MISLABELS THE RESIDUAL (code review, 2026-11-08): six prose gates were listed as though
+  // somebody had tried to run `subscriptions` or `NEXT_PUBLIC_APP_URL`, which are a table name
+  // and an env var quoted inside an external-gate sentence. **A residual list that misnames its
+  // own entries is read once and ignored.** So the FIRST backticked span whose first token looks
+  // like a program is the candidate; a line with none is a prose gate.
+  const looksLikeCommand = t => SAFE_PROGS.has(t) || /^(npx|npm|node|bash|sh|tsx|pnpm|yarn)$/.test(t)
+  const spans = Array.from(joined.matchAll(/`([^`]+)`/g)).map(m => m[1].trim())
+  const cmd = spans.find(sp => looksLikeCommand((tokenise(sp) ?? sp.split(/\s+/))[0] ?? ''))
+  if (!cmd) { predManual.push([id, 'prose gate', rest.replace(/\*\*/g, '').trim().slice(0, 80)]); return }
   // ⚠️ AN ALLOW-LIST OF COMMAND HEADS, NOT ARBITRARY EXECUTION. These are prose in a markdown
   // file and some are `npx tsx -e "…"`. Running whatever a document happens to contain is not a
   // check, it is a shell. Everything else is REPORTED as not runnable — never silently skipped.
-  if (!SAFE_HEAD.test(cmd)) { predManual.push([id, 'not allow-listed', cmd.slice(0, 80)]); return }
+  const argv0 = tokenise(cmd)
+  if (!argv0) { predManual.push([id, 'needs a shell', cmd.slice(0, 80)]); return }
+  if (!SAFE_PROGS.has(argv0[0])) { predManual.push([id, 'not allow-listed', cmd.slice(0, 80)]); return }
+  // `git` is allow-listed only for the one read it is used for.
+  if (argv0[0] === 'git' && !(argv0[1] === 'remote' && argv0[2] === 'get-url')) {
+    predManual.push([id, 'git subcommand not allow-listed', cmd.slice(0, 80)]); return
+  }
+  const argv = [argv0[0], ...argv0.slice(1).flatMap(expandGlob)]
   // ⚠️ A TIMEOUT, BECAUSE A PREDICATE IS A CHECK AND NOT A BUILD — and because removing the
   // closed-item skip to falsify it HUNG THIS SCRIPT, which sits in `verify:ci`. A predicate
   // that cannot answer in 15s is reported as not runnable rather than stalling the gate; a
   // gate that can hang is a gate someone removes from CI. `stdin` is /dev/null for the same
   // family of reason: a `grep` with no file argument would otherwise wait on it forever.
-  let out = '', failed = false, timedOut = false
+  let out = '', failed = false, timedOut = false, status = 0
   try {
-    out = execFileSync('bash', ['-c', cmd],
+    out = execFileSync(argv[0], argv.slice(1),
       { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'], timeout: 15_000 })
   } catch (e) {
     failed = true
     timedOut = !!(e && (e.signal === 'SIGTERM' || e.code === 'ETIMEDOUT'))
+    status = (e && typeof e.status === 'number') ? e.status : 1
     out = (e && e.stdout) ? String(e.stdout) : ''
   }
   if (timedOut) { predManual.push([id, 'timed out at 15s', cmd.slice(0, 80)]); return }
+  // 🔴 GREP'S ERROR EXIT WAS DISCARDED ON THE COUNTED PATH (code review, 2026-11-08). grep
+  // returns 1 for "no match" and >=2 for "the file is unreadable" — and on the second it still
+  // prints nothing, so a MISSING TARGET read as 0 and matched a stated `0 = still open`. **The
+  // predicate would then confirm an item's premise using a file that no longer exists**, which
+  // is the `a null from a field that does not exist` class. Latent today: all eight targets
+  // exist. Reported as unanswerable, never as a count.
+  if (status >= 2) { predManual.push([id, `the command errored (exit ${status})`, cmd.slice(0, 80)]); return }
   const rows = out.trim().split('\n').filter(Boolean)
   // `grep -c` prints the count (prefixed by a filename when multiple files are given).
   const count = /^grep\b.*\s-\w*c/.test(cmd)
     ? rows.reduce((a, r) => a + Number(r.split(':').pop() || 0), 0)
     : rows.length
-  const stated = /→\s*\*?\*?(\d+)\s*=/.exec(rest) ?? /\*\*(\d+)\s*=/.exec(rest)
+  // 🔴 A NaN COUNT FELL INTO `predRan` AS "NaN = stated" AND READ GREEN, because `predRan` is
+  // only counted and never printed (code review, 2026-11-08). `unverified is never a pass.`
+  if (!Number.isFinite(count)) { predManual.push([id, 'count not derivable', cmd.slice(0, 80)]); return }
+  const stated = /→\s*\*?\*?(\d+)\s*=/.exec(joined) ?? /\*\*(\d+)\s*=/.exec(joined)
   if (stated) {
     const want = Number(stated[1])
-    if (Number.isFinite(count) && count !== want) predStale.push([id, cmd.slice(0, 66), `states ${want}, reads ${count}`])
+    if (count !== want) predStale.push([id, cmd.slice(0, 66), `states ${want}, reads ${count}`])
     else predRan.push([id, cmd.slice(0, 66), `${count} = stated`])
   } else {
     predRan.push([id, cmd.slice(0, 66), failed ? 'no match (exit non-zero)' : `${count} line(s)`])
@@ -338,8 +456,15 @@ if (untagged.length) {
   console.log('    board that rules first, and that is what this reads.')
 }
 
+head('5. WHAT IS VERIFIABLE AT ALL')
+console.log(`  ${withNums.length} items state a number — a figure exists to re-derive`)
+console.log(`  ${noNums.length} items state NO number — behavioural claims, no script settles them`)
 head('6. `Verify still open` PREDICATES — RUN, not read')
 console.log(`  ran and consistent ${predRan.length} · CONTRADICTED ${predStale.length} · not mechanically runnable ${predManual.length}`)
+// ⚠️ THE RAN LIST IS PRINTED, not merely counted (code review, 2026-11-08). A bucket that is
+// only counted cannot be checked: a NaN count fell into it reading "NaN = stated" and nobody
+// would have seen it. **A green total is not evidence of what was green.**
+predRan.forEach(([id, cmd, note]) => console.log(`      ✓ ${id.padEnd(32)} ${note.padEnd(20)} ${cmd}`))
 if (predStale.length) {
   console.log('\n  ✗ A PREDICATE WHOSE STATED COUNT NO LONGER MATCHES:')
   predStale.forEach(([id, cmd, why]) => console.log(`      ${id.padEnd(32)} ${why}\n${' '.repeat(34)}${cmd}`))
@@ -351,9 +476,6 @@ if (predManual.length) {
   predManual.forEach(([id, why, what]) => console.log(`      ${id.padEnd(32)} [${why}] ${what}`))
 }
 
-head('5. WHAT IS VERIFIABLE AT ALL')
-console.log(`  ${withNums.length} items state a number — a figure exists to re-derive`)
-console.log(`  ${noNums.length} items state NO number — behavioural claims, no script settles them`)
 console.log('\n⚠️  A DEAD REFERENCE IS NOT ALWAYS A DEAD PREMISE: an item can name a file precisely')
 console.log('    because it is missing. Nothing here is auto-resolved — read the item.')
 console.log('⚠️  AND SECTION 5 IS THE HONEST LIMIT. This proves references are live and prints')
