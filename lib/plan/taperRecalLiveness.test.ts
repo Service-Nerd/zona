@@ -15,7 +15,7 @@ import { describe, it, expect } from 'vitest'
 import { generateMarketingPlan } from '@/lib/marketing/marketingPlan'
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
-import { computeTaperRecalibration } from './taperRecalibration'
+import { computeTaperRecalibration, resolveTaperPhase } from './taperRecalibration'
 import { GENERATION_CONFIG } from './generationConfig'
 import { MARKETING_PLANS, planAnchor } from '@/lib/marketing/plans'
 import { trainingKm } from './weekVolume'
@@ -33,10 +33,24 @@ function realPlan(slug = 'sub-4-hour-marathon-plan'): Plan {
   return generateMarketingPlan(src).plan
 }
 
-const taperStartOf = (p: Plan) => {
-  const i = p.weeks.findIndex(w => (w as unknown as { phase?: string }).phase === 'taper')
-  return i === -1 ? -1 : i + 1
-}
+/**
+ * 🔴 THIS DERIVED THE TAPER START A SECOND WAY AND THE TWO ONLY AGREED BY ACCIDENT OF THE DATE
+ * (2026-11-09). It scanned `weeks` for `phase === 'taper'` and returned the ARRAY POSITION + 1,
+ * while `computeTaperRecalibration` reads `resolveTaperPhase(plan).start_week`. The plan here is
+ * generated from `planAnchor`, which anchors to NEXT MONDAY — so the plan's shape moves with the
+ * day of the week, and on 2026-11-09 the two answers diverged: the function reported *"not taper
+ * entry (current=16, taper starts=…)"* and two arms went red.
+ *
+ * ⚠️ **A CHECKER THAT RE-DERIVES THE PRODUCER'S ANSWER IS NOT CHECKING IT, IT IS GUESSING
+ * ALONGSIDE IT** — the `deloadCadence` / `tierResolution` shape, in a liveness proof whose whole
+ * purpose is to show the real path runs. It asks the owner now.
+ *
+ * ⚠️ AND THIS IS `PINNED-CLOCK-01`'s FAMILY, THIRD INSTANCE: nothing here pins a literal date,
+ * so the pinned-clock gate could not see it. The staleness came from a date-DERIVED plan shape
+ * meeting a second, independent derivation. **Deriving from today is necessary and not
+ * sufficient; the second derivation is what expires.**
+ */
+const taperStartOf = (p: Plan) => resolveTaperPhase(p)?.start_week ?? -1
 
 describe('the route reads the table the columns actually live on', () => {
   it('selects from run_analysis, never strava_activities', () => {

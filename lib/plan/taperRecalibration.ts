@@ -74,7 +74,11 @@ function scaleSession(session: Session, scaleFactor: number, floors: SessionFloo
 }
 
 /** Derive the taper Phase from plan.phases or by scanning plan.weeks. */
-function resolveTaperPhase(plan: Plan): Phase | null {
+/** EXPORTED for `taperRecalLiveness.test.ts` (2026-11-09): that proof derived the taper start a
+ *  SECOND way — the array position of the first `phase === 'taper'` week — and the two answers
+ *  agreed only by accident of the day of the week, because the plan it builds is anchored to
+ *  NEXT MONDAY. A checker that re-derives the producer's answer is guessing alongside it. */
+export function resolveTaperPhase(plan: Plan): Phase | null {
   if (plan.phases && plan.phases.length > 0) {
     return plan.phases.find(p => p.name === 'taper') ?? null
   }

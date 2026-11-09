@@ -2149,6 +2149,49 @@ Within a week of the build: `X-Ingest-Path: native` appears in ops events, and m
 
 ---
 
+### 🔲 `PINNED-CLOCK-RUNWAY-01` — pinning `planStart` closes one of the engine's two clock reads ⚙️ **NO BOARD**
+
+Found 2026-11-09 when the full suite went red on a date roll with **no code change**: 4 tests in
+2 files. Third instance of the `PINNED-CLOCK-01` family, and `CLAUDE.md` already predicts it —
+*"the gate only knows two names for a pinned date."*
+
+**`generateRulePlan(input, tier, planStart)` pins the plan's CALENDAR and not the engine's
+other clock read.** `composePlanWithFoundation` sizes the foundation runway from
+(today → planStart), and §44 measures prep time the same way, so a test can pin its plan start
+AND its own `TODAY` constant for a derived `race_date` — as `inputEffect.test.ts` does — and
+still expire. On 2026-11-09 `foundation_decision` reported **INERT** and the effect surface
+moved **33 → 32**. Fixed by passing the fifth argument, `todayOverride`.
+
+📐 **MEASURED: 136 test files, 451 call sites pass `planStart` and not `todayOverride`.**
+
+🔻 **AND A BLANKET GATE IS THE WRONG FIX, which is why this is filed rather than swept.**
+Most of those 451 are **correct and stable**: a pinned start in the PAST makes the runway ≤0,
+so no foundation weeks are composed and the output is deterministic regardless of today. Firing
+on all 136 would be the noise failure this repo records four times — a gate that fires on
+ordinary work gets switched off, which is the same as having none.
+
+⚙️ **The discriminator, and it is what needs building:** a test is at risk only when its
+assertion depends on the runway's SIZE — a `foundation_*` field, a prep-time warning, or a
+plan LENGTH derived from weeks-available. The sweep is: find the call sites whose file mentions
+`foundation`, `prep_time`, `PrepTime` or asserts a week count, and pin `todayOverride` on those.
+⚠️ **Pin it to the file's own `planStart`, never to a convenient date** — the fixture header for
+`PINNED_PLAN_START` is explicit that *"it went green" is not evidence the plan is the one you
+meant to assert on*, and borrowing a date is the `COHORT_PLAN_START` mistake at smaller scale.
+
+### 🔲 `TAPER-LIVENESS-SECOND-DERIVATION-01` — **CLOSED 2026-11-09 in the same commit.** A liveness proof re-derived the producer's answer ⚙️ **NO BOARD**
+
+`taperRecalLiveness.test.ts` computed the taper start as *the array position of the first week
+whose `phase === 'taper'`*, while `computeTaperRecalibration` reads
+`resolveTaperPhase(plan).start_week`. The plan it builds comes from `planAnchor`, which anchors
+to **next Monday**, so the plan's shape moves with the day of the week — and on 2026-11-09 the
+two derivations disagreed: *"not taper entry (current=16, taper starts=…)"*, two arms red.
+
+✅ `resolveTaperPhase` is exported and the proof asks the owner. ⚠️ **A checker that re-derives
+the producer's answer is not checking it, it is guessing alongside it** — the `deloadCadence` /
+`tierResolution` shape, inside a liveness proof whose entire purpose is to show the real path
+runs. And **nothing here pinned a literal date**, so the pinned-clock gate could not see it:
+**deriving from today is necessary and not sufficient; the second derivation is what expires.**
+
 ### 🔻 `HK-NATIVE-BG-INGEST-02` — the native ingest needs a credential that outlives an access token — **BLOCKED ON A DEVICE, 2026-11-08** *(P2, filed 2026-11-05)* ⚙️ **NO BOARD** (💼 **SLT** on build cost)
 
 Phase 1 posts a run from native code only while the published Supabase **access token** is still valid, and it deliberately does not refresh. **Measured before building Phase 1:** median **68.7 min** since the app was last active at the moment a run ends, so of the 39 runs that currently link slowly, **13 would have a live token and 26 would not.** Phase 1 is therefore a third of the problem by design.
