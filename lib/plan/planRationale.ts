@@ -1,5 +1,6 @@
 import type { Plan } from '@/types/plan'
 import { convertDistanceString, type DistanceUnits } from '@/lib/format'
+import { currentMetaNote } from './supersededNotes'
 
 /**
  * PLAN-NOTE-SURFACE-01 — the single owner of "why this plan is shaped this way".
@@ -213,5 +214,15 @@ export function planRationaleNotes(
   //
   // ⚠️ MAPPED ON THE WAY OUT rather than at each `push`, so a note added later
   // is converted by construction and cannot be the one that was forgotten.
-  return out.map(n => ({ ...n, text: convertDistanceString(n.text, units) ?? n.text }))
+  // 🔴 AND THE EM-DASH REPAIR, IN THE SAME MAP AND FOR THE SAME REASON (code review,
+  // 2026-11-09). `EMDASH-LIB-COPY-01` repunctuated four of these sentences in the ENGINE,
+  // which reaches NEW plans only: measured against production the day it shipped, **12 of 41
+  // stored plans still carried one** (10 hard_pref, 1 difficulty, 1 returning_runner). A note
+  // is stamped into `plan_json` at generation, so a copy fix can only reach an existing plan
+  // HERE. ⚠️ Repaired BEFORE `convertDistanceString`, so the units conversion reads the final
+  // punctuation rather than a mark that is about to change.
+  return out.map(n => {
+    const repaired = currentMetaNote(n.text)
+    return { ...n, text: convertDistanceString(repaired, units) ?? repaired }
+  })
 }

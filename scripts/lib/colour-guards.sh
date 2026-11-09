@@ -65,7 +65,14 @@ BANNED_RE='#D4501A|#f5f2ee|#F5F2EE|#0B132B|#5BC0BE|rgba?\(212, ?80, ?26|rgba?\(1
 # name no palette colour and are deliberately NOT listed.
 COLOUR_PROP='(color|background|backgroundColor|borderColor|borderTopColor|borderBottomColor|borderLeftColor|borderRightColor|outlineColor|caretColor|textDecorationColor|columnRuleColor|fill|stroke)'
 COLOUR_WORD='(white|black|red|green|blue|yellow|orange|purple|grey|gray|teal|navy|pink|brown|cyan|magenta|silver|gold|beige|ivory|coral|salmon|crimson|olive|lime|maroon|indigo|violet|turquoise|khaki|tan|aqua|fuchsia|darkred|darkblue|darkgreen|lightblue|lightgrey|lightgray|whitesmoke|snow|azure)'
-KEYWORD_RE="\\b${COLOUR_PROP}\\s*:\\s*'${COLOUR_WORD}'"
+# 🔴 QUOTE-AGNOSTIC, AND IT WAS NOT (code review, 2026-11-09). The first cut hardcoded a
+# SINGLE quote, so `color: "white"` passed both the hook and the sweep — and the hex rule it
+# was modelled on is quote-agnostic, while the hook's own hex tests are written with DOUBLE
+# quotes. **A guard that misses the next introduction is the whole class this one closes.**
+# Also reaches a SHORTHAND value: `border: '1px solid white'` names a palette colour just as
+# squarely as `borderColor` does.
+COLOUR_PROP_SHORT='(border|borderTop|borderBottom|borderLeft|borderRight|outline|boxShadow|textShadow|background)'
+KEYWORD_RE="\\b(${COLOUR_PROP}\\s*:\\s*['\\\"\`]${COLOUR_WORD}['\\\"\`]|${COLOUR_PROP_SHORT}\\s*:\\s*['\\\"\`][^'\\\"\`]*[[:space:]]${COLOUR_WORD}['\\\"\`])"
 
 FONT_RE='DM Mono|DM Sans|Space Grotesk|Bebas Neue'
 SETP_RE='\.style\.setProperty\('

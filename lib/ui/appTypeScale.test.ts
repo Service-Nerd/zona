@@ -47,10 +47,21 @@ const strip = (s: string) => s.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^[ \t]*
  *
  * 🔑 AND IT UNDERSTATED THE HOLE. 150 `fontSize` literals in this population are not `Npx`
  * at all. Most are `var(--fs-*)`, which is the CORRECT form and must keep passing — but
- * **nine are hardcoded `rem` values**, every bit as off-scale as a hardcoded px and equally
- * invisible: six `0.8125rem` in `UpgradeScreen.tsx` (one of the four files `CLAUDE.md`
- * records as reverted to legacy aliases post-Phase 3), plus `EmptyState` 1rem,
- * `PullToRefresh` 0.8125rem and `PlanChart` **0.46rem = 7.36px**.
+ * **23 are hardcoded `rem` values**, every bit as hardcoded as a px and equally invisible to
+ * the old pattern: **17 in `UpgradeScreen.tsx`** (one of the four files `CLAUDE.md` records as
+ * reverted to legacy aliases post-Phase 3), 3 in `PullToRefresh`, 2 in `EmptyState`, and
+ * `PlanChart`'s **0.46rem = 7.36px**, the smallest type in the app.
+ *
+ * 🔴 I FIRST WROTE "NINE", WHICH WAS THE OFF-SCALE SUBSET REPORTED AS THE POPULATION (code
+ * review, 2026-11-09). 📐 Re-measured with this file's own glob and pattern: **23 total, of
+ * which 9 normalise OFF the declared scale and 14 normalise ONTO it** — `0.75rem` is 12px,
+ * `0.9375rem` is 15px, `0.6875rem` is 11px, and all three px values are DECLARED.
+ *
+ * 🔻 SO THOSE 14 PASS, AND THAT IS A LIMIT RATHER THAN A FIX. The ratchets here count
+ * **undeclared SIZES**, not **hardcoded-versus-token**; a hardcoded `0.75rem` is on the scale
+ * by value and off the convention by form. **Closing that is a different debt and a different
+ * number** (every `var(--fs-*)` conversion, ~160 sites), and claiming this gate covers it
+ * would be the overclaim the item's own history is made of. Stated, not absorbed.
  *
  * So the pattern takes both units and NORMALISES to px (`rem × 16`), which is what the
  * declared scale is written in. `MATCH THE EFFECT, NOT THE SPELLING.`
@@ -61,10 +72,16 @@ function sizes() {
   for (const f of FILES) {
     for (const m of Array.from(strip(readFileSync(f, 'utf8')).matchAll(/fontSize:\s*'(\d+(?:\.\d+)?)(px|rem)'/g))) {
       const px = Number(m[1]) * (m[2] === 'rem' ? REM_PX : 1)
-      // Integers keep their integer spelling so `DECLARED` (and every historical baseline
-      // note) still matches; a genuine fraction keeps its decimal and is undeclared by
-      // construction, which is the point.
-      const key = Number.isInteger(px) ? String(px) : String(px)
+      // 🔴 THIS READ `Number.isInteger(px) ? String(px) : String(px)` — IDENTICAL BRANCHES,
+      // under a comment describing a normalisation it did not perform (code review,
+      // 2026-11-09). `String()` already gives `12` for 12 and `9.5` for 9.5, so the integer
+      // half was never in doubt; what the ternary hid was the FLOAT half. `0.07rem` is
+      // 1.1200000000000001 in IEEE 754, and that string would enter the key space as its own
+      // "distinct size" and move `DISTINCT_BASELINE` for a rounding artefact.
+      //
+      // Two decimal places, which is finer than any real type size and exact for every
+      // sixteenth: `rem` steps of 1/16 are 0.0625 apart, so 2dp separates them cleanly.
+      const key = Number.isInteger(px) ? String(px) : String(Math.round(px * 100) / 100)
       counts.set(key, (counts.get(key) ?? 0) + 1)
     }
   }

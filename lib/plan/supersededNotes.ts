@@ -99,3 +99,48 @@ export function currentNote(note: string | undefined): string | undefined {
   if (note === undefined) return undefined
   return BY_NORMALISED.get(NORMALISE(note)) ?? note
 }
+
+/**
+ * 🔴 THE META-NOTE HALF, AND IT IS NOT LATENT (EMDASH-LIB-COPY-01, code review 2026-11-09).
+ *
+ * `currentNote` above repairs STEP notes, and `sessionSteps.ts:422` is its only caller. The
+ * four sentences repunctuated in `ruleEngine.ts` are `meta.*_note` fields read by
+ * `planRationale.ts`, so **the engine was fixed and every stored plan kept its em dash while
+ * the guard went green** — the exact class this module's own header records getting wrong
+ * twice, and the 2026-11-05 precedent shipped 14 entries for it.
+ *
+ * 📐 MEASURED AGAINST PRODUCTION before writing this, not assumed: **12 of 41 stored plans
+ * carry one** — 10 `hard_pref_note`, 1 `difficulty_note`, 1 `returning_runner_note`. Twelve
+ * live runners read a mark the founder's rule forbids.
+ *
+ * ⚠️ PHRASES, NOT WHOLE STRINGS, because three of the four are TEMPLATES. `difficulty_note`
+ * interpolates two week counts and `returning_runner_note` three config values, so an
+ * exact-string key — the right instrument for a step note — cannot match them. Each phrase
+ * below carries enough of its own sentence that it can only ever replace the one it names,
+ * which is the property the header argues for.
+ */
+const SUPERSEDED_META_PHRASES: ReadonlyArray<{ from: string; to: string }> = [
+  // hard_pref_note (§110 / §40c). Static, so an exact key would also work; kept here so all
+  // four live in one place and a reader does not have to know which is which.
+  { from: 'deepens \u2014 not before your legs', to: 'deepens, not before your legs' },
+  // difficulty_note (§44 prep-time warning).
+  { from: ' weeks \u2014 below the ', to: ' weeks: below the ' },
+  // level_disagreement_note. 0 stored plans today; included because the engine can still
+  // emit it and a repair that covers three of four is a repair someone has to re-open.
+  { from: "says you're not one \u2014 you're a runner", to: "says you're not one: you're a runner" },
+  // returning_runner_note (fresh-from-layoff).
+  { from: 'not faster ramp \u2014 the engine prefers', to: 'not faster ramp; the engine prefers' },
+]
+
+/**
+ * Repair a stored `meta.*_note` at the READ. Returns the note unchanged when it carries none
+ * of the superseded phrases, which is every plan generated from 2026-11-09 onward.
+ *
+ * ⚠️ IT EMPTIES WHEN A MIGRATION REWRITES THE STORED NOTES, exactly as the step-note map
+ * does. Until then it is the only thing that reaches a runner mid-block.
+ */
+export function currentMetaNote(note: string): string {
+  let out = note
+  for (const { from, to } of SUPERSEDED_META_PHRASES) out = out.split(from).join(to)
+  return out
+}

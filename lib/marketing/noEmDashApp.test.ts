@@ -108,16 +108,14 @@ const EXEMPT = [
   { match: /^(?:\$\{[^}]*\}|[A-Z])[^.!?]*\u2014[^.!?]*$/,  why: 'engine LABEL or week caption, no sentence punctuation: "Easy run — Zone 2", "Build — raising the ceiling", "Standard plan — 5km, 12 weeks". ADR-018 joins a row to a session BY LABEL, so these are coupled as well as non-prose' },
   { match: /§/,                       why: 'invariant / rule message, developer-facing (CLAUDE.md exempts invariant messages by name)' },
   { match: /requires derivable|re-read after/, why: 'invariant message continued onto its own literal' },
-  // 🔴 A LIMITATION OF THE LITERAL MATCHER, NAMED RATHER THAN HIDDEN. `LIT` is a
-  // regex, so where one template literal ends and another begins it can pair the
-  // CLOSING backtick of the first with the OPENING backtick of the second and
-  // report the code between them as a string. Three such spans exist in
-  // `ruleEngine.ts` today; each reports a line (`: null`, `,`) that contains no
-  // em dash at all, which is the tell and is what this matches. ⚠️ Safe in the
-  // direction that matters: a real offender always has the mark ON its own
-  // reported line, so this can only ever clear an artefact. Verified by hand on
-  // all three before it was written.
-  { match: /^[\s,:;{}()\[\]]*(?:\n|$)/, why: 'regex mis-pairing across a template boundary. The TEST is the first line: a real sentence never opens with nothing but code punctuation, and in every case here the reported line carries no em dash at all' },
+  // 🔴 THE MIS-PAIRING EXEMPTION IS DELETED, NOT KEPT (code review, 2026-11-09). It read
+  // `/^[\s,:;{}()\[\]]*(?:\n|$)/` and existed to clear the artefacts the old REGEX produced.
+  // The scanner produces none, so it cleared 0 literals — and left reachable: with `noInterp`
+  // added below, **any multi-line template whose first line is just an interpolation** matched
+  // it, so `` `${runnerName}\n  You went hard today — ease off tomorrow.` `` became exempt and
+  // was not before. ⚠️ **An exemption whose cause is gone is not inert, it is a hole waiting
+  // for a shape nobody is thinking about** — and its stated rationale is the very sentence this
+  // commit records as false.
 ]
 
 /** NOEMDASH-JSX-TEXT-01 — exemptions for the JSX-TEXT pass, kept separate from the
@@ -192,10 +190,10 @@ function files(dir: string, out: string[] = []): string[] {
 
 /** Comments are exempt by the rule itself, so they are blanked (not removed —
  *  blanking preserves offsets, which keeps reported line numbers honest). */
-const blankComments = (s: string) =>
-  s.replace(/\/\*[\s\S]*?\*\//g, m => ' '.repeat(m.length))
-   .replace(/\{\/\*[\s\S]*?\*\/\}/g, m => ' '.repeat(m.length))
-   .replace(/^\s*\/\/.*$/gm, m => ' '.repeat(m.length))
+// `blankComments` is DELETED (code review, 2026-11-09). The scanner skips comments itself,
+// so it had no call sites — and the comment keeping it alive claimed the reported line text
+// came from it, which was false: it comes from `raw`. `noUnusedLocals` is unset, so nothing
+// else would have said so.
 
 /**
  * 🔴 THE REGEX SWALLOWED REAL LITERALS, AND THE EXEMPTION BELOW CLAIMED IT COULD NOT
@@ -273,8 +271,7 @@ function offenders(): string[] {
       if (DEV_FACING[rel]) continue
       const raw = readFileSync(f, 'utf8')
       if (!raw.includes(EM)) continue
-      // The scanner skips comments itself, so `blankComments` is no longer the defence —
-      // it is kept only so the reported line text matches what a reader sees.
+      // The scanner skips comments itself.
       for (const lit of stringLiterals(raw)) {
         // 🔴 A CSS COMMENT INSIDE A `<style>{`…`}</style>` TEMPLATE IS COMMENT TEXT, AND THE
         // SCANNER CANNOT KNOW THAT — to a TypeScript scanner it is string CONTENT, correctly.
@@ -282,7 +279,15 @@ function offenders(): string[] {
         // block carries a 6-line `/* … */` explaining a retired colour. **Blanked rather than
         // the LINE exempted**, so a real sentence elsewhere in the same template is still
         // caught — `HOOK-RGBA-COMMENTS-01`, one layer in.
-        const t = lit.text.replace(/\/\*[\s\S]*?\*\//g, m => ' '.repeat(m.length))
+        // 🔴 AND AN ESCAPED EM DASH IS SIX ASCII CHARACTERS, SO `includes(EM)` COULD NOT SEE
+        // IT (found while writing the meta-note repair, 2026-11-09). `'\\u2014'` in TS source
+        // renders an em dash to the runner and reads as `\`, `u`, `2`, `0`, `1`, `4` to a
+        // string search — **a way to write the forbidden mark and pass the guard**. Measured
+        // across `app/`, `components/` and `lib/`: 2 live instances outside this file, one a
+        // bare placeholder (exempt below) and one in `app/post-run-preview/`, which is outside
+        // this guard's SURFACES. No offender inside the population, and the hole is one line.
+        const decoded = lit.text.replace(/\\u([0-9a-fA-F]{4})/g, (_, h) => String.fromCharCode(parseInt(h, 16)))
+        const t = decoded.replace(/\/\*[\s\S]*?\*\//g, m => ' '.repeat(m.length))
         if (!t.includes(EM)) continue
         // 🔴 REPORT THE LINE OF THE EM DASH, NOT OF THE LITERAL'S START, and
         // test the SENTENCE AROUND IT rather than the whole extract.
@@ -299,7 +304,11 @@ function offenders(): string[] {
         // 400-character swallowed span would clear any sentence that happened
         // to share it; matched against the one line the dash is actually on, it
         // clears a rule reference and nothing else.
-        const at = lit.at + Math.max(0, t.indexOf(EM))
+        // `lit.at` is the OPENING QUOTE and `t` excludes it, so the offset needs the +1
+        // (code review, 2026-11-09). Without it an em dash on a template's first content
+        // character resolves to the PREVIOUS line — and `around`, the string the exemption
+        // list is matched against, is then the wrong line entirely. No live instance today.
+        const at = lit.at + 1 + Math.max(0, t.indexOf(EM))
         const line = raw.slice(0, at).split('\n').length
         const around = (raw.split('\n')[line - 1] ?? t).trim()
         // ⚠️ TEST THE EXEMPTIONS AGAINST AN INTERPOLATION-FREE FORM TOO (2026-11-09). The
@@ -375,6 +384,15 @@ describe('BRAND-EMDASH-APP-01 — no em dash in a sentence the runner reads', ()
       "const b = 'another sentence \u2014 here'",
     ].join('\n')
     expect(stringLiterals(src).map(l => l.text)).toContain('another sentence \u2014 here')
+  })
+
+  it('🔴 an em dash written as a `\\u2014` ESCAPE is still an em dash', () => {
+    // Six ASCII characters to a string search, one forbidden mark to the runner.
+    const src = "const a = 'you went hard today\\u2014ease off tomorrow'"
+    const lit = stringLiterals(src)[0]!.text
+    expect(lit.includes('—'), 'the RAW literal cannot contain the mark').toBe(false)
+    const decoded = lit.replace(/\\u([0-9a-fA-F]{4})/g, (_, h) => String.fromCharCode(parseInt(h, 16)))
+    expect(decoded.includes('—'), 'decoded, it must').toBe(true)
   })
 
   it('en dashes in RANGES are correct and must survive', () => {
