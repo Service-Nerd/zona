@@ -5,6 +5,15 @@ angle. Feeds the weekly DHTB LinkedIn build-in-public posts — keep it honest, 
 it specific, no polish. The content system adds the voice.
 
 ---
+## 2026-11-09 — TYPESCALE-DECIMAL-GATE-01 · the same blind pattern, one layer over
+**Shipped:** the type-scale gate counts decimal px and hardcoded rem sizes, normalised to px.
+**Dev learning:** `fontSize: '(\d+)px'`. Three decimal sites were invisible, which the item said. **Nine hardcoded `rem` values were invisible too, which it did not** — including `PlanChart`'s `0.46rem`, 7.36px, the smallest type anywhere in the app. The declared scale is written in px, so the fix is to take both units and normalise. **Matching the effect, not the spelling** — this is the second pattern-blindness defect in two hours and the same sentence fixed both.
+**Product/creator learning:** three separate ratchets moved, and all three moved for one reason: the definition widened, not the tree. I wrote that beside each number, because a ratchet that moves without saying *which of the three possible moves it was* is a ratchet nobody can read — the rule this repo wrote for its contract debt and then had to write again for its spacing register this morning.
+**AI-building learning:** the most interesting number is `13px: 131 → 136`. That arm tracks a deliberate convergence — 13px is being eliminated — and five of the sites were `0.8125rem`, which *is* 13px. **So a convergence the team has been driving for weeks was five sites further from done than its own gate reported, for the gate's entire life.** Nobody was wrong; the pattern was narrower than the concept.
+**The honest bit:** my falsification of the new arm swapped `9.5px` for `9.75px` in the tree, and the distinct-count ratchet stayed green — one value out, one in, total unchanged. Only the new behavioural arm caught it. **A count cannot see a swap**, and I would not have known that if I had only mutated the pattern.
+**Hook material:** `0.46rem`. 7.36 pixels of type, in a shipped chart, invisible to the gate built to find exactly that.
+**Postable?:** maybe — the "131 → 136 means the convergence was further from done than its own gate said" angle.
+
 ## 2026-11-09 — EMDASH-LIB-COPY-01 · the guard's exemption said the bug was impossible, in the direction it actually happened
 **Shipped:** the em-dash guard finds string literals with a scanner instead of a regex, and four runner-facing sentences lost their em dashes.
 **Dev learning:** `LIT` was a regex whose template branch did not exclude newlines. A template nested inside a `${…}` — `` ?? `${paceFade}s/km` `` — pairs the inner backticks with the outer ones, and the regex then **consumes the span between them**, so every genuine literal inside produced no match at all. Measured: 23,291 reported "literals" where a real scanner finds 14,597. **A regex cannot tokenise a language with nestable string literals, and the failure is silent in the only direction that matters.**

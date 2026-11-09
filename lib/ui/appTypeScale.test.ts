@@ -38,11 +38,34 @@ const FILES = execSync("git ls-files 'app/**/*.tsx' 'components/**/*.tsx'", { en
 
 const strip = (s: string) => s.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^[ \t]*\/\/.*$/gm, '')
 
+/**
+ * 🔴 THE PATTERN WAS `(\d+)px` AND IT COULD SEE NEITHER A DECIMAL NOR A `rem`
+ * (TYPESCALE-DECIMAL-GATE-01, 2026-11-09).
+ *
+ * The item named the decimal half — `13.5px` is invisible to `(\d+)px`, found by the
+ * 2026-10-31 independent audit. 📐 Measured: **3 such sites** (`9.5px`, `11.5px`, `13.5px`).
+ *
+ * 🔑 AND IT UNDERSTATED THE HOLE. 150 `fontSize` literals in this population are not `Npx`
+ * at all. Most are `var(--fs-*)`, which is the CORRECT form and must keep passing — but
+ * **nine are hardcoded `rem` values**, every bit as off-scale as a hardcoded px and equally
+ * invisible: six `0.8125rem` in `UpgradeScreen.tsx` (one of the four files `CLAUDE.md`
+ * records as reverted to legacy aliases post-Phase 3), plus `EmptyState` 1rem,
+ * `PullToRefresh` 0.8125rem and `PlanChart` **0.46rem = 7.36px**.
+ *
+ * So the pattern takes both units and NORMALISES to px (`rem × 16`), which is what the
+ * declared scale is written in. `MATCH THE EFFECT, NOT THE SPELLING.`
+ */
+const REM_PX = 16
 function sizes() {
   const counts = new Map<string, number>()
   for (const f of FILES) {
-    for (const m of Array.from(strip(readFileSync(f, 'utf8')).matchAll(/fontSize:\s*'(\d+)px'/g))) {
-      counts.set(m[1], (counts.get(m[1]) ?? 0) + 1)
+    for (const m of Array.from(strip(readFileSync(f, 'utf8')).matchAll(/fontSize:\s*'(\d+(?:\.\d+)?)(px|rem)'/g))) {
+      const px = Number(m[1]) * (m[2] === 'rem' ? REM_PX : 1)
+      // Integers keep their integer spelling so `DECLARED` (and every historical baseline
+      // note) still matches; a genuine fraction keeps its decimal and is undeclared by
+      // construction, which is the point.
+      const key = Number.isInteger(px) ? String(px) : String(px)
+      counts.set(key, (counts.get(key) ?? 0) + 1)
     }
   }
   return counts
@@ -57,8 +80,32 @@ describe('TYPESCALE-APP-GATE-01 — the app type scale is a closed set', () => {
   // ⚠️ A FALLING REGISTER OF DISTINCT SIZES, not a per-call-site sweep. 649 uses
   // is its own project; what matters is that the SET cannot grow, so the next
   // screen reaches for a size that already exists instead of inventing a 23rd.
+  /**
+   * 🔴 THE ARM THAT PROVES THE WIDENED PATTERN ACTUALLY SEES THE TWO SHAPES
+   * (TYPESCALE-DECIMAL-GATE-01, 2026-11-09). Behavioural, over the real tree: a source
+   * assertion on the regex would pass on a comment, and the baselines above only prove a
+   * TOTAL — which a pattern that lost one shape and gained another could hold flat.
+   */
+  it('🔴 the gate sees a DECIMAL px and a hardcoded rem, not only integers', () => {
+    const seen = sizes()
+    // The three decimal px sites the 2026-10-31 audit named as invisible.
+    for (const px of ['9.5', '11.5', '13.5']) {
+      expect(seen.has(px), `${px}px is in the tree and the gate must count it`).toBe(true)
+    }
+    // And a rem, normalised: PlanChart's 0.46rem is 7.36px, the smallest type in the app.
+    expect(seen.has('7.36'), 'PlanChart 0.46rem must normalise to 7.36px').toBe(true)
+    // ⚠️ `var(--fs-*)` is the CORRECT form and must NOT be counted — it is the token, not a
+    // hardcoded size. If it ever is, this number jumps by ~140 and the ratchet is meaningless.
+    expect(Array.from(seen.keys()).every(k => /^\d+(?:\.\d+)?$/.test(k)),
+      'only numeric px keys; a var(--fs-*) leaking in would wreck every baseline').toBe(true)
+  })
+
   it('🔴 no NEW font size enters the app', () => {
-    const DISTINCT_BASELINE = 22
+    // 🔴 22 → 26 IS THE SAME DEFINITION CHANGE AS `UNDECLARED_USES_BASELINE` (2026-11-09),
+    // not four new sizes. The widened pattern made four values visible that were always in
+    // the tree: **7.36 (PlanChart 0.46rem), 9.5, 11.5 and 13.5.** Three are decimal px the
+    // old `(\d+)px` could not match; one is a rem. **Nothing was added.**
+    const DISTINCT_BASELINE = 26
     const n = sizes().size
     expect(n,
       n > DISTINCT_BASELINE
@@ -86,7 +133,15 @@ describe('TYPESCALE-APP-GATE-01 — the app type scale is a closed set', () => {
     // the founder-note pull-line went 18px -> 20px after the board refused 18 as a level
     // (17 -> 18 is 1.059x). The other sites of the same headline species converged on
     // 2026-10-24 (TYPE-18PX-CONVERGE-01); see the 18px arm below for what is left and why.
-    const UNDECLARED_USES_BASELINE = 195  // 196 → 195 A DELETION, NOT A PAYMENT (SELECT-DEAD-01, 2026-11-08): `components/shared/Select.tsx` had zero importers and went, taking its one `fontSize: '11px'` chevron with it. **No size was converted**, so this buys nothing — same distinction the two uncontracted registers were built to make visible last week, and the ratchet must never move without saying which it was; 201 → 196 measured STAGED: COACH-KIT-CAUGHT-01 retired the stale free teaser (locked report, two upsell buttons, locked race list, example card), 2026-10-31; 202 → 201 RUNKED-LOAD-VIEW-01: the Coach Sessions tile's 28px numeral went when Sessions became a 17px row (2026-10-30); 209 → 202 TYPE-18PX-CONVERGE-01: seven 18px headline/title sites converged (2026-10-24); 210 → 209 measured STAGED: ME-HISTORY-ERROR-DEADEND-01 moved Plan history's 13px error line onto EmptyState
+    // 🔴 195 → 207 IS THE DEFINITION CHANGING, NOT DECAY (TYPESCALE-DECIMAL-GATE-01,
+    // 2026-11-09), and it is stated beside the number for the same reason
+    // `CONTRACT-BACKFILL-01` states its 11 → 13: a ratchet that moves without saying WHICH
+    // of the three moves it was is a ratchet nobody can read. **Not one size was added to
+    // the tree.** The pattern widened from `(\d+)px` to `(\d+(?:\.\d+)?)(px|rem)`, so 12
+    // sites that were always there became visible: 3 decimal px (9.5, 11.5, 13.5) and 9
+    // hardcoded rem (6 × 0.8125rem in UpgradeScreen, EmptyState 1rem, PullToRefresh
+    // 0.8125rem, PlanChart 0.46rem = 7.36px).
+    const UNDECLARED_USES_BASELINE = 207  // 195 → 207 DEFINITION CHANGE, see above; 196 → 195 A DELETION, NOT A PAYMENT (SELECT-DEAD-01, 2026-11-08): `components/shared/Select.tsx` had zero importers and went, taking its one `fontSize: '11px'` chevron with it. **No size was converted**, so this buys nothing — same distinction the two uncontracted registers were built to make visible last week, and the ratchet must never move without saying which it was; 201 → 196 measured STAGED: COACH-KIT-CAUGHT-01 retired the stale free teaser (locked report, two upsell buttons, locked race list, example card), 2026-10-31; 202 → 201 RUNKED-LOAD-VIEW-01: the Coach Sessions tile's 28px numeral went when Sessions became a 17px row (2026-10-30); 209 → 202 TYPE-18PX-CONVERGE-01: seven 18px headline/title sites converged (2026-10-24); 210 → 209 measured STAGED: ME-HISTORY-ERROR-DEADEND-01 moved Plan history's 13px error line onto EmptyState
     let n = 0
     for (const [size, count] of Array.from(sizes())) if (!DECLARED.has(size)) n += count
     expect(n,
@@ -158,7 +213,12 @@ describe('TYPESCALE-APP-GATE-01 — the app type scale is a closed set', () => {
     // ⚠️ The arm is kept, inverted, rather than deleted: an accusation that was
     // answered still needs a ratchet, or 13px simply grows back.
     // 169 (2026-10-05) -> 137 (2026-10-14). 12px is now the most-used size.
-    const THIRTEEN_BASELINE = 131  // 134 → 131 measured STAGED: COACH-KIT-CAUGHT-01 retired three 13px teaser lines; 135 → 134 measured STAGED: Plan history's 13px error line became EmptyState (ME-HISTORY-ERROR-DEADEND-01)
+    // 🔴 131 → 136 IS THE SAME DEFINITION CHANGE (2026-11-09): five `0.8125rem` literals
+    // ARE 13px and the old pattern could not see them — four in `UpgradeScreen.tsx`, one in
+    // `PullToRefresh.tsx`. ⚠️ **So the convergence this arm tracks was five sites further
+    // from done than it reported, for as long as the arm has existed.** The ratchet still
+    // only falls from here.
+    const THIRTEEN_BASELINE = 136  // 131 → 136 DEFINITION CHANGE, see above; 134 → 131 measured STAGED: COACH-KIT-CAUGHT-01 retired three 13px teaser lines; 135 → 134 measured STAGED: Plan history's 13px error line became EmptyState (ME-HISTORY-ERROR-DEADEND-01)
     const n = sizes().get('13') ?? 0
     expect(n,
       n > THIRTEEN_BASELINE

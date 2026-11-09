@@ -1771,11 +1771,6 @@ be read from the data: recording the error (stage, RevenueCat code) is part of t
 `TrendCard`'s `useCountUp` animates regardless of the setting (found rendering `/coach-preview/full`). Sweep every
 animation (count-ups, ring draws, sheets, staggers) and honour reduced motion at one owner, not per component.
 
-### 🔲 `TYPESCALE-DECIMAL-GATE-01` — the type-scale gate cannot see decimal sizes ⚙️ **NO BOARD** (tooling) · P3
-
-`appTypeScale.test.ts` matches `(\d+)px`, so `13.5px` is invisible to it (found by the 2026-10-31 independent audit; the
-one Coach site is fixed). Widen the pattern, count what it finds, baseline it as debt.
-
 ### ✅ `COACH-KIT-CAUGHT-01` (shipped 2026-10-31, `f100f2f6`) — what Kit caught: receipts in place of the stale free teaser (idea 6) 💼 **SLT** (ruled 2026-10-31: BUILD, AMENDED) → 🧭 **DESIGN BOARD** · FREE surface, PRO content · after `COACH-EFFORT-PICTURE-01`
 
 Replaces `CoachTeaser` (which sells tiles paid Coach no longer has). **Questions answered 2026-10-31** (`kit-caught-questions-2026-10-31.md`): from ONE receipt (SLT), a good-news receipt allowed (Coaching Board, §133 at build), P-01 dots and the Upgrade-screen placement (Design Board), the free insight only as the no-receipt fallback (SLT, CO-ONE). Mockup: `kit-caught-mockups.png`. **Earlier SLT amendments:** evidence-triggered, never dated
