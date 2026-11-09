@@ -27,6 +27,15 @@
 // `actual_load_mins` / `planned_load_mins` — which `long_run_shortfall` needs — are on
 // **10 of 97**.
 //
+// 🔴 AND THE FIRST CUT OF THIS MODULE MISLABELLED TWO OF THE EIGHT, WHICH IS WHY `FedBy` AND
+// THE IMPORTED PREDICATES BELOW EXIST. Code review, same day: `readiness_signal` was reported
+// STARVED — a claim about runners — when `buildAdjustmentSignals` never emits the field at all,
+// and `fitness_signal` was reported silent on 22 weeks when the detector discards every one of
+// those rows. Both came from the same mistake: **`present` answered the detector's OUTER gate
+// instead of its precondition.** The fix is not a better copy, it is no copy — `shortfallAxis`,
+// `fitnessQualifying`, `guardCheck` and `RPE_DISCONNECT_THRESHOLD` are imported from the
+// detector's own module.
+//
 // ⚠️ THIS MODULE IS A SECOND COPY BY CONSTRUCTION AND THAT IS THE RISK. The engine's own
 // code is the truth about what it reads; this is a declared reflection of it, and this repo
 // has a register of second copies that drifted (`deloadCadence`, `tierResolution`,
@@ -48,6 +57,13 @@ import {
   type AdjustmentCheckInput,
   type TriggerType,
   DETECTED_TRIGGER_TYPES,
+  // 🔴 THE DETECTOR'S OWN PREDICATES, imported rather than restated. Code review (2026-11-09)
+  // found three `present` functions answering the detector's OUTER gate instead of its real
+  // precondition, which mislabelled STARVED and silent in exactly the direction this module
+  // was written to prevent. Each of these was private and is now exported for this caller.
+  shortfallAxis,
+  fitnessQualifying,
+  RPE_DISCONNECT_THRESHOLD,
 } from './planAdjustment'
 // ⚠️ From `constants`, the same module the DETECTOR imports them from — never re-typed here.
 // `present` asks the detector's own arity question, so it must read the detector's own number.
@@ -80,10 +96,36 @@ export type NeutraliseKind =
   /** The field stays, set to a value that cannot cross the threshold: `present` stays TRUE. */
   | 'benign-value'
 
+/**
+ * 🔴 WHO BUILDS THE FIELD, BECAUSE "STARVED" WAS STILL CARRYING TWO FINDINGS AND CODE REVIEW
+ * CAUGHT IT IN THE COMMIT THAT ADDED STARVED.
+ *
+ * `readiness_signal` reported **STARVED on 0 of 43 weeks**, and I wrote that into the backlog
+ * and the roadmap as a fact about runners having no readiness baselines. It is not.
+ * `buildAdjustmentSignals` — the route's assembler, which this harness deliberately shares so
+ * no field can measure differently — **never emits `readinessSignal` at all**. Its sole
+ * producer is `app/api/pre-session-readiness/route.ts`, a different route. So that zero
+ * describes the ASSEMBLER, and the detector has never been given a chance here.
+ *
+ * ⚠️ **That is the `recentLongRunAnalyses` incident again, inside the module whose header
+ * cites it.** `BACKTEST-SECOND-ASSEMBLY-01` fixed a harness that could not feed one detector
+ * and reported it as unreachable; the three-state report made starvation visible and then
+ * mislabelled a harness gap as a data gap. **A new state is only as honest as its ability to
+ * say "this is about me, not about the runner".**
+ */
+export type FedBy =
+  /** `buildAdjustmentSignals` emits this field, so absence is a fact about the DATA. */
+  | 'assembler'
+  /** Another route builds it; this harness never supplies it, so absence says nothing. */
+  | 'other-route'
+
 export interface TriggerInputSpec {
   /** The input fields this detector reads, for the report. Prose, not a mechanism. */
   readonly reads: readonly string[]
   readonly neutraliseKind: NeutraliseKind
+  readonly fedBy: FedBy
+  /** Where the field comes from when `fedBy` is `other-route` — named, for the report. */
+  readonly producer?: string
   /**
    * Could this detector see anything at all on this input? FALSE means STARVED: no
    * threshold was tested, so "never fired" says nothing about the rule.
@@ -106,6 +148,7 @@ export const TRIGGER_INPUTS: Readonly<Record<string, TriggerInputSpec>> = {
   fatigue_accumulation: {
     reads: ['recentFatigueRows'],
     neutraliseKind: 'removes-input',
+    fedBy: 'assembler',
     present: i => (i.recentFatigueRows?.length ?? 0) >= FATIGUE_ACCUMULATION_THRESHOLD,
     neutralise: i => ({ ...i, recentFatigueRows: [] }),
   },
@@ -114,6 +157,7 @@ export const TRIGGER_INPUTS: Readonly<Record<string, TriggerInputSpec>> = {
     // Reads `linkedKm` too, deliberately NOT blanked — `shadow_load` reads it as well.
     reads: ['linkedKm', 'priorWeeksKm'],
     neutraliseKind: 'removes-input',
+    fedBy: 'assembler',
     present: i => {
       const w = (i.priorWeeksKm ?? []).slice(0, 4)
       return w.length > 0 && w.reduce((s, v) => s + v, 0) > 0
@@ -124,6 +168,8 @@ export const TRIGGER_INPUTS: Readonly<Record<string, TriggerInputSpec>> = {
   readiness_signal: {
     reads: ['readinessSignal'],
     neutraliseKind: 'removes-input',
+    fedBy: 'other-route',
+    producer: 'app/api/pre-session-readiness/route.ts',
     present: i => Boolean(i.readinessSignal?.hasBaseline),
     neutralise: i => ({ ...i, readinessSignal: undefined }),
   },
@@ -135,9 +181,19 @@ export const TRIGGER_INPUTS: Readonly<Record<string, TriggerInputSpec>> = {
     // trigger type, which is why the RPE fallback belongs in this entry and not its own.
     reads: ['hrInZoneData[].aboveCeilingPct', 'rpeSignal'],
     neutraliseKind: 'removes-input',
+    fedBy: 'assembler',
+    // ⚠️ THE RPE HALF CARRIES THE DETECTOR'S CONDITIONS, not a bare truthiness test. The
+    // fallback fires only at `rpe >= RPE_DISCONNECT_THRESHOLD` on an easy or long session;
+    // `Boolean(i.rpeSignal)` would call a week with an RPE of 3 "present". Latent today —
+    // `buildAdjustmentSignals` supplies no `rpeSignal` — and latent is how the other three
+    // in this class got here.
     present: i =>
       (i.hrInZoneData ?? []).some(s => s.aboveCeilingPct !== null)
-      || Boolean(i.rpeSignal),
+      || (
+        !!i.rpeSignal
+        && i.rpeSignal.rpe >= RPE_DISCONNECT_THRESHOLD
+        && (i.rpeSignal.sessionType === 'easy' || i.rpeSignal.sessionType === 'long')
+      ),
     neutralise: i => ({ ...i, hrInZoneData: [], rpeSignal: undefined }),
   },
 
@@ -145,6 +201,7 @@ export const TRIGGER_INPUTS: Readonly<Record<string, TriggerInputSpec>> = {
     reads: ['linkedKm', 'offPlanKm', 'plannedKm'],
     // `plannedKm` exists on every week a plan exists, so this trigger is never STARVED.
     neutraliseKind: 'benign-value',
+    fedBy: 'assembler',
     present: i => i.plannedKm > 0,
     neutralise: i => ({ ...i, plannedKm: i.linkedKm + i.offPlanKm }),
   },
@@ -152,6 +209,7 @@ export const TRIGGER_INPUTS: Readonly<Record<string, TriggerInputSpec>> = {
   ef_decline: {
     reads: ['efTrendPct'],
     neutraliseKind: 'removes-input',
+    fedBy: 'assembler',
     present: i => i.efTrendPct !== null && i.efTrendPct !== undefined,
     neutralise: i => ({ ...i, efTrendPct: null }),
   },
@@ -159,15 +217,26 @@ export const TRIGGER_INPUTS: Readonly<Record<string, TriggerInputSpec>> = {
   long_run_shortfall: {
     reads: ['recentLongRunAnalyses'],
     neutraliseKind: 'removes-input',
-    present: i => (i.recentLongRunAnalyses?.length ?? 0) >= LONG_RUN_SHORTFALL_CONSECUTIVE,
+    fedBy: 'assembler',
+    // ⚠️ ROWS THE DETECTOR CAN USE, not rows that exist. `shortfallAxis` returns null when
+    // neither the km nor the minutes pair resolves, and `buildLongRunShortfallAdjustment`
+    // filters on it before counting — so a raw length was the OUTER gate, and a week of
+    // axis-less rows printed as "silent, threshold never crossed".
+    present: i =>
+      (i.recentLongRunAnalyses ?? []).filter(a => shortfallAxis(a) !== null).length
+        >= LONG_RUN_SHORTFALL_CONSECUTIVE,
     neutralise: i => ({ ...i, recentLongRunAnalyses: [] }),
   },
 
   fitness_signal: {
     reads: ['recentQualityAnalyses', 'currentWeekN'],
     neutraliseKind: 'removes-input',
+    fedBy: 'assembler',
+    // ⚠️ QUALIFYING analyses, via the detector's own filter. A row needs a non-null
+    // `paceScore` AND a non-null `hrAboveCeilingPct`, and the latter is absent on 22 of 97
+    // live rows — so a raw length counted weeks the detector discarded.
     present: i =>
-      (i.recentQualityAnalyses?.length ?? 0) >= FITNESS_SIGNAL_SESSION_THRESHOLD
+      fitnessQualifying(i).length >= FITNESS_SIGNAL_SESSION_THRESHOLD
       && i.currentWeekN >= FITNESS_SIGNAL_MIN_PLAN_WEEKS,
     neutralise: i => ({ ...i, recentQualityAnalyses: [] }),
   },

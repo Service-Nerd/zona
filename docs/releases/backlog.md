@@ -7466,7 +7466,23 @@ HR-in-zone data starves the same two detectors, so waiting does not settle the q
 > | ✅ reachable unmasked | **2** — `acute_chronic_high` (russell w2) · `shadow_load` (harv w2/3/4) |
 > | 🔁 **OUTRANKED** | **2** — `zone_drift` (1 week, beaten by `acute_chronic_high`) · `ef_decline` (1 week, beaten by three seniors) |
 > | ⬜ genuinely silent | **3** — `fatigue_accumulation` (4 of 7 runners) · `fitness_signal` (1 runner) · `long_run_shortfall` (1 runner, 3 weeks) |
-> | ⚠️ **STARVED** | **1** — `readiness_signal`, `readinessSignal` present on **0 of 43 weeks** |
+> | ⚠️ **STARVED** | **1** — `fitness_signal`, no QUALIFYING analysis in **0 of 38 guarded weeks** |
+> | 🚫 **UNFED** | **1** — `readiness_signal`: `buildAdjustmentSignals` **never emits `readinessSignal`** |
+>
+> 🔴 **THREE OF THOSE CELLS WERE WRONG WHEN FIRST PUBLISHED, AND `/code-review` FOUND ALL THREE.**
+> Corrected in the fix round (`c8edf23a` → review), with the causes named because they are one class:
+> **`present` was answering each detector's OUTER gate rather than its real precondition.**
+>
+> | First published | Corrected | Cause |
+> |---|---|---|
+> | `readiness_signal` STARVED on 0 of 43 — *written into this item AND the roadmap as a fact about runners* | **UNFED** | The ASSEMBLER never builds the field. Sole producer is `app/api/pre-session-readiness/route.ts`. **The zero described the harness.** This is the `recentLongRunAnalyses` incident again, inside the module whose header cites it |
+> | `fitness_signal` silent, 22 weeks, 1 runner | **STARVED**, 0 of 38 | `present` counted raw analyses; the detector counts rows passing `fitnessQualifying` — and `hrAboveCeilingPct` is null on 22 of 97 live rows |
+> | coverage denominator 43 | **38 guarded weeks** | Weeks `guardCheck` refuses tested no threshold. The last `TAPER_PROTECTION_WEEKS + 1` weeks of every plan were counted as *"present, never crossed"*. `fatigue_accumulation` 35 → 30 |
+>
+> ✅ **Fixed by IMPORTING the detector's own predicates, never restating them** — `shortfallAxis`,
+> `fitnessQualifying`, `guardCheck` and `RPE_DISCONNECT_THRESHOLD` are exported from
+> `planAdjustment.ts` for this caller. `fedBy` is **parsed out of the assembler's own return
+> object**, so a declared `other-route` that the assembler does in fact emit fails the build.
 >
 > ⚠️ **AND `zone_drift` READ AS A REGRESSION AND IS NOT ONE.** It fired on the 10-16 and 10-24 runs and came
 > back `never` today. Cause: its source runner's analyses are **all superseded** — Duncan, 8 rows, **0 live**,

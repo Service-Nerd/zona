@@ -150,7 +150,7 @@
 import { createClient } from '@supabase/supabase-js'
 import { loadEnvConfig } from '@next/env'
 import {
-  checkAdjustmentTriggers, TRIGGER_TYPES, DETECTED_TRIGGER_TYPES,
+  checkAdjustmentTriggers, TRIGGER_TYPES, DETECTED_TRIGGER_TYPES, guardCheck,
   type AdjustmentCheckInput, type TriggerType,
 } from '../lib/coaching/planAdjustment'
 import { fetchWeeklyLoad } from '../lib/coaching/weeklyActualLoad'
@@ -198,6 +198,7 @@ async function main() {
   // weeks — `AN AGGREGATE CANNOT SEE A RUNNER FLIP`, in the harness built to stop exactly
   // that reading.
   const inputRunners = new Map<TriggerType, Set<string>>()
+  let guardedIn = 0   // week-checks that got past `guardCheck` — the real denominator for coverage
   // The assembled inputs, kept so `--unmasked` can replay each week without a second fetch.
   const weekInputs: { email: string; weekN: number; input: AdjustmentCheckInput }[] = []
 
@@ -254,10 +255,18 @@ async function main() {
       checks++
       weeksReplayed++
       weekInputs.push({ email, weekN, input })
-      for (const t of DETECTED) {
-        if (!specFor(t)?.present(input)) continue
-        inputSeen.set(t, (inputSeen.get(t) ?? 0) + 1)
-        ;(inputRunners.get(t) ?? inputRunners.set(t, new Set()).get(t)!).add(email)
+      // 🔴 A WEEK THE GUARD REFUSES TESTED NO THRESHOLD, so counting its inputs as "present"
+      // manufactures the exact false "silent" this report exists to remove. Code review
+      // 2026-11-09: the last `TAPER_PROTECTION_WEEKS + 1` weeks of EVERY plan and every taper
+      // week were being tallied — and late weeks are precisely where `fatigue_accumulation`
+      // becomes present. `guardCheck` is the detector's own gate, imported, not restated.
+      if (guardCheck(input)) {
+        guardedIn++
+        for (const t of DETECTED) {
+          if (!specFor(t)?.present(input)) continue
+          inputSeen.set(t, (inputSeen.get(t) ?? 0) + 1)
+          ;(inputRunners.get(t) ?? inputRunners.set(t, new Set()).get(t)!).add(email)
+        }
       }
       try {
         const out = checkAdjustmentTriggers(input)
@@ -324,12 +333,19 @@ async function main() {
       // here — `recentLongRunAnalyses` was never assembled, so `long_run_shortfall` could not
       // fire whatever the data said, and its zero sat beside seven genuine ones.
       const seen = inputSeen.get(t) ?? 0
-      if (seen === 0) {
-        console.log(`  ⚠️ ${t.padEnd(22)} STARVED — inputs present in 0 of ${weeksReplayed} weeks`)
+      const spec = specFor(t)
+      if (spec?.fedBy === 'other-route') {
+        // 🔴 NOT STARVED — UNFED. `buildAdjustmentSignals` does not emit this field at all, so
+        // the zero describes THIS HARNESS. Reported as STARVED in the first cut of this table,
+        // and I wrote that into the backlog and the roadmap as a fact about runners.
+        console.log(`  🚫 ${t.padEnd(22)} UNFED — \`buildAdjustmentSignals\` never emits ${spec.reads.join(', ')}`)
+        console.log(`       built by ${spec.producer ?? '(unnamed)'} — this harness CANNOT speak about this detector`)
+      } else if (seen === 0) {
+        console.log(`  ⚠️ ${t.padEnd(22)} STARVED — inputs present in 0 of ${guardedIn} guarded weeks`)
         console.log(`       reads ${(specFor(t)?.reads ?? []).join(', ')} — nothing to judge, so this is NOT evidence about the rule`)
       } else {
         const rn = inputRunners.get(t)?.size ?? 0
-        console.log(`  ⬜ ${t.padEnd(22)} silent — inputs present in ${seen} of ${weeksReplayed} weeks`
+        console.log(`  ⬜ ${t.padEnd(22)} silent — inputs present in ${seen} of ${guardedIn} guarded weeks`
           + ` across ${rn} of ${runnersConsidered} runners, threshold never crossed`)
         if (rn <= 1) console.log(`       ⚠️  ONE runner's data. A threshold not crossed by one person is not a measurement.`)
       }
@@ -338,12 +354,20 @@ async function main() {
     }
   }
   const detectedReachable = DETECTED.filter(t => fired.has(t))
-  const starved = DETECTED.filter(t => !fired.has(t) && (inputSeen.get(t) ?? 0) === 0)
-  const silent  = DETECTED.filter(t => !fired.has(t) && (inputSeen.get(t) ?? 0) > 0)
+  const unfed   = DETECTED.filter(t => !fired.has(t) && specFor(t)?.fedBy === 'other-route')
+  const starved = DETECTED.filter(t => !fired.has(t) && specFor(t)?.fedBy !== 'other-route' && (inputSeen.get(t) ?? 0) === 0)
+  const silent  = DETECTED.filter(t => !fired.has(t) && specFor(t)?.fedBy !== 'other-route' && (inputSeen.get(t) ?? 0) > 0)
   console.log(`\n  OF THE ${DETECTED.length} WE WOULD CLAIM TO WATCH FOR: ${detectedReachable.length} reachable,`
-    + ` ${silent.length} silent, ${starved.length} STARVED`)
+    + ` ${silent.length} silent, ${starved.length} STARVED, ${unfed.length} UNFED`)
+  console.log(`  (${guardedIn} of ${weeksReplayed} week-checks got past \`guardCheck\` — coverage is counted on those)`)
   if (detectedReachable.length) console.log(`    reachable: ${detectedReachable.join(' · ')}`)
   if (silent.length)   console.log(`    silent   : ${silent.join(' · ')}`)
+  if (unfed.length) {
+    console.log(`    UNFED    : ${unfed.join(' · ')}`)
+    console.log(`    🚫 A HARNESS GAP, NOT A DATA GAP. The assembler does not build these fields, so`)
+    console.log(`       their zero is about this script. Reporting it as STARVED — which the first`)
+    console.log(`       cut did — states a fact about runners that was never measured.`)
+  }
   if (starved.length) {
     console.log(`    STARVED  : ${starved.join(' · ')}`)
     console.log(`    ⚠️  A STARVED detector is UNMEASURED, not silent. Quoting it in the silent`)
@@ -377,7 +401,19 @@ async function main() {
       let input = w.input
       const seenHere: TriggerType[] = []
       for (let depth = 0; depth < DETECTED.length + 2; depth++) {
-        const out = checkAdjustmentTriggers(input)
+        // 🔴 THE MAIN LOOP CATCHES AND THIS ONE DID NOT (code review 2026-11-09). A week that
+        // throws is pushed to `weekInputs` BEFORE the main loop's try, so one malformed week
+        // would take down the whole `--unmasked` run through `main().catch` — exit 1, after the
+        // main table had already printed, discarding the masking analysis with no explanation.
+        // A measurement script must degrade to a named partial, never to a stack trace.
+        let out: ReturnType<typeof checkAdjustmentTriggers>
+        try {
+          out = checkAdjustmentTriggers(input)
+        } catch (err) {
+          console.log(`  🔴 ${w.email} w${w.weekN} THREW while peeling at depth ${depth}: ${(err as Error).message.slice(0, 80)}`)
+          broke++
+          break
+        }
         if (!out) break
         const t = out.trigger.type
         if (seenHere.includes(t)) {
@@ -409,6 +445,8 @@ async function main() {
       const e = outranked.get(t)
       if (e) {
         console.log(`  🔁 ${t.padEnd(22)} OUTRANKED — would fire on ${e.n} week(s), beaten by ${Array.from(e.behind).join(', ')}`)
+      } else if (specFor(t)?.fedBy === 'other-route') {
+        console.log(`  🚫 ${t.padEnd(22)} UNFED — peeling cannot help: the assembler never builds its input`)
       } else if ((inputSeen.get(t) ?? 0) === 0) {
         console.log(`  ⚠️ ${t.padEnd(22)} STARVED — still nothing to judge even with seniors peeled`)
       } else {

@@ -196,7 +196,7 @@ export interface AdjustmentCheckInput {
 }
 
 const DAY_ORDER = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'] as const
-const RPE_DISCONNECT_THRESHOLD = 8
+export const RPE_DISCONNECT_THRESHOLD = 8
 const SKIP_INJURY_VOLUME_REDUCTION = 0.85  // 15% cut per session
 const HILL_TYPES = new Set(['hills', 'hill_repeats'])
 
@@ -348,7 +348,12 @@ export function checkAdjustmentTriggers(input: AdjustmentCheckInput): ProposedAd
 }
 
 /** Hard guards — no adjustment if any fails. */
-function guardCheck(input: AdjustmentCheckInput): boolean {
+// TRIGGER-BACKTEST-02 review — EXPORTED for the same reason. The backtest counted a week's
+// inputs as "present" without asking whether any detector RAN on it, so the last
+// `TAPER_PROTECTION_WEEKS + 1` weeks of every plan and every taper week were tallied as
+// "present, threshold never crossed" when the guard had returned before any threshold was
+// read. Late weeks are exactly where `fatigue_accumulation` becomes present.
+export function guardCheck(input: AdjustmentCheckInput): boolean {
   if (input.adjustmentsThisWeek >= MAX_ADJUSTMENTS_PER_WEEK) return false
   const weeksRemaining = input.totalWeeks - input.currentWeekN
   if (weeksRemaining <= TAPER_PROTECTION_WEEKS) return false
@@ -847,13 +852,20 @@ function cap(s: string): string {
 // Action: flag_for_review → notification → ReshapeScreen shows benchmark CTA.
 // Architecture note: all paces flow from VDOT. The right response to "plan is
 // too conservative" is benchmark recalibration, not individual session hardening.
-function buildFitnessSignalAdjustment(input: AdjustmentCheckInput): ProposedAdjustment | null {
-  const qualifying = (input.recentQualityAnalyses ?? []).filter(a =>
+// TRIGGER-BACKTEST-02 review — the filter was INLINE and `triggerInputs.ts`'s `present` skipped
+// it, so three analyses with `hrAboveCeilingPct: null` read as present and fired nothing. That
+// field is absent on 22 of 97 live rows. One copy, read by the detector and by the harness.
+export function fitnessQualifying(input: AdjustmentCheckInput) {
+  return (input.recentQualityAnalyses ?? []).filter(a =>
     a.paceScore !== null &&
     a.paceScore <= FITNESS_SIGNAL_PACE_SCORE_MAX &&
     a.hrAboveCeilingPct !== null &&
     a.hrAboveCeilingPct <= FITNESS_SIGNAL_HR_CEILING_MAX
   )
+}
+
+function buildFitnessSignalAdjustment(input: AdjustmentCheckInput): ProposedAdjustment | null {
+  const qualifying = fitnessQualifying(input)
   if (qualifying.length < FITNESS_SIGNAL_SESSION_THRESHOLD) return null
 
   const sessions       = input.currentWeekSessions
@@ -909,7 +921,14 @@ function buildFitnessSignalAdjustment(input: AdjustmentCheckInput): ProposedAdju
  * told they came up short against a number that never appeared in their plan.
  * §80: "a floor the runner believes they have failed is worse than no floor."
  */
-function shortfallAxis(a: {
+// TRIGGER-BACKTEST-02 review (2026-11-09) — EXPORTED so `triggerInputs.ts` can ask the
+// detector's OWN precondition instead of a copy of its outer gate. Code review found
+// `present` counting raw `recentLongRunAnalyses` rows where the detector counts rows with a
+// RESOLVABLE axis: a row with both axes null gave `present === true` and a `null` fire, so the
+// harness printed "silent, threshold never crossed" for a week where nothing was tested. Live
+// shape, not hypothetical — `plannedKm` falls back to `distance_km`, null on a
+// duration-anchored long run, and load-minutes sit on 10 of 97 rows.
+export function shortfallAxis(a: {
   actualKm: number | null; plannedKm: number | null
   actualMins?: number | null; plannedMins?: number | null
 }): { actual: number; planned: number } | null {

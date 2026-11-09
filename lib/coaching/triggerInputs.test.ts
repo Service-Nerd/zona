@@ -29,6 +29,8 @@ import { checkAdjustmentTriggers, DETECTED_TRIGGER_TYPES, type AdjustmentCheckIn
 import { TRIGGER_INPUTS, unspecified, specFor } from './triggerInputs'
 import { FATIGUE_ACCUMULATION_THRESHOLD, FITNESS_SIGNAL_SESSION_THRESHOLD } from './constants'
 import type { Session } from '@/types/plan'
+import { readFileSync } from 'node:fs'
+import { join } from 'node:path'
 
 const rest = (): Session => ({ type: 'rest', label: 'Rest', detail: null })
 const long = (km: number): Session => ({ type: 'long', label: 'Long run', detail: null, distance_km: km })
@@ -175,11 +177,82 @@ describe('TRIGGER_INPUTS — non-interference', () => {
   // "unreachable". This arm walks every ordered pair rather than naming that one.
   it.each(
     DETECTED_TRIGGER_TYPES.flatMap(a => DETECTED_TRIGGER_TYPES.filter(b => b !== a).map(b => [a, b] as const)),
-  )('neutralising %s leaves %s`s inputs present', (a, b) => {
+  )('neutralising %s leaves %s able to FIRE', (a, b) => {
     const base = FIRING[b]()
-    // Only meaningful where B's inputs were present to begin with.
+    // 🔴 THIS ARM ASSERTED `present`, WHICH IS THE WEAKER CLAIM (code review 2026-11-09).
+    // A neutralise of A that leaves B's field POPULATED BUT UN-CROSSABLE passes a `present`
+    // check and still makes the harness report B "genuinely silent" — the false verdict this
+    // whole module exists to remove, sneaking in through its own guard. So the assertion is
+    // that B still FIRES: the real `checkAdjustmentTriggers`, on B's own firing input with A
+    // neutralised, must still reach B.
+    //
+    // ⚠️ Skipped where B's inputs were not present to begin with, and where A is SENIOR to B
+    // on this input — a senior winning is the design, not interference. Detected by checking
+    // whether A fires on B's input at all.
     if (!specFor(b)!.present(base)) return
-    expect(specFor(b)!.present(specFor(a)!.neutralise(base)), `${a} silenced ${b}`).toBe(true)
+    const unmodified = checkAdjustmentTriggers(base)
+    if (unmodified?.trigger.type !== b) return
+    const after = checkAdjustmentTriggers(specFor(a)!.neutralise(base))
+    expect(after?.trigger.type ?? null, `${a}'s neutralise stopped ${b} firing`).toBe(b)
+  })
+})
+
+describe('TRIGGER_INPUTS — `fedBy` is checked against the assembler, not asserted', () => {
+  // 🔴 THE FINDING THAT MADE `fedBy` EXIST. `readiness_signal` printed "STARVED — inputs
+  // present in 0 of 43 weeks" and I wrote that into the backlog and the roadmap as a fact
+  // about runners having no readiness baselines. `buildAdjustmentSignals` never emits
+  // `readinessSignal` at all — its sole producer is `app/api/pre-session-readiness/route.ts`.
+  // The zero described the ASSEMBLER.
+  //
+  // ⚠️ So `fedBy` is READ FROM THE ASSEMBLER'S SOURCE rather than trusted: a field the
+  // assembler does emit may not be declared `other-route`, and one it does not emit may not
+  // be declared `assembler`. A declared reason that nothing checks is how this got here.
+  // 🔴 AND THE FIRST CUT OF THIS GATE MATCHED ONE SPELLING AND MISSED THE THING. It tested
+  // `\bfield\s*:` over the whole file; the assembler uses SHORTHAND properties
+  // (`plannedKm,` `efTrendPct,` `recentLongRunAnalyses,`), so three correct declarations
+  // failed. `MATCH THE EFFECT, NOT THE SPELLING`, and `bound the region, never grep the file`
+  // — both already in this repo's register, and I did both again in one line.
+  //
+  // So the keys are PARSED out of `buildAdjustmentSignals`'s own return object, at brace
+  // depth 1, accepting `key:` and bare `key,` alike.
+  const assemblerKeys = (() => {
+    const src = readFileSync(join(process.cwd(), 'lib/coaching/adjustmentEngine.ts'), 'utf8')
+    const fn = src.indexOf('export function buildAdjustmentSignals')
+    expect(fn, 'buildAdjustmentSignals not found — this gate cannot be evaluated').toBeGreaterThan(-1)
+    // the LAST `return {` inside the function body, which is the assembled input
+    const body = src.slice(fn)
+    const end = body.indexOf('\n}\n')
+    const scope = body.slice(0, end > -1 ? end : body.length)
+    const ret = scope.lastIndexOf('return {')
+    expect(ret, 'no `return {` in buildAdjustmentSignals').toBeGreaterThan(-1)
+    let depth = 0
+    const keys = new Set<string>()
+    const block = scope.slice(ret + 'return '.length)
+    for (const line of block.split('\n')) {
+      const opened = depth
+      for (const ch of line) { if (ch === '{' || ch === '[') depth++; else if (ch === '}' || ch === ']') depth-- }
+      if (opened === 1) {
+        const m = /^\s*([A-Za-z_$][\w$]*)\s*[:,]/.exec(line)
+        if (m) keys.add(m[1])
+      }
+      if (depth <= 0 && opened > 0) break
+    }
+    expect(keys.size, 'parsed no keys from the assembler — unverified is never a pass').toBeGreaterThan(5)
+    return keys
+  })()
+
+  /** The emitted key, from the field path (`hrInZoneData[].aboveCeilingPct` → `hrInZoneData`). */
+  const emits = (field: string) => assemblerKeys.has(field.split(/[.[]/)[0])
+
+  it.each(DETECTED_TRIGGER_TYPES)('%s declares the right `fedBy`', (t) => {
+    const spec = specFor(t)!
+    const anyEmitted = spec.reads.some(emits)
+    if (spec.fedBy === 'assembler') {
+      expect(anyEmitted, `${t} declares 'assembler' but it emits none of ${spec.reads.join(', ')}`).toBe(true)
+    } else {
+      expect(anyEmitted, `${t} declares 'other-route' but the assembler emits one of ${spec.reads.join(', ')}`).toBe(false)
+      expect(spec.producer, `${t} is 'other-route' and must name its producer`).toBeTruthy()
+    }
   })
 })
 
