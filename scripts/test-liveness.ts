@@ -54,7 +54,28 @@ const SUBJECTS: Record<string, string[]> = {
   'lib/coaching/recalibrationPrompt.test.ts':       ['lib/coaching/recalibrationPrompt.ts'],
   'lib/coaching/reshapeMagnitude.test.ts':          ['lib/coaching/reshapeMagnitude.ts'],
   'lib/coaching/sessionScore.test.ts':              ['lib/coaching/sessionScore.ts'],
-  'lib/plan/featureGates.test.ts':                  ['lib/plan/canUseFeature.ts'],
+  // ⚠️ BOTH, since 2026-11-09 (`TEST-LIVENESS-COVERAGE-01`). This row named only the
+  // consumer, so a mutation to the GATE TABLE itself was never applied.
+  'lib/plan/featureGates.test.ts':                  ['lib/plan/canUseFeature.ts', 'lib/plan/featureGates.ts'],
+
+  // ── TEST-LIVENESS-COVERAGE-01 (2026-11-09) ────────────────────────────────
+  // Four sources were ALREADY declared as mutation subjects by another test's row
+  // while their OWN co-named test file sat outside the map — so the harness
+  // reported on those sources through a neighbour's assertions and never through
+  // the test written for them. Each of these was added and then RUN: see the
+  // baseline for any that survived, with its reason.
+  'lib/plan/effectiveSessions.test.ts':             ['lib/plan/effectiveSessions.ts'],
+  'lib/ui/loadRatioContext.test.ts':                ['lib/ui/loadRatioContext.ts'],
+  'lib/coaching/weeklyZoneAggregate.test.ts':       ['lib/coaching/weeklyZoneAggregate.ts'],
+  // ⚠️ MAPPED AND *UNPROVEN*, DELIBERATELY. `lib/plan.ts` is 362 lines with many exports
+  // and both of its tests (`plan.test.ts` and `planDateWindow.test.ts`, mapped since
+  // before this) report UNPROVEN: scoping mutations to the symbols either one imports
+  // scopes them across the module, so the battery lands outside the asserted behaviour
+  // far more often than inside. **Same too-broad-subject case as `ruleEngine.ts` and
+  // `lib/coaching/constants.ts` above.** Recorded rather than left absent: UNPROVEN is
+  // the harness saying it cannot speak to this, which is a different and more useful
+  // statement than the test not being in the map at all.
+  'lib/plan.test.ts':                               ['lib/plan.ts'],
   'lib/plan/fitnessThresholds.test.ts':             ['lib/plan/fitnessAssessment.ts'],
   'lib/plan/inputRanges.test.ts':                   ['lib/plan/inputs.ts'],
   'lib/plan/taperRecalibration.test.ts':            ['lib/plan/taperRecalibration.ts'],
@@ -340,8 +361,13 @@ const only = process.argv.includes('--only')
 // `npm run falsify -- --test <t> --subject <s> --from <a> --to <b>`
 //
 // THE BATCH MODE ABOVE CANNOT REACH A TEST YOU JUST WROTE, and that is the case
-// that matters most. `SUBJECTS` is a DECLARED map — 22 of 373 test files, 5.9% —
-// so a new test is invisible to it by default, and `MUTATIONS` is a fixed battery
+// that matters most. `SUBJECTS` is a DECLARED map — a small fraction of the suite,
+// and the exact figure is DERIVED AND PRINTED at the end of every batch run rather
+// than written here. 🔴 This comment said "22 of 373 test files, 5.9%" from
+// 2026-09-24 to 2026-11-09; by then it was 27 of 761, 3.5%, so the stated number was
+// wrong in both halves and in the flattering direction. A number a script computes
+// cannot drift; a number a comment states always does (`TEST-LIVENESS-COVERAGE-01`).
+// So a new test is invisible to it by default, and `MUTATIONS` is a fixed battery
 // of operator flips. Neither reaches the three mutations run BY HAND on
 // 2026-09-24 alone: return the clock instead of null, drop the `ai:` key prefix,
 // revert a `toMatch` to `toContain`. All three were arbitrary literal edits to
@@ -565,6 +591,31 @@ if (existsSync(BASELINE_PATH) && !process.argv.includes('--write')) {
 
 console.log(`\ntests checked ${testsChecked} · killed ${killed} · SURVIVED ${survivors.length}`
   + ` · UNPROVEN ${unreached.length} · inert mutations ${inert}`)
+
+// ── WHAT THIS RUN CANNOT SPEAK TO (TEST-LIVENESS-COVERAGE-01, 2026-11-09) ───
+//
+// 🔴 The figure used to live in a COMMENT at the top of this file and was wrong in
+// both halves for six weeks: "22 of 373, 5.9%" against a real 27 of 761, 3.5% —
+// and the harness this protects is the one built to catch a green tick with
+// nothing behind it. **The instrument was sound and its population was not, and
+// the file said otherwise.** Derived now, printed every run, and never written
+// down: a number a script computes cannot drift.
+//
+// ⚠️ It is printed whether or not anything survived, because a run that ends in
+// "✅ every mutation was caught" is exactly when the share matters — that tick is
+// about 3.5% of the suite, and read without this line it sounds like all of it.
+if (!only) {
+  const all = execFileSync('find', ['lib', 'components', 'packages', '-name', '*.test.ts'],
+    { encoding: 'utf8' }).trim().split('\n').filter(Boolean)
+  const mapped = Object.keys(SUBJECTS).length
+  const pct = (mapped / all.length * 100).toFixed(1)
+  console.log(`\ncoverage: ${mapped} of ${all.length} test files are in SUBJECTS (${pct}%).`)
+  console.log(`  The other ${all.length - mapped} are outside this harness BY CONSTRUCTION — the map is`)
+  console.log('  declared, not inferred, and nothing grows it automatically. A clean run above says')
+  console.log('  nothing about them. For a test not in the map, use `npm run falsify -- --adhoc`.')
+  console.log('  ⚠️ This share is NOT ratcheted and nothing schedules its growth. The gate in')
+  console.log('     lib/plan/testLivenessCoverage.test.ts only holds the map CONSISTENT with itself.')
+}
 if (survivors.length) console.log('⚠️  SURVIVORS: those tests pass while the behaviour they name is broken.')
 if (unreached.length) console.log(`⚪ UNPROVEN: ${unreached.map(t => t.replace('lib/', '')).join(', ')}`
   + '\n   The battery does not reach these subjects. Not evidence the test is good —'

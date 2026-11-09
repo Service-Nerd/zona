@@ -14533,7 +14533,62 @@ that is the ratified design. The `effectiveMaxHR` fallback `plan?.meta?.hr_deriv
 still wins when there is no age (5 of 53 rows); what changed is that `hr_derived_max` is now the
 guarded number, so the fallback means what its name says.
 
-### ⚙️ `TEST-LIVENESS-COVERAGE-01` — the mutation harness sees 5.9% of the test suite
+### ✅ `TEST-LIVENESS-COVERAGE-01` — **SHIPPED 2026-11-09.** The mutation harness now states its own coverage, and growing the map by five found a module half-tested ⚙️ **NO BOARD**
+
+✅ **BUILT 2026-11-09.** 🔴 **THREE NUMBERS DISAGREED AND ALL THREE WERE WRONG, INCLUDING MINE.** The item and
+the script's own header both said **22 of 373 — 5.9%**; my re-measurement earlier in this programme said
+**34 of 759 — 4.5%**; the answer was **27 of 761 — 3.5%**. ⚠️ **My 34 came from `grep -A 200` running past the
+end of the object** — *bound the region, never grep the file*, the class this repo has recorded four times,
+committed while measuring the harness built to catch exactly that. **The figure is derived and printed on
+every run now and never written down**: a number a script computes cannot drift.
+
+⚠️ **THE OBVIOUS GATE WOULD HAVE BEEN AN AMNESTY, AND THE ITEM SAID SO BEFORE I MEASURED IT.** Option 2
+("fail when a test imports from `lib/` and has no entry") measured two ways: test files reading source text
+**295 of 761**; test files importing an already-declared subject **307** (because `lib/plan.ts` is a barrel
+imported everywhere). **A 300-entry baseline is a pile with a name.** So the gate holds the map consistent
+with **its own claim** instead, a population of **five**, every one a real gap:
+
+| Arm | Shape | Found |
+|---|---|---|
+| **A** | a source the map already declares as a mutation subject whose **own co-named test** is not a key — so the harness reported on it through a *neighbour's* assertions | **4**: `effectiveSessions`, `loadRatioContext`, `weeklyZoneAggregate`, `plan` |
+| **B** | a key whose co-named source exists and is **not** among its subjects — a mapping that drifted | **1**: `featureGates.test.ts` named only its consumer, so a mutation to the gate **table** was never applied |
+
+🔑 **AND GROWING THE MAP BY FIVE IS WHAT FOUND THE REAL DEFECT: `effectiveSessions.test.ts` passes while
+4 OF 4 behaviour-changing mutations survive, all at one site.** That module is the one `CLAUDE.md` names as
+shared between the daily coach note and the missed-session prompt, and its own test file's header records
+that it was written because the module had *"six production callers and zero tests"*. **Phase 2 — the §126
+doubles branch, `new_slot` — had no test at all**: the word did not appear in the file once, against a
+five-conjunct `if` at `effectiveSessions.ts:60` deciding whether a slotted move becomes a double or falls
+back to an ordinary move. ⚠️ **A thorough test of half a module is a green tick over the other half.** Six
+cases added, one per conjunct; **4 of 4 mutations now KILLED.**
+
+🔻 **One survivor is baselined and it is provably EQUIVALENT, not a weak test.** `weeklyZoneAggregate.ts:96`
+flips `||` to `&&` with no effect because all four nulls come from `weightedMean` over the **same rows and
+the same weights**, so they are always all-null or all-non-null together — and `ZoneSplitRow` types the four
+as `number`, so a partial-null row **cannot be constructed**. Writing a test for it would mean asserting a
+state the type system forbids; the reason is in the baseline.
+🔻 **Two entries are UNPROVEN and recorded as such**, `plan.test.ts` and the pre-existing
+`planDateWindow.test.ts`: `lib/plan.ts` is 362 lines with many exports, so scoping mutations to either
+test's imports scopes them across the module — the documented too-broad-subject case. **UNPROVEN is the
+harness saying it cannot speak to this, which is more useful than absence.**
+
+📐 **Final state: 31 keys of 762 test files (4.1%) · 162 killed · 11 survivors (all with reasons) · 2
+unproven.** Gate: `lib/plan/testLivenessCoverage.test.ts`, 8 arms, **falsified six ways, each firing the
+named arm** — a removed entry (A + the ratchet), a reverted mapping (B), the derived figure put back as a
+literal, a subject that does not exist, **a key written in double quotes** (the parse refuses rather than
+skipping it, naming the line — `DOC-AUDIT-REG-FORMAT-01`), and the declaration renamed (the file fails at
+collection with a named message, because unverified is never a pass).
+
+⚠️ **One arm needed the comment stripper:** asserting the stale literal cannot come back matched **this
+gate's own explanation of why it was wrong** — `HOOK-RGBA-COMMENTS-01` exactly, in the commit that cites it.
+
+🔻 **WHAT THIS DOES NOT PROVE, AND IT IS THE ITEM'S WHOLE RESIDUAL.** The share is **4.1%**. The gate holds
+the map self-consistent; **it does not make the map grow, and nothing schedules that.** 731 test files are
+outside the harness by construction, and a clean nightly run says nothing about them. That sentence now
+prints at the end of every run instead of living in a backlog item, which is the only part of this that is
+an improvement rather than a record. ⚠️ **A declared reason is not a scheduled fix.**
+
+### ⚙️ `TEST-LIVENESS-COVERAGE-01` — original filing, for the record
 **Board: ⚙️ NO BOARD.** Found 2026-09-24 while building `GATE-FALSIFY-01 (c)`.
 
 `scripts/test-liveness.ts` is the harness that turns tests red on purpose — the one built

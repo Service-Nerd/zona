@@ -90,6 +90,85 @@ describe('resolveEffectiveSessions', () => {
 
 })
 
+/**
+ * 🔴 PHASE 2 (`new_slot`) HAD NO TEST AT ALL, AND NOTHING SAID SO
+ * (`TEST-LIVENESS-COVERAGE-01`, 2026-11-09).
+ *
+ * `effectiveSessions.ts` was already a declared mutation subject — named by
+ * `overrideMoves.test.ts` and `autoLinkOverride.test.ts` — while its OWN co-named
+ * test file sat outside `SUBJECTS`, so the liveness harness reported on this module
+ * through a neighbour's assertions and never through the test written for it. Adding
+ * the entry turned **4 of 4 behaviour-changing mutations into SURVIVORS, all at one
+ * site**: the five-conjunct `if` at `effectiveSessions.ts:60` that decides whether a
+ * slotted move becomes a §126 double or falls back to an ordinary move.
+ *
+ * The file above covers Phase 1 thoroughly and the word `new_slot` did not appear in
+ * it once. **A thorough test of half a module is a green tick over the other half.**
+ * One case per conjunct below, so a flip of any of them goes red.
+ */
+describe('resolveEffectiveDay — §126 doubles (Phase 2, ADR-025)', () => {
+  const easy = (id: string): Session => ({ id, type: 'easy', label: id } as unknown as Session)
+  const quality = (id: string): Session => ({ id, type: 'quality', label: id } as unknown as Session)
+
+  it('a slotted move onto an occupied EASY day becomes a double, and the origin empties', () => {
+    const w = week({ tue: easy('mover'), thu: easy('occupant') })
+    const out = resolveEffectiveDay(w, [{ week_n: 1, original_day: 'tue', new_day: 'thu', new_slot: 'am' }] as SessionOverride[])
+    expect(out.tue, 'the mover\'s own day is left empty').toBeUndefined()
+    expect(out.thu!.map(e => [e.session.id, e.slot])).toEqual([['mover', 'am'], ['occupant', 'pm']])
+    // The completion key survives on both halves — losing it orphans the log.
+    expect(out.thu!.map(e => e.originalDay).sort()).toEqual(['thu', 'tue'])
+  })
+
+  it('pm lands the mover SECOND — the list is ordered by slot, not by who moved', () => {
+    const w = week({ tue: easy('mover'), thu: easy('occupant') })
+    const out = resolveEffectiveDay(w, [{ week_n: 1, original_day: 'tue', new_day: 'thu', new_slot: 'pm' }] as SessionOverride[])
+    expect(out.thu!.map(e => [e.session.id, e.slot])).toEqual([['occupant', 'am'], ['mover', 'pm']])
+  })
+
+  it('🔴 canDouble conjunct — §126 forbids a double with a QUALITY session, so it swaps instead', () => {
+    // Kills `flip ... && to ||` on canDouble: admitting it would put a hard run
+    // and an easy run on the same day, which is the thing §126 exists to prevent.
+    const w = week({ tue: easy('mover'), thu: quality('hard') })
+    const out = resolveEffectiveDay(w, [{ week_n: 1, original_day: 'tue', new_day: 'thu', new_slot: 'am' }] as SessionOverride[])
+    expect(out.thu!.length, 'not a double').toBe(1)
+    expect(out.thu![0].session.id).toBe('mover')
+    expect(out.tue![0].session.id, 'the occupant is displaced, never dropped').toBe('hard')
+    expect(out.thu![0].slot ?? null, 'an ordinary move carries no slot').toBeNull()
+  })
+
+  it('🔴 free conjunct — a SECOND slotted move onto the same day does not double it again', () => {
+    // Kills `flip ... && to ||` on `free`: a third session on one day, or a lost one.
+    const w = week({ mon: easy('m1'), tue: easy('m2'), thu: easy('occupant') })
+    const out = resolveEffectiveDay(w, [
+      { week_n: 1, original_day: 'mon', new_day: 'thu', new_slot: 'am' },
+      { week_n: 1, original_day: 'tue', new_day: 'thu', new_slot: 'am' },
+    ] as SessionOverride[])
+    expect(out.thu!.length, 'at most two on a day').toBe(2)
+    const ids = Object.values(out).flat().map(e => e.session.id).sort()
+    expect(ids, 'nothing is lost — the second move yields').toEqual(['m1', 'm2', 'occupant'])
+  })
+
+  it('🔴 originalDay conjunct — a slot row whose target ALREADY holds the mover is not a double', () => {
+    // Kills `flip === to !==`: the occupant IS the mover, arriving via the plain
+    // row, so doubling it would pair a session with itself.
+    const w = week({ wed: easy('only') })
+    const out = resolveEffectiveDay(w, [
+      { week_n: 1, original_day: 'wed', new_day: 'fri' },
+      { week_n: 1, original_day: 'wed', new_day: 'fri', new_slot: 'am' },
+    ] as SessionOverride[])
+    expect(out.fri!.length).toBe(1)
+    expect(out.fri![0].session.id).toBe('only')
+    expect(Object.keys(out)).toEqual(['fri'])
+  })
+
+  it('a slotted move onto an EMPTY day is an ordinary relocation, not a double', () => {
+    const w = week({ tue: easy('mover') })
+    const out = resolveEffectiveDay(w, [{ week_n: 1, original_day: 'tue', new_day: 'thu', new_slot: 'am' }] as SessionOverride[])
+    expect(out.thu!.length).toBe(1)
+    expect(out.thu![0].session.id).toBe('mover')
+  })
+})
+
 describe('slotForOriginalDay', () => {
   it('returns the new day when moved, and the original when not', () => {
     const ov: SessionOverride[] = [{ week_n: 1, original_day: 'wed', new_day: 'fri' }]
