@@ -170,7 +170,6 @@ export function planRationaleNotes(
   // the measurement: Wood already ranks "Shaped for you" LAST because constraints beat a brag,
   // so displacing it is that ruling applying rather than a new trade. Cost accepted and named,
   // exactly as §6ak named `Long run` lost on 469 of 844.
-  else if (meta.peak_shortfall_note) notes.push({ label: 'Your peak', text: meta.peak_shortfall_note })
   // 🔴 NOTE-SURFACE-INERT-01 — `frequency_constraint_note`, also read by nothing. 3 of 41 plans,
   // and **3 of 3 carriers have a free slot**, so this displaces nothing at all.
   // ⚠️ ALSO RULE 1: it blames weekly volume, which is `volume_constraint_note`'s cause, and 1 of
@@ -178,9 +177,6 @@ export function planRationaleNotes(
   // unconditional slot — the runner must not read "your volume is low" twice with two labels.
   // 🎓 Sierra: *"3 honest runs beat 4 token ones"* is the best sentence in the batch — it teaches
   // something the runner carries away from the app, which is the bar this section is held to.
-  if (meta.frequency_constraint_note && !meta.volume_constraint_note && !meta.volume_shortfall_note) {
-    notes.push({ label: 'Your days', text: meta.frequency_constraint_note })
-  }
   // INJURY-PEAK-JUMP-01 (Coaching Board 2026-10-28): §34 says an accepted residual is STATED.
   // `load_residual_note` was stamped on hundreds of plans a week-on-week ramp check warns, and
   // this list never read it, so no runner was ever told. Ranked with the constraints, ahead of
@@ -217,6 +213,33 @@ export function planRationaleNotes(
   }
 
   // The "shaped for you" line ranks LAST (Wood: never a brag; constraints matter more).
+  // 🔴 RANKED LOW, AND THE MEASUREMENT IS WHY (NOTE-SURFACE-INERT-01, re-sat 2026-11-09).
+  //
+  // The first ruling put these in the volume family on the strength of a STORED-CORPUS
+  // number: 41 plans, of which 2 and 3 carried them. On the ENGINE (39,744 generated
+  // plans) the costs were understated by three orders of magnitude:
+  //
+  //   "Your peak" high  → 3,200 of 4,776 shown, 324 plans DISPLACED (Coming back 308)
+  //   "Your peak" low   → 2,876 of 4,776 shown, ZERO displaced
+  //   "Your days" high  → 2,136 of 3,312 shown, 1,216 plans displaced (Coming back 480,
+  //                       Your level 424, LONG RUN 152 — a shortfall note the board never saw)
+  //
+  // ⚠️ THE TRADE IS 1:1 AND THAT IS NOT A COINCIDENCE: a plan only sees a promoted note by
+  // pushing another out. 324 more runners read "Your peak"; 308 stop reading "Coming back",
+  // which is the note about returning from a layoff. **A new note does not outrank a
+  // constraint the board has already ranked.**
+  //
+  // ⚠️ AND THE ARGUMENT FOR THE HIGH RANK WAS A STORED-CORPUS ARTEFACT. The first sitting was
+  // told "ranked LAST it shows on 0 of 2 — wired and never rendered". On the engine a low rank
+  // shows it on 60% of carriers with nothing displaced. **That claim is withdrawn.**
+  //
+  // They sit above `Shaped for you` only, which Wood ranks last because constraints beat a
+  // brag — so a constraint note still outranks the brag, and nothing else moves.
+  if (meta.peak_shortfall_note && !meta.volume_constraint_note && !meta.volume_shortfall_note) notes.push({ label: 'Your peak', text: meta.peak_shortfall_note })
+  if (meta.frequency_constraint_note && !meta.volume_constraint_note && !meta.volume_shortfall_note
+      && !meta.peak_shortfall_note) {
+    notes.push({ label: 'Your days', text: meta.frequency_constraint_note })
+  }
   const fit = levelFitNote(meta)
   if (fit) notes.push({ label: 'Shaped for you', text: fit })
 

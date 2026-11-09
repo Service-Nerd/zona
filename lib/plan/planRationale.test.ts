@@ -353,12 +353,25 @@ describe('NOTE-SURFACE — every declared plan note has a reader', () => {
     expect(unread, 'a plan note with no reader: wire it into planRationaleNotes, or register it').toEqual([])
   })
 
-  // ── THE RULING'S OWN CHECK (NOTE-SURFACE-INERT-01, Design Board 2026-11-09) ──
+  // ── THE RULING'S OWN CHECK (NOTE-SURFACE-INERT-01, Design Board 2026-11-09, RE-SAT) ──
   //
-  // ⚠️ RULE 1 IS ENFORCED MECHANICALLY HERE, NOT BY CONVENTION. §18's "one cause, one tile"
-  // was broken on 157 of 200 plans before the 2026-09-17 cut, by exactly this shape: two
-  // labels, one cause, two sets of numbers. Both notes this ruling wires blame weekly volume,
-  // so both are gated — and a gate nobody asserts is a comment.
+  // 🔴 THE FIRST RULING WAS VACATED BY CODE REVIEW AND ITS COSTS WERE WRONG BY THREE ORDERS
+  // OF MAGNITUDE. The sitting ran on a STORED corpus (41 plans, 2 and 3 carriers). On the
+  // engine, 39,744 generated plans:
+  //
+  //            declared to the board          measured
+  //   Your peak  "loses Shaped for you"       324 plans displaced, Coming back 308
+  //   Your days  "displaces nothing"          1,216 displaced, incl. LONG RUN 152
+  //   rule 1     (not considered)             760 plans showed BOTH, one cause two labels
+  //
+  // ⚠️ AND THE ARGUMENT FOR THE HIGH RANK WAS A STORED-CORPUS ARTEFACT. The board was told
+  // "ranked LAST it shows on 0 of 2 — wired and never rendered". On the engine a low rank
+  // shows it on 2,876 of 4,776 carriers with ZERO displacement. The claim is withdrawn.
+  //
+  // RE-SAT: both rank above `Shaped for you` only. Result: rule 1 breaks 760 → 0,
+  // displacement 1,684 → 8 plans and the only loss is the brag line, which is the one trade
+  // Wood's own ranking sanctions. Coverage: Your peak 2,468 of 4,776 (51.7%), Your days 600 of
+  // 3,312 (18.1% — rule 1 gives the slot to the larger statement, as §18 says it must).
   it('🔴 rule 1 — "Your days" never appears beside a volume tile', () => {
     const both = planRationaleNotes({
       frequency_constraint_note: 'You told us you can run 5 days a week. This plan uses 3.',
@@ -367,14 +380,24 @@ describe('NOTE-SURFACE — every declared plan note has a reader', () => {
     expect(both, 'the runner reads "your volume is low" twice, under two labels')
       .not.toContain('Your days')
     expect(both).toContain('Maintenance')
-    // ...and alone it DOES show, or the gate is just an off switch.
     const alone = planRationaleNotes({
       frequency_constraint_note: 'You told us you can run 5 days a week. This plan uses 3.',
     } as never, 'km').map(n => n.label)
     expect(alone, 'gated to nothing: "Your days" never renders at all').toContain('Your days')
   })
 
-  it('🔴 rule 1 — "Your peak" never appears beside a volume tile either', () => {
+  it('🔴 rule 1 — "Your days" never appears beside "Your peak" EITHER (760 plans did)', () => {
+    // The gap code review found: both blame weekly volume, and the first cut gated `Your days`
+    // on the two older volume notes and not on the one shipped in the same commit.
+    const both = planRationaleNotes({
+      frequency_constraint_note: 'You told us you can run 5 days a week. This plan uses 3.',
+      peak_shortfall_note: 'This plan peaks at 40km a week, short of the 46km a goal like this usually wants.',
+    } as never, 'km').map(n => n.label)
+    expect(both, 'two labels for one cause — the defect rule 1 exists for').not.toContain('Your days')
+    expect(both, '§18: the larger statement wins').toContain('Your peak')
+  })
+
+  it('🔴 rule 1 — "Your peak" never appears beside a volume tile', () => {
     const both = planRationaleNotes({
       peak_shortfall_note: 'This plan peaks at 40km a week, short of the 46km a goal like this usually wants.',
       volume_constraint_note: 'Your weekly mileage holds steady across this plan.',
@@ -387,29 +410,56 @@ describe('NOTE-SURFACE — every declared plan note has a reader', () => {
     expect(alone, 'gated to nothing: "Your peak" never renders at all').toContain('Your peak')
   })
 
-  it('🔴 "Your peak" RANKS — it is not appended where a full plan would never show it', () => {
-    // The whole reason the board ranked rather than appended: both live carriers sit at 3/3,
-    // so a last-place rank shows it on 0 of 2 — wired and never rendered.
-    const full = planRationaleNotes({
+  it('🔴 BOTH RANK LOW — a plan with three real constraints loses NOTHING to them', () => {
+    // 🔴 THIS ARM REPLACES ONE THAT COULD NOT FAIL. Its predecessor used a fixture key
+    // `level_fit: true` that exists nowhere in the repo (silenced by `as never`), so only
+    // three notes were ever produced and the cap never bound — code review ranked `Your peak`
+    // LAST with rule 1 intact and all 27 tests stayed green. **A fixture key that does not
+    // exist is a fixture that asserts nothing.** The keys below are the real ones the owner
+    // reads, and the cap binds: four constraints compete for three slots.
+    const full = {
+      load_residual_note: 'Week 9 is heavier than the week before it.',
+      load_residual_week: 9,
+      long_run_shortfall_note: 'Your long run stops short of the distance this race wants.',
+      intensity_reentry_omission_note: 'No hard sessions in the first three weeks.',
       peak_shortfall_note: 'This plan peaks at 40km a week, short of the 46km a goal like this usually wants.',
-      short_opening_block_note: 'Your first recovery week comes early.',
-      hard_pref_note: 'You asked for harder sessions.',
-      level_fit: true,
+      frequency_constraint_note: 'You told us you can run 5 days a week. This plan uses 3.',
+    }
+    const withNew = planRationaleNotes(full as never, 'km').map(n => n.label)
+    const withoutNew = planRationaleNotes({
+      ...full, peak_shortfall_note: undefined, frequency_constraint_note: undefined,
     } as never, 'km').map(n => n.label)
-    expect(full.length).toBeLessThanOrEqual(3)
-    expect(full, 'ranked below the cap, so the carriers measured at 3/3 would never see it')
+    expect(withoutNew.length, 'the cap must BIND or this arm is vacuous').toBe(3)
+    const lost = withoutNew.filter(l => !withNew.includes(l))
+    expect(lost, 'a promoted note displaced a constraint the board already ranked').toEqual([])
+    // ...and the reason the rank is defensible: it still outranks the BRAG.
+    //
+    // 🔴 THIRD HOLLOW FIXTURE IN THIS ITEM, AND THE MUTATION FOUND IT. This arm first read
+    // `{ peak_shortfall_note, early_quality_onset }` — two notes against a cap of three, so
+    // the cap never bound and ranking `Your peak` BELOW `Shaped for you` stayed green. **An
+    // order assertion over a list shorter than the cap asserts nothing about order.** The
+    // fixture below puts FOUR claimants in front of three slots so the rank decides which
+    // one is dropped, and it asserts the cap binds before asserting anything else.
+    const contested = {
+      load_residual_note: 'Week 9 is heavier than the week before it.',
+      load_residual_week: 9,
+      long_run_shortfall_note: 'Your long run stops short of the distance this race wants.',
+      peak_shortfall_note: 'This plan peaks at 40km a week, short of the 46km a goal like this usually wants.',
+      early_quality_onset: true,
+    }
+    const all = planRationaleNotes(contested as never, 'km').map(n => n.label)
+    const bragOnly = planRationaleNotes({
+      ...contested, peak_shortfall_note: undefined,
+    } as never, 'km').map(n => n.label)
+    expect(bragOnly, 'the brag must be in play or this arm cannot test the rank')
+      .toContain('Shaped for you')
+    expect(all.length, 'the cap must BIND — four claimants, three slots').toBe(3)
+    expect(all, 'it must outrank "Shaped for you" — constraints beat a brag (Wood)')
       .toContain('Your peak')
-    // ⚠️ THE LIMIT OF THIS ARM, STATED. The rank IS the chain's position, so a
-    // "ranked last but rule-1 intact" mutation cannot be written without moving the
-    // whole volume family — a different and larger change. Falsifying by un-wiring the
-    // note fires this arm; falsifying by moving it last fires the rule-1 arm first.
-    // So this arm catches ABSENCE from the top three, not every possible mis-rank.
+    expect(all, 'the brag kept its slot over a constraint').not.toContain('Shaped for you')
   })
 
   it('🔻 `returning_runner_note` is REFUSED and stays unread', () => {
-    // Design Board 2026-11-09: §18 rule 2 (no ratios, no thresholds) and rule 1 (its cause
-    // belongs to "Coming back", duplicated on 2 of 3 carriers). Shipping it would be the
-    // ruling reversed in silence.
     const out = planRationaleNotes({
       returning_runner_note: 'Returning-runner allowance active: weeks 1-3 grow at 15% per week.',
     } as never, 'km')

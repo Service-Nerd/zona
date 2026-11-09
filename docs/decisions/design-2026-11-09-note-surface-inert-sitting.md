@@ -1,5 +1,11 @@
 # Design Board — NOTE-SURFACE-INERT-01, 2026-11-09
 
+> 🔴 **THIS SITTING WAS VACATED BY ITS OWN RE-MEASUREMENT, HOURS LATER, AND RE-SAT. Read the
+> correction at the end before the sitting.** The ruling below was made on 41 STORED plans; the
+> engine produces 4,776 and 3,312 carriers of these notes. Every displacement figure in the
+> original sitting is wrong by three orders of magnitude, and the argument the chair overruled
+> Silvanto on was a stored-corpus artefact. **Silvanto was right.**
+
 **Ruling: SHIP WITH AMENDMENT (3).** Register row in `design-rulings.md`; pattern in
 `ui-patterns.md` §18; check in `planRationale.test.ts`.
 
@@ -90,3 +96,65 @@ volume family. That arm catches **absence from the top three**, not every possib
 ⚠️ **Not seen on a device**, and no plan screen has been looked at with three tiles since the
 2026-09-17 cut. `PLAN-NOTE-PLACEMENT-01` remains open: Wood argues the rationale does not belong at
 the top of the plan at all.
+
+
+---
+
+# 🔴 THE CORRECTION — re-sat the same day, on the engine
+
+`/code-review` re-measured on **39,744 plans generated from `cohortGrid()`** rather than the 41
+stored ones. Everything below was wrong in the sitting above.
+
+| | declared to the board | measured on the engine |
+|---|---|---|
+| `Your peak` displacement | *"loses Shaped for you / Coming back"* | **324 plans** — Coming back **308**, Your level 8, Shaped for you **8** |
+| `Your days` displacement | *"displaces nothing"* | **1,216 plans** — Coming back 480, Your level 424, **Long run 152**, Hard sessions 112, Recovery week 48 |
+| rule 1 | not considered | **760 plans showed BOTH new tiles** |
+| *"ranked last it shows on 0 of 2"* | the argument the rank turned on | **a low rank shows it on 2,876 of 4,776 (60%) with ZERO displacement** |
+
+## What that does to the ruling
+
+**The chair's overrule of Silvanto is withdrawn.** It rested on *"Wood already ranks `Shaped for
+you` last because constraints beat a brag, so displacing it is that ruling applying"* — and
+`Shaped for you` is **8 of 1,684 displacements**. The real cost was `Coming back` on **788** plans,
+which is the note about returning from a layoff, and **`Long run` on 152**, a shortfall note whose
+loss §6ak accepted ONCE with a number and which this board never saw.
+
+**Silvanto's dissent was about exactly that loss. He was told it was one plan. It was 788.**
+
+**And rule 1 was broken by my own commit**: I gated `Your days` on the two OLDER volume notes and
+not on `peak_shortfall_note`, which I shipped in the same change. 760 plans read "your volume is
+low" under two labels — the defect rule 1 exists for, 157 of 200 plans in 2026-09-17.
+
+## Re-sat
+
+Both notes rank **above `Shaped for you` only**; `Your days` is additionally gated on
+`peak_shortfall_note`.
+
+| | |
+|---|---|
+| rule-1 breaks | **760 → 0** |
+| plans losing a note | **1,684 → 8**, and the only loss is the brag line |
+| `Your peak` coverage | **2,468 of 4,776 carriers (51.7%)** |
+| `Your days` coverage | **600 of 3,312 (18.1%)** — rule 1 giving the slot to the larger statement, as §18 requires |
+
+🔑 **The trade is 1:1 and that is not a coincidence: a plan only ever sees a promoted note by
+pushing another out.** A new note does not outrank a constraint this board has already ranked.
+
+🎪 **Collins is strengthened, not disproved.** The queue is demonstrably zero-sum: **1,684
+displacements across 4.2% of plans was the price of two more claimants** for three seats.
+
+## Three hollow fixtures in one item, all found by mutation
+
+1. The rank arm used a fixture key **`level_fit`, which exists nowhere in the repo**, silenced by
+   `as never`. Only three notes were produced, the cap never bound, and ranking `Your peak` last
+   stayed green — **so the limit I had confidently written into that test was itself false.**
+2. Its replacement's brag arm compared **two** notes against a cap of **three**. An order
+   assertion over a list shorter than the cap asserts nothing about order.
+3. Both now assert the cap **BINDS** before asserting anything else.
+
+## The lesson, stated plainly
+
+**A design ruling about displacement needs the population the engine produces, not the plans that
+happen to be stored.** 41 rows told me `Your days` was free. It displaces a note on 1,216 plans.
+The stored corpus is a sample of who has signed up, not of what the product does.

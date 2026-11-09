@@ -2179,18 +2179,32 @@ on, and the check firing is the product reporting it.
 > 16 and was wrong**, because it read `app/` + `components/` only and *this* function collects
 > ten of them. Two directories checked is not "nowhere".
 >
-> | Label | Note | Rank | Measured cost |
-> |---|---|---|---|
-> | **Your peak** | `peak_shortfall_note` | **in the volume `else if` chain** | 2 carriers, **both at 3/3** — so ranked LAST it would show on **0 of 2**: wired and never rendered, decorative config in a new costume. One loses *"Shaped for you"*, one loses *"Coming back"* |
-> | **Your days** | `frequency_constraint_note` | after the volume family, **gated on neither volume note showing** | 3 carriers, **3 of 3 with a free slot — displaces nothing** |
-> | — | `returning_runner_note` | 🔴 **DON'T SHIP as written** | Rule 2: *"weeks 1–3 grow at 15% per week (vs the standard 10%)"* is a ratio and a threshold. Rule 1: duplicates *"Coming back"* on **2 of 3**. Engine register throughout (*"allowance active"*, *"the engine prefers a small base"*) |
+> 🔴 **AND THE FIRST RULING WAS VACATED THE SAME DAY, BECAUSE IT RAN ON THE STORED CORPUS.**
+> 41 plans, 2 and 3 carriers. On the engine — **39,744 generated plans** — the declared costs were
+> wrong by three orders of magnitude: `Your peak` displaced **324** plans (Coming back **308**),
+> `Your days` displaced **1,216** (Coming back 480, Your level 424, **Long run 152**), and **760
+> plans showed BOTH new tiles — one cause, two labels, the defect rule 1 exists for.**
+> ⚠️ **The argument the first sitting turned on — *"ranked last it shows on 0 of 2"* — was a
+> stored-corpus artefact: a low rank shows it on 2,876 of 4,776 carriers (60%) with ZERO
+> displacement.** ✋ **Silvanto's dissent was right; he was told the `Coming back` loss was one
+> plan and it was 788.**
 >
-> **Both new labels obey rule 1 mechanically, not by convention.** `Your peak` joins the
-> volume family's existing `else if` chain because *"your plan peaks short of your goal"* is the
-> same cause as the two notes above it; `Your days` is gated on neither volume note being shown,
-> because it blames weekly volume and 1 of its 3 carriers also carries `volume_constraint_note`.
-> **The runner must not read "your volume is low" twice under two labels** — which is the
-> defect rule 1 was written for, 157 of 200 plans.
+> | Label | Note | Rank | Measured on 39,744 generated plans |
+> |---|---|---|---|
+> | **Your peak** | `peak_shortfall_note` | **above `Shaped for you` only**, gated on neither volume note | shown **2,468 of 4,776 carriers (51.7%)** |
+> | **Your days** | `frequency_constraint_note` | the same, **also gated on `peak_shortfall_note`** | shown **600 of 3,312 (18.1%)** — rule 1 gives the slot to the larger statement, as this section says it must |
+> | — | `returning_runner_note` | 🔴 **DON'T SHIP as written** | Rule 2: *"weeks 1–3 grow at 15% per week (vs the standard 10%)"* is a ratio and a threshold. Rule 1: duplicates *"Coming back"* on **2 of 3**. Engine register throughout |
+>
+> **Together: rule-1 breaks 760 → 0, displacement 1,684 → 8 plans, and the only loss is the brag
+> line** — the one trade Wood's own ranking sanctions. 🔑 **The trade is 1:1 and that is not a
+> coincidence: a plan only sees a promoted note by pushing another out.** A new note does not
+> outrank a constraint this board has already ranked.
+>
+> **Both labels obey rule 1 mechanically, not by convention, and each is gated on EVERY note
+> that shares its cause** — including each other. The first cut gated them on the two OLDER
+> volume notes and not on the one shipped in the same commit, which is the 760 plans above.
+> **The runner must not read "your volume is low" twice under two labels** — the defect rule 1
+> was written for, 157 of 200 plans.
 >
 > ⚠️ **The cap was NOT widened and may not be.** §6ae declined 4 tiles / 240 words on
 > 2026-10-28 for want of readability evidence, and nothing here supplies any. These two notes

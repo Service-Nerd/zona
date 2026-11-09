@@ -5654,7 +5654,51 @@ Pattern — `ui-patterns.md` §18 (label + rank) · Constants — none new · Ch
 un-wiring the render. Sitting: `docs/decisions/design-2026-10-28-heavier-week-slot-sitting.md`. ⚠️ Not seen on a device.
 
 
-## 🧭 RULED 2026-11-09 — `NOTE-SURFACE-INERT-01`: **SHIP WITH AMENDMENT (3).** Two labels added, one note refused
+## 🧭 RULED 2026-11-09 — `NOTE-SURFACE-INERT-01`: **SHIP WITH AMENDMENT (3), AND THE FIRST RULING WAS VACATED THE SAME DAY**
+
+🔴 **THE FIRST SITTING RAN ON A STORED CORPUS AND ITS DECLARED COSTS WERE WRONG BY THREE ORDERS OF
+MAGNITUDE.** 41 stored plans, of which 2 and 3 carried the notes. Code review re-measured on the
+engine — **39,744 generated plans** from `cohortGrid()`:
+
+| | declared to the board | measured on the engine |
+|---|---|---|
+| `Your peak` | *"loses Shaped for you / Coming back"* | **324 plans displaced**, of which **Coming back 308**, Your level 8, **Shaped for you 8** |
+| `Your days` | *"displaces nothing"* | **1,216 plans displaced** — Coming back 480, Your level 424, **Long run 152**, Hard sessions 112, Recovery week 48 |
+| rule 1 | not considered | **760 plans showed BOTH new tiles** — one cause, two labels, the exact defect rule 1 exists for |
+
+⚠️ **AND THE ARGUMENT THE CHAIR OVERRULED SILVANTO ON WAS A STORED-CORPUS ARTEFACT.** The board was
+told *"ranked LAST it shows on 0 of 2 — wired and never rendered, decorative config in a new
+costume. It ranks or it is declined."* On the engine **a low rank shows it on 2,876 of 4,776
+carriers (60%) with ZERO displacement.** **That claim is withdrawn and the overrule with it.**
+⚠️ **`Shaped for you` — the note the whole trade was justified on, citing Wood's ranking — is 8 of
+1,684.** The real cost was `Coming back` on 788 plans and **`Long run` on 152**, a shortfall note
+whose loss §6ak had accepted ONCE with a number and which this board never saw.
+
+**✋ SILVANTO WAS RIGHT AND IT IS RECORDED.** His dissent was about the `Coming back` loss; he was
+told it was one plan and it was 788.
+
+### Re-sat, on the engine
+
+| Decision | Status | Why |
+|---|---|---|
+| **Both notes rank above `Shaped for you` ONLY** | 🟢 **SHIP** | **rule 1 breaks 760 → 0 · displacement 1,684 → 8 plans, and the only loss is the brag line** — the one trade Wood's own ranking sanctions. Coverage: `Your peak` **2,468 of 4,776 (51.7%)**, `Your days` **600 of 3,312 (18.1%)** |
+| **`Your days` gated on `peak_shortfall_note` too** | 🟢 **SHIP** | The 760-plan rule-1 gap: the first cut gated it on the two OLDER volume notes and not on the one shipped in the same commit. §18 — *"the larger statement wins"* — gives the slot to `Your peak`, which is why `Your days` lands at 18.1% and that is correct, not a shortfall |
+| **`returning_runner_note`** | 🔴 **DON'T SHIP as written** (unchanged) | §18 rule 2 forbids ratios and thresholds; rule 1's cause belongs to *"Coming back"*, duplicated on 2 of 3 carriers; engine register throughout |
+| **Widening the cap** | 🔴 **NOT AVAILABLE** (unchanged) | §6ae declined 4 tiles / 240 words on 2026-10-28; no readability evidence here either |
+
+⚡ **🎪 Collins still LOST and the re-measurement strengthens him:** twelve labels for three seats is
+*"a queue, not a taxonomy"*, and the queue is now demonstrably zero-sum — **1,684 displacements
+across 4.2% of plans was the price of two more claimants.** Filed as its own item.
+
+🔻 **The refusal's cost stands: `9feb0406` shows ZERO notes with three free slots** while carrying a
+substantive returning-runner note. The copy is the problem, not the fact.
+
+Pattern — `ui-patterns.md` §18 (amended, with the engine numbers) · Constants — none new · Check —
+`planRationale.test.ts`, **five arms**, falsified four ways after **three hollow fixtures were found
+by mutation**: an order assertion over a list shorter than the cap asserts nothing about order, and
+a fixture key that does not exist (`level_fit`) asserts nothing at all. ⚠️ Not seen on a device.
+
+
 
 **Input:** the backlog item's own ⚙️ measurement half, taken first. **3 of 16 `meta.*_note` keys had no reader
 anywhere** — stamped by the engine, rendered by nothing, on 8 of 41 stored plans. ⚠️ **A first measurement said 12
@@ -5663,31 +5707,6 @@ directories checked is not "nowhere."**
 
 | Decision | Status | Why |
 |---|---|---|
-| **`peak_shortfall_note` → "Your peak", in the volume family's `else if` chain** | 🟢 **SHIP** | 🎓 Sierra: it names both figures AND the levers AND says **"not effort"** — the one thing a Type-A runner needs told, and §18 rule 2's own requirement (Hutchinson: a constraint without its cost is a disclaimer). **Measured: both carriers sit at 3/3, so ranked LAST it shows on 0 of 2** — wired and never rendered, decorative config in a new costume. **Cost named and accepted:** one plan loses *"Shaped for you"*, one loses *"Coming back"* |
-| **`frequency_constraint_note` → "Your days", gated on neither volume note showing** | 🟢 **SHIP** | **3 of 3 carriers have a free slot — displaces nothing.** 🎓 Sierra: *"3 honest runs beat 4 token ones"* is the best sentence in the batch; it teaches something the runner carries away from the app |
-| **`returning_runner_note`** | 🔴 **DON'T SHIP as written** (not permanent) | §18 **rule 2**: *"weeks 1-3 grow at 15% per week (vs the standard 10%)"* is a ratio and a threshold. §18 **rule 1**: its cause belongs to *"Coming back"*, which it duplicates on **2 of 3** carriers. Engine register throughout (*"allowance active"*, *"the engine prefers a small base"*). ✋ Silvanto also calls it a **week-level** fact at the top of the plan — the horizon mistake of §6ak. Returns with consequence/cause/lever copy, or `intensity_reentry_omission_note` carries the cause and the key is deleted |
-| **Widening the cap to fit them** | 🔴 **NOT ASKED AND NOT AVAILABLE** | §6ae declined 4 tiles / 240 words on 2026-10-28 for want of readability evidence, and nothing here supplies any. Both notes compete inside 3 |
-
-⚡ **✋ Silvanto dissented on `Your peak`'s rank** (one plan loses *"Coming back"*) and the chair **overruled on the
-measurement**: Wood already ranks *"Shaped for you"* LAST **because constraints beat a brag**, so displacing it is
-that ruling applying rather than a new trade. Same shape as §6ak naming `Long run` lost on 469 of 844. **What would
-move him: that plan on a device.** ⛔ **He declined the veto and named why** — craft, not a documented palette or
-type regression. Second time the untested veto has correctly declined itself.
-
-⚡ **🎪 Collins LOST and it is recorded as lost:** he would collapse the twelve labels to four — *volume, days,
-intensity, shape* — before adding a thirteenth, on the grounds that **twelve claimants for three seats is a queue,
-not a taxonomy.** The measurement does not disprove him. Filed as its own item.
-
-🔻 **The refusal has a named cost: `9feb0406` shows ZERO notes with three free slots**, carrying a substantive
-returning-runner note. That runner is told nothing. **It is the strongest argument for the rewrite, not against the
-refusal.**
-
-Pattern — `ui-patterns.md` §18 (amended, with the per-note table) · Constants — **none new**; both labels sit beside
-the existing twelve in the owner, which is where §18 puts them · Check — `planRationale.test.ts`, **four new arms**,
-falsified five ways (un-gate either note → rule 1 red · un-wire `Your peak` → three arms red · ship the refused note
-→ two red). ⚠️ **One limit stated in the test:** the rank IS the chain's position, so a "ranked last, rule 1 intact"
-mutation cannot be written; that arm catches absence from the top three, not every mis-rank. ⚠️ Not seen on a device.
-
 ## 🧭 RULED 2026-10-30 — `RUNKED-LOAD-VIEW-01`: **SHIP WITH AMENDMENT.** Bars of the weeks you ran, not two lines about fitness
 
 **Input:** the founder's Runked screenshots (*"I like things like this"*), and the Coaching Board's ruling the same day
