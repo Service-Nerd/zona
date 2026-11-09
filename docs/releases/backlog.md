@@ -7403,6 +7403,32 @@ the gap so widening a corpus fails loudly and the arm gets replaced by a floor. 
 > FIRST match in priority order**, so a silent trigger may be unreachable or merely always
 > outranked — `TRIGGER-BACKTEST-02` (masking analysis) is stubbed and not built.
 
+### 🔲 `ANALYSIS-HR-CEILING-ABSENT-01` — the drift detector's input is missing for every real runner *(filed 2026-11-09, P1)* ⚙️ **NO BOARD** to measure the writer; 🏃 **COACHING BOARD** only if a threshold or a claim moves
+
+Found running `ADJUST-TRIGGER-REACH-02`'s backtest after `TRIGGER-BACKTEST-02` made starvation visible.
+
+📐 **Measured 2026-11-09, live `run_analysis`, superseded rows excluded:** `hr_above_ceiling_pct` — the field
+`zoneDriftScore` reads, and therefore the only input to §12's drift trigger — is present on **75 of 97 rows
+(77.3%)**. ⚠️ **72 of those 75 belong to ONE user**, whose 72 analyses were all written on a single day: a
+backfill, not history. Of the **four** genuine users, **two** have any at all, and one of those has **three
+rows**. 🔴 **The runner with the deepest real history — 6 plan weeks, 14 analyses, 13 separate write days —
+has ZERO.** `ef_trend_pct` tracks it at 74 of 97 with the same concentration. `actual_load_mins` /
+`planned_load_mins`, which `long_run_shortfall` needs, are on **10 of 97**.
+
+⚠️ **THE AGGREGATE IS THE TRAP AND IT IS WHY THIS WAS NEVER NOTICED.** 77.3% reads healthy and describes one
+account. `ADJUST-SESSIONDAY-PREFIX-01` (2026-10-15) fixed the **selector** — the route was filtering on a
+`week_N_` prefix that matched nothing — and that repair was real and verified. **This is a different cause
+with the same effect:** the selector now works and there is nothing to select.
+
+**So §12's ceiling is still enforced in the plan and unwatched in the data**, which is the exact sentence that
+item was written to retire. Measure the WRITER before proposing anything: which ingest path populates
+`hr_above_ceiling_pct`, and whether an Apple-Health run without an HR stream (ADR-011 §5: the iPhone-only
+cohort) simply cannot produce it. **If that is the answer, it is an honest consequence and the DETECTOR is
+fine — but then `zone_drift` can never fire for most runners and the product should not claim it watches.**
+
+🔻 **It also re-prices `ADJUST-TRIGGER-REACH-02`'s January gate.** A December cohort with 4+ weeks and no
+HR-in-zone data starves the same two detectors, so waiting does not settle the question on its own.
+
 ### 🟡 `ADJUST-TRIGGER-REACH-02` — RUN the backtest and report which of the 8 detectors a real runner reaches *(filed 2026-10-08, P1)* ⚙️ **NO BOARD**
 
 > ✅ **UNBLOCKED AND RUN, 2026-10-08.** First real result: **37 week-checks across 7 runners,
@@ -7430,6 +7456,40 @@ the gap so widening a corpus fails loudly and the arm gets replaced by a floor. 
 > backtest fires are on FREE accounts and correctly never reach the live engine:** their trials ended 2026-10-01 and
 > 10-07, `dynamic_reshape_r20` is PAID, and `last_adjustment_check_at` is null for both (the engine woke 10-08, after
 > both trials). Reachability is a property of the runner's data, not of who may receive the change. Still January.
+>
+> 🔑 **RE-RUN 2026-11-09, AND THE STANDING NUMBER WAS WRONG — 2 of 8 reachable is actually 4 of 8.**
+> `TRIGGER-BACKTEST-02` is **BUILT** (feature registry), so `--unmasked` no longer prints a stub, and the
+> report has three states instead of two. **43 week-checks across 7 runners:**
+>
+> | | |
+> |---|---|
+> | ✅ reachable unmasked | **2** — `acute_chronic_high` (russell w2) · `shadow_load` (harv w2/3/4) |
+> | 🔁 **OUTRANKED** | **2** — `zone_drift` (1 week, beaten by `acute_chronic_high`) · `ef_decline` (1 week, beaten by three seniors) |
+> | ⬜ genuinely silent | **3** — `fatigue_accumulation` (4 of 7 runners) · `fitness_signal` (1 runner) · `long_run_shortfall` (1 runner, 3 weeks) |
+> | ⚠️ **STARVED** | **1** — `readiness_signal`, `readinessSignal` present on **0 of 43 weeks** |
+>
+> ⚠️ **AND `zone_drift` READ AS A REGRESSION AND IS NOT ONE.** It fired on the 10-16 and 10-24 runs and came
+> back `never` today. Cause: its source runner's analyses are **all superseded** — Duncan, 8 rows, **0 live**,
+> `plan_start` now 2026-11-30 — so he correctly drops out of the population, and a senior trigger took the one
+> remaining week. **The population moved and the priority order masked the rest; the detector did not change.**
+> This is `ZERO-REJECTION-SERVED-01`'s rule in the adjustment engine: *the engine can move, the definition can
+> move, or the population can move, and only the first is news.*
+>
+> 🔴 **THE PRECONDITION WAS MEASURED OFF THE WRONG TABLE AND I PUBLISHED IT.** Asked what was left to build,
+> I reported *"20 of 25 users have ≥4 run-weeks, the blocker has cleared"* — from `strava_activities`, which
+> is **logged runs**. The detectors read `run_analysis`, which is **analysed runs**: **1 of 4 genuine users**
+> qualifies (6 plan weeks, 14 analyses, 13 separate write days), the next deepest is 3, and the 19-week
+> account was written in a single day. **The correct figure was already in the script's own header, written
+> that morning.** Filed as the lesson, not as a defect in the item.
+>
+> 📐 **COVERAGE IS THE REAL BLOCKER, NOT TIME.** `hr_above_ceiling_pct` — what §12's drift detector reads —
+> sits on **75 of 97 live `run_analysis` rows (77.3%)**, and **72 of those 75 belong to the one backfilled
+> account**. Of the four genuine users, **two have any, and one of those has three rows.** The runner with the
+> deepest real history has **zero**. `actual_load_mins` / `planned_load_mins`, which `long_run_shortfall`
+> needs, are on **10 of 97**. ⚠️ **So "wait until January" is only half the gate.** A December cohort with
+> 4+ weeks and no HR-in-zone data still starves `zone_drift` and `ef_decline`. **Before the next re-run,
+> measure why `hr_above_ceiling_pct` is absent for real runners** — that is a separate item and it is what
+> actually decides whether this question can ever be answered.
 >
 > **Re-run any time** — one command, no new code:
 >

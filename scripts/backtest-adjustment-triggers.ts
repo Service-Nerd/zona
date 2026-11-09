@@ -97,6 +97,15 @@
 // unreachable** — the `SWEEP-VACUOUS-01` class, in the one place where that answer was
 // about to be handed to a blocked board decision.
 //
+// ✅ AND "SILENT" IS THREE STATES NOW, NOT ONE. A detector whose inputs were never present
+// on any replayed week was never TESTED, and its zero is a fact about our data coverage, not
+// about the rule — the `SWEEP-VACUOUS-01` class, which has already cost here once
+// (`recentLongRunAnalyses` was never assembled, so `long_run_shortfall` could not fire
+// whatever the data said). The table now prints STARVED separately, with the week count AND
+// the RUNNER count, because 📐 `hr_above_ceiling_pct` sits on 75 of 97 live `run_analysis`
+// rows — **72 of them one single-day backfill**, so the 77.3% aggregate reads healthy and
+// describes one account.
+//
 //   DOES NOT — prove the route would fire it END TO END. The assembly is now shared, but
 //              the route's gates (tier, the opt-out, `MAX_ADJUSTMENTS_PER_WEEK`, the pending
 //              dedup) are not replayed, and `adjustmentsThisWeek` is deliberately 0 because
@@ -104,11 +113,34 @@
 //   DOES NOT — a false-POSITIVE rate. Nothing here knows whether a firing was RIGHT.
 //              It answers "is this reachable", which is the prerequisite question.
 //
-// 🔴 AND THE STRUCTURAL FINDING THE FIRING TABLE WILL UNDERSTATE: the detector returns
+// 🔴 AND THE STRUCTURAL FINDING THE FIRING TABLE USED TO UNDERSTATE: the detector returns
 // the FIRST match in priority order, never a list. So on any given check at most ONE
 // trigger can win, and a lower-priority trigger is masked whenever a higher one fires.
-// `--unmasked` re-runs each week with the higher-priority signals suppressed, which is the
-// only way to tell "never reachable" from "always beaten to it".
+//
+// ✅ `--unmasked` IS BUILT NOW (`TRIGGER-BACKTEST-02`, 2026-11-09), and the first run
+// overturned this item's own standing number. It had read **"2 of 8 reachable, 6 silent"**
+// since 2026-10-16. Measured with the peel:
+//
+//   reachable unmasked ... 2   acute_chronic_high · shadow_load
+//   OUTRANKED ............ 2   zone_drift (beaten by acute_chronic_high on 1 week)
+//                              ef_decline (beaten by three seniors on 1 week)
+//   genuinely silent ..... 3   fatigue_accumulation · fitness_signal · long_run_shortfall
+//   STARVED .............. 1   readiness_signal — `readinessSignal` present on 0 of 43 weeks
+//
+// **So 4 of 8 are reachable, not 2**, and the number was wrong in the PESSIMISTIC direction
+// for a month because the only mechanism that could see it was a stub. ⚠️ `zone_drift` in
+// particular read as a regression — it fired on the 10-16 and 10-24 runs and came back
+// "never" today — and the truth is that its source runner's analyses were all SUPERSEDED by
+// a plan rebuild (Duncan: 8 rows, 0 live, plan_start now 2026-11-30) while a senior trigger
+// took the one remaining week. **The population moved and the order masked it; the detector
+// did not change.**
+//
+// 🔴 HOW THE ORDER IS OBTAINED, BECAUSE THE OBVIOUS WAY WOULD HAVE BEEN A SECOND COPY.
+// "For each trigger, neutralise its seniors" needs a declared senior list — a second copy of
+// the engine's priority order, the most drift-prone thing this file could hold. Instead the
+// order is OBSERVED: call the detector, neutralise whatever won, call again. The sequence of
+// winners IS the order. A repeat winner is a hard error, so `TRIGGER_INPUTS`'s correctness is
+// asserted at runtime as well as by the 92 arms in `lib/coaching/triggerInputs.test.ts`.
 //
 //   npx tsx scripts/backtest-adjustment-triggers.ts            # firing table
 //   npx tsx scripts/backtest-adjustment-triggers.ts --unmasked # + masking analysis
@@ -125,6 +157,7 @@ import { fetchWeeklyLoad } from '../lib/coaching/weeklyActualLoad'
 import {
   buildAdjustmentSignals, type AnalysisRow, type CompletionRow,
 } from '../lib/coaching/adjustmentEngine'
+import { specFor, unspecified } from '../lib/coaching/triggerInputs'
 import type { Plan } from '../types/plan'
 
 loadEnvConfig(process.cwd())
@@ -153,6 +186,20 @@ async function main() {
   const perRunner: Array<{ email: string; weeks: number; checks: number; fires: number; types: string[] }> = []
   let runnersConsidered = 0, weeksReplayed = 0, threw = 0
   const skipped: string[] = []
+  // TRIGGER-BACKTEST-02 — per trigger, on how many replayed weeks were its inputs PRESENT at
+  // all. This is what separates "silent" (a threshold was tested and not crossed) from
+  // STARVED (nothing was tested). Counted on every run, never behind a flag: the headline
+  // table is actively misleading without it.
+  const inputSeen = new Map<TriggerType, number>()
+  // 🔴 AND THE WEEK COUNT ALONE HAS THE TRAP THIS WHOLE ITEM IS ABOUT. Measured 2026-11-09:
+  // `hr_above_ceiling_pct` sits on 75 of 97 live `run_analysis` rows (77.3%) and **72 of
+  // those 75 belong to ONE single-day backfill**. A coverage line reading "present in 22 of
+  // 43 weeks" would look healthy while describing one account. So RUNNERS are counted beside
+  // weeks — `AN AGGREGATE CANNOT SEE A RUNNER FLIP`, in the harness built to stop exactly
+  // that reading.
+  const inputRunners = new Map<TriggerType, Set<string>>()
+  // The assembled inputs, kept so `--unmasked` can replay each week without a second fetch.
+  const weekInputs: { email: string; weekN: number; input: AdjustmentCheckInput }[] = []
 
   for (const p of plans ?? []) {
     const email = emailOf(p.user_id as string)
@@ -206,6 +253,12 @@ async function main() {
 
       checks++
       weeksReplayed++
+      weekInputs.push({ email, weekN, input })
+      for (const t of DETECTED) {
+        if (!specFor(t)?.present(input)) continue
+        inputSeen.set(t, (inputSeen.get(t) ?? 0) + 1)
+        ;(inputRunners.get(t) ?? inputRunners.set(t, new Set()).get(t)!).add(email)
+      }
       try {
         const out = checkAdjustmentTriggers(input)
         if (out) {
@@ -239,6 +292,19 @@ async function main() {
     process.exit(2)
   }
 
+  // 🔴 A DETECTED TRIGGER WITH NO `TRIGGER_INPUTS` SPEC WOULD SILENTLY REVERT TO THE OLD
+  // TWO-STATE REPORT for that one trigger: `inputSeen` would read 0 and it would print
+  // STARVED, which is a claim about the DATA made from a gap in the HARNESS. Refuse instead.
+  // `triggerInputs.test.ts` also fails the build on this, but a measurement script that
+  // trusts a test it does not run is the `A PLAUSIBLE NAME IS NOT A RUNNING CHECK` class.
+  const noSpec = unspecified()
+  if (noSpec.length) {
+    console.log(`🔴 NO TRIGGER_INPUTS SPEC FOR: ${noSpec.join(', ')}`)
+    console.log('   Add one in lib/coaching/triggerInputs.ts. Until then this report cannot')
+    console.log('   tell STARVED from silent for those triggers, so it will not print one.')
+    process.exit(2)
+  }
+
   console.log('PER TRIGGER — would it have fired?')
   let reachable = 0
   for (const t of ALL_TRIGGERS) {
@@ -250,26 +316,109 @@ async function main() {
       reachable++
       console.log(`  ✅ ${t.padEnd(22)} n=${String(e.n).padStart(3)}  runners=${e.users.size}${tag}`)
       console.log(`       e.g. ${e.weeks.slice(0, 3).join(' · ')}`)
+    } else if (detected) {
+      // 🔴 TRIGGER-BACKTEST-02 — "never" USED TO BE ONE WORD FOR TWO FINDINGS, and only one
+      // of them is a finding. A detector whose inputs were never present on any replayed
+      // week was not tested: no threshold was reached for it, so its zero says nothing about
+      // the rule. That is this repo's `SWEEP-VACUOUS-01` class, and it had already cost once
+      // here — `recentLongRunAnalyses` was never assembled, so `long_run_shortfall` could not
+      // fire whatever the data said, and its zero sat beside seven genuine ones.
+      const seen = inputSeen.get(t) ?? 0
+      if (seen === 0) {
+        console.log(`  ⚠️ ${t.padEnd(22)} STARVED — inputs present in 0 of ${weeksReplayed} weeks`)
+        console.log(`       reads ${(specFor(t)?.reads ?? []).join(', ')} — nothing to judge, so this is NOT evidence about the rule`)
+      } else {
+        const rn = inputRunners.get(t)?.size ?? 0
+        console.log(`  ⬜ ${t.padEnd(22)} silent — inputs present in ${seen} of ${weeksReplayed} weeks`
+          + ` across ${rn} of ${runnersConsidered} runners, threshold never crossed`)
+        if (rn <= 1) console.log(`       ⚠️  ONE runner's data. A threshold not crossed by one person is not a measurement.`)
+      }
     } else {
       console.log(`  ⬜ ${t.padEnd(22)} never${' '.repeat(12)}${tag}`)
     }
   }
   const detectedReachable = DETECTED.filter(t => fired.has(t))
-  console.log(`\n  OF THE ${DETECTED.length} WE WOULD CLAIM TO WATCH FOR: ${detectedReachable.length} reachable, ${DETECTED.length - detectedReachable.length} silent`)
+  const starved = DETECTED.filter(t => !fired.has(t) && (inputSeen.get(t) ?? 0) === 0)
+  const silent  = DETECTED.filter(t => !fired.has(t) && (inputSeen.get(t) ?? 0) > 0)
+  console.log(`\n  OF THE ${DETECTED.length} WE WOULD CLAIM TO WATCH FOR: ${detectedReachable.length} reachable,`
+    + ` ${silent.length} silent, ${starved.length} STARVED`)
   if (detectedReachable.length) console.log(`    reachable: ${detectedReachable.join(' · ')}`)
-  const silent = DETECTED.filter(t => !fired.has(t))
-  if (silent.length) console.log(`    silent   : ${silent.join(' · ')}`)
+  if (silent.length)   console.log(`    silent   : ${silent.join(' · ')}`)
+  if (starved.length) {
+    console.log(`    STARVED  : ${starved.join(' · ')}`)
+    console.log(`    ⚠️  A STARVED detector is UNMEASURED, not silent. Quoting it in the silent`)
+    console.log(`       column is how a data-coverage gap gets read as a working rule.`)
+  }
 
   console.log('\nPER RUNNER')
   for (const r of perRunner.sort((a, b) => b.checks - a.checks))
     console.log(`  ${r.email.padEnd(36)} weeksReached=${String(r.weeks).padStart(2)} checks=${String(r.checks).padStart(2)} fires=${String(r.fires).padStart(2)}  ${r.types.join(',') || '-'}`)
 
   if (has('--unmasked')) {
-    // 🔴 THE PRIORITY-ORDER PROBLEM. The detector returns the FIRST match, so a silent
-    // trigger may be unreachable OR merely always beaten. Re-run with each trigger's
-    // seniors neutralised to tell those two apart.
+    // 🔴 THE PRIORITY-ORDER PROBLEM, AND HOW IT IS ANSWERED WITHOUT RE-TYPING THE ORDER.
+    //
+    // `checkAdjustmentTriggers` returns the FIRST match, so a silent trigger may be
+    // unreachable OR merely always beaten. The obvious implementation — "for each trigger,
+    // neutralise its seniors" — needs a declared senior list, which is a SECOND COPY of the
+    // engine's priority order and the single most drift-prone thing in this file.
+    //
+    // ✅ So the order is OBSERVED, never declared: call the detector, neutralise whatever
+    // won, call again. The sequence of winners IS the priority order on that week's data,
+    // measured. Anything that appears at peel depth ≥ 1 was reachable and OUTRANKED.
+    //
+    // ⚠️ AND THE LOOP CHECKS ITS OWN PREMISE. If a neutralisation does not neutralise, the
+    // same trigger wins forever; so a repeat winner is a hard error, not a loop. That turns
+    // `TRIGGER_INPUTS`'s correctness into a runtime assertion rather than a hope — on top of
+    // the 92 arms in `triggerInputs.test.ts` that falsify every entry.
     console.log('\nMASKING ANALYSIS — is a silent trigger unreachable, or just outranked?')
-    console.log('  (not yet implemented — needs per-trigger input neutralisation, filed as TRIGGER-BACKTEST-02)')
+    const outranked = new Map<TriggerType, { n: number; behind: Set<string> }>()
+    let peeled = 0, broke = 0
+    for (const w of weekInputs) {
+      let input = w.input
+      const seenHere: TriggerType[] = []
+      for (let depth = 0; depth < DETECTED.length + 2; depth++) {
+        const out = checkAdjustmentTriggers(input)
+        if (!out) break
+        const t = out.trigger.type
+        if (seenHere.includes(t)) {
+          console.log(`  🔴 ${t} won twice on ${w.email} w${w.weekN} — its \`neutralise\` does not neutralise.`)
+          console.log(`     This is a defect in lib/coaching/triggerInputs.ts, not a finding about the runner.`)
+          broke++
+          break
+        }
+        seenHere.push(t)
+        if (depth > 0) {
+          const e = outranked.get(t) ?? { n: 0, behind: new Set<string>() }
+          e.n++; seenHere.slice(0, depth).forEach(s => e.behind.add(s))
+          outranked.set(t, e)
+        }
+        const spec = specFor(t)
+        if (!spec) {
+          console.log(`  🔴 ${t} has no TRIGGER_INPUTS spec — cannot peel past it.`)
+          broke++
+          break
+        }
+        input = spec.neutralise(input)
+        peeled++
+      }
+    }
+    if (broke) { console.log(`\n  🔴 ${broke} week(s) could not be peeled. The masking result below is INCOMPLETE.`) }
+    console.log(`  peeled ${peeled} trigger(s) across ${weekInputs.length} week-checks\n`)
+    for (const t of DETECTED) {
+      if (fired.has(t)) { console.log(`  ✅ ${t.padEnd(22)} fires unmasked — nothing to separate`); continue }
+      const e = outranked.get(t)
+      if (e) {
+        console.log(`  🔁 ${t.padEnd(22)} OUTRANKED — would fire on ${e.n} week(s), beaten by ${Array.from(e.behind).join(', ')}`)
+      } else if ((inputSeen.get(t) ?? 0) === 0) {
+        console.log(`  ⚠️ ${t.padEnd(22)} STARVED — still nothing to judge even with seniors peeled`)
+      } else {
+        console.log(`  ⬜ ${t.padEnd(22)} genuinely silent — inputs present, no threshold crossed at any depth`)
+      }
+    }
+    console.log(`\n  ⚠️  OUTRANKED IS NOT A DEFECT. The route is meant to propose ONE change, and a`)
+    console.log(`     senior trigger winning is the design. What this separates is "the rule cannot`)
+    console.log(`     fire on real data" from "the rule never gets to speak", which are different`)
+    console.log(`     answers to the chair's question and used to share a column.`)
   }
 
   if (skipped.length) {
