@@ -12,6 +12,7 @@ import { fetchWeeklyLoad, priorWeeks, EMPTY_LOAD } from '@/lib/coaching/weeklyAc
 import { daysDueByEndOfYesterday } from '@/lib/coaching/dayBoundary'
 import { COACHING_RULE_ENGINE_VERSION } from '@/lib/coaching/constants'
 import { buildWeeklyReportPrompt } from '@/lib/coaching/prompts/weeklyReport'
+import { raceKm, plannedCoveredKm } from '@/lib/plan/weekVolume'
 import { buildAthleteContext } from '@/lib/coaching/prompts/athleteContext'
 import { isVerifiedCompletion } from '@/lib/coaching/completionVerification'
 import { getCurrentWeekIndex, isDateWithinWeek, isDateBeforePlan, readPlanJson } from '@/lib/plan'
@@ -252,7 +253,28 @@ export async function POST(req: NextRequest) {
   const sessionsPlanned = Object.keys(week.sessions).filter(d => {
     return isCountableSession(week.sessions[d as keyof typeof week.sessions])
   }).length
-  const plannedKm = week.weekly_km ?? 0
+  // 🔴 RACE-WEEK-ZERO-KM-01 (2026-11-09). §121 takes the race out of `weekly_km`
+  // ("the race is the test, not the training"), so on race week this read 0 — while
+  // `plannedKmToDate` below sums session `distance_km` and `isCountableSession` does NOT
+  // exclude a race, so THAT figure includes it. Two planned numbers, two bases, one
+  // sentence: measured on a real Monday-race plan, the prompt handed the model
+  // **"42.2km actual vs 42.2km due by end of yesterday (0.0km full-week target)"** — a
+  // full-week target smaller than the to-date figure, on the one week that matters most.
+  //
+  // ⚠️ THE COMPARISON NEEDS ONE BASIS AND THE ACTUAL SETS IT. `linkedKm + offPlanKm`
+  // includes the race the runner ran, so the planned side must too.
+  // ⚠️ `raceKm(week)`, NEVER A LITERAL, and ADDED AT THE CALLER, never in `weekly_km`.
+  // §121 is the statute and `weekVolume.ts`'s header warns that touching it double-counts;
+  // this is a caller choosing the basis for its own comparison.
+  // ⚠️ AND THE TWO ARE KEPT SEPARATE IN THE PROMPT, because §121 Amendment 1 is binding
+  // (Sims): race week shows what the runner TRAINS and what they RACE, never folded.
+  // ⚠️ `plannedCoveredKm`, NOT THE ADDITION WRITTEN OUT HERE. The first cut of this
+  // fix computed `trainingKm + raceKm` at this call site and its test restated the
+  // same expression — so reverting this line to `week.weekly_km ?? 0` left the test
+  // GREEN. A checker sharing the producer's expression cannot catch the producer
+  // being wrong (`TIER-OWNER-01`, `deloadCadence.test.ts`).
+  const plannedRaceKm = raceKm(week as never)
+  const plannedKm = plannedCoveredKm(week as never)
 
   // Sessions and km that were due by yesterday end-of-day (for mid-week
   // comparison). Today is excluded — it's still in flight.
@@ -442,6 +464,7 @@ export async function POST(req: NextRequest) {
       previousReport,
       raceDebrief,
       displayUnits,
+      plannedRaceKm,
     )
 
     const aiRes = await callAnthropic({

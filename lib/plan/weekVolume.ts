@@ -89,6 +89,30 @@ export function planArcSeries(weeks: WeekLike[]): { km: number[]; phase: (string
 }
 
 /**
+ * What the plan ASKED the runner to COVER that week — training plus the race.
+ *
+ * 🔴 THE BASIS FOR A PLANNED-VS-ACTUAL COMPARISON, AND IT HAS ONE OWNER BECAUSE A
+ * SECOND COPY WENT GREEN UNDER A MUTATION (`RACE-WEEK-ZERO-KM-01`, 2026-11-09).
+ * `app/api/weekly-report` compares `linkedKm + offPlanKm` — which includes the race
+ * the runner ran — against the planned figure. Reading `weekly_km` there gave **0**
+ * on race week (§121 correctly excludes the race), so the prompt handed the model
+ * *"42.2km actual vs 0.0km planned"*. Apples to oranges, on the one week that matters.
+ *
+ * ⚠️ IT IS NOT A RE-DEFINITION OF §121. `trainingKm` is still what the runner TRAINS
+ * and `weekly_km` is untouched; this is a different question with a different answer,
+ * named once so a caller cannot write the addition out by hand — which is how the
+ * first version of this fix shipped with a test that restated the route's expression
+ * and could not see the route change underneath it (`TIER-OWNER-01`'s shape).
+ *
+ * ⚠️ DISPLAY STILL OBEYS §121 Amendment 1 (Sims, binding): a SURFACE never folds the
+ * two into one number — see `weekVolumeLabel`. This is an arithmetic basis for a
+ * comparison, and the surface that uses it names the race alongside it.
+ */
+export function plannedCoveredKm(w: WeekLike): number {
+  return trainingKm(w) + raceKm(w)
+}
+
+/**
  * §121 Amendment 1 — race week shows what the runner TRAINS and what they RACE,
  * **separately, never one folded number** (Sims, binding).
  *

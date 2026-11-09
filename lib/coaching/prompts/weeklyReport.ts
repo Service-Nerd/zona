@@ -94,6 +94,9 @@ export function buildWeeklyReportPrompt(
   /** Reader's units (FMT-01). Optional + last so every existing positional
    *  call — including the tests — defaults to 'km' and stays byte-identical. */
   units: DistanceUnits = 'km',
+  /** The race distance inside `data.totalKmPlanned`, 0 on every other week
+   *  (RACE-WEEK-ZERO-KM-01). Optional + last for the same reason as `units`. */
+  raceKmPlanned = 0,
 ): string {
   const { fmtDist, fmtPlanned, fmtRace } = promptDistanceFormatters(units)
   const weeksToRace = plan.meta.race_date
@@ -146,9 +149,19 @@ RACE WEEK — this is a debrief, not a scorecard. The athlete's goal race (${rac
   const sessionLine = (isInFlight && sessionsPlannedToDate !== undefined)
     ? `Sessions completed: ${data.sessionsCompleted} of ${data.sessionsPlanned} this week (${sessionsPlannedToDate} due by end of yesterday)`
     : `Sessions completed: ${data.sessionsCompleted} of ${data.sessionsPlanned}`
+  // 🔴 RACE-WEEK-ZERO-KM-01 (2026-11-09) — §121 Amendment 1 IS BINDING HERE, and a
+  // prompt is a display surface (ADR-015 Amendment). Sims: race week shows what the
+  // runner TRAINS and what they RACE **separately, never one folded number**. The
+  // caller now sends a single-basis `totalKmPlanned` so the comparison is coherent;
+  // this names the race inside it so the model is not told a 42.2 km target was
+  // ordinary training. `raceKmPlanned` is 0 on every other week, so this clause and
+  // every existing prompt are byte-identical off race week.
+  // Two forms, because the in-flight line already sits inside parentheses and
+  // nesting them reads as a typo to a model being asked to write prose.
+  const racePart = raceKmPlanned && raceKmPlanned > 0 ? `incl. ${fmtRace(raceKmPlanned)} race` : ''
   const volumeLine = (isInFlight && plannedKmToDate !== undefined)
-    ? `Volume: ${fmtDist(data.totalKmActual, 1)} actual vs ${fmtDist(plannedKmToDate, 1)} due by end of yesterday (${fmtDist(data.totalKmPlanned, 1)} full-week target)`
-    : `Volume: ${fmtDist(data.totalKmActual, 1)} actual vs ${fmtDist(data.totalKmPlanned, 1)} planned`
+    ? `Volume: ${fmtDist(data.totalKmActual, 1)} actual vs ${fmtDist(plannedKmToDate, 1)} due by end of yesterday (${fmtDist(data.totalKmPlanned, 1)} full-week target${racePart ? `, ${racePart}` : ''})`
+    : `Volume: ${fmtDist(data.totalKmActual, 1)} actual vs ${fmtDist(data.totalKmPlanned, 1)} planned${racePart ? ` (${racePart})` : ''}`
 
   const remainingLine = (remainingScheduledSessions && remainingScheduledSessions.length > 0)
     ? `\n- Remaining sessions already in the plan: ${remainingScheduledSessions.join(', ')}`

@@ -1974,7 +1974,56 @@ This runner will not see it (his plan is already generated), so it is latent. Th
 (WEEK-THEME-TOKEN-ENRICH-01) is the precedent: reject or strip tokens in fields that are not token-resolved. 1 of 9
 restored plans.
 
-### 🔲 `RACE-WEEK-ZERO-KM-01` — a race week holding only the race reads "0 km" ⚙️ **NO BOARD** to measure; 🧭 **DESIGN BOARD** if the display changes
+### ✅ `RACE-WEEK-ZERO-KM-01` — **SHIPPED 2026-11-09. The 0 was NOT data-only: the weekly report told the model "42.2km actual vs 0.0km planned"** ⚙️ **NO BOARD** (defect against §121 Am. 1)
+
+✅ **MEASURED AND FIXED 2026-11-09, and the item's own premise is overturned.** It said *"the app does
+not show 0… the 0 is in the data only"* — true of `PlanCalendar` and Today, which sum sessions and
+never read `weekly_km`. 🔴 **It was never true of `app/api/weekly-report`, which reads
+`week.weekly_km ?? 0` and hands the figure to the model.** Verified by **running the real prompt** off
+a real generated Monday-race plan:
+
+> `Volume: 42.2km actual vs 0.0km planned`
+
+🔴 **AND THE MID-WEEK FORM IS WORSE, BECAUSE IT CONTRADICTS ITSELF IN ONE SENTENCE:**
+
+> `Volume: 42.2km actual vs 42.2km due by end of yesterday (0.0km full-week target)`
+
+**A full-week target smaller than the to-date figure.** Two planned numbers on two bases:
+`plannedKmToDate` sums session `distance_km` and `isCountableSession` does **not** exclude a race, so
+it includes it; `plannedKm` read `weekly_km`, which §121 correctly excludes it from. **On the one week
+that matters most, with the model asked to narrate it.**
+
+📐 **THE POPULATION SAID NOTHING AND THE MECHANISM SAID EVERYTHING.** Production: **0 of 38 stored
+race weeks** have `weekly_km` 0, and **0 of 42 weekly reports** have `total_km_planned` 0 — the item's
+own plan `3cc7c3a9` week 20 now reads **8**, because it was rebuilt. But **9 of 9 generated
+Monday-race plans produce a race-only final week at `weekly_km: 0`.** ⚠️ **A clean population is not
+a fixed defect**, which is why the gate generates rather than reading the table.
+
+⚖️ **⚙️ NO BOARD, and the exemption is that the remedy was already ratified.** §121 Amendment 1
+(Sims, binding) says race week shows what the runner TRAINS and what they RACE **separately, never
+one folded number**, and a prompt is a display surface (ADR-015 Amendment). The prompt folded them.
+**`weekly_km` is untouched** — §121 stands; the fix is a **caller** choosing the basis for its own
+comparison, which is set by the actual (`linkedKm + offPlanKm` includes the race the runner ran).
+
+🔴 **MY FIRST CUT OF THE GATE WAS HOLLOW ON THE ONE MUTATION THAT MATTERED, AND THE MUTATION IS WHAT
+FOUND IT.** The test computed `trainingKm + raceKm` itself — the same expression as the route — so
+reverting the route to `week.weekly_km ?? 0` left **all six arms green**. *A checker that restates the
+producer's arithmetic cannot catch the producer changing* (`TIER-OWNER-01`, `deloadCadence.test.ts`).
+✅ **`plannedCoveredKm` in `weekVolume.ts` is the basis's single owner**, imported by both sides, plus
+a **source arm** on the route — declared as one, comments stripped, because `app/` is outside
+vitest's collection so no behavioural test in this repo can reach a route.
+
+📐 **7 arms, falsified six ways, each firing the named arm:** the route reverted to `weekly_km` · the
+route adding it by hand instead of calling the owner · the owner dropping the race · the prompt
+folding the two · the clause made non-inert off race week · and a corpus arm that fails if the final
+week stops being race-only. **763 files / 7,712 tests; `review:coaching` 94.6% WHOLE PRODUCT,
+identical, 7 of 7 steps, no measured rate moved** — the engine is untouched, as claimed.
+
+🔻 **What this does not fix.** `GeneratePlanScreen` also reads `weekly_km` (`peakKm = Math.max(...)`),
+and a 0 cannot move a maximum, so it is harmless there and deliberately left. **And the `weekly_km: 0`
+itself stays, correctly** — §121 is the statute; what changed is one caller's comparison.
+
+### ⚙️ `RACE-WEEK-ZERO-KM-01` — the original filing, for the record ⚙️ **NO BOARD** to measure; 🧭 **DESIGN BOARD** if the display changes
 
 Raised by the 28 Oct digest on claymanwaterman (3cc7c3a9): race on a Monday, so week 20 holds the race alone, and
 `weekly_km` excludes race km by convention, giving 0. **Measured 2026-10-28: the app does not show 0.** `PlanCalendar` sums the week's sessions

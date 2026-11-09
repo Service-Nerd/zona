@@ -29,6 +29,20 @@ Empty body accepted.
     "load_ratio": 1.1,
     "sessions_completed": 4,
     "sessions_planned": 5,
+
+> 🔴 **`total_km_planned` IS RACE-INCLUSIVE SINCE 2026-11-09** (`RACE-WEEK-ZERO-KM-01`).
+> It is `plannedCoveredKm(week)` — `trainingKm + raceKm`, the **single owner** of the basis
+> in `lib/plan/weekVolume.ts` — and **not** `week.weekly_km`, which §121 deliberately
+> excludes the race from. The comparison's basis is set by the ACTUAL
+> (`linkedKm + offPlanKm` includes the race the runner ran), so a race-exclusive planned
+> figure made it apples to oranges: on race week this field read **0** and the AI prompt
+> said *"42.2km actual vs 0.0km planned"*.
+>
+> ⚠️ **§121 itself is unchanged** — `weekly_km` still excludes the race and `trainingKm` is
+> still what the runner TRAINS. This route asks a different question.
+> ⚠️ **The prompt names the race rather than folding it** (§121 Amendment 1, Sims, binding):
+> `"42.2km actual vs 42.2km planned (incl. 42.2km race)"`. Off race week the clause is
+> inert and every prompt is byte-identical.
     "rule_engine_version": "1.0.0",
     "created_at": "2026-04-29T10:00:00Z"
   },
