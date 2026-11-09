@@ -30,6 +30,7 @@ import { pageMetadata } from '@/lib/marketing/siteMeta'
 import { FOUNDER_STORY } from '@/lib/marketing/founderStory'
 import { SiteHeader } from '@/components/marketing/SiteHeader'
 import { SiteFooter } from '@/components/marketing/SiteFooter'
+import { TAP_TARGET_MIN_PX } from '@/components/ui/tapTarget'
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://www.zonna.run'
 const PAGE_URL = `${APP_URL}/about`
@@ -205,7 +206,7 @@ export default function AboutPage() {
         <a
           href="mailto:russ@zonna.run"
           style={{
-            display: 'inline-flex', alignItems: 'center', minHeight: '44px',
+            display: 'inline-flex', alignItems: 'center', minHeight: TAP_TARGET_MIN_PX,
             fontSize: 'var(--fs-body)', color: 'var(--moss-strong)', fontWeight: 600,
             textDecoration: 'underline', textUnderlineOffset: '3px',
           }}

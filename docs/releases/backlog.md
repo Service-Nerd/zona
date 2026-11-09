@@ -8640,7 +8640,37 @@ about whether the design system absorbs them, and the honest answer may be *"no"
 
 ---
 
-#### 🟡 `TAP-TARGET-INLINE-44-01` — 17 inline `minHeight: 44` literals that should import the owner *(P3, filed 2026-10-05)* ⚙️ **NO BOARD**
+#### ✅ `TAP-TARGET-INLINE-44-01` — **SHIPPED 2026-11-09. All 16 converted; the baseline is 0, so the ratchet is now a RULE** *(P3, filed 2026-10-05)* ⚙️ **NO BOARD**
+
+✅ **BUILT 2026-11-09.** Every inline `minHeight: 44` imports `TAP_TARGET_MIN_PX`. **29 → 26 → 17 →
+16 → 0.** `INLINE_BASELINE` is **0**, which changes what the arm is: it was a ratchet over declared
+debt, it is now a rule — **the next control that types the number instead of importing it fails the
+build**, which is the property the register was only ever approximating.
+
+🔴 **THREE NUMBERS AND THE GATE'S WAS THE ONLY RIGHT ONE.** The heading said **17**; the item's own
+re-measurement note said **16**; a fresh `grep -rE "minHeight: *'?44"` over `app/` + `components/`
+said **17** again — **because it counted the regex literal inside `tapTarget.test.ts` itself.** The
+gate excludes `.test.` and had been right all along. ⚠️ **The gate's population is the one the gate
+governs; mine was a directory.** Same shape as `TEST-LIVENESS-COVERAGE-01` an hour earlier.
+
+📐 **No visible delta, PROVED on the diff rather than asserted:** 16 removals each containing
+`minHeight: 44`, 16 additions each the constant, and **zero changed lines touching neither that nor
+the import**. React renders `minHeight: 44` as `min-height: 44px`, so `'44px'` → `TAP_TARGET_MIN_PX`
+is byte-identical output. 96 component test files / 846 tests green, markup suites included.
+⚖️ **Design Board exempt in one line** (defect fix, no visible delta, no new pattern) — the guard
+fired because the conversion rewrote whole files.
+
+🔻 **Falsified both ways:** restoring `minHeight: '44px'` fails, and so does the px-less
+`minHeight: 44` — the second matters because that form is what `PhoneShell` actually had.
+⚠️ **The `.btn` classes in `globals.css` remain OUT OF SCOPE and that is not debt:** the website has
+no React, so the CSS floor is the correct owner there. Two layers, deliberately.
+
+🔻 **One thing this does not do.** It governs `minHeight` only. A control can still be under 44px by
+having no `minHeight` at all, which is what `TAP-TARGET-FLOOR-01` measures and what found 21 real
+violations with 106 hand-rolled controls invisible to it. **This closes the duplication, not the
+floor.**
+
+#### 🟡 `TAP-TARGET-INLINE-44-01` — the original filing, for the record ⚙️ **NO BOARD**
 
 > 🔄 **RE-MEASURED 2026-11-07: 17 → 16 inline `minHeight: 44` literals** (`grep -rE "minHeight: *'?44"`
 > over `app/` and `components/`). One was paid since filing.

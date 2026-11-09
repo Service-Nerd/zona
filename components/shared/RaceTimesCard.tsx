@@ -24,6 +24,7 @@ import { RaceProgressArcRow } from './RaceProgressArcRow'
 import { RACE_PROJECTIONS_COPY, type RaceProjectionsVariant } from './raceProjectionsCopy'
 import Button from '@/components/ui/Button'
 import { MICRO_LABELS } from './microLabels'
+import { TAP_TARGET_MIN_PX } from '@/components/ui/tapTarget'
 
 type TargetRace = {
   distanceKm:      number
@@ -332,7 +333,7 @@ export function RaceTimesCard({
                 <Button variant="ghost" 
                   type="button"
                   onClick={() => setDistancesOpen(o => !o)}
-                  aria-expanded={distancesOpen} style={{ width: '100%', minHeight: '44px', padding: '4px 0', background: 'none', font: 'inherit' }}>
+                  aria-expanded={distancesOpen} style={{ width: '100%', minHeight: TAP_TARGET_MIN_PX, padding: '4px 0', background: 'none', font: 'inherit' }}>
                   <span style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', fontWeight: 500, color: 'var(--ink-2)' }}>
                     {toggleLabel}
                   </span>

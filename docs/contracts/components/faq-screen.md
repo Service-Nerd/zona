@@ -46,6 +46,12 @@ found `plans.ts`, which lives in **data**, not a page.
 rotation is owned by `globals.css` (`details[open] > summary > span[aria-hidden]`), so the marker
 **must** stay a direct `aria-hidden` span child of `summary`. No class, no local rule. Summary
 carries a 44px minimum target via padding.
+⚠️ **The row's own `minHeight` imports `TAP_TARGET_MIN_PX` since 2026-11-09**
+(`TAP-TARGET-INLINE-44-01`) rather than typing 44. **No prop, state or rendered
+geometry changed** — React emits `min-height: 44px` for the constant exactly as it
+did for the string — so this contract's interface is unaltered; the note exists
+because the floor's value now has one owner and a reader should not hunt for a
+literal that is no longer there.
 
 ⚠️ **No `FAQPage` JSON-LD.** Google retired FAQPage rich results in **May 2026**; we already ship
 the dead schema in two places (`SEO-SCHEMA-STALE-01`).

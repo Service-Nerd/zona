@@ -1585,7 +1585,7 @@ export default function SessionPopupInner({ session, weekN, aiNotes, preloadedRu
                     const tagColor = tag === 'Fresh' ? 'var(--moss)' : tag === 'Fine' ? 'var(--moss)' : tag === 'Heavy' ? 'var(--warn)' : 'var(--danger)'
                     return (
                       <button key={tag} onClick={() => { const next = isActive ? null : tag; setFatigueTag(next); saveRPEFatigue(rpe, next) }}
-                        style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', padding: '10px 18px', minHeight: '44px', borderRadius: '20px', border: `1px solid ${isActive ? tagColor : 'var(--line)'}`, background: isActive ? `color-mix(in srgb, ${tagColor} 9%, transparent)` : 'transparent', color: isActive ? hueText(tagColor) : 'var(--mute)', cursor: 'pointer', fontWeight: isActive ? 500 : 400, transition: 'all 0.12s' }}>
+                        style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', padding: '10px 18px', minHeight: TAP_TARGET_MIN_PX, borderRadius: '20px', border: `1px solid ${isActive ? tagColor : 'var(--line)'}`, background: isActive ? `color-mix(in srgb, ${tagColor} 9%, transparent)` : 'transparent', color: isActive ? hueText(tagColor) : 'var(--mute)', cursor: 'pointer', fontWeight: isActive ? 500 : 400, transition: 'all 0.12s' }}>
                         {tag}
                       </button>
                     )

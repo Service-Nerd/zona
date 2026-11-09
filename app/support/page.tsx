@@ -5,6 +5,7 @@ import { WEB_FAQS } from '@/lib/faq'
 import { pageMetadata } from '@/lib/marketing/siteMeta'
 import { SiteHeader } from '@/components/marketing/SiteHeader'
 import { SiteFooter } from '@/components/marketing/SiteFooter'
+import { TAP_TARGET_MIN_PX } from '@/components/ui/tapTarget'
 
 export const metadata: Metadata = pageMetadata({
   title: `Support`,
@@ -114,7 +115,7 @@ export default function SupportPage() {
                 <summary style={{
                   listStyle: 'none', cursor: 'pointer',
                   display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                  gap: '12px', padding: 'var(--space-4) var(--space-4)', minHeight: '44px', boxSizing: 'border-box',
+                  gap: '12px', padding: 'var(--space-4) var(--space-4)', minHeight: TAP_TARGET_MIN_PX, boxSizing: 'border-box',
                   fontFamily: 'var(--font-ui)', fontSize: 'var(--fs-body)', fontWeight: 500,
                   color: 'var(--text-primary)', lineHeight: 1.4,
                 }}>

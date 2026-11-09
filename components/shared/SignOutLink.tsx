@@ -30,6 +30,7 @@
 
 import { useState } from 'react'
 import { useSignOut } from '@/lib/auth/signOut'
+import { TAP_TARGET_MIN_PX } from '@/components/ui/tapTarget'
 
 export default function SignOutLink({ disabled = false }: {
   /** True while the host screen is mid-action, so the escape cannot fire
@@ -55,7 +56,7 @@ export default function SignOutLink({ disabled = false }: {
       style={{
         width: '100%', background: 'none', border: 'none',
         // 44px is the iOS HIG minimum. The hand-rolled original used 40.
-        padding: '12px 0', minHeight: '44px',
+        padding: '12px 0', minHeight: TAP_TARGET_MIN_PX,
         // Separation, not decoration. On Connect Runs this link sits directly
         // under the screen's own "Not now →" skip, and at 375px the two read as
         // a pair of near-identical muted links — one skips a step, the other

@@ -26,6 +26,7 @@ import { authedFetch } from '@/lib/supabase/authedFetch'
 import { createClient } from '@/lib/supabase/client'
 import type { Session } from '@/types/plan'
 import { useState } from 'react'
+import { TAP_TARGET_MIN_PX } from '@/components/ui/tapTarget'
 
 export default function ManualRunModal({ weekN, sessionKey, preferredUnits, onClose, onSaved, sessionName, sessionType, plannedDistanceKm, plannedDurationMins, loggedDistanceKm, isEdit, accumulate, existingTotalKm, existingEffortCount, offPlan = false, sessionDate }: {
   weekN: number
@@ -366,7 +367,7 @@ export default function ManualRunModal({ weekN, sessionKey, preferredUnits, onCl
                       }
                       saveReflect(rpe, newTag)
                     }} style={{
-                      fontFamily: 'var(--font-ui)', fontSize: '12px', padding: '10px 16px', minHeight: '44px',
+                      fontFamily: 'var(--font-ui)', fontSize: '12px', padding: '10px 16px', minHeight: TAP_TARGET_MIN_PX,
                       borderRadius: '20px',
                       border: `0.5px solid ${active ? tagColor : 'var(--border-col)'}`,
                       background: active ? `color-mix(in srgb, ${tagColor} 12%, transparent)` : 'transparent',

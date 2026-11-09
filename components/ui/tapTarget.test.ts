@@ -55,7 +55,24 @@ describe('TAP-TARGET-DECISIONS-01 — the floor has one owner', () => {
   // 17, and the difference is the whole reason the number is derived in the test
   // rather than typed into it.
   it('inline 44 literals do not grow', () => {
-    const INLINE_BASELINE = 16   // 17 → 16: the recovery card's hand-sized 44px ghost became a Button secondary (2026-10-18)
+    // ✅ DEBT PAID IN FULL, 2026-11-09 (`TAP-TARGET-INLINE-44-01`). 29 → 26 → 17 → 16 → **0**.
+    // All sixteen remaining inline literals import the owner; the conversion is
+    // literal-to-constant and nothing else, proved on the diff (16 removals each
+    // containing `minHeight: 44`, 16 additions each the constant, zero changed lines
+    // touching neither that nor the import). React renders `minHeight: 44` as
+    // `min-height: 44px`, so `'44px'` → `TAP_TARGET_MIN_PX` is byte-identical output.
+    //
+    // ⚠️ THE BASELINE IS 0 NOW, WHICH CHANGES WHAT THIS ARM IS. It was a ratchet over
+    // declared debt; it is a RULE: no inline 44 at all. The next control that types the
+    // number instead of importing it fails the build, which is the property the register
+    // was only ever approximating.
+    //
+    // ⚠️ AND THE ITEM'S HEADING SAID 17 WHILE ITS OWN CORRECTION NOTE SAID 16, and a
+    // fresh grep across `app/` + `components/` ALSO said 17 — because it counted the
+    // regex literal in THIS file. The gate excludes `.test.` and was right all along at
+    // 16. Three numbers, and the gate's was the only one derived from the population it
+    // governs.
+    const INLINE_BASELINE = 0
     let n = 0
     for (const f of FILES) {
       n += (readFileSync(f, 'utf8').match(/minHeight:\s*'?44(?:px)?'?/g) ?? []).length

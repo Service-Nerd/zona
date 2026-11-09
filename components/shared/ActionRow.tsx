@@ -24,6 +24,7 @@ import type { ReactNode } from 'react'
 // CHEVRON-OWNER-01 — was a local `const` here, which is the very trap this component's
 // own comment was written about. Extracted so `row()` and anything else can reach it.
 import { Chevron } from './Chevron'
+import { TAP_TARGET_MIN_PX } from '@/components/ui/tapTarget'
 
 export interface ActionRowProps {
   /** The verb. What the runner is about to do. */
@@ -52,7 +53,7 @@ export default function ActionRow({ title, subtitle, onClick, divider = false, a
         borderBottom: divider ? '1px solid var(--line)' : 'none',
         // 44px is the documented minimum tap target — a row whose content is
         // short must still be reachable with a thumb.
-        minHeight: '44px',
+        minHeight: TAP_TARGET_MIN_PX,
         cursor: 'pointer', textAlign: 'left',
       }}
     >

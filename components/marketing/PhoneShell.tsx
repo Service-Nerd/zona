@@ -19,6 +19,7 @@
  */
 
 import React from 'react'
+import { TAP_TARGET_MIN_PX } from '@/components/ui/tapTarget'
 
 /** Device geometry. Exported so a screen can size itself against the frame
  *  rather than guessing, and so there is one definition of "the phone". */
@@ -147,7 +148,7 @@ export function PhoneShell({
               alignItems: 'center', justifyContent: 'center', gap: '3px',
               // 44pt minimum tap target (iOS HIG); the nav is 60px so the
               // cell is already tall enough, this guarantees it stays so.
-              minHeight: 44,
+              minHeight: TAP_TARGET_MIN_PX,
             }
             return interactive ? (
               <button

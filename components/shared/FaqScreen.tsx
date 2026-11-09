@@ -16,6 +16,7 @@
 import { APP_FAQS, FAQ_TITLE, FAQ_SUBTITLE } from '@/lib/faq'
 import Button from '@/components/ui/Button'
 import PinnedBackHeader from '@/components/shared/PinnedBackHeader'
+import { TAP_TARGET_MIN_PX } from '@/components/ui/tapTarget'
 
 export { FAQ_TITLE, FAQ_SUBTITLE }
 
@@ -71,7 +72,7 @@ export default function FaqScreen({ onBack, onContact }: FaqScreenProps) {
                 // 🔴 44px minimum target, and it is the PADDING that earns it, not a
                 // height. BUTTON-GEOMETRY's floor arm was written because 18 hand-rolled
                 // controls sat under 44px; a summary is a hand-rolled control.
-                padding: '15px 18px', minHeight: '44px', boxSizing: 'border-box',
+                padding: '15px 18px', minHeight: TAP_TARGET_MIN_PX, boxSizing: 'border-box',
                 fontFamily: 'var(--font-ui)', fontSize: '14px', fontWeight: 500,
                 color: 'var(--ink)', lineHeight: 1.4,
               }}>

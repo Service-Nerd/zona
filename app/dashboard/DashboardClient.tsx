@@ -4030,7 +4030,7 @@ function ConnectRunsScreen({ onConnected, onSkip, onHRFound }: {
             looked exit-less until the user had already tapped Connect. */}
         <Button variant="ghost" 
           onClick={skip}
-          disabled={pending !== null} style={{ width: '100%', padding: '14px 0', marginTop: 'var(--space-2)', minHeight: '44px', fontSize: '13px', textDecoration: 'underline', textUnderlineOffset: '3px', cursor: pending ? 'default' : 'pointer' }}>
+          disabled={pending !== null} style={{ width: '100%', padding: '14px 0', marginTop: 'var(--space-2)', minHeight: TAP_TARGET_MIN_PX, fontSize: '13px', textDecoration: 'underline', textUnderlineOffset: '3px', cursor: pending ? 'default' : 'pointer' }}>
           {pending === 'skip' ? 'One sec…' : 'Connect later'}
         </Button>
 
@@ -4171,7 +4171,7 @@ function PushOnboardingScreen({ onEnabled, onSkip }: {
 
         <Button variant="ghost" 
           onClick={skip}
-          disabled={pending !== null} style={{ width: '100%', padding: '14px 0', marginTop: denied ? '0' : '8px', minHeight: '44px', fontSize: '13px', textDecoration: 'underline', textUnderlineOffset: '3px', cursor: pending ? 'default' : 'pointer' }}>
+          disabled={pending !== null} style={{ width: '100%', padding: '14px 0', marginTop: denied ? '0' : '8px', minHeight: TAP_TARGET_MIN_PX, fontSize: '13px', textDecoration: 'underline', textUnderlineOffset: '3px', cursor: pending ? 'default' : 'pointer' }}>
           {pending === 'skip' ? 'One sec…' : denied ? 'Continue without notifications.' : "Skip for now."}
         </Button>
 
@@ -7399,7 +7399,7 @@ export function SessionScreen({ session, aiNotes, preloadedRuns, onBack, onSaved
           {isComplete && (
             <Button variant="ghost" 
               onClick={() => setBriefOpen(o => !o)}
-              aria-expanded={briefOpen} style={{ width: '100%', background: 'transparent', padding: '14px 18px', borderBottom: briefOpen ? `1px solid var(--line)` : 'none', color: 'var(--ink-2)', minHeight: '44px' }}>
+              aria-expanded={briefOpen} style={{ width: '100%', background: 'transparent', padding: '14px 18px', borderBottom: briefOpen ? `1px solid var(--line)` : 'none', color: 'var(--ink-2)', minHeight: TAP_TARGET_MIN_PX }}>
               <span style={{
                 ...MICRO_LABELS.eyebrow,
                 color: 'var(--mute)',

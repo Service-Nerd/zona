@@ -41,6 +41,7 @@ import {
   ATTRIBUTION_SOURCES, trackEvent, markAttributionAnswered,
   type AttributionSource,
 } from '@/lib/analytics'
+import { TAP_TARGET_MIN_PX } from '@/components/ui/tapTarget'
 
 export default function AttributionRow({ supabase, userId, onResolved }: {
   supabase: SupabaseClient
@@ -112,7 +113,7 @@ export default function AttributionRow({ supabase, userId, onResolved }: {
               borderRadius: '999px',
               // 44px tall: the documented minimum tap target, which a 13px pill
               // does not reach on padding alone.
-              minHeight: '44px',
+              minHeight: TAP_TARGET_MIN_PX,
               padding: '0 14px',
               cursor: busy ? 'default' : 'pointer',
               opacity: busy ? 0.5 : 1,
@@ -133,7 +134,7 @@ export default function AttributionRow({ supabase, userId, onResolved }: {
             color: 'var(--mute)',
             background: 'transparent',
             border: 'none',
-            minHeight: '44px',
+            minHeight: TAP_TARGET_MIN_PX,
             padding: '0 8px',
             cursor: busy ? 'default' : 'pointer',
           }}

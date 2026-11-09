@@ -19,6 +19,7 @@ import { BRAND } from '@/lib/brand'
 import { MICRO_LABELS } from '@/components/shared/microLabels'
 import { FOUNDER_STORY } from '@/lib/marketing/founderStory'
 import PinnedBackHeader from '@/components/shared/PinnedBackHeader'
+import { TAP_TARGET_MIN_PX } from '@/components/ui/tapTarget'
 
 export default function FounderNoteScreen({ onBack }: { onBack: () => void }) {
   return (
@@ -159,7 +160,7 @@ export default function FounderNoteScreen({ onBack }: { onBack: () => void }) {
           href="mailto:russ@zonna.run"
           style={{
             display: 'inline-flex', alignItems: 'center',
-            minHeight: '44px',
+            minHeight: TAP_TARGET_MIN_PX,
             // `--moss-strong`, never `--moss`: this is the only tappable thing on the
             // page besides the back arrow, and a link is the worst text to render below
             // AA (Wroblewski, the DANGER-TEXT-CONTRAST-01 argument). 3.24 -> 4.82.

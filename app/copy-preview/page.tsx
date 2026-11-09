@@ -41,6 +41,7 @@ import SessionPopupInner from '@/components/dashboard/SessionPopupInner'
 import harnessPlanJson from '@/components/dashboard/__fixtures__/harnessPlan.json'
 import type { Plan } from '@/types/plan'
 import { MICRO_LABELS } from '@/components/shared/microLabels'
+import { TAP_TARGET_MIN_PX } from '@/components/ui/tapTarget'
 
 const noop = () => {}
 
@@ -165,7 +166,7 @@ export default function CopyPreview() {
             type="button"
             onClick={() => setSheetOpen(true)}
             style={{
-              width: '100%', minHeight: '44px', borderRadius: 'var(--radius-lg)',
+              width: '100%', minHeight: TAP_TARGET_MIN_PX, borderRadius: 'var(--radius-lg)',
               border: '1px solid var(--line)', background: 'var(--card)',
               fontFamily: 'var(--font-ui)', fontSize: '14px', color: 'var(--ink)',
               cursor: 'pointer',

@@ -6,6 +6,16 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-11-09 — TAP-TARGET-INLINE-44-01 · three counts of one thing, and the gate's was the only right one
+**Shipped:** the last 16 inline `minHeight: 44` literals import the owner. Baseline 0, so the ratchet is now a rule.
+**Dev learning:** the item's heading said 17 literals, its own correction note said 16, and my fresh grep said 17 — because my grep counted the regex literal inside the test file that does the counting. The gate excludes `.test.` and had been right for weeks. **The gate's population is the one the gate governs; mine was a directory.** That is the second time today I measured something with a wider population than the check that owns it, which is becoming the pattern worth watching rather than the individual mistakes.
+**Product/creator learning:** dropping the baseline from 16 to 0 is a small diff and a different kind of check. A ratchet says "this debt may not grow"; a zero baseline says "this is now illegal". The register was only ever approximating the property anyone actually wanted, and it took paying the debt off to get the property.
+**AI-building learning:** I proved "no visible delta" instead of claiming it — 16 removals each containing the literal, 16 additions each the constant, and zero changed lines touching neither. That took one command and it is the difference between a reviewable claim and a hopeful one. Worth it, because the design guard fires on a whole-file write and the exemption I state has to be true.
+**The honest bit:** my import-insertion helper found "the last line starting with `import `" and inserted inside a multi-line `import {` block, breaking one file's syntax. "Bound the region, never grep the file" — the same sentence I had written into a gate's header earlier in the day, now in a throwaway helper. `tsc` caught it instantly, which is the argument for running it before the suite.
+**Hook material:** three different counts of the same 16 things, and the one that was right was the one derived from the population it governs.
+**Postable?:** maybe — the ratchet-to-rule point is genuinely useful, the rest is a small tidy.
+
+
 ## 2026-11-09 — DOCS-RESIDUAL-REVIEW-01 · the gate I built after measuring a defect twice shipped with that defect in it
 **Shipped:** the review round on the residual-mark build. Seven findings, all mine; § 7's clause is bounded now, every tracker in it must be open, and the owner learned the third filing format.
 **Dev learning:** my gate scanned ids from the whole line. A `feature-registry.md` row is 2,000–3,000 characters, so one residual's real tracker sat 27 characters after the mark while the two ids I credited as "tracked and open" were 600 and 950 characters further along, in unrelated sentences. **That is co-occurrence read as a reference** — and the same commit's write-up records me measuring exactly that class twice, in the same file, to decide not to do a conversion pass. I avoided the trap in the analysis and then built it into the code. The clause is bounded to a table cell or a paragraph now, and it has to cross a line wrap, because `backlog.md` prose is hard-wrapped and one residual's second id was on the next line.

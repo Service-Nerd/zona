@@ -1209,9 +1209,14 @@ with the Coaching Board (the week-1 floor for someone who has never run, and
   `.btn--inline-target`), and genuine drift. ⚠️ **Re-measure before picking it up**, and note the
   register counts CALL SITES not properties, so paying three of four overrides on one button
   moves it by zero. From `CTA-INLINE-PAINT-01`. `backlog.md`.
-- ⚙️ `TAP-TARGET-INLINE-44-01` — **LATER, low.** 17 inline `minHeight: 44` literals should
-  import `TAP_TARGET_MIN_PX`. Registered as falling debt so it cannot grow; converting 17
-  sites is its own batch. `backlog.md`.
+- ✅ `TAP-TARGET-INLINE-44-01` — **SHIPPED 2026-11-09.** All 16 inline `minHeight: 44` literals
+  import `TAP_TARGET_MIN_PX`. **29 → 26 → 17 → 16 → 0**, and `INLINE_BASELINE: 0` turns the
+  ratchet into a **rule**: the next control that types the number fails the build.
+  🔴 **Three numbers and the gate's was the only right one** — the heading said 17, the item's own
+  note said 16, and a fresh grep said 17 because it counted the regex literal inside the test that
+  does the counting. **The gate's population is the one the gate governs; mine was a directory.**
+  📐 No visible delta, proved on the diff; falsified on both literal forms. 🔻 It governs
+  `minHeight` only — a control with no `minHeight` at all is still `TAP-TARGET-FLOOR-01`'s.
 - 🧭 `FATIGUE-CHIP-DUPLICATE-01` — **LATER, low.** The Fresh/Fine/Heavy/Wrecked chip row exists
   TWICE (`SessionPopupInner` + `DashboardClient`), with the per-tag colour MAPPING written out
   in both. The board refused `Chip` a colour axis because the scale is real doctrine — and that
