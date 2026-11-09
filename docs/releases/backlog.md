@@ -5123,13 +5123,6 @@ false triggers (RHR up a few bpm, HRV down), moot without cycle data. **Artifact
 S13, `STRENGTH_CONFIG.RECOVERY_SET_FACTOR`, invariant `S-RECOVERY-SUBTRACT-ONLY`. Depends on
 `READINESS-SURFACE-01` item 3 for the shared "Eased for recovery" mark. **Tags:** 🏃 ruled → ⚙️ build.
 
-#### `EMDASH-LIB-COPY-01` — 12 runner-facing change notes carry em dashes *(filed 2026-10-17)*
-`lib/coaching/planAdjustment.ts` coach notes and summaries (e.g. *"Swapped to easy — aerobic efficiency trending
-down."*) break the founder's no-em-dash rule for sentences. `noEmDashApp.test.ts` scans `components/` and
-`app/dashboard/` only, so producer strings in `lib/` are outside it. Fix the punctuation (colon or full stop) and
-extend the guard to runner-facing producer strings. The readiness note was fixed in `READINESS-WRONG-DAY-01`.
-**Tag:** ⚙️ NO BOARD (restores the founder's rule; no word changes).
-
 ### 🟡 `STRENGTH-ENGINE-01` — a separate strength & conditioning engine that places sessions AROUND the run plan *(filed 2026-10-16, side project)* 🏃 **COACHING BOARD** (ruled) → 💼 **SLT** (ruled) → 🧭 **DESIGN BOARD** (before any UI) → 👤 **FOUNDER** (seat, session length)
 
 > **Founder's brief:** a separate engine that works WITH the coaching engine, never contradicts it, helps the goal;

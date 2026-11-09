@@ -197,7 +197,73 @@ const blankComments = (s: string) =>
    .replace(/\{\/\*[\s\S]*?\*\/\}/g, m => ' '.repeat(m.length))
    .replace(/^\s*\/\/.*$/gm, m => ' '.repeat(m.length))
 
-const LIT = /'((?:[^'\\\n]|\\.)*)'|"((?:[^"\\\n]|\\.)*)"|`((?:[^`\\]|\\.)*)`/g
+/**
+ * 🔴 THE REGEX SWALLOWED REAL LITERALS, AND THE EXEMPTION BELOW CLAIMED IT COULD NOT
+ * (EMDASH-LIB-COPY-01, 2026-11-09).
+ *
+ * `LIT` was a regex. Its template alternative does not exclude newlines, so a template
+ * literal containing a NESTED template inside `${…}` — `` ?? `${paceFade}s/km` `` in
+ * `limiter.ts` — pairs the wrong backticks, and so does any trailing `//` comment carrying
+ * one (only LINE-LEADING comments were blanked). When that happens the regex consumes the
+ * span between the mismatched quotes, and **every genuine literal inside it never produces
+ * a match at all.**
+ *
+ * ⚠️ THE OLD EXEMPTION SAID: *"Safe in the direction that matters: a real offender always
+ * has the mark ON its own reported line, so this can only ever clear an artefact."* **That
+ * is false, and it is false in the direction that matters.** A swallowed literal is never
+ * iterated, so there is no report to exempt and no line to test. The author measured the
+ * artefacts (three in `ruleEngine.ts`) and not the absences.
+ *
+ * 📐 MEASURED: the regex reported **23,291** "literals" across 373 files where a real
+ * scanner finds **14,597** — so ~37% of its output was mis-paired spans — and **44 em-dash
+ * literals in non-exempt files were invisible**, 43 of them in `ruleEngine.ts`. Most are
+ * week captions the EXEMPT list clears by design once it can see them; **four were live
+ * runner-facing sentences**, including `hard_pref_note`, which `planRationaleNotes()`
+ * renders to the runner under the heading "Hard sessions".
+ *
+ * 🔑 SO THE FIX IS A SCANNER, NOT A BETTER REGEX. One pass, real state: comments, then
+ * strings, with `${…}` nesting tracked so a template inside a template cannot mis-pair.
+ * `ENUMERATE THE ABSENCE, NOT JUST THE VALUES.`
+ */
+function stringLiterals(src: string): Array<{ at: number; text: string }> {
+  const out: Array<{ at: number; text: string }> = []
+  let i = 0
+  const n = src.length
+  while (i < n) {
+    const c = src[i]
+    if (c === '/' && src[i + 1] === '/') { const j = src.indexOf('\n', i); i = j < 0 ? n : j; continue }
+    if (c === '/' && src[i + 1] === '*') { const j = src.indexOf('*/', i + 2); i = j < 0 ? n : j + 2; continue }
+    if (c === '"' || c === "'" || c === '`') {
+      const q = c
+      let j = i + 1
+      const buf: string[] = []
+      while (j < n) {
+        const d = src[j]
+        if (d === '\\') { buf.push(src.slice(j, j + 2)); j += 2; continue }
+        // A `${…}` holds CODE, which may contain its own template. Walk it by brace
+        // depth so the nested backticks are never read as this literal's terminator.
+        if (q === '`' && d === '$' && src[j + 1] === '{') {
+          let depth = 1
+          buf.push('${'); j += 2
+          while (j < n && depth > 0) {
+            if (src[j] === '{') depth++
+            else if (src[j] === '}') depth--
+            buf.push(src[j]); j++
+          }
+          continue
+        }
+        if (d === q) break
+        if (d === '\n' && q !== '`') break   // an unterminated quote is not a literal
+        buf.push(d); j++
+      }
+      out.push({ at: i, text: buf.join('') })
+      i = j + 1
+      continue
+    }
+    i++
+  }
+  return out
+}
 
 function offenders(): string[] {
   const bad: string[] = []
@@ -207,11 +273,16 @@ function offenders(): string[] {
       if (DEV_FACING[rel]) continue
       const raw = readFileSync(f, 'utf8')
       if (!raw.includes(EM)) continue
-      const src = blankComments(raw)
-      LIT.lastIndex = 0
-      let m: RegExpExecArray | null
-      while ((m = LIT.exec(src)) !== null) {
-        const t = m[1] ?? m[2] ?? m[3] ?? ''
+      // The scanner skips comments itself, so `blankComments` is no longer the defence —
+      // it is kept only so the reported line text matches what a reader sees.
+      for (const lit of stringLiterals(raw)) {
+        // 🔴 A CSS COMMENT INSIDE A `<style>{`…`}</style>` TEMPLATE IS COMMENT TEXT, AND THE
+        // SCANNER CANNOT KNOW THAT — to a TypeScript scanner it is string CONTENT, correctly.
+        // Surfaced the day the scanner replaced the regex: `GeneratingCeremony.tsx`'s shimmer
+        // block carries a 6-line `/* … */` explaining a retired colour. **Blanked rather than
+        // the LINE exempted**, so a real sentence elsewhere in the same template is still
+        // caught — `HOOK-RGBA-COMMENTS-01`, one layer in.
+        const t = lit.text.replace(/\/\*[\s\S]*?\*\//g, m => ' '.repeat(m.length))
         if (!t.includes(EM)) continue
         // 🔴 REPORT THE LINE OF THE EM DASH, NOT OF THE LITERAL'S START, and
         // test the SENTENCE AROUND IT rather than the whole extract.
@@ -228,10 +299,17 @@ function offenders(): string[] {
         // 400-character swallowed span would clear any sentence that happened
         // to share it; matched against the one line the dash is actually on, it
         // clears a rule reference and nothing else.
-        const at = m.index + (m[0].indexOf(EM) >= 0 ? m[0].indexOf(EM) : 0)
+        const at = lit.at + Math.max(0, t.indexOf(EM))
         const line = raw.slice(0, at).split('\n').length
         const around = (raw.split('\n')[line - 1] ?? t).trim()
-        if (EXEMPT.some(e => e.match.test(around) || e.match.test(t.trim()))) continue
+        // ⚠️ TEST THE EXEMPTIONS AGAINST AN INTERPOLATION-FREE FORM TOO (2026-11-09). The
+        // caption rule is `[^.!?]*—[^.!?]*$` — no sentence punctuation — and a `${…}` holding
+        // a PROPERTY ACCESS puts a dot inside the caption: `Standard plan — ${input.race_distance_km}km,
+        // ${totalWeeks} weeks` is a caption by every reading and was reported as a sentence
+        // because of the dot in `input.race_distance_km`. **Matching the effect, not the
+        // spelling:** a dot inside an interpolation is code, not prose.
+        const noInterp = t.replace(/\$\{[^}]*\}/g, '{}').trim()
+        if (EXEMPT.some(e => e.match.test(around) || e.match.test(t.trim()) || e.match.test(noInterp))) continue
         bad.push(`${f.replace(process.cwd() + '/', '')}:${line}  ${around.slice(0, 80)}`)
       }
     }
@@ -263,6 +341,40 @@ describe('BRAND-EMDASH-APP-01 — no em dash in a sentence the runner reads', ()
     expect(Array.from(probe.matchAll(/>([^<>]*)</g)).length).toBeGreaterThanOrEqual(2)
     expect(EXEMPT_JSX.some(e => e.match.test('{session.label} \u2014 {dayLabel}'))).toBe(true)
     expect(EXEMPT_JSX.some(e => e.match.test('Later \u2014 still flexible'))).toBe(false)
+  })
+
+  /**
+   * 🔴 THE ARM THAT KEEPS THE HOLE SHUT (EMDASH-LIB-COPY-01, 2026-11-09).
+   *
+   * It is BEHAVIOURAL, not a source assertion, because a source assertion passes on a
+   * comment. The shape that broke the old regex was a TEMPLATE INSIDE A TEMPLATE's `${…}`:
+   * the regex paired the inner backticks with the outer ones and consumed everything
+   * between, so every real literal in that span produced no match at all.
+   *
+   * ⚠️ FALSIFIED BOTH WAYS before this shipped: with the em dash restored the scanner reports
+   * `ruleEngine.ts:9990`, and with the OLD REGEX restored alongside it the suite is **GREEN
+   * with a live offender in the tree.** That second run is the finding.
+   */
+  it('🔴 the literal scanner survives a template nested inside an interpolation', () => {
+    const src = [
+      'const a = `outer ${x ?? `inner`} tail`',
+      "const b = 'a real sentence \u2014 with an em dash'",
+    ].join('\n')
+    const lits = stringLiterals(src).map(l => l.text)
+    // The nested template must not swallow what follows it.
+    expect(lits).toContain('a real sentence \u2014 with an em dash')
+    // And the outer template is ONE literal whose text keeps its interpolation.
+    expect(lits.some(t => t.startsWith('outer ${') && t.endsWith(' tail'))).toBe(true)
+  })
+
+  it('a trailing line comment carrying a backtick does not swallow the next literal', () => {
+    // The other mis-pairing source: only LINE-LEADING comments were blanked, so a trailing
+    // `// see `foo`` broke pairing for the rest of the file.
+    const src = [
+      'const a = 1  // see `someIdentifier` for why',
+      "const b = 'another sentence \u2014 here'",
+    ].join('\n')
+    expect(stringLiterals(src).map(l => l.text)).toContain('another sentence \u2014 here')
   })
 
   it('en dashes in RANGES are correct and must survive', () => {

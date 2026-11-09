@@ -199,7 +199,7 @@
     },
     {
       "file": "lib/plan/ruleEngine.ts",
-      "code": "? `Fresh-from-layoff start: week 1 begins at ${Math.round(GENERATION_CONFIG.FRESH_RETURN_START_FRACTION * 100)}% of your stated current weekly volume (${Math.round(volumes[0])} km vs ${input.current_weekly_km} km stated). Returning to running needs caution, not faster ramp — the engine prefers a small base to rebuild from. Volume grows at the standard ${GENERATION_CONFIG.MAX_WEEKLY_VOLUME_INCREASE_PCT}% per week.`"
+      "code": "? `Fresh-from-layoff start: week 1 begins at ${Math.round(GENERATION_CONFIG.FRESH_RETURN_START_FRACTION * 100)}% of your stated current weekly volume (${Math.round(volumes[0])} km vs ${input.current_weekly_km} km stated). Returning to running needs caution, not faster ramp; the engine prefers a small base to rebuild from. Volume grows at the standard ${GENERATION_CONFIG.MAX_WEEKLY_VOLUME_INCREASE_PCT}% per week.`"
     },
     {
       "file": "lib/plan/runWalkPlan.ts",
@@ -226,5 +226,6 @@
       "code": "return formatDuration(value) ?? `${value} min`"
     }
   ],
-  "note_2026_11_05": "SITE-ENGINE-EMDASH-01: 6 entries were re-quoted, NOT added. The founder ruled a step note is a sentence, so the em dash in these generated strings became a colon, comma or full stop. Same 55 sites, same debt, same count — this register stays closed to new entries, and re-quoting an existing one is how it stays pointed at the code rather than at copy that no longer exists."
+  "note_2026_11_05": "SITE-ENGINE-EMDASH-01: 6 entries were re-quoted, NOT added. The founder ruled a step note is a sentence, so the em dash in these generated strings became a colon, comma or full stop. Same 55 sites, same debt, same count — this register stays closed to new entries, and re-quoting an existing one is how it stays pointed at the code rather than at copy that no longer exists.",
+  "note_2026_11_09": "🔴 AN ENTRY'S TEXT CHANGED WITHOUT THE SITE MOVING, AND THIS REGISTER BROKE BOTH WAYS AT ONCE. EMDASH-LIB-COPY-01 repunctuated the Fresh-from-layoff note (em dash → semicolon, founder's rule, no word changes). Because entries are keyed by the literal's TEXT, the registered entry went STALE and the identical site read as a NEW offender in the same run. Count unchanged; this is the SAME site, and the gate's \"closed to new entries\" rule is not in play. ⚠️ A register keyed by prose is a register that a punctuation fix invalidates — keep the key, or key on file:line and accept that an insert above moves it. Both have a failure mode; this one at least fails LOUDLY and in both directions."
 }

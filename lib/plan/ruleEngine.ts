@@ -9599,7 +9599,7 @@ function buildRulePlanOnce(
   const difficultyNoteBase: string | undefined =
     difficultyBand === 'comfortable' ? undefined
     : prepTime.status === 'warn'
-      ? `Very demanding on ${prepTime.weeks_available} weeks — below the ${prepTime.weeks_required_ok}-week mark for this race. It can be run; the timeline is the constraint, not your effort.`
+      ? `Very demanding on ${prepTime.weeks_available} weeks: below the ${prepTime.weeks_required_ok}-week mark for this race. It can be run; the timeline is the constraint, not your effort.`
     : compressionClassification === 'constrained_by_inputs'
       ? `Demanding: your inputs (days available, weekday time, or starting volume) cap how far the plan can build. Freeing one of those lifts the ceiling.`
     // §120 Amendment 2 — founder's words, 2026-10-27. In the interval arm's place, because that arm's sentence ("race-pace
@@ -9801,7 +9801,7 @@ function buildRulePlanOnce(
       // §79 — the note depends on WHY the signals split. A training-age lift
       // (returning runner, no benchmark) must not claim a benchmark disagreement.
       fitness_signal_note: assessed.intensityLiftedForReturn
-        ? `Your current volume reads like a beginner's, but your training history says you're not one — you're a runner coming back, not starting out. So the plan keeps the mileage cautious while it rebuilds, but gives you real quality work rather than a true beginner's easy-only plan. Hard sessions ease in over the first few weeks (your fitness returns faster than your tendons and bones do), and recovery and fuelling matter more coming back than they did at your peak.`
+        ? `Your current volume reads like a beginner's, but your training history says you're not one: you're a runner coming back, not starting out. So the plan keeps the mileage cautious while it rebuilds, but gives you real quality work rather than a true beginner's easy-only plan. Hard sessions ease in over the first few weeks (your fitness returns faster than your tendons and bones do), and recovery and fuelling matter more coming back than they did at your peak.`
         : `Your race benchmark and your training volume point to different levels (${fitnessFromVdot(vdot ?? 0)} on benchmark, ${fitnessFromVolume(input.current_weekly_km, input.longest_recent_run_km)} on volume). The plan uses the more cautious of the two for how much you run, and the less cautious for how hard. Building volume is where injuries come from, holding back intensity is where progress is lost.`,
     } : {}),
     // §79 (2026-08-31) — progressive intensity re-entry surfaced for honesty + the
@@ -9987,7 +9987,7 @@ function buildRulePlanOnce(
     // stays honest for a 2-5yr HM runner who did get the recent-run stretch (they still
     // have not earned the 5yr+ exception).
     ...(input.hard_session_relationship === 'love' && input.training_age !== '5yr+'
-      ? { hard_pref_note: 'You said you like hard sessions. The plan earns longer peak runs and more intensity as your training history deepens — not before your legs have proven they will take it.' }
+      ? { hard_pref_note: 'You said you like hard sessions. The plan earns longer peak runs and more intensity as your training history deepens, not before your legs have proven they will take it.' }
       : {}),
 
     // §110 / §40c (Coaching Board 2026-09-16) — THE NOTE IS PART OF THE RULING,
@@ -10121,7 +10121,7 @@ function buildRulePlanOnce(
     // does. Mirrors volume_constraint_note pattern.
     ...((returningRunner || isFreshReturn) ? {
       returning_runner_note: isFreshReturn
-        ? `Fresh-from-layoff start: week 1 begins at ${Math.round(GENERATION_CONFIG.FRESH_RETURN_START_FRACTION * 100)}% of your stated current weekly volume (${Math.round(volumes[0])} km vs ${input.current_weekly_km} km stated). Returning to running needs caution, not faster ramp — the engine prefers a small base to rebuild from. Volume grows at the standard ${GENERATION_CONFIG.MAX_WEEKLY_VOLUME_INCREASE_PCT}% per week.`
+        ? `Fresh-from-layoff start: week 1 begins at ${Math.round(GENERATION_CONFIG.FRESH_RETURN_START_FRACTION * 100)}% of your stated current weekly volume (${Math.round(volumes[0])} km vs ${input.current_weekly_km} km stated). Returning to running needs caution, not faster ramp; the engine prefers a small base to rebuild from. Volume grows at the standard ${GENERATION_CONFIG.MAX_WEEKLY_VOLUME_INCREASE_PCT}% per week.`
         : `Returning-runner allowance active: weeks 1-${GENERATION_CONFIG.RETURNING_RUNNER_GRACE_WEEKS} grow at ${GENERATION_CONFIG.RETURNING_RUNNER_ALLOWANCE_PCT}% per week (vs the standard ${GENERATION_CONFIG.MAX_WEEKLY_VOLUME_INCREASE_PCT}%). Your training history allows a faster rebuild because the aerobic and structural base is still there.`,
     } : {}),
 

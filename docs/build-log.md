@@ -5,6 +5,15 @@ angle. Feeds the weekly DHTB LinkedIn build-in-public posts — keep it honest, 
 it specific, no polish. The content system adds the voice.
 
 ---
+## 2026-11-09 — EMDASH-LIB-COPY-01 · the guard's exemption said the bug was impossible, in the direction it actually happened
+**Shipped:** the em-dash guard finds string literals with a scanner instead of a regex, and four runner-facing sentences lost their em dashes.
+**Dev learning:** `LIT` was a regex whose template branch did not exclude newlines. A template nested inside a `${…}` — `` ?? `${paceFade}s/km` `` — pairs the inner backticks with the outer ones, and the regex then **consumes the span between them**, so every genuine literal inside produced no match at all. Measured: 23,291 reported "literals" where a real scanner finds 14,597. **A regex cannot tokenise a language with nestable string literals, and the failure is silent in the only direction that matters.**
+**Product/creator learning:** the guard *had* an exemption for mis-pairing, with a measurement behind it — three artefact reports in `ruleEngine.ts` — and a conclusion: *"Safe in the direction that matters: a real offender always has the mark ON its own reported line, so this can only ever clear an artefact."* That is false. A swallowed literal is never iterated, so there is no report to exempt and no line to test. **The author measured the artefacts and not the absences**, which is the harder half of every population question.
+**AI-building learning:** both of the item's own claims were stale. The twelve notes it names have been fixed by someone else; the guard it says covers only two directories has covered five since 5 November. **So the item was wrong about the problem and wrong about the check, and the real defect was underneath the second mistake.** Re-measuring is what found it — the item would have closed in ten minutes as "already done".
+**The honest bit:** `hardcodedUnitsDebt.json` keys its entries by the literal's *text*. Repunctuating one sentence made the registered entry stale **and** made the identical site read as a brand-new offender, in the same run, in both directions at once. I had hit that exact shape two days earlier in a different register and still did not see it coming.
+**Hook material:** I restored the old regex next to a live em dash in runner-facing copy and the suite went green. That run is the whole finding.
+**Postable?:** yes — "my exemption explained why the bug couldn't happen, in the direction it did".
+
 ## 2026-11-09 — RESHAPE-FIRST-FIRINGS-01 · the sentence the whole wave was sequenced on was wrong about its own data
 **Shipped:** the reshape engine's first real firings, read from production and recorded beside the original figures.
 **Dev learning:** this was an item marked "watch — blocked on the engine firing in the wild". It had fired. Two detection types, and the most recent zone_drift is auto-applied and not even superseded. **An item whose state is "wait" is still an item you can go and measure**, and the wave had been sequenced on a one-line summary of a table nobody had re-read in a month.
