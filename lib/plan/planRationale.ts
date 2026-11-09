@@ -152,6 +152,35 @@ export function planRationaleNotes(
   // 17% less") — which is exactly the precision the board judged unusable:
   // nobody has ever acted on 17%.
   else if (meta.volume_shortfall_note) notes.push({ label: 'Volume', text: meta.volume_shortfall_note })
+  // 🔴 NOTE-SURFACE-INERT-01 (Design Board, SHIP WITH AMENDMENT (3), 2026-11-09).
+  //
+  // `peak_shortfall_note` was stamped and READ BY NOTHING. Measured on production: 2 of 41
+  // plans carry it, **both at 3/3 notes already**, so ranking it LAST would have shown it on
+  // **0 of 2** — wired and never rendered, which is decorative config in a new costume. It
+  // ranks or it is declined, and the board ranked it.
+  //
+  // ⚠️ IT JOINS THE VOLUME FAMILY'S `else if` CHAIN, not a new slot. Rule 1 of §18 is ONE
+  // CAUSE, ONE TILE, and "your plan peaks short of your goal" is the same cause as both notes
+  // above it. Measured: 0 of 41 plans carry it alongside either, so the chain costs nothing
+  // today and is correct the first time one does.
+  //
+  // 🎓 Sierra, on why it ranks ahead of a plan's other constraints: it names both figures AND
+  // the levers AND says **"not effort"**, which is the one thing a Type-A runner needs told.
+  // ✋ Silvanto dissented on the rank (one plan loses "Coming back") and the chair overruled on
+  // the measurement: Wood already ranks "Shaped for you" LAST because constraints beat a brag,
+  // so displacing it is that ruling applying rather than a new trade. Cost accepted and named,
+  // exactly as §6ak named `Long run` lost on 469 of 844.
+  else if (meta.peak_shortfall_note) notes.push({ label: 'Your peak', text: meta.peak_shortfall_note })
+  // 🔴 NOTE-SURFACE-INERT-01 — `frequency_constraint_note`, also read by nothing. 3 of 41 plans,
+  // and **3 of 3 carriers have a free slot**, so this displaces nothing at all.
+  // ⚠️ ALSO RULE 1: it blames weekly volume, which is `volume_constraint_note`'s cause, and 1 of
+  // the 3 carries both. So it is gated on neither of those being shown rather than given its own
+  // unconditional slot — the runner must not read "your volume is low" twice with two labels.
+  // 🎓 Sierra: *"3 honest runs beat 4 token ones"* is the best sentence in the batch — it teaches
+  // something the runner carries away from the app, which is the bar this section is held to.
+  if (meta.frequency_constraint_note && !meta.volume_constraint_note && !meta.volume_shortfall_note) {
+    notes.push({ label: 'Your days', text: meta.frequency_constraint_note })
+  }
   // INJURY-PEAK-JUMP-01 (Coaching Board 2026-10-28): §34 says an accepted residual is STATED.
   // `load_residual_note` was stamped on hundreds of plans a week-on-week ramp check warns, and
   // this list never read it, so no runner was ever told. Ranked with the constraints, ahead of

@@ -1701,7 +1701,52 @@ when that week is current (`meta.load_residual_week` already names it). When it 
 plan-level tile drops behind `Long run` or goes (Collins: goes; Sierra: a short mention stays).
 
 
-### 🔲 `NOTE-SURFACE-INERT-01` — three plan notes are stamped and shown nowhere ⚙️ **NO BOARD** to measure; 🧭 **DESIGN BOARD** to place
+### ✅ `NOTE-SURFACE-INERT-01` — **SHIPPED 2026-11-09. Two placed, one refused; and my own measurement was wrong by 4×** ⚙️ measured; 🧭 **DESIGN BOARD** ruled
+
+✅ **BOTH HALVES DONE 2026-11-09.** ⚙️ Measured, then 🧭 **SHIP WITH AMENDMENT (3)** — register row in
+`design-rulings.md`, sitting at `docs/decisions/design-2026-11-09-note-surface-inert-sitting.md`.
+
+🔴 **MY FIRST MEASUREMENT SAID 12 OF 16 NOTE KEYS WERE INERT AND IT WAS WRONG.** I grepped `app/` +
+`components/` and missed that **`lib/plan/planRationale.ts` COLLECTS ten of them** into the list the
+plan screen renders. **The item's original figure of 3 was right** — and the item itself said *"no
+reader in `app/`, `components/` **or `planRationaleNotes`**"*, so the third place to look was named
+in the sentence I was working from. ⚠️ **Two directories checked is not "nowhere."**
+
+📐 **The measurement, production, 41 plans:** 3 of 16 keys inert, **8 plan-instances**. Rule-1 cause
+collisions: `returning_runner` + *"Coming back"* **2 of 3** · `frequency_constraint` +
+*"Maintenance"* **1 of 3** · `peak_shortfall` **0**. Word counts 30–65 against the SLT's post-cut
+mean of 67 — **length is not the problem; cause duplication is.**
+
+| Ruling | |
+|---|---|
+| 🟢 `peak_shortfall_note` → **"Your peak"**, in the volume family's `else if` chain | Both carriers sit at **3/3**, so ranked LAST it shows on **0 of 2** — wired and never rendered, **decorative config in a new costume.** Cost named: one loses *"Shaped for you"*, one loses *"Coming back"* |
+| 🟢 `frequency_constraint_note` → **"Your days"**, gated on neither volume note showing | **3 of 3 carriers have a free slot — displaces nothing** |
+| 🔴 `returning_runner_note` — **DON'T SHIP as written** | §18 rule 2 forbids ratios and thresholds (*"15% per week (vs the standard 10%)"*); rule 1's cause belongs to *"Coming back"*, duplicated on 2 of 3; engine register throughout |
+
+⚠️ **THE CAP WAS NOT ON THE TABLE.** §6ae declined 4 tiles / 240 words on 2026-10-28 for want of
+readability evidence, and this sitting supplied none. The §18 cut took the section from **mean 130
+words and 74% of runners seeing 2–3 tiles** to **67 words and 510 of 513 plans carrying one** —
+anything added here is added back toward a wall somebody deliberately cut.
+
+⚡ **✋ Silvanto dissented on the rank and the chair overruled on the measurement** (Wood already
+ranks *"Shaped for you"* last **because constraints beat a brag**). **He declined the veto and named
+why** — craft, not a documented regression; second time the untested veto has correctly declined
+itself. ⚡ **🎪 Collins LOST and it is recorded:** twelve labels for three seats is *"a queue, not a
+taxonomy"*, and he would collapse to four before adding a thirteenth. **The measurement does not
+disprove him.**
+
+🔻 **THE REFUSAL HAS A NAMED COST:** `9feb0406` shows **ZERO notes with three free slots**, carrying
+*"Fresh-from-layoff start: week 1 begins at 70% of your stated current weekly volume"*. That runner
+is told nothing. **It is the strongest argument for the rewrite, not against the refusal** — the
+copy is the problem, not the fact.
+
+📐 **Four new arms, falsified five ways**, each firing a named arm. ⚠️ **One limit stated in the test
+rather than discovered later:** the rank IS the chain's position, so a *"ranked last, rule 1 intact"*
+mutation cannot be written; that arm catches absence from the top three, not every mis-rank.
+⚠️ **Not seen on a device**, and no plan screen has been looked at with three tiles since 2026-09-17.
+`PLAN-NOTE-PLACEMENT-01` stays open (Wood: the rationale may not belong at the top of the plan at all).
+
+### ⚙️ `NOTE-SURFACE-INERT-01` — the original filing, for the record ⚙️ **NO BOARD** to measure; 🧭 **DESIGN BOARD** to place
 
 Found building INJURY-PEAK-JUMP-01: `peak_shortfall_note` (§106/§40c), `frequency_constraint_note` and
 `returning_runner_note` have no reader in `app/`, `components/` or `planRationaleNotes`. Registered as debt in

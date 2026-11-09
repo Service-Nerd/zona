@@ -326,11 +326,21 @@ describe('NOTE-SURFACE — every declared plan note has a reader', () => {
     uncovered_runway_note: 'app/dashboard/GeneratePlanScreen.tsx',
     weekday_overrun_note: 'components/dashboard/SessionPopupInner.tsx',
   }
-  /** Stamped, read by nothing. Each is open work, not an exemption. */
+  /** Stamped, read by nothing. Each is open work, not an exemption.
+   *
+   *  🔴 TWO PAID DOWN 2026-11-09 (Design Board SHIP WITH AMENDMENT (3)). `peak_shortfall_note`
+   *  → "Your peak", in the volume family's `else if` chain; `frequency_constraint_note` →
+   *  "Your days", gated on neither volume note showing. **This register caught the wiring
+   *  itself** — the arm below asserts a DEBT entry is still unread, so leaving them here after
+   *  wiring went red. That is the register working, not a nuisance.
+   *
+   *  🔻 `returning_runner_note` is REFUSED, not pending: §18 rule 2 forbids ratios and
+   *  thresholds (*"weeks 1-3 grow at 15% per week (vs the standard 10%)"*) and rule 1's cause
+   *  already belongs to "Coming back", which it duplicates on 2 of its 3 carriers. It returns
+   *  with consequence/cause/lever copy or the key is deleted — so it stays here, because a
+   *  refused note with a named rewrite IS open work. */
   const DEBT: Record<string, string> = {
-    frequency_constraint_note: 'NOTE-SURFACE-INERT-01',
-    peak_shortfall_note: 'NOTE-SURFACE-INERT-01',
-    returning_runner_note: 'NOTE-SURFACE-INERT-01',
+    returning_runner_note: 'NOTE-SURFACE-INERT-01 — DON\'T SHIP as written, Design Board 2026-11-09',
   }
 
   it('the population is the type, and it is real', () => {
@@ -341,6 +351,69 @@ describe('NOTE-SURFACE — every declared plan note has a reader', () => {
   it('every declared note is rendered, rendered elsewhere, or registered debt', () => {
     const unread = declared.filter(k => !reads(RATIONALE, `meta\\.${k}`) && !OTHER_SURFACE[k] && !DEBT[k])
     expect(unread, 'a plan note with no reader: wire it into planRationaleNotes, or register it').toEqual([])
+  })
+
+  // ── THE RULING'S OWN CHECK (NOTE-SURFACE-INERT-01, Design Board 2026-11-09) ──
+  //
+  // ⚠️ RULE 1 IS ENFORCED MECHANICALLY HERE, NOT BY CONVENTION. §18's "one cause, one tile"
+  // was broken on 157 of 200 plans before the 2026-09-17 cut, by exactly this shape: two
+  // labels, one cause, two sets of numbers. Both notes this ruling wires blame weekly volume,
+  // so both are gated — and a gate nobody asserts is a comment.
+  it('🔴 rule 1 — "Your days" never appears beside a volume tile', () => {
+    const both = planRationaleNotes({
+      frequency_constraint_note: 'You told us you can run 5 days a week. This plan uses 3.',
+      volume_constraint_note: 'Your weekly mileage holds steady across this plan.',
+    } as never, 'km').map(n => n.label)
+    expect(both, 'the runner reads "your volume is low" twice, under two labels')
+      .not.toContain('Your days')
+    expect(both).toContain('Maintenance')
+    // ...and alone it DOES show, or the gate is just an off switch.
+    const alone = planRationaleNotes({
+      frequency_constraint_note: 'You told us you can run 5 days a week. This plan uses 3.',
+    } as never, 'km').map(n => n.label)
+    expect(alone, 'gated to nothing: "Your days" never renders at all').toContain('Your days')
+  })
+
+  it('🔴 rule 1 — "Your peak" never appears beside a volume tile either', () => {
+    const both = planRationaleNotes({
+      peak_shortfall_note: 'This plan peaks at 40km a week, short of the 46km a goal like this usually wants.',
+      volume_constraint_note: 'Your weekly mileage holds steady across this plan.',
+    } as never, 'km').map(n => n.label)
+    expect(both).not.toContain('Your peak')
+    expect(both).toContain('Maintenance')
+    const alone = planRationaleNotes({
+      peak_shortfall_note: 'This plan peaks at 40km a week, short of the 46km a goal like this usually wants.',
+    } as never, 'km').map(n => n.label)
+    expect(alone, 'gated to nothing: "Your peak" never renders at all').toContain('Your peak')
+  })
+
+  it('🔴 "Your peak" RANKS — it is not appended where a full plan would never show it', () => {
+    // The whole reason the board ranked rather than appended: both live carriers sit at 3/3,
+    // so a last-place rank shows it on 0 of 2 — wired and never rendered.
+    const full = planRationaleNotes({
+      peak_shortfall_note: 'This plan peaks at 40km a week, short of the 46km a goal like this usually wants.',
+      short_opening_block_note: 'Your first recovery week comes early.',
+      hard_pref_note: 'You asked for harder sessions.',
+      level_fit: true,
+    } as never, 'km').map(n => n.label)
+    expect(full.length).toBeLessThanOrEqual(3)
+    expect(full, 'ranked below the cap, so the carriers measured at 3/3 would never see it')
+      .toContain('Your peak')
+    // ⚠️ THE LIMIT OF THIS ARM, STATED. The rank IS the chain's position, so a
+    // "ranked last but rule-1 intact" mutation cannot be written without moving the
+    // whole volume family — a different and larger change. Falsifying by un-wiring the
+    // note fires this arm; falsifying by moving it last fires the rule-1 arm first.
+    // So this arm catches ABSENCE from the top three, not every possible mis-rank.
+  })
+
+  it('🔻 `returning_runner_note` is REFUSED and stays unread', () => {
+    // Design Board 2026-11-09: §18 rule 2 (no ratios, no thresholds) and rule 1 (its cause
+    // belongs to "Coming back", duplicated on 2 of 3 carriers). Shipping it would be the
+    // ruling reversed in silence.
+    const out = planRationaleNotes({
+      returning_runner_note: 'Returning-runner allowance active: weeks 1-3 grow at 15% per week.',
+    } as never, 'km')
+    expect(out, 'the refused note is rendering — the ruling was reversed').toEqual([])
   })
 
   it('each named surface still reads its note, and debt that has been wired is removed from the register', () => {

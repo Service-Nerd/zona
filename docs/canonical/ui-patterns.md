@@ -2171,6 +2171,44 @@ on, and the check firing is the product reporting it.
 > device, since the 254-word version is what made that argument feel obvious.
 > Filed as `PLAN-NOTE-PLACEMENT-01`.
 >
+> ---
+>
+> 🔴 **AMENDED 2026-11-09 — `NOTE-SURFACE-INERT-01`. Two labels added, one note refused.**
+> Measured on 41 stored plans: **3 of 16 `meta.*_note` keys had no reader anywhere** — stamped
+> by the engine, rendered by nothing, on 8 plan-instances. ⚠️ **A first measurement said 12 of
+> 16 and was wrong**, because it read `app/` + `components/` only and *this* function collects
+> ten of them. Two directories checked is not "nowhere".
+>
+> | Label | Note | Rank | Measured cost |
+> |---|---|---|---|
+> | **Your peak** | `peak_shortfall_note` | **in the volume `else if` chain** | 2 carriers, **both at 3/3** — so ranked LAST it would show on **0 of 2**: wired and never rendered, decorative config in a new costume. One loses *"Shaped for you"*, one loses *"Coming back"* |
+> | **Your days** | `frequency_constraint_note` | after the volume family, **gated on neither volume note showing** | 3 carriers, **3 of 3 with a free slot — displaces nothing** |
+> | — | `returning_runner_note` | 🔴 **DON'T SHIP as written** | Rule 2: *"weeks 1–3 grow at 15% per week (vs the standard 10%)"* is a ratio and a threshold. Rule 1: duplicates *"Coming back"* on **2 of 3**. Engine register throughout (*"allowance active"*, *"the engine prefers a small base"*) |
+>
+> **Both new labels obey rule 1 mechanically, not by convention.** `Your peak` joins the
+> volume family's existing `else if` chain because *"your plan peaks short of your goal"* is the
+> same cause as the two notes above it; `Your days` is gated on neither volume note being shown,
+> because it blames weekly volume and 1 of its 3 carriers also carries `volume_constraint_note`.
+> **The runner must not read "your volume is low" twice under two labels** — which is the
+> defect rule 1 was written for, 157 of 200 plans.
+>
+> ⚠️ **The cap was NOT widened and may not be.** §6ae declined 4 tiles / 240 words on
+> 2026-10-28 for want of readability evidence, and nothing here supplies any. These two notes
+> compete inside 3.
+>
+> 🔻 **The refusal has a named cost: one plan (`9feb0406`) shows ZERO notes with three free
+> slots, carrying a substantive returning-runner note.** That runner is told nothing, and it is
+> the strongest argument for the rewrite rather than against the refusal. `returning_runner_note`
+> returns with consequence/cause/lever copy, or `intensity_reentry_omission_note` carries the
+> cause and the key is deleted.
+>
+> 🎪 **Collins lost, recorded as lost:** he would collapse the twelve labels to four — *volume,
+> days, intensity, shape* — before adding a thirteenth, on the grounds that **twelve claimants
+> for three seats is a queue, not a taxonomy.** The measurement does not disprove him; filed as
+> its own item.
+>
+> ---
+>
 > **Voice stays the RULE ENGINE'S, never Kit's.** Traynor's block: the enricher
 > never runs for free users, so "route these through the model for a friendlier
 > voice" would leave the free tier permanently with the cold copy. The registry's

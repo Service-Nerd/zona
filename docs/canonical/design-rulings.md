@@ -5654,6 +5654,40 @@ Pattern — `ui-patterns.md` §18 (label + rank) · Constants — none new · Ch
 un-wiring the render. Sitting: `docs/decisions/design-2026-10-28-heavier-week-slot-sitting.md`. ⚠️ Not seen on a device.
 
 
+## 🧭 RULED 2026-11-09 — `NOTE-SURFACE-INERT-01`: **SHIP WITH AMENDMENT (3).** Two labels added, one note refused
+
+**Input:** the backlog item's own ⚙️ measurement half, taken first. **3 of 16 `meta.*_note` keys had no reader
+anywhere** — stamped by the engine, rendered by nothing, on 8 of 41 stored plans. ⚠️ **A first measurement said 12
+of 16 and was wrong:** it read `app/` + `components/` and missed `planRationale.ts` collecting ten of them. **Two
+directories checked is not "nowhere."**
+
+| Decision | Status | Why |
+|---|---|---|
+| **`peak_shortfall_note` → "Your peak", in the volume family's `else if` chain** | 🟢 **SHIP** | 🎓 Sierra: it names both figures AND the levers AND says **"not effort"** — the one thing a Type-A runner needs told, and §18 rule 2's own requirement (Hutchinson: a constraint without its cost is a disclaimer). **Measured: both carriers sit at 3/3, so ranked LAST it shows on 0 of 2** — wired and never rendered, decorative config in a new costume. **Cost named and accepted:** one plan loses *"Shaped for you"*, one loses *"Coming back"* |
+| **`frequency_constraint_note` → "Your days", gated on neither volume note showing** | 🟢 **SHIP** | **3 of 3 carriers have a free slot — displaces nothing.** 🎓 Sierra: *"3 honest runs beat 4 token ones"* is the best sentence in the batch; it teaches something the runner carries away from the app |
+| **`returning_runner_note`** | 🔴 **DON'T SHIP as written** (not permanent) | §18 **rule 2**: *"weeks 1-3 grow at 15% per week (vs the standard 10%)"* is a ratio and a threshold. §18 **rule 1**: its cause belongs to *"Coming back"*, which it duplicates on **2 of 3** carriers. Engine register throughout (*"allowance active"*, *"the engine prefers a small base"*). ✋ Silvanto also calls it a **week-level** fact at the top of the plan — the horizon mistake of §6ak. Returns with consequence/cause/lever copy, or `intensity_reentry_omission_note` carries the cause and the key is deleted |
+| **Widening the cap to fit them** | 🔴 **NOT ASKED AND NOT AVAILABLE** | §6ae declined 4 tiles / 240 words on 2026-10-28 for want of readability evidence, and nothing here supplies any. Both notes compete inside 3 |
+
+⚡ **✋ Silvanto dissented on `Your peak`'s rank** (one plan loses *"Coming back"*) and the chair **overruled on the
+measurement**: Wood already ranks *"Shaped for you"* LAST **because constraints beat a brag**, so displacing it is
+that ruling applying rather than a new trade. Same shape as §6ak naming `Long run` lost on 469 of 844. **What would
+move him: that plan on a device.** ⛔ **He declined the veto and named why** — craft, not a documented palette or
+type regression. Second time the untested veto has correctly declined itself.
+
+⚡ **🎪 Collins LOST and it is recorded as lost:** he would collapse the twelve labels to four — *volume, days,
+intensity, shape* — before adding a thirteenth, on the grounds that **twelve claimants for three seats is a queue,
+not a taxonomy.** The measurement does not disprove him. Filed as its own item.
+
+🔻 **The refusal has a named cost: `9feb0406` shows ZERO notes with three free slots**, carrying a substantive
+returning-runner note. That runner is told nothing. **It is the strongest argument for the rewrite, not against the
+refusal.**
+
+Pattern — `ui-patterns.md` §18 (amended, with the per-note table) · Constants — **none new**; both labels sit beside
+the existing twelve in the owner, which is where §18 puts them · Check — `planRationale.test.ts`, **four new arms**,
+falsified five ways (un-gate either note → rule 1 red · un-wire `Your peak` → three arms red · ship the refused note
+→ two red). ⚠️ **One limit stated in the test:** the rank IS the chain's position, so a "ranked last, rule 1 intact"
+mutation cannot be written; that arm catches absence from the top three, not every mis-rank. ⚠️ Not seen on a device.
+
 ## 🧭 RULED 2026-10-30 — `RUNKED-LOAD-VIEW-01`: **SHIP WITH AMENDMENT.** Bars of the weeks you ran, not two lines about fitness
 
 **Input:** the founder's Runked screenshots (*"I like things like this"*), and the Coaching Board's ruling the same day

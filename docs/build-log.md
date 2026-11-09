@@ -6,6 +6,16 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-11-09 — NOTE-SURFACE-INERT-01 · the item told me where to look and I looked in two of the three places
+**Shipped:** two plan notes the engine had been stamping and nothing rendering now appear, with labels and a rank the Design Board ruled; the third was refused.
+**Dev learning:** my first measurement said 12 of 16 note keys were inert. The real answer is 3. I grepped `app/` and `components/` and missed that `lib/plan/planRationale.ts` *collects* ten of them into the list the plan screen renders — and **the item's own sentence named that file**: "no reader in app/, components/ or planRationaleNotes". I was working from that sentence and checked two of the three places it listed. Two directories checked is not "nowhere", and I would have published a number four times too big.
+**Product/creator learning:** the measurement decided the ruling, not an opinion. `frequency_constraint` turned out to be free — all three carriers had a spare slot, so it displaces nothing and the decision was trivial. `peak_shortfall` was the opposite: both its carriers were already at the 3-note cap, so ranking it *last* would have shown it on **0 of 2 plans** — wired and never rendered, which is decorative config in a new costume. That single number is what forced a real choice rather than a safe one.
+**AI-building learning:** the register that already existed caught me. `planRationale.test.ts` asserts that anything in its DEBT map is still *unread*, so wiring two notes while leaving them registered turned it red immediately. That is a debt register doing the one thing debt registers usually don't: noticing when the debt is paid.
+**The honest bit:** the sharpest thing in the sitting was not my finding. It was reading §18 and discovering the SLT had already cut this section from a mean of 130 words to 67 after the founder read a real plan on a device — and that "4 tiles / 240 words" had been *declined* two weeks ago for want of readability evidence. I had been about to argue for space that was already refused. The settled-ground scan is the step that stops me re-litigating, and it earned its keep.
+**Hook material:** one of the three notes would have been visible on zero plans if I had ranked it the safe way. The safe option was the inert one.
+**Postable?:** yes — "I looked in two of the three places the ticket told me to look" is honest and the 0-of-2 ranking point is genuinely interesting.
+
+
 ## 2026-11-09 — RACE-WEEK-ZERO-KM-REVIEW-01 · the double-count was warned about in the file I was editing
 **Shipped:** the planned-volume basis is summed from sessions through `sessionKmSelfPaced` instead of derived from `weekly_km`, and both halves of the comparison share one owner.
 **Dev learning:** my fix was `trainingKm + raceKm`, which assumes §121 holds for the stored row. §121 is only true of engine output. A legacy plan has `weekly_km: 105` for 2 + 3 + a 100 km race, so my owner returned 205. **The header of the file I was editing warns, in as many words, that subtracting `raceKm` there would remove a marathon twice — and I committed the mirror error in the function I added directly beneath it.** Reading a warning about one direction did not make me check the other.
