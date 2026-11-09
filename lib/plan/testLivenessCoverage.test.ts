@@ -1,73 +1,29 @@
-// testLivenessCoverage.test.ts — TEST-LIVENESS-COVERAGE-01.
-//
-// 🔴 WHY. `scripts/test-liveness.ts` is the harness built to catch a green tick
-// with nothing behind it: it breaks the SOURCE each test claims to cover and
-// checks the test notices. Its `SUBJECTS` map is DECLARED, never inferred, which
-// is correct and deliberate ("a first-import-wins heuristic breaks silently the
-// first time someone reorders an import block") — but NOTHING GREW IT and nothing
-// reported that it was not growing. Its own header stated "22 of 373 test files,
-// 5.9%" from 2026-09-24 to 2026-11-09; by then it was **27 of 761, 3.5%**, so the
-// figure was wrong in both halves and in the flattering direction.
-// **The harness against hollow tests was itself blind to 96% of the tests, and
-// the file said 94%.**
-//
-// ⚠️ THE OBVIOUS GATE WOULD BE AN AMNESTY, AND THE ITEM SAID SO BEFORE I MEASURED
-// IT. "Fail when a test imports from lib/ and has no entry" was measured two ways:
-// test files reading source text = **295 of 761**; test files importing an
-// already-declared subject = **307** (because `lib/plan.ts` is a barrel imported
-// everywhere). A 300-entry baseline is a pile with a name, not a gate.
-//
-// 🔑 SO THIS GATE HOLDS THE MAP CONSISTENT WITH ITS OWN CLAIM instead, which is a
-// population of FIVE and every one was a real gap:
-//
-//   A  a source the map already declares as a mutation subject, whose OWN co-named
-//      test file is not a key — so the harness reported on that source through a
-//      neighbour's assertions and never through the test written for it (4 cases:
-//      effectiveSessions, loadRatioContext, weeklyZoneAggregate, plan)
-//   B  a key whose co-named source exists and is NOT among its subjects — a mapping
-//      that drifted (1 case: featureGates.test.ts named only its consumer, so a
-//      mutation to the gate TABLE was never applied)
-//
-// ⚠️ WHAT IT DOES NOT DO: it does not make the share grow. Nothing schedules that,
-// and saying so is the point — a declared reason is not a scheduled fix. The share
-// is printed by the harness on every run so the gap is visible rather than implied.
-
 import { describe, it, expect } from 'vitest'
 import { existsSync, readFileSync } from 'node:fs'
 import { execFileSync } from 'node:child_process'
 import { join } from 'node:path'
+import { SUBJECTS } from '../../scripts/lib/liveness-subjects'
 
 const ROOT = join(__dirname, '..', '..')
 const SCRIPT = join(ROOT, 'scripts', 'test-liveness.ts')
+const OWNER = join(ROOT, 'scripts', 'lib', 'liveness-subjects.ts')
 
-/** The SUBJECTS object, bounded by its own braces.
+/** 🔴 THE REAL OBJECT, NOT ITS SOURCE TEXT (code review, 2026-11-09).
  *
- *  🔴 BOUND THE REGION, NEVER GREP THE FILE. My own re-measurement of this item
- *  reported 34 keys because `grep -A 200` ran past the end of the object into
- *  later code. The real figure is 27. This repo has recorded that class four
- *  times, and I committed it while measuring the harness built to catch it. */
-function subjectsBlock(): string {
-  const src = readFileSync(SCRIPT, 'utf8')
-  const i = src.indexOf('const SUBJECTS')
-  expect(i, 'the SUBJECTS declaration has moved — re-point this gate').toBeGreaterThan(-1)
-  const lines = src.slice(i).split('\n')
-  const end = lines.findIndex(l => l === '}')
-  expect(end, 'no closing brace at column 0 — the object shape changed').toBeGreaterThan(0)
-  return lines.slice(0, end + 1).join('\n')
-}
-
-const BLOCK = subjectsBlock()
-const KEYS = Array.from(BLOCK.matchAll(/'([^']+\.test\.ts)'\s*:/g)).map(m => m[1])
-
-/** The subjects listed against one key. */
-function subjectsOf(key: string): string[] {
-  const at = BLOCK.indexOf(`'${key}'`)
-  const seg = BLOCK.slice(at, BLOCK.indexOf(']', at) + 1)
-  return Array.from(seg.matchAll(/'((?:lib|components|packages)\/[^']+\.ts)'/g))
-    .map(m => m[1]).filter(p => p !== key)
-}
-
-const ALL_SUBJECTS = Array.from(new Set(KEYS.flatMap(subjectsOf)))
+ *  The first cut of this gate regex-matched the map out of `test-liveness.ts`, and
+ *  review found two fail-open defects in it within the hour: a row with `// ` in
+ *  front still counted, so commenting one out removed it from the harness with
+ *  every arm green; and the block boundary was `line === '}'` exactly, so ONE
+ *  TRAILING SPACE on the closing brace widened the region into `NO_SUBJECT` and
+ *  took the parsed count 31 -> 38, leaving the ratchet slack by seven.
+ *
+ *  ⚠️ Both are "bound the region, never grep the file" — the rule this file's own
+ *  header cites — broken in the file that cites it. The map is now its own module
+ *  and both the harness and this gate import it, so there is no parse to get
+ *  wrong and no second copy to drift. */
+const KEYS = Object.keys(SUBJECTS)
+const ALL_SUBJECTS = Array.from(new Set(Object.values(SUBJECTS).flat()))
+const subjectsOf = (key: string): string[] => SUBJECTS[key] ?? []
 
 describe('TEST-LIVENESS-COVERAGE-01 — the mutation map is consistent with its own claim', () => {
   it('reads a real map — an empty population passes every other arm', () => {
@@ -77,16 +33,21 @@ describe('TEST-LIVENESS-COVERAGE-01 — the mutation map is consistent with its 
     expect(ALL_SUBJECTS.length, 'declared mutation subjects parsed').toBeGreaterThan(20)
   })
 
-  it('🔴 PROVES IT READ EVERY ROW — a key-shaped line that does not parse fails, by line', () => {
-    // DOC-AUDIT-REG-FORMAT-01: a pattern widened four times, each time because
-    // someone found a row BY HAND. Any line mentioning a .test.ts path inside the
-    // object must yield a key, or this gate is reporting on a subset it chose.
-    const unparsed = BLOCK.split('\n')
-      .map((l, n) => ({ l, n: n + 1 }))
-      .filter(({ l }) => /\.test\.ts/.test(l) && !/^\s*\/\//.test(l))
-      .filter(({ l }) => !/'[^']+\.test\.ts'\s*:/.test(l))
-    expect(unparsed.map(u => `line ${u.n}: ${u.l.trim()}`),
-      'a line names a test file and this gate could not read it as a key').toEqual([])
+  it('🔴 ONE OWNER — nothing outside the module declares a map of its own', () => {
+    // The row-proof arm this replaces asked "did my regex read every row?", which
+    // is a question that only exists because there was a regex. Importing the
+    // object answers it by construction. What is still worth asserting is that
+    // the harness did not keep a copy: a second declaration would agree with this
+    // one only by accident, which is the register this repo keeps
+    // (deloadCadence, tierResolution, SESSION-KM-01, OPS-AI-OWNER-01).
+    const script = readFileSync(SCRIPT, 'utf8')
+    expect(script, 'test-liveness.ts declares its own SUBJECTS again')
+      .not.toMatch(/const\s+SUBJECTS\s*[:=]/)
+    expect(script, 'test-liveness.ts declares its own NO_SUBJECT again')
+      .not.toMatch(/const\s+NO_SUBJECT\s*[:=]/)
+    expect(script, 'the harness no longer imports the owner')
+      .toContain("from './lib/liveness-subjects'")
+    expect(existsSync(OWNER), 'the owner module is gone').toBe(true)
   })
 
   it('every key is a live test file, and every subject a live source file', () => {
@@ -135,7 +96,7 @@ describe('TEST-LIVENESS-COVERAGE-01 — the mutation map is consistent with its 
     // hardcoded value finds the COMMENT ABOUT the hardcoded value. Both this file
     // and the script's own header quote "22 of 373" to explain why it was wrong.
     const code = src.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '')
-    expect(code, 'a hardcoded coverage figure is back in the code').not.toMatch(/\d+ of \d{3} test files/)
+    expect(code, 'a hardcoded coverage figure is back in the code').not.toMatch(/\d+ of \d+ test files/)
   })
 
   it('states the denominator the same way the suite is globbed', () => {
@@ -143,10 +104,15 @@ describe('TEST-LIVENESS-COVERAGE-01 — the mutation map is consistent with its 
     // would be the denominator error this repo keeps paying for. Both are
     // lib + components + packages.
     const vitest = readFileSync(join(ROOT, 'vitest.config.ts'), 'utf8')
-    for (const dir of ['lib/', 'components/', 'packages/']) {
-      expect(vitest, `vitest no longer globs ${dir} — the coverage denominator is wrong`)
-        .toContain(`${dir}**/*.test.ts`)
-    }
+    // ⚠️ EXACTLY these three, not "at least" them (code review, 2026-11-09). A
+    // fourth include would silently FLATTER the printed share, because the
+    // numerator would not grow with it — the denominator error this repo keeps
+    // paying for, in the figure written to stop a denominator error.
+    const include = vitest.match(/include:\s*\[([^\]]*)\]/)?.[1] ?? ''
+    expect(include, 'vitest include could not be read — re-point this arm').not.toBe('')
+    const globs = Array.from(include.matchAll(/'([^']+)'/g)).map(m => m[1])
+    expect(globs.sort(), 'the vitest include set changed — the coverage denominator is wrong')
+      .toEqual(['components/**/*.test.ts', 'lib/**/*.test.ts', 'packages/**/*.test.ts'])
     const counted = execFileSync('find', ['lib', 'components', 'packages', '-name', '*.test.ts'],
       { cwd: ROOT, encoding: 'utf8' }).trim().split('\n').filter(Boolean)
     expect(counted.length).toBeGreaterThan(700)

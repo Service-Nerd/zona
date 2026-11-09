@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { readFileSync, existsSync } from 'node:fs'
 import { join } from 'node:path'
+import { SUBJECTS, NO_SUBJECT } from '../../scripts/lib/liveness-subjects'
 import { PRINCIPLE_COVERAGE, UNVERIFIED_BASELINE, UNPROVEN_INVARIANT_COVERAGE_BASELINE } from './principleCoverage'
 import { INVARIANT_CODES } from './invariants'
 
@@ -150,9 +151,17 @@ describe('principle coverage — every rule is enforced, tested, exempt, or open
     // anything try to turn it red. Measured 2026-09-17: 21 of the 22 were
     // mapped; §35's was not, and nobody could have known without cross-reading
     // two files. That is the gap this closes, mechanically.
-    const harness = readFileSync(join(process.cwd(), 'scripts', 'test-liveness.ts'), 'utf8')
+    // 🔴 THE REAL MAPS, NOT THE HARNESS'S SOURCE TEXT (2026-11-09,
+    // `TEST-LIVENESS-COVERAGE-01`). This arm used `harness.includes(ref)` — a
+    // substring match over the whole file — so a test file MENTIONED anywhere in
+    // `test-liveness.ts`, a comment included, counted as mapped. That is the
+    // `GTM-CHARITY-02` class: a mention is not a filing. It also broke the moment
+    // the maps moved into their own module, which is how it was found: the arm
+    // reported all 34 entries unmapped and the suite went red.
+    const mapped = new Set([...Object.keys(SUBJECTS), ...Object.keys(NO_SUBJECT)])
+    expect(mapped.size, 'the liveness maps came back empty — re-point this arm').toBeGreaterThan(30)
     const unmapped = PRINCIPLE_COVERAGE
-      .filter(e => e.by === 'test' && e.ref && !harness.includes(e.ref.replace(/^\.?\//, '')))
+      .filter(e => e.by === 'test' && e.ref && !mapped.has(e.ref.replace(/^\.?\//, '')))
       .map(e => `§${e.n} → ${e.ref}`)
     expect(
       unmapped,

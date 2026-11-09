@@ -14582,6 +14582,43 @@ collection with a named message, because unverified is never a pass).
 ⚠️ **One arm needed the comment stripper:** asserting the stale literal cannot come back matched **this
 gate's own explanation of why it was wrong** — `HOOK-RGBA-COMMENTS-01` exactly, in the commit that cites it.
 
+🔴 **`/code-review` FOUND SIX, ALL MINE, AND THE FIRST TWO WERE THE EXACT CLASS THIS GATE'S OWN HEADER
+CITES.** Both were **fail-open parse defects** in a gate that reads a map out of a script as TEXT:
+a row with `// ` in front of it **still counted**, so commenting one out removed it from the harness
+with every arm green; and the block boundary was `line === '}'` exactly, so **one trailing space on
+the closing brace** widened the region into `NO_SUBJECT` and took the parsed count **31 → 38**,
+leaving the ratchet slack by seven. ⚠️ **"Bound the region, never grep the file" — broken inside the
+gate that cites it, in the commit that cites it.** ✅ **Fixed by deleting the parse, not improving
+it:** `scripts/lib/liveness-subjects.ts` is the single owner and both the harness and the gate
+**import the real object**. The row-proof arm is gone because the question only existed while there
+was a regex; a **one-owner** arm replaces it, asserting the harness kept no copy. **Falsified: a
+commented-out row now goes red on two arms, and a trailing space is correctly a no-op.**
+
+🔴 **AND VERIFYING ONE OF THE SMALLER FIXES FOUND A SEVENTH: THE HARNESS PRINTED A TICK OVER ZERO
+TESTS.** Run from the wrong directory — or with an `--only` filter matching nothing — it printed
+*"✅ every behaviour-changing mutation was caught by the test that claims to cover it"* over **0
+tests checked**. **The strongest sentence in the file, said about nothing, in the harness built to
+catch a green tick with nothing behind it.** Exit 2 now, the code it already uses for *"the baseline
+was not green"*, because both mean the run proved nothing.
+🔻 Also fixed: under `--only` the *"newly KILLED (remove from baseline)"* line **named all 11
+baseline entries the run never attempted** — acting on it deletes 11 justified EQUIVALENT reasons,
+and the coverage block three lines below had been gated for exactly that; the denominator arm
+asserted the vitest include **contains** the three dirs rather than **equals** them, so a fourth
+include would silently flatter the share; the stale-literal regex hardcoded a three-digit
+denominator; and the new `find` call omitted `cwd`.
+
+🔴 **AND THE FULL SUITE FOUND A THIRD CONSUMER OF THE MAP THAT MY CONSUMER CHECK MISSED.**
+`principleCoverage.test.ts` read `SUBJECTS` and `NO_SUBJECT` out of `test-liveness.ts` **as text**,
+so moving them turned all 34 of its entries unmapped and the suite red. ⚠️ **I grepped for the
+consumers of the ROUND on the previous item and did not grep for the consumers of the MAP on this
+one** — `grep -rn "SUBJECTS" lib components packages` would have found it in one command.
+🥇 **And the arm it broke was worse than broken: `harness.includes(e.ref)` is a substring match over
+the WHOLE FILE, so a test file mentioned anywhere in the harness — a comment included — counted as
+mapped.** That is the `GTM-CHARITY-02` class, fifth instance, in the cross-register arm written to
+stop a principle reading as covered when nothing could turn its test red. It reads the real key sets
+now, refuses an empty map, and **falsified: a mapping replaced by a comment that names the same file
+goes red** where the old arm passed it.
+
 🔻 **WHAT THIS DOES NOT PROVE, AND IT IS THE ITEM'S WHOLE RESIDUAL.** The share is **4.1%**. The gate holds
 the map self-consistent; **it does not make the map grow, and nothing schedules that.** 731 test files are
 outside the harness by construction, and a clean nightly run says nothing about them. That sentence now
