@@ -3139,8 +3139,11 @@ What actually arrives is a different shape: one headline zone %, a score, and th
 > reachable only on the `firstName` branch. **Composing the real header beat scanning one
 > file's source.**
 >
-> 🔺 **RESIDUALS, both filed below:** `BRAND-EMDASH-LIB-01` still owns the `ruleEngine.ts`
-> + push-notification half, and `READ-EM-DASH-02` is the plan-JSON population.
+> 🔺 **RESIDUAL, still open:** `BRAND-EMDASH-LIB-01` owns the `ruleEngine.ts`
+> + push-notification half.
+> ✅ The plan-JSON population half **shipped 2026-10-08** under READ-EM-DASH-02.
+> *(The `🔺` named both until 2026-11-09, when § 7 of `backlog:verify` read the wrapped
+> clause and found one of its two trackers had been closed for a month.)*
 
 
 **Measured: 15 of 83 live `feedback_text` rows contain an em dash.** The founder settled the scope on 2026-09-22: *"No em dash in text or spoken word … I just don't want it in sentences."* A run read is a sentence the runner reads.
@@ -8719,8 +8722,9 @@ two zero-importer components were outside the script I counted the 20 with. **Th
 the value before measuring the population" mistake `UNCONTRACTED_BASELINE`'s own comment
 records about its first value of 14, committed in the commit that added a register to make the
 first one honest.**
-🔺 **And the two zero-importer components are now filed:** `WAITLIST-UNREACHABLE-01` (a form,
-a route and a Supabase table, with **no render site**) and `SELECT-DEAD-01`.
+🔺 **Residual, still open:** `WAITLIST-UNREACHABLE-01` (a form,
+a route and a Supabase table, with **no render site**).
+✅ The other zero-importer component was **deleted 2026-11-08** under SELECT-DEAD-01.
 
 > ✅ **PREMISE CONFIRMED 2026-11-07, and `npm run backlog:verify` flags it by design:** this item
 > names `docs/contracts/components/ledger-card.md` **precisely because it does not exist**. The dead
@@ -9391,6 +9395,48 @@ apply** — I was replacing a `🔻` string I had already converted. Every mutat
 
 🔴 **I ALSO WIPED SIX OF MY OWN UNCOMMITTED CONVERSIONS WITH `git checkout`** on the registry,
 mid-falsification, against a memory note that says exactly that. Re-applied from a `/tmp` backup.
+
+🔴 **`/code-review` FOUND SEVEN, AND THE HEADLINE IS THAT § 7's OWN FIRST RUN WAS WRONG ON 2 OF
+ITS 11 ROWS WITH BOTH OF THE FINDINGS IT EXISTS TO MAKE MASKED.** Two causes, both mine:
+**ids were scanned from the whole LINE**, and a `feature-registry.md` row is 2,000–3,000
+characters — `feature-registry.md:1354`'s real tracker sat **27 chars** after the mark while the
+ids credited as *"tracked and open"* were **600 and 950 chars later, in unrelated sentences**.
+⚠️ **Co-occurrence read as a reference — the `GTM-CHARITY-02` class, INSIDE the gate, in the
+commit whose own write-up records measuring that class twice.** And `if (open.length) return ok`
+**short-circuited**, so a clause naming one open id and one closed one passed.
+✅ **Fixed: the clause is bounded** (to the table cell, or for prose to the end of its
+*paragraph* — `backlog.md` is hard-wrapped and *"RESIDUALS, **both** filed below"* had its second
+id on the next line, invisible) **and every id in the clause must be open, not one of them.**
+
+🔑 **THE HONEST RE-RUN THEN FOUND FOUR REAL RECORD DEFECTS, WHICH IS THE GATE EARNING ITS KEEP:**
+`READ-EM-DASH-02` (**shipped 2026-10-08**) and `SELECT-DEAD-01` (**done 2026-11-08**) were each
+still named as live trackers — **the `PUSH-UNITS-01` shape, twice, exactly what arm 3 is for** —
+and `POSTRUN-PLAN-FEEDBACK-01` is **PARKED at the founder's request**, so a finding *about* a
+parked item is an accepted state, not a tracked residual: that one went back to `🔻`. All four
+corrected. **Eleven green rows became ten, and the four it found were worth more than the eleven.**
+
+🔴 **AND THE OWNER GAINED THE THIRD FILING FORMAT, BECAUSE ARM 2 FALSE-FIRED ON TEN OPEN ITEMS.**
+`backlog.md` § *Keeping this file honest* names **three** item formats and says *"a bullet-only
+grep misses ~40% of open items"*; the owner covered the heading and the board-tag bullet and not
+the **status bullet**, so `POSTRUN-PLAN-FEEDBACK-01` — filed at L22232 and cited as an open blocker
+six times — was in **no set at all** and read as a typo. `status_bullet_open_ids` added (**23 open
+ids**), sharing the closed vocabulary; § 4's narrower population is unchanged **by ruling**.
+🔴 **And my `heading_all_sites` was a VERBATIM SECOND COPY of the extraction, directly under a
+comment claiming it shared it, in the file whose own header says a second copy *"ends silently"* —
+ungated, because `openItemsSingleOwner.test.ts` enumerates NAMES.** Arm 2 is folded into arm 3 and
+**the duplicate is deleted, not refactored**; the four new names are in that test now.
+
+🔴 **AND IT FIRED ON ITS OWN DOCUMENTATION A THIRD TIME** — on my correction note above, which
+discusses the mark in prose. The gate is right and my prose was wrong: **a mark being discussed
+goes in backticks.** Three instances of `HOOK-RGBA-COMMENTS-01` in one item.
+🔻 Also fixed: a sentinel failure now **skips the scan** rather than collecting arms nobody sees
+(measured: 5 failures, 1 explanation, 4 of them about the documentation); an **odd backtick count**
+skips the blanking and scans raw, because a false fire is reviewable and a silent skip is not; and
+`b - a > 45` permitted a **46**-line block against a message saying 45.
+
+📐 **Re-falsified against the review's own measured cases:** a clause naming an open AND a closed
+id fires · a tracker on the next line is found · one across a **blank line** is not · a
+status-bullet tracker passes · 46 lines fails · an unmatched backtick does not swallow the mark.
 
 🔻 **WHAT THIS DOES NOT PROVE.** It cannot find a `🔻` that should have been a `🔺` — whether a cost
 was **accepted** or merely **noted** is a judgement and no script settles it. The 425 existing marks

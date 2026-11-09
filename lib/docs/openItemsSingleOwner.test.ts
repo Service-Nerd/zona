@@ -28,6 +28,14 @@ const CALLERS = ['scripts/audit-docs.sh', 'scripts/backlog-open.sh', 'scripts/ba
 const OWNED = [
   'heading_open_ids', 'heading_open_sites',
   'board_tag_bullet_ids', 'board_tag_bullet_sites',
+  // 🔴 ADDED 2026-11-09. `status_bullet_open_*` is the THIRD filing format `backlog.md` names
+  // and the owner did not cover, so the first consumer to ask "is this id a live item?" was
+  // wrong about 23 of them. ⚠️ The list was also the reason a duplicate extraction went
+  // ungated: a `heading_all_sites` shipped as a verbatim second copy of `heading_open_sites`,
+  // under a comment claiming it shared the extraction, and this file could not see it because
+  // it enumerates NAMES. The duplicate was deleted rather than refactored; the names are here
+  // so the next one is caught.
+  'status_bullet_open_ids', 'status_bullet_open_sites',
   // 🔴 ADDED 2026-11-08 (BACKLOG-TAG-IN-HEADING-01). `backlog-open.sh` held the board
   // derivation and `backlog-verify.mjs` needed the same answer to GATE the filing rule. Two
   // copies would disagree about which board owns an item, which is the one thing it says.

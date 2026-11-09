@@ -34,10 +34,21 @@ process.chdir(ROOT)
 const ids = sh('bash', ['-c', '. scripts/lib/open-items.sh; { heading_open_ids docs/releases/backlog.md; board_tag_bullet_ids docs/releases/backlog.md; } | sort -u'])
   .split('\n').map(s => s.trim()).filter(Boolean)
 
-/** Every id this file FILES, open or closed — so § 7 can tell a typo from a closed item.
- *  Derived by the owner (`heading_all_ids`), never by a copy of the extraction here. */
-const allIds = sh('bash', ['-c', '. scripts/lib/open-items.sh; heading_all_ids docs/releases/backlog.md | sort -u'])
-  .split('\n').map(s => s.trim()).filter(Boolean)
+/**
+ * § 7's OPEN set, and it is WIDER than § 4's on purpose.
+ *
+ * 🔴 CODE REVIEW, 2026-11-09. The first cut asked "is this id FILED" against a headings-only
+ * derivation and reported `POSTRUN-PLAN-FEEDBACK-01` — filed at L22232 and cited as an open
+ * blocker six times — as an id that was never filed. `backlog.md` names THREE item formats and
+ * the owner covered two, so the arm false-fired on 10 bullet-only open ids.
+ *
+ * ⚠️ § 4's tag gate keeps the narrower population BY RULING (`BACKLOG-TAG-IN-HEADING-01`):
+ * demanding a board tag from 23 status bullets that never carried one is a different change.
+ * This set answers a different question — "is this a live item?" — so it reads all three.
+ */
+const openIdsWide = Array.from(new Set([...ids, ...sh('bash',
+  ['-c', '. scripts/lib/open-items.sh; status_bullet_open_ids docs/releases/backlog.md | sort -u'])
+  .split('\n').map(s => s.trim()).filter(Boolean)]))
 
 /**
  * 🔴 SECTION 5 — THE FILING RULE FINALLY HAS A GATE (BACKLOG-TAG-IN-HEADING-01, 2026-11-08).
@@ -516,63 +527,107 @@ if (predManual.length) {
 const RESIDUAL_FILES = ['docs/releases/backlog.md', 'docs/canonical/feature-registry.md']
 const SENTINEL = ['residual-convention:start', 'residual-convention:end']
 const ID_IN_TICKS = /`([A-Z][A-Z0-9]*(?:-[A-Z0-9]+)+)`/g
-const resNoId = [], resUnknown = [], resClosed = [], resOk = []
+const resNoId = [], resNotOpen = [], resOk = []
 let resSentinelFail = null
+
+/**
+ * 🔴 THE CLAUSE, NOT THE LINE (code review, 2026-11-09). The first cut scanned ids from the
+ * WHOLE line, and a `feature-registry.md` row is 2,000-3,000 characters. Measured on its own
+ * first run: `feature-registry.md:1354`'s real tracker sits 27 chars after the mark and the ids
+ * credited as "tracked and open" were **600 and 950 chars later, in unrelated sentences**.
+ * **Co-occurrence read as a reference — the `GTM-CHARITY-02` class, inside the gate, in the
+ * commit whose own write-up records measuring that class twice.**
+ *
+ * ⚠️ AND IT MUST CROSS A WRAP. `backlog.md` prose is hard-wrapped: `backlog.md:3142` says
+ * "RESIDUALS, **both** filed below" and the second id is on 3143, invisible to a line scan —
+ * which also sent an id-on-the-next-line residual into the "no item id" arm.
+ *
+ * So: from the mark to the end of its TABLE CELL (`|`), or for prose to the end of its
+ * PARAGRAPH — following lines while they are non-empty and do not open a new block.
+ */
+function clauseAt(ls, i) {
+  const l = ls[i]
+  const from = l.indexOf('🔺')
+  if (l.trimStart().startsWith('|')) {
+    const end = l.indexOf('|', from)
+    return l.slice(from, end < 0 ? undefined : end)
+  }
+  const parts = [l.slice(from)]
+  for (let j = i + 1; j < ls.length; j++) {
+    const n = ls[j]
+    if (!n.trim()) break
+    if (/^\s*(#{1,6} |\||[-*] |\d+\. )/.test(n.replace(/^>\s?/, ''))) break
+    if (n.includes('🔺') || n.includes('🔻')) break
+    parts.push(n.replace(/^>\s?/, ''))
+  }
+  return parts.join(' ')
+}
 
 for (const f of RESIDUAL_FILES) {
   const ls = readFileSync(f, 'utf8').split('\n')
-  let skipFrom = -1, skipTo = -1
+  let skipFrom = -1, skipTo = -1, scan = true
   const a = ls.findIndex(l => l.includes(SENTINEL[0]))
   const b = ls.findIndex(l => l.includes(SENTINEL[1]))
   if (f.endsWith('backlog.md')) {
-    if (a < 0 || b < 0 || b <= a) resSentinelFail = `${f}: the ${SENTINEL[0]}/${SENTINEL[1]} pair is missing or inverted`
-    else if (b - a > 45) resSentinelFail = `${f}: the convention block spans ${b - a + 1} lines (max 45) — it must not be widened`
+    // ⚠️ A SENTINEL FAILURE SKIPS THE SCAN (code review). The first cut left `skipFrom` at -1
+    // and went on collecting, so the unskipped convention block alone contributed 1 closed and
+    // 3 no-id to the exit code while only the sentinel message printed: five failures, one
+    // explanation, four of them about the documentation.
+    if (a < 0 || b < 0 || b <= a) { resSentinelFail = `${f}: the ${SENTINEL[0]}/${SENTINEL[1]} pair is missing or inverted`; scan = false }
+    else if (b - a + 1 > 45) { resSentinelFail = `${f}: the convention block spans ${b - a + 1} lines (max 45) — it must not be widened`; scan = false }
     else { skipFrom = a; skipTo = b }
   }
+  if (!scan) continue
   ls.forEach((l, i) => {
-    // 🔴 A MARK INSIDE A CODE SPAN IS BEING NAMED, NOT USED (2026-11-09). The first cut
-    // fired on this item's OWN write-up, which quotes `🔺` in backticks to explain the
-    // convention — `HOOK-RGBA-COMMENTS-01`, third instance in one day, in the record of
-    // the item that cites it. The ids are themselves in backticks, so the MARK is looked
-    // for in the code-span-blanked line and the IDS are read from the original.
-    const prose = l.replace(/`[^`]*`/g, '@@')
+    // ⚠️ A MARK INSIDE A CODE SPAN IS BEING NAMED, NOT USED. This gate fired on its own
+    // convention table and then on its own shipped write-up, which quotes `🔺` to explain the
+    // mark — `HOOK-RGBA-COMMENTS-01`, twice in one build. The MARK is looked for in the
+    // code-span-blanked line; the IDS are read from the original, because ids are in backticks.
+    // ⚠️ ODD PARITY MEANS THE SPANS CANNOT BE PAIRED, and blanking then shifts and can swallow a
+    // real bare mark with NO arm firing — the em-dash guard's recorded mechanism. So an odd
+    // count skips the blanking and scans raw: a false fire is reviewable, a silent skip is not.
+    const parity = (l.match(/`/g) ?? []).length % 2 === 0
+    const prose = parity ? l.replace(/`[^`]*`/g, '@@') : l
     if (!prose.includes('🔺')) return
     if (i >= skipFrom && i <= skipTo && skipFrom >= 0) return
     if (/^#{2,4} /.test(l)) return
-    const named = Array.from(l.matchAll(ID_IN_TICKS)).map(m => m[1])
+    const clause = clauseAt(ls, i)
+    const named = Array.from(clause.matchAll(ID_IN_TICKS)).map(m => m[1])
     const where = `${f.split('/').pop()}:${i + 1}`
-    const text = l.trim().replace(/\s+/g, ' ').slice(0, 92)
+    const text = clause.trim().replace(/\s+/g, ' ').slice(0, 92)
     if (!named.length) return resNoId.push([where, text])
-    const open = named.filter(n => ids.includes(n))
-    const filed = named.filter(n => allIds.includes(n))
-    if (open.length) return resOk.push([where, open.join(', ')])
-    if (!filed.length) return resUnknown.push([where, named.join(', '), text])
-    resClosed.push([where, filed.join(', '), text])
+    // 🔑 EVERY id in the clause must be OPEN, not just one of them. The short-circuit in the
+    // first cut (`if (open.length) return ok`) masked BOTH of the findings this arm exists to
+    // make: `feature-registry.md:1327` names an open id AND `SELECT-DEAD-01` (✅ DONE), which is
+    // the PUSH-UNITS-01 shape exactly, and it reported 0.
+    const closed = named.filter(n => !openIdsWide.includes(n))
+    if (!closed.length) return resOk.push([where, named.join(', ')])
+    resNotOpen.push([where, closed.join(', '), text])
   })
 }
 
-head('7. 🔺 RESIDUALS — unfixed, and the item that tracks it must still be OPEN')
+head('7. 🔺 RESIDUALS — unfixed, and every item named as its tracker must still be OPEN')
 if (resSentinelFail) {
   console.log(`  ✗ ${resSentinelFail}`)
   console.log('    This section skips the block that DESCRIBES the marks; without a bounded')
-  console.log('    sentinel it would either fire on the documentation or skip the whole file.')
-} else if (!resOk.length && !resNoId.length && !resUnknown.length && !resClosed.length) {
+  console.log('    sentinel it would fire on the documentation. The scan is SKIPPED, not run')
+  console.log('    partially, so this message is the only finding rather than one of five.')
+} else if (!resOk.length && !resNoId.length && !resNotOpen.length) {
   console.log('  ✗ NOT ONE 🔺 IN EITHER FILE. A convention nobody uses is a convention that does')
   console.log('    not exist, and a gate over an empty population is green by construction.')
   console.log('    Adopt it on the next residual, or delete the convention and this section.')
 } else {
   console.log(`  tracked and open ${resOk.length} · no id ${resNoId.length}`
-    + ` · id never filed ${resUnknown.length} · ✗ TRACKING ITEM CLOSED ${resClosed.length}`)
+    + ` · ✗ TRACKER NOT OPEN ${resNotOpen.length}`)
   resOk.forEach(([w, n]) => console.log(`      ✓ ${w.padEnd(30)} ${n}`))
-  if (resClosed.length) {
-    console.log('\n  ✗ A RESIDUAL WHOSE TRACKING ITEM IS CLOSED — the PUSH-UNITS-01 shape:')
-    resClosed.forEach(([w, n, t]) => console.log(`      ${w.padEnd(30)} ${n}\n${' '.repeat(32)}${t}`))
-    console.log('    Either the residual shipped (change 🔺 to a ✅ line, or drop it), or it is')
-    console.log('    still live and needs a NEW open item. A closed id is not a tracker.')
-  }
-  if (resUnknown.length) {
-    console.log('\n  ✗ A 🔺 NAMING AN ID THAT WAS NEVER FILED:')
-    resUnknown.forEach(([w, n, t]) => console.log(`      ${w.padEnd(30)} ${n}\n${' '.repeat(32)}${t}`))
+  if (resNotOpen.length) {
+    console.log('\n  ✗ A RESIDUAL WHOSE TRACKER IS NOT AN OPEN ITEM — the PUSH-UNITS-01 shape:')
+    resNotOpen.forEach(([w, n, t]) => console.log(`      ${w.padEnd(30)} ${n}\n${' '.repeat(32)}${t}`))
+    console.log('    Either the residual shipped (drop the 🔺, or say so), or it is still live and')
+    console.log('    needs an OPEN item. A shipped, parked or withdrawn id is not a tracker.')
+    console.log('    (Filed-but-closed and never-filed are ONE bucket on purpose: telling them')
+    console.log('     apart needs an all-ids derivation, and the first cut of that was a verbatim')
+    console.log('     second copy of the owner\'s extraction. Read the item.)')
   }
   if (resNoId.length) {
     console.log('\n  ✗ A 🔺 WITH NO ITEM ID — use 🔻 for an accepted trade-off, or file an item:')
@@ -589,8 +644,8 @@ console.log('    QUESTION. `FIRSTRUN-MARATHON-01` read open for 33 days with a p
 console.log('    fine. A correct question and a plausible one look identical from here.\n')
 console.log('⚠️  AND SECTION 7 CANNOT FIND A 🔻 THAT SHOULD HAVE BEEN A 🔺. Whether a cost was')
 console.log('    ACCEPTED or merely NOTED is a judgement; 425 existing 🔻 stay as they are.\n')
-const residualFail = resNoId.length + resUnknown.length + resClosed.length
+const residualFail = resNoId.length + resNotOpen.length
   + (resSentinelFail ? 1 : 0)
-  + (!resOk.length && !resNoId.length && !resUnknown.length && !resClosed.length && !resSentinelFail ? 1 : 0)
+  + (!resOk.length && !resNoId.length && !resNotOpen.length && !resSentinelFail ? 1 : 0)
 process.exit(deadFiles.length + deadSyms.length + untagged.length + deadContractRefs.length
   + predStale.length + residualFail > 0 ? 1 : 0)

@@ -120,34 +120,42 @@ heading_open_sites() {
 
 heading_open_ids() { heading_open_sites "$1" | cut -f2; }
 
-# ── EVERY ITEM ID THIS FILE FILES, OPEN OR CLOSED ───────────────────────────
+# ── THE THIRD FILING FORMAT: A STATUS BULLET ────────────────────────────────
 #
-# 🔴 ADDED 2026-11-09 (`DOCS-RESIDUAL-01`) BECAUSE A CALLER NEEDED TO TELL "TYPO" FROM
-# "CLOSED", AND THE ALTERNATIVE WAS A SECOND COPY OF THE EXTRACTION. The 🔺 residual gate
-# must distinguish *an id that was never filed* (a typo, fix the text) from *an id that was
-# filed and has since closed* (the `PUSH-UNITS-01` shape, which is the finding). Doing that
-# from `heading_open_ids` alone is impossible, and deriving all-ids in the caller would put a
-# third copy of "how an id is read from a heading" in the repo.
+# 🔴 ADDED 2026-11-09 (`DOCS-RESIDUAL-01`, by code review). This file's own § *Keeping this
+# file honest* names **three** item formats — status bullets, LATER table rows, unscheduled
+# bullets — and says *"a bullet-only grep misses ~40% of open items; that is why CA-08 once
+# looked like it had vanished."* The owner covered the `###` heading and the board-tag bullet
+# and NOT the status bullet, so `POSTRUN-PLAN-FEEDBACK-01` — filed at L22232, cited as an open
+# blocker six times — was in no set at all, and the first consumer to ask "is this id filed?"
+# reported it as a typo.
 #
-# ⚠️ IT SHARES THE EXTRACTION, NOT A SECOND REGEX. Same `^###`-backticked and `^## `-bare
-# conventions as `heading_open_sites`, same FILED/SHIPPING exclusion for the `##` form — just
-# without the status test, because status is the one thing this function does not ask about.
-heading_all_sites() {
-  awk '
-    /^##/ {
+# ⚠️ IT SHARES THE CLOSED VOCABULARY, which is the half that matters: the same
+# `_CLOSED_STAMPS` / `_CLOSED_PROSE` and the same blank-the-backticks rule, so a bullet closes
+# the same way a heading does and an id containing "DEAD" cannot close itself.
+#
+# ⚠️ IT IS DELIBERATELY NOT IN `open_item_boards` OR § 4's TAG GATE. Those populations are the
+# heading + board-tag sets by ruling (`BACKLOG-TAG-IN-HEADING-01`), and widening them would
+# demand a board tag from 23 bullets that never carried one. This set exists so a consumer can
+# answer "is this id a live item?" without being wrong about 23 of them.
+status_bullet_open_sites() {
+  awk -v stamps="$_CLOSED_STAMPS" -v prose="$_CLOSED_PROSE" '
+    /^- / {
       line = $0
-      if (line ~ /^## /) {
-        if (line ~ /^## .{0,8}(FILED|SHIPPING|Filed|Shipping)/) next
-        if (match(line, /[A-Z][A-Z0-9]*(-[A-Z0-9]+)+-[0-9][0-9]/) == 0) next
-        printf "%s\t%s\n", NR, substr(line, RSTART, RLENGTH); next
-      }
-      if (line !~ /^###/) next
-      if (match(line, /`[A-Z][A-Z0-9]*(-[A-Z0-9]+)+`/) == 0) next
-      printf "%s\t%s\n", NR, substr(line, RSTART + 1, RLENGTH - 2)
+      if (match(line, /^- ([^ A-Za-z]+ )?\*\*`?[A-Z][A-Z0-9]*(-[A-Z0-9]+)+/) == 0) next
+      if (match(line, /[A-Z][A-Z0-9]*(-[A-Z0-9]+)+/) == 0) next
+      id = substr(line, RSTART, RLENGTH)
+      bare = line
+      gsub(/`[^`]*`/, "@@", bare)          # an id containing DEAD must not close itself
+      if (index(bare, "\342\234\205") || index(bare, "~~")) next
+      n = split(stamps, w, "|"); for (i = 1; i <= n; i++) if (index(bare, w[i])) next
+      lo = tolower(bare)
+      m = split(prose, q, "|");  for (i = 1; i <= m; i++) if (index(lo, tolower(q[i]))) next
+      printf "%s\t%s\n", NR, id
     }' "$1"
 }
 
-heading_all_ids() { heading_all_sites "$1" | cut -f2; }
+status_bullet_open_ids() { status_bullet_open_sites "$1" | cut -f2; }
 
 
 
