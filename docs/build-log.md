@@ -5,7 +5,7 @@ angle. Feeds the weekly DHTB LinkedIn build-in-public posts — keep it honest, 
 it specific, no polish. The content system adds the voice.
 
 ---
-## 2026-11-09 — the date rolled over and four tests went red with no code change
+## 2026-11-09 — TAPER-LIVENESS-SECOND-DERIVATION-01 · the date rolled over and four tests went red with no code change
 **Shipped:** two expired tests fixed, the class measured and filed.
 **Dev learning:** I ran both files under a pinned clock *before* attributing a cause, because the recorded lesson is that a bisect cannot distinguish a commit that broke a test from a test that expired. Both passed at 2026-11-08 and failed at 2026-11-09. Nothing I had written that day was involved.
 **Product/creator learning:** `inputEffect.test.ts` pins its plan start *and* its own `TODAY` constant, and still expired. `generateRulePlan(input, tier, planStart)` fixes the plan's calendar; the engine's **other** clock read — the foundation runway, measured from today to the plan start — is untouched by it. So a field reported INERT and a declared effect surface moved 33 → 32 overnight. **CLAUDE.md predicts this in as many words: "the gate only knows two names for a pinned date."** It is the third instance.
