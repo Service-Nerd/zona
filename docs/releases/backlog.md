@@ -6634,15 +6634,64 @@ bypassed by a table being in the wrong place."*
 |---|---|---|---|
 | 1 | `RESHAPE-CONFIG-GATE-01` — bring every numeric in `lib/coaching/constants.ts` under the principle gate | **DO NOW** | nothing |
 | 2 | `LEDGER-ZERO-UNIT-01` — the ledger's bare `0` | **DO NOW** | nothing |
-| 3 | `RESHAPE-FIRST-FIRINGS-01` — read the first real adjustments the woken engine produces | watch | the engine firing in the wild |
-| 4 | `ADJUST-TRIGGER-REACH-02` — re-run the backtest | wait ~3 weeks | runners need **4+ weeks** of history; two triggers cannot fire on three |
-| 5 | `POSTRUN-PLAN-FEEDBACK-01` — tell the runner the plan changed | **blocked** | 3 and 4. Nothing truthful to say yet |
+| 3 | ✅ `RESHAPE-FIRST-FIRINGS-01` — read the first real adjustments the woken engine produces | **DONE 2026-11-09** | — |
+| 4 | `ADJUST-TRIGGER-REACH-02` — re-run the backtest | **precondition MET by one runner** | a conclusion needs more than one |
+| 5 | `POSTRUN-PLAN-FEEDBACK-01` — tell the runner the plan changed | **still blocked, for a DIFFERENT and sharper reason** | nothing changed — see below |
 
 ⚠️ **The order is not negotiable and 5 is the reason.** The founder wants the announcement,
-and it is the right feature; but the only genuine detection that has ever fired in production
-is `zone_drift`, **three times, reverted all three**, and the one readable message says
+and it is the right feature; but the only genuine detection that had ever fired in production
+was `zone_drift`, **three times, reverted all three**, and the one readable message says
 *"zero discipline this week."* **A tone rejection and a wrong detection look identical in the
 data**, and announcing a reshape engine whose firings get reverted is worse than staying quiet.
+
+🔑 **RE-MEASURED AGAINST PRODUCTION 2026-11-09 — THE ENGINE HAS FIRED, AND EVERY CLAUSE ABOVE
+MOVED.** Full reading in `scripts/backtest-adjustment-triggers.ts`'s header.
+
+- **22 ledger rows (was 18); last row 2026-11-03 (was 2026-06-29).**
+- 🔑 **`shadow_load` HAS FIRED** — 2026-10-11, `shadowPct 18.4` vs threshold 15, **auto_applied**.
+  A second detection type, which the paragraph above says had never happened.
+- 🔑 **The latest `zone_drift` is auto_applied and NOT EVEN SUPERSEDED** — 2026-10-28,
+  `driftPct 87` vs threshold 20. **So "reverted all three" is no longer the record.**
+- ✅ **THE FIRST FIRING WAS A WRONG DETECTION AND THE DATA SAYS SO**: `zdScore: 0` against a
+  `threshold: 50` — the pre-§12-Am.1 detector, which read a BAND where §12 prescribes a CAP,
+  fixed by `TRIGGER-AUDIT-01` on 2026-09-13. **⚠️ So the worry above is answerable: a tone
+  rejection and a wrong detection do NOT look identical — `trigger_detail` distinguishes them.**
+  0 crossing 50 is a defect; 87 crossing 20 is not. That sentence was the gate on item 5 and it
+  was wrong about its own data.
+- 🔴 **THE LEDGER IS 36% DUPLICATES — 8 of 22 rows in 4 pairs, 1–7 SECONDS apart**, which is what
+  inflates the "three times": zone_drift fired **three** times and wrote **four** rows. Filed as
+  `ADJUST-LEDGER-DUPLICATE-01`.
+- 🔻 **AND WHAT STILL BLOCKS ITEM 5 IS NOT THE REVERT RATE — IT IS THAT NOTHING CHANGED.** Both
+  standing firings are `adjustment_type: 'flag_for_review'`, and `shadow_load`'s
+  `sessions_before` is **byte-identical** to its `sessions_after` (2,427 chars each); the
+  zone_drift rows differ by 126–189 characters of added coach-note text. **So *"your plan changed
+  because of your run"* would be FALSE for one and an overstatement for the rest.** A sharper
+  block than "wait and see" — and it points at a different feature: **tell the runner the
+  COACHING changed, not the plan.** 💼 That is a product decision, not a measurement.
+- 📐 **Item 4's precondition, measured from non-superseded `run_analysis`: ONE runner qualifies**
+  on genuinely accumulated history (6 distinct weeks, 14 analyses, 2026-10-01 → 2026-11-06); the
+  next deepest is 3 weeks. ⚠️ **A second runner shows 19 weeks and every analysis was written on
+  ONE DAY (2026-06-02)** — a backfill, not history; counting it would make the population look
+  twice as deep as it is. **The wait is over for a re-run, not for a conclusion.**
+
+### 🔲 `ADJUST-LEDGER-DUPLICATE-01` — the adjustment ledger is 36% duplicate rows ⚙️ **NO BOARD**
+
+📐 **Measured 2026-11-09 reading `RESHAPE-FIRST-FIRINGS-01`: 8 of 22 `plan_adjustments` rows are
+duplicates — 4 pairs, 1–7 seconds apart**, same user, same `week_n`, same `trigger_type`, same
+`status`. Three pairs are `session_reorder` and one is the 2026-08-17 `zone_drift`.
+
+🔴 **IT CORRUPTS THE ONE NUMBER THIS WAVE IS SEQUENCED ON.** The wave's own text says zone_drift
+fired *"three times"*; it fired **three** times and wrote **four** rows, so every count taken
+from this table over-reports. `MAX_ADJUSTMENTS_PER_WEEK` exists and did not prevent it, because a
+pair seconds apart is a double-invocation of the same check, not a second detection.
+
+⚙️ **The fix is idempotency at the write, not a cap.** Candidate: a unique index on
+`(user_id, week_n, trigger_type)` where `superseded_at is null`, or a conditional insert that
+reads the open row first. ⚠️ **Decide which before writing: a unique index is a migration and
+needs its GRANT** (MIGRATION-GRANTS-01), and it would also forbid a legitimate second firing of
+the same trigger in the same week — which `MAX_ADJUSTMENTS_PER_WEEK > 1` currently permits. **So
+the cap and the index disagree about the domain model, and that is the question to settle first.**
+
 
 ### ✅ `RESHAPE-CONFIG-GATE-01` — **SHIPPED 2026-10-08.** The whole file is in the gate now, derived not listed ⚙️ **NO BOARD**
 

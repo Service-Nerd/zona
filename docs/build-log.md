@@ -5,6 +5,15 @@ angle. Feeds the weekly DHTB LinkedIn build-in-public posts — keep it honest, 
 it specific, no polish. The content system adds the voice.
 
 ---
+## 2026-11-09 — RESHAPE-FIRST-FIRINGS-01 · the sentence the whole wave was sequenced on was wrong about its own data
+**Shipped:** the reshape engine's first real firings, read from production and recorded beside the original figures.
+**Dev learning:** this was an item marked "watch — blocked on the engine firing in the wild". It had fired. Two detection types, and the most recent zone_drift is auto-applied and not even superseded. **An item whose state is "wait" is still an item you can go and measure**, and the wave had been sequenced on a one-line summary of a table nobody had re-read in a month.
+**Product/creator learning:** the wave's gating sentence reads *"a tone rejection and a wrong detection look identical in the data."* They do not. The first firing recorded `zdScore: 0` against a `threshold: 50` — a score of zero crossing a threshold of fifty — and that is a wrong detection, legible in one column. The most recent recorded `driftPct 87` against `20`, which is not. **The distinction the sentence says is impossible is one `trigger_detail` field.** The threshold defect was fixed in September by a different item; the data confirms the fix end to end.
+**AI-building learning:** the block on the dependent feature survived, for a completely different reason than the one written down. Both standing firings are `flag_for_review`, and `shadow_load`'s `sessions_before` is byte-identical to its `sessions_after` — 2,427 characters each. So "your plan changed because of your run" is **false**, not premature. **The right answer was to sharpen the block, not lift it**, and it points at a different feature: tell the runner the coaching changed.
+**The honest bit:** 8 of 22 rows in that ledger are duplicates, 1–7 seconds apart. That is what makes the wave's "zone_drift fired three times" read as three: it fired three times and wrote four rows. **Every count anyone has taken off that table, including mine ten minutes earlier, over-reports.** And one runner's 19 weeks of "history" were all written on a single day — a backfill that would have made the population look twice as deep as it is.
+**Hook material:** a trigger that fired on a score of 0 against a threshold of 50, and told the runner they had "zero discipline this week".
+**Postable?:** yes — "the item said wait; the thing had already happened" is a good one.
+
 ## 2026-11-09 — TAPER-LIVENESS-SECOND-DERIVATION-01 · the date rolled over and four tests went red with no code change
 **Shipped:** two expired tests fixed, the class measured and filed.
 **Dev learning:** I ran both files under a pinned clock *before* attributing a cause, because the recorded lesson is that a bisect cannot distinguish a commit that broke a test from a test that expired. Both passed at 2026-11-08 and failed at 2026-11-09. Nothing I had written that day was involved.

@@ -13,6 +13,53 @@
 //   last row of any kind .............. 2026-06-29
 //   users ever checked ................ 2 of 44 (`last_adjustment_check_at`)
 //
+// 🔑 RE-MEASURED AGAINST PRODUCTION 2026-11-09 (`RESHAPE-FIRST-FIRINGS-01`, the wave's item 3:
+// *"read the first real adjustments the woken engine produces"*). THE ENGINE HAS FIRED, and the
+// premise above is stale in three directions at once:
+//
+//   plan_adjustments, all time ........ 22 rows  (was 18)
+//     session_reorder .... 14   (user-initiated)
+//     zone_drift .........  4 rows / 3 FIRINGS  ← see the duplicate finding below
+//     skip_with_reason ...  3   (user-initiated)
+//     shadow_load ........  1   🔑 A SECOND DETECTION TYPE HAS FIRED, auto_applied
+//     the other seven ....  0   still never
+//   last row of any kind .............. 2026-11-03  (was 2026-06-29)
+//
+//   zone_drift  2026-04-27  reverted      zdScore 0  vs threshold 50
+//   zone_drift  2026-08-17  reverted      rpe_disconnect, RPE 8   ← written TWICE
+//   shadow_load 2026-10-11  auto_applied  shadowPct 18.4 vs 15
+//   zone_drift  2026-10-28  auto_applied  driftPct 87   vs 20     ← not even superseded
+//
+// ✅ THE FIRST FIRING WAS A WRONG DETECTION AND THE DATA SAYS SO. `zdScore: 0` against a
+// `threshold: 50` is the pre-§12-Am.1 detector, which gated on the km-weighted MEAN of
+// `hr_in_zone_pct` — a BAND, where §12 prescribes a CAP — and `TRIGGER-AUDIT-01` fixed it on
+// 2026-09-13. The 2026-10-28 row confirms the fix end to end: `driftPct 87 vs 20`, DIRECTIONAL.
+//
+// ⚠️ SO THE WAVE'S OWN WORRY IS ANSWERABLE AFTER ALL. It reads: *"a tone rejection and a wrong
+// detection look identical in the data."* **They do not — `trigger_detail` distinguishes them.**
+// A score of 0 crossing a threshold of 50 is a wrong detection; 87 against 20 is not.
+//
+// 🔴 AND THE LEDGER IS 36% DUPLICATES: 8 of 22 rows, in 4 pairs, 1–7 SECONDS APART — three
+// `session_reorder` and the 2026-08-17 `zone_drift`. **That is what inflates the "three times"
+// above: zone_drift has fired THREE times and written FOUR rows.** A pair seconds apart is a
+// double-invocation, not a second detection. Filed as `ADJUST-LEDGER-DUPLICATE-01`.
+//
+// 🔻 AND WHAT STILL BLOCKS ITEM 5 (`POSTRUN-PLAN-FEEDBACK-01`) IS NOT THE REVERT RATE — IT IS
+// THAT NOTHING CHANGED. Both standing firings are `adjustment_type: 'flag_for_review'`, and
+// `shadow_load`'s `sessions_before` is BYTE-IDENTICAL to its `sessions_after` (2,427 chars
+// each). The zone_drift rows do differ, by 126–189 characters of added coach-note text. **So
+// "your plan changed because of your run" would be false for the one and an overstatement for
+// the others.** That is a sharper block than "wait and see", and it points at a different
+// feature: tell the runner the COACHING changed, not the plan.
+//
+// 📐 ITEM 4's PRECONDITION (`ADJUST-TRIGGER-REACH-02`, *"runners need 4+ weeks of history"*),
+// measured the same day from non-superseded `run_analysis`: **ONE runner now qualifies on
+// genuinely accumulated history** — 6 distinct weeks, 14 analyses, 2026-10-01 → 2026-11-06.
+// The next deepest is 3 weeks. ⚠️ A second runner shows 19 weeks and **every analysis was
+// written on one day (2026-06-02)**, so it is a backfill, not history: counting it would make
+// the population look twice as deep as it is. **The wait is over for a re-run; it is not over
+// for a conclusion from one runner.**
+//
 // ⚠️ AND THE SILENCE IS NOT A DEFECT. `/api/adjust-plan` is gated on `dynamic_reshape_r20`
 // (PAID) and 403s before stamping, so for a free runner the engine correctly never runs.
 // I went looking for a dead engine and there is none. **There is simply no evidence.**
