@@ -12,7 +12,7 @@ import { fetchWeeklyLoad, priorWeeks, EMPTY_LOAD } from '@/lib/coaching/weeklyAc
 import { daysDueByEndOfYesterday } from '@/lib/coaching/dayBoundary'
 import { COACHING_RULE_ENGINE_VERSION } from '@/lib/coaching/constants'
 import { buildWeeklyReportPrompt } from '@/lib/coaching/prompts/weeklyReport'
-import { raceKm, plannedCoveredKm } from '@/lib/plan/weekVolume'
+import { raceKm, plannedCoveredKm, plannedCoveredKmOnDays } from '@/lib/plan/weekVolume'
 import { buildAthleteContext } from '@/lib/coaching/prompts/athleteContext'
 import { isVerifiedCompletion } from '@/lib/coaching/completionVerification'
 import { getCurrentWeekIndex, isDateWithinWeek, isDateBeforePlan, readPlanJson } from '@/lib/plan'
@@ -281,11 +281,14 @@ export async function POST(req: NextRequest) {
   const sessionsPlannedToDate = daysDueByToday.filter(d => {
     return isCountableSession(week.sessions[d as keyof typeof week.sessions])
   }).length
-  const plannedKmToDate = daysDueByToday.reduce((sum, d) => {
-    const s = week.sessions[d as keyof typeof week.sessions]
-    if (!isCountableSession(s)) return sum
-    return sum + (s?.distance_km ?? 0)
-  }, 0)
+  // 🔴 THE OWNER, AND `?? 0` IS GONE (RACE-WEEK-ZERO-KM-01, code review 2026-11-09).
+  // This summed `s.distance_km ?? 0` while the full-week figure read `weekly_km` — two
+  // bases in one sentence — and `?? 0` asserts a duration-anchored session covered no
+  // ground (`SESSION-KM-01/02`). Measured on production: **229 of 632 stored weeks hold
+  // a null-distance session (705 sessions)**, and on `f3ae3cba` weeks 1-3 this computed
+  // **0.0 km against a real 13.1**. Both halves now come from `weekVolume`, which uses
+  // `sessionKmSelfPaced` and shares the countable predicate.
+  const plannedKmToDate = plannedCoveredKmOnDays(week as never, daysDueByToday as never)
 
   // RESHAPE-FIX-WAVE2B-AUDIT: the completed-session COUNT is an analytic and
   // must not treat a bare-stub tap as a real session (ADR-011 §3b).

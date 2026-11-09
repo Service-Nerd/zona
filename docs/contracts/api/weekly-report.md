@@ -29,26 +29,35 @@ Empty body accepted.
     "load_ratio": 1.1,
     "sessions_completed": 4,
     "sessions_planned": 5,
-
-> 🔴 **`total_km_planned` IS RACE-INCLUSIVE SINCE 2026-11-09** (`RACE-WEEK-ZERO-KM-01`).
-> It is `plannedCoveredKm(week)` — `trainingKm + raceKm`, the **single owner** of the basis
-> in `lib/plan/weekVolume.ts` — and **not** `week.weekly_km`, which §121 deliberately
-> excludes the race from. The comparison's basis is set by the ACTUAL
-> (`linkedKm + offPlanKm` includes the race the runner ran), so a race-exclusive planned
-> figure made it apples to oranges: on race week this field read **0** and the AI prompt
-> said *"42.2km actual vs 0.0km planned"*.
->
-> ⚠️ **§121 itself is unchanged** — `weekly_km` still excludes the race and `trainingKm` is
-> still what the runner TRAINS. This route asks a different question.
-> ⚠️ **The prompt names the race rather than folding it** (§121 Amendment 1, Sims, binding):
-> `"42.2km actual vs 42.2km planned (incl. 42.2km race)"`. Off race week the clause is
-> inert and every prompt is byte-identical.
     "rule_engine_version": "1.0.0",
     "created_at": "2026-04-29T10:00:00Z"
   },
   "cached": false
 }
 ```
+
+> 🔴 **`total_km_planned` IS SUMMED FROM THE SESSIONS SINCE 2026-11-09** (`RACE-WEEK-ZERO-KM-01`).
+> It is `plannedCoveredKm(week)` from `lib/plan/weekVolume.ts` — the **single owner** of
+> the basis — which sums the week's sessions through `sessionKmSelfPaced`, race included.
+> It is **not** `week.weekly_km`, for three measured reasons: §121 excludes the race from
+> `weekly_km` on ENGINE output but a legacy stored plan can include it (`e916f15a` wk25
+> reads 105 for 2 + 3 + a 100 km race, so adding the race again gave 205); `weekly_km` is
+> ROUNDED while a session sum is not (|diff| across 632 stored weeks: median 0.39, p90
+> 1.05, **max 37.00**); and a missing `weekly_km` would render as "vs — planned".
+> The basis is set by the ACTUAL (`linkedKm + offPlanKm` includes the race the runner ran),
+> so a race-exclusive planned figure made it apples to oranges: on race week this read
+> **0** and the prompt said *"42.2km actual vs 0.0km planned"*.
+>
+> ⚠️ **`plannedKmToDate` uses the SAME owner** (`plannedCoveredKmOnDays`). It summed
+> `distance_km ?? 0`, which asserts a duration-anchored session covered no ground
+> (`SESSION-KM-01/02`): **229 of 632 stored weeks hold a null-distance session**, and on
+> `f3ae3cba` weeks 1-3 it computed **0.0 km against a real 13.1**.
+>
+> ⚠️ **§121 itself is unchanged** — `weekly_km` still excludes the race and `trainingKm` is
+> still what the runner TRAINS. This route asks a different question.
+> ⚠️ **The prompt names the race rather than folding it** (§121 Amendment 1, Sims, binding):
+> `"42.2km actual vs 42.2km planned (incl. 42.2km race)"`. Off race week the clause is
+> inert and every prompt is byte-identical.
 
 `cached: true` when an existing report was returned without regeneration.
 

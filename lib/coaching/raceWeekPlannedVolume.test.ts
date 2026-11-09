@@ -31,7 +31,7 @@ import { describe, it, expect } from 'vitest'
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { generateRulePlan } from '@/lib/plan/ruleEngine'
-import { raceKm, trainingKm, plannedCoveredKm } from '@/lib/plan/weekVolume'
+import { raceKm, trainingKm, plannedCoveredKm, plannedCoveredKmOnDays } from '@/lib/plan/weekVolume'
 import { buildWeeklyReportPrompt } from './prompts/weeklyReport'
 import { computeWeeklyReportData } from './weeklyReport'
 import type { GeneratorInput, Plan } from '@/types/plan'
@@ -72,6 +72,76 @@ function reportData(weekN: number, actualKm: number, planned: number) {
 
 const volumeLine = (prompt: string) =>
   prompt.split('\n').find(l => l.includes('Volume:'))?.trim() ?? ''
+
+/**
+ * 🔴 THE THREE CASES CODE REVIEW FOUND, 2026-11-09, EACH MEASURED ON PRODUCTION.
+ * The first cut of the owner was `trainingKm + raceKm`, which depends on §121 holding
+ * for the stored row — and §121 is only true of ENGINE output.
+ */
+describe('RACE-WEEK-ZERO-KM-01 — the owner does not trust `weekly_km`', () => {
+  /** `e916f15a` wk25 shape: a legacy race-INCLUSIVE `weekly_km`. 2 + 3 + a 100 km race. */
+  const legacyRaceInclusive = {
+    n: 25, weekly_km: 105,
+    sessions: {
+      tue: { type: 'easy', distance_km: 2 },
+      thu: { type: 'easy', distance_km: 3 },
+      sun: { type: 'race', distance_km: 100 },
+    },
+  } as never
+
+  it('🔴 a LEGACY race-inclusive `weekly_km` is not double-counted (1 of 38 live)', () => {
+    // `trainingKm + raceKm` returned 205 here — the mirror of the double-SUBTRACTION
+    // `weekVolume.ts`'s own header warns about, in the function added below it.
+    expect(trainingKm(legacyRaceInclusive)).toBe(105)   // the row as stored
+    expect(raceKm(legacyRaceInclusive)).toBe(100)
+    expect(plannedCoveredKm(legacyRaceInclusive), 'the race counted twice').toBe(105)
+  })
+
+  it('🔴 a ROUNDED `weekly_km` cannot shift the basis (median 0.39, max 37.0 live)', () => {
+    const rounded = {
+      n: 5, weekly_km: 28,                      // rounded
+      sessions: { tue: { type: 'easy', distance_km: 9.4 }, thu: { type: 'easy', distance_km: 9.5 }, sun: { type: 'easy', distance_km: 9.5 } },
+    } as never
+    // 28.4, not 28: the same basis the to-date figure sums, so the two agree.
+    expect(plannedCoveredKm(rounded)).toBeCloseTo(28.4, 5)
+    expect(plannedCoveredKmOnDays(rounded, ['tue', 'thu', 'sun'] as never)).toBeCloseTo(28.4, 5)
+  })
+
+  it('🔴 a MISSING `weekly_km` gives a number, never NaN ("vs — planned")', () => {
+    const noWeeklyKm = { n: 3, sessions: { wed: { type: 'easy', distance_km: 6 } } } as never
+    expect(Number.isNaN(plannedCoveredKm(noWeeklyKm))).toBe(false)
+    expect(plannedCoveredKm(noWeeklyKm)).toBe(6)
+  })
+
+  it('🔴 a DURATION-ANCHORED session is not 0 km — 229 of 632 live weeks hold one', () => {
+    // `distance_km ?? 0` asserts the session covered no ground (SESSION-KM-01/02). On
+    // `f3ae3cba` weeks 1-3 the naive sum was 0.0 against a real 13.1.
+    const durationAnchored = {
+      n: 1,
+      // ⚠️ `pace_target` IS PART OF THE FIXTURE, because it is part of a real session.
+      // Without it `sessionKmSelfPaced` correctly returns null: a duration with no pace
+      // is not a distance. My first fixture omitted it and the arm failed — the code was
+      // right and the fixture was not (`fixtures must use the PRODUCT's values`).
+      sessions: {
+        tue: { type: 'easy', distance_km: null, duration_mins: 30, pace_target: '6:30–7:30 /km' },
+        thu: { type: 'easy', distance_km: null, duration_mins: 30, pace_target: '6:30–7:30 /km' },
+        sun: { type: 'easy', distance_km: null, duration_mins: 45, pace_target: '6:30–7:30 /km' },
+      },
+    } as never
+    const naive = [30, 30, 45].reduce(() => 0, 0)       // what `?? 0` produced
+    expect(naive).toBe(0)
+    expect(plannedCoveredKm(durationAnchored), 'the owner must price time on feet')
+      .toBeGreaterThan(5)
+    expect(plannedCoveredKmOnDays(durationAnchored, ['tue', 'thu'] as never))
+      .toBeGreaterThan(3)
+  })
+
+  it('⚠️ and the two halves agree by construction — one owner, one predicate', () => {
+    const w = plan.weeks.find(x => raceKm(x) === 0)!
+    const all = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'] as never
+    expect(plannedCoveredKmOnDays(w, all)).toBeCloseTo(plannedCoveredKm(w), 5)
+  })
+})
 
 describe('RACE-WEEK-ZERO-KM-01 — the planned figure and the actual share one basis', () => {
   it('the corpus REACHES a race-only week — otherwise every arm below is vacuous', () => {
@@ -135,6 +205,16 @@ describe('RACE-WEEK-ZERO-KM-01 — the planned figure and the actual share one b
       .not.toMatch(/const\s+plannedKm\s*=\s*week\.weekly_km/)
     expect(code, 'the route adds the race by hand instead of calling the owner')
       .not.toMatch(/plannedTrainingKm\s*\+\s*plannedRaceKm/)
+    // 🔴 AND THE TO-DATE HALF, because the first cut of this arm guarded only
+    // `plannedKm` — so reverting `plannedKmToDate` to its own `distance_km ?? 0`
+    // sum left all 12 arms GREEN. Two halves, two guards; one of them is not a
+    // check. (Second hollow arm in this item, both found by running the mutation.)
+    expect(code, 'the route no longer takes the to-date figure from the owner')
+      .toContain('plannedCoveredKmOnDays')
+    expect(code, 'the route sums `distance_km ?? 0` again — that is the beginner zero')
+      .not.toMatch(/distance_km\s*\?\?\s*0/)
+    expect(code, 'no plannedKmToDate in the route — re-point this arm')
+      .toMatch(/const\s+plannedKmToDate\s*=/)
     // Precondition: if the route stops having a plannedKm at all, this arm is vacuous.
     expect(code, 'no plannedKm in the route — re-point this arm').toMatch(/const\s+plannedKm\s*=/)
   })

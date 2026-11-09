@@ -89,27 +89,68 @@ export function planArcSeries(weeks: WeekLike[]): { km: number[]; phase: (string
 }
 
 /**
- * What the plan ASKED the runner to COVER that week — training plus the race.
+ * What the plan ASKED the runner to COVER — summed from the SESSIONS, race included.
  *
- * 🔴 THE BASIS FOR A PLANNED-VS-ACTUAL COMPARISON, AND IT HAS ONE OWNER BECAUSE A
- * SECOND COPY WENT GREEN UNDER A MUTATION (`RACE-WEEK-ZERO-KM-01`, 2026-11-09).
- * `app/api/weekly-report` compares `linkedKm + offPlanKm` — which includes the race
- * the runner ran — against the planned figure. Reading `weekly_km` there gave **0**
- * on race week (§121 correctly excludes the race), so the prompt handed the model
- * *"42.2km actual vs 0.0km planned"*. Apples to oranges, on the one week that matters.
+ * 🔴 THE BASIS FOR A PLANNED-VS-ACTUAL COMPARISON, AND IT IS DELIBERATELY NOT DERIVED
+ * FROM `weekly_km` (`RACE-WEEK-ZERO-KM-01`, 2026-11-09). Three separate defects made
+ * that impossible, and all three were measured on production:
  *
- * ⚠️ IT IS NOT A RE-DEFINITION OF §121. `trainingKm` is still what the runner TRAINS
- * and `weekly_km` is untouched; this is a different question with a different answer,
- * named once so a caller cannot write the addition out by hand — which is how the
- * first version of this fix shipped with a test that restated the route's expression
- * and could not see the route change underneath it (`TIER-OWNER-01`'s shape).
+ *   1. **§121 is only true of engine output.** A legacy stored plan can have a
+ *      race-INCLUSIVE `weekly_km`: `e916f15a` week 25 reads **105** for 2 + 3 + a
+ *      100 km race. The first cut of this function was `trainingKm + raceKm` and
+ *      returned **205** there — the mirror of the double-subtraction this module's
+ *      header warns about, found by code review, 1 of 38 stored race weeks.
+ *   2. **`weekly_km` is ROUNDED and a session sum is not.** |weekly_km − sessionSum|
+ *      across 632 stored weeks: median **0.39**, p90 **1.05**, **max 37.00**. The
+ *      route's to-date figure sums sessions, so the two planned numbers in one
+ *      sentence sat on different bases on most weeks, not only race week.
+ *   3. **A missing `weekly_km` would yield NaN**, which renders as "vs — planned".
+ *      0 of 632 today; the unvalidated legacy/gist path is the producer that could.
  *
- * ⚠️ DISPLAY STILL OBEYS §121 Amendment 1 (Sims, binding): a SURFACE never folds the
- * two into one number — see `weekVolumeLabel`. This is an arithmetic basis for a
+ * Summing the sessions removes the dependence on `weekly_km` entirely, and it is the
+ * same thing the ACTUAL measures, which is what makes the comparison honest.
+ *
+ * ⚠️ `sessionKmSelfPaced`, NEVER `distance_km ?? 0`. **A session is anchored EITHER by
+ * distance OR by duration, and beginners get duration-anchored plans** (`SESSION-KM-01/02`):
+ * `?? 0` asserts the session covered no ground. Measured: **229 of 632 stored weeks hold
+ * a null-distance session (705 sessions)**, and on `f3ae3cba` weeks 1–3 the naive sum is
+ * **0.0 km against a real 13.1** — the same zero defect as race week, on 36% of weeks.
+ *
+ * ⚠️ IT IS NOT A RE-DEFINITION OF §121. `trainingKm` is still what the runner TRAINS and
+ * `weekly_km` is untouched; this is a different question with a different answer, named
+ * once so a caller cannot write it out by hand — which is how the first version shipped
+ * with a test that restated the route's expression and could not see the route change
+ * underneath it (`TIER-OWNER-01`'s shape).
+ *
+ * ⚠️ DISPLAY STILL OBEYS §121 Amendment 1 (Sims, binding): a SURFACE never folds training
+ * and race into one number — see `weekVolumeLabel`. This is an arithmetic basis for a
  * comparison, and the surface that uses it names the race alongside it.
  */
+function countable(s: Session): boolean {
+  // The route's own predicate, moved here so the full-week and to-date figures cannot
+  // disagree about what counts. Strength carries no running distance by design.
+  return s.type !== 'rest' && s.type !== 'strength'
+}
+
 export function plannedCoveredKm(w: WeekLike): number {
-  return trainingKm(w) + raceKm(w)
+  return sessionsOf(w).filter(countable)
+    .reduce((a, s) => a + (sessionKmSelfPaced(s) ?? 0), 0)
+}
+
+/**
+ * The same basis, restricted to named days — the to-date half of the comparison.
+ *
+ * ⚠️ ONE OWNER FOR BOTH HALVES IS THE WHOLE POINT. The route summed `distance_km ?? 0`
+ * here while reading `weekly_km` for the full week, which is how it printed
+ * *"42.2km due by end of yesterday (0.0km full-week target)"* — a full-week target
+ * below its own to-date figure.
+ */
+export function plannedCoveredKmOnDays(w: WeekLike, days: readonly Day[]): number {
+  const ss = w.sessions as Partial<Record<Day, Session>>
+  return days
+    .map(d => ss[d])
+    .filter((s): s is Session => s != null && countable(s))
+    .reduce((a, s) => a + (sessionKmSelfPaced(s) ?? 0), 0)
 }
 
 /**

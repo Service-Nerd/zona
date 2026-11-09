@@ -2019,6 +2019,43 @@ folding the two · the clause made non-inert off race week · and a corpus arm t
 week stops being race-only. **763 files / 7,712 tests; `review:coaching` 94.6% WHOLE PRODUCT,
 identical, 7 of 7 steps, no measured rate moved** — the engine is untouched, as claimed.
 
+🔴 **`/code-review` FOUND FOUR AND THE FIRST WAS A DOUBLE-COUNT THE FILE I EDITED HAD WARNED ME
+ABOUT.** `plannedCoveredKm` shipped as `trainingKm + raceKm`, which **assumes §121 holds for the
+stored row — and §121 is only true of ENGINE output.** Verified against production: plan
+`e916f15a` week 25 reads `weekly_km: 105` for **2 + 3 + a 100 km race**, so my owner returned
+**205**. ⚠️ **`weekVolume.ts`'s own header warns that subtracting `raceKm` there would remove a
+marathon twice; I committed the mirror error in the function added directly beneath it.** 1 of 38
+stored race weeks, and the legacy/gist path can add more.
+
+🔑 **AND THE FIX FOR IT FOUND TWO MORE DEFECTS IN THE SAME SENTENCE, BOTH BIGGER.** The owner no
+longer touches `weekly_km` at all — it **sums the sessions through `sessionKmSelfPaced`**, which is
+the same thing the actual measures:
+
+| | measured on 632 stored weeks |
+|---|---|
+| **`weekly_km` is ROUNDED, a session sum is not** | \|diff\| median **0.39**, p90 **1.05**, **max 37.00** — so the two planned figures sat on different bases on **most** weeks, not only race week |
+| 🔴 **`plannedKmToDate` summed `distance_km ?? 0`** | **229 of 632 weeks (36%) hold a null-distance session, 705 sessions.** On `f3ae3cba` weeks 1–3 it computed **0.0 km against a real 13.1** |
+| A missing `weekly_km` would render as *"vs — planned"* | 0 of 632 today; the unvalidated legacy path is the producer that could |
+
+🔴 **THE THIRD ROW IS `SESSION-KM-01/02` AND IT IS THE LARGEST OF THE THREE: `?? 0` asserts a
+duration-anchored session covered no ground, and beginners get duration-anchored plans.** The
+race-week zero I set out to fix affects one cohort on one week; **this one is 36% of every stored
+week.** Both halves now come from `weekVolume` and share one countable predicate.
+
+🔻 **Two more, fixed:** the contract blockquote had been inserted **inside the ```json example**, so
+the documented 200 payload was not valid JSON (re-checked by parsing it); and the removed `?? 0`
+would have yielded NaN, which summing sessions makes impossible.
+
+🔴 **AND TWO OF MY ARMS WERE HOLLOW, BOTH FOUND BY RUNNING THE MUTATION, NOT BY READING.** The
+first restated the route's arithmetic, so reverting the route left all six arms green. The second —
+written to fix the first — guarded `plannedKm` and **not** `plannedKmToDate`, so reverting the
+to-date half to its own `?? 0` sum left all twelve green. **Two halves, two guards; one of them is
+not a check.** ⚠️ **And my duration-anchored fixture omitted `pace_target`**, so the arm failed on
+a correct owner: a duration with no pace is not a distance. **The code was right and the fixture
+was not.**
+
+📐 **12 arms now, falsified eight ways**, each firing the named arm.
+
 🔻 **What this does not fix.** `GeneratePlanScreen` also reads `weekly_km` (`peakKm = Math.max(...)`),
 and a 0 cannot move a maximum, so it is harmless there and deliberately left. **And the `weekly_km: 0`
 itself stays, correctly** — §121 is the statute; what changed is one caller's comparison.
