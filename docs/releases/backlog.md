@@ -1442,7 +1442,7 @@ which arms `INV-PLAN-ONRAMP-SPACED`; `validateStoredPlan` returns **0 violations
 3.2 (deload) → 5.7 → 6.4 → 6.8 → 7.6 km, so `INV-PLAN-ONRAMP-CURVE-CLIMBS` holds too. The per-run dip from 2.2 → 1.6 km at
 week 3 is frequency rising against a lawful weekly increase, not a drop in load.
 
-🔻 **The one live half is already filed elsewhere:** no session carries a duration — `BASEBUILD-DURATION-01`, untouched.
+🔺 **The one live half is already filed elsewhere:** no session carries a duration — `BASEBUILD-DURATION-01`, untouched.
 
 ---
 
@@ -3139,7 +3139,7 @@ What actually arrives is a different shape: one headline zone %, a score, and th
 > reachable only on the `firstName` branch. **Composing the real header beat scanning one
 > file's source.**
 >
-> 🔻 **RESIDUALS, both filed below:** `BRAND-EMDASH-LIB-01` still owns the `ruleEngine.ts`
+> 🔺 **RESIDUALS, both filed below:** `BRAND-EMDASH-LIB-01` still owns the `ruleEngine.ts`
 > + push-notification half, and `READ-EM-DASH-02` is the plan-JSON population.
 
 
@@ -7120,7 +7120,7 @@ Re-run with `vdot` and `vdot_training_anchor` added to `STRIP_META`: IDENTICAL, 
 only thing that moved is the two numbers; no session, pace, volume or note changed. (That `STRIP_META` edit was for the
 measurement and is NOT committed — committing it would blind parity to the next VDOT change.)
 
-🔻 **Filed `CORPUS-BENCHMARK-VARIETY-01`:** no corpus could see this. `cohortGrid` carries **1** distinct benchmark,
+🔺 **Filed `CORPUS-BENCHMARK-VARIETY-01`:** no corpus could see this. `cohortGrid` carries **1** distinct benchmark,
 `targetedGrid` **1**, `slowGoalGrid` **5**, `useCaseEnvelope` **0**, the parity grid **1** time (`10 km / 45:00`, twice).
 Anything that varies with the benchmark VALUE is unmeasurable, and the first gate arm written against the corpus read
 **0.0%** where the whole-space figure is 77.0%.
@@ -8719,7 +8719,7 @@ two zero-importer components were outside the script I counted the 20 with. **Th
 the value before measuring the population" mistake `UNCONTRACTED_BASELINE`'s own comment
 records about its first value of 14, committed in the commit that added a register to make the
 first one honest.**
-🔻 **And the two zero-importer components are now filed:** `WAITLIST-UNREACHABLE-01` (a form,
+🔺 **And the two zero-importer components are now filed:** `WAITLIST-UNREACHABLE-01` (a form,
 a route and a Supabase table, with **no render site**) and `SELECT-DEAD-01`.
 
 > ✅ **PREMISE CONFIRMED 2026-11-07, and `npm run backlog:verify` flags it by design:** this item
@@ -9349,7 +9349,55 @@ runner-facing.
 
 ## ⚖️ FILED 2026-10-01 — `DOCS-RESIDUAL-01`
 
-### 🔲 `DOCS-RESIDUAL-01` — a residual on an already-delivered item has no home in "what's left" ⚙️ **NO BOARD**
+### ✅ `DOCS-RESIDUAL-01` — **SHIPPED 2026-11-09.** Two residual marks, and only the new one is gated ⚙️ **NO BOARD**
+
+✅ **BUILT 2026-11-09, as option 1 + 2 exactly: `🔺` = unfixed and here is the open item;
+`🔻` unchanged; zero retrofit.** Convention documented in § *Keeping this file honest*; gate is
+`npm run backlog:verify` **§ 7**, in `verify:ci`.
+
+🔴 **PREMISE RE-MEASURED AND IT GREW 4× IN FIVE WEEKS — which does not weaken the item, it is the
+item's own central argument four times stronger.** Filed on **105** markers (73 `backlog.md` + 32
+`feature-registry.md`); today **316 + 109 = 425** in those two files, **686 across `docs/`**.
+**Retrofit was dead at 105 and is deader now**, so the second-mark route was the only one left.
+
+🔑 **THREE ARMS, AND THE THIRD IS THE ONE THAT EARNS ITS KEEP.** (1) a `🔺` with no id — cheap, and
+only catches someone who knows the convention and forgot. (2) an id that was never filed — a typo.
+(3) **an id that is CLOSED, which is the `PUSH-UNITS-01` shape: a residual outliving the item that
+tracked it.** Arm 3 is why `scripts/lib/open-items.sh` gained **`heading_all_ids`** — telling a typo
+from a closed item is impossible from the open set alone, and deriving all-ids in the caller would
+have put a **third** copy of *"how an id is read from a heading"* in the repo. **446 filed ids
+against 99 open.**
+
+⚠️ **TWO DELIBERATE EXCLUSIONS, BOTH MEASURED, BOTH STATED IN THE SECTION.** `###` **headings**:
+🔴 **`🔻` is already OVERLOADED and the item does not mention it** — **9 of 316** occurrences in this
+file are an item's *status* glyph (P3/blocked), not a residual. And **the convention block itself**,
+because searching for the mark finds the documentation of the mark — `HOOK-RGBA-COMMENTS-01`, which
+I hit for the second time in one day. It is bounded by a sentinel pair the section **asserts exists
+and is under 45 lines**, so it cannot be widened to swallow a real residual.
+
+🔴 **I DID NOT DO A CONVERSION PASS, AND TWO ATTEMPTS TO DERIVE ONE MECHANICALLY WERE BOTH
+POLLUTED.** *"A `🔻` line that names an open item"* finds **67** — and the top hits are a `✅ SHIPPED`
+bullet mentioning a different id, three `### 🔻 \`ID\`` **headings**, and the giant dated state
+paragraphs where a `🔻` and an id merely co-occur. **A mark and an id in the same paragraph is not a
+tracking reference** — the `GTM-CHARITY-02` class, twice in one measurement. So **11 lines whose
+shape is unambiguous, each verified by reading**, giving the gate a real population on day one:
+`tracked and open 11 · no id 0 · never filed 0 · closed 0`.
+
+📐 **Falsified seven ways, each firing the named arm:** a `🔺` with no id · an id never filed · **a
+CLOSED id** · the sentinel pair removed · the sentinel **widened to 90 lines** · every `🔺` reverted
+(the gate refuses an empty population: *"a convention nobody uses is a convention that does not
+exist"*). ⚠️ **And the first attempt at the no-id case STAYED GREEN because my mutation did not
+apply** — I was replacing a `🔻` string I had already converted. Every mutation asserts it landed now.
+
+🔴 **I ALSO WIPED SIX OF MY OWN UNCOMMITTED CONVERSIONS WITH `git checkout`** on the registry,
+mid-falsification, against a memory note that says exactly that. Re-applied from a `/tmp` backup.
+
+🔻 **WHAT THIS DOES NOT PROVE.** It cannot find a `🔻` that should have been a `🔺` — whether a cost
+was **accepted** or merely **noted** is a judgement and no script settles it. The 425 existing marks
+stay as they are, correctly, because most of them are genuinely accepted trade-offs. This prints at
+the end of every run.
+
+### 🔲 `DOCS-RESIDUAL-01` — original filing, for the record ⚙️ **NO BOARD**
 
 🔴 **MEASURED 2026-10-01: 105 `🔻` residual markers** — 73 in `backlog.md`, 32 in
 `feature-registry.md` — and **`audit-docs.sh` can see none of them.** It reported **ALL CLEAN**
@@ -14004,7 +14052,7 @@ and check had disagreed three ways for months, and both docs are corrected.
 `lib/marketing/noEmDashApp.test.ts` guards every string literal under `components/` and
 `app/dashboard/`, each exemption carrying its reason.
 
-🔻 **Residual, filed and NOT counted done: `BRAND-EMDASH-LIB-01`.** `ruleEngine` mixes
+🔺 **Residual, filed and NOT counted done: `BRAND-EMDASH-LIB-01`.** `ruleEngine` mixes
 runner-facing notes with dev-only invariant text **in one file**, so a path-based rule would be
 wrong in both directions; and push-notification bodies — the *spoken word* half of the founder's
 own sentence — are untouched.
@@ -21500,6 +21548,39 @@ The 2026-09-17 08:30 digest surfaced three issues. Verified against the live pla
 > incidentally), and `/ship` moves finished items to `feature-registry.md`.
 > **Note the three item formats** — status bullets, LATER table rows, and unscheduled bullets.
 > A bullet-only grep misses ~40% of open items; that is why CA-08 once looked like it had vanished.
+>
+> ---
+>
+<!-- residual-convention:start — the gate skips this block: it DESCRIBES the marks.
+     Searching for the mark finds the documentation of the mark (HOOK-RGBA-COMMENTS-01).
+     backlog-verify.mjs § 7 asserts this pair exists and that it is under 45 lines, so it
+     cannot be widened to swallow a real residual. -->
+> 🔺 **TWO RESIDUAL MARKS, NOT ONE (`DOCS-RESIDUAL-01`, 2026-11-09).**
+>
+> | Mark | Means | Needs an item? |
+> |---|---|---|
+> | 🔻 | **An accepted trade-off, stated honestly.** *"iPhone-only runners get no HR coaching"*, *"the tokens are measured, the dollars are not"*. It is a fact we have decided to live with. | No. It is finished work with a stated cost. |
+> | 🔺 | **Unfixed, and here is the open item that tracks it.** | **Yes, and the gate checks it.** |
+>
+> **Why two marks and not a retrofit.** A residual lives inside a ✅ SHIPPED entry, written by an
+> author who has just proved they understand it — and a shipped item has no status, so nothing
+> ever queries it again. That is `PUSH-UNITS-01`'s shape. The obvious fix is to require every
+> residual to name an item, and it is worse than the problem: 🔴 **measured 2026-11-09 there are
+> 425 `🔻` markers in this file and `feature-registry.md` (686 across `docs/`), against the 105
+> the item was filed on five weeks earlier.** Retrofitting a convention across 425 marks, most of
+> which are correctly accepted, is how a register fills with `accepted` and stops meaning
+> anything. **So `🔻` is unchanged, `🔺` is new, and only the new one is gated.**
+>
+> **The gate** — `npm run backlog:verify` § 7: every 🔺 names an id · that id exists as a heading
+> in this file · **and that id is still OPEN**. The third arm is the one that earns its keep: a
+> residual whose tracking item got closed while the residual stayed is exactly the shape that let
+> `PUSH-UNITS-01` sit open for weeks.
+>
+> ⚠️ **What the gate cannot do, and it is the honest half.** It cannot find a 🔻 that should have
+> been a 🔺 — that is a judgement about whether a cost was accepted or merely noted, and no script
+> settles it. It also skips `###` headings on purpose: 🔻 is **overloaded**, and 9 of the
+> occurrences in this file are an item's *status* glyph, not a residual.
+<!-- residual-convention:end -->
 
 ## Roadmap Waves — sequenced plan (SLT portfolio review 2026-07-22)
 

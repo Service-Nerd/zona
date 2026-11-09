@@ -34,6 +34,11 @@ process.chdir(ROOT)
 const ids = sh('bash', ['-c', '. scripts/lib/open-items.sh; { heading_open_ids docs/releases/backlog.md; board_tag_bullet_ids docs/releases/backlog.md; } | sort -u'])
   .split('\n').map(s => s.trim()).filter(Boolean)
 
+/** Every id this file FILES, open or closed — so § 7 can tell a typo from a closed item.
+ *  Derived by the owner (`heading_all_ids`), never by a copy of the extraction here. */
+const allIds = sh('bash', ['-c', '. scripts/lib/open-items.sh; heading_all_ids docs/releases/backlog.md | sort -u'])
+  .split('\n').map(s => s.trim()).filter(Boolean)
+
 /**
  * 🔴 SECTION 5 — THE FILING RULE FINALLY HAS A GATE (BACKLOG-TAG-IN-HEADING-01, 2026-11-08).
  *
@@ -476,6 +481,105 @@ if (predManual.length) {
   predManual.forEach(([id, why, what]) => console.log(`      ${id.padEnd(32)} [${why}] ${what}`))
 }
 
+/**
+ * 🔴 SECTION 7 — THE 🔺 RESIDUAL MARK (`DOCS-RESIDUAL-01`, 2026-11-09).
+ *
+ * A residual on a SHIPPED item has no home in "what's left". CLAUDE.md's flow is: an open item
+ * lives in roadmap + backlog, a shipped one moves to `feature-registry.md` — so **shipping is
+ * what gives an item a home, and a residual is the part that did not ship.** It gets written
+ * into the shipped entry, in detail, by an author who has just proved they understand it, and
+ * then nothing ever queries it again. That is `PUSH-UNITS-01`'s shape.
+ *
+ * ⚠️ REQUIRING EVERY RESIDUAL TO NAME AN ITEM IS WORSE THAN THE PROBLEM, and it was measured
+ * before this was built: **425 `🔻` markers** in `backlog.md` + `feature-registry.md` (686 across
+ * `docs/`), against the **105** the item was filed on five weeks earlier. Most are correctly
+ * ACCEPTED trade-offs ("iPhone-only runners get no HR coaching"). Retrofitting 425 marks to
+ * satisfy a check is how a register fills with `accepted` and stops meaning anything.
+ *
+ * So there are TWO marks and only the new one is gated: `🔻` = accepted trade-off, unchanged;
+ * `🔺` = unfixed, and here is the open item that tracks it.
+ *
+ * ⚠️ THREE ARMS, HONESTLY RANKED. (1) a 🔺 with no id at all — cheap, and only catches someone
+ * who knows the convention and forgot. (2) an id that was never filed — a typo. (3) **an id that
+ * is CLOSED — the `PUSH-UNITS-01` shape, a residual outliving the item that tracked it.** The
+ * third is the one that earns its keep, and it is why the owner gained `heading_all_ids`.
+ *
+ * ⚠️ WHAT IT CANNOT DO: find a 🔻 that should have been a 🔺. That is a judgement about whether a
+ * cost was accepted or merely noted, and no script settles it.
+ *
+ * ⚠️ TWO DELIBERATE EXCLUSIONS, BOTH MEASURED. `###` HEADINGS: 🔻 is overloaded — 9 occurrences in
+ * `backlog.md` are an item's STATUS glyph, not a residual. And the CONVENTION BLOCK itself, which
+ * describes the marks: searching for the mark finds the documentation of the mark, which is
+ * `HOOK-RGBA-COMMENTS-01` exactly. The block is bounded by a sentinel pair this section ASSERTS
+ * exists and is under 45 lines, so it cannot be widened to swallow a real residual.
+ */
+const RESIDUAL_FILES = ['docs/releases/backlog.md', 'docs/canonical/feature-registry.md']
+const SENTINEL = ['residual-convention:start', 'residual-convention:end']
+const ID_IN_TICKS = /`([A-Z][A-Z0-9]*(?:-[A-Z0-9]+)+)`/g
+const resNoId = [], resUnknown = [], resClosed = [], resOk = []
+let resSentinelFail = null
+
+for (const f of RESIDUAL_FILES) {
+  const ls = readFileSync(f, 'utf8').split('\n')
+  let skipFrom = -1, skipTo = -1
+  const a = ls.findIndex(l => l.includes(SENTINEL[0]))
+  const b = ls.findIndex(l => l.includes(SENTINEL[1]))
+  if (f.endsWith('backlog.md')) {
+    if (a < 0 || b < 0 || b <= a) resSentinelFail = `${f}: the ${SENTINEL[0]}/${SENTINEL[1]} pair is missing or inverted`
+    else if (b - a > 45) resSentinelFail = `${f}: the convention block spans ${b - a + 1} lines (max 45) — it must not be widened`
+    else { skipFrom = a; skipTo = b }
+  }
+  ls.forEach((l, i) => {
+    // 🔴 A MARK INSIDE A CODE SPAN IS BEING NAMED, NOT USED (2026-11-09). The first cut
+    // fired on this item's OWN write-up, which quotes `🔺` in backticks to explain the
+    // convention — `HOOK-RGBA-COMMENTS-01`, third instance in one day, in the record of
+    // the item that cites it. The ids are themselves in backticks, so the MARK is looked
+    // for in the code-span-blanked line and the IDS are read from the original.
+    const prose = l.replace(/`[^`]*`/g, '@@')
+    if (!prose.includes('🔺')) return
+    if (i >= skipFrom && i <= skipTo && skipFrom >= 0) return
+    if (/^#{2,4} /.test(l)) return
+    const named = Array.from(l.matchAll(ID_IN_TICKS)).map(m => m[1])
+    const where = `${f.split('/').pop()}:${i + 1}`
+    const text = l.trim().replace(/\s+/g, ' ').slice(0, 92)
+    if (!named.length) return resNoId.push([where, text])
+    const open = named.filter(n => ids.includes(n))
+    const filed = named.filter(n => allIds.includes(n))
+    if (open.length) return resOk.push([where, open.join(', ')])
+    if (!filed.length) return resUnknown.push([where, named.join(', '), text])
+    resClosed.push([where, filed.join(', '), text])
+  })
+}
+
+head('7. 🔺 RESIDUALS — unfixed, and the item that tracks it must still be OPEN')
+if (resSentinelFail) {
+  console.log(`  ✗ ${resSentinelFail}`)
+  console.log('    This section skips the block that DESCRIBES the marks; without a bounded')
+  console.log('    sentinel it would either fire on the documentation or skip the whole file.')
+} else if (!resOk.length && !resNoId.length && !resUnknown.length && !resClosed.length) {
+  console.log('  ✗ NOT ONE 🔺 IN EITHER FILE. A convention nobody uses is a convention that does')
+  console.log('    not exist, and a gate over an empty population is green by construction.')
+  console.log('    Adopt it on the next residual, or delete the convention and this section.')
+} else {
+  console.log(`  tracked and open ${resOk.length} · no id ${resNoId.length}`
+    + ` · id never filed ${resUnknown.length} · ✗ TRACKING ITEM CLOSED ${resClosed.length}`)
+  resOk.forEach(([w, n]) => console.log(`      ✓ ${w.padEnd(30)} ${n}`))
+  if (resClosed.length) {
+    console.log('\n  ✗ A RESIDUAL WHOSE TRACKING ITEM IS CLOSED — the PUSH-UNITS-01 shape:')
+    resClosed.forEach(([w, n, t]) => console.log(`      ${w.padEnd(30)} ${n}\n${' '.repeat(32)}${t}`))
+    console.log('    Either the residual shipped (change 🔺 to a ✅ line, or drop it), or it is')
+    console.log('    still live and needs a NEW open item. A closed id is not a tracker.')
+  }
+  if (resUnknown.length) {
+    console.log('\n  ✗ A 🔺 NAMING AN ID THAT WAS NEVER FILED:')
+    resUnknown.forEach(([w, n, t]) => console.log(`      ${w.padEnd(30)} ${n}\n${' '.repeat(32)}${t}`))
+  }
+  if (resNoId.length) {
+    console.log('\n  ✗ A 🔺 WITH NO ITEM ID — use 🔻 for an accepted trade-off, or file an item:')
+    resNoId.forEach(([w, t]) => console.log(`      ${w.padEnd(30)} ${t}`))
+  }
+}
+
 console.log('\n⚠️  A DEAD REFERENCE IS NOT ALWAYS A DEAD PREMISE: an item can name a file precisely')
 console.log('    because it is missing. Nothing here is auto-resolved — read the item.')
 console.log('⚠️  AND SECTION 5 IS THE HONEST LIMIT. This proves references are live and prints')
@@ -483,4 +587,10 @@ console.log('    baselines. It does not prove a behavioural premise still holds.
 console.log('⚠️  AND SECTION 6 PROVES A PREDICATE STILL EXECUTES, NOT THAT IT ASKS THE RIGHT')
 console.log('    QUESTION. `FIRSTRUN-MARATHON-01` read open for 33 days with a predicate that ran')
 console.log('    fine. A correct question and a plausible one look identical from here.\n')
-process.exit(deadFiles.length + deadSyms.length + untagged.length + deadContractRefs.length + predStale.length > 0 ? 1 : 0)
+console.log('⚠️  AND SECTION 7 CANNOT FIND A 🔻 THAT SHOULD HAVE BEEN A 🔺. Whether a cost was')
+console.log('    ACCEPTED or merely NOTED is a judgement; 425 existing 🔻 stay as they are.\n')
+const residualFail = resNoId.length + resUnknown.length + resClosed.length
+  + (resSentinelFail ? 1 : 0)
+  + (!resOk.length && !resNoId.length && !resUnknown.length && !resClosed.length && !resSentinelFail ? 1 : 0)
+process.exit(deadFiles.length + deadSyms.length + untagged.length + deadContractRefs.length
+  + predStale.length + residualFail > 0 ? 1 : 0)

@@ -120,6 +120,35 @@ heading_open_sites() {
 
 heading_open_ids() { heading_open_sites "$1" | cut -f2; }
 
+# ── EVERY ITEM ID THIS FILE FILES, OPEN OR CLOSED ───────────────────────────
+#
+# 🔴 ADDED 2026-11-09 (`DOCS-RESIDUAL-01`) BECAUSE A CALLER NEEDED TO TELL "TYPO" FROM
+# "CLOSED", AND THE ALTERNATIVE WAS A SECOND COPY OF THE EXTRACTION. The 🔺 residual gate
+# must distinguish *an id that was never filed* (a typo, fix the text) from *an id that was
+# filed and has since closed* (the `PUSH-UNITS-01` shape, which is the finding). Doing that
+# from `heading_open_ids` alone is impossible, and deriving all-ids in the caller would put a
+# third copy of "how an id is read from a heading" in the repo.
+#
+# ⚠️ IT SHARES THE EXTRACTION, NOT A SECOND REGEX. Same `^###`-backticked and `^## `-bare
+# conventions as `heading_open_sites`, same FILED/SHIPPING exclusion for the `##` form — just
+# without the status test, because status is the one thing this function does not ask about.
+heading_all_sites() {
+  awk '
+    /^##/ {
+      line = $0
+      if (line ~ /^## /) {
+        if (line ~ /^## .{0,8}(FILED|SHIPPING|Filed|Shipping)/) next
+        if (match(line, /[A-Z][A-Z0-9]*(-[A-Z0-9]+)+-[0-9][0-9]/) == 0) next
+        printf "%s\t%s\n", NR, substr(line, RSTART, RLENGTH); next
+      }
+      if (line !~ /^###/) next
+      if (match(line, /`[A-Z][A-Z0-9]*(-[A-Z0-9]+)+`/) == 0) next
+      printf "%s\t%s\n", NR, substr(line, RSTART + 1, RLENGTH - 2)
+    }' "$1"
+}
+
+heading_all_ids() { heading_all_sites "$1" | cut -f2; }
+
 
 
 # ── WHICH BOARD OWNS EACH OPEN ITEM ─────────────────────────────────────────
