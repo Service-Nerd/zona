@@ -2149,38 +2149,6 @@ Within a week of the build: `X-Ingest-Path: native` appears in ops events, and m
 
 ---
 
-### 🔲 `BACKLOG-VERIFY-PREDICATE-01` — 48 "Verify still open" predicates and nothing runs one ⚙️ **NO BOARD**
-
-Found 2026-11-08 closing out W7. `backlog.md` § *Keeping this file honest* states the convention
-in as many words: *"it exists so an audit is a script rather than a careful read."* 📐 **The
-script does not exist. 48 `Verify still open:` lines, zero of them executed by anything.**
-
-🔴 **AND THE DANGEROUS DIRECTION IS REAL, MEASURED THAT DAY.**
-`HK-NATIVE-BG-INGEST-02`'s predicate read `grep -rn "refresh" ios/App/App/*.swift` → *no hit =
-still open*. It returns **five** hits: Apple's `AppDelegate` boilerplate comment, a
-widget-refresh note, and three lines in `HealthObserverPlugin` that exist **precisely because
-Phase 2 is unbuilt** (*"No token refresh. Supabase ROTATES refresh tokens on use…"*). So the
-predicate reported Phase 2 as **BUILT**. Corrected to the pattern
-`nativeIngestContract.test.ts` already enforces (`refresh_?[Tt]oken`), and verified to
-DISTINGUISH rather than merely to run.
-
-**The build.** `scripts/verify-backlog-predicates.ts`, wired into `npm run backlog:verify`:
-parse each `Verify still open:` line, run the mechanical ones, compare against the stated
-outcome, and fail naming the item. ⚠️ **Population first, and it is heterogeneous:** of the 48,
-some are `grep -c X → N = still open` (runnable and comparable), some are `test -f` / `ls` /
-`find` (runnable), some are a `tsx -e` one-liner (runnable, slow), and some are **prose gates**
-with no command at all (*"Gate: 50+ paying users"*, *"Strava API approval still pending"*).
-**Count each class before promising a number**, and the prose ones are a declared residual, not
-a failure.
-
-⚠️ **The hard part is not running them, it is that a predicate can be wrong in the
-SAFE direction too** — reporting open when the work is done, which is `FIRSTRUN-MARATHON-01`
-sitting open for 33 days. A green sweep proves the stated outcome matches today's code; it does
-not prove the predicate asks the right question. State that limit.
-
-⚙️ Falsification is easy and must be done both ways: break a predicate's expected count, and
-plant the feature a predicate is watching for.
-
 ### 🔻 `HK-NATIVE-BG-INGEST-02` — the native ingest needs a credential that outlives an access token — **BLOCKED ON A DEVICE, 2026-11-08** *(P2, filed 2026-11-05)* ⚙️ **NO BOARD** (💼 **SLT** on build cost)
 
 Phase 1 posts a run from native code only while the published Supabase **access token** is still valid, and it deliberately does not refresh. **Measured before building Phase 1:** median **68.7 min** since the app was last active at the moment a run ends, so of the 39 runs that currently link slowly, **13 would have a live token and 26 would not.** Phase 1 is therefore a third of the problem by design.
@@ -20611,7 +20579,19 @@ the Anthropic credit runs out mid-block?* Tracing the failure path found one rea
 > ⚠️ **Do NOT fold maintenance into `cohortGrid`** — it is a different plan object, and the
 > exhaustive-and-un-sampled property of that grid is doctrine (CLAUDE.md, cohort:shape).
 >
-> *Verify still open:* `grep -c '"corpus"' lib/plan/__fixtures__/invariantLivenessBaseline.json` → **9 = still open**.
+> 🔴 **RE-DERIVED 2026-11-08 BY `backlog:verify` § 6, THE FIRST RUN THAT EVER EXECUTED THIS
+> PREDICATE: the `corpus` debt is ONE entry, not the eight this item implies.** Only
+> `INV-PLAN-ULTRA-NO-PACE-SEGMENTS` is still baselined for it — **the maintenance half was paid
+> down by `MAINT-LIVENESS-01` on 2026-09-19**, which found the 8 `INV-MAINT-*` codes were never
+> unreachable by SHAPE at all: *"the harness was calling the wrong validator."* The reason is
+> recorded in the baseline file and was never brought back to this item.
+>
+> ⚠️ **AND THE PREDICATE'S OWN COMMAND OVER-COUNTS BY ONE** — `grep -c '"corpus"'` matches the
+> reason's DEFINITION line as well as the entries that cite it, so it reads 2 where the answer
+> is 1. Corrected below. **A predicate can be stale and wrong at the same time, and running it
+> is the only way either shows up.**
+>
+> *Verify still open:* `grep -c '": "corpus"' lib/plan/__fixtures__/invariantLivenessBaseline.json` → **1 = still open**.
 
 > ✅ **LR-DELOAD-CUT-01 — SHIPPED 2026-09-17 (§3 Amendment).** Marathon finish knee+45+ **26.0 → 29.5km**, time-goal knee **30.5 → 32.0km**, M3 persona net build 54% → 79%. Worst single-week jump **+50% → +47%**; 2-week spikes 23.0% → 19.3%. ⚠️ Cost: marathon `maintenance` 68% → 72.7%, all §52 lopsidedness, founder-accepted. ⚠️ Willy's §52 bound did NOT prevent it — second time an amendment passed its condition and missed its purpose. Original entry below.
 >

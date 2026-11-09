@@ -171,6 +171,144 @@ for (const [id, body] of bodies) {
   ;(/\*\*\d[\d,.]*\*\*|\b\d+ of \d+\b|\b\d+%/.test(body) ? withNums : noNums).push(id)
 }
 
+
+/**
+ * 🔴 SECTION 6 — THE `Verify still open:` PREDICATES, FINALLY RUN (BACKLOG-VERIFY-PREDICATE-01,
+ * 2026-11-08).
+ *
+ * `backlog.md` § *Keeping this file honest* states the convention and then states its purpose:
+ * *"It exists so an audit is a script rather than a careful read: run the check, and if it comes
+ * back false the entry is stale."* **The script did not exist. 48 predicates, zero executions.**
+ *
+ * 🔴 AND THE DANGEROUS DIRECTION IS NOT HYPOTHETICAL — it was found the same day.
+ * `HK-NATIVE-BG-INGEST-02`'s predicate read `grep -rn "refresh" ios/App/App/*.swift` → *no hit =
+ * still open*. It returns FIVE hits: Apple's `AppDelegate` boilerplate comment, a widget-refresh
+ * note, and three lines in `HealthObserverPlugin` that exist **precisely because the feature is
+ * unbuilt** (*"No token refresh. Supabase ROTATES refresh tokens on use…"*). **So the predicate
+ * reported the work DONE.** A predicate that the ABSENCE of the feature makes fail is worse than
+ * none.
+ *
+ * ⚠️ SAFETY: AN ALLOW-LIST OF COMMAND HEADS, NOT ARBITRARY EXECUTION. The predicates are prose in
+ * a markdown file, and some are `npx tsx -e "…"` or use process substitution. Running whatever a
+ * document happens to contain is not a check, it is a shell. Only `grep`, `test`, `ls`, `find`
+ * and `git remote get-url` run; everything else is REPORTED as not mechanically runnable, which
+ * is the honest answer rather than a silent skip.
+ *
+ * ⚠️ WHAT A GREEN SECTION 6 DOES NOT PROVE, and it is the more important half: that a predicate
+ * asks the RIGHT question. `FIRSTRUN-MARATHON-01` read open for 33 days with a predicate that
+ * ran fine. This proves a predicate still EXECUTES and, where it states an expected count, that
+ * the count still matches. It cannot tell a correct question from a plausible one.
+ */
+const PRED = /\*?\*?Verify still open:?\*?\*?:?\s*(.*)$/
+const SAFE_HEAD = /^(grep|test|ls|find|git remote get-url)\b/
+
+/**
+ * 🔴 THE POPULATION IS THE FILE, NOT THE ITEM BODIES, AND MEASURING THAT WAS THE BUILD.
+ *
+ * My first cut keyed off `bodies` — the heading-derived map every other section uses — and saw
+ * **3 lines of 52**, all of them this item's own prose. **48 of 52 predicates are ORPHANED from
+ * a heading block**: they live in `> *Verify still open:*` blockquotes and in bullets under
+ * LATER tables and unscheduled sections. That is the "three item formats" the backlog's own
+ * convention paragraph warns about, and a heading-keyed parse reads one of them.
+ *
+ * A predicate line is self-contained — it carries the command AND the expected outcome — so the
+ * item id is needed only to NAME the finding. Attributed to the nearest preceding id, the same
+ * way a sentence's subject can be its heading.
+ */
+const allLines = readFileSync('docs/releases/backlog.md', 'utf8').split('\n')
+const ID_RE = /`?\b([A-Z][A-Z0-9]*(?:-[A-Z0-9]+){1,4})\b`?/
+const predRan = [], predStale = [], predManual = []
+let nearestId = '(file)'
+/**
+ * ⚠️ THE PHRASE MUST OPEN THE LINE, OR THE SCAN READS PROSE ABOUT THE CONVENTION AS A
+ * PREDICATE. My first cut matched anywhere on the line and collected four narrative mentions —
+ * three of them this item's own text, plus the convention paragraph itself and ADR-015's
+ * write-up of a predicate that once contradicted its own tick. **A check that fires on writing
+ * about the check is `HOOK-RGBA-COMMENTS-01`, and this is its fifth appearance in two days.**
+ * A real predicate opens its line after the bullet or blockquote markup.
+ */
+const opensLine = line =>
+  /^[-*>\s|]*\**`?\*?Verify still open/.test(line)
+
+/**
+ * 🔴 A CLOSED ITEM'S PREDICATE MUST NOT BE SCANNED, AND THE FIRST RUN PROVED WHY.
+ *
+ * `SWEEP-AGE-01` is ticked ✅, and its predicate reads *"`grep -c "age: pick(ages)"` → 0 =
+ * open"*. It now reads 1 — which is the predicate **correctly reporting that the item is
+ * closed**. Reported as a contradiction, that is a gate nagging about finished work on every
+ * run, and this repo records four times that such a gate gets switched off entirely, which is
+ * the same as having none. A predicate's job is to tell you whether an OPEN item is stale.
+ *
+ * Closed is read from the nearest preceding RECORD lead line — a heading, a bullet, or a
+ * blockquote bullet — carrying ✅ or a ~~strikethrough~~.
+ */
+const LEAD = /^(?:#{2,4} |>?\s*[-*] |> \*\*)/
+const isClosedLead = l => /✅|~~/.test(l)
+let leadClosed = false
+
+allLines.forEach((line, n) => {
+  // 🔴 THE PREDICATE'S OWN BULLET IS A LEAD LINE, AND IT RESET THE FLAG. Found by injecting a
+  // matched pair of probe items, one ✅ and one 🔲, with the same wrong predicate: BOTH were
+  // reported. `### ✅ …` set `leadClosed`, and then the very next line — `- **Verify still
+  // open:** …` — matched `LEAD`, carried no ✅, and cleared it again before the predicate was
+  // read. So the skip worked only where the predicate sat in a blockquote under a bullet, and
+  // silently did nothing for a heading-shaped item.
+  //
+  // ⚠️ MY FIRST FALSIFICATION ATTEMPT WAS TO UN-TICK A REAL CLOSED ITEM, AND IT WAS
+  // INCONCLUSIVE — no output either way, which reads exactly like a working skip. The matched
+  // pair is what settled it: two items differing in ONE character, with the same predicate.
+  if (LEAD.test(line) && !opensLine(line)) leadClosed = isClosedLead(line)
+  // Attribution is for NAMING a finding, nothing more: any line carrying a backticked id
+  // updates it, because the blockquote predicates sit under a `> **ITEM-ID**` lead line that
+  // is neither a heading nor a bullet. ⚠️ The LINE NUMBER is the exact locator; the id is a
+  // hint and can name a neighbour.
+  const idm = ID_RE.exec(line)
+  if (idm && /`/.test(line)) nearestId = idm[1]
+  if (!opensLine(line)) return
+  if (leadClosed) return
+  const m = PRED.exec(line)
+  if (!m) return
+  const rest = m[1]
+  const id = `${nearestId}:L${n + 1}`
+  // The command is the FIRST backticked span; the stated outcome is the prose after it. A line
+  // with no backticks is a prose gate ("Gate: 50+ paying users") and is reported, not run.
+  const cmdM = /`([^`]+)`/.exec(rest)
+  if (!cmdM) { predManual.push([id, 'prose gate', rest.replace(/\*\*/g, '').trim().slice(0, 80)]); return }
+  const cmd = cmdM[1].trim()
+  // ⚠️ AN ALLOW-LIST OF COMMAND HEADS, NOT ARBITRARY EXECUTION. These are prose in a markdown
+  // file and some are `npx tsx -e "…"`. Running whatever a document happens to contain is not a
+  // check, it is a shell. Everything else is REPORTED as not runnable — never silently skipped.
+  if (!SAFE_HEAD.test(cmd)) { predManual.push([id, 'not allow-listed', cmd.slice(0, 80)]); return }
+  // ⚠️ A TIMEOUT, BECAUSE A PREDICATE IS A CHECK AND NOT A BUILD — and because removing the
+  // closed-item skip to falsify it HUNG THIS SCRIPT, which sits in `verify:ci`. A predicate
+  // that cannot answer in 15s is reported as not runnable rather than stalling the gate; a
+  // gate that can hang is a gate someone removes from CI. `stdin` is /dev/null for the same
+  // family of reason: a `grep` with no file argument would otherwise wait on it forever.
+  let out = '', failed = false, timedOut = false
+  try {
+    out = execFileSync('bash', ['-c', cmd],
+      { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'], timeout: 15_000 })
+  } catch (e) {
+    failed = true
+    timedOut = !!(e && (e.signal === 'SIGTERM' || e.code === 'ETIMEDOUT'))
+    out = (e && e.stdout) ? String(e.stdout) : ''
+  }
+  if (timedOut) { predManual.push([id, 'timed out at 15s', cmd.slice(0, 80)]); return }
+  const rows = out.trim().split('\n').filter(Boolean)
+  // `grep -c` prints the count (prefixed by a filename when multiple files are given).
+  const count = /^grep\b.*\s-\w*c/.test(cmd)
+    ? rows.reduce((a, r) => a + Number(r.split(':').pop() || 0), 0)
+    : rows.length
+  const stated = /→\s*\*?\*?(\d+)\s*=/.exec(rest) ?? /\*\*(\d+)\s*=/.exec(rest)
+  if (stated) {
+    const want = Number(stated[1])
+    if (Number.isFinite(count) && count !== want) predStale.push([id, cmd.slice(0, 66), `states ${want}, reads ${count}`])
+    else predRan.push([id, cmd.slice(0, 66), `${count} = stated`])
+  } else {
+    predRan.push([id, cmd.slice(0, 66), failed ? 'no match (exit non-zero)' : `${count} line(s)`])
+  }
+})
+
 const head = s => console.log(`\n── ${s} ──`)
 console.log(`\nBACKLOG PREMISE VERIFICATION — ${ids.length} open items\n`)
 head('0. DEAD BY DESIGN — declared, with a reason')
@@ -200,6 +338,19 @@ if (untagged.length) {
   console.log('    board that rules first, and that is what this reads.')
 }
 
+head('6. `Verify still open` PREDICATES — RUN, not read')
+console.log(`  ran and consistent ${predRan.length} · CONTRADICTED ${predStale.length} · not mechanically runnable ${predManual.length}`)
+if (predStale.length) {
+  console.log('\n  ✗ A PREDICATE WHOSE STATED COUNT NO LONGER MATCHES:')
+  predStale.forEach(([id, cmd, why]) => console.log(`      ${id.padEnd(32)} ${why}\n${' '.repeat(34)}${cmd}`))
+  console.log('    Re-derive the figure and correct the item, or the predicate is lying in the')
+  console.log('    direction that closes work that is still open.')
+}
+if (predManual.length) {
+  console.log('\n  — not mechanically runnable (reported, never silently skipped):')
+  predManual.forEach(([id, why, what]) => console.log(`      ${id.padEnd(32)} [${why}] ${what}`))
+}
+
 head('5. WHAT IS VERIFIABLE AT ALL')
 console.log(`  ${withNums.length} items state a number — a figure exists to re-derive`)
 console.log(`  ${noNums.length} items state NO number — behavioural claims, no script settles them`)
@@ -207,4 +358,7 @@ console.log('\n⚠️  A DEAD REFERENCE IS NOT ALWAYS A DEAD PREMISE: an item ca
 console.log('    because it is missing. Nothing here is auto-resolved — read the item.')
 console.log('⚠️  AND SECTION 5 IS THE HONEST LIMIT. This proves references are live and prints')
 console.log('    baselines. It does not prove a behavioural premise still holds.\n')
-process.exit(deadFiles.length + deadSyms.length + untagged.length + deadContractRefs.length > 0 ? 1 : 0)
+console.log('⚠️  AND SECTION 6 PROVES A PREDICATE STILL EXECUTES, NOT THAT IT ASKS THE RIGHT')
+console.log('    QUESTION. `FIRSTRUN-MARATHON-01` read open for 33 days with a predicate that ran')
+console.log('    fine. A correct question and a plausible one look identical from here.\n')
+process.exit(deadFiles.length + deadSyms.length + untagged.length + deadContractRefs.length + predStale.length > 0 ? 1 : 0)
