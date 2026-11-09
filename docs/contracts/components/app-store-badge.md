@@ -34,15 +34,24 @@ exist yet. Switching it to a styled-but-dead anchor would be a dead end on every
 2. **The Apple mark is an inline SVG with `fill="currentColor"` and `aria-hidden="true"`**, so it
    inherits the pill's text colour and is announced once (by the label) rather than twice.
    No external asset, no second network request, no hardcoded hex in the path.
-3. ⚠️ **`color: 'white'` IS A HARDCODED COLOUR AND IT IS THE ONLY ONE IN THE TREE.** 📐 Measured
-   2026-11-08 across 376 files: the only bare palette keyword in `app/` or `components/` is this
-   line. It passes every guard — the hex and `rgba()` checks in `.githooks/pre-commit` and
-   `npm run sweep:colours` match numeric forms, so a CSS colour **keyword** walks past both.
-   It is white text on a `--ink` pill, which is correct, and **there is no token for
-   "text on ink"**: `--card` is #FFFFFF but means a card surface, so using it here would be
-   semantically wrong. 🔻 **Filed as `GUARD-COLOUR-KEYWORD-01`** rather than fixed here, because
-   inventing a token is a Design Board call and adding a guard arm whose only instance needs an
-   immediate exemption is a guard that proves nothing.
+3. ✅ **`color: 'var(--card)'` — FIXED 2026-11-09 (`GUARD-COLOUR-KEYWORD-01`), and this clause
+   was WRONG about why it could not be.** It read: *"there is no token for 'text on ink': `--card`
+   is #FFFFFF but means a card surface, so using it here would be semantically wrong."*
+   🔴 **`globals.css` had already settled it the other way, in a comment beside `--on-ground`:**
+   *"The wordmark's light/moss lockups sit on dark at **PURE white (--card)**, not on the warm
+   --on-ground."* So `--card` is the documented choice for a mark on dark, with precedent in the
+   same stylesheet. `--card` is #FFFFFF, so the substitution is **zero-pixel** — no Design Board
+   question, because no token had to be invented.
+   📐 **The measurement stands and was the useful part:** across 376 files this was the ONLY bare
+   palette keyword, and it passed every guard, because the hex and `rgba()` rules in
+   `.githooks/pre-commit` and `npm run sweep:colours` match NUMERIC forms — a CSS colour
+   **keyword** walked past both. It was found by writing this contract, not by a guard.
+   ✅ **Now gated in both places**: `colour-guards.sh` owns a `keyword` rule, the commit hook and
+   the tree sweep both read it (**sweep-only would have made the sweep STRICTER than the hook**,
+   inverting the owner's stated invariant), and it shipped with **zero exemptions** because the
+   one instance was converted first. 8 new cases across the two shell suites, both directions:
+   a comment is prose, a variant named `'red'` is not a declaration, `transparent` and
+   `currentColor` are legal CSS.
 
 ## Gates
 

@@ -114,6 +114,24 @@ run_case "a hex inside a STRING is code, not prose" block "components/x.tsx" \
   'export const LABEL = "brand hex is #B5C0B4"
 '
 
+# ── GUARD-COLOUR-KEYWORD-01: a colour KEYWORD, both directions ──
+# The rule that both numeric rules were blind to. Scoped to a colour property's whole
+# VALUE, so the words themselves are not the trigger.
+run_case "a colour KEYWORD as a property value blocks" block "components/x.tsx" \
+  "export const X = () => <div style={{ color: 'white' }} />
+"
+run_case "a keyword in a COMMENT is prose and passes" pass "components/x.tsx" \
+  "// this used to be color: 'white' before the token
+export const X = () => <div style={{ color: 'var(--card)' }} />
+"
+run_case "a variant NAMED after a colour is not a colour declaration" pass "components/x.tsx" \
+  "const variant = 'red'
+export const X = () => <div data-variant={variant} />
+"
+run_case "transparent and currentColor are legal CSS and pass" pass "components/x.tsx" \
+  "export const X = () => <div style={{ background: 'transparent', fill: 'currentColor' }} />
+"
+
 # ── the blocking cases must name their rule, not merely exit non-zero ──
 run_msg "a hex block SAYS it is a hex colour" "Hardcoded hex colour" "components/x.tsx" \
   'export const X = () => <div style={{ color: "#B5C0B4" }} />
@@ -121,6 +139,9 @@ run_msg "a hex block SAYS it is a hex colour" "Hardcoded hex colour" "components
 run_msg "an rgba block SAYS it is an rgba palette colour" "Hardcoded rgba" "components/x.tsx" \
   'export const X = () => <div style={{ color: "rgba(91,192,190,0.4)" }} />
 '
+run_msg "a keyword block SAYS it is a colour keyword" "colour KEYWORD" "components/x.tsx" \
+  "export const X = () => <div style={{ background: 'navy' }} />
+"
 run_msg "a banned-value block SAYS which family" "Banned palette value" "components/x.tsx" \
   'export const C = "#5BC0BE"
 '

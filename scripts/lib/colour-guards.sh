@@ -46,6 +46,27 @@ RGBA_RE='rgba?\(\s*[0-9]{1,3}\s*,\s*[0-9]{1,3}\s*,\s*[0-9]{1,3}'
 RGBA_SCRIM='rgba?\(\s*(0\s*,\s*0\s*,\s*0|255\s*,\s*255\s*,\s*255)\s*[,)]'
 
 BANNED_RE='#D4501A|#f5f2ee|#F5F2EE|#0B132B|#5BC0BE|rgba?\(212, ?80, ?26|rgba?\(11, ?19, ?43|rgba?\(91, ?192, ?190'
+
+# GUARD-COLOUR-KEYWORD-01 (2026-11-09) — A CSS COLOUR *KEYWORD* WALKED PAST ALL THREE RULES.
+#
+# 🔴 `HEX_RE`, `RGBA_RE` and `BANNED_RE` all match NUMERIC forms, so `color: 'white'` was
+# invisible to the commit hook AND to the tree sweep. Found not by a guard but by WRITING A
+# CONTRACT (`app-store-badge.md`, 2026-11-08): the only instance in 376 files.
+#
+# 📐 Measured 2026-11-09 before this shipped: **exactly ONE site**, now converted to
+# `var(--card)` at zero visible delta — so this arm ships with **no exemptions at all**, which
+# is the condition the item set for itself. A guard whose only instance needs an immediate
+# exemption proves nothing.
+#
+# ⚠️ SCOPED TO A COLOUR PROPERTY'S WHOLE VALUE, not to the words. `'red'` as a variant name,
+# a `borderStyle`, an aria label or a class name is not a colour declaration, and matching the
+# bare words would fire on ordinary code — which this repo records four times as how a guard
+# gets switched off. `transparent`, `currentColor` and `inherit` are legal CSS keywords that
+# name no palette colour and are deliberately NOT listed.
+COLOUR_PROP='(color|background|backgroundColor|borderColor|borderTopColor|borderBottomColor|borderLeftColor|borderRightColor|outlineColor|caretColor|textDecorationColor|columnRuleColor|fill|stroke)'
+COLOUR_WORD='(white|black|red|green|blue|yellow|orange|purple|grey|gray|teal|navy|pink|brown|cyan|magenta|silver|gold|beige|ivory|coral|salmon|crimson|olive|lime|maroon|indigo|violet|turquoise|khaki|tan|aqua|fuchsia|darkred|darkblue|darkgreen|lightblue|lightgrey|lightgray|whitesmoke|snow|azure)'
+KEYWORD_RE="\\b${COLOUR_PROP}\\s*:\\s*'${COLOUR_WORD}'"
+
 FONT_RE='DM Mono|DM Sans|Space Grotesk|Bebas Neue'
 SETP_RE='\.style\.setProperty\('
 
@@ -87,6 +108,7 @@ colour_violations() {
     hex)    strip_comments "$f" | grep -nE "$HEX_RE" ;;
     rgba)   strip_comments "$f" | grep -nE "$RGBA_RE" | grep -vE "$RGBA_SCRIM" ;;
     banned) grep -nE "$BANNED_RE" "$f" ;;
+    keyword) strip_comments "$f" | grep -nE "$KEYWORD_RE" ;;
     font)   grep -nE "$FONT_RE" "$f" ;;
     setp)   grep -nE "$SETP_RE" "$f" ;;
     *)      echo "colour_violations: unknown kind '$kind'" >&2; return 2 ;;

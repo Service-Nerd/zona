@@ -125,13 +125,23 @@ run_case "a palette rgba inside a template literal is a HIT" hit "rgba" \
 # 🔴 THE POPULATION, NOT JUST THE RULE. A hex under lib/ is outside this sweep by
 # design — the palette rules govern app/ and components/ — and asserting it keeps the
 # sweep from being quietly widened into the thing that fires on ordinary work.
+# ── GUARD-COLOUR-KEYWORD-01 (2026-11-09), both directions ──
+run_case "a colour KEYWORD as a property value is a HIT" hit "COLOUR KEYWORD" \
+  "components/x.tsx" "export const X = () => <div style={{ color: 'white' }} />"
+run_case "a keyword in a COMMENT is prose and stays CLEAN" clean "CLEAN" \
+  "components/x.tsx" "// was color: 'white' before the token
+export const X = () => <div style={{ color: 'var(--card)' }} />"
+run_case "a variant named after a colour stays CLEAN" clean "CLEAN" \
+  "components/x.tsx" "const v = 'red'
+export const X = () => <div data-v={v} />"
+
 run_case "a hex under lib/ is out of population" clean "CLEAN" \
   "lib/colours.ts" 'export const OG = "#F3F0EB"
 '
 
 
 # ── 🔴 THE FLOOR ITSELF, AT THE DEFAULT (code review, 2026-11-08) ──
-# `CLEAN — 0 files, 5 rules, 0 hits`, exit 0, was the first cut's answer to a population that
+# `CLEAN — 0 files, 6 rules, 0 hits`, exit 0, was the first cut's answer to a population that
 # selected nothing: a renamed directory, a changed glob, a run from the wrong place. **Absence
 # written as a value**, in the check whose entire job is to notice what nobody is looking at.
 floor_case() {                   # name  expect(refuse|ran)  path  content

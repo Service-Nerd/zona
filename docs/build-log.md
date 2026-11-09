@@ -5,6 +5,15 @@ angle. Feeds the weekly DHTB LinkedIn build-in-public posts — keep it honest, 
 it specific, no polish. The content system adds the voice.
 
 ---
+## 2026-11-09 — GUARD-COLOUR-KEYWORD-01 · the item deferred itself on a claim I had written, and the stylesheet had already disproved it
+**Shipped:** a `keyword` rule in the colour-guard owner, read by both the commit hook and the tree sweep. The one instance is a token now.
+**Dev learning:** three colour rules — hex, `rgba()`, banned values — and all three match *numeric* forms. `color: 'white'` walked past every one, in the commit hook and in the tree-wide sweep. One instance in 376 files, and it was found by **writing a component contract**, not by any guard.
+**Product/creator learning:** the contract I wrote yesterday deferred the fix with a reason: *"there is no token for 'text on ink'… using `--card` here would be semantically wrong."* `globals.css` contains, four lines from the token I should have read, the sentence *"The wordmark's light/moss lockups sit on dark at PURE white (--card), not on the warm --on-ground."* **The answer was in the stylesheet, with precedent, and I routed the question to a board instead.** `--card` is `#FFFFFF`, so the fix is a zero-pixel substitution — there was never a design decision to make.
+**AI-building learning:** I nearly added the rule to the sweep only. The owner module exists so that *"the sweep can never enforce a looser rule than the commit guard"* — and a sweep-only rule inverts that: the sweep becomes stricter, and a commit can still introduce what the tree then fails on. **An asymmetry in a guard pair is a guard pair that will disagree, and which side is stricter decides whether the disagreement is annoying or useless.**
+**The honest bit:** the rule is scoped to a colour property's whole value, because my first instinct was to match the words. `'red'` is a variant name in plenty of codebases, including things like `data-variant`; a word-matching rule fires on ordinary code, and this repo has recorded four times that such a guard gets switched off entirely. Three of the eight new test cases exist purely to pin that it does *not* fire.
+**Hook material:** one hardcoded colour in 376 files, invisible to three guards, found by writing documentation.
+**Postable?:** yes — "the answer was four lines from the token I was looking at".
+
 ## 2026-11-09 — TYPESCALE-DECIMAL-GATE-01 · the same blind pattern, one layer over
 **Shipped:** the type-scale gate counts decimal px and hardcoded rem sizes, normalised to px.
 **Dev learning:** `fontSize: '(\d+)px'`. Three decimal sites were invisible, which the item said. **Nine hardcoded `rem` values were invisible too, which it did not** — including `PlanChart`'s `0.46rem`, 7.36px, the smallest type anywhere in the app. The declared scale is written in px, so the fix is to take both units and normalise. **Matching the effect, not the spelling** — this is the second pattern-blindness defect in two hours and the same sentence fixed both.

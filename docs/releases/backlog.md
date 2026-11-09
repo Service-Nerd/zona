@@ -5681,31 +5681,6 @@ and re-export paths, not just the static ones.
 `UNCONTRACTED_ANY_BASELINE` in the same commit — ⚠️ **saying it was a DELETION, not a payment**,
 which is the distinction the two registers were just built to make visible.
 
-### 🔲 `GUARD-COLOUR-KEYWORD-01` — a CSS colour KEYWORD walks past both colour guards *(filed 2026-11-08, P3)* ⚙️ **NO BOARD** to measure; 🧭 **DESIGN BOARD** if a token is needed
-
-Found 2026-11-08 writing `docs/contracts/components/app-store-badge.md`.
-
-📐 **Measured across 376 files in `app/` and `components/`: exactly ONE bare palette colour
-keyword** — `color: 'white'` in `AppStoreBadge.tsx`. Everything else matching the shape is
-`none` (23), `transparent` (11), `inherit` (2), `currentColor` (1) or `fill: 'none'` (1), none of
-which are palette values.
-
-**Why both guards miss it:** `.githooks/pre-commit` and `npm run sweep:colours` share
-`scripts/lib/colour-guards.sh`, whose `HEX_RE` and `RGBA_RE` match **numeric** forms. A CSS
-colour keyword is neither, so it is invisible to the commit guard, the tree sweep and the
-banned-value list at once.
-
-⚠️ **It is correct code.** White text on an `--ink` pill is right, and **there is no token for
-"text on ink"**: `--card` is `#FFFFFF` but means a card surface, so using it would be
-semantically wrong while passing every check.
-
-🔻 **Deliberately NOT fixed when found.** Adding a guard arm whose only instance needs an
-immediate exemption is a guard that proves nothing, and this repo records four times that a
-guard firing on correct work gets switched off. **The order is: 🧭 Design Board on whether a
-token exists for text on a dark ground** (there is `--on-card-mute`, so the family has
-precedent), **then** the guard arm, with the keyword list closed and the single instance
-converted rather than exempted.
-
 ### 🔲 `BACKLOG-DUPLICATE-HEADING-01` — 48 ids are filed twice, so closing an item once does not close it *(filed 2026-11-08, P3)* ⚙️ **NO BOARD** *(records)*
 
 Found while stamping `SUITE-POOL-WALLCLOCK-01` in W3. Its first filing was stamped ✅ and

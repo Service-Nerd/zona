@@ -82,6 +82,10 @@ hits_rgba=$(grep -E "$RGBA_RE" "$STREAM" | grep -vE "$RGBA_SCRIM" | sed 's/^/  /
 hits_banned=$(printf '%s\n' "$files" | xargs grep -nE "$BANNED_RE" 2>/dev/null | sed 's/^/  /' || true)
 hits_font=$(printf '%s\n' "$files" | xargs grep -nE "$FONT_RE" 2>/dev/null | sed 's/^/  /' || true)
 hits_setp=$(printf '%s\n' "$files" | xargs grep -nE "$SETP_RE" 2>/dev/null | sed 's/^/  /' || true)
+# GUARD-COLOUR-KEYWORD-01 (2026-11-09) — reads the COMMENT-STRIPPED stream, like hex and rgba:
+# a colour keyword in a comment is prose (HOOK-RGBA-COMMENTS-01), and this file's own header
+# records that searching for the hardcoded colour finds the comment ABOUT it.
+hits_keyword=$(grep -E "$KEYWORD_RE" "$STREAM" | sed 's/^/  /' || true)
 
 report() {                       # kind  message  hits
   if [ -n "${3//[$'\n' ]/}" ]; then
@@ -97,11 +101,12 @@ report rgba   "HARDCODED rgba() PALETTE value (pure black/white at alpha are scr
 report banned "BANNED palette value (ember orange / warm beige / System B):" "$hits_banned"
 report font   "BANNED font reference. Use var(--font-ui) or var(--font-brand):" "$hits_font"
 report setp   "style.setProperty() — colour switching is not allowed (ADR-008):" "$hits_setp"
+report keyword "CSS COLOUR KEYWORD as a property value. Use a globals.css token (--card is #FFFFFF):" "$hits_keyword"
 
 say ""
 if [ "$fail" -ne 0 ]; then
   say "COLOUR SWEEP: HITS FOUND (above). All colour must come from globals.css."
   exit 1
 fi
-say "COLOUR SWEEP: CLEAN — $n files, 5 rules, 0 hits"
+say "COLOUR SWEEP: CLEAN — $n files, 6 rules, 0 hits"
 exit 0

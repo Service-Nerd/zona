@@ -46,6 +46,35 @@ if [ -n "$HEX_HITS" ]; then
   FAIL=1
 fi
 
+# ── CSS colour KEYWORD as a property value (GUARD-COLOUR-KEYWORD-01) ────────
+#
+# 🔴 THE HEX AND rgba RULES BOTH MATCH NUMERIC FORMS, so `color: 'white'` walked past
+# BOTH — and past the tree sweep. It was found by WRITING A CONTRACT, not by a guard:
+# the only instance in 376 files, on the App Store badge.
+#
+# ⚠️ ADDED HERE AND NOT ONLY TO THE SWEEP, AND THE REASON IS THE OWNER'S OWN INVARIANT:
+# `colour-guards.sh` exists so "the sweep can never enforce a looser rule than the
+# commit guard". A rule in the sweep alone inverts that — the sweep becomes STRICTER
+# than the hook, and a commit can still introduce what the tree then fails on.
+KEYWORD_HITS=""
+for f in $STAGED; do
+  [ -f "$f" ] || continue
+  if colour_violations keyword "$f" | grep -q .; then
+    KEYWORD_HITS="$KEYWORD_HITS$f
+"
+  fi
+done
+if [ -n "$KEYWORD_HITS" ]; then
+  echo ""
+  echo "✗  CSS colour KEYWORD as a property value. Use a globals.css token."
+  echo "   (--card is #FFFFFF: globals.css names it for a mark on dark, beside --on-ground.)"
+  echo "$KEYWORD_HITS" | while read -r f; do
+    [ -n "$f" ] || continue
+    colour_violations keyword "$f" | head -3 | sed "s|^|   $f:|"
+  done
+  FAIL=1
+fi
+
 # ── Hardcoded rgba() PALETTE values (P-13b, GAP-08) ──────────────────────────
 #
 # WHY THIS EXISTS. The hex rule above has protected this repo for months and has

@@ -26,7 +26,14 @@ export function AppStoreBadge() {
         gap: 'var(--space-2)',
         padding: 'var(--space-3) var(--space-4)',
         background: 'var(--ink)',
-        color: 'white',
+        // GUARD-COLOUR-KEYWORD-01 (2026-11-09) — was `color: 'white'`, the only bare palette
+        // keyword in the tree and invisible to all three colour rules, which match NUMERIC
+        // forms. ⚠️ `--card` is #FFFFFF, so this is a ZERO-PIXEL substitution — and it is the
+        // DOCUMENTED token for a mark on dark: globals.css says so beside --on-ground, "the
+        // wordmark's light/moss lockups sit on dark at PURE white (--card), not on the warm
+        // --on-ground". This component's own contract claimed --card "would be semantically
+        // wrong" here; the stylesheet's comment had already settled it the other way.
+        color: 'var(--card)',
         borderRadius: 'var(--radius-md, 8px)',
         fontSize: 'var(--fs-body)',
         fontWeight: 600,
