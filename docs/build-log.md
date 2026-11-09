@@ -6,6 +6,16 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-11-09 — NOTE-SURFACE-INERT-FINISH-01 · "stop raising new, just fix as you go" — and fixing as I went found four more
+**Shipped:** the note the Design Board refused that morning. It refused the *copy*, not the fact; I rewrote the copy to the board's own rule and placed it, instead of leaving it filed.
+**Dev learning:** the founder's correction was that I keep filing instead of finishing. He was right — I had closed an item while leaving its sharpest residual as a new ticket. Finishing it took about as long as filing it would have, and it found four more defects I would otherwise never have seen, each one in the fallout of the previous fix. That is the actual argument for finishing: the defects live in the consequences, and you only meet them if you follow through.
+**Product/creator learning:** the best of the four was found by a test disagreeing with me. I had the test derive the week-1 volume off the plan rather than typing a number, and it reported 22 where the note said 23 — because the note read the internal volume *curve* and the runner reads the placed sessions. That is ADR-022's class, and a note naming a number the plan does not show is worse than no note. **A hand-typed expectation would have hidden it; a derived one found it.**
+**AI-building learning:** a test can encode a defect as a requirement. `freshReturnGate.test.ts` asserted the note must contain `70%` — the exact ratio §18 rule 2 forbids and the board had just refused. If I had treated the red test as the authority rather than checking what the principle actually says (§51: "names the change and the reason"), I would have reverted a correct fix to keep a wrong test green.
+**The honest bit:** I also had to pay a units debt entry I had accidentally moved, and the right move was to *pay* it rather than re-register it — the guard's own error message says that register is closed because "a debt that can grow is not a debt, it is a habit." And a fixture in another test turned out to be hand-truncated rather than what production actually stamped, so my repair "broke" a test that was itself wrong. Fixtures must use the product's values; I keep relearning that one.
+**Hook material:** finishing one deferred note found four defects, including a test that required the exact wording a board had refused.
+**Postable?:** yes — "stop filing, start finishing" with four concrete defects as the evidence is a genuinely useful post.
+
+
 ## 2026-11-09 — NOTE-SURFACE-INERT-REVIEW-01 · I ran a design board on 41 stored plans for an engine with 4,776 carriers
 **Shipped:** the same day's Design Board ruling, vacated and re-sat on the engine's population. Both notes dropped to the lowest constraint rank; rule-1 breaks went 760 → 0 and displacement 1,684 → 8.
 **Dev learning:** I measured the displacement cost on 41 stored plans and told the board `Your days` "displaces nothing" and `Your peak` "loses Shaped for you". On 39,744 generated plans: `Your days` displaces a note on **1,216** plans and `Your peak` on 324, of which **Shaped for you is 8**. The note I justified the entire trade on — citing Wood's own ranking that constraints beat a brag — accounted for half a percent of the real cost. The actual cost was `Coming back` on 788 plans and `Long run` on 152.

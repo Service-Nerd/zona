@@ -1701,7 +1701,7 @@ when that week is current (`meta.load_residual_week` already names it). When it 
 plan-level tile drops behind `Long run` or goes (Collins: goes; Sierra: a short mention stays).
 
 
-### ✅ `NOTE-SURFACE-INERT-01` — **SHIPPED 2026-11-09. Two placed, one refused; and my own measurement was wrong by 4×** ⚙️ measured; 🧭 **DESIGN BOARD** ruled
+### ✅ `NOTE-SURFACE-INERT-01` — **SHIPPED 2026-11-09. All THREE placed; the refusal was of the copy and the copy was rewritten** ⚙️ measured; 🧭 **DESIGN BOARD** ruled
 
 ✅ **BOTH HALVES DONE 2026-11-09.** ⚙️ Measured, then 🧭 **SHIP WITH AMENDMENT (3)** — register row in
 `design-rulings.md`, sitting at `docs/decisions/design-2026-11-09-note-surface-inert-sitting.md`.
@@ -1770,6 +1770,56 @@ confidently written into the test was itself false.** Then its replacement's bra
 notes against a cap of three: **an order assertion over a list shorter than the cap asserts nothing
 about order.** Both now assert the cap BINDS before asserting anything else. 📐 Five arms, falsified
 four ways.
+
+✅ **AND THE THIRD NOTE IS NOW DONE, NOT LEFT FILED** (founder, 2026-11-09: *"why are you not
+finishing off? And stop raising new. Just fix as you go"*). The board refused the **copy**, not the
+fact, so the copy was rewritten at the producer to §18 rule 2 and wired:
+
+> *"Week 1 starts at 22 km rather than the 30 km you are running now, because you are coming back
+> from a break. It climbs from there."*
+
+🔑 **It reuses the existing `Coming back` label and adds no thirteenth** — which answers Collins'
+objection inside the item instead of filing it. Rule 1 gives the slot to
+`intensity_reentry_omission_note` when both are present, so **zero duplicate tiles**. Measured on the
+engine: **6,624 carriers, shown on 996 (15.0%), ZERO displacement.**
+⚠️ **Hutchinson's clause applied, not dropped:** the fresh-return variant has a gap so **both
+figures stay**; the allowance variant has none, so it carries no numbers and inventing some would be
+the precision §18 cut.
+
+🔑 **THE STORED PLAN GETS THE NEW COPY.** *A fix to the engine reaches no existing plan* — and this
+note was about to render **for the first time**, so without a repair the one stored carrier
+(`9feb0406`) would have shown exactly the prose the board refused, which is worse than the nothing it
+showed before. Repaired through `SUPERSEDED_META_PHRASES`, **verified byte-for-byte on both stored
+strings**. ⚠️ The old side is what production actually stamped, read off the table — it carries an
+**em dash** where the code had a semicolon, because it predates `SITE-ENGINE-EMDASH-01`.
+
+✅ **`planRationale.test.ts`'s DEBT register is now EMPTY** — all three notes placed. **It caught
+each wiring itself**, three times: the arm asserts a registered note is still unread.
+
+🔑 **AND FIXING AS I WENT FOUND THREE MORE DEFECTS, EACH IN THE FALLOUT OF THE LAST:**
+1. 🔴 **A test asserted the refused wording as a REQUIREMENT.** `freshReturnGate.test.ts` demanded
+   the note contain `70%`. **§51 requires *"the change and the reason"* and never required a ratio**
+   — §18 rule 2 forbids one. **A test can encode a defect as a requirement**, and that one would have
+   held the refused copy in place. Now asserts the principle.
+2. 🔴 **The note named a number the plan does not show.** It read `volumes[0]` — the internal volume
+   CURVE — and said *"23 km"* where week 1 delivers **22**. **ADR-022's class exactly:** the rules
+   were enforced on the curve while the runner sees the placed sessions. Found only because the
+   corrected test **derived the figure off the plan instead of trusting the note**. Now reads
+   `weeks[0].weekly_km`.
+3. 🔴 **A `UNITS-PROSE-01` debt entry went stale and the register is one shorter: 55 → 54.** The
+   entry held the old string verbatim. **Paid, not re-registered** — the guard's own message says
+   that register is closed because *"a debt that can grow is not a debt, it is a habit."* The
+   replacement is BASELINED with a demonstrated reason: `convertDistanceString` runs on every
+   rationale note, measured end to end — a km reader gets *"12 km rather than the 15 km"*, a miles
+   reader gets **"7 mi rather than the 9 mi"**.
+4. ⚠️ **And `supersededNotesMeta.test.ts`'s fixture was NOT what production stamped** — hand-truncated,
+   missing the real final sentence, so a repair anchored on the real text mangled the fixture and
+   **the fixture was what was wrong.** Replaced with the table's string, and the punctuation-only
+   guard now has a **declared second class** for copy superseded by a RULING, with an arm proving the
+   two classes are genuinely different (the punctuation test must FAIL on a ruling repair, or merging
+   them would hollow it).
+
+📐 `review:coaching` **94.6%**, identical, 7 of 7 steps, no measured rate moved.
 
 ⚠️ **Not seen on a device**, and no plan screen has been looked at with three tiles since 2026-09-17.
 `PLAN-NOTE-PLACEMENT-01` stays open (Wood: the rationale may not belong at the top of the plan at all).

@@ -10119,10 +10119,29 @@ function buildRulePlanOnce(
     // CoachingPrinciples §51 — communicate the allowance / start-fraction
     // change so the runner knows why their week-1 volume looks the way it
     // does. Mirrors volume_constraint_note pattern.
+    // 🔴 REWRITTEN 2026-11-09 TO §18 RULE 2, WHICH IS WHY IT CAN BE SHOWN AT ALL.
+    // The Design Board refused the old copy the same day: *"Fresh-from-layoff start: week 1
+    // begins at 70% of your stated current weekly volume"* and *"weeks 1-3 grow at 15% per
+    // week (vs the standard 10%)"* are **ratios and thresholds**, which §18 rule 2 forbids
+    // outright — *"consequence, then cause, then the one lever. No thresholds, no ratios."*
+    // It was also engine register talking about itself (*"allowance active"*, *"the engine
+    // prefers a small base"*), and the note had **no reader at all**, so it had never been
+    // held to the voice bar.
+    //
+    // ⚠️ HUTCHINSON'S CLAUSE IS APPLIED, NOT DROPPED: *where a gap exists, both figures stay.*
+    // The fresh-return variant has a gap (week 1 below what the runner says they run) so it
+    // keeps BOTH numbers. The allowance variant has no gap — a faster climb is not a shortfall
+    // — so it carries no figures, and inventing some would be the precision §18 cut.
     ...((returningRunner || isFreshReturn) ? {
       returning_runner_note: isFreshReturn
-        ? `Fresh-from-layoff start: week 1 begins at ${Math.round(GENERATION_CONFIG.FRESH_RETURN_START_FRACTION * 100)}% of your stated current weekly volume (${Math.round(volumes[0])} km vs ${input.current_weekly_km} km stated). Returning to running needs caution, not faster ramp; the engine prefers a small base to rebuild from. Volume grows at the standard ${GENERATION_CONFIG.MAX_WEEKLY_VOLUME_INCREASE_PCT}% per week.`
-        : `Returning-runner allowance active: weeks 1-${GENERATION_CONFIG.RETURNING_RUNNER_GRACE_WEEKS} grow at ${GENERATION_CONFIG.RETURNING_RUNNER_ALLOWANCE_PCT}% per week (vs the standard ${GENERATION_CONFIG.MAX_WEEKLY_VOLUME_INCREASE_PCT}%). Your training history allows a faster rebuild because the aerobic and structural base is still there.`,
+        // 🔴 THE DELIVERED WEEK, NOT THE VOLUME CURVE (found 2026-11-09 by a test that
+        // derived the figure off the plan instead of trusting the note). `volumes[0]` is the
+        // internal curve; the runner reads `weeks[0].weekly_km`, and they DISAGREED — the
+        // note said "23 km" where week 1 delivers 22. **ADR-022's class exactly:** the load
+        // rules were enforced on the curve while the runner sees the placed sessions. A note
+        // that names a number the plan does not show is worse than no note.
+        ? `Week 1 starts at ${Math.round(weeks[0]?.weekly_km ?? volumes[0])} km rather than the ${input.current_weekly_km} km you are running now, because you are coming back from a break. It climbs from there.`
+        : `Your first ${GENERATION_CONFIG.RETURNING_RUNNER_GRACE_WEEKS} weeks climb faster than they would for someone starting from scratch, because you have run before and that base is still there. After that it settles to the normal rate.`,
     } : {}),
 
     // CoachingPrinciples §50 — HR zone fallback hierarchy (L-03). Surface

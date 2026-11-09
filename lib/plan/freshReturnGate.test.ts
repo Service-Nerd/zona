@@ -115,11 +115,32 @@ describe('§37 — the heuristic, arm by arm', () => {
 })
 
 describe('§29 — the runner is told, in their own numbers', () => {
-  it('surfaces the returning-runner note with the percentage and both volumes', () => {
-    const note = gen({ weeks_at_current_volume: 3 }).meta.returning_runner_note ?? ''
-    expect(note, 'a 30% volume cut with no explanation reads as a broken plan').toBeTruthy()
-    expect(note).toContain(`${Math.round(G.FRESH_RETURN_START_FRACTION * 100)}%`)
-    expect(note).toContain('30 km')
+  // 🔴 THIS ARM ASSERTED AN IMPLEMENTATION DETAIL AS A REQUIREMENT (corrected 2026-11-09).
+  // It demanded the note contain `70%`. **§51 requires the note to name "the change and the
+  // reason"; it never required a ratio** — and `ui-patterns.md` §18 rule 2 FORBIDS one:
+  // *"consequence, then cause, then the one lever. No thresholds, no ratios."* The Design
+  // Board refused the old copy on exactly that ground, and this test would have held the
+  // refused wording in place. **A test can encode a defect as a requirement**, which is why
+  // the assertion now reads the principle rather than the string.
+  //
+  // ⚠️ HUTCHINSON'S CLAUSE SURVIVES AND IS ASSERTED: *where a gap exists, both figures stay.*
+  // This note has a gap (week 1 below what the runner says they run), so BOTH numbers are
+  // still required — that is what makes it coaching rather than a disclaimer.
+  it('names the change and the reason, with BOTH volumes and no ratio (§51 + §18 rule 2)', () => {
+    const plan = gen({ weeks_at_current_volume: 3 })
+    const note = plan.meta.returning_runner_note ?? ''
+    expect(note, 'a volume cut with no explanation reads as a broken plan').toBeTruthy()
+    // ⚠️ DERIVED FROM THE PLAN, NOT TYPED. My first version asserted `21 km` — 70% of the
+    // stated 30 — and the engine produces 23, because the start fraction is not the only
+    // thing acting on week 1. A hand-computed expectation tests my arithmetic, not the note.
+    const week1 = Math.round(plan.weeks.find(w => w.n === 1)!.weekly_km)
+    expect(week1, 'week 1 must be BELOW the stated volume or there is no gap to explain')
+      .toBeLessThan(30)
+    expect(note, "the start volume, read off the plan").toContain(`${week1} km`)
+    expect(note, "the runner's stated volume — both figures stay where a gap exists").toContain('30 km')
+    expect(note, 'the REASON, not just the change').toMatch(/coming back from a break/)
+    expect(note, '§18 rule 2 forbids a ratio').not.toMatch(/\d+%/)
+    expect(note, 'engine register must not reach the runner').not.toContain('the engine prefers')
   })
 
   it('a settled runner gets no such note', () => {

@@ -58,6 +58,31 @@ const BASELINE: ReadonlyArray<{ file: string; snippet: string; reason: string }>
   //    condition — *"deleting the screen is its own decision"* — and the decision was
   //    taken. 🔴 The entry had already been corrected once for a pure RELOCATION, by the
   //    stale-entry arm; this is the second time that arm has forced this line to move.
+  // ✅ UNITS-PROSE-01 DEBT PAID, NOT MOVED (2026-11-09, `NOTE-SURFACE-INERT-01`). The
+  //    register held `ruleEngine.ts`'s old `Fresh-from-layoff start: …70% of your stated
+  //    current weekly volume (${…} km vs ${…} km stated)…` verbatim. That copy was REWRITTEN
+  //    (the Design Board refused its ratios under §18 rule 2), so the registered string no
+  //    longer exists and the stale-entry arm caught it. **Register 55 → 54.**
+  //    ⚠️ The replacement is baselined rather than re-registered, because the guard's own
+  //    message says this register is closed to new entries — *"a debt that can grow is not a
+  //    debt, it is a habit."*
+  {
+    file: 'lib/plan/ruleEngine.ts',
+    snippet: 'km rather than the ${input.current_weekly_km} km you are running now',
+    reason:
+      'CONVERTED AT RENDER, DEMONSTRATED IN BOTH SYSTEMS. `returning_runner_note` has exactly ' +
+      'one render site — `planRationaleNotes`, wired 2026-11-09 — and that function runs ' +
+      '`convertDistanceString(text, units)` on every note. Measured end to end: a km reader ' +
+      'gets "Week 1 starts at 12 km rather than the 15 km you are running now"; a miles reader ' +
+      'gets "7 mi rather than the 9 mi". ⚠️ So the weld is the INPUT to the converter, not ' +
+      'copy that reaches a runner — which is why `formatDistance` at the producer would be ' +
+      'wrong here: the engine has no reader and no units at generation time. ' +
+      'EXIT CONDITION: if this note ever gains a second render site, that site must convert ' +
+      'too, or this entry is false. ' +
+      '⚠️ This snippet has already been corrected once by the stale-entry arm below, when the ' +
+      'note was repointed from the volume CURVE to the delivered week — which is the arm doing ' +
+      'its job, and the reason a baseline entry names a stable fragment rather than a whole line.',
+  },
   {
     file: 'components/training/PlanChart.tsx',
     snippet: '${w.long_run_hrs}hr',

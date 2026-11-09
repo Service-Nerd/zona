@@ -328,20 +328,18 @@ describe('NOTE-SURFACE — every declared plan note has a reader', () => {
   }
   /** Stamped, read by nothing. Each is open work, not an exemption.
    *
-   *  🔴 TWO PAID DOWN 2026-11-09 (Design Board SHIP WITH AMENDMENT (3)). `peak_shortfall_note`
-   *  → "Your peak", in the volume family's `else if` chain; `frequency_constraint_note` →
-   *  "Your days", gated on neither volume note showing. **This register caught the wiring
-   *  itself** — the arm below asserts a DEBT entry is still unread, so leaving them here after
-   *  wiring went red. That is the register working, not a nuisance.
+   *  ✅ **EMPTY SINCE 2026-11-09, AND THAT IS THE POINT OF `NOTE-SURFACE-INERT-01`.** All three
+   *  entries are placed: `peak_shortfall_note` → "Your peak", `frequency_constraint_note` →
+   *  "Your days", `returning_runner_note` → the existing "Coming back" label after its copy was
+   *  rewritten to §18 rule 2. **This register caught each wiring itself** — the arm below
+   *  asserts a registered note is still UNREAD, so leaving one here after wiring went red three
+   *  times. That is a debt register doing the thing debt registers usually do not: noticing when
+   *  the debt is paid.
    *
-   *  🔻 `returning_runner_note` is REFUSED, not pending: §18 rule 2 forbids ratios and
-   *  thresholds (*"weeks 1-3 grow at 15% per week (vs the standard 10%)"*) and rule 1's cause
-   *  already belongs to "Coming back", which it duplicates on 2 of its 3 carriers. It returns
-   *  with consequence/cause/lever copy or the key is deleted — so it stays here, because a
-   *  refused note with a named rewrite IS open work. */
-  const DEBT: Record<string, string> = {
-    returning_runner_note: 'NOTE-SURFACE-INERT-01 — DON\'T SHIP as written, Design Board 2026-11-09',
-  }
+   *  ⚠️ EMPTY IS NOT VACUOUS. The arm that binds is the one above it — *every declared note is
+   *  rendered, rendered elsewhere, or registered debt* — and with nothing registered, a NEW
+   *  inert note fails the build immediately instead of joining a pile. */
+  const DEBT: Record<string, string> = {}
 
   it('the population is the type, and it is real', () => {
     expect(declared.length).toBeGreaterThanOrEqual(15)
@@ -459,11 +457,57 @@ describe('NOTE-SURFACE — every declared plan note has a reader', () => {
     expect(all, 'the brag kept its slot over a constraint').not.toContain('Shaped for you')
   })
 
-  it('🔻 `returning_runner_note` is REFUSED and stays unread', () => {
+  // ── THE THIRD NOTE, FINISHED RATHER THAN LEFT FILED (2026-11-09) ──────────
+  //
+  // The Design Board refused the OLD COPY, not the fact: §18 rule 2 forbids ratios and
+  // thresholds, and *"weeks 1-3 grow at 15% per week (vs the standard 10%)"* is both. The
+  // refusal had a named cost — one stored plan showed ZERO notes with three free slots while
+  // carrying this one. The copy is rewritten at the producer and wired here.
+  it('🔴 `returning_runner_note` renders, under the EXISTING "Coming back" label', () => {
     const out = planRationaleNotes({
-      returning_runner_note: 'Returning-runner allowance active: weeks 1-3 grow at 15% per week.',
+      returning_runner_note: 'Week 1 starts at 12 km rather than the 15 km you are running now, because you are coming back from a break. It climbs from there.',
     } as never, 'km')
-    expect(out, 'the refused note is rendering — the ruling was reversed').toEqual([])
+    expect(out.map(n => n.label), 'no thirteenth label — Collins').toEqual(['Coming back'])
+  })
+
+  it('🔴 rule 1 — it yields to `intensity_reentry_omission_note`, which outranks it', () => {
+    // Same cause, same label, so only one may ever show. The reentry note names a change to
+    // the PRESCRIPTION (no hard sessions yet), which outranks a note about the ramp.
+    const out = planRationaleNotes({
+      returning_runner_note: 'Week 1 starts at 12 km rather than the 15 km you are running now.',
+      intensity_reentry_omission_note: 'No hard sessions in the first three weeks.',
+    } as never, 'km')
+    const comingBack = out.filter(n => n.label === 'Coming back')
+    expect(comingBack.length, 'two "Coming back" tiles — one cause, one tile').toBe(1)
+    expect(comingBack[0]!.text).toContain('No hard sessions')
+  })
+
+  it('🔴 a STORED plan gets the NEW copy, not the prose the board refused', () => {
+    // 🔑 THE REPAIR IS THE POINT. The engine edit reaches new plans only, and this note was
+    // about to render for the FIRST time — so without `SUPERSEDED_META_PHRASES` the one stored
+    // carrier would have shown exactly the copy the board refused, which is worse than the
+    // nothing it showed before. Both strings below are what production actually stamped, read
+    // off the table (note the EM DASH, which predates SITE-ENGINE-EMDASH-01).
+    const storedFresh = 'Fresh-from-layoff start: week 1 begins at 70% of your stated current weekly volume (12 km vs 15 km stated). Returning to running needs caution, not faster ramp \u2014 the engine prefers a small base to rebuild from. Volume grows at the standard 10% per week.'
+    const storedAllowance = 'Returning-runner allowance active: weeks 1-3 grow at 15% per week (vs the standard 10%). Your training history allows a faster rebuild because the aerobic and structural base is still there.'
+    for (const stored of [storedFresh, storedAllowance]) {
+      const text = planRationaleNotes({ returning_runner_note: stored } as never, 'km')[0]!.text
+      expect(text, 'a ratio reached the runner — §18 rule 2').not.toMatch(/\d+%/)
+      expect(text, 'engine register reached the runner').not.toContain('allowance active')
+      expect(text, 'engine register reached the runner').not.toContain('the engine prefers')
+      expect(text, 'the stored copy was shown unrepaired').not.toBe(stored)
+    }
+    expect(planRationaleNotes({ returning_runner_note: storedFresh } as never, 'km')[0]!.text)
+      .toBe('Week 1 starts at 12 km rather than the 15 km you are running now, because you are coming back from a break. It climbs from there.')
+  })
+
+  it('⚠️ and the PRODUCER emits no ratio either — the repair is not load-bearing for new plans', () => {
+    const src = readFileSync(join(root, 'lib/plan/ruleEngine.ts'), 'utf8')
+    const i = src.indexOf('returning_runner_note: isFreshReturn')
+    expect(i, 'the stamp has moved — re-point this arm').toBeGreaterThan(-1)
+    const stamp = src.slice(i, src.indexOf('} : {}),', i))
+    expect(stamp, 'the producer stamps a ratio again').not.toMatch(/\$\{[^}]*PCT[^}]*\}%/)
+    expect(stamp, 'the producer stamps a percentage again').not.toMatch(/\* 100\)\}%/)
   })
 
   it('each named surface still reads its note, and debt that has been wired is removed from the register', () => {

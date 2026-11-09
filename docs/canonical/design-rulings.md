@@ -5683,15 +5683,21 @@ told it was one plan and it was 788.
 |---|---|---|
 | **Both notes rank above `Shaped for you` ONLY** | 🟢 **SHIP** | **rule 1 breaks 760 → 0 · displacement 1,684 → 8 plans, and the only loss is the brag line** — the one trade Wood's own ranking sanctions. Coverage: `Your peak` **2,468 of 4,776 (51.7%)**, `Your days` **600 of 3,312 (18.1%)** |
 | **`Your days` gated on `peak_shortfall_note` too** | 🟢 **SHIP** | The 760-plan rule-1 gap: the first cut gated it on the two OLDER volume notes and not on the one shipped in the same commit. §18 — *"the larger statement wins"* — gives the slot to `Your peak`, which is why `Your days` lands at 18.1% and that is correct, not a shortfall |
-| **`returning_runner_note`** | 🔴 **DON'T SHIP as written** (unchanged) | §18 rule 2 forbids ratios and thresholds; rule 1's cause belongs to *"Coming back"*, duplicated on 2 of 3 carriers; engine register throughout |
+| **`returning_runner_note` → the EXISTING "Coming back" label** | 🟢 **SHIP, copy rewritten the same day** | The refusal was of the PROSE, not the fact: §18 rule 2 forbids the ratio (*"15% per week (vs the standard 10%)"*). Rewritten at the producer to consequence/cause — *"Week 1 starts at 22 km rather than the 30 km you are running now, because you are coming back from a break"* — with Hutchinson's clause applied (the fresh-return variant has a gap, so **both figures stay**; the allowance variant has none and carries no numbers). **6,624 carriers, 996 shown (15.0%), ZERO displacement, no thirteenth label — which answers Collins inside the ruling.** 🔑 **The stored carrier is repaired** through `SUPERSEDED_META_PHRASES`, verified byte-for-byte: without it the note would have rendered the refused prose on its first-ever appearance |
 | **Widening the cap** | 🔴 **NOT AVAILABLE** (unchanged) | §6ae declined 4 tiles / 240 words on 2026-10-28; no readability evidence here either |
 
 ⚡ **🎪 Collins still LOST and the re-measurement strengthens him:** twelve labels for three seats is
 *"a queue, not a taxonomy"*, and the queue is now demonstrably zero-sum — **1,684 displacements
 across 4.2% of plans was the price of two more claimants.** Filed as its own item.
 
-🔻 **The refusal's cost stands: `9feb0406` shows ZERO notes with three free slots** while carrying a
-substantive returning-runner note. The copy is the problem, not the fact.
+✅ **The refusal's cost was PAID, not recorded:** `9feb0406` showed ZERO notes with three free slots;
+the copy is rewritten and the stored string repaired. 🔑 **And finishing it found four more defects,
+each in the fallout of the last:** a test that asserted the refused wording as a REQUIREMENT (§51 asks
+for *"the change and the reason"*, never a ratio); the note naming the volume **CURVE** where week 1
+delivers 1 km less (ADR-022's class, found only because the corrected test derived the figure off the
+plan); a stale `UNITS-PROSE-01` entry **paid down 55 → 54** rather than re-registered; and a fixture
+in `supersededNotesMeta.test.ts` that was **not what production stamped**, so the fixture was what was
+wrong.
 
 Pattern — `ui-patterns.md` §18 (amended, with the engine numbers) · Constants — none new · Check —
 `planRationale.test.ts`, **five arms**, falsified four ways after **three hollow fixtures were found

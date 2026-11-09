@@ -128,6 +128,29 @@ const SUPERSEDED_META_PHRASES: ReadonlyArray<{ from: string; to: string }> = [
   // level_disagreement_note. 0 stored plans today; included because the engine can still
   // emit it and a repair that covers three of four is a repair someone has to re-open.
   { from: "says you're not one \u2014 you're a runner", to: "says you're not one: you're a runner" },
+  // 🔴 returning_runner_note — REWRITTEN 2026-11-09 (Design Board refused the old copy under
+  // §18 rule 2: *"no thresholds, no ratios"*). The engine edit reaches NEW plans only, and
+  // **this note was about to start rendering for the first time**, so without these entries the
+  // one stored carrier (`9feb0406`) would have shown exactly the prose the board refused —
+  // worse than the nothing it showed before. Fourth time this shape has come up in this file.
+  //
+  // ⚠️ THE OLD SIDE IS WHAT PRODUCTION ACTUALLY STAMPED, read off the table, not retyped: the
+  // stored fresh-return string carries an EM DASH where the code now has a semicolon, because
+  // it predates `SITE-ENGINE-EMDASH-01`. Both forms are mapped — the semicolon one is 0 stored
+  // plans today and the engine could still have emitted it, and this file's own header records
+  // that a repair covering three of four is a repair someone has to re-open.
+  //
+  // ⚠️ `' km vs '` IS A SHORT, GENERIC PHRASE AND IT WAS MEASURED BEFORE BEING USED: it appears
+  // in **0 of every other stored meta note**. The two long anchors around it are unique.
+  { from: 'Fresh-from-layoff start: week 1 begins at 70% of your stated current weekly volume (',
+    to:   'Week 1 starts at ' },
+  { from: ' km vs ', to: ' km rather than the ' },
+  { from: ' km stated). Returning to running needs caution, not faster ramp \u2014 the engine prefers a small base to rebuild from. Volume grows at the standard 10% per week.',
+    to:   ' km you are running now, because you are coming back from a break. It climbs from there.' },
+  { from: ' km stated). Returning to running needs caution, not faster ramp; the engine prefers a small base to rebuild from. Volume grows at the standard 10% per week.',
+    to:   ' km you are running now, because you are coming back from a break. It climbs from there.' },
+  { from: 'Returning-runner allowance active: weeks 1-3 grow at 15% per week (vs the standard 10%). Your training history allows a faster rebuild because the aerobic and structural base is still there.',
+    to:   'Your first 3 weeks climb faster than they would for someone starting from scratch, because you have run before and that base is still there. After that it settles to the normal rate.' },
   // returning_runner_note (fresh-from-layoff).
   { from: 'not faster ramp \u2014 the engine prefers', to: 'not faster ramp; the engine prefers' },
 ]

@@ -2193,7 +2193,7 @@ on, and the check firing is the product reporting it.
 > |---|---|---|---|
 > | **Your peak** | `peak_shortfall_note` | **above `Shaped for you` only**, gated on neither volume note | shown **2,468 of 4,776 carriers (51.7%)** |
 > | **Your days** | `frequency_constraint_note` | the same, **also gated on `peak_shortfall_note`** | shown **600 of 3,312 (18.1%)** — rule 1 gives the slot to the larger statement, as this section says it must |
-> | — | `returning_runner_note` | 🔴 **DON'T SHIP as written** | Rule 2: *"weeks 1–3 grow at 15% per week (vs the standard 10%)"* is a ratio and a threshold. Rule 1: duplicates *"Coming back"* on **2 of 3**. Engine register throughout |
+> | **Coming back** (the EXISTING label) | `returning_runner_note` | the same, **yielding to `intensity_reentry_omission_note`** | ✅ **copy REWRITTEN to rule 2 and placed the same day.** The refusal was of the prose — *"weeks 1–3 grow at 15% per week (vs the standard 10%)"* is a ratio and a threshold — not of the fact. Now: *"Week 1 starts at 22 km rather than the 30 km you are running now, because you are coming back from a break."* **6,624 carriers, shown on 996 (15.0%), ZERO displacement, and no thirteenth label** |
 >
 > **Together: rule-1 breaks 760 → 0, displacement 1,684 → 8 plans, and the only loss is the brag
 > line** — the one trade Wood's own ranking sanctions. 🔑 **The trade is 1:1 and that is not a
@@ -2210,11 +2210,13 @@ on, and the check firing is the product reporting it.
 > 2026-10-28 for want of readability evidence, and nothing here supplies any. These two notes
 > compete inside 3.
 >
-> 🔻 **The refusal has a named cost: one plan (`9feb0406`) shows ZERO notes with three free
-> slots, carrying a substantive returning-runner note.** That runner is told nothing, and it is
-> the strongest argument for the rewrite rather than against the refusal. `returning_runner_note`
-> returns with consequence/cause/lever copy, or `intensity_reentry_omission_note` carries the
-> cause and the key is deleted.
+> ✅ **THE REFUSAL'S COST WAS PAID THE SAME DAY.** `9feb0406` showed ZERO notes with three free
+> slots while carrying a substantive returning-runner note; the copy was rewritten at the producer
+> and the stored string repaired through `SUPERSEDED_META_PHRASES`, **verified byte-for-byte**.
+> ⚠️ Without that repair the note would have started rendering **for the first time** carrying
+> exactly the prose the board refused — worse than the nothing it showed before.
+> 🔑 **It reuses `Coming back` and adds no thirteenth label**, which answers Collins inside the
+> ruling rather than deferring him.
 >
 > 🎪 **Collins lost, recorded as lost:** he would collapse the twelve labels to four — *volume,
 > days, intensity, shape* — before adding a thirteenth, on the grounds that **twelve claimants

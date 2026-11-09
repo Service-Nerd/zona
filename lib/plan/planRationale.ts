@@ -240,6 +240,19 @@ export function planRationaleNotes(
       && !meta.peak_shortfall_note) {
     notes.push({ label: 'Your days', text: meta.frequency_constraint_note })
   }
+  // 🔴 NOTE-SURFACE-INERT-01, the refused third note, FINISHED 2026-11-09 rather than left
+  // filed. The Design Board refused the OLD COPY (§18 rule 2: no ratios, no thresholds), not
+  // the fact — and the refusal had a named cost: `9feb0406` showed ZERO notes with three free
+  // slots while carrying this one. The copy is rewritten at the producer; this wires it.
+  //
+  // ⚠️ IT REUSES "Coming back" AND ADDS NO THIRTEENTH LABEL. 🎪 Collins' objection to the first
+  // sitting was that twelve claimants for three seats is a queue, not a taxonomy. Same cause,
+  // same label, and rule 1 means only one of them ever shows — so the queue does not grow.
+  // `intensity_reentry_omission_note` wins when both are present: it names a change to the
+  // PRESCRIPTION (no hard sessions yet), which outranks a note about the ramp.
+  if (meta.returning_runner_note && !meta.intensity_reentry_omission_note) {
+    notes.push({ label: 'Coming back', text: meta.returning_runner_note })
+  }
   const fit = levelFitNote(meta)
   if (fit) notes.push({ label: 'Shaped for you', text: fit })
 
