@@ -6,6 +6,25 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-11-10 — BACKLOG-DUPLICATE-HEADING-01 · the gate the item asked for would have missed every real case
+**Shipped:** `backlog:verify` § 8 — an id with two live headings and no archive marker.
+
+**Dev learning:** the item specified the gate: *"fail when an id has two headings whose CLOSED status disagrees."* I ran that rule against the incident that caused the item, by checking the backlog out at the commit before the fix. **It fires zero.** The item's own account of the incident is wrong: it says the first filing was stamped ✅ while the audit still read open, but both headings were OPEN and identical — the ✅ landed in the commit that fixed it. **A status disagreement only exists during the repair, never before it.** And on today's file that rule fires on two ids, both of which are correct records: a live heading beside an archived original is this document's convention, which the item itself says must not be merged, one paragraph after proposing the rule that breaks it.
+
+**So the useful shape was a different one:** more than one heading, at least one still open, and *none* marked as the archive. That is the second filing nobody declared as the record — stamp one and the other is left open. One at the incident, zero today, and all 43 legitimate pairs silent.
+
+**The part that was already written down and still happened:** extracting a status-aware owner from `heading_open_sites` **has been attempted once before and reverted.** The single-owner test records it in its own list of owned names: a `heading_all_sites` shipped as a *verbatim second copy*, under a comment claiming it shared the extraction, and the test could not see it because it enumerates NAMES rather than checking shape. It was deleted rather than refactored, so the refactor was still owed. My version is a one-line filter over the owner, and the new arm checks the shape — the filter must contain no awk program of its own — so re-introducing the verbatim copy now goes red. **A comment claiming a function shares an extraction is not evidence that it does.**
+
+**AI-building learning:** I planted a duplicate heading to falsify the gate, restored the file, then checked the restore with `grep -c planted` — which returned 3 and made me think the restore had failed. **Two of those were ordinary prose: this backlog legitimately contains the word "planted" twice**, in records about planting test values. Matching the spelling rather than the thing, in a check I wrote to verify my own cleanup. `git diff --stat` was the authoritative answer and it was empty.
+
+**The honest bit:** re-measuring the premise took about fifteen minutes and changed what I built. All three of the item's figures had drifted, its account of its own incident was wrong, and its proposed fix was the opposite of the one that works. The fifteen minutes were the whole value of the build.
+
+**Hook material:** A bug ticket specified its own fix. Run that fix against the bug that caused the ticket and it catches nothing — and on today's file it cries wolf on two correct records.
+
+**Postable?:** yes
+
+---
+
 ## 2026-11-10 — CONTRACT-COVERAGE-03 (W5) · seven contracts, and the gate was reading the wrong component
 **Shipped:** Contracts for the seven highest-reach uncontracted shared components. Both gated registers down by seven — 49 → 42 and 70 → 63.
 

@@ -81,18 +81,37 @@ _CLOSED_PROSE='for the record|NOT an open item|do not re-propose'
 # closure as a CAPITALISED stamp (**DEAD**, **WITHDRAWN**, ✅ SHIPPED), so requiring caps keeps
 # ordinary prose ("a deadline", "shipped copy") from closing an open item. Only the two
 # sentence-shaped markers are case-insensitive, because they are written as prose.
-heading_open_sites() {
+# ── THE OWNER: every item-naming heading, with the status it DECLARES ────────
+#
+# 🔴 THREE STATES, NOT TWO, AND THE THIRD IS WHY `BACKLOG-DUPLICATE-HEADING-01` NEEDED IT
+# (2026-11-10). `heading_open_sites` collapsed "closed" into one bucket, so nothing could tell
+# a SHIPPED stamp from the archive convention this file uses for a second heading
+# (*"the original filing, for the record"*). Both read as closed, and they mean opposite things
+# about whether a second heading is legitimate.
+#
+#   STAMPED   — ✅ / ~~…~~ / a capitalised closure word. The item is done.
+#   ARCHIVED  — the prose markers only. A deliberate second heading keeping the problem
+#               statement beside the live record. **Expected to sit beside an OPEN heading.**
+#   OPEN      — neither. The live status.
+#
+# `heading_open_sites` is now a FILTER over this, so there is exactly one place that decides
+# what a heading declares. ⚠️ Proven byte-identical to the previous implementation on the live
+# backlog before the change landed — the open COUNT feeds `open_item_boards` and § 4's gate, so
+# a refactor here that moved it would be invisible and expensive.
+heading_sites_with_status() {
   awk -v stamps="$_CLOSED_STAMPS" -v prose="$_CLOSED_PROSE" '
     /^##/ {
       line = $0
       bare = line
       gsub(/`[^`]*`/, "@@", bare)          # the id and any filename cannot vote on status
-      if (index(bare, "\342\234\205") || index(bare, "~~")) next
-      n = split(stamps, w, "|"); for (i = 1; i <= n; i++) if (index(bare, w[i])) next
+      stamped = 0; archived = 0
+      if (index(bare, "\342\234\205") || index(bare, "~~")) stamped = 1
+      n = split(stamps, w, "|"); for (i = 1; i <= n; i++) if (index(bare, w[i])) stamped = 1
       lo = tolower(bare)
-      m = split(prose, q, "|");  for (i = 1; i <= m; i++) if (index(lo, tolower(q[i]))) next
+      m = split(prose, q, "|");  for (i = 1; i <= m; i++) if (index(lo, tolower(q[i]))) archived = 1
+      status = stamped ? "STAMPED" : (archived ? "ARCHIVED" : "OPEN")
 
-      # 🔴 A `##` PARENT HEADING IS AN ITEM TOO, AND NO ARM HAS EVER READ ONE (2026-11-07).
+      # 🔴 A `##` PARENT HEADING IS AN ITEM TOO, AND NO ARM HAD EVER READ ONE (2026-11-07).
       # The founder asked whether FIRSTRUN-MARATHON-01 was built. It was: touchpoint 7 shipped
       # 2026-10-05 and every named blocker before it, all in production. Its parent heading is
       # `## 🥇 P0 — FIRSTRUN-MARATHON-01`, which carries NO stamp and NO backticks, and every
@@ -107,15 +126,46 @@ heading_open_sites() {
         if (line ~ /^## .{0,8}(FILED|SHIPPING|Filed|Shipping)/) next
         # a `##` parent names its id WITHOUT backticks by convention, so accept a bare id
         if (match(line, /[A-Z][A-Z0-9]*(-[A-Z0-9]+)+-[0-9][0-9]/) == 0) next
-        printf "%s\t%s\n", NR, substr(line, RSTART, RLENGTH); next
+        printf "%s\t%s\t%s\n", NR, substr(line, RSTART, RLENGTH), status; next
       }
 
       # `###`/`####` keep the backticked convention: it is what stops a sentence-shaped
       # heading that MENTIONS an id from being read as that id\x27s filing.
       if (line !~ /^###/) next
       if (match(line, /`[A-Z][A-Z0-9]*(-[A-Z0-9]+)+`/) == 0) next
-      printf "%s\t%s\n", NR, substr(line, RSTART + 1, RLENGTH - 2)
+      printf "%s\t%s\t%s\n", NR, substr(line, RSTART + 1, RLENGTH - 2), status
     }' "$1"
+}
+
+# Every `###`/`####`/`##` heading that names an item and does not say it is closed.
+heading_open_sites() {
+  heading_sites_with_status "$1" | awk -F'\t' '$3 == "OPEN" { printf "%s\t%s\n", $1, $2 }'
+}
+
+# 🔴 BACKLOG-DUPLICATE-HEADING-01 (2026-11-10) — A TRUE DUPLICATE FILING, which is NOT a status
+# disagreement, and the item that asked for this had it wrong.
+#
+# The item specified *"fail when an id has two headings whose CLOSED status disagrees"*. 📐 Run
+# against the incident that caused it (`SUITE-POOL-WALLCLOCK-01`, backlog at `23e1ccb6^`) that
+# rule fires **0** — because BOTH its headings were OPEN AND IDENTICAL. The ✅ arrived in the
+# commit that FIXED it, so a disagreement exists only *during* the repair, never before it.
+# ⚠️ And on today's file the disagreement rule fires on **2 ids, both correct**: a live heading
+# beside an ARCHIVED one is the convention, which the item itself says must not be merged.
+# **It would have been a gate that misses every real case and cries wolf on every legitimate
+# one.**
+#
+# So the shape that misleads is: an id with more than one heading, at least one still OPEN, and
+# **none of them ARCHIVED** — i.e. a second filing nobody marked as the record. Stamping one
+# then leaves the other open, which is exactly what `audit-docs.sh` reported.
+#
+# 📐 FALSIFIED AGAINST THE INCIDENT, not against an invented case: **1 at `23e1ccb6^`,
+# 0 today.** The 43 legitimate pairs stay silent.
+duplicate_filing_ids() {
+  heading_sites_with_status "$1" | awk -F'\t' '
+    { n[$2]++; if ($3 == "OPEN") open[$2] = 1; if ($3 == "ARCHIVED") arch[$2] = 1
+      if (!($2 in first)) first[$2] = $1; else last[$2] = $1 }
+    END { for (k in n) if (n[k] > 1 && (k in open) && !(k in arch))
+            printf "%s\t%s\t%s\t%s\n", k, n[k], first[k], last[k] }' | sort
 }
 
 heading_open_ids() { heading_open_sites "$1" | cut -f2; }

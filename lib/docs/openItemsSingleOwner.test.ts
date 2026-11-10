@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest'
-import { readFileSync, existsSync } from 'node:fs'
+import { readFileSync, existsSync, writeFileSync, unlinkSync } from 'node:fs'
+import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { execFileSync } from 'node:child_process'
 
@@ -40,6 +41,16 @@ const OWNED = [
   // derivation and `backlog-verify.mjs` needed the same answer to GATE the filing rule. Two
   // copies would disagree about which board owns an item, which is the one thing it says.
   'open_item_boards',
+  // 🔴 ADDED 2026-11-10 (BACKLOG-DUPLICATE-HEADING-01). `heading_sites_with_status` is the
+  // OWNER now and `heading_open_sites` is a one-line filter over it, because a second heading
+  // needs THREE states and not two: a SHIPPED stamp and this file's archive convention
+  // (*"the original filing, for the record"*) both read as closed and mean opposite things.
+  // ⚠️ **THIS EXTRACTION HAS BEEN ATTEMPTED ONCE AND REVERTED** — the note above records a
+  // `heading_all_sites` that shipped as a VERBATIM second copy of `heading_open_sites` under a
+  // comment claiming it shared the extraction. It was deleted rather than refactored, so the
+  // refactor was still owed. This time `heading_open_sites` holds no awk of its own, and arm 6
+  // asserts that rather than trusting the comment.
+  'heading_sites_with_status', 'duplicate_filing_ids',
   '_CLOSED_STAMPS', '_CLOSED_PROSE',
 ] as const
 
@@ -99,5 +110,91 @@ describe('BACKLOG-PARENT-HEADING-BLIND-01 — one owner of "what is open"', () =
     expect(bl).toContain('VERIFIED BUILT AND IN PRODUCTION')
     expect(bl, 'a push is not a deploy — the evidence names the deployed SHA')
       .toMatch(/ancestors of the deployed production SHA/)
+  })
+})
+
+/**
+ * 🔴 BACKLOG-DUPLICATE-HEADING-01 (2026-11-10) — the status owner, and the duplicate gate.
+ *
+ * `heading_sites_with_status` exists because `heading_open_sites` collapsed closed into one
+ * bucket, and a second heading needs three states: a SHIPPED **STAMP**, this file's **ARCHIVE**
+ * convention, or **OPEN**. Both of the first two read as "closed" and they mean opposite things
+ * about whether the second heading is legitimate.
+ *
+ * ⚠️ **AND THIS EXTRACTION WAS ATTEMPTED ONCE AND REVERTED.** The `OWNED` note above records a
+ * `heading_all_sites` that shipped as a verbatim second copy of `heading_open_sites`, under a
+ * comment claiming it shared the extraction, invisible to this file because it enumerates
+ * NAMES. Arm 6 below checks the SHAPE instead: the filter must hold no awk program of its own.
+ */
+describe('BACKLOG-DUPLICATE-HEADING-01 — three states, one extraction, and the duplicate gate', () => {
+  const lib = read(LIB)
+  const fn = (name: string) => {
+    const i = lib.indexOf(`${name}() {`)
+    expect(i, `${name} must be defined in ${LIB}`).toBeGreaterThan(-1)
+    // Brace-match from the opening `{`, rather than slicing to the next `}` at column 0 —
+    // guessing where a region ends is a defect this repo paid for twice this week.
+    let depth = 0, j = lib.indexOf('{', i)
+    for (let k = j; k < lib.length; k++) {
+      if (lib[k] === '{') depth++
+      else if (lib[k] === '}') { depth--; if (depth === 0) return lib.slice(i, k + 1) }
+    }
+    throw new Error(`${name} is unbalanced`)
+  }
+
+  it('6. 🔴 `heading_open_sites` is a FILTER, not a second copy of the extraction', () => {
+    const open = fn('heading_open_sites')
+    expect(open, 'it must call the owner').toContain('heading_sites_with_status')
+    // The extraction is the `/^##/` awk program. A filter has no business holding one.
+    expect(open, 'the filter must not re-extract headings').not.toContain('/^##/')
+    expect(open, 'nor re-derive the backtick id convention').not.toContain('RSTART')
+    // …and the owner must still hold exactly one.
+    const owner = fn('heading_sites_with_status')
+    expect((owner.match(/\/\^##\//g) ?? []).length, 'exactly one extraction').toBe(1)
+    expect((lib.match(/match\(line, \/`\[A-Z\]/g) ?? []).length,
+      'the backtick-id convention appears in ONE place in the whole owner').toBe(1)
+  })
+
+  it('7. the three states are decided in one place, and ARCHIVE is distinct from STAMPED', () => {
+    const owner = fn('heading_sites_with_status')
+    expect(owner).toContain('STAMPED')
+    expect(owner).toContain('ARCHIVED')
+    // 🔴 The distinction is the whole point: a prose marker must NOT set `stamped`. If it did,
+    // `duplicate_filing_ids` could never tell a legitimate archive pair from a real duplicate.
+    expect(owner, 'the prose vocabulary sets ARCHIVED').toMatch(/prose[\s\S]{0,200}archived = 1/)
+    expect(owner, 'the stamp vocabulary sets STAMPED').toMatch(/stamps[\s\S]{0,200}stamped = 1/)
+  })
+
+  it('8. 🔴 the duplicate gate fires on an UNMARKED second filing and not on an archive pair', () => {
+    const run = (body: string) => {
+      const f = join(tmpdir(), `dup-${Math.random().toString(36).slice(2)}.md`)
+      writeFileSync(f, body)
+      try {
+        return execFileSync('bash',
+          ['-c', `. ${JSON.stringify(join(ROOT, LIB))}; duplicate_filing_ids ${JSON.stringify(f)}`],
+          { encoding: 'utf8', cwd: ROOT }).split('\n').filter(Boolean).map(l => l.split('\t')[0])
+      } finally { unlinkSync(f) }
+    }
+    const H = (extra: string) => `### 🔲 \`THING-01\`${extra}\n\nbody\n`
+
+    // The incident shape: the same id filed twice, both open, neither marked.
+    expect(run(H(' — first filing') + H(' — second filing')),
+      'two live headings, no archive marker').toEqual(['THING-01'])
+
+    // The convention: a live heading beside the archived original. 43 of these exist.
+    expect(run(H(' — live status') + H(' — the original filing, for the record')),
+      'an archive pair is legitimate and must stay silent').toEqual([])
+
+    // Both resolved. Nothing misleading, so nothing to say.
+    expect(run(H(' — ✅ SHIPPED') + H(' — ✅ SHIPPED, a second filing')),
+      'both stamped').toEqual([])
+
+    // One heading only.
+    expect(run(H(' — the only filing')), 'a single heading is never a duplicate').toEqual([])
+
+    // 🔴 The shape the ITEM asked for, which is NOT this gate: a stamped heading beside an
+    // open one, with no archive marker. It is still a duplicate by this rule, and should be —
+    // that is the half-closed state the incident ended in.
+    expect(run(H(' — ✅ SHIPPED') + H(' — second filing, still open')),
+      'half-closed is a duplicate too').toEqual(['THING-01'])
   })
 })

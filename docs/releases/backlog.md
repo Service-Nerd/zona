@@ -6311,7 +6311,58 @@ and re-export paths, not just the static ones.
 `UNCONTRACTED_ANY_BASELINE` in the same commit — ⚠️ **saying it was a DELETION, not a payment**,
 which is the distinction the two registers were just built to make visible.
 
-### 🔲 `BACKLOG-DUPLICATE-HEADING-01` — 48 ids are filed twice, so closing an item once does not close it *(filed 2026-11-08, P3)* ⚙️ **NO BOARD** *(records)*
+### ✅ `BACKLOG-DUPLICATE-HEADING-01` — **SHIPPED 2026-11-10. A gate on the UNMARKED second filing — and the gate the item specified would have missed every real case** *(filed 2026-11-08, P3)* ⚙️ **NO BOARD** *(records)*
+
+✅ **SHIPPED 2026-11-10 as `backlog:verify` § 8**, in `verify:ci`.
+
+🔄 **RE-MEASURED FIRST, AND EVERY FIGURE HAD DRIFTED:** **43** ids carry more than one item
+heading (not 48), **3** of them three (not 8), and **2** pairs disagree about closed status (not 4
+— `COACHING-ROUND-WARNS-BLIND-01` and `DOCS-RESIDUAL-01` have since been resolved consistently).
+Population: **492 item-naming headings across 446 distinct ids.**
+
+🔴 **AND THE GATE THIS ITEM SPECIFIED WOULD HAVE BEEN WRONG IN BOTH DIRECTIONS.** It asked to
+*"fail when an id has two headings whose CLOSED status disagrees"*.
+- 📐 **Against the incident that caused it, that rule fires ZERO.** The item says *"its first
+  filing was stamped ✅ and `audit-docs.sh` still reported STILL OPEN"* — but at `23e1ccb6^`
+  **both of `SUITE-POOL-WALLCLOCK-01`'s headings were OPEN and IDENTICAL.** The ✅ arrived in the
+  commit that FIXED it, so a status disagreement exists only *during* the repair, never before.
+- ⚠️ **Against today's file it fires on 2 ids, and both are correct records:** a live heading
+  beside one marked *"the original filing, for the record"* is this document's convention — which
+  **the item itself says must not be merged**, one paragraph after proposing the rule that breaks it.
+
+🔑 **THE SHAPE THAT ACTUALLY MISLEADS: an id with more than one heading, at least one still
+OPEN, and NONE of them marked as the archive** — a second filing nobody declared as the record.
+Stamping one then leaves the other open. 📐 **Falsified against the incident rather than an invented
+case: 1 at `23e1ccb6^`, 0 today**, with all 43 legitimate pairs silent.
+
+✅ **`heading_sites_with_status` is now the owner and `heading_open_sites` is a one-line filter over
+it**, because a second heading needs **three** states and not two: a SHIPPED **STAMP**, the
+**ARCHIVE** prose, or **OPEN**. The first two both read as closed and mean opposite things.
+⚠️ **Proven byte-identical to the previous `heading_open_sites` on the live backlog before the
+change landed** — that set feeds `open_item_boards` and § 4's gate, so a refactor that moved it
+would be invisible and expensive.
+
+🔴 **AND THIS EXTRACTION HAD BEEN ATTEMPTED ONCE AND REVERTED, which `openItemsSingleOwner.test.ts`
+records in its own `OWNED` note:** a `heading_all_sites` shipped as a **verbatim second copy** of
+`heading_open_sites`, under a comment claiming it shared the extraction, **invisible to that test
+because it enumerates NAMES**. It was deleted rather than refactored, so the refactor was still
+owed. ✅ **Arm 6 now checks the SHAPE instead of the comment:** the filter must contain no awk
+program of its own, and the backtick-id convention must appear exactly once in the whole owner.
+📐 **Falsified by re-introducing the verbatim copy — arm 6 goes red**, which is the case the
+previous attempt shipped past.
+
+📐 **3 new arms, 3 falsifications** (verbatim copy → 1 red; ARCHIVE collapsed into STAMPED → 2 red;
+the gate disarmed → 1 red) plus **5 constructed cases** in arm 8 covering both directions, including
+the half-closed state the incident ended in.
+
+🔻 **Declared limit, printed by the gate itself: it cannot see a second heading WRONGLY marked as
+the archive.** The marker is prose a human writes, so putting it on a live filing silences the arm
+by hand. It catches the **unmarked** duplicate — the one nobody chose to create.
+
+🔻 **Nothing was remediated because nothing is broken:** 0 duplicates today, the open count was
+already safe (`open_items.sh` dedups per id), and the 43 pairs are legitimate.
+
+🔻 **Kept below: the original filing, for the record.**
 
 Found while stamping `SUITE-POOL-WALLCLOCK-01` in W3. Its first filing was stamped ✅ and
 `audit-docs.sh` still reported **`STILL OPEN SUITE-POOL-WALLCLOCK-01 (has a feature-registry

@@ -635,6 +635,52 @@ if (resSentinelFail) {
   }
 }
 
+/**
+ * 🔴 § 8 — A TRUE DUPLICATE FILING (`BACKLOG-DUPLICATE-HEADING-01`, 2026-11-10).
+ *
+ * An id filed under more than one heading, at least one still OPEN, and **none of them marked
+ * as the archive**. Stamping one such heading leaves the other open, so the item is half-closed
+ * and nothing says so — which is exactly what `audit-docs.sh` reported for
+ * `SUITE-POOL-WALLCLOCK-01` (*"STILL OPEN … (has a feature-registry row)"*).
+ *
+ * ⚠️ THE ITEM ASKED FOR A DIFFERENT GATE AND IT WOULD NOT HAVE WORKED. It specified *"fail when
+ * an id has two headings whose CLOSED status disagrees"*. Measured against the incident that
+ * caused it, that rule fires **0** — both headings were OPEN and IDENTICAL, and the ✅ arrived in
+ * the commit that fixed it. Measured against today's file it fires on **2 ids, both correct**:
+ * a live heading beside an ARCHIVED one is this document's convention, which the item itself
+ * says must not be merged. **A gate that misses every real case and cries wolf on every
+ * legitimate one.**
+ *
+ * 📐 The rule shipped here: **1 at `23e1ccb6^`, 0 today**, with all 43 legitimate pairs silent.
+ * The derivation lives in `duplicate_filing_ids` (`scripts/lib/open-items.sh`), beside the
+ * closed vocabulary it depends on, so it cannot drift from what "closed" means.
+ */
+let dupRows = []
+try {
+  dupRows = execFileSync('bash',
+    ['-c', '. scripts/lib/open-items.sh; duplicate_filing_ids docs/releases/backlog.md'],
+    { encoding: 'utf8' }).split('\n').filter(Boolean).map(l => l.split('\t'))
+} catch (e) {
+  // ⚠️ An allow-by-default arm is not a check (W2-REVIEW-ROUND-01, recorded under that name).
+  // `sh()` above swallows failures and returns ''; this must not.
+  console.error('\n✗ duplicate_filing_ids FAILED TO RUN — § 8 cannot be evaluated.')
+  console.error(`  ${e instanceof Error ? e.message : String(e)}`)
+  console.error('  Unverified is never a pass. Fix scripts/lib/open-items.sh.')
+  process.exit(1)
+}
+
+head('8. DUPLICATE FILINGS — one id, two live headings, no archive marker')
+if (!dupRows.length) {
+  console.log('  none — every id with more than one heading marks the second as the record')
+} else {
+  for (const [id, n, first, last] of dupRows) {
+    console.log(`  ✗ ${id} — ${n} headings (L${first} and L${last}), none marked as the archive`)
+  }
+  console.log('    Stamping one of these leaves the other OPEN and the item half-closed.')
+  console.log('    Fix: mark the second heading as the record — the convention this file already')
+  console.log('    uses is "the original filing, for the record" — or merge the two filings.')
+}
+
 console.log('\n⚠️  A DEAD REFERENCE IS NOT ALWAYS A DEAD PREMISE: an item can name a file precisely')
 console.log('    because it is missing. Nothing here is auto-resolved — read the item.')
 console.log('⚠️  AND SECTION 5 IS THE HONEST LIMIT. This proves references are live and prints')
@@ -644,8 +690,12 @@ console.log('    QUESTION. `FIRSTRUN-MARATHON-01` read open for 33 days with a p
 console.log('    fine. A correct question and a plausible one look identical from here.\n')
 console.log('⚠️  AND SECTION 7 CANNOT FIND A 🔻 THAT SHOULD HAVE BEEN A 🔺. Whether a cost was')
 console.log('    ACCEPTED or merely NOTED is a judgement; 425 existing 🔻 stay as they are.\n')
+console.log('⚠️  AND SECTION 8 CANNOT SEE A SECOND HEADING WRONGLY MARKED AS THE ARCHIVE.')
+console.log('    The marker is prose a human writes, so putting it on a live filing silences')
+console.log('    this arm by hand. It catches the UNMARKED duplicate — the one nobody chose')
+console.log('    to create, which is the one that half-closes an item in silence.\n')
 const residualFail = resNoId.length + resNotOpen.length
   + (resSentinelFail ? 1 : 0)
   + (!resOk.length && !resNoId.length && !resNotOpen.length && !resSentinelFail ? 1 : 0)
 process.exit(deadFiles.length + deadSyms.length + untagged.length + deadContractRefs.length
-  + predStale.length + residualFail > 0 ? 1 : 0)
+  + predStale.length + residualFail + dupRows.length > 0 ? 1 : 0)
