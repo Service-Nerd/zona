@@ -6,6 +6,24 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-11-10 — BINGE-WEEK-DELIVERED-01 · the fix I almost proposed was the one the board had reversed
+**Shipped:** Nothing, deliberately. The item is closed DON'T SHIP, and what shipped is the gate that would have let the next person read the answer instead of re-deriving it.
+
+**Dev learning:** Three registers tracked the same object and the item had read one. `cohortReviewBaseline.json` holds *weighted band shares* — hence "0.1–1.4% per marathon band". `audit:plans`, which actually owns the question, reports **10.1% of generated**, and my independent run gave 10.16%, so the two reconcile exactly. The item also said `BINGE-SEVERE-75` "did not appear"; it appears at 0.4%, and it has its own committed incident file with a baseline of 20. **The claim was falsifiable from a test already in the repo.**
+
+Then the real one. I measured the 43 severe cases and they were a single shape: marathon, three days a week, beginner, a 34 km week with a 23.5–27 km long run at 76–78% — a three-and-a-half-hour run. I was writing that up as a finding when I opened the invariant and read its own comment: *"Worst: a BEGINNER marathon plan with a 26.0 km long run in a 34 km week, 76% of the week's running in one session."* Same numbers. Ruled by the Coaching Board on **2026-09-13**, two months before the item was filed.
+
+**Product/creator learning:** All 1,389 flagged plans are `volume_profile: 'maintenance'`, and the §52 invariant is warn on every one and error on none. That is not a defect, it is §34's honest-residual pattern working as designed: the alternative was 60 plans failing to generate. Willy's objection is on the record beside the ruling — *"the tissue does not care that the plan is labelled maintenance"* — and nothing I did revisits it. The 3-day beginner marathoner is still the riskiest thing the engine emits, by the board's own reasoning, and that is a cost the board accepted rather than a bug I found.
+
+**AI-building learning:** I came within one step of proposing the exact move that amendment exists to reverse. `planQuality` counts these as coach objections, and it has a `watched: true` flag for "exempted-but-counted" quantities. Marking BINGE watched would have lifted the fit-for-purpose rate, and I had a board ruling to cite as justification. But §52 Amendment 1 says in as many words: *"THIS IS NO LONGER EXEMPTED, only DOWNGRADED"*, because *"a safety check was switched off because something else was believed to report it, and that something else does not report it."* **I would have re-exempted in the measurement layer precisely what the board un-exempted in the invariant layer, and cited the board as the warrant.** The ruling that justifies a relaxation is usually the ruling that forbids it; read it before you lean on it.
+
+**The honest bit:** Two self-inflicted errors in one afternoon. First I reimplemented the check instead of calling it — my own copy of P4 omitted `isTrainingWeek`'s `w.type !== 'race'` filter, so I measured 20,790 flagged weeks, 13,248 of them the race week itself and 5,376 above a 200% share, which no real session can be. I nearly reported that. Then, after code review had found a module-scope corpus in my morning's test file, I wrote a new one and put its corpus in the describe body — `import 5.66s / tests 171ms`, the same defect, within the hour.
+
+**Hook material:** I spent an afternoon measuring a defect, found a beginner being prescribed a three-and-a-half-hour run that was 78% of their training week, and then found the same plan — 26 km in a 34 km week, 76% — already written into the comment above the check I was measuring, ruled on two months earlier. The item asked for a measurement. The measurement said the item was wrong, the finding was known, and the fix I had in mind had already been tried and reversed.
+
+**Postable?:** yes — "the ruling that justifies your relaxation is usually the ruling that forbids it" is a real lesson, and the three-registers-one-object opening is concrete.
+
+
 ## 2026-11-10 — NOTE-LEVER-INJURY-CAP-01 · a lever that cannot move the thing it just named
 **Shipped:** The plan's maintenance note no longer offers "run 4 days a week instead of 3" after telling a runner her back injury caps the long run, because nothing she changes moves that cap.
 

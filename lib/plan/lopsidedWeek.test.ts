@@ -18,6 +18,10 @@
 import { describe, it, expect } from 'vitest'
 import { validatePlan } from './invariants'
 import { GENERATION_CONFIG } from './generationConfig'
+import { cohortGrid, COHORT_PLAN_START } from './cohortGrid'
+import { generateRulePlan } from './ruleEngine'
+import { isDesignedRefusal } from './designedRefusal'
+import { auditPlanQuality } from './planQuality'
 import type { GeneratorInput, Plan } from '@/types/plan'
 
 const CAP = GENERATION_CONFIG.LONG_RUN_MAX_PCT_OF_WEEKLY
@@ -91,5 +95,85 @@ describe('§52 Amendment 1 — the cap is evaluated on EVERY plan', () => {
     // 60% of 40 is 24.0. The check allows a small epsilon, so the boundary case
     // must not produce a warn on every plan that lands precisely on the rule.
     expect(lopsided(planWith(24, 40, 'maintenance'))).toEqual([])
+  })
+})
+
+// 🔴 BINGE-WEEK-DELIVERED-01 (closed 2026-11-10, DON'T SHIP) — THE 2026-09-13 CLAIM ABOVE WAS
+// RECORDED IN A COMMENT AND ASSERTED NOWHERE, SO IT WAS RE-DISCOVERED AS A DEFECT.
+//
+// The item was filed 2026-11-03 reporting `BINGE-WEEK` as newly visible at "0.1–1.4% per
+// marathon band" with "`BINGE-SEVERE-75` did not appear". All three figures were artefacts of
+// reading ONE register:
+//   · `cohortReviewBaseline.json` holds WEIGHTED BAND shares; `audit:plans` reports **10.1% of
+//     generated** and `BINGE-SEVERE-75` at **0.4%**. The code does appear.
+//   · `BINGE-SEVERE-75` has its own committed incident (`BINGE-BUCKET-CROSS-01`, baseline 20),
+//     so "did not appear" was falsifiable from a test file in the repo.
+//   · Re-measured here: **1,389 flagged plans, every one `volume_profile: 'maintenance'`, the
+//     §52 invariant at WARN on all 1,389 and ERROR on none** — precisely the population §52
+//     Amendment 1 ruled on, with its worst case (26.0 km in a 34 km week, 76%) already written
+//     into the comment at the top of this file and into the invariant's own.
+//
+// ⚠️ AND THE FIX I ALMOST PROPOSED WAS THE ONE THIS AMENDMENT REVERSED. `planQuality` counts
+// these as coach OBJECTIONS, and it has a `watched: true` mechanism for "exempted-but-counted"
+// quantities. Marking BINGE watched would have raised the fit-for-purpose rate by re-exempting,
+// in the measurement layer, exactly what the board un-exempted in the invariant layer — citing
+// the board's ruling as the warrant. **§52 Am. 1 did not exempt; it DOWNGRADED.** A coach would
+// object to a 78% week, which is the point, so the objection stands and the rate stays honest.
+//
+// THIS ARM IS WHAT THE ITEM SHOULD HAVE BEEN ABLE TO READ. It fires if a BUILD plan ever
+// carries a binge week, which WOULD be a real defect: the invariant is error-severity there,
+// and the "declared debt" reading of every BINGE finding depends entirely on this holding.
+describe('§52 Amendment 1 — the declared residual is maintenance-only, on real generated plans', () => {
+  // ⚠️ LAZY, NOT DESCRIBE-BODY SCOPE. A corpus built in the describe body runs at IMPORT time,
+  // where `check:slow`'s rules cannot see it — measured here as `import 5.66s / tests 171ms`
+  // before this was memoised. Code review found the identical defect in
+  // `noteLeverInjuryCap.test.ts` the same morning; I then wrote it again, which is why it is
+  // called out rather than quietly fixed.
+  // ⚠️ And the loop is indexed, not `.entries()`: that spread-iterator form fails `tsc` here
+  // (TS2802, the `[...Set]` gotcha in CLAUDE.md).
+  interface Flagged { plan: Plan; input: GeneratorInput; severe: boolean }
+  let memo: { generated: number; flagged: Flagged[] } | null = null
+  const corpus = () => (memo ??= (() => {
+    const grid = cohortGrid() as GeneratorInput[]
+    const flagged: Flagged[] = []
+    let generated = 0
+    for (let i = 0; i < grid.length; i += 23) {
+      const g = grid[i]!
+      let plan: Plan
+      try { plan = generateRulePlan(g, 'paid', COHORT_PLAN_START) as Plan }
+      catch (e) { if (!isDesignedRefusal(e)) throw e; continue }
+      generated++
+      const f = auditPlanQuality(plan, g).find(x => x.code === 'BINGE-WEEK' || x.code === 'BINGE-SEVERE-75')
+      if (f) flagged.push({ plan, input: g, severe: f.code === 'BINGE-SEVERE-75' })
+    }
+    return { generated, flagged }
+  })())
+
+  it('the population is real — an empty one would pass every arm below vacuously', () => {
+    const { generated, flagged } = corpus()
+    expect(generated, 'nothing generated — re-point this corpus').toBeGreaterThan(1_000)
+    expect(flagged.length, 'no plan carries a binge week; the §52 residual is gone or unreachable')
+      .toBeGreaterThan(80)
+    // Measured 2026-11-10 at this stride: ~10% of generated plans, a handful of them severe.
+    expect(flagged.filter(f => f.severe).length, 'BINGE-SEVERE-75 is unreachable here').toBeGreaterThan(0)
+  })
+
+  it('🔴 EVERY flagged plan is maintenance — a BUILD plan binging is a real defect, not debt', () => {
+    const build = corpus().flagged.filter(f => f.plan.meta.volume_profile !== 'maintenance')
+    expect(build.map(f => `${f.input.race_distance_km}km/${f.input.current_weekly_km}/${f.input.days_available}d`),
+      'a non-maintenance plan carries a binge week: §52 Am. 1 is error-severity there, so this is a defect')
+      .toEqual([])
+  })
+
+  it('…and the invariant agrees with the audit: WARN on all of them, ERROR on none', () => {
+    // The two registers must say the same thing about the same plan, or one of them is wrong.
+    const { flagged } = corpus()
+    let warn = 0
+    for (const f of flagged) {
+      const v = validatePlan(f.plan, f.input).filter(x => x.code === 'INV-PLAN-LR-MAX-WEEKLY-PCT')
+      expect(v.filter(x => x.severity === 'error'), `error-severity §52 breach on a flagged plan`).toEqual([])
+      if (v.length) warn++
+    }
+    expect(warn, 'the audit flags plans the invariant does not see at all').toBe(flagged.length)
   })
 })

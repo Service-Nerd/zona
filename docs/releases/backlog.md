@@ -1133,20 +1133,48 @@ envelope where it remains reachable (2 cases at 100K, 0 flagged). `week1LeapAbso
 HM → marathon for the same reason: HM `WEEK1-LEAP` is now **0** and the residual lives at marathon (46 of 1,084,
 biggest 9.5 km). **Neither arm was edited to go green on a claim it had stopped proving.**
 
-### 🔲 `BINGE-WEEK-DELIVERED-01` — a single session over §52's 60% cap in the DELIVERED week, newly visible *(filed 2026-11-03)* ⚙️ **NO BOARD** to measure; 🏃 **COACHING BOARD** only if a cap moves
+### ✅ `BINGE-WEEK-DELIVERED-01` — **CLOSED 2026-11-10. DON'T SHIP: already ruled, two months before the item was filed** ⚙️ measured; 🏃 **no board: no cap moves**
 
-Appeared the moment `ENVELOPE-UNSET-LEVEL-01` made the corpus production-shaped: **`BINGE-WEEK` at 0.1–1.4% per
-marathon band and 0.9% at 25 km/wk**, where it previously registered nowhere. `planQuality.ts:189` — the worst
-single session exceeds `LONG_RUN_MAX_PCT_OF_WEEKLY` (60%) in a non-deload week.
+**The item did the right thing in saying "measure before proposing anything", and the measurement closes it.**
+Filed 2026-11-03 as newly visible: *"`BINGE-WEEK` at 0.1–1.4% per marathon band and 0.9% at 25 km/wk"*, with
+*"`BINGE-SEVERE-75` is a separate code and did not appear"*. 🔴 **All three figures were artefacts of reading ONE
+register.**
 
-**It was invisible, not absent.** The old corpus forced structure to the band, so it under-produced the low-volume
-beginner weeks where one long run dominates. This is the **ADR-022 curve-vs-delivered class**: the load rules are
-enforced on the internal curve while the runner sees `sumWeeklyKm(placed sessions)`.
+| The item said | Measured 2026-11-10 |
+|---|---|
+| 0.1–1.4% per marathon band | Those are **weighted band shares** from `cohortReviewBaseline.json`. **`audit:plans`, the owner, reports 10.1% of generated** — and my independent run gave **10.16%**, so the two reconcile |
+| `BINGE-SEVERE-75` did not appear | **It does: 0.4% of generated.** And it has its own committed incident — `BINGE-BUCKET-CROSS-01`, baseline **20** — so this was falsifiable from a test file already in the repo |
+| ADR-022 curve-vs-delivered, newly visible | **Ruled on 2026-09-13**, `§52 Amendment 1 / MAINT-EXEMPT-SCOPE-01` |
 
-⚠️ **Measure before proposing anything.** §52's invariant exempts deload weeks and `planQuality` matches it, so a
-1.4% band rate may be a handful of weeks at 61%, which is noise, or a few at 75%+, which is not — `BINGE-SEVERE-75`
-is a separate code and did not appear. **Get the distribution of `worstShare` first**; the fix is only a coaching
-question if the cap itself has to move.
+🔴 **THE WORST CASE I "FOUND" WAS ALREADY WRITTEN INTO THE INVARIANT'S OWN COMMENT.** All 43 severe plans are one
+shape — marathon · **3 days/week** · **beginner** · peak week · 34 km week · long run 23.5–27 km at **76–78%**,
+`duration_mins` **180–208, a three-and-a-half-hour run**. §52 Am. 1 records: *"Worst: a BEGINNER marathon plan with a
+26.0 km long run in a 34 km week, 76% of the week's running in one session."* **Identical numbers.**
+
+📐 **And the decisive measurement: of 1,389 flagged plans, every one is `volume_profile: 'maintenance'`, with
+`INV-PLAN-LR-MAX-WEEKLY-PCT` at WARN on all 1,389 and ERROR on none.** That is exactly the population §52 Am. 1
+downgraded under §34's honest-residual pattern, because the alternative was 60 plans failing to generate. Willy's
+objection is on the record there too: *"the tissue does not care that the plan is labelled maintenance."*
+
+🔴 **AND THE FIX I ALMOST PROPOSED WAS THE ONE THAT AMENDMENT REVERSED.** `planQuality` counts these as coach
+OBJECTIONS and has a `watched: true` mechanism for *"exempted-but-counted"* quantities (`DAYS-SHORT-SILENCED`,
+`LONG-RUN-SHORT-RUNWALK`). Marking BINGE watched would have raised the fit-for-purpose rate by re-exempting, **in the
+measurement layer, exactly what the board un-exempted in the invariant layer — citing the board's ruling as the
+warrant.** ⚠️ **§52 Am. 1 did not exempt; it DOWNGRADED**, and its stated reason is that *"a safety check was switched
+off because something else was believed to report it, and that something else does not report it."* A coach would
+object to a 78% week; that is the point. **The objection stands and the rate stays honest.**
+
+✅ **WHAT SHIPPED INSTEAD IS THE GATE THE ITEM SHOULD HAVE BEEN ABLE TO READ.** The 2026-09-13 claim — *"EVERY ONE in
+a maintenance plan, NONE in a build plan"* — was in a comment in two files and **asserted nowhere**; every arm in
+`lopsidedWeek.test.ts` was a hand-built fixture. **That is why it was re-discovered as a defect.** Three corpus arms
+added there (1,803 generated, ~180 flagged): the population is real and non-empty, **every flagged plan is
+maintenance**, and **the audit and the invariant agree — warn on all, error on none.** A BUILD plan binging would be
+a genuine defect (error severity there), and the whole "declared debt" reading depends on this holding.
+
+⚠️ **What this does not prove:** that a 78% week is acceptable coaching. It is a declared, counted residual that
+Willy objected to on the record, and nothing here revisits it. 🔻 **The 3-day beginner marathoner at 34 km/week
+remains the engine's highest-risk emission, by the board's own reasoning** — that is §52 Am. 1's open cost, not a new
+item.
 
 ### 🔲 `WIZARD-CONTRADICTORY-VOLUME-01` — the wizard accepts a longest run bigger than the weekly total ⚙️ **NO BOARD**
 
