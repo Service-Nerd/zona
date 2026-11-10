@@ -4599,7 +4599,7 @@ green build.
 `reason: 'timeout'` is the first evidence this path can report its own failure at all —
 `enrich-plan` p50 is already **59.1 s** and rising.
 
-### 🔲 `AI-ROUTE-HTTP-HOP-CEILING-01` — three callers await an AI route over HTTP with no ceiling of their own *(filed 2026-11-08, P2)* ⚙️ **NO BOARD**
+### ✅ `AI-ROUTE-HTTP-HOP-CEILING-01` — **SHIPPED 2026-11-10. FIVE sites, not three — and the cron that waits is a sequential loop** *(filed 2026-11-08, P2)* ⚙️ **NO BOARD**
 
 Found by `/code-review` on `OPS-FN-DURATION-01`, which set `maxDuration = 300` on every route in
 `callAnthropic`'s **import closure**. 🔴 **That population is right for the routes that CALL the
@@ -4625,6 +4625,61 @@ an `AbortSignal` on the hop. Measured: `weekly-report`'s own AI call is p50 **3.
 *"awaits an HTTP call to a route in the AI closure"*, which needs the URL string resolved through
 `getInternalBaseUrl()` and a template literal. `aiRouteMaxDuration.test.ts` walks an IMPORT graph;
 this needs a call graph through a string. State the population before writing the arm.
+
+---
+
+✅ **DONE. Both halves on all five sites, plus a derived-population gate** (`lib/ai/aiRouteHopCeiling.test.ts`,
+6 arms, **7 falsifications**).
+
+🔴 **THE POPULATION IS FIVE SITES IN FOUR FILES, NOT THREE. The item missed BOTH `fetch`es in
+`app/api/strava/link-activity/route.ts`** — which is precisely why the gate derives the population
+from the import closure plus a brace-matched `fetch` reader rather than using the item's table. **A
+hand-written population is wrong on the day it is written.**
+
+🔑 **AND THE CRON THAT WAITS IS A SEQUENTIAL LOOP, which the item did not say and which sets the
+number.** `push/send-weekly-report` iterates **every push subscription** awaiting the hop —
+measured 2026-11-10: **31 subscriptions, 26 users.** So one hop hanging at `CALL_TIMEOUT_MS` does
+not cost one report; **it ends the cron, and every subsequent subscriber gets no Sunday push.**
+`HOP_TIMEOUT_MS = 30_000` is derived from that: ~10% of a 300 s run, so one pathological user costs
+a tenth and thirty are still served — and it is **5.3×** `weekly-report`'s slowest measured model
+call (5.7 s), so it cannot cut real work.
+
+🔻 **⚠️ AND A TIMEOUT DOES NOT FIX THE CRON'S SHAPE — stated with the arithmetic rather than left to
+be discovered.** The total is `subscriptions × hop`: 31 × a typical 5 s is already **~155 s of a
+300 s ceiling**, and **at roughly 60 subscribers it exceeds the ceiling on typical latencies
+alone**, with nothing hanging. Batching or a fan-out is a separate decision; it now has a number
+attached instead of arriving as a surprise at 60 installs.
+
+🔴 **AND A REAL PRODUCTION DEFECT CAME OUT OF IT: `link-activity` was the LAST file carrying a
+hand-built server→server base, twice.** Both hops read
+`NEXT_PUBLIC_APP_URL ?? (VERCEL_URL ? …)` where `getInternalBaseUrl()` is the one owner
+(GTM-SITE-01) — and the owner's own comment names the cost: `VERCEL_URL` *"carries Vercel
+Deployment Protection and is not the canonical host"*, and it *"silently degraded the no-app
+run-analysis on both ingest paths after 2026-09-10"*. `NEXT_PUBLIC_APP_URL` is **deliberately
+unset**, so in production both hops resolved to a protected deployment URL, and the `catch` only
+`console.warn`s. **The fix that removed this everywhere else missed this file, and nothing noticed
+for two months.** The gate's last arm fails if the hand-built form returns anywhere.
+
+✅ **Three contracts, because changing a route obliges its contract in the same commit.**
+`health-ingest.md` and `push-send-weekly-report.md` updated; **`strava-link-activity.md` written
+from nothing** — `CONTRACT-COVERAGE-01`'s debt is **12 → 11 of 71**. ⚠️ **And writing it was a code
+review, as this repo's own lesson says:** the route upserts `strava_activities`, and **CLAUDE.md
+says two incompatible things about that** — INV-DATA-008 permits writes *"only via
+`/api/health/ingest` or `healthkitConsolidate.ts`"* and ADR-011's summary says a Strava activity
+with no matching HK row is *"discarded — never stored"*, while the `STRAVA-WEBHOOK-OBS-01`
+paragraph says the webhook *"only stores a Strava-canonical row when no HK row exists"*. This route
+deliberately mirrors the webhook. 🔻 **There is no mechanical gate for INV-DATA-008 at all** — it
+lives in three comments. **Which writers the invariant intends to permit is an ADR-011 wording
+question, recorded in the contract rather than resolved by me.**
+
+🔴 **TWO MISTAKES OF MINE, BOTH RECORDED BECAUSE BOTH ARE REPEATS.** (1) The gate's `fetch` reader
+sliced to the next `\n})` to find the init object, which depends on the caller's indentation — so
+it found **none of the five signals that were already there** and the arm failed on correct code.
+**Bound the region, never guess where it ends**; it brace-matches now. (2) 🔴 **I ran `git checkout`
+on a file to undo a mutation and wiped every uncommitted change in it** — the recorded
+`GIT-CHECKOUT-IS-NOT-A-MUTATION-UNDO` lesson, again — **and my backup loop used `basename`, so
+three different `route.ts` files collapsed onto one `/tmp/route.ts.bak`.** Redone from scratch;
+backups are path-mangled now.
 
 ### 🔲 `AI-TIMEOUT-PER-SURFACE-01` — the AI call timeout is one number for two latency regimes *(filed 2026-11-08, P3)* ⚙️ **NO BOARD**
 
@@ -4662,6 +4717,39 @@ accumulates n ≥ 30. Until then the one number is honest and the gate holds its
 properties: it fires before the platform ceiling, and it is ≥ 3× the slowest call ever recorded
 (because `enrich-plan`'s p50 rose 38.3 → 45.4 → 59.1 s across three months and a tighter value
 would start cutting plans).
+
+---
+
+⏸️ **REOPEN CONDITION TESTED 2026-11-10 AND IT IS NOT MET. The item stays deferred, and the check
+is stamped so the next reader does not re-derive it.** `ops_events.kind = 'ai_call'`, 760 calls
+carrying `ms` (was 749):
+
+| surface | n at filing | n now | thin? |
+|---|---|---|---|
+| `daily-coach-note` | 334 | **342** | no |
+| `trend` | 145 | 145 | no |
+| `enrich-plan` | 103 | 103 | no |
+| `plan-weekly-note` | 62 | 62 | no |
+| `analyse-run` | 48 | **50** | no |
+| `weekly-report` | 36 | 36 | no |
+| `strength-weekly-note` | 10 | 10 | **yes** |
+| `adjust-plan` | 5 | 5 | **yes** |
+| `weekly-free-insight` | 3 | **4** | **yes** |
+| `phase-summary` | 3 | 3 | **yes** |
+| `enrich-maintenance` | 0 | **still absent from the table entirely** | **yes** |
+
+**None of the four thin surfaces is within 20 of n ≥ 30, and `enrich-maintenance` still has zero
+samples** — there are no maintenance plans in production. Building a per-surface value now would
+be the guess-wearing-a-measurement the item itself warns against.
+
+✅ **And the two properties the single number is justified on both still hold, re-checked rather
+than assumed:** the slowest call ever recorded is `enrich-plan` at **64.4 s**, so
+`CALL_TIMEOUT_MS = 240_000` is **3.73×** it — still ≥ 3×; and it is below the 300 s route ceiling.
+⚠️ **The second property is conditional on Fluid compute and that is still unresolved**
+(`AI-ROUTE-DURATION-FLUID-01`, founder-owned): without Fluid the platform **clamps** rather than
+erroring, so the 240 s timeout would never fire and this gate would be green while proving
+nothing. ⚠️ **`ai_call_failed` still has 0 rows ever**, so this path has never once reported its
+own failure — the timeout is unexercised, not proven.
 
 ### ✅ `OPS-FN-DURATION-01` — **DONE 2026-11-08.** NOT a DON'T BUILD: the 300 s default is **conditional on Fluid compute**, unverifiable from here, and the item's own *"28–35 s"* was stale by nearly 2× — `enrich-plan` p50 rose **38.3 → 45.4 → 59.1 s** across three months, max **64.4 s**. 14 routes declare `maxDuration`, and `callAnthropic` has a timeout for the first time ⚙️ **NO BOARD**
 

@@ -1,3 +1,4 @@
+import { AI_LIMITS } from '@/lib/ai/limits'
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient as createServiceClient } from '@supabase/supabase-js'
 import { waitUntil } from '@vercel/functions'
@@ -11,6 +12,16 @@ import { consolidateIncomingHealthKitRow } from '@/lib/coaching/healthkitConsoli
 import { decideLateArrival, hrArrivalStamp } from '@/lib/coaching/lateArrivalGate'
 import { recordOpsEvent } from '@/lib/ops/recordOpsEvent'
 import { REPORTED_DISTANCE_M } from '@/lib/health/runDistance'
+
+// 🔴 AI-ROUTE-HTTP-HOP-CEILING-01 (2026-11-10) — THIS ROUTE AWAITS AN AI ROUTE OVER HTTP, SO IT
+// NEEDS A CEILING OF ITS OWN. `OPS-FN-DURATION-01` set `maxDuration` on every route in
+// `callAnthropic`'s IMPORT closure, and that population is right for the routes that CALL the
+// model and wrong for the ones that WAIT on one — the two sets do not overlap. The fix made this
+// exposure WORSE: the downstream may now hold for up to `CALL_TIMEOUT_MS` (240 s) where the
+// platform used to cut it off, and the caller with no declared ceiling is what dies instead.
+// ⚠️ Vercel cannot read `AI_LIMITS` from a route config, so the literal is duplicated here and
+// `aiRouteHopCeiling.test.ts` is the link that fails if they disagree.
+export const maxDuration = 300
 
 // POST /api/health/ingest
 //
@@ -416,6 +427,8 @@ function triggerHrRefreshAnalysis(
       session_day:       sessionDay,
       scores_only:       scoresOnly,
     }),
+    // AI-ROUTE-HTTP-HOP-CEILING-01 — bound the hop, or the CALLER is what dies.
+    signal: AbortSignal.timeout(AI_LIMITS.HOP_TIMEOUT_MS),
   })
     .then(() => undefined)
     .catch(err => { console.error('[health-ingest] hr-refresh analyse failed', err) })

@@ -36,3 +36,30 @@ plan, no runs, an error): counted so a Sunday that produces nothing is visible. 
 - Stale subscriptions returning 410 Gone are deleted automatically.
 - Errors per-user are caught and counted separately — one failure does not abort the batch.
 - No-ops silently if no subscriptions exist.
+
+## Duration ceiling and the outbound hop (AI-ROUTE-HTTP-HOP-CEILING-01, 2026-11-10)
+
+`export const maxDuration = 300`, and every outbound `fetch` to an AI route carries
+`signal: AbortSignal.timeout(AI_LIMITS.HOP_TIMEOUT_MS)` (30 s).
+
+🔴 **Why this route needed both.** `OPS-FN-DURATION-01` set `maxDuration` on every route in
+`callAnthropic`'s **import** closure. That population is right for the routes that CALL the model
+and wrong for the ones that **WAIT** on one over HTTP, and **the two sets do not overlap** — this
+route reaches `/api/analyse-run` through a URL string, which no import graph can see. ⚠️ **The
+fix made the exposure worse before it fixed it:** the downstream may now hold for up to
+`CALL_TIMEOUT_MS` (240 s) where the platform used to cut it off, so the caller with no declared
+ceiling is what dies instead.
+
+⚠️ **The literal `300` is duplicated from `AI_LIMITS.ROUTE_MAX_DURATION_SECONDS` because Vercel
+cannot read a constant from a route config.** `lib/ai/aiRouteHopCeiling.test.ts` is the link: it
+derives the population from the import closure plus a brace-matched `fetch` reader, and fails if
+any hop has no signal, any waiting route has no ceiling, or the literal and the constant disagree.
+
+🔻 **AND THIS ROUTE'S SHAPE IS THE REASON THE HOP TIMEOUT IS 30 s RATHER THAN 240 s.** It loops
+**sequentially** over every push subscription, awaiting the hop each time — measured 2026-11-10:
+**31 subscriptions, 26 users.** So one hop hanging does not cost one report; it ends the cron, and
+every subsequent subscriber gets no Sunday push, which nothing watches. ⚠️ **A timeout bounds the
+damage from one bad hop; it does not fix the shape.** The total is `subscriptions × hop`: at 31 ×
+a typical 5 s that is already ~155 s of a 300 s ceiling, and **at roughly 60 subscribers the cron
+exceeds its ceiling on typical latencies alone.** Batching or a fan-out is a separate decision,
+with that number attached rather than arriving as a surprise at 60 installs.

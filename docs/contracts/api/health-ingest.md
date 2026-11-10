@@ -41,3 +41,21 @@
 touched (ADR-011: the device's value is the system of record). **Read only through** `lib/health/runDistance.ts`, which
 returns measured, else reported (flagged), else null. Counts for volume, load and display; **never** for a fitness estimate
 (Coaching Board 2026-10-22). Tests: `lib/health/reportDistance.test.ts`.
+
+## Duration ceiling and the outbound hop (AI-ROUTE-HTTP-HOP-CEILING-01, 2026-11-10)
+
+`export const maxDuration = 300`, and every outbound `fetch` to an AI route carries
+`signal: AbortSignal.timeout(AI_LIMITS.HOP_TIMEOUT_MS)` (30 s).
+
+🔴 **Why this route needed both.** `OPS-FN-DURATION-01` set `maxDuration` on every route in
+`callAnthropic`'s **import** closure. That population is right for the routes that CALL the model
+and wrong for the ones that **WAIT** on one over HTTP, and **the two sets do not overlap** — this
+route reaches `/api/analyse-run` through a URL string, which no import graph can see. ⚠️ **The
+fix made the exposure worse before it fixed it:** the downstream may now hold for up to
+`CALL_TIMEOUT_MS` (240 s) where the platform used to cut it off, so the caller with no declared
+ceiling is what dies instead.
+
+⚠️ **The literal `300` is duplicated from `AI_LIMITS.ROUTE_MAX_DURATION_SECONDS` because Vercel
+cannot read a constant from a route config.** `lib/ai/aiRouteHopCeiling.test.ts` is the link: it
+derives the population from the import closure plus a brace-matched `fetch` reader, and fails if
+any hop has no signal, any waiting route has no ceiling, or the literal and the constant disagree.

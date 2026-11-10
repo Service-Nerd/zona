@@ -75,6 +75,38 @@ export const AI_LIMITS = {
    * would be a guess wearing a measurement. Filed as `AI-TIMEOUT-PER-SURFACE-01`.
    */
   CALL_TIMEOUT_MS: 240_000,
+
+  /**
+   * 🔴 AI-ROUTE-HTTP-HOP-CEILING-01 (2026-11-10) — THE TIMEOUT FOR AWAITING AN AI ROUTE OVER
+   * HTTP, AND IT IS DERIVED FROM THE CALLER'S BUDGET, NOT THE CALLEE'S LATENCY.
+   *
+   * `ROUTE_MAX_DURATION_SECONDS` and `CALL_TIMEOUT_MS` above govern the route that CALLS the
+   * model. **Five sites WAIT on one over HTTP, and that population does not overlap** — none of
+   * them had a `maxDuration` or a signal of any kind, so the fix above made their exposure
+   * WORSE: the downstream may now hold for up to 240 s where the platform used to cut it off,
+   * and the caller with no ceiling is the one that dies instead.
+   *
+   * 🔑 WHY 30 s, AND IT IS NOT A LATENCY ESTIMATE. `push/send-weekly-report` is a **cron that
+   * loops SEQUENTIALLY over every push subscription**, awaiting the hop each time — measured
+   * 2026-11-10: **31 subscriptions, 26 users**. So one hop hanging at `CALL_TIMEOUT_MS` does not
+   * cost one report; it ends the cron, and **every subsequent subscriber gets no Sunday push at
+   * all**, which nothing watches. The job of this number is to bound what ONE bad hop costs the
+   * rest of the loop: at 31 iterations under a 300 s ceiling the budget is ~9 s per subscriber,
+   * and 30 s is ~10% of the run — one pathological user, thirty still served.
+   *
+   * 📐 AND IT CANNOT CUT REAL WORK: `weekly-report`'s own model call measures p50 **3.3 s**, max
+   * **5.7 s**, and `analyse-run` p50 **1.5 s**, max **2.3 s** (`ops_events.ai_call`, 760 calls),
+   * so 30 s is **5.3×** the slowest hop's slowest measured model call with room for the DB work
+   * either side.
+   *
+   * 🔻 ⚠️ A TIMEOUT DOES NOT FIX THE CRON'S SHAPE AND MUST NOT BE READ AS DOING SO. The loop is
+   * sequential, so its total is `subscriptions × hop`: at 31 × a typical 5 s it is ~155 s of a
+   * 300 s ceiling, **already half**, and it grows with every install. **At roughly 60 subscribers
+   * the cron exceeds its ceiling on TYPICAL latencies alone**, with no hop hanging at all. This
+   * number bounds the damage from one bad hop; the shape needs batching or a fan-out, and that
+   * is a separate decision with a number attached rather than a surprise at 60 installs.
+   */
+  HOP_TIMEOUT_MS: 30_000,
 } as const
 
 /** Per-route overrides. Routes not listed use the DEFAULT_* values. */

@@ -1,3 +1,4 @@
+import { AI_LIMITS } from '@/lib/ai/limits'
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { secretMatches, cronSecretFrom } from '@/lib/security/secrets'
@@ -6,6 +7,16 @@ import { BRAND } from '@/lib/brand'
 import { sendWebPush } from '@/lib/webpush'
 import { sendApnsPush } from '@/lib/apnpush'
 import { recordNotification, pruneReadNotifications } from '@/lib/notifications'
+
+// 🔴 AI-ROUTE-HTTP-HOP-CEILING-01 (2026-11-10) — THIS ROUTE AWAITS AN AI ROUTE OVER HTTP, SO IT
+// NEEDS A CEILING OF ITS OWN. `OPS-FN-DURATION-01` set `maxDuration` on every route in
+// `callAnthropic`'s IMPORT closure, and that population is right for the routes that CALL the
+// model and wrong for the ones that WAIT on one — the two sets do not overlap. The fix made this
+// exposure WORSE: the downstream may now hold for up to `CALL_TIMEOUT_MS` (240 s) where the
+// platform used to cut it off, and the caller with no declared ceiling is what dies instead.
+// ⚠️ Vercel cannot read `AI_LIMITS` from a route config, so the literal is duplicated here and
+// `aiRouteHopCeiling.test.ts` is the link that fails if they disagree.
+export const maxDuration = 300
 
 // POST /api/push/send-weekly-report
 // Called by Vercel cron every Sunday at 18:00.
@@ -62,6 +73,8 @@ export async function POST(req: NextRequest) {
           'x-service-key': process.env.SUPABASE_SERVICE_ROLE_KEY!,
           'x-user-id':     sub.user_id,
         },
+        // AI-ROUTE-HTTP-HOP-CEILING-01 — bound the hop, or the CALLER is what dies.
+        signal: AbortSignal.timeout(AI_LIMITS.HOP_TIMEOUT_MS),
       })
 
       if (!reportRes.ok) { declined++; continue }

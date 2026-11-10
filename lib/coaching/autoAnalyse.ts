@@ -10,6 +10,7 @@
 
 // The only import in this otherwise dependency-free module, and deliberately a
 // PURE predicate: `runnerAuthoredTitle` reads two strings and returns a string.
+import { AI_LIMITS } from '@/lib/ai/limits'
 import { readPlanJson } from '@/lib/plan'
 import { runnerAuthoredTitle } from '@/lib/health/activityTitle'
 
@@ -221,6 +222,8 @@ export async function autoMatchAndAnalyse(
         'x-user-id':     userId,
       },
       body: JSON.stringify(analyseBody),
+      // AI-ROUTE-HTTP-HOP-CEILING-01 — bound the hop, or the CALLER is what dies.
+      signal: AbortSignal.timeout(AI_LIMITS.HOP_TIMEOUT_MS),
     })
   } catch (err) {
     console.warn('[auto-analyse] analyse-run call failed', err)

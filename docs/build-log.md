@@ -6,6 +6,30 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-11-10 — AI-ROUTE-HTTP-HOP-CEILING-01 · the cron that waits is a sequential loop, and that sets the number
+**Shipped:** Every site that awaits an AI route over HTTP now bounds the hop and declares a ceiling of its own — five sites, where the item named three.
+
+**Dev learning:** The previous fix set `maxDuration` on every route in `callAnthropic`'s **import** closure. That is the right population for routes that *call* the model and the wrong one for routes that *wait* on one, and the two sets do not overlap at all: a waiter reaches the AI route through a URL string, which no import graph can see. So the fix made the exposure worse before anyone fixed it — the downstream can now hold for 240 seconds where the platform used to cut it off, and the caller with no declared ceiling is what dies instead.
+
+The item's table named three sites. There are five, in four files: it missed **both** `fetch`es in `strava/link-activity`. That is why the gate derives its population — the import closure, plus a brace-matched `fetch` reader — rather than asserting the table. A hand-written population is wrong on the day it is written.
+
+**Product/creator learning:** The number came from a fact the item did not mention: `push/send-weekly-report` is a **sequential loop over every push subscription**, awaiting the hop each time. 31 subscriptions, 26 users. So one hop hanging does not cost one report — it ends the cron, and every subscriber after that point simply gets no Sunday push. Nothing watches for that. A 30-second hop timeout is ~10% of a 300-second run, so one pathological user costs a tenth and thirty are still served, and it is 5.3× the slowest model call that hop's target has ever recorded.
+
+And the thing worth saying out loud: **a timeout does not fix the cron's shape.** The total is subscriptions × hop. At 31 × a typical 5 seconds it is already ~155 seconds of a 300-second ceiling, and at roughly 60 subscribers it exceeds the ceiling on typical latencies alone, with nothing hanging. That is now written down with the arithmetic instead of waiting to be discovered at 60 installs.
+
+**AI-building learning:** Writing the missing contract for `link-activity` was a code review, exactly as this repo's own note says. It turned up that the route upserts `strava_activities`, and CLAUDE.md says two incompatible things about whether it may: INV-DATA-008 permits writes only via two named paths, ADR-011's summary says an unmatched Strava activity is "discarded — never stored", and the webhook paragraph says the webhook "only stores a Strava-canonical row when no HK row exists". This route deliberately mirrors the webhook. There is no mechanical gate for INV-DATA-008 anywhere — it lives in three comments. I recorded that in the contract rather than picking a reading, because which writers the invariant intends to permit is an ADR-011 wording question and not mine to settle in passing.
+
+**The honest bit:** Two mistakes, both repeats of lessons already written down here.
+
+The gate's `fetch` reader sliced from the call to the next `\n})` to find the init object — which depends on the caller's indentation, so it found **none of the five signals I had just added** and the arm failed on correct code. "Bound the region, never guess where it ends." It brace-matches now.
+
+Then, restoring after a mutation, I ran `git checkout` on a file and wiped every uncommitted change in it — the owner swap, both signals, the ceiling. That is a lesson I have written down and hit before. Worse, my backup loop named files by `basename`, so three different `route.ts` files had collapsed onto a single `/tmp/route.ts.bak` and the backup was the wrong file entirely. Redone from scratch; backups are path-mangled now.
+
+**Hook material:** A real production defect found while writing a contract nobody had asked for: one file was still hand-building its own server-to-server URL, two months after that was centralised everywhere else, so in production it called a Deployment-Protected URL — and the error handler only logged a warning.
+
+**Postable?:** yes — "the cron is a sequential loop, so one slow user costs everyone after them their notification" is concrete and widely applicable, and the `git checkout` confession is the honest half.
+
+
 ## 2026-11-10 — ADJUST-LEDGER-DUPLICATE-01 · four of the five "duplicates" were a runner moving two sessions at once
 **Shipped:** The adjustment ledger's duplicate guard now matches on the trigger payload, which is the only thing that separates a double-invocation from a second thing the runner actually did.
 

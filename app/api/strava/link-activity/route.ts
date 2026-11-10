@@ -1,3 +1,5 @@
+import { AI_LIMITS } from '@/lib/ai/limits'
+import { getInternalBaseUrl } from '@/lib/coaching/autoAnalyse'
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient as createServiceClient } from '@supabase/supabase-js'
 import { getUserFromRequest } from '@/lib/supabase/getUserFromRequest'
@@ -5,6 +7,16 @@ import { getStravaToken, fetchHRStreamSummary } from '@/lib/strava'
 import { getUserTier } from '@/lib/trial'
 import { isFeatureAllowed } from '@/lib/plan/canUseFeature'
 import { tryEnrichHealthKitRow } from '@/lib/coaching/healthkitConsolidate'
+
+// 🔴 AI-ROUTE-HTTP-HOP-CEILING-01 (2026-11-10) — THIS ROUTE AWAITS AN AI ROUTE OVER HTTP, SO IT
+// NEEDS A CEILING OF ITS OWN. `OPS-FN-DURATION-01` set `maxDuration` on every route in
+// `callAnthropic`'s IMPORT closure, and that population is right for the routes that CALL the
+// model and wrong for the ones that WAIT on one — the two sets do not overlap. The fix made this
+// exposure WORSE: the downstream may now hold for up to `CALL_TIMEOUT_MS` (240 s) where the
+// platform used to cut it off, and the caller with no declared ceiling is what dies instead.
+// ⚠️ Vercel cannot read `AI_LIMITS` from a route config, so the literal is duplicated here and
+// `aiRouteHopCeiling.test.ts` is the link that fails if they disagree.
+export const maxDuration = 300
 
 // POST /api/strava/link-activity
 // Called when a user manually links a Strava activity to a planned session.
@@ -45,8 +57,14 @@ export async function POST(req: NextRequest) {
   // (re)trigger analyse-run, which writes the run_analysis row keyed by
   // apple_health_uuid. Idempotent: safe even if auto-match already analysed it.
   if (apple_health_uuid) {
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL
-      ?? (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000')
+    // 🔴 GTM-SITE-01 / AI-ROUTE-HTTP-HOP-CEILING-01 (2026-11-10) — `getInternalBaseUrl()` is the
+    // ONE OWNER of the server→server base, and this file was the last copy of the hand-built
+    // fallback it replaced. The owner's own comment states the consequence: `VERCEL_URL`
+    // "carries Vercel Deployment Protection and is not the canonical host", and it "silently
+    // degraded the no-app run-analysis on both ingest paths after 2026-09-10". This route had
+    // the same bypass, TWICE, so a manually linked Strava run triggered analysis against a
+    // protected deployment URL — and the catch below only `console.warn`s, so it said nothing.
+    const baseUrl = getInternalBaseUrl()
     try {
       await fetch(`${baseUrl}/api/analyse-run`, {
         method: 'POST',
@@ -56,6 +74,8 @@ export async function POST(req: NextRequest) {
           'x-user-id':     user.id,
         },
         body: JSON.stringify({ apple_health_uuid, week_n, session_day }),
+        // AI-ROUTE-HTTP-HOP-CEILING-01 — bound the hop, or the CALLER is what dies.
+        signal: AbortSignal.timeout(AI_LIMITS.HOP_TIMEOUT_MS),
       })
     } catch (err) {
       console.warn('[link-activity] healthkit analyse-run trigger failed', err)
@@ -143,8 +163,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Failed to persist activity' }, { status: 500 })
   }
 
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL
-    ?? (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000')
+  // The same bypass as above, in the Strava-id path. One owner (GTM-SITE-01).
+  const baseUrl = getInternalBaseUrl()
 
   try {
     await fetch(`${baseUrl}/api/analyse-run`, {
@@ -155,6 +175,8 @@ export async function POST(req: NextRequest) {
         'x-user-id':     user.id,
       },
       body: JSON.stringify({ strava_activity_id, week_n, session_day }),
+      // AI-ROUTE-HTTP-HOP-CEILING-01 — bound the hop, or the CALLER is what dies.
+      signal: AbortSignal.timeout(AI_LIMITS.HOP_TIMEOUT_MS),
     })
   } catch (err) {
     console.warn('[link-activity] analyse-run trigger failed', err)
