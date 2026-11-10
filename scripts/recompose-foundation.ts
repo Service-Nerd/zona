@@ -191,6 +191,18 @@ async function main() {
     if (mainWeeksFingerprint(res.plan) !== mainWeeksFingerprint(plan)) problems.push('MAIN-PLAN WEEKS CHANGED')
     if (metaFingerprint(res.plan) !== metaFingerprint(plan)) problems.push('meta changed beyond timestamps')
     if (!res.plan.weeks.some(w => w.n <= 0)) problems.push('no foundation weeks were rebuilt')
+    // 🔴 GOALPACE-REGEN-OWNER-01 (2026-11-10) — THE COUNT, NOT JUST THE PRESENCE. This compose
+    // takes TODAY as its "today" (declared above), and `foundationWeekCount` is
+    // `floor(gap / 7)` clamped to `FOUNDATION_MAX_WEEKS` — so run with fewer than 21 days to
+    // the plan start it rebuilds a SHORTER runway than the one stored. The presence check above
+    // passes on any non-empty block, and foundation weeks are excluded from
+    // `mainWeeksFingerprint` by construction, so **nothing here could see a runner's runway
+    // being shortened.** Latent today (all 7 live plans with a block sit at a 27-day gap, so
+    // both derivations clamp to 3) and this script WRITES live runner data, so it is guarded
+    // rather than left to the gap.
+    const fBefore = plan.weeks.filter(w => w.n <= 0).length
+    const fAfter = res.plan.weeks.filter(w => w.n <= 0).length
+    if (fAfter !== fBefore) problems.push(`foundation week count changed ${fBefore} → ${fAfter} (the runway would be re-sized, not rebuilt)`)
     const stillOver = after.out.filter(o => !o.floorProtected)
     if (stillOver.length) problems.push(`${stillOver.length} session(s) still over budget and NOT floor-protected`)
     // §122's half: the recompose must leave EVERY weekday session measurable.

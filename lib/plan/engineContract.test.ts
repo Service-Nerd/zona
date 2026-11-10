@@ -174,25 +174,33 @@ describe('ENGINE-CONTRACT-01 — the contract matches the engine', () => {
     }
   })
 
-  it('adjust-plan imports FIVE engine modules, and the contract says so', () => {
-    // 🔴 This claim said TEN, then FOURTEEN, and it is FIVE now
-    // (ADJUST-ENGINE-ENTRY-01). It said ten and nothing read it at all: 9 of the
-    // 14 were `@/lib/coaching/*`, invisible to the reader written to protect the
-    // claim beside it.
+  it('adjust-plan imports SIX engine modules, and the contract says so', () => {
+    // 🔴 This claim said TEN, then FOURTEEN, then FIVE (ADJUST-ENGINE-ENTRY-01), and it is SIX
+    // since 2026-11-10. It said ten and nothing read it at all: 9 of the 14 were
+    // `@/lib/coaching/*`, invisible to the reader written to protect the claim beside it.
+    //
+    // ⚠️ THE SIXTH IS `coaching/adjustmentLedger` AND IT IS DECLARED, NOT ABSORBED
+    // (ADJUST-LEDGER-DUPLICATE-01). `duplicateOf` decides whether the route WRITES a ledger
+    // row — persistence, which the engine holds no opinion about — so it is the CALLER's by the
+    // same rule as the two prompt builders. The alternative was to put it in a module this
+    // counter does not read (`lib/ops/*`, `lib/supabase/*`), keeping the headline at five; that
+    // is precisely the behaviour the count exists to prevent, and this arm going red is it
+    // working.
     const mods = directModules('app/api/adjust-plan/route.ts')
     expect(
       mods.size,
-      `adjust-plan imports ${mods.size} engine modules, not 5 — update the contract. ` +
+      `adjust-plan imports ${mods.size} engine modules, not 6 — update the contract. ` +
       `Found: ${Array.from(mods).sort().join(', ')}`,
-    ).toBe(5)
-    expect(CONTRACT).toContain('`adjust-plan` five')
+    ).toBe(6)
+    expect(CONTRACT).toContain('`adjust-plan` six')
 
-    // Not just the count — the SHAPE. One door, plus the four the contract
-    // assigns to the caller. A sixth engine module creeping back would hold the
-    // count at 5 only by displacing one of these.
+    // Not just the count — the SHAPE. One door, plus the five the contract
+    // assigns to the caller. A seventh engine module creeping back would hold the
+    // count at 6 only by displacing one of these.
     expect(mods, 'the entry point itself must be imported').toContain('coaching/adjustmentEngine')
     for (const m of ['plan/canUseFeature', 'coaching/weeklyActualLoad',
-                     'coaching/prompts/planAdjustment', 'coaching/prompts/athleteContext']) {
+                     'coaching/prompts/planAdjustment', 'coaching/prompts/athleteContext',
+                     'coaching/adjustmentLedger']) {
       expect(mods, `${m} is the CALLER's and must stay in the route`).toContain(m)
     }
   })
@@ -202,11 +210,11 @@ describe('ENGINE-CONTRACT-01 — the contract matches the engine', () => {
     // and `savePlanForUser` is persistence, and both arrive through one import
     // the old pattern could not see. Pinned so a THIRD symbol cannot join them
     // without this going red — which is how `adjust-plan` would quietly reacquire
-    // engine surface while the headline count stayed at five.
+    // engine surface while the headline count stayed at six (five until 2026-11-10).
     const all = engineModules('app/api/adjust-plan/route.ts')
-    expect(all.size, `with the barrel: ${Array.from(all).sort().join(', ')}`).toBe(6)
+    expect(all.size, `with the barrel: ${Array.from(all).sort().join(', ')}`).toBe(7)
     expect(all).toContain('plan (barrel)')
-    expect(CONTRACT).toContain('six counting the `@/lib/plan` barrel')
+    expect(CONTRACT).toContain('seven counting the `@/lib/plan` barrel')
 
     // ⚠️ AND THE SYMBOLS, NOT JUST THE MODULE — the first cut of this arm counted
     // modules and its own comment claimed it stopped a third symbol joining. It

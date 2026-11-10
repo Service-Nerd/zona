@@ -1,4 +1,5 @@
 import { getUserFromRequest } from '@/lib/supabase/getUserFromRequest'
+import { duplicateOf, countsTowardCap, type LedgerRowLike } from '@/lib/coaching/adjustmentLedger'
 import { getUserDisplayPrefs } from '@/lib/userPrefs'
 import { guardAiRequest } from '@/lib/ai/guardAiRequest'
 import { NextRequest, NextResponse } from 'next/server'
@@ -157,13 +158,18 @@ export async function POST(req: NextRequest) {
     // ⚠️ The prior-weeks `run_analysis` query that used to sit here is GONE.
     // `fetchWeeklyLoad` answers the same question from the activity log, and
     // leaving a second producer alive is how DELOAD-OWNER-01 happened.
+    // ⚠️ `trigger_type` and `trigger_detail` come back for ADJUST-LEDGER-DUPLICATE-01's
+    // idempotency check below. The count use is `.length` and is unaffected; fetching them here
+    // costs nothing, where a second query before the insert would be another round trip on the
+    // hot path. `reverted` is in the status list for the check, NOT for the cap: the cap counts
+    // what is live, and the list it counts is derived below rather than shared.
     serviceSupabase
       .from('plan_adjustments')
-      .select('id')
+      .select('id, status, trigger_type, trigger_detail')
       .eq('user_id', user.id)
       .is('superseded_at', null)   // PLAN-WEEK-COLLISION-01: live plan only
       .eq('week_n', weekN)
-      .in('status', ['pending', 'confirmed', 'auto_applied']),
+      .in('status', ['pending', 'confirmed', 'auto_applied', 'reverted']),
     // Return any existing pending adjustment rather than creating a duplicate
     serviceSupabase
       .from('plan_adjustments')
@@ -215,7 +221,11 @@ export async function POST(req: NextRequest) {
   }
 
   // Count of adjustments already made this week — enforces MAX_ADJUSTMENTS_PER_WEEK.
-  const adjustmentsThisWeek = (adjustmentsThisWeekRes.data ?? []).length
+  // ⚠️ `reverted` is excluded HERE, so widening the query above for the duplicate check did not
+  // quietly widen the cap. A reverted adjustment is one the runner rejected; counting it toward
+  // their weekly allowance would punish them for saying no.
+  const weekRows = (adjustmentsThisWeekRes.data ?? []) as LedgerRowLike[]
+  const adjustmentsThisWeek = weekRows.filter(countsTowardCap).length
 
   // 🔴 LOG-OFFPLAN-01 — the week's load comes from the SINGLE OWNER, which reads
   // the activity log rather than `run_analysis`. Five routes had hand-rolled this
@@ -415,6 +425,49 @@ export async function POST(req: NextRequest) {
     status,
     rule_engine_version: ruleEngineVersion,
     confirmed_at:    status === 'auto_applied' ? new Date().toISOString() : null,
+  }
+
+  // 🔴 ADJUST-LEDGER-DUPLICATE-01 (2026-11-10) — A DOUBLE-INVOCATION WROTE A SECOND IDENTICAL
+  // ROW, AND THE GUARD THAT EXISTS FOR THIS COULD NOT SEE IT.
+  //
+  // There is already a duplicate guard above — "return any existing pending adjustment rather
+  // than creating a duplicate" — and it is scoped to `status: 'pending'`. ⚠️ **An auto-applied
+  // adjustment never passes through `pending`**, so the only status the guard protects is the
+  // one that already blocks itself, and the statuses that actually duplicated in production
+  // (`auto_applied`, `reverted`) were unguarded. The population excluded the cases at risk.
+  //
+  // 📐 MEASURED ON PRODUCTION, 22 ledger rows, and the item's premise was wrong by 4×. It read
+  // "8 of 22 rows are duplicates — 4 pairs". Grouping by `(user, week_n, trigger_type, status)`
+  // and never comparing `trigger_detail` is what produced that: **four of the five sub-10-second
+  // pairs are DISTINCT MOVES**, mostly a runner shuffling two sessions in one interaction
+  // (week 21: `wed → thu` then `tue → wed`, two seconds apart; week 17: `wed → tue` then
+  // `wed → thu`, a correction). **Exactly one pair is a true duplicate** — week 6 `zone_drift`,
+  // identical `{rpe: 8, source: rpe_disconnect, sessionType: easy}` four seconds apart. So the
+  // ledger is **2 of 22 (9%)**, not 36%.
+  //
+  // 🔑 WHICH IS WHY THIS MATCHES ON `trigger_detail` AND NOT ON A UNIQUE INDEX. The item's
+  // candidate — a unique index on `(user_id, week_n, trigger_type) where superseded_at is null`
+  // — **would forbid all four legitimate chains**, and it needs a migration and a GRANT. The
+  // payload is the measured discriminator: identical on the one real duplicate, different on
+  // every chain. No migration, and it cannot refuse a move the runner actually made.
+  const openIdentical = duplicateOf(weekRows, adjustmentRow)
+  if (openIdentical) {
+    await recordAdjustmentCheck(serviceSupabase, user.id, true)
+    const { data: existing } = await serviceSupabase
+      .from('plan_adjustments')
+      .select('*')
+      .eq('id', openIdentical.id)
+      // ⚠️ PLAN-WEEK-COLLISION-01, and `supersedeCoverage.test.ts` caught this on the way in.
+      // The id comes from `weekRows`, which is already filtered, so the row is provably live —
+      // but a read that is correct only because ANOTHER query filtered is correct by
+      // inheritance, and the next edit to that query breaks this one silently.
+      .is('superseded_at', null)
+      .maybeSingle()
+    return NextResponse.json({
+      adjustment: existing,
+      requires_confirmation: existing?.status === 'pending',
+      deduplicated: true,
+    })
   }
 
   const { data: inserted, error: insertError } = await serviceSupabase

@@ -209,7 +209,16 @@ Named so the work is visible rather than discovered later:
    | `buildAdjustmentExplanationPrompt`, `buildAthleteContext` | **caller** | they take `units` and assemble runner-facing voice for a model the engine may not call. ADR-006 makes the pass silent, so its failure must not be an engine outcome |
    | `validateSummaryAgainstDiff` (via `acceptAiSummary`) | **engine** | it asks *"does this prose contradict what I changed?"*, and the engine is the only thing holding the diff. A hosted engine that withheld it would make every consumer re-derive it |
 
-   So: **`adjust-plan` five**, and **six counting the `@/lib/plan` barrel**.
+   So: **`adjust-plan` six**, and **seven counting the `@/lib/plan` barrel**.
+
+   ⚠️ **IT WAS FIVE UNTIL 2026-11-10, AND THE SIXTH IS DECLARED RATHER THAN ABSORBED**
+   (`ADJUST-LEDGER-DUPLICATE-01`). `lib/coaching/adjustmentLedger.ts` → `duplicateOf` +
+   `CAPPED_STATUSES` is assigned to the **caller** by the same rule as the two prompt builders:
+   it decides whether the route WRITES a ledger row, which is persistence, and the engine holds
+   no opinion about the ledger at all. ⚠️ The honest alternative was to hide it in a module the
+   counter does not read (`lib/ops/*`, `lib/supabase/*`), which would have kept the headline at
+   five and is exactly the behaviour this count exists to prevent. **The gate made the growth
+   state itself, which is what it is for.**
 
    🔴 **THE COUNT'S READER HAD A FOURTH HOLE AND THIS FOUND IT.** `from '@/lib/plan'` — the
    barrel, `lib/plan.ts` — needs no trailing slash, so `getCurrentWeekIndex` and

@@ -1645,7 +1645,7 @@ fingerprint is a weekday session at exactly its day's budget, **276 of 551**.
 
 ---
 
-### 🔲 `GOALPACE-REGEN-OWNER-01` — a one-off regen script reimplements `regenerateFromStored`, carrying the bug the owner was written to fix ⚙️ **NO BOARD**
+### ✅ `GOALPACE-REGEN-OWNER-01` — **SHIPPED 2026-11-10. The swap, a gate, and the item's "fails loudly" was unreachable for its own two targets** ⚙️ **NO BOARD**
 
 Found building `REBUILD-STAMP-ENRICHMENT-01` (2026-11-08). `lib/plan/storedPlanRegen.ts →
 regenerateFromStored` exists precisely so two scripts share one construction, and its docblock
@@ -1666,6 +1666,52 @@ engine for the script's own defect**. The script is a completed one-off (GOALPAC
 and must NOT be moved — its comment declares the choice (*"anchored to the ORIGINAL plan_start
 so main-week identity is unchanged. gap 0 → no new foundation prefix"*), and `recal-live-repair.ts`
 composes from TODAY deliberately because it re-plans from today.
+
+---
+
+✅ **DONE: the script calls the owner, and the two dead imports went with it.** `tsc` clean, and a
+**dry-run against production** (read-only; the script returns before any write without `--apply`)
+runs clean on both targets where the rebuild target refuses for an unrelated, correct reason
+(`plan-already-started`).
+
+🔴 **BUT THE ITEM'S SEVERITY ARGUMENT DOES NOT HOLD FOR ITS OWN TARGETS, AND THE DRY-RUN PROVES
+LESS THAN IT LOOKS.** The item says the bug *"fails loudly… the script throws `refused: the fixed
+engine moves the calendar`"*. Measured: **both targets (`c8aef8f9`, `e49ea589`) carry 0 foundation
+weeks**, so `composeToday` resolved to `planStart` either way and that refusal **could never fire
+for them**. The dry-run shows I did not break the script; **it does not show the fix fixed
+anything for those two.** The bug is live for any stored plan WITH a runway — **7 of 41 today.**
+
+🔑 **THE ITEM NAMED TWO DIVERGENT SIBLINGS. THERE ARE FOUR SITES, AND FOUR DIFFERENT ANSWERS** to
+*"which day does a stored-plan regeneration compose from?"* — the owner uses the stored block's
+first week, `fleet-invalid-debt-01-regen` the original `plan_start`, `recal-live-repair` and
+`recompose-foundation` TODAY, and `lib/ops/regressionVsNewRule` `generated_at`. **`A SINGLE OWNER
+OF CONSTRUCTION IS NOT ONE OF THE DECISION`**, exactly.
+
+⚠️ **AND I NEARLY REFACTORED A WORKING FUNCTION ON A WRONG INFERENCE.** `regressionVsNewRule`'s
+date differs from the owner's on **all 7** live plans with a block (gaps 22–75 days against the
+owner's 21), so I reasoned it must compose a runway up to 3.5× too long. **Measured: all 7 come
+back `comparable: true` with the same 3 foundation weeks** — because `foundationWeekCount` clamps
+to `FOUNDATION_MAX_WEEKS = 3` and every gap exceeds 21 days. **They converge by a CAP, not by
+agreement**, and would diverge only for a gap of 7–20 days, of which there are none stored. It is
+an exemption, not a fix.
+
+🔴 **ONE REAL DEFECT FOUND IN THE FALLOUT AND FIXED IN PLACE:** `recompose-foundation.ts` composes
+from TODAY and guarded only that foundation weeks **exist** (`some(w => w.n <= 0)`), while
+foundation weeks are excluded from `mainWeeksFingerprint` by construction — so **run with fewer
+than 21 days to the plan start it would rebuild a SHORTER runway and nothing could see it.** It
+writes live runner data. Now guarded on the **count**. Latent today: all 7 sit at a 27-day gap.
+
+✅ **Gate: `lib/plan/storedPlanRegenOwner.test.ts`** — 4 arms, the `noRawAnthropicCalls` pattern:
+the population is non-empty, no file regenerates a stored plan inline, **every declared divergence
+still exists and still diverges** (a stale exemption reads as "we thought about this"), and the
+owner still composes from the stored block.
+
+🔴 **AND THE GATE'S CENTRAL ARM WAS HOLLOW UNTIL THE MUTATION.** It exempted any file *containing*
+the string `regenerateFromStored`, so reintroducing the inline construction while leaving the
+now-unused **import** in place passed every arm: **an unused import exempted the file from the gate
+written to catch it.** Anchored on the call (`\bregenerateFromStored\s*\(`), it fires naming the
+file. **When the thing being matched is a NAME, anchor it** — recorded in this repo several times
+over, and committed again here. 📐 4 falsifications, each with a landing assertion.
 
 ### ✅ `MAINT-ENRICH-VALIDATE-01` — **DONE 2026-11-08 `27f0375c`.** The item named the race path's MECHANISM; the gap was the constitution. The ladder would have been **inert by construction**. Maintenance was the one plan kind with no placeholder check anywhere ⚙️ **NO BOARD**
 
@@ -7124,11 +7170,74 @@ MOVED.** Full reading in `scripts/backtest-adjustment-triggers.ts`'s header.
   ONE DAY (2026-06-02)** — a backfill, not history; counting it would make the population look
   twice as deep as it is. **The wait is over for a re-run, not for a conclusion.**
 
-### 🔲 `ADJUST-LEDGER-DUPLICATE-01` — the adjustment ledger is 36% duplicate rows ⚙️ **NO BOARD**
+### ✅ `ADJUST-LEDGER-DUPLICATE-01` — **SHIPPED 2026-11-10. It is 9%, not 36%, and the fix the item proposed would have forbidden four real moves** ⚙️ **NO BOARD**
 
-📐 **Measured 2026-11-09 reading `RESHAPE-FIRST-FIRINGS-01`: 8 of 22 `plan_adjustments` rows are
-duplicates — 4 pairs, 1–7 seconds apart**, same user, same `week_n`, same `trigger_type`, same
-`status`. Three pairs are `session_reorder` and one is the 2026-08-17 `zone_drift`.
+📐 **Filed 2026-11-09: "8 of 22 `plan_adjustments` rows are duplicates — 4 pairs, 1–7 seconds
+apart", three `session_reorder` and one `zone_drift`.**
+
+🔴 **WRONG BY 4×, AND MY FIRST RE-MEASUREMENT WAS WRONG TOO.** The item grouped by
+`(user, week_n, trigger_type, status)` and never compared `trigger_detail`. My own first query
+did the same and reported **12 rows in 6 groups — including a pair 4.5 DAYS apart**, which is
+plainly not a double-invocation. Comparing the payload settles it:
+
+| week | first | second | gap | same payload? |
+|---|---|---|---|---|
+| 21 | `wed → thu` | `tue → wed` | 2.3s | no — a **CHAIN**, two sessions shuffled in one interaction |
+| 22 | `wed → thu` | `tue → wed` | 1.6s | no — the same chain shape |
+| 17 | `wed → tue` | `wed → thu` | 7.4s | no — a **CORRECTION** of the first move |
+| 15 | `sat → sun` | `sat → mon` | 9.3s | no — likewise |
+| 6 | `zone_drift` | `zone_drift` | 4.1s | **YES — the one true duplicate** |
+
+**2 of 22 rows (9%), one pair, one user, on a detector since fixed.** The item's range (1–7s) also
+excluded two of its own pairs at 7.4s and 9.3s.
+
+🔴 **AND THE FIX IT PROPOSED WOULD HAVE BEEN ACTIVELY HARMFUL.** A unique index on
+`(user_id, week_n, trigger_type) where superseded_at is null` **forbids all four legitimate
+chains** — a runner moving two sessions at once would silently lose the second move — and needs a
+migration plus a GRANT. The item suspected the cap and the index disagreed about the domain model;
+**the data says the index is simply wrong.** The payload is the measured discriminator.
+
+🔑 **THE REAL DEFECT WAS A GUARD WHOSE POPULATION EXCLUDED THE CASES AT RISK.** `adjust-plan`
+already carried one — *"return any existing pending adjustment rather than creating a
+duplicate"* — scoped to `status: 'pending'`. ⚠️ **An auto-applied adjustment never passes through
+`pending`**, so the only status it protected was the one that already blocks itself, and every
+status that actually duplicated (`auto_applied`, `reverted`) was unguarded.
+
+✅ **`lib/coaching/adjustmentLedger.ts` → `duplicateOf` + `CAPPED_STATUSES`.** Matched on the
+payload, not time-bounded (the real gaps run 1.6s to 9.3s and a legitimate pair is 4.5 days, so a
+window would need a number nobody can justify), live rows only. ⚠️ **`reverted` is read for the
+duplicate check and excluded from the cap** — they were one list, so widening the query would
+otherwise have quietly tightened `MAX_ADJUSTMENTS_PER_WEEK` and punished a runner for saying no.
+📐 7 arms, **6 falsifications**, each with a landing assertion; **M1 — the item's unique-index
+model — fails two arms, including the four-chains proof.** Fixtures are the real production
+payloads.
+
+🔻 **NOTHING TO REMEDIATE, FOR A REASON THE ITEM DID NOT SEE: 18 of the 22 rows are superseded.**
+The live ledger is **4 rows**, and the one true duplicate is among the superseded — so any count
+that filters `superseded_at is null`, which every production query does, **never saw it.** The
+wave's "22 ledger rows" counts rows from dead plans.
+
+✅ **AND TWO GATES CAUGHT MY OWN CHANGE ON THE WAY IN, WHICH IS THE REASON TO RUN THE WHOLE
+SUITE.** `supersedeCoverage.test.ts` found the new by-id read had no `.is('superseded_at', null)`
+— the id came from an already-filtered query so the row was provably live, but **a read that is
+correct only because ANOTHER query filtered is correct by inheritance**, and the next edit there
+breaks it silently (`PLAN-WEEK-COLLISION-01`). And `engineContract.test.ts` went red because
+`adjust-plan`'s engine-import surface grew **five → six**: `ADJUST-ENGINE-ENTRY-01` cut it from
+fourteen to five deliberately, so the count is declared in `docs/contracts/engine.md` and updated
+there with the reason. ⚠️ **The alternative was to put `duplicateOf` in a module the counter does
+not read (`lib/ops/*`, `lib/supabase/*`), keeping the headline at five — precisely the behaviour
+that count exists to prevent.** Both arms going red on the real change and green on declaring it
+is a stronger falsification than any mutation I could have written.
+
+🔻 **ROUTED, NOT FILED — the live pending rows surfaced a different and sharper condition.**
+`e518d7f8` is a `pending skip_with_reason` from **2026-05-08, still live**, and the route returns
+*any* live pending row instead of detecting anything new — so **an unanswered confirmation freezes
+that runner's adjustment engine indefinitely**, reachable by simply ignoring the prompt. ⚠️
+Severity measured honestly: that user's race was 2026-07-25, they have **0 runs ever** and 1
+completion, so there is nothing to detect; the other live pending row is a week old and
+legitimate. **The fix is a design decision about what happens to an unanswered confirmation**
+(expire it, scope the guard to `week_n`, or allow two open) — ADR-012's model, so 🧭 **DESIGN
+BOARD**, and recorded here with the measurement rather than guessed at.
 
 🔴 **IT CORRUPTS THE ONE NUMBER THIS WAVE IS SEQUENCED ON.** The wave's own text says zone_drift
 fired *"three times"*; it fired **three** times and wrote **four** rows, so every count taken

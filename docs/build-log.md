@@ -6,6 +6,50 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-11-10 — ADJUST-LEDGER-DUPLICATE-01 · four of the five "duplicates" were a runner moving two sessions at once
+**Shipped:** The adjustment ledger's duplicate guard now matches on the trigger payload, which is the only thing that separates a double-invocation from a second thing the runner actually did.
+
+**Dev learning:** The item said 8 of 22 rows were duplicates — 36% — in four pairs seconds apart. I re-measured and got 12 rows in 6 groups, which was also wrong: my grouping included a pair **4.5 days apart**, which is obviously not a double-invocation of the same check.
+
+Both of us had grouped by `(user, week_n, trigger_type, status)` and never looked at `trigger_detail`. Once you do, the five sub-ten-second pairs separate cleanly. Week 21: `wed → thu`, then two seconds later `tue → wed`. That is not a duplicate, it is a **chain** — the runner moved Wednesday's session to Thursday and then moved Tuesday's into the gap. Week 22 is the same shape. Week 17 is `wed → tue` then `wed → thu`: a correction. Week 15 likewise. Exactly one pair repeats its payload: a `zone_drift` with identical `{rpe: 8, source: rpe_disconnect, sessionType: easy}` four seconds apart.
+
+**2 of 22 rows, 9%.** And the item's own stated range of "1–7 seconds" excluded two of its five pairs, at 7.4s and 9.3s.
+
+**Product/creator learning:** The item's candidate fix was a unique index on `(user_id, week_n, trigger_type) where superseded_at is null`. The data says that would have been actively harmful: it forbids all four legitimate chains, so a runner shuffling two sessions would silently lose the second move. The item suspected the cap and the index disagreed about the domain model and said to settle that first — which was the right instinct, and the answer is that the index is wrong, not merely in tension.
+
+The real defect was smaller and more embarrassing than a missing index. There was already a duplicate guard: *"return any existing pending adjustment rather than creating a duplicate"*, scoped to `status: 'pending'`. **An auto-applied adjustment never passes through `pending`.** So the only status the guard protected was the one that already blocks itself, and every status that actually duplicated in production was unguarded. This repo has a name for that shape — the population excludes the cases at risk — and it was sitting inside the guard written to prevent it.
+
+**AI-building learning:** Two things I nearly got wrong by not finishing the query. First, I had drafted the remediation SQL for the one real duplicate before checking `superseded_at`: **18 of the 22 rows are superseded**, the duplicate is among them, and every production query filters them out. There was nothing to remediate and the "corrupted count" the wave was sequenced on was only ever visible to a query that read dead plans. Second, I saw two live `pending` rows and started writing up a failed guard — they are different users, so the guard held.
+
+**The honest bit:** The same look did turn up something real that I did not fix. `e518d7f8` is a pending adjustment from **2026-05-08** that is still live, and the route returns any live pending row rather than detecting anything new. So an unanswered confirmation freezes that runner's adjustment engine indefinitely, and the path there is just ignoring the prompt. It is latent for that user — their race was in July and they have never logged a run — but it is not latent as a design. What should happen to an unanswered confirmation is ADR-012's question, not mine, so it is recorded with its measurement and routed rather than guessed at.
+
+Two gates then caught my own change on the way in, which is the whole argument for running the full suite rather than the files you touched. `supersedeCoverage.test.ts` found that my new by-id read had no `superseded_at` filter — the id came from an already-filtered query, so the row was provably live, but a read that is correct only because *another* query filtered is correct by inheritance and breaks silently the next time that query is edited. And `engineContract.test.ts` went red because `adjust-plan`'s engine-import surface grew from five modules to six; `ADJUST-ENGINE-ENTRY-01` had cut it from fourteen to five on purpose, so the count is declared in the contract and I updated it there with the reason. The tempting alternative was to put the new module somewhere the counter does not read — which is exactly what that count exists to prevent.
+
+**Hook material:** A bug report said a third of the rows in a table were duplicates. Four of the five pairs turned out to be a runner moving two sessions in one go, two seconds apart, and the fix that had been proposed would have silently thrown the second move away.
+
+**Postable?:** yes — "the duplicates were real user behaviour and the proposed fix would have deleted it" is a good, short story about measuring before fixing.
+
+
+## 2026-11-10 — GOALPACE-REGEN-OWNER-01 · an unused import defeated the gate written to catch it
+**Shipped:** A one-off regen script now calls `regenerateFromStored` instead of reimplementing it, and a gate stops the fourth inline copy appearing.
+
+**Dev learning:** The owner exists because passing a plan's start date as `composePlanWithFoundation`'s "today" gives a zero-day gap and therefore no foundation weeks, so a plan with a runway reads as "the engine moves the calendar". Its docblock names the two plans that were wrongly refused. A sibling script then rebuilt the whole construction inline and brought that bug back — every other line identical.
+
+The item said the bug "fails loudly". **It cannot fire for either of that script's two targets**: both carry zero foundation weeks, so `composeToday` resolved to the plan start either way. My production dry-run came back clean, and all that proves is that I did not break the script. The bug is live for the seven of forty-one stored plans that have a runway.
+
+**Product/creator learning:** The item named two siblings that diverge deliberately. There are **four sites and four different answers** to "which day does a stored-plan regeneration compose from" — the stored block's first week, the original plan start, today, and `generated_at`. A single owner of the *construction* is not a single owner of the *decision*, which this repo already has a note about and which I only saw by listing every call site.
+
+**AI-building learning:** I nearly refactored a working function on a wrong inference. `regressionVsNewRule` composes from `generated_at`, and that date differs from the owner's on all seven live plans with a block — gaps of 22 to 75 days against the owner's 21. I had written most of a paragraph about it sizing a runway up to three and a half times too long. Then I ran it: **all seven come back comparable with the same three foundation weeks**, because the runway clamps to `FOUNDATION_MAX_WEEKS = 3` and every gap clears 21 days. They converge by a cap, not by agreement, and would only diverge for a gap between 7 and 20 days — of which there are none. It is an exemption, not a defect.
+
+**The honest bit:** The gate's central arm was hollow and the mutation found it. It exempted any file *containing* the string `regenerateFromStored`, so when I reintroduced the inline construction and left the now-unused `import` behind, every arm passed. **An unused import exempted the file from the gate written to catch exactly that file.** Anchoring on the call rather than the name fixes it, and "when the thing being matched is a NAME, anchor it" is already written down here several times over.
+
+One real defect did come out of the fallout: `recompose-foundation.ts` composes from today and guarded only that foundation weeks *exist*, not that the count matched — and foundation weeks are excluded from its main-plan fingerprint by construction. Run with fewer than 21 days to the plan start, it would rebuild a shorter runway than the one stored and nothing in the script could see it. It writes live runner data.
+
+**Hook material:** I wrote a test to stop a function being reimplemented, reimplemented it to check the test worked, and the test passed — because I had left the unused import at the top of the file.
+
+**Postable?:** yes — the unused-import-defeats-the-guard story is short, concrete and the kind of thing every engineer recognises.
+
+
 ## 2026-11-10 — SCALE-SESSION-OWNER-01 · three copies, four defects between them, and a recovery run of 3 km in half a minute
 **Shipped:** One owner for "make this session a factor smaller", used by the taper, the post-race reshape and the readiness ease — and the four defects that were distributed across the three copies.
 

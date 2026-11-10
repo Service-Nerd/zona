@@ -28,15 +28,13 @@ import { hasAiCopy } from '../lib/plan/enrichmentState'
 import { stampRebuilt } from '../lib/plan/enrichmentState'
 import { createClient } from '@supabase/supabase-js'
 import * as fs from 'fs'
-import { generateRulePlan } from '../lib/plan/ruleEngine'
-import { composePlanWithFoundation } from '../lib/plan/foundationCompose'
 // RESHAPE-VALIDATOR-KIND-01 (2026-11-03) — the kind-dispatching owner, because this script
 // validates plans it read out of `plans` and a base-build plan judged by the race
 // constitution reports ~50 phantom errors. Identical to `validateReshapedPlan` on a race
 // plan; the difference is §116's own validator running on the plans it describes.
 import { validateStoredPlan } from '../lib/plan/validateStoredPlan'
 import { regenRefusalReason } from '../lib/ops/regenEligibility'
-import { withProfileHr } from '../lib/plan/rebuildInput'
+import { regenerateFromStored } from '../lib/plan/storedPlanRegen'
 import type { Plan, GeneratorInput, Session } from '../types/plan'
 
 const TARGETS: Record<string, 'rebuild' | 'patch'> = { c8aef8f9: 'rebuild', e49ea589: 'patch' }
@@ -116,15 +114,27 @@ async function main() {
   console.log(`Plan        ${row.id}  ${planStart} → ${raceDate}  tier ${meta.tier}  enrichment ${meta.enrichment}`)
   console.log(`Data        completions ${completionWeeks.length} · analyses ${analysisWeeks.length} · overrides ${overrideWeeks.length} · runs ${runs?.length ?? 0} (${runsInBlock} on/after plan start)`)
 
-  // Heart rate comes from the PROFILE, not the stored answers. A max HR confirmed in
-  // Profile after the plan was built updates the plan's meta and user_settings but
-  // never meta.generator_input, so regenerating from the stored answers alone would
-  // quietly put the runner back on the old max (e49ea589: 203 confirmed vs 198 stored).
-  const input = { ...withProfileHr(gi, settings), plan_start: planStart } as GeneratorInput
+  // 🔴 GOALPACE-REGEN-OWNER-01 (2026-11-10) — THIS CONSTRUCTION IS `regenerateFromStored`'s, AND
+  // REIMPLEMENTING IT CARRIED THE BUG THE OWNER WAS WRITTEN TO FIX. Every line was identical to
+  // the owner's except one: it passed `planStart` as `composePlanWithFoundation`'s "today", which
+  // gives a 0-day gap and NO foundation weeks — so `sameCalendar` failed and the script threw
+  // **`refused: the fixed engine moves the calendar`**, naming the engine for its own defect. It
+  // could never write a wrong plan, only refuse a right one. The owner composes from the stored
+  // block's first week instead, which is the "today" the runway was built for.
+  //
+  // ⚠️ The owner also carries the heart-rate reasoning this comment used to hold: HR comes from
+  // the PROFILE, not the stored answers, because a max confirmed in Profile updates `user_settings`
+  // and never `meta.generator_input` (`REBUILD-HR-FROM-PROFILE-01`; e49ea589, 203 confirmed vs 198
+  // stored). And it stamps `stampRebuilt`, which is idempotent and harmless here: rebuild mode
+  // stamps again below, and patch mode clones the STORED plan and copies three named meta fields,
+  // never `enrichment`.
+  //
+  // ⚠️ TWO SIBLING SCRIPTS DIVERGE DELIBERATELY AND MUST NOT BE MOVED ONTO THE OWNER:
+  // `fleet-invalid-debt-01-regen.ts` anchors to the original `plan_start` so main-week identity is
+  // unchanged, and `recal-live-repair.ts` composes from TODAY because it re-plans from today.
+  const { input, tier, fresh } = regenerateFromStored(plan, settings)
   const hrMoved = (['max_hr', 'resting_hr', 'max_hr_source'] as const).filter(k => input[k] !== gi[k])
   console.log(`Heart rate  from profile: max ${input.max_hr} (${input.max_hr_source ?? 'unstated'}), resting ${input.resting_hr}${hrMoved.length ? `  · differs from the stored answers on ${hrMoved.join(', ')}` : ''}`)
-  const tier = (meta.tier === 'paid' ? 'paid' : meta.tier === 'free' ? 'free' : 'trial') as 'free' | 'trial' | 'paid'
-  const fresh = composePlanWithFoundation(generateRulePlan(input, tier, planStart, undefined, planStart), input, planStart, 'add').plan
   const sameCalendar = JSON.stringify(fresh.weeks.map(w => [w.n, w.date])) === JSON.stringify(plan.weeks.map(w => [w.n, w.date]))
   if (!sameCalendar) throw new Error('refused: the fixed engine moves the calendar')
 
