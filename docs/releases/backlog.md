@@ -1351,7 +1351,45 @@ not nothing** — the same framing the parent item carried, and the parent item 
 ⚙️ Fix: move `enrichRepair.ts` and every baseline that feeds it to `validateSavedPlan` in one
 commit, and re-run `lib/plan/enrichRepair.test.ts` plus the golden reframe suite.
 
-### 🔲 `RECAL-REPAIR-DRIVER-VALIDATOR-01` — the one remaining hand-built input, and it drives a production write ⚙️ **NO BOARD**
+### ✅ `RECAL-REPAIR-DRIVER-VALIDATOR-01` — **SHIPPED 2026-11-10. The calibration the item said could not be re-measured from a dev machine was in `plan_archive`** ⚙️ **NO BOARD**
+
+✅ **SHIPPED 2026-11-10.** The driver call is `validateRepairedPlan(before)` now, and
+`storedPlanDebt.test.ts`'s `EXEMPT` map is **empty** — both exemptions from
+`STORED-PLAN-VALIDATOR-INPUT-01` retired on the same day.
+
+🔴 **THE ITEM'S BLOCKING REASON WAS FALSE, AND THE ARCHIVE PROVED IT.** It said the remedies
+*"were calibrated against this exact set (9 error-severity violations → 1) on live plans, and that
+cannot be re-measured from a dev machine"*. **`plan_archive` holds the pre-repair state of every
+write.** Replayed across all **80** archived snapshots: **7 carry a REPAIRABLE code, and on every
+one the two verdict sets are IDENTICAL** — the full error set AND the driver's input (6, 13, 8,
+**16**, 13, 8, 7 repairable verdicts each, which includes the 16- and 13-code calibration cases).
+
+🔑 **AND COMPARING VERDICT SETS IS A STRONGER PROOF THAN REPLAYING THE REMEDIES.** `repairPlan`
+is a pure function of the verdicts it is handed, so identical input means identical output by
+construction — no need to reconstruct a `nowPace` to find out.
+
+⚠️ **THE DRY-RUN DIFF THE ITEM ASKED FOR IS UNSATISFIABLE AS WRITTEN.** It wanted *"the script in
+DRY-RUN against production, diffing the remedy counts per plan before and after"*. Run: **41 stored
+plans · 0 carry a stale step · Nothing to repair.** The repair already ran, so a production
+before/after is **0 → 0** and proves nothing. The archive was the only population that could
+answer the question, and the item did not know it existed for this purpose.
+
+⚠️ **THREE COMPOSITIONS, AND ONLY ONE IS THE OWNER THE ITEM MEANT.** `validatePlan(before, gi)`
+had no dispatch and a RAW `meta.generator_input`; `errCodes(before, gi)` — the script's own helper
+— dispatches on that same raw input; `validateRepairedPlan(before)` dispatches **and** composes
+`storedPlanInput`, which is the meta-first level merge the item named. **The third is what was
+measured and the third is what shipped** — *measure with the composition the producer calls*.
+
+✅ **`storedPlanDebt.test.ts`'s stale-exemption arm is what noticed, twice in one day** — once for
+`reenrich-plans.ts` and once here. ⚠️ **And an empty `EXEMPT` map makes that arm vacuous**, so a new
+arm asserts the map is empty on purpose, the population is non-empty, and **both retired files stay
+IN the population** now that they no longer need an exemption. 📐 Falsified both ways: putting the
+driver back on raw `validatePlan` reddens 1 arm; re-adding a stale exemption reddens 2.
+
+🔻 **What this does not prove.** All 7 archived cases are RACE plans, where the dispatch is a
+no-op by construction — so the measurement shows the switch changes nothing on any plan the driver
+has ever run on, not that the dispatch is correct for a base-build plan carrying a repairable code.
+**No such plan has ever existed**, and if one appears the owner is the half that is right.
 
 The second declared exemption from `STORED-PLAN-VALIDATOR-INPUT-01`.
 `scripts/recal-live-repair.ts` keeps one `validatePlan(before, gi)` as the argument to

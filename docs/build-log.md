@@ -6,6 +6,27 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-11-10 — RECAL-REPAIR-DRIVER-VALIDATOR-01 · the measurement the item said was impossible was in plan_archive
+**Shipped:** The last validator exemption retired. The `EXEMPT` map is empty.
+
+**Dev learning:** the item was explicit that it could not be done from here: the repair remedies *"were calibrated against this exact set (9 error-severity violations to 1) on live plans, and that cannot be re-measured from a dev machine."* That was wrong, and the reason is the same insight that closed CLAY earlier today — **`plan_archive` holds the state immediately before every write.** The pre-repair plans are all still there. Replayed across all 80 snapshots: 7 carry a repairable code, and on every one the two validators produce **identical verdict sets**, including the 16-code and 13-code calibration cases.
+
+**And comparing verdict sets beat replaying the remedies.** My first attempt actually ran `repairPlan` both ways and crashed, because it needs a real pace object I did not have. Then the obvious thing: `repairPlan` is a pure function of the verdicts it is handed. Identical input, identical output, by construction — a stronger claim than two matching outputs, and it needed no fixture at all.
+
+**The exit condition the item specified was unsatisfiable.** It asked for a production dry-run diffing remedy counts before and after. I ran it: *41 stored plans, 0 carry a stale step, nothing to repair.* The repair had already been applied, so the diff is 0 to 0. **A check with an empty population cannot answer anything**, and the item had specified exactly that check.
+
+**Three compositions, and I nearly shipped the wrong one.** The script already had an `errCodes` helper on the dispatching validator, so reaching for it looked right — except it passes the RAW `meta.generator_input`, while the owner the item actually meant also composes `storedPlanInput` for the level merge. Three different answers to "validate this stored plan", and my measurement had used the third. I shipped the one I measured.
+
+**The gate that keeps earning its place:** `storedPlanDebt.test.ts`'s stale-exemption arm fired twice today, once per retired exemption. It exists because of a recorded lesson — *verify the exemption's justification, not the stamp* — and it is the reason neither exemption was left behind as dead weight. Then the map went empty, which makes that arm vacuous, so it needed a new arm asserting the emptiness is deliberate.
+
+**The honest bit:** all 7 archived cases are race plans, where the dispatch is a no-op by construction. So the measurement proves the switch changes nothing on any plan the driver has ever run on — it does not prove the dispatch is correct for a base-build plan carrying a repairable code. No such plan has ever existed, and I said so rather than letting "identical on all 7" stand in for more than it is.
+
+**Hook material:** A ticket said its own verification was impossible from a dev machine. The data it needed was in a table called `plan_archive`, which exists specifically to hold the state before every write.
+
+**Postable?:** yes
+
+---
+
 ## 2026-11-10 — BACKLOG-DUPLICATE-HEADING-01 (residual) · the item was hidden by the word SHIPPED in its own heading
 **Shipped:** Two glyph enumerations retired in favour of the owner, and an explicit `OPEN` now beats a closure stamp.
 

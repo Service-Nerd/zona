@@ -50,9 +50,9 @@ import { fitnessAnchorMap } from '../lib/plan/fitnessAnchorMap'
 import { alignDerivedToStructure } from '../lib/plan/derivedSetAnchors'
 import { repairPlan, REPAIRABLE_CODES } from '../lib/plan/planRepairs'
 import { buildPaceFromVDOT } from '../lib/plan/paceBands'
-import { validateSavedPlan } from '../lib/plan/validateStoredPlan'
+import { validateSavedPlan, validateRepairedPlan } from '../lib/plan/validateStoredPlan'
+import type { Violation } from '../lib/plan/invariants'
 // The one remaining direct caller is the REPAIR DRIVER, exempted by name below.
-import { validatePlan } from '../lib/plan/invariants'
 import { storedPlanInput } from '../lib/plan/storedPlanInput'
 import { getCurrentWeek } from '../lib/plan/weekResolution'
 import { qualityHeaderPace } from '../lib/plan/qualityHeaderPace'
@@ -416,20 +416,34 @@ async function main() {
         // Every repair is driven by the invariant's OWN verdicts — see the module
         // header for why that is load-bearing rather than tidy. Four remedies,
         // measured on this runner: 9 error-severity violations become 1.
-        // 🔴 THIS ONE CALL STAYS ON `validatePlan(before, gi)` AND IS THE DECLARED EXEMPTION
-        // (STORED-PLAN-VALIDATOR-INPUT-01, 2026-11-08). Everything else in this script moved
-        // to the owner; this did not, because `repairPlan` READS these verdicts and acts on
-        // them. The owner's input is more correct — §116's dispatch plus the meta-first level
-        // merge — and a more correct verdict set means the remedies DO SOMETHING DIFFERENT, on
-        // a script that writes to production. The remedies were calibrated against this exact
-        // set (9 error-severity violations → 1 on this runner), measured on live plans, and I
-        // cannot re-measure that from here.
+        // ✅ ON THE OWNER SINCE 2026-11-10 (`RECAL-REPAIR-DRIVER-VALIDATOR-01`). It was the last
+        // declared exemption from `STORED-PLAN-VALIDATOR-INPUT-01`, because `repairPlan` READS
+        // these verdicts and acts on them: a more correct verdict set means the remedies DO
+        // SOMETHING DIFFERENT, on a script that writes to production.
         //
-        // ⚠️ I FIRST CHANGED IT AND WROTE "deliberately the same call as before" NEXT TO THE
+        // 🔴 AND THE ITEM SAID THE CALIBRATION "CANNOT BE RE-MEASURED FROM A DEV MACHINE".
+        // IT CAN — `plan_archive` HOLDS THE PRE-REPAIR STATE. Replayed across all 80 archived
+        // snapshots: **7 carry a REPAIRABLE code, and on every one the two verdict sets are
+        // IDENTICAL** — the full error set AND the driver's input (6/13/8/16/13/8/7 repairable
+        // verdicts each, including the 16- and 13-code calibration cases). `repairPlan` is a
+        // pure function of the verdicts it is handed, so identical input means identical
+        // remedies by construction, which is a stronger proof than replaying them.
+        //
+        // ⚠️ AND THE DRY-RUN DIFF THE ITEM ASKED FOR IS UNSATISFIABLE AS WRITTEN: **0 of 41
+        // live plans carry a stale step**, so a before/after on production is 0 → 0 and proves
+        // nothing. The archive was the only population that could answer it.
+        //
+        // ⚠️ THREE COMPOSITIONS, AND ONLY ONE IS THE OWNER. `validatePlan(before, gi)` had no
+        // dispatch and a RAW `meta.generator_input`; `errCodes(before, gi)` dispatches on the
+        // same raw input; `validateRepairedPlan(before)` dispatches AND composes
+        // `storedPlanInput`, which is the meta-first level merge the item named. The third is
+        // what was measured and the third is what ships — *measure with the composition the
+        // producer calls*.
+        //
+        // ⚠️ I ONCE CHANGED THIS AND WROTE "deliberately the same call as before" NEXT TO THE
         // CHANGE. It was not the same call. `make the fix read the check's verdicts` cuts both
-        // ways: change the check and you have changed the fix. Moving this is its own item,
-        // with a before/after on real plans, not a line in a refactor.
-        const r = repairPlan(after, validatePlan(before, gi), nowPace)
+        // ways: change the check and you have changed the fix.
+        const r = repairPlan(after, validateRepairedPlan(before).filter((v: Violation) => v.severity === 'error'), nowPace)
         console.log(`  repairs: ${r.steps} stale step(s) · ${r.headers} header(s) matched to their steps`
           + ` · ${r.stripped} effort-governed pace(s) REMOVED · ${r.segments} long-run segment(s) re-priced`)
       } else {

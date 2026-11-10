@@ -185,12 +185,30 @@ describe('STORED-PLAN-VALIDATOR-INPUT-01 — stored-plan scripts do not hand-bui
     .replace(/\/\/[^\n]*/g, m => m.replace(/[^\n]/g, ' '))
 
   /**
-   * ⚠️ ONE DECLARED EXEMPTION, BY NAME AND WITH ITS REASON. `recal-live-repair.ts` keeps a
-   * single `validatePlan(before, gi)` as the driver of `repairPlan`, which READS those
-   * verdicts and acts on them. The owner's verdict set is MORE correct, which means the
-   * remedies would do something different on a script that writes to production; they were
-   * calibrated against this exact set (9 error-severity violations → 1) on live plans, and
-   * that cannot be re-measured from a dev machine. Moving it is its own item.
+   * ✅ THERE ARE NO EXEMPTIONS LEFT — `RECAL-REPAIR-DRIVER-VALIDATOR-01`, SHIPPED 2026-11-10.
+   *
+   * `recal-live-repair.ts` kept one `validatePlan(before, gi)` as the driver of `repairPlan`,
+   * which READS those verdicts and acts on them: a more correct verdict set means the remedies
+   * DO SOMETHING DIFFERENT, on a script that writes to production. The item said the
+   * calibration *"cannot be re-measured from a dev machine"*.
+   *
+   * 🔴 IT COULD: `plan_archive` HOLDS THE PRE-REPAIR STATE. Replayed across all **80**
+   * archived snapshots — **7 carry a REPAIRABLE code, and on every one the two verdict sets are
+   * IDENTICAL**, both the full error set and the driver's input (6/13/8/16/13/8/7 repairable
+   * verdicts, including the 16- and 13-code calibration cases). `repairPlan` is a pure function
+   * of the verdicts it is handed, so identical input means identical remedies by construction.
+   *
+   * ⚠️ And the dry-run diff the item asked for is UNSATISFIABLE: **0 of 41 live plans carry a
+   * stale step**, so a production before/after is 0 → 0. The archive was the only population
+   * that could answer it.
+   *
+   * ⚠️ IT WAS THIS ARM THAT NOTICED, TWICE IN ONE DAY — once for `reenrich-plans.ts` and once
+   * here. An exemption whose file has stopped calling `validatePlan` is dead weight that hides
+   * the next genuine offender, which is why it fails rather than shrugging.
+   *
+   * 🔻 THE MAP IS EMPTY NOW, AND THAT IS A STATE TO WATCH: an empty exemption map makes the
+   * arm below vacuous, so it asserts the population is non-empty instead (see the arm's own
+   * guard). If an exemption is ever added again, it needs a reason AND a removal condition.
    */
   /**
    * ✅ THE SECOND EXEMPTION IS GONE — `REENRICH-REPAIR-VALIDATOR-KIND-01`, SHIPPED 2026-11-10.
@@ -208,9 +226,7 @@ describe('STORED-PLAN-VALIDATOR-INPUT-01 — stored-plan scripts do not hand-bui
    * ⚠️ IT WAS THIS ARM THAT NOTICED. The stale-exemption check below fired the moment the
    * script stopped calling `validatePlan`, which is what it is for.
    */
-  const EXEMPT = new Map([
-    ['recal-live-repair.ts', 'the repairPlan DRIVER reads these verdicts; see the call site'],
-  ])
+  const EXEMPT = new Map<string, string>([])
 
   const readsStoredPlans = readdirSync(DIR)
     .filter(f => f.endsWith('.ts') && !f.endsWith('.test.ts'))
@@ -234,6 +250,21 @@ describe('STORED-PLAN-VALIDATOR-INPUT-01 — stored-plan scripts do not hand-bui
       + 'applies §116\'s kind dispatch AND the meta-first level merge, neither of which a '
       + 'hand-built input gets. An exemption goes in EXEMPT with its reason:\n' + strays.join('\n'),
     ).toEqual([])
+  })
+
+  it('🔴 an EMPTY exemption map is the goal, and the arm above must not be vacuous', () => {
+    // ⚠️ With no exemptions, `the exemption is REAL` iterates nothing and passes for free. The
+    // arm that still carries weight is the population one plus the stray check, so assert the
+    // population reaches the scripts that were moved — otherwise an empty map plus an empty
+    // glob would read as "all clean".
+    expect(EXEMPT.size, 'two exemptions were retired on 2026-11-10; adding one needs a reason '
+      + 'AND a removal condition in its value').toBe(0)
+    expect(readsStoredPlans.length, 'an empty population makes the stray check vacuous')
+      .toBeGreaterThan(5)
+    for (const name of ['recal-live-repair.ts', 'reenrich-plans.ts']) {
+      expect(readsStoredPlans.some(x => x.f === name),
+        `${name} held an exemption and must stay IN the population now that it does not`).toBe(true)
+    }
   })
 
   it('the exemption is REAL — an exempt name that no longer needs it is a stale exemption', () => {
