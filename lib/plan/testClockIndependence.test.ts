@@ -130,8 +130,60 @@ function callsWithoutPlanStart(src: string): number {
   return n
 }
 
+/**
+ * 🔴 A `generateRulePlan(` INSIDE A STRING IS A CASE-TABLE ENTRY, NOT A CALL SITE
+ * (2026-11-10, `PARITY-STAGED-BLIND-01`).
+ *
+ * This gate fired on `pinnedClock.test.ts` — the file whose whole job is enforcing the same
+ * rule — the moment a new arm added an absolute `race_date`. Its own detector cases are
+ * string literals reading `generateRulePlan(input, 'paid')`, deliberately unpinned because
+ * that is the shape being detected. **The planStart-less "call" had been sitting there since
+ * the file was written; the new `race_date` supplied the other half of `offends`.**
+ *
+ * This is `design-guard.py`'s recorded defect — *"an ownership arm matching its own comment"*,
+ * and before that *"writing `design-guard.test.py` tripped the coaching guard"*. **A guard that
+ * fires on the file documenting the rule gets switched off, which this repo records as
+ * equivalent to having no guard.**
+ *
+ * 📐 MEASURED BOTH WAYS BEFORE NARROWING, because a looser gate is the real risk here.
+ * Across **673 test files**: `offends` goes **1 → 0** (the one being my own correct file), and
+ * the detection arm's population goes **8 → 4**. All four dropped are files whose only
+ * `generateRulePlan(` occurrences are inside strings — `marketingPlanOwner.test.ts`,
+ * `whenItNotices.test.ts`, `parityProducer.test.ts` and this gate's own subject,
+ * `pinnedClock.test.ts`. **Four false positives removed, no true positive lost.**
+ *
+ * ⚠️ Quote state is tracked per line, and an escape consumes the next character. It blanks
+ * the string's CONTENTS and keeps the quotes, so argument-splitting still sees a token where a
+ * string argument was — `generateRulePlan(input, 'paid', PINNED)` must keep three arguments.
+ */
+function blankStrings(src: string): string {
+  let out = '', quote: string | null = null
+  for (let i = 0; i < src.length; i++) {
+    const c = src[i]!
+    if (quote) {
+      if (c === '\\') { out += '  '; i++; continue }
+      if (c === quote) { quote = null; out += c; continue }
+      out += c === '\n' ? '\n' : ' '
+      continue
+    }
+    if (c === "'" || c === '"' || c === '`') { quote = c; out += c; continue }
+    out += c
+  }
+  return out
+}
+
 function offends(src: string): boolean {
-  return ABSOLUTE_RACE_DATE.test(src) && callsWithoutPlanStart(src) > 0
+  // ⚠️ ORDER IS LOAD-BEARING AND THE FIRST CUT GOT IT WRONG: comments FIRST, then strings.
+  // A docblock explaining the rule contains both a `race_date:` literal and a
+  // `generateRulePlan(…)` in backticks, and backticks are a template-literal opener — so
+  // blanking strings before stripping comments DESYNCS the scanner on the prose, which is the
+  // colour guard's own recorded failure (*"one apostrophe inside a comment put the rest of the
+  // FILE inside a string"*). Strip the prose, then blank the literals.
+  //
+  // ⚠️ And `ABSOLUTE_RACE_DATE` is tested BEFORE blanking: a race date IS a string literal, so
+  // blanking first would make this arm unable to fire at all. Two questions, two inputs.
+  const code = stripComments(src)
+  return ABSOLUTE_RACE_DATE.test(code) && callsWithoutPlanStart(blankStrings(code)) > 0
 }
 
 
@@ -152,8 +204,33 @@ function offends(src: string): boolean {
  */
 const CLOCK_DEPENDENT_BASELINE: Record<string, string> = {}
 
+/**
+ * ⚠️ THE DETECTOR'S OWN FILE IS EXCLUDED FROM ITS OWN CORPUS, AND THE REASON IS STRUCTURAL
+ * (2026-11-10). **A detector's case table is, by construction, a catalogue of the shape it
+ * detects.** The both-directions arms below hold a planStart-less `generateRulePlan(` and an
+ * absolute `race_date` as deliberate fixtures, so scanning this file reports the fixtures.
+ * `design-guard.py` excludes its own test file for exactly this reason, and `falsify-check.py`
+ * had the inverse form — the item id `GATE-FALSIFY-01` contains "FALSIFY", so every commit on
+ * that item silenced its own hook.
+ *
+ * 🔴 THIS IS NOT A SUPPRESSION, AND THE DISTINCTION IS THE WHOLE POINT. Removing a file from
+ * a corpus to go green is how a gate dies; what replaces the coverage here is **stronger**:
+ * `offends` is exercised directly on constructed sources in both directions, so the predicate
+ * is proved rather than merely unexercised against a clean tree. The live corpus is currently
+ * clean, which means scanning it cannot tell a working gate from a disarmed one.
+ */
+const SELF = 'lib/plan/testClockIndependence.test.ts'
+
 describe('TEST-CLOCK-PREPTIME-01 — no NEW wall-clock-dependent engine test', () => {
-  const files = allTestFiles()
+  const files = allTestFiles().filter(f => !f.endsWith(SELF))
+
+  it('the self-exclusion removes exactly one file, and that file exists', () => {
+    // An exclusion that matches nothing is a typo wearing a justification, and one that
+    // matches more than it names is a hole. Both directions, every run.
+    const all = allTestFiles()
+    expect(all.length - files.length, 'exactly one file excluded').toBe(1)
+    expect(all.some(f => f.endsWith(SELF)), 'and it is this file').toBe(true)
+  })
 
   it('discovers the test corpus at all', () => {
     // A zero-length scan would make every assertion below vacuously true, which
@@ -205,6 +282,50 @@ describe('TEST-CLOCK-PREPTIME-01 — no NEW wall-clock-dependent engine test', (
       'TEST-CLOCK-PINSWEEP-01 emptied this. Adding a row needs a reason in the value.')
       .toEqual([])
   })
+
+  // ⚠️ THE NARROWING MUST STILL FIRE. Blanking string literals made this gate quieter, and a
+  // quieter gate is the failure mode, not the fix — so `offends` is exercised in BOTH
+  // directions on constructed sources rather than only on the live corpus, which is currently
+  // clean and therefore cannot distinguish a working gate from a disarmed one.
+  it('🔴 offends, both directions — the narrowing did not disarm it', () => {
+    const REAL = "const TODAY = '2026-09-21'\nconst input = { race_date: '2027-03-28' }\ngenerateRulePlan(input, 'paid')"
+    expect(offends(REAL), 'a REAL planStart-less call beside an absolute race date still offends').toBe(true)
+    expect(offends(REAL.replace("generateRulePlan(input, 'paid')", "generateRulePlan(input, 'paid', TODAY)")),
+      'pinned as the 3rd argument → clean').toBe(false)
+
+    const IN_A_STRING = "const input = { race_date: '2027-03-28' }\nexpect(detect(\"generateRulePlan(input, 'paid')\")).toBe(1)"
+    expect(offends(IN_A_STRING), 'a case-table entry is data, not a call site').toBe(false)
+
+    const IN_A_COMMENT = "const input = { race_date: '2027-03-28' }\n// it used to call generateRulePlan(input, 'paid')"
+    expect(offends(IN_A_COMMENT), 'prose about the defect is not the defect').toBe(false)
+
+    expect(offends("generateRulePlan(input, 'paid')"),
+      'no absolute race date → the wall clock is the intent, and arm 6 owns that case').toBe(false)
+  })
+
+  it('blankStrings does not change a real call\'s argument count, and FIXES a comma in a string', () => {
+    // ⚠️ THE FIRST VERSION OF THIS ARM CLAIMED THE QUOTES WERE LOAD-BEARING — that keeping them
+    // preserves argument boundaries — and it was HOLLOW: mutating the blanker to drop the
+    // closing quote left all ten arms green, because the commas that split arguments sit
+    // OUTSIDE the literals. Found by mutation, not by review. The claim is replaced with what
+    // blanking actually buys, which is falsifiable:
+    //
+    //   a COMMA INSIDE A STRING is not an argument separator, and unblanked it reads as one.
+    //   `generateRulePlan(input, 'a,b')` splits into 3 parts, the third being `b'`, which is
+    //   non-empty — so the call reads as PINNED and the offender is missed.
+    expect(callsWithoutPlanStart("generateRulePlan(input, 'a,b')"),
+      'unblanked: a comma inside a string fakes a third argument — a FALSE NEGATIVE').toBe(0)
+    expect(callsWithoutPlanStart(blankStrings("generateRulePlan(input, 'a,b')")),
+      'blanked: two arguments, correctly an offender').toBe(1)
+
+    // And the ordinary cases still read the same way through the blanker.
+    expect(callsWithoutPlanStart(blankStrings("generateRulePlan(input, 'paid', '2026-09-14')"))).toBe(0)
+    expect(callsWithoutPlanStart(blankStrings("generateRulePlan(input, 'paid')"))).toBe(1)
+    expect(callsWithoutPlanStart(blankStrings("generateRulePlan(input, 'paid', undefined)")),
+      'explicit undefined falls back to nextMonday() exactly as absence does').toBe(1)
+    expect(blankStrings(`const s = 'a\\'b' // kept`), 'an escape consumes the next character')
+      .toContain('// kept')
+  })
 })
 
 /**
@@ -229,12 +350,12 @@ const stripComments = (src: string) => src.replace(/\/\*[\s\S]*?\*\//g, '').repl
 describe('ENVELOPE-CLOCK-01 — no non-test engine caller generates against the wall clock', () => {
   const files = nonTestLibFiles('lib')
   it('discovers the callers at all', () => {
-    const callers = files.filter(f => /generateRulePlan\s*\(/.test(stripComments(readFileSync(f, 'utf8'))))
+    const callers = files.filter(f => /generateRulePlan\s*\(/.test(blankStrings(stripComments(readFileSync(f, 'utf8')))))
     expect(callers.length).toBeGreaterThan(4)
     expect(callers.some(f => f.endsWith('envelopeMeasure.ts'))).toBe(true)
   })
   it('every generateRulePlan call under lib/ (outside tests) passes a planStart', () => {
-    const offenders = files.filter(f => callsWithoutPlanStart(stripComments(readFileSync(f, 'utf8'))) > 0)
+    const offenders = files.filter(f => callsWithoutPlanStart(blankStrings(stripComments(readFileSync(f, 'utf8')))) > 0)
     expect(offenders, "pass the start as the 3rd argument; a measurement helper also pins `todayOverride` (5th)").toEqual([])
   })
 })

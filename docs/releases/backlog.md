@@ -199,7 +199,7 @@ before planning against any number below (an item is a snapshot of the code on t
   runner at 6–8 km/week completes a 2 km continuous run. We have no such runner.
   ⚠️ **Pinned, not endorsed**, in `stagedHmDoor.test.ts` — so a change in either direction is noticed while it is open.
 
-- ✅ **SHIPPED 2026-11-07** `PARITY-GRID-VOLUME-FLOOR-01` — `LOWVOL_EXTRA`: 6 variants × 6 distances × 3 levels = **108 rows, 6,102 → 6,210**, volume and longest run varied INDEPENDENTLY, routed through `runEngine` because `generateRulePlan` refuses every one of them. Falsified: engine-untouched IDENTICAL, cw-6 mutation **60 changed, all `lv-` rows, `volume 15/30/55 = 0`**. 🔻 The main grid is still staged-blind → `PARITY-STAGED-BLIND-01`. ~~Original filing:~~ **`verify:parity` reported IDENTICAL on 6,102 cases for a change
+- ✅ **SHIPPED 2026-11-07** `PARITY-GRID-VOLUME-FLOOR-01` — `LOWVOL_EXTRA`: 6 variants × 6 distances × 3 levels = **108 rows, 6,102 → 6,210**, volume and longest run varied INDEPENDENTLY, routed through `runEngine` because `generateRulePlan` refuses every one of them. Falsified: engine-untouched IDENTICAL, cw-6 mutation **60 changed, all `lv-` rows, `volume 15/30/55 = 0`**. ✅ The main grid is no longer staged-blind — `PARITY-STAGED-BLIND-01` shipped 2026-11-10 and every block now shares `runEngine`. ~~Original filing:~~ **`verify:parity` reported IDENTICAL on 6,102 cases for a change
   that demonstrably re-routes 290 plans, and it was guaranteed to.** `scripts/verify-parity.ts` has
   `const VOLUMES = [15, 30, 55]`: its **lowest weekly volume is 15 km/week**, and §111 Am. 4's affected band is
   **4–8**. The grid cannot express a single affected runner, so IDENTICAL was certain before a line was written.
@@ -216,28 +216,124 @@ before planning against any number below (an item is a snapshot of the code on t
   10 km/week, `measure:envelope` derives the longest run from volume, `cohortGrid` is byte-identical on 41,472 cases.
   **Every standing harness was blind to a change that moves 290 plans; only a purpose-built grid and production saw it.**
 
-- ⚙️ **NO BOARD** `PARITY-STAGED-BLIND-01` — **`verify:parity` hashes `generateRulePlan`, so the entire
-  STAGED / OFFER path is invisible to it wherever `generateRulePlan` refuses.** Found 2026-11-07 while building
-  `PARITY-GRID-VOLUME-FLOOR-01`, and **filed rather than half-built** because it changes what a
-  long-standing check compares.
-  **Measured through both producers at the same inputs:**
-  | input | `generateRulePlan` (what parity hashes) | `runEngine` (what the runner gets) |
+- ✅ **SHIPPED 2026-11-10** `PARITY-STAGED-BLIND-01` — **one producer, and it is `runEngine`: the
+  parity grid now hashes what the RUNNER RECEIVES, not what `generateRulePlan` generates.** Six
+  row-emitting blocks each wrote their own producer and ONE (`LOWVOL_EXTRA`) used `runEngine`, so the
+  file answered two questions at once — the `TIER-OWNER-01` / `DELOAD-OWNER-01` / `SESSION-KM-01`
+  shape. `emit(key, input, tier, planStart)` is now the single owner, with `today` pinned per block.
+  **Measured 2026-11-10:**
+
+  | | before | after |
   |---|---|---|
-  | 42.2 km, cw 6, lr 0 | `REFUSED: LongRunReadinessError` | **`base_build`** |
-  | 42.2 km, cw 6, lr 5 | `REFUSED: BaseVolumeError` | **`base_build`** |
-  | 21.1 km, cw 8, lr 5 | `REFUSED: BaseVolumeError` | **`base_build`** |
-  A refused row stores the refusal **message**, so any change to the staged block it offers is
-  undetectable. ⚠️ **Scoped by `/code-review` the same day: 24 of 36 low-volume combinations refuse;
-  5K and 10K generate 6 of 6, so this is "wherever it refuses", never "at every volume".** **That is why §111 Amendment 4 reported IDENTICAL on 6,102 cases while 80 inputs
-  changed and 14 were rescued from an outright refusal** — those inputs were in range the whole time.
-  🔻 **Scope: §116, §117, §118 and the whole NO-RUNNER-TURNED-AWAY family have never been covered by
-  the parity gate.** The new `LOWVOL_EXTRA` block (**108 rows**) goes through `runEngine` and is the only
-  part that is.
-  ⚠️ **Not a one-line swap.** Routing the main cartesian through `runEngine` changes the main grid's **6,102 rows'**
-  producer, so every baseline hash moves once, and `runEngine` needs `today` pinned as well as
-  `planStart` or the staged path is clock-dependent (`meta.last_updated` already caught that once).
-  **Decide whether parity hashes what the ENGINE generates or what the RUNNER receives** — they are
-  different questions and the file currently answers the first while its name suggests the second.
+  | plan | 4,454 `OK` | 4,490 `PLAN` |
+  | refusal | **1,648 `REFUSED` — a message truncated to 140 chars** | **1,602 `REFUSAL` — the whole body** |
+  | staged | 72 `BASE_BUILD` | **118** |
+
+  🔑 **46 of the main grid's rows were never refusals at all.** They are `base_build` STAGED
+  PLANS — ultras at 15 km/week (16 × 50 km, 6 × 100 km) carrying a `door_km`, a `checkpoint_week`
+  and three weeks of real sessions — and the gate saw one sentence. The other 1,602 gained the
+  refusal object: on the marathon days-warning case the `error` string alone is **211 chars**, so 71
+  were being dropped, along with three `alternatives` and four numeric fields.
+
+  ✅ **FALSIFIED, AND THE DISCRIMINATING MUTATION WAS THE THIRD TRIED.**
+  `BASE_BUILD_ONRAMP_MIN_START_KM` 6 → 7 and `BASE_BUILD_ONRAMP_DELOAD_FREQUENCY` 4 → 5 moved **the
+  same rows under both producers** (60 and 69) — *a falsification aimed at the wrong population*,
+  because `LOWVOL_EXTRA` already covered them. `MAX_WEEKLY_VOLUME_INCREASE_PCT` 10 → 15: **old 3,990
+  rows, new 4,012 — 22 rows the old grid could not see**, every one an ultra at 15 km/week.
+  ⚠️ **And "invisible" overstated it, which the item did too:** on that mutation the old grid DID
+  catch **24** refused rows, because their message quotes the volume it recommends. It was partly
+  sighted on refusals, never fully blind; the 22 are the rows whose staged PLAN moved while their
+  MESSAGE did not.
+
+  🔴 **THE ITEM'S STATED COST WAS FALSE.** It said routing the main cartesian through `runEngine`
+  moves "every baseline hash once". **There is no committed baseline** — `main()` does
+  `copyFileSync(self, …)` into the baseline worktree, so BOTH sides run this file and changing the
+  producer changes both sides together. Proved end to end: **`npm run verify:parity` → IDENTICAL on
+  6,210 cases**, and two consecutive probes byte-identical (determinism, with `today` pinned).
+
+  ✅ **Gate: `lib/plan/parityProducer.test.ts`, 6 arms, every one falsified by mutation** — no
+  `generateRulePlan` in code, exactly one `runEngine(` call site, exactly six `emit(key,` blocks,
+  `today: planStart` and never `new Date()`, and a `THREW` row so a genuine fault stays comparable
+  instead of aborting the probe. ⚠️ **It strips comments first, and that stripper had a hole its own
+  both-directions arm caught:** `(?<!:)//` survives `https://` and then cuts inside `"https://x//y"`.
+  Quote state is tracked per line now — *a `//` inside a STRING is code, not prose*, the sibling of
+  `HOOK-RGBA-COMMENTS-01`. A blank-everything stripper fails **5 of 6** arms rather than passing them.
+
+  🔻 **What this does not prove.** `acceptBaseBuild` is deliberately unset, so the grid hashes what
+  the engine offers UNPROMPTED and not the accepted branch; covering both would double it. Pinning
+  `today` does not make the engine fully deterministic — `applyVdotDiscount` reads the real clock when
+  a benchmark is present, by design — but that was already true of `generateRulePlan`, which owns
+  that call, so this adds no clock dependency. And `verify:parity` is still not in `npm run verify`:
+  it needs a baseline commit and makes worktrees.
+
+  🔴 **AND `/code-review` FOUND THE BIGGER DEFECT UNDERNEATH, WHICH IS NOT IN THE PARITY SCRIPT AT
+  ALL: `runEngine` NEVER FORWARDED `today` TO GENERATION.** It computed
+  `req.today ?? formatDate(new Date())`, used it to compose foundation weeks, then called
+  `generateRulePlan(input, tier, planStart)` with no `todayOverride` — so generation read its own
+  `formatDate(new Date())`. **A caller that pinned `today` got a plan built half against the pin and
+  half against the wall clock.** Measured with `today` pinned and only the clock moved one week:
+  `foundation_weeks_planned` **0 → 3 on 3 of 3 inputs**, beside a `foundation_gap_class` of `none`
+  from the pin — three foundation weeks planned for a gap the same plan calls no gap.
+
+  🔑 **AND THE FIELD THAT MOVED IS PLAN LENGTH.** A 21.1 km fixture at a pinned `planStart` of
+  `2026-09-14`: **16 weeks with `today` pinned, 19 weeks with the wall clock.** So the parity grid
+  has been comparing plans whose LENGTH came from the wall clock, **growing by a week every week**,
+  and reporting IDENTICAL only because both sides grew together. Every historical IDENTICAL was a
+  correct comparison of the grid *as of that day*; the grid was never the fixed thing it claimed.
+
+  ✅ **ZERO PRODUCTION DELTA, PROVED EMPIRICALLY RATHER THAN BY READING.** The one production caller
+  (`app/api/generate-plan/route.ts:265`) passes no `today`, so the forwarded value is the same date
+  `generateRulePlan` computed itself. Replayed the **live call shape byte-for-byte** —
+  `runEngine({ input, tier, acceptBaseBuild, displayUnits })`, no `planStart`, no `today` — across
+  **1,944 cases** (6 distances × 3 race dates × 3 levels × 3 day counts × 3 volumes × 2 goals ×
+  `acceptBaseBuild`): **IDENTICAL**. It is strictly more correct too: one clock read instead of two,
+  so a request straddling midnight can no longer build a plan against two different days.
+
+  📐 **DECLARED RE-MEASUREMENT: `verify:parity` reports 1,233 of 6,210 CHANGED (19.9%), and the
+  containment says it is the pin arriving, not a prescription change.** `race 2026-12-06` =
+  **0 of 2,124** (too close for the window to matter either way), **42.2 km = 0** and **50 km = 0**,
+  while `2027-01-17` (648) and `2027-03-28` (576) carry it; level splits exactly 411/411/411. The
+  grid pins `today` to `2026-09-14` and the wall clock is `2026-11-10` — eight weeks of prep window
+  that the grid believed it had pinned and had not.
+
+  ✅ **Gate: `lib/plan/pinnedClock.test.ts` § PINNED-CLOCK-04, two behavioural arms** (identical plans
+  across a week of wall clock at three day counts; the field named explicitly so a regression says
+  what broke) plus a third proving the fixture is clock-SENSITIVE by asking
+  `plannedFoundationWeeks` — the single owner — rather than reimplementing the boundary. **Both go
+  red against the unfixed engine (2 failed / 7 passed), green with it.**
+  ⚠️ **A LINT COULD NOT HAVE CAUGHT THIS.** `testClockIndependence.test.ts` looks for a fixed date
+  beside a `generateRulePlan(` call with fewer than three arguments; these callers pass a pinned date
+  to **`runEngine`** and never name `generateRulePlan`. The pin was present, correct, and dropped one
+  frame down. **A source gate can only see the call it knows the name of.**
+
+  🔴 **AND THAT GATE THEN FIRED ON THE FILE ENFORCING ITS OWN RULE.** Adding an absolute `race_date`
+  to `pinnedClock.test.ts` completed `offends`, because that file's detector cases are string literals
+  reading `generateRulePlan(input, 'paid')` — deliberately unpinned, since that is the shape being
+  detected. **The planStart-less "call" had been sitting there since the file was written; the new
+  date supplied the other half.** `design-guard.py`'s recorded defect, again. Two fixes, both
+  measured before narrowing: **a `generateRulePlan(` inside a STRING is a case-table entry, not a
+  call site** (across **673 test files**: `offends` **1 → 0**, detector population **8 → 4**, all four
+  dropped being string-only — *four false positives removed, no true positive lost*), and **the
+  detector's own file is excluded from its own corpus**, because a detector's case table is by
+  construction a catalogue of the shape it detects. ⚠️ **Order is load-bearing and the first cut had
+  it wrong:** comments FIRST, then strings — a docblock holds `generateRulePlan(…)` in backticks and
+  a backtick is a template-literal opener, so blanking first desyncs the scanner on prose, which is
+  the colour guard's own recorded failure. ✅ **Not a suppression:** `offends` is now exercised
+  directly on constructed sources in both directions (**4 cases**), which is stronger than scanning a
+  clean corpus that cannot tell a working gate from a disarmed one.
+  🔴 **AND ONE OF MY NEW ARMS WAS HOLLOW, FOUND BY MUTATION.** It claimed the blanker's preserved
+  quotes keep the argument count; dropping the closing quote left all ten arms green, because the
+  commas that split arguments sit OUTSIDE the literals. Replaced with what blanking actually buys and
+  can be falsified: **a comma INSIDE a string fakes a third argument** — unblanked,
+  `generateRulePlan(input, 'a,b')` reads as PINNED and the offender is missed. Identity blanking now
+  fails **4 of 10**.
+
+  📐 **Gates after: 769 files / 7,795 tests · `tsc` 0 · `audit-docs.sh` ALL CLEAN · `backlog:verify`
+  0 · `review:coaching` 94.6% WHOLE PRODUCT, every step passed, no measured rate moved** (which also
+  corroborates the zero-delta claim: the coaching corpora pin `today`, and nothing moved).
+  ⚠️ **`check:slow` then flagged a test from my OWN earlier wave** — `lopsidedWeek.test.ts`'s corpus
+  arm at **6,333 ms**, invisible until `CHECK-SLOW-STALE-01` was fixed the same day it landed.
+  Baselined with a written reason, and the stale `prosePreference` entry dropped: **register 30 → 30.**
 
 - 🏃 **COACHING BOARD** `WEEK1-DELIVERED-CEILING-01` — **week 1 is composed from the runner's LONGEST RUN and never
   consults the week they declared, and that is ADR-022's divergence with its levers scoped to injured runners only.**
@@ -7018,7 +7114,7 @@ than from the item:
 | `MICRO-LABEL-DRIFT-01` | **132** non-conforming | **27** | `NON_CONFORMING_BASELINE`, falling arm asserts exactly 27 |
 | `CONTRACT-COVERAGE-03` | **61** components | **58** | `UNCONTRACTED_BASELINE`, lowered twice since |
 | `CONTRACT-BACKFILL-01` | **17** of 56 routes | **13** of 62 | `audit-docs.sh` live count |
-| `CLAY-PLAN-THREE-FAULTS-01` | fault 2 UNKNOWN | **answered, engine fixed** | `foundationBlock.ts:370–371` |
+| `CLAY-PLAN-THREE-FAULTS-01` | fault 2 UNKNOWN, 15 errors, 0 runs | **all 3 faults gone since 2026-10-09; 0 errors, 16 runs** | the archive trail, re-measured 2026-11-10 |
 | `ICON-RULE-01` | read open | ✅ build declined | `design-rulings.md` § 2 |
 
 ⚠️ **Clay's item is the one with a consequence, not just a stamp.** Its fault 2 said the foundation
@@ -7548,7 +7644,60 @@ the cap and the index disagree about the domain model, and that is the question 
 > copies — or does an on-ramp warrant its own band? A §57 line either way stops the next producer
 > repeating it.
 
-### 🔴 `CLAY-PLAN-THREE-FAULTS-01` — his plan is NOT a recalibration victim; it was born inconsistent *(filed 2026-10-09)* ⚙️ **NO BOARD** *(needs `/zona-debug` first)*
+### ✅ `CLAY-PLAN-THREE-FAULTS-01` — **CLOSED 2026-11-10. All three faults were gone before the item was a day old, and its own "cause unidentified" was two invariant codes inside the plan it described** ⚙️ **NO BOARD**
+
+> ✅ **CLOSED, NO CODE. Re-measured 2026-11-10 against production, and EVERY NUMBER IN THIS ITEM
+> HAD DRIFTED — including the one that mattered.** The runner is `2bce83cd`; his live plan is
+> `3cc7c3a9`. `plan_archive` holds six snapshots of his plan and they settle all three faults:
+>
+> | archived | built by engine of | error-severity violations | fault 1's code |
+> |---|---|---|---|
+> | 2026-10-03 17:26 | 2026-10-02 | **27** | `INV-PLAN-HEADER-PACE-MATCHES-WORK` ×8 |
+> | 2026-10-09 13:24 | 2026-10-02 | **30** | ×8 |
+> | 2026-10-28 13:11 | **2026-10-09** | **1** | — |
+> | 2026-10-28 16:45 | 2026-10-28 | 2 | — |
+> | 2026-11-04 10:11 | 2026-10-28 | **0** | — |
+> | 2026-11-04 10:15 | 2026-11-04 | **0** | — |
+>
+> 🔴 **FAULT 1's CAUSE WAS NEVER UNIDENTIFIED. THE VALIDATOR WAS NAMING IT, BY CODE, THIRTEEN TIMES,
+> IN THE PLAN THIS ITEM WAS WRITTEN ABOUT.** `INV-PLAN-HEADER-PACE-MATCHES-WORK` ×8 (§120 /
+> `HM-ANCHOR-VS-GOAL-01`, live since **2026-09-22**, ten days BEFORE his plan was generated) plus
+> `INV-PLAN-STEP-PACE-FROM-GUIDE` ×5. The header read `4:29–4:42 /km` while the work steps read
+> `5:21–5:34` and `5:30–6:00` — exactly the divergence that invariant exists to catch, caught,
+> and reported every time anything validated the plan. **This item recorded "15 errors" and
+> `/zona-debug` as the next step; it never read WHICH codes.** A count is not a diagnosis.
+> → an item about a stored plan carries its violation CODES, never its error TOTAL.
+>
+> ✅ **All three faults were fixed by ONE regeneration on 2026-10-09 — the day this item was filed.**
+> 30 → 1 errors in a single write. Fault 1 (headers vs steps) and fault 3 (`"Quality: Threshold"` on
+> all 11 quality sessions → `Progressive tempo`, `Over-unders`, `CV intervals`, `Marathon-pace
+> ladder`…) both went in it; fault 2 is `FOUNDATION-PACE-STRIPPED-01`, shipped the same day, visible
+> here as `INV-PLAN-EASY-PACE-PRESENT` ×12 in the 10-09 snapshot and absent after. **The item then
+> sat open for 32 days and was re-diagnosed twice.**
+>
+> 🔑 **AND THE REGENERATION THIS ITEM WAS HOLDING OPEN WAS NEVER NEEDED: HE DID IT HIMSELF.** On
+> 2026-11-04 he changed his race through the wizard — two `enrich-plan` calls at 10:12 and 10:15,
+> both `plan_enrich_server_saved` — moving start `2027-01-04` → `2026-12-07` and race `2027-05-17`
+> → `2027-04-25` (a marathon, `race_distance_km: 42.2`). **Every planning fact in this item is now
+> false:** he has **16 activities**, not 0, so `regenRefusalReason` returns `has-activities` and he
+> is no longer eligible for a silent rewrite at all.
+>
+> 📐 **Live state, measured:** `3cc7c3a9` — **0 error-severity violations**, 91 sessions, 13
+> quality, **0** generic `"Quality:"` labels, **0 of 12** foundation sessions missing pace AND hr.
+> The only quality sessions without a `catalogue_id` are **2 × "5K time trial"**, which is
+> by-design (`Session.catalogue_id`: *"absent on … inline-generated sessions with no row behind"*)
+> and accounts for **13 of the fleet's 32** un-catalogued quality sessions.
+>
+> 🔻 **What this does NOT prove.** Nothing about the other runners: `INV-PLAN-CATALOGUE-LINK` still
+> fires on **2** plans and `INV-PLAN-LABEL-MATCHES-PACE` on **1**, and the fleet carries **222**
+> error-severity violations across **15 of 41** plans. None of those breaches sits in a week still
+> ahead of its runner, so there is nothing to repair — that is `STORED-PLAN-DEBT-REPAIR-01` and
+> `FLEET-INVALID-DEBT-02`, not this. **No gate shipped**, deliberately: the fleet question already
+> has one (`npm run audit:stored` + the daily `/api/ops/plan-audit` cron), and
+> `audit-stored-plans.ts`'s own header states correctly why a production population cannot carry a
+> committed baseline.
+>
+> 🔻 **Kept below: the original diagnosis, wrong twice over and left standing as the record.**
 
 > 🔴 **I HAD CLAY'S STORY WRONG TWICE AND THE ARCHIVE SETTLED IT.** I said he generated a plan and
 > *"later came back and gave us a 5K time"*, so `applyRecalibration` left his steps behind. **Both

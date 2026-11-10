@@ -56,7 +56,8 @@ row when no HK row exists** (ADR-011)"*.
 intended behaviour under the second reading and a violation under the first.
 
 ⚠️ **There is no mechanical gate for INV-DATA-008.** It is named in comments in
-`lib/coaching/weeklyActualLoad.ts`, `healthkitConsolidate.test.ts` and `health/ingest/route.ts`,
+`lib/coaching/weeklyActualLoad.ts`, `lib/coaching/healthkitConsolidate.test.ts` and
+`app/api/health/ingest/route.ts`,
 and nothing enumerates the writers. Measured 2026-11-10, the files that write the table at all:
 `health/ingest` (sanctioned), `healthkitConsolidate` (sanctioned), **`strava/link-activity`
 (upsert)**, `recalibrate-hr` (updates), `race-times` and `post-run-reframe` (reads). **Which of

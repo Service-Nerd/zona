@@ -6,6 +6,50 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-11-10 — PARITY-STAGED-BLIND-01 · one grid file, two producers, two different questions
+**Shipped:** The parity gate now hashes what the runner RECEIVES rather than what `generateRulePlan` generates, through one `emit` owner instead of six hand-written blocks.
+
+**Dev learning:** `generateRulePlan` THROWS on a designed refusal, so the grid stored the exception message — **truncated to 140 characters** — for **1,648 of 6,210 rows**. A string cannot move when the plan behind it changes. Under `runEngine` those rows carry an object: 1,602 refusal bodies (the marathon days-warning `error` alone is 211 chars, so 71 were being dropped, along with three `alternatives` and four numeric fields) and **46 rows that were never refusals at all** — three-week staged base builds for ultra runners at 15 km/week, with a door distance, a checkpoint week and real sessions, and the gate saw one sentence.
+
+**The part I got wrong and had to keep chasing:** my first two falsifications moved **exactly the same rows under both producers** — 60 and 69. Both were base-build on-ramp constants, which the `LOWVOL_EXTRA` block already covered. *A falsification aimed at the wrong population*, which is a lesson already written down in this repo and which I repeated twice in twenty minutes. The third mutation, `MAX_WEEKLY_VOLUME_INCREASE_PCT` 10 → 15, finally discriminated: **old producer 3,990 rows, new 4,012.** Twenty-two rows, every one an ultra at 15 km/week.
+
+**And the honest correction to my own item:** it said the staged path was "invisible" to the gate. It was not. On that mutation the old grid caught **24** refused rows, because the refusal message quotes the volume it recommends — *"Get to about 16 km a week first"*. Partly sighted, never blind. The 22 are the rows whose staged plan moved while their sentence did not.
+
+**Product/creator learning:** the item's headline cost — *"routing the main cartesian through `runEngine` moves every baseline hash once"* — was false. There is no committed baseline: the orchestrator does `copyFileSync(self, …)` into the baseline worktree, so both sides run the same file and changing the producer changes both sides together. **I had filed a reason not to do it, and the reason was in the file I filed it about.** End to end: IDENTICAL on 6,210.
+
+**AI-building learning:** I wrote a source-reading gate whose comment stripper used `(?<!:)//` to spare `https://`. Its own both-directions arm failed immediately on `"https://x//y"` — the *second* slash pair. The fix is the one the colour guard already landed on: track quote state per line, because a `//` inside a string is code, not prose. **The arm that caught it was the one I nearly did not write**, the "does the stripper keep code?" direction, which is exactly the direction a stripper that blanks everything passes for free.
+
+**The honest bit:** five of the six gate arms needed a source mutation to prove, and one of my mutation attempts silently did not apply — caught only because the mutator asserts its target exists before replacing. Without that assert I would have recorded "6 passed" as a falsification of an arm I never tested.
+
+**The finding I did not go looking for:** the review round found a defect one layer below the script. `runEngine` computed `req.today ?? new Date()`, used it to compose foundation weeks, and then called `generateRulePlan(input, tier, planStart)` **without forwarding it** — so generation read its own clock. Every caller that pinned `today` got a plan built half against the pin and half against the wall clock, and the field that moves is **plan length**: 16 weeks pinned, 19 on the clock. **So the parity grid had been comparing plans that grew by a week every week**, reporting IDENTICAL because both sides grew together. Production never saw it — its one caller passes no `today`, which I then proved rather than asserted by replaying the live call shape across 1,944 cases: identical. Declared cost: `verify:parity` 1,233 of 6,210 changed, with `race 2026-12-06` at 0 of 2,124 and marathon and 50K at 0, which is the signature of a pin arriving rather than a prescription moving.
+
+**And then the clock gate fired on the file that enforces the clock rule.** Adding an absolute `race_date` to `pinnedClock.test.ts` completed the offence, because that file's own detector cases are strings reading `generateRulePlan(input, 'paid')` — unpinned on purpose, since that is the shape being detected. The planStart-less "call" had been there since the file was written; my date supplied the other half. **A detector's case table is, by construction, a catalogue of the shape it detects.** Measured before narrowing, across 673 files: treating a call inside a string as data removes four false positives and no true positives.
+
+**Hook material:** A regression gate compared 6,210 plans and reported IDENTICAL. For a quarter of them it was comparing the first 140 characters of an error message — and for a fifth of them it was comparing plans that got a week longer every week.
+
+**Postable?:** yes
+
+---
+
+## 2026-11-10 — CLAY-PLAN-THREE-FAULTS-01 · "cause unidentified" was two invariant codes inside the plan I wrote it about
+**Shipped:** Nothing. The item closed with no code: all three faults were gone before it was a day old, and re-measuring it found every number in it had drifted.
+
+**Dev learning:** `plan_archive` is a time machine and I had never used it as one. Six snapshots of this runner's plan, each holding the state immediately BEFORE a write, date every repair to the minute: 27 errors → 30 → **1** → 2 → 0 → 0, with the step from 30 to 1 landing on a single regeneration on 2026-10-09. I had spent two sessions reasoning about mechanisms when the answer was a table.
+
+**The bit that stings:** the item said fault 1's cause was *"unidentified"* and routed itself to `/zona-debug`. The cause was `INV-PLAN-HEADER-PACE-MATCHES-WORK` ×8 and `INV-PLAN-STEP-PACE-FROM-GUIDE` ×5 — **thirteen violations, naming the exact divergence, inside the plan the item was written about, from an invariant that had been live for ten days before that plan was generated.** The header said `4:29–4:42 /km`; the steps said `5:21–5:34` and `5:30–6:00`. I had recorded *"15 errors"* and never read which ones. **A count is not a diagnosis, and this repo's validator does diagnosis for free.**
+
+**Product/creator learning:** the regeneration the item was holding open was never needed, because the runner did it himself. He changed his race through the wizard on 2026-11-04 — two `enrich-plan` calls three minutes apart — and walked onto the fixed engine without anyone touching his row. He also now has 16 synced runs where the item said 0, which means `regenRefusalReason` would refuse the repair the item was asking for. **An item about a live user's data rots faster than an item about code, because the user keeps moving.**
+
+**AI-building learning:** I burned a very large query dumping an unfiltered `ops_events` window to find two rows. The attribution question — *did a script do this, or did he?* — needed `kind in ('enrich-plan','plan_enrich_server_saved')` and nothing else. Narrow the predicate before you widen the window.
+
+**The honest bit:** this item sat open 32 days and was re-diagnosed twice, both times from a plausible mechanism rather than from the data. The first diagnosis said the foundation compose *"stripped"* the paces; it never set them. The second said fault 2's liveness was *"UNKNOWN"*; the fix had shipped the same day the item was filed, and neither referenced the other for two days. Three wrong readings of one plan, and the plan was queryable the whole time.
+
+**Hook material:** "Cause unidentified" sat on a bug ticket for 32 days. The cause was in the plan's own validation output, 13 times, by name, from a check that shipped 10 days before the bug.
+
+**Postable?:** yes
+
+---
+
 ## 2026-11-10 — AI-ROUTE-HTTP-HOP-CEILING-01 · the cron that waits is a sequential loop, and that sets the number
 **Shipped:** Every site that awaits an AI route over HTTP now bounds the hop and declares a ceiling of its own — five sites, where the item named three.
 

@@ -5,7 +5,7 @@
 //
 // Rule: a test that declares a fixed date constant (`TODAY` / `START`) must hand it to `generateRulePlan` as the
 // third argument. `input.plan_start` alone does not pin the engine's clock.
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, vi } from 'vitest'
 import { readFileSync, readdirSync, statSync } from 'node:fs'
 import { join } from 'node:path'
 
@@ -217,5 +217,95 @@ describe('PINNED-CLOCK-01 — a pinned test pins the engine', () => {
     expect(unpinnedCalls("const TODAY = '2026-09-21'\ngenerateRulePlan(input, 'paid')")).toHaveLength(1)
     expect(unpinnedCalls("const TODAY = '2026-09-21'\ngenerateRulePlan(input, 'paid', TODAY)")).toEqual([])
     expect(unpinnedCalls("generateRulePlan(input, 'paid')"), 'no fixed date → the clock is the intent').toEqual([])
+  })
+})
+
+/**
+ * 🔴 A FOURTH PATH, AND IT IS BEHAVIOURAL RATHER THAN A LINT: `runEngine`'s OWN `today`
+ * REACHED THE FOUNDATION COMPOSITION AND NOT GENERATION (`PARITY-STAGED-BLIND-01` code
+ * review, 2026-11-10).
+ *
+ * The arms above enforce PINNED-CLOCK-01 on `generateRulePlan`'s third argument and warn that
+ * a pinned benchmark still ages. Neither can see the engine's OTHER entry point. `runEngine`
+ * computed `req.today ?? formatDate(new Date())`, used it to compose foundation weeks, and
+ * then called `generateRulePlan(input, tier, planStart)` — no `todayOverride` — so generation
+ * read its own `formatDate(new Date())`.
+ *
+ * 📐 MEASURED, with `today` pinned to `2026-12-14` and only the WALL CLOCK moved one week:
+ * `foundation_weeks_planned` went **0 → 3 on 3 of 3 inputs**, every plan hash changed, and
+ * `foundation_gap_class` stayed `'none'` — from the pin. **A plan built half against the pin
+ * and half against the clock, and internally inconsistent: three foundation weeks planned for
+ * a gap the same plan classifies as none.** Production was unaffected because its one caller
+ * passes no `today`, so both reads hit the same clock; every pinned test and script was not.
+ *
+ * ⚠️ WHY A LINT COULD NOT CATCH IT. `unpinnedCalls` above looks for a fixed date beside a
+ * `generateRulePlan(` call with fewer than three arguments. These callers pass a pinned date to
+ * `runEngine` and never name `generateRulePlan` at all — the pin was present, correct, and
+ * silently dropped one frame down. **A source gate can only see the call it knows the name of.**
+ */
+describe('PINNED-CLOCK-04 — runEngine forwards `today` to generation, not just to composition', () => {
+  const PLAN_START = '2026-12-14'
+  const input = (days_available: number) => ({
+    goal: 'finish', age: 40, resting_hr: 55, max_hr: 180, preferred_long_run_day: 'sun',
+    race_date: '2027-03-28', race_distance_km: 42.2, current_weekly_km: 30,
+    longest_recent_run_km: 10, days_available, user_declared_level: 'intermediate',
+    injury_history: [] as string[],
+  })
+  // Wall-clock fields are excluded; `foundation_weeks_planned` is NOT one of them — that is the
+  // whole point. It is in neither of `verify-parity.ts`'s strip lists either, and it should not be.
+  const VOLATILE = ['generated_at', 'last_updated', 'created_at', 'updated_at']
+  const shape = (p: unknown) =>
+    JSON.stringify(p, (k, v) => (VOLATILE.includes(k) ? undefined : v))
+
+  const planAt = async (wallClock: string, days: number) => {
+    const { runEngine } = await import('./engine')
+    vi.useFakeTimers()
+    try {
+      vi.setSystemTime(new Date(`${wallClock}T09:00:00Z`))
+      const out = runEngine({
+        input: input(days) as never, tier: 'paid',
+        planStart: PLAN_START, today: PLAN_START, displayUnits: 'km',
+      })
+      if (out.kind === 'refusal') throw new Error('refused — the fixture must generate')
+      return out.plan
+    } finally {
+      vi.useRealTimers()
+    }
+  }
+
+  it('a pinned `today` makes generation clock-independent on every sampled input', async () => {
+    for (const days of [3, 4, 5]) {
+      const early = await planAt('2026-11-10', days)
+      const later = await planAt('2026-11-17', days)
+      expect(shape(later), `days_available=${days}: the wall clock moved and the plan must not`)
+        .toBe(shape(early))
+    }
+  })
+
+  it('names the field that moved, so a future regression says what broke', async () => {
+    // Asserting hashes alone would report "something changed". This is the field that did,
+    // and it is the one a reader of the plan would be most misled by.
+    for (const days of [3, 4, 5]) {
+      const early = await planAt('2026-11-10', days)
+      const later = await planAt('2026-11-17', days)
+      expect(later.meta.foundation_weeks_planned).toBe(early.meta.foundation_weeks_planned)
+      // And it agrees with the gap class the SAME plan derived from the pinned date.
+      expect(early.meta.foundation_gap_class, 'a 4-week runway is no gap').toBe('none')
+      expect(early.meta.foundation_weeks_planned, 'no gap means no foundation weeks').toBe(0)
+    }
+  })
+
+  it('the fixture is clock-SENSITIVE, so these arms are not vacuous', async () => {
+    // ⚠️ Without this the two arms above pass on any input the clock cannot reach, which is
+    // most of them. Freezing the clock a week later must change what the UNFIXED engine would
+    // have produced — proved here by showing the two dates straddle the boundary that moved it:
+    // a plan start 4 weeks after 2026-11-10 is inside the no-gap window and 5 weeks after
+    // 2026-11-17 is not, which is exactly why `foundation_weeks_planned` went 0 → 3.
+    // `plannedFoundationWeeks` is the SINGLE OWNER of this number (§91 / CB-ONSET-02), shared
+    // by `computePhases` and `composePlanWithFoundation` precisely so they cannot disagree.
+    // Asking it directly is asking the producer, not a reimplementation of it.
+    const { plannedFoundationWeeks } = await import('./foundationBlock')
+    expect(plannedFoundationWeeks('2026-11-10', PLAN_START), 'no gap at the earlier clock').toBe(0)
+    expect(plannedFoundationWeeks('2026-11-17', PLAN_START), 'a gap at the later clock').toBeGreaterThan(0)
   })
 })

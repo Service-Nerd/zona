@@ -286,9 +286,13 @@ export interface EngineRequest {
   /** Defaults to next Monday, exactly as the route derived it. Overridable so a
    *  test or a support reproduction can pin it. */
   planStart?: string
-  /** Defaults to the wall clock. NOTE this does not make the engine deterministic:
-   *  `applyVdotDiscount` reads the real clock when a benchmark is present, which is
-   *  deliberate (`docs/contracts/engine.md` § The clock). */
+  /** Defaults to the wall clock. Forwarded to `generateRulePlan`'s `todayOverride` as well
+   *  as to the foundation composition, so pinning it pins BOTH — it did not until
+   *  2026-11-10 (`PARITY-STAGED-BLIND-01`), and a pinned caller silently got a plan built
+   *  half against the pin and half against the clock.
+   *  NOTE it still does not make the engine fully deterministic: `applyVdotDiscount` reads
+   *  the real clock when a benchmark is present, which is deliberate
+   *  (`docs/contracts/engine.md` § The clock). That is now the ONLY clock leak. */
   today?: string
 }
 
@@ -331,7 +335,23 @@ export function runEngine(req: EngineRequest): EngineOutcome {
 
   let rulePlan: Plan
   try {
-    rulePlan = generateRulePlan(input, tier, planStart)
+    // 🔴 `today` IS FORWARDED, AND FOR 202 OF 418 SAMPLED PARITY ROWS IT WAS NOT
+    // (`PARITY-STAGED-BLIND-01` code review, 2026-11-10). `req.today` reached the
+    // FOUNDATION COMPOSITION below and stopped there, so generation read its own
+    // `formatDate(new Date())` — `buildRulePlanOnce`'s `todayOverride ?? formatDate(new
+    // Date())`. A caller that pinned `today` got a plan whose `foundation_gap_class` came
+    // from the pinned date and whose `foundation_weeks_planned` came from the wall clock,
+    // and **9 of 162 sampled plans hashed differently a week apart with the engine
+    // untouched**. `EngineRequest.today` documents itself as overridable "so a test or a
+    // support reproduction can pin it" and named ONE residual leak; there were two.
+    //
+    // ✅ ZERO PRODUCTION DELTA, which is why this is a defect fix and not a change.
+    // `today` is `req.today ?? formatDate(new Date())` and the ONLY production caller
+    // (`app/api/generate-plan/route.ts`) passes no `today`, so the forwarded value is the
+    // same date `generateRulePlan` would have computed. It is strictly MORE correct: one
+    // clock read instead of two, so a request straddling midnight can no longer build a
+    // plan against two different days.
+    rulePlan = generateRulePlan(input, tier, planStart, undefined, today)
   } catch (err) {
     // NO-RUNNER-TURNED-AWAY-01 (§116 Am. 9) — a §111 refusal becomes a plan FOR THE RACE: base building to a checkpoint,
     // the race block built only once the checkpoint passes on observed volume. On by default since 2026-10-25; `=0` is the off-switch,

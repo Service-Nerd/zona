@@ -273,10 +273,85 @@ const stripVolatile = (o: any): void => {
 
 async function probe(): Promise<void> {
   // Imported lazily so the orchestrator never loads the engine itself.
-  const { generateRulePlan } = await import('../lib/plan/ruleEngine')
-  // 🔴 `runEngine`, FOR THE LOW-VOLUME BLOCK ONLY, AND THE REASON IS THE WHOLE FINDING BELOW.
   const { runEngine } = await import('../lib/plan/engine')
   const rows: string[] = []
+
+  // 🔴 PARITY-STAGED-BLIND-01 (2026-11-10) — THE SINGLE PRODUCER FOR EVERY ROW, AND IT IS
+  // `runEngine`, NOT `generateRulePlan`.
+  //
+  // Six blocks each wrote out their own `generateRulePlan` + hash + catch, and ONE of them
+  // (`LOWVOL_EXTRA`) wrote `runEngine` instead. So this file answered two different questions
+  // at once — *what does the engine GENERATE* in five blocks, *what does the runner RECEIVE*
+  // in the sixth — which is the parallel-semantics failure this repo has paid for repeatedly
+  // (`TIER-OWNER-01`, `DELOAD-OWNER-01`, `SESSION-KM-01/02`). It is now one owner and one
+  // question: **what the runner receives.**
+  //
+  // 🔑 WHY THAT IS THE RIGHT QUESTION, MEASURED 2026-11-10. `generateRulePlan` THROWS on a
+  // designed refusal, so a refused row stored the exception MESSAGE, **truncated to 140
+  // characters**. **1,648 of 6,210 rows (26.5%) were refusals.** `runEngine` returns
+  // `kind: 'plan' | 'base_build' | 'refusal'` with an OBJECT in every case, so:
+  //
+  //   before: 4,454 OK  · 1,648 REFUSED (a string)  ·  72 BASE_BUILD  ·  36 PLAN
+  //   after : 4,490 PLAN · 1,602 REFUSAL (a body)   · 118 BASE_BUILD
+  //
+  // **46 rows were never refusals at all** — they are `base_build` STAGED PLANS (ultras at
+  // 15 km/week; 16 × 50 km and 6 × 100 km reach a `door_km`, `checkpoint_week` and three
+  // weeks of real sessions), and the gate saw a sentence. The other 1,602 gained the whole
+  // refusal body: on the marathon days-warning case the `error` string alone is 211 chars, so
+  // 71 were dropped, along with three `alternatives` and four numeric fields.
+  //
+  // ✅ FALSIFIED, AND THE DISCRIMINATING MUTATION WAS THE THIRD TRIED.
+  // `BASE_BUILD_ONRAMP_MIN_START_KM` 6 → 7 and `BASE_BUILD_ONRAMP_DELOAD_FREQUENCY` 4 → 5 moved
+  // **the same rows under both producers** (60 and 69) — *a falsification aimed at the wrong
+  // population*, because `LOWVOL_EXTRA` already covered them.
+  // `MAX_WEEKLY_VOLUME_INCREASE_PCT` 10 → 15: **old 3,990 rows, new 4,012 — 22 rows the old
+  // grid could not see**, every one an ultra at 15 km/week.
+  //
+  // ⚠️ AND THE HONEST NUANCE, BECAUSE "INVISIBLE" OVERSTATES IT: on that mutation the old grid
+  // DID catch **24** refused rows, since their refusal message quotes the volume it recommends
+  // ("Get to about 16 km a week first"). It was partly sighted on refusals, never fully blind.
+  // The 22 are the rows whose staged PLAN moved while their MESSAGE did not.
+  //
+  // ⚠️ THE ITEM'S STATED COST WAS FALSE AND IT IS WORTH SAYING WHY. It said routing the main
+  // cartesian through `runEngine` means "every baseline hash moves once". There is no committed
+  // baseline: `main()` does `copyFileSync(self, ...)` into the baseline worktree, so BOTH sides
+  // run this file. Changing the producer changes both sides together and costs nothing.
+  //
+  // ⚠️ `acceptBaseBuild` IS DELIBERATELY UNSET. It is client intent ("I'll take the base
+  // build"), and what the runner receives FIRST is whatever the engine offers unprompted.
+  // Setting it would hash the accepted branch instead, and passing both would double the grid.
+  //
+  // ⚠️ `today` IS PINNED TO `planStart`, per block. `runEngine` defaults it to the wall clock,
+  // and 36 of the low-volume rows carry `meta.uncovered_runway_weeks` derived from it — two
+  // probes either side of a midnight would have reported them as CHANGED. Pinning does NOT make
+  // the engine fully deterministic (`applyVdotDiscount` reads the real clock when a benchmark
+  // is present, by design — `docs/contracts/engine.md` § The clock), but that was already true
+  // of `generateRulePlan`, which owns that call: this change adds no clock dependency.
+  const emit = (key: string, input: unknown, tier: string, planStart: string): void => {
+    try {
+      const out: any = runEngine({ input: input as any, tier: tier as any,
+        planStart, today: planStart, displayUnits: 'km' } as any)
+      const stable = JSON.parse(JSON.stringify(out?.plan ?? out?.body ?? out))
+      stripVolatile(stable)
+      // ⚠️ THE REFUSAL'S `reason` RIDES IN THE STATUS COLUMN, because hashing the body
+      // alone cost the gate the only human-readable output it had: 1,602 rows used to print
+      // their refusal sentence in the CHANGED report and would otherwise print two opaque
+      // hashes (`/code-review`, 2026-11-10). It is part of the compared value on purpose —
+      // a refusal changing its REASON is a change — and `reason` is a short enum
+      // (`warn_unacknowledged`, …), never the message, so it cannot reintroduce the
+      // truncated-string comparison this block exists to replace.
+      const kind = String(out?.kind ?? 'none').toUpperCase()
+      const why = out?.kind === 'refusal' && typeof out?.body?.reason === 'string'
+        ? `:${out.body.reason}` : ''
+      rows.push(`${key}\t${kind}${why}\t${createHash('sha256')
+        .update(JSON.stringify(stable)).digest('hex').slice(0, 16)}`)
+    } catch (e: any) {
+      // A THROW from `runEngine` is a GENUINE fault, never a designed refusal (its own
+      // docblock: "Throws only on a GENUINE fault"). Recording the message keeps a crash
+      // comparable instead of aborting the whole probe.
+      rows.push(`${key}\tTHREW\t${String(e?.message ?? e).replace(/\s+/g, ' ').slice(0, 140)}`)
+    }
+  }
 
   for (const race_distance_km of DISTANCES)
     for (const race_date of RACE_DATES)
@@ -299,16 +374,7 @@ async function probe(): Promise<void> {
                   // The main grid sends no `hard_session_relationship` at all;
                   // 'unset' is the honest label for that, not 'neutral'.
                   'unset'].join('|')
-                try {
-                  const plan: any = generateRulePlan(input as any, tier as any, PLAN_START)
-                  const stable = JSON.parse(JSON.stringify(plan))
-                  stripVolatile(stable)
-                  rows.push(`${key}\tOK\t${createHash('sha256')
-                    .update(JSON.stringify(stable)).digest('hex').slice(0, 16)}`)
-                } catch (e: any) {
-                  // A refusal is a result. Compare the reason, not just the fact.
-                  rows.push(`${key}\tREFUSED\t${String(e?.message ?? e).replace(/\s+/g, ' ').slice(0, 140)}`)
-                }
+                emit(key, input, tier, PLAN_START)
               }
 
   // ── PARITY-HSR-01 block — see HSR_EXTRA above for why this is appended
@@ -332,15 +398,7 @@ async function probe(): Promise<void> {
           }
           const key = [race_distance_km, race_date, user_declared_level, days_available,
             'none', current_weekly_km, tier, goal, hard_session_relationship].join('|')
-          try {
-            const plan: any = generateRulePlan(input as any, tier as any, PLAN_START)
-            const stable = JSON.parse(JSON.stringify(plan))
-            stripVolatile(stable)
-            rows.push(`${key}\tOK\t${createHash('sha256')
-              .update(JSON.stringify(stable)).digest('hex').slice(0, 16)}`)
-          } catch (e: any) {
-            rows.push(`${key}\tREFUSED\t${String(e?.message ?? e).replace(/\s+/g, ' ').slice(0, 140)}`)
-          }
+          emit(key, input, tier, PLAN_START)
         }
 
   // ── PARITY-INJURY-EXTRA block — the four wizard injuries the main grid has
@@ -364,15 +422,7 @@ async function probe(): Promise<void> {
         // block, so the key is unique without a prefix — same argument as DST.
         const key = [race_distance_km, race_date, user_declared_level, days_available,
           injury_history.join('+'), current_weekly_km, tier, 'finish', 'unset'].join('|')
-        try {
-          const plan: any = generateRulePlan(input as any, tier as any, PLAN_START)
-          const stable = JSON.parse(JSON.stringify(plan))
-          stripVolatile(stable)
-          rows.push(`${key}\tOK\t${createHash('sha256')
-            .update(JSON.stringify(stable)).digest('hex').slice(0, 16)}`)
-        } catch (e: any) {
-          rows.push(`${key}\tREFUSED\t${String(e?.message ?? e).replace(/\s+/g, ' ').slice(0, 140)}`)
-        }
+        emit(key, input, tier, PLAN_START)
       }
 
   // ── PARITY-GRID-VOLUME-FLOOR-01 block — see LOWVOL_EXTRA above. Volume and the
@@ -400,39 +450,18 @@ async function probe(): Promise<void> {
         }
         const key = [race_distance_km, race_date, user_declared_level, days_available,
           'none', lv.cw, tier, goal, lv.tag].join('|')
-        // 🔴 THIS BLOCK GOES THROUGH `runEngine`, NOT `generateRulePlan`, AND WITHOUT THAT MOST
-        // OF IT WOULD BE DECORATIVE. Measured 2026-11-07: **24 of the 36 distance x variant
-        // combinations are REFUSED by `generateRulePlan`** (LongRunReadinessError /
-        // BaseVolumeError) while `runEngine` returns a **base_build staged plan** — which is what
-        // the runner receives. ⚠️ **NOT "every one", and the first cut of this comment said every
-        // one:** 5K and 10K generate 6 of 6, so 12 of 36 were never refused at all
-        // (`/code-review`, same day). The claim mattered because `PARITY-STAGED-BLIND-01` was
-        // filed on it.
-        // Hashing the refusal MESSAGE cannot detect a change to the staged block, so the first
-        // cut of this block reported IDENTICAL even with `BASE_BUILD_ONRAMP_MIN_START_KM`
-        // mutated 6 -> 7 directly underneath it.
-        //
-        // ⚠️ AND THAT IS THE DEEPER FINDING, FILED SEPARATELY AS `PARITY-STAGED-BLIND-01`:
-        // the main cartesian above hashes `generateRulePlan`, so **the entire staged / offer
-        // path is invisible to it at EVERY volume** — §111 Am. 4, §117 Am. 7, §116 and §118's
-        // whole NO-RUNNER-TURNED-AWAY family. That is why §111 Am. 4 reported IDENTICAL on
-        // 6,102 cases while 80 inputs changed and 14 were rescued from an outright refusal:
-        // those inputs WERE in range, and all parity ever saw was a refusal message that did
-        // not move. Not fixed here — changing the main grid's producer is its own build.
-        try {
-          // 🔴 `today` PINNED, AND THE FIRST CUT OMITTED IT WHILE THE ITEM I FILED IN THE SAME
-          // COMMIT NAMED THE REQUIREMENT. `runEngine` defaults `today` to `new Date()`, and 36 of
-          // these 108 rows return `kind: 'plan'` carrying `meta.uncovered_runway_weeks` derived
-          // from it — moving today one week changed 12 of 12 sampled rows (6 → 5). Two probes
-          // across a week boundary would have reported 36 false CHANGED. Found by `/code-review`.
-          const out: any = runEngine({ input: input as any, tier: tier as any, planStart: PLAN_START, today: PLAN_START, displayUnits: 'km' } as any)
-          const stable = JSON.parse(JSON.stringify(out?.plan ?? out?.body ?? out))
-          stripVolatile(stable)
-          rows.push(`${key}\t${String(out?.kind ?? 'none').toUpperCase()}\t${createHash('sha256')
-            .update(JSON.stringify(stable)).digest('hex').slice(0, 16)}`)
-        } catch (e: any) {
-          rows.push(`${key}\tTHREW\t${String(e?.message ?? e).replace(/\s+/g, ' ').slice(0, 140)}`)
-        }
+        // ✅ PARITY-STAGED-BLIND-01 (2026-11-10) — THIS BLOCK NO LONGER NEEDS ITS OWN PRODUCER.
+        // It was the ONLY block on `runEngine`, because without it most of it was decorative:
+        // measured 2026-11-07, **24 of its 36 distance × variant combinations are REFUSED by
+        // `generateRulePlan`** (LongRunReadinessError / BaseVolumeError) while `runEngine`
+        // returns a **base_build staged plan**, which is what the runner receives. ⚠️ NOT
+        // "every one", and the first cut of this comment said every one: 5K and 10K generate
+        // 6 of 6, so 12 of 36 were never refused at all (`/code-review`, same day).
+        // Hashing the refusal MESSAGE could not detect a change to the staged block — the
+        // first cut reported IDENTICAL with `BASE_BUILD_ONRAMP_MIN_START_KM` mutated 6 → 7
+        // directly underneath it. **Every block now shares that producer**; `emit` carries the
+        // reasoning and the pinned `today` that this block used to carry alone.
+        emit(key, input, tier, PLAN_START)
       }
 
   // ── PARITY-NO-BENCHMARK-01 block — see BENCHMARK_EXTRA above. Appended rather
@@ -465,15 +494,7 @@ async function probe(): Promise<void> {
         }
         const key = [race_distance_km, race_date, user_declared_level, days_available,
           'none', current_weekly_km, tier, goal, bm.tag].join('|')
-        try {
-          const plan: any = generateRulePlan(input as any, tier as any, PLAN_START)
-          const stable = JSON.parse(JSON.stringify(plan))
-          stripVolatile(stable)
-          rows.push(`${key}\tOK\t${createHash('sha256')
-            .update(JSON.stringify(stable)).digest('hex').slice(0, 16)}`)
-        } catch (e: any) {
-          rows.push(`${key}\tREFUSED\t${String(e?.message ?? e).replace(/\s+/g, ' ').slice(0, 140)}`)
-        }
+        emit(key, input, tier, PLAN_START)
       }
 
   // ── PARITY-DST-01 block — tight runways that cross spring-forward.
@@ -494,15 +515,7 @@ async function probe(): Promise<void> {
         // this block appear nowhere else, so the key is already unique.
         const key = [race_distance_km, race_date, user_declared_level, days_available,
           'none', current_weekly_km, tier, 'finish', 'unset'].join('|')
-        try {
-          const plan: any = generateRulePlan(input as any, tier as any, DST_PLAN_START)
-          const stable = JSON.parse(JSON.stringify(plan))
-          stripVolatile(stable)
-          rows.push(`${key}\tOK\t${createHash('sha256')
-            .update(JSON.stringify(stable)).digest('hex').slice(0, 16)}`)
-        } catch (e: any) {
-          rows.push(`${key}\tREFUSED\t${String(e?.message ?? e).replace(/\s+/g, ' ').slice(0, 140)}`)
-        }
+        emit(key, input, tier, DST_PLAN_START)
       }
 
   rows.sort()
