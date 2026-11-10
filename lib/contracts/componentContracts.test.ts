@@ -62,6 +62,27 @@ function componentProps(raw: string): string[] | null {
   if (defaultName) {
     const d = src.match(new RegExp('export default function ' + defaultName + '\\s*\\(\\s*\\{([\\s\\S]*?)\\}\\s*:'))
     if (d) return splitTopLevel(d[1])
+    // 🔴 A DEFAULT EXPORT WE COULD NOT READ MUST NOT FALL THROUGH TO A SIBLING, AND IT DID
+    // (2026-11-10, writing `zone-rings.md` for `CONTRACT-COVERAGE-03`).
+    //
+    // This is the `sheet.md` / `NavHeightProvider` defect above in a NEW SHAPE. That fix made
+    // the default export the subject when it is DESTRUCTURED; a default export whose parameter
+    // is a plain `props: Props` still dropped to the generic matcher below and read whichever
+    // named function came first. `ZoneRings(props: Props)` is a four-way discriminated union, so
+    // the gate compared its contract against **`ZoneRingsSkeleton`'s** `{ label, chromeless }`
+    // and would have reported every real prop as fictional.
+    //
+    // ⚠️ The lesson is the one this function already records: **a gate that reads the wrong
+    // component does not decline to check, it checks confidently and wrongly.** So when there IS
+    // a default export, the answer is its props or `null` — never a sibling's. `null` makes the
+    // caller's `expect(actual).not.toBeNull()` fire, which is loud and correct.
+    //
+    // 📐 Measured before changing it: of **74** single-component contracts the verdict moves on
+    // exactly **one**, `zone-rings.md`, from `["label","chromeless"]` to `null`. No collateral.
+    // (An empty parameter list is still `[]` — "takes nothing" stays decidable, per the
+    // `SiteFooter` note below.)
+    if (new RegExp('export default function ' + defaultName + '\\s*\\(\\s*\\)').test(src)) return []
+    return null
   }
   // ⚠️ NAMED EXPORTS TOO, and the reason is a real miss. This matched only
   // `export default function`, and every marketing component in this codebase
@@ -71,7 +92,15 @@ function componentProps(raw: string): string[] | null {
   // "only as wide as its list" shape as the three audit checks widened
   // earlier today. Found 2026-09-21 by registering contracts for HrTrace,
   // Section, TabbedPhone and PhoneShell.
-  const m = src.match(/export (?:default )?function \w+\s*\(\s*\{([\s\S]*?)\}\s*:/)
+  // ⚠️ `(?:<[^>]*>)?` — A GENERIC COMPONENT, AND THERE IS EXACTLY ONE IN THE TREE.
+  // `export function SegmentedControl<T extends string>({ … })` did not match, because the
+  // pattern allowed only whitespace between the name and the paren, so writing its contract
+  // produced "could not read props" rather than a comparison. **Third instance of this
+  // function's own "only as wide as its list" lesson** — after default-vs-named and
+  // empty-vs-unparseable. 📐 Measured: `components/` holds **1** generic export, it is
+  // `SegmentedControl`, and the hole was unreachable until that contract existed, which is the
+  // argument for writing them: a contract IS a code review.
+  const m = src.match(/export (?:default )?function \w+\s*(?:<[^>]*>)?\s*\(\s*\{([\s\S]*?)\}\s*:/)
   if (m) return splitTopLevel(m[1])
 
   // 🔴 "TAKES NOTHING" IS AN ANSWER, AND IT USED TO BE INDISTINGUISHABLE FROM
@@ -87,7 +116,7 @@ function componentProps(raw: string): string[] | null {
   // would make every parser failure read as "no props" and silently stop
   // comparing, which is the failure this file already records twice.
   // Found 2026-10-02 writing SiteFooter's contract (CONTRACT-COVERAGE-02).
-  if (new RegExp('export (?:default )?function \\w+\\s*\\(\\s*\\)').test(src)) return []
+  if (new RegExp('export (?:default )?function \\w+\\s*(?:<[^>]*>)?\\s*\\(\\s*\\)').test(src)) return []
   return null
 }
 
@@ -95,9 +124,24 @@ function componentProps(raw: string): string[] | null {
 function splitTopLevel(inner: string): string[] {
   // Split on TOP-LEVEL commas: a one-line destructure and a multi-line one must
   // parse the same, and `state = 'future'` / nested shapes must not split.
+  // 🔴 QUOTE STATE, AND IT WAS MISSING — found 2026-11-10 by this file's own new
+  // both-directions arm, not by review. Depth tracking alone splits a comma INSIDE a string
+  // default: `{ a, b = 'x,y', c }` returned `['a','b','y','c']`, inventing a prop called `y`.
+  // The header above already promised that `state = 'future'` must not split; a comma in the
+  // literal was the case it did not cover.
+  //
+  // ⚠️ THIRD TIME IN ONE DAY for this exact shape — the colour guard's comment scanner, then
+  // `testClockIndependence`'s string blanker, now this. **A character scanner that does not
+  // track quotes is a character scanner with this bug in it.**
+  //
+  // 📐 LATENT, measured before fixing: **0** destructures under `components/` carry a comma
+  // inside a string default. Fixed anyway, because the next one is silent — it would add a
+  // fictional prop to the gate's `actual`, which reads as a contract that forgot a prop.
   const parts: string[] = []
-  let depth = 0, cur = ''
+  let depth = 0, cur = '', quote: string | null = null
   for (const ch of inner) {
+    if (quote) { cur += ch; if (ch === quote) quote = null; continue }
+    if (ch === "'" || ch === '"' || ch === '`') { quote = ch; cur += ch; continue }
     if ('([{<'.includes(ch)) depth++
     else if (')]}>'.includes(ch)) depth--
     if (ch === ',' && depth === 0) { parts.push(cur); cur = ''; continue }
@@ -112,7 +156,10 @@ function contractProps(md: string): string[] | null {
   // Accept both shapes a real component uses: `interface Props {` and
   // `type Props = {`. Matching only one of them makes the gate depend on a
   // stylistic choice in the file it is checking.
-  const block = md.match(/```(?:typescript|ts)\s*\n[\s\S]*?(?:interface \w+ \{|type \w+ = \{)([\s\S]*?)\n\}\s*\n```/)
+  // ⚠️ `(?:<[^>]*>)?` here too, so a contract for a GENERIC component can state the real
+  //    signature (`interface SegmentedControlProps<T extends string> {`) instead of quietly
+  //    dropping the type parameter to satisfy the parser. Same allowance as `componentProps`.
+  const block = md.match(/```(?:typescript|ts)\s*\n[\s\S]*?(?:interface \w+\s*(?:<[^>]*>)?\s*\{|type \w+\s*(?:<[^>]*>)?\s*= \{)([\s\S]*?)\n\}\s*\n```/)
   if (!block) return null
   return block[1].split('\n').map(l => l.trim()).filter(Boolean)
     .filter(l => !l.startsWith('//'))
@@ -187,4 +234,80 @@ describe('COMPONENT-CONTRACT-GATE-01 — component contracts match their compone
       })
     })
   }
+})
+
+/**
+ * 🔴 THE PARSERS, BOTH DIRECTIONS — because the gate above is CORPUS-ONLY and the corpus is
+ * clean (2026-11-10, `CONTRACT-COVERAGE-03`).
+ *
+ * Every arm above reads `docs/contracts/components/` and compares it against the tree. When
+ * both agree, a run cannot distinguish a working `componentProps` from one that returns `null`
+ * for everything, and `componentProps` has now been widened **three times, each time by someone
+ * finding a case by hand**: default-vs-named (`sheet.md`), empty-vs-unparseable (`SiteFooter`),
+ * and a generic export (`SegmentedControl`). ⚠️ **A parser widened by hand three times is a
+ * parser with a fourth shape in it**, and none of those widenings had a unit arm.
+ *
+ * These are the five shapes the function CLAIMS to handle, asserted directly, so the next
+ * widening starts from a table rather than from an incident.
+ */
+describe('COMPONENT-CONTRACT-GATE-01 — the prop parsers, both directions', () => {
+  it('reads `interface Props` and `<Name>Props` ahead of any destructure', () => {
+    expect(componentProps(
+      'interface Props {\n  a: string\n  b?: number\n}\nexport default function X({ ignored }: Props) {}',
+    )).toEqual(['a', 'b'])
+    expect(componentProps(
+      'interface XProps {\n  a: string\n}\nexport default function X({ ignored }: XProps) {}',
+    ), 'the interface named after the default export').toEqual(['a'])
+  })
+
+  it('reads the DEFAULT export\'s destructure, never a sibling\'s', () => {
+    expect(componentProps(
+      'export function Helper({ wrong }: { wrong: string }) {}\n' +
+      'export default function X({ right, alsoRight }: { right: string; alsoRight?: number }) {}',
+    ), 'the default export wins even when a named one comes first').toEqual(['right', 'alsoRight'])
+  })
+
+  it('🔴 a default export it CANNOT read returns null, never a sibling\'s props', () => {
+    // This is the defect `zone-rings.md` found: `ZoneRings(props: Props)` is not destructured,
+    // and the generic matcher below used to pick up `ZoneRingsSkeleton({ label, chromeless })`.
+    // `null` is loud; a sibling's props are confidently wrong.
+    expect(componentProps(
+      'type Props = A | B\n' +
+      'export function XSkeleton({ label, chromeless }: { label?: string; chromeless?: boolean }) {}\n' +
+      'export default function X(props: Props) {}',
+    )).toBeNull()
+    // …and a propless default export is still DECIDABLE, not null.
+    expect(componentProps('export default function X() {}')).toEqual([])
+  })
+
+  it('reads a NAMED export, including a GENERIC one', () => {
+    expect(componentProps(
+      'export function X({ a, b }: { a: string; b?: number }) {}',
+    )).toEqual(['a', 'b'])
+    expect(componentProps(
+      'export function X<T extends string>({ options, value }: { options: T[]; value: T }) {}',
+    ), 'SegmentedControl is the one generic component in the tree').toEqual(['options', 'value'])
+    expect(componentProps('export function X<T>() {}'), 'generic and propless').toEqual([])
+  })
+
+  it('returns null when there is nothing it can read', () => {
+    expect(componentProps('const X = () => null\nexport default X')).toBeNull()
+  })
+
+  it('splits a destructure on TOP-LEVEL commas only', () => {
+    expect(componentProps(
+      "export default function X({ a, b = 'x,y', c }: { a: 1; b?: string; c: 2 }) {}",
+    ), 'a comma inside a default value is not a separator').toEqual(['a', 'b', 'c'])
+  })
+
+  it('contractProps reads both block shapes, and a GENERIC name', () => {
+    const fence = (body: string) => '## Prop interface\n\n```typescript\n' + body + '\n```\n'
+    expect(contractProps(fence('interface XProps {\n  a: string\n  b?: number\n}'))).toEqual(['a', 'b'])
+    expect(contractProps(fence('type XProps = {\n  a: string\n}'))).toEqual(['a'])
+    expect(contractProps(fence('interface XProps<T extends string> {\n  value: T\n}')),
+      'a contract may name a generic component faithfully').toEqual(['value'])
+    expect(contractProps('no fence here'), 'no block at all').toBeNull()
+    expect(contractProps(fence('interface XProps {\n  // a comment is not a prop\n  a: string\n}')))
+      .toEqual(['a'])
+  })
 })

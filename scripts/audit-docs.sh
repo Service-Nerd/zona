@@ -902,7 +902,14 @@ say "── CONTRACTS: a SHARED component with no contract at all ──"
 # This asks the inverse: a component under `components/shared/` that EXPORTS a prop
 # interface and is imported by more than one file should have a contract. Existing
 # debt is declared below so it is visible and cannot grow.
-UNCONTRACTED_BASELINE=49   # ⚠️ 50 -> 49, 2026-11-08 (code review, SAME DAY): a RE-COUNT, not a
+UNCONTRACTED_BASELINE=42   # 49 -> 42, 2026-11-10 (CONTRACT-COVERAGE-03, W5): SEVEN CONTRACTS WRITTEN,
+                           # not seven components deleted — `SegmentedControl` (6 importers), `DurationPicker` (6),
+                           # `ActionRow` (6), `ZoneRings` (5), `CoachNoteBlock` (5), `Chip` (5), `Chevron` (5).
+                           # ⚠️ The pair below only distinguishes the DROP-OUT move, so saying which happened is the
+                           # whole discipline: `git log --diff-filter=A docs/contracts/components/` is the proof.
+                           # 🔴 The item's "highest reach first" list was stale for the THIRD time — six of its eight
+                           # were contracted in W4, and the live top was `SegmentedControl`/`ActionRow`, absent from it.
+                           # ⚠️ 50 -> 49, 2026-11-08 (code review, SAME DAY): a RE-COUNT, not a
                            # payment. Membership now parses the `**Components:**` LIST form as
                            # well as the singular header, so `components/marketing/PhoneFrame.tsx`
                            # — 2 importers, governed only by `marketing-device.md`'s list — stops
@@ -1009,7 +1016,10 @@ UNCONTRACTED_BASELINE=49   # ⚠️ 50 -> 49, 2026-11-08 (code review, SAME DAY)
 # register held at 49 through the change, which is exactly the signature this pair exists to
 # show: a component at zero importers was never inside the `>= 2` population, so a real
 # payment there is still owed.
-UNCONTRACTED_ANY_BASELINE=70
+UNCONTRACTED_ANY_BASELINE=63  # 70 -> 63, 2026-11-10 (CONTRACT-COVERAGE-03, W5): the SAME seven contracts.
+                              # 🔑 BOTH FIGURES MOVED BY SEVEN, which is what a payment at >= 2 importers looks
+                              # like; a component DROPPING below the line would have moved the first and left this
+                              # one FLAT. That is the one move the pair exists to separate.
 
 # ── 🔴 TWO NUMBERS, BECAUSE ONE CANNOT TELL A PAYMENT FROM A DROP-OUT ────────
 #

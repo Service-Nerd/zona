@@ -40,7 +40,12 @@ export interface ActionRowProps {
   icon?: ReactNode
 }
 
-/** 16px chevron. `flexShrink: 0` so a long title never squashes the affordance. */
+// ⚠️ THE DOCBLOCK THAT USED TO SIT HERE DESCRIBED THE CHEVRON — *"16px chevron, `flexShrink: 0`
+// so a long title never squashes the affordance"* — and was left behind when `CHEVRON-OWNER-01`
+// moved the chevron out, so a comment about a 16px SVG read as the documentation for `ActionRow`.
+// The behaviour was never lost (`flexShrink: 0` lives on the `<svg>` in `Chevron.tsx`); only the
+// prose went stale, which is the `BACK-HEADER-OWNER-01` class in a comment. Found 2026-11-10
+// while writing this component's contract — writing a contract is a code review.
 
 export default function ActionRow({ title, subtitle, onClick, divider = false, ariaLabel, icon }: ActionRowProps) {
   return (

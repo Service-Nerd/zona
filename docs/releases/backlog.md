@@ -49,7 +49,7 @@ someone has to remember. It re-derives, for every open item:
 
 | Item | Filed | Live |
 |---|---|---|
-| `CONTRACT-COVERAGE-03` | 58 uncontracted components | **56** — and ⚠️ `UNCONTRACTED_BASELINE`, the derivation it names, **no longer exists** |
+| `CONTRACT-COVERAGE-03` | 58 uncontracted components, 86 in population | **42** at ≥ 2 importers, **63** at any, population **139** — re-derived 2026-11-10 from `audit-docs.sh`'s own `/tmp/_contracted_paths` |
 | `CONTRACT-BACKFILL-01` | 13 of 62 routes | **11 of 71**; **13 of 71** from 2026-11-08, when `AUDIT-CONTRACT-MENTION-01` made the predicate structural |
 | `TAP-TARGET-INLINE-44-01` | 17 inline `minHeight: 44` | **16** |
 
@@ -11818,7 +11818,67 @@ will RAISE the reported debt** — unknown by how much until it is run, and that
 finding, not a regression. 🔻 **Do not fix this while the number is being quoted elsewhere** without
 saying in the same breath that the definition changed, or the jump reads as decay.
 
-#### 🟡 `CONTRACT-COVERAGE-03` — **50** components still have no contract *(P3, filed 2026-10-02, falling register; paid down 2026-11-08)* ⚙️ **NO BOARD**
+#### 🟡 `CONTRACT-COVERAGE-03` — **42** components still have no contract *(P3, filed 2026-10-02, falling register; paid down 2026-11-08 and 2026-11-10)* ⚙️ **NO BOARD**
+
+> 🔄 **PAID DOWN 2026-11-10 (W5): 49 → 42, and `missing_any` 70 → 63.** Seven contracts written,
+> highest reach first — **`SegmentedControl` (6 importers) · `DurationPicker` (6) · `ActionRow` (6)
+> · `ZoneRings` (5) · `CoachNoteBlock` (5) · `Chip` (5) · `Chevron` (5)**.
+> 🔑 **BOTH FIGURES MOVED BY SEVEN**, which is what a payment at ≥ 2 importers looks like; a
+> component dropping below the line would have moved the first and left the second FLAT. That is
+> the one move the pair exists to separate, and `git log --diff-filter=A` is the proof that these
+> were contracts WRITTEN rather than components deleted.
+>
+> 🔴 **THE ITEM'S "HIGHEST REACH FIRST" LIST WAS STALE FOR THE THIRD TIME** — six of its eight were
+> contracted in W4, and the live top (`SegmentedControl`, `ActionRow`) was absent from it entirely.
+> ⚠️ **And its denominator was never re-derived: it says "58 of 86 in-population components"; the
+> population is 139.**
+>
+> 🥇 **FOUR DEFECTS CAME OUT OF THE WRITING, WHICH IS THE ARGUMENT FOR CONTRACTS.**
+> **(1)** `ActionRow.tsx` carried an **orphaned docblock** — *"16px chevron, `flexShrink: 0` so a long
+> title never squashes the affordance"* — sitting immediately above `export default function
+> ActionRow`, left behind when `CHEVRON-OWNER-01` moved the chevron out. The behaviour survived
+> (`flexShrink: 0` is on the `<svg>` in `Chevron.tsx`); only the prose went stale, which is the
+> `BACK-HEADER-OWNER-01` class in a comment.
+> **(2)** 🔴 **THE GATE WAS READING THE WRONG COMPONENT.** `ZoneRings(props: Props)` is not
+> destructured, so `componentProps` fell through to **`ZoneRingsSkeleton`'s** `{ label, chromeless }`
+> — the `sheet.md` / `NavHeightProvider` defect its own comment records fixing, **in a new shape**:
+> that fix made the default export the subject when DESTRUCTURED, and said nothing about one that
+> is not. **A gate that reads the wrong component does not decline to check; it checks confidently
+> and wrongly.** 📐 Measured before changing it: of **74** single-component contracts the verdict
+> moves on exactly **one**. A default export it cannot read now returns `null`, which is loud.
+> **(3)** 🔴 **IT COULD NOT READ A GENERIC EXPORT AT ALL**, so `SegmentedControl<T extends string>`
+> gave *"could not read props"* rather than a comparison — **the third widening of this one parser,
+> each by someone finding a case by hand** (default-vs-named, empty-vs-unparseable, now generic).
+> 📐 `components/` holds **exactly one** generic export and it is this component, **so the hole was
+> unreachable until the contract existed.**
+> **(4)** 🔴 **`splitTopLevel` SPLIT ON A COMMA INSIDE A STRING DEFAULT** — `{ a, b = 'x,y', c }`
+> returned `['a','b','y','c']`, inventing a prop called `y`, while its own header promised
+> `state = 'future'` would not split. **Third instance of the missing-quote-state shape in one day**
+> (the colour guard's scanner, `testClockIndependence`'s string blanker, now this).
+> 📐 **LATENT, measured: 0 destructures under `components/` carry one.** Fixed anyway — the next one
+> adds a fictional prop to the gate's `actual`, which reads as a contract that forgot a prop.
+> ⚠️ **It was found by my OWN new arm, not by review.**
+>
+> ✅ **AND THE GATE HAD NO UNIT ARMS AT ALL — that is the thing left behind.** Every arm read
+> `docs/contracts/components/` against the tree, so **a clean corpus could not distinguish a working
+> parser from one returning `null` for everything**, which is exactly how a parser gets widened three
+> times by hand. **6 new arms, both directions, covering the five shapes the function claims**
+> (`interface Props` / `<Name>Props`, the default export's destructure, a default it cannot read
+> → `null`, a propless default → `[]`, named and generic exports, top-level comma splitting) plus
+> `contractProps`. 📐 **7 falsifications**: each of the four parser changes reverted gives ≥ 1 red,
+> a deleted contract gives **GREW 43/64 against 42/63**, a fictional prop fires naming `fictional`,
+> an omitted prop fires naming `undocumented: ['active']`.
+>
+> 🔻 **`zone-rings.md` is a `**Components:**` contract, deliberately** — it governs two exports and
+> a four-way discriminated union, and the gate's own rule is that pinning a multi-component contract
+> to ONE component's props *"would be a false comparison"*. A flat `interface` block cannot express a
+> union whose required props differ per `state`.
+>
+> 🔻 **What this does not prove.** 42 components at ≥ 2 importers and 63 at any count still have no
+> contract; the top of the remaining queue is 4 importers. The two registers still cannot tell a
+> contract WRITTEN from a component DELETED at the same tier — only the drop-out move — so the
+> commit has to say which, and this one does. And `WaitlistForm.tsx` is still the one component at
+> **zero** importers (`WAITLIST-UNREACHABLE-01`, 💼 SLT).
 
 > 🔄 **PAID DOWN 2026-11-08 (W4): 56 → 50.** Six contracts written, highest reach first, because
 > a contract is a code review and the review is worth most where the blast radius is:

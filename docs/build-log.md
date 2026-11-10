@@ -6,6 +6,30 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-11-10 — CONTRACT-COVERAGE-03 (W5) · seven contracts, and the gate was reading the wrong component
+**Shipped:** Contracts for the seven highest-reach uncontracted shared components. Both gated registers down by seven — 49 → 42 and 70 → 63.
+
+**Dev learning:** "Writing a contract is a code review" has been in my notes for days, and this is the round that proved it with numbers. Four defects, none of them findable by reading the components:
+
+1. `ActionRow.tsx` had a docblock describing a chevron that was extracted out months ago, sitting directly above the component's own export — so a comment about a 16px SVG read as the documentation for `ActionRow`.
+2. **The contract gate was comparing `ZoneRings` against `ZoneRingsSkeleton`.** `ZoneRings(props: Props)` is not destructured, so the parser fell through to whichever named function came first. Its own header comment records fixing this exact class for `sheet.md` — that fix made the default export the subject *when it is destructured*, and said nothing about one that is not. A gate that reads the wrong component doesn't decline to check; it checks confidently and wrongly.
+3. **It could not read a generic export at all.** `SegmentedControl<T extends string>` returned "could not read props". That is the third widening of this one parser, each time by a human finding a case by hand — and `components/` holds exactly one generic export, so the hole was literally unreachable until I wrote that contract.
+4. `splitTopLevel` split on a comma inside a string default: `{ a, b = 'x,y', c }` yielded a prop called `y`. **Third time in one day** I have found a character scanner with no quote state — the colour guard's, the clock gate's, now this one. Latent here (zero live cases), fixed anyway, because the failure mode is inventing a prop that reads as a contract omission.
+
+**The thing I actually left behind:** the gate had **no unit arms**. Every assertion read the contracts directory against the tree, which means a clean corpus cannot tell a working parser from one that returns `null` for everything. That is precisely how a parser gets widened three times by hand without anyone noticing it was narrow. Six both-directions arms now, one per shape the function claims to handle.
+
+**Product/creator learning:** the item's "highest reach first" list was stale for the third time — six of its eight had been contracted in the previous wave — and its denominator said 86 in-population components where the real figure is 139. Re-deriving before planning cost about ten minutes and changed which seven files I opened.
+
+**AI-building learning:** I re-derived the counts, got 49/70, wrote seven contracts, re-derived again and got 49/70. The script was reading `/tmp/_contracted_paths` — an artefact the audit writes — and I had not re-run the audit. **I had fixed exactly that shape (`CHECK-SLOW-STALE-01`, a gate reading a two-day-old report) about an hour earlier in the same session.**
+
+**The honest bit:** two of my falsification mutations silently failed to apply because of backslash escaping between bash and python, and printed nothing. The only reason I noticed is that the mutator asserts its target exists before replacing. Without that assert I would have recorded two arms as falsified that I never tested.
+
+**Hook material:** A gate that validates component documentation spent an unknown number of months comparing one component's contract against a different component's props. It was found by writing documentation.
+
+**Postable?:** yes
+
+---
+
 ## 2026-11-10 — PARITY-STAGED-BLIND-01 · one grid file, two producers, two different questions
 **Shipped:** The parity gate now hashes what the runner RECEIVES rather than what `generateRulePlan` generates, through one `emit` owner instead of six hand-written blocks.
 
