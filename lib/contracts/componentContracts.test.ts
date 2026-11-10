@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { readFileSync, readdirSync, existsSync } from 'fs'
 import { join } from 'path'
+import { splitTopLevelArgs } from '../ops/splitTopLevelArgs'
 
 // COMPONENT-CONTRACT-GATE-01 — `docs/contracts/components/` is checked by
 // something now.
@@ -60,7 +61,12 @@ function componentProps(raw: string): string[] | null {
 
   // The DEFAULT export's destructure, before any named one.
   if (defaultName) {
-    const d = src.match(new RegExp('export default function ' + defaultName + '\\s*\\(\\s*\\{([\\s\\S]*?)\\}\\s*:'))
+    // ⚠️ `(?:<[^>]*>)?` HERE TOO, AND IT WAS MISSING (/code-review, 2026-11-10). The generic
+    // allowance was added to the NAMED-export matcher below in the same commit, and the
+    // `return null` three lines down short-circuits before it — so a GENERIC DEFAULT export
+    // returned `null` where it would have parsed correctly, and the allowance was unreachable
+    // for half the shapes it claimed to cover. **A guard added on one branch is not added.**
+    const d = src.match(new RegExp('export default function ' + defaultName + '\\s*(?:<[^>]*>)?\\s*\\(\\s*\\{([\\s\\S]*?)\\}\\s*:'))
     if (d) return splitTopLevel(d[1])
     // 🔴 A DEFAULT EXPORT WE COULD NOT READ MUST NOT FALL THROUGH TO A SIBLING, AND IT DID
     // (2026-11-10, writing `zone-rings.md` for `CONTRACT-COVERAGE-03`).
@@ -81,7 +87,7 @@ function componentProps(raw: string): string[] | null {
     // exactly **one**, `zone-rings.md`, from `["label","chromeless"]` to `null`. No collateral.
     // (An empty parameter list is still `[]` — "takes nothing" stays decidable, per the
     // `SiteFooter` note below.)
-    if (new RegExp('export default function ' + defaultName + '\\s*\\(\\s*\\)').test(src)) return []
+    if (new RegExp('export default function ' + defaultName + '\\s*(?:<[^>]*>)?\\s*\\(\\s*\\)').test(src)) return []
     return null
   }
   // ⚠️ NAMED EXPORTS TOO, and the reason is a real miss. This matched only
@@ -120,36 +126,16 @@ function componentProps(raw: string): string[] | null {
   return null
 }
 
-/** Destructured names, split on TOP-LEVEL commas only. */
-function splitTopLevel(inner: string): string[] {
-  // Split on TOP-LEVEL commas: a one-line destructure and a multi-line one must
-  // parse the same, and `state = 'future'` / nested shapes must not split.
-  // 🔴 QUOTE STATE, AND IT WAS MISSING — found 2026-11-10 by this file's own new
-  // both-directions arm, not by review. Depth tracking alone splits a comma INSIDE a string
-  // default: `{ a, b = 'x,y', c }` returned `['a','b','y','c']`, inventing a prop called `y`.
-  // The header above already promised that `state = 'future'` must not split; a comma in the
-  // literal was the case it did not cover.
-  //
-  // ⚠️ THIRD TIME IN ONE DAY for this exact shape — the colour guard's comment scanner, then
-  // `testClockIndependence`'s string blanker, now this. **A character scanner that does not
-  // track quotes is a character scanner with this bug in it.**
-  //
-  // 📐 LATENT, measured before fixing: **0** destructures under `components/` carry a comma
-  // inside a string default. Fixed anyway, because the next one is silent — it would add a
-  // fictional prop to the gate's `actual`, which reads as a contract that forgot a prop.
-  const parts: string[] = []
-  let depth = 0, cur = '', quote: string | null = null
-  for (const ch of inner) {
-    if (quote) { cur += ch; if (ch === quote) quote = null; continue }
-    if (ch === "'" || ch === '"' || ch === '`') { quote = ch; cur += ch; continue }
-    if ('([{<'.includes(ch)) depth++
-    else if (')]}>'.includes(ch)) depth--
-    if (ch === ',' && depth === 0) { parts.push(cur); cur = ''; continue }
-    cur += ch
-  }
-  if (cur.trim()) parts.push(cur)
-  return parts.map(p => (p.trim().match(/^([A-Za-z_$][\w$]*)/) || [])[1]).filter(Boolean) as string[]
-}
+/** Destructured names, split on TOP-LEVEL commas only.
+ *
+ * ⚠️ THE SPLITTING IS `splitTopLevelArgs`'s JOB NOW (2026-11-10). This held its own loop, and
+ * its quote-state fix landed here the same day a FOURTH copy of the same hole was found in
+ * `check-clock-drift.ts` by `/code-review`. Two callers splitting an argument list identically
+ * is a missing owner; the NAME extraction stays local because that part differs per caller. */
+const splitTopLevel = (inner: string): string[] =>
+  splitTopLevelArgs(inner)
+    .map((p: string) => (p.trim().match(/^([A-Za-z_$][\w$]*)/) || [])[1])
+    .filter(Boolean) as string[]
 
 /** Prop names the CONTRACT documents, from its first fenced interface block. */
 function contractProps(md: string): string[] | null {
@@ -288,6 +274,17 @@ describe('COMPONENT-CONTRACT-GATE-01 — the prop parsers, both directions', () 
       'export function X<T extends string>({ options, value }: { options: T[]; value: T }) {}',
     ), 'SegmentedControl is the one generic component in the tree').toEqual(['options', 'value'])
     expect(componentProps('export function X<T>() {}'), 'generic and propless').toEqual([])
+  })
+
+  it('— and a GENERIC DEFAULT export, which the first cut could not read', () => {
+    // /code-review, 2026-11-10: the generic allowance went on the NAMED matcher only, and the
+    // `return null` for an unreadable default export fired first — so these two cases returned
+    // `null`. The table covered a generic NAMED export and nothing else, which is why it passed.
+    expect(componentProps(
+      'export default function X<T extends string>({ a, b }: { a: T; b?: number }) {}',
+    )).toEqual(['a', 'b'])
+    expect(componentProps('export default function X<T>() {}'),
+      'generic, default, propless').toEqual([])
   })
 
   it('returns null when there is nothing it can read', () => {

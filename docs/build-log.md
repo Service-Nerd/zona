@@ -6,6 +6,29 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-11-10 — W16-REVIEW-ROUND-01 · five findings, all mine, and one of them would have crashed CI
+**Shipped:** The code review I had not run on five commits, then its five findings fixed and gated.
+
+**The honest start:** the founder asked whether code review had run. It had run **once**, on one of seven items, and five code commits had none — against a standing instruction that says every build gets regression tests and code review. Saying so was the only option, and running it immediately produced five findings, every one mine.
+
+**The one that mattered most:** `check:clock` writes a generated vitest config into `scripts/.tmp/`, which is **gitignored and therefore absent from a fresh checkout** — and I had added `check:clock` to `verify:ci` in the same commit. Every CI run would have died with `ENOENT: mkdtemp` before probing a single shift. I confirmed it by moving the directory aside and watching it throw. **A gate that cannot run in CI is not a gate**, and this one would have taken the whole job down with it. One `mkdirSync(…, { recursive: true })`.
+
+**The one that is a genuine behaviour change I asserted was none.** I switched the recal repair driver to the kind-dispatching owner *and* narrowed it to `severity === 'error'` in the same line, under a comment claiming the verdict sets were identical. They are not: `INV-PLAN-HEADER-PACE-MATCHES-WORK` is `warn` under §22's goal-pace override, and `matchHeadersToSteps` dispatches on the code alone — so on **2 of 9** archived snapshots that warn is the *only* repairable verdict, and one runner’s header/step mismatch would never have been repaired.
+
+**And the measurement missed it because it shared the bug.** My replay filtered to error severity before counting repairable codes — exactly the narrowing I had wrongly applied to the driver — which is why I published **7** snapshots when the answer is **9**. Corrected in six files. *Measure with the composition the producer calls*, and that includes measuring the thing you are about to change with the same lens you are about to change it to.
+
+**The one that is funny and not:** my argument reader in `check-clock-drift.ts` tracked bracket depth and not quote state — **the fourth such scanner in one day, and the third I had fixed personally, written into the same diff as the fix for the third.** So the two that split argument lists now share `lib/ops/splitTopLevelArgs.ts`. Measured first: the hole changed the count on exactly one file and dropped nothing out of a population, so it was latent in effect and real in kind.
+
+**And one that made a fix I had just added unreachable:** the generic-export allowance went on the named-export matcher, while the `return null` for an unreadable default export fires first — so a generic *default* export still returned `null`, and my new unit table happened to cover only the named case. **A guard added on one branch is not added.**
+
+**The honest bit:** five findings in five commits, after four rounds of falsifying my own arms. Falsifying an arm proves the arm bites; it says nothing about whether the thing beside it is correct, whether the comment above it is true, or whether it can run on a machine that is not mine. Those are what review is for, and skipping it for five commits was my decision, not an oversight.
+
+**Hook material:** I added a gate to CI in the same commit that made it impossible for CI to run it. Found by the code review I had skipped for five commits.
+
+**Postable?:** yes
+
+---
+
 ## 2026-11-10 — PINNED-CLOCK-RUNWAY-01 · the item asked me to pin 161 call sites; I moved the clock instead
 **Shipped:** `npm run check:clock` — a harness that re-runs engine tests at a shifted wall clock.
 
@@ -30,7 +53,7 @@ it specific, no polish. The content system adds the voice.
 ## 2026-11-10 — RECAL-REPAIR-DRIVER-VALIDATOR-01 · the measurement the item said was impossible was in plan_archive
 **Shipped:** The last validator exemption retired. The `EXEMPT` map is empty.
 
-**Dev learning:** the item was explicit that it could not be done from here: the repair remedies *"were calibrated against this exact set (9 error-severity violations to 1) on live plans, and that cannot be re-measured from a dev machine."* That was wrong, and the reason is the same insight that closed CLAY earlier today — **`plan_archive` holds the state immediately before every write.** The pre-repair plans are all still there. Replayed across all 80 snapshots: 7 carry a repairable code, and on every one the two validators produce **identical verdict sets**, including the 16-code and 13-code calibration cases.
+**Dev learning:** the item was explicit that it could not be done from here: the repair remedies *"were calibrated against this exact set (9 error-severity violations to 1) on live plans, and that cannot be re-measured from a dev machine."* That was wrong, and the reason is the same insight that closed CLAY earlier today — **`plan_archive` holds the state immediately before every write.** The pre-repair plans are all still there. Replayed across all 80 snapshots: 9 carry a repairable code, and on every one the two validators produce **identical verdict sets**, including the 16-code and 13-code calibration cases.
 
 **And comparing verdict sets beat replaying the remedies.** My first attempt actually ran `repairPlan` both ways and crashed, because it needs a real pace object I did not have. Then the obvious thing: `repairPlan` is a pure function of the verdicts it is handed. Identical input, identical output, by construction — a stronger claim than two matching outputs, and it needed no fixture at all.
 
@@ -40,7 +63,7 @@ it specific, no polish. The content system adds the voice.
 
 **The gate that keeps earning its place:** `storedPlanDebt.test.ts`'s stale-exemption arm fired twice today, once per retired exemption. It exists because of a recorded lesson — *verify the exemption's justification, not the stamp* — and it is the reason neither exemption was left behind as dead weight. Then the map went empty, which makes that arm vacuous, so it needed a new arm asserting the emptiness is deliberate.
 
-**The honest bit:** all 7 archived cases are race plans, where the dispatch is a no-op by construction. So the measurement proves the switch changes nothing on any plan the driver has ever run on — it does not prove the dispatch is correct for a base-build plan carrying a repairable code. No such plan has ever existed, and I said so rather than letting "identical on all 7" stand in for more than it is.
+**The honest bit:** all 9 archived cases are race plans, where the dispatch is a no-op by construction. So the measurement proves the switch changes nothing on any plan the driver has ever run on — it does not prove the dispatch is correct for a base-build plan carrying a repairable code. No such plan has ever existed, and I said so rather than letting "identical on all 9" stand in for more than it is.
 
 **Hook material:** A ticket said its own verification was impossible from a dev machine. The data it needed was in a table called `plan_archive`, which exists specifically to hold the state before every write.
 

@@ -1360,7 +1360,7 @@ commit, and re-run `lib/plan/enrichRepair.test.ts` plus the golden reframe suite
 🔴 **THE ITEM'S BLOCKING REASON WAS FALSE, AND THE ARCHIVE PROVED IT.** It said the remedies
 *"were calibrated against this exact set (9 error-severity violations → 1) on live plans, and that
 cannot be re-measured from a dev machine"*. **`plan_archive` holds the pre-repair state of every
-write.** Replayed across all **80** archived snapshots: **7 carry a REPAIRABLE code, and on every
+write.** Replayed across all **80** archived snapshots: **9 carry a REPAIRABLE code, and on every
 one the two verdict sets are IDENTICAL** — the full error set AND the driver's input (6, 13, 8,
 **16**, 13, 8, 7 repairable verdicts each, which includes the 16- and 13-code calibration cases).
 
@@ -13039,7 +13039,7 @@ guard which cries wolf gets disabled, which is the same as having no guard.
 
 ✅ **`REENRICH-REPAIR-VALIDATOR-KIND-01`** — both sides onto `validateSavedPlan` in one commit. 📐 **37 of 41 stored plans get an IDENTICAL verdict** (for a race plan `validateSavedPlan` **is** `validatePlan`); the 4 that differ are all `base_build` with **no AI copy**. Provably inert today. 🔴 The item's population was incomplete — the LIVE `generate-plan` route calls the ladder too.
 
-✅ **`RECAL-REPAIR-DRIVER-VALIDATOR-01`** — 🔑 **the item said the calibration *"cannot be re-measured from a dev machine"*. `plan_archive` holds the pre-repair state of every write.** Replayed across all **80** snapshots: **7 carry a repairable code and on every one the two verdict sets are IDENTICAL**, including the 16- and 13-code calibration cases. ⚠️ **And the dry-run diff it asked for is unsatisfiable — 41 plans, 0 stale steps, so production is 0 → 0.** The `EXEMPT` map is **empty** now; both exemptions retired the same day, and the stale-exemption arm noticed each time.
+✅ **`RECAL-REPAIR-DRIVER-VALIDATOR-01`** — 🔑 **the item said the calibration *"cannot be re-measured from a dev machine"*. `plan_archive` holds the pre-repair state of every write.** Replayed across all **80** snapshots: **9 carry a repairable code and on every one the two verdict sets are IDENTICAL**, including the 16- and 13-code calibration cases. ⚠️ **And the dry-run diff it asked for is unsatisfiable — 41 plans, 0 stale steps, so production is 0 → 0.** The `EXEMPT` map is **empty** now; both exemptions retired the same day, and the stale-exemption arm noticed each time.
 
 ✅ **`PINNED-CLOCK-RUNWAY-01`** — a **harness**, not the 161-site sweep. 🔴 **The clock was actually moved and nothing broke: all 51 at-risk files pass at +3 through +365 days**, so the sweep was churn; the incident was real and already pinned, so the class is LATENT and a harness says the day it stops being. 🔴 **The falsification changed the default:** a planted runway flip is caught at **+7d and MISSED at +30d and +365d** — my own *"a shift only finds what a shift reaches"* limit was live in my own two-shift default.
 

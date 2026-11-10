@@ -38,9 +38,10 @@
  *   npm run check:clock -- --all     # every engine-calling test file
  *   npm run check:clock -- --days 7,30,90
  */
-import { readFileSync, readdirSync, statSync, writeFileSync, mkdtempSync } from 'node:fs'
+import { readFileSync, readdirSync, statSync, writeFileSync, mkdtempSync, mkdirSync, rmSync } from 'node:fs'
 import { join } from 'node:path'
 import { execFileSync } from 'node:child_process'
+import { callArgs } from '../lib/ops/splitTopLevelArgs'
 
 const ALL = process.argv.includes('--all')
 const daysArg = process.argv[process.argv.indexOf('--days') + 1]
@@ -65,21 +66,18 @@ const strip = (s: string) => s
   .replace(/\/\*[\s\S]*?\*\//g, m => m.replace(/[^\n]/g, ' '))
   .replace(/\/\/[^\n]*/g, m => m.replace(/[^\n]/g, ' '))
 
-/** A `generateRulePlan` call with a 3rd argument and no 4th/5th — i.e. `planStart` pinned,
- *  `todayOverride` absent. Brace-matched, because guessing where a call ends is a defect this
- *  repo has paid for; `runEngine` is read by its named `today` key. */
+/** A `generateRulePlan` call with a 3rd argument and no 5th — i.e. `planStart` pinned,
+ *  `todayOverride` absent. `runEngine` is read by its named `today` key.
+ *
+ *  ⚠️ ARGUMENT SPLITTING IS `callArgs`'s JOB, NOT THIS FILE'S. The first cut wrote its own
+ *  depth-tracking splitter with no quote state — the FOURTH such scanner in one day, found by
+ *  `/code-review` in the same diff that fixed the third. 📐 Measured: the hole changes the count
+ *  on exactly one file (`testClockIndependence.test.ts`, 6 against 4, whose case table holds
+ *  `generateRulePlan(…)` inside strings), and no file dropped out of a population — latent in
+ *  effect, real in kind, and a `)` inside a string would have truncated a call silently. */
 function unpinnedEngineCalls(src: string): number {
   let n = 0
-  for (const m of Array.from(src.matchAll(/generateRulePlan\s*\(/g))) {
-    const open = m.index! + m[0].length - 1
-    let depth = 0, cur = '', args: string[] = []
-    for (let i = open; i < src.length; i++) {
-      const c = src[i]!
-      if ('([{'.includes(c)) { depth++; if (depth > 1) cur += c }
-      else if (')]}'.includes(c)) { depth--; if (depth === 0) { args.push(cur); break } cur += c }
-      else if (c === ',' && depth === 1) { args.push(cur); cur = '' }
-      else cur += c
-    }
+  for (const args of callArgs(src, 'generateRulePlan')) {
     const fifth = (args[4] ?? '').trim()
     if (args.length >= 3 && (fifth === '' || fifth === 'undefined')) n++
   }
@@ -119,6 +117,13 @@ if (population.length < 10) {
 // the harness reported `✗ +30d (no tally)`, i.e. a RED RESULT FROM A BROKEN HARNESS, which reads
 // exactly like a real finding. `scripts/.tmp/` is gitignored and inside the project, so the
 // generated config resolves and nothing is committed.
+// ⚠️ `mkdirSync(…, { recursive: true })` FIRST, AND WITHOUT IT THIS CRASHED CI (/code-review,
+// 2026-11-10). `scripts/.tmp/` is GITIGNORED, so it does not exist in a fresh checkout — and
+// `check:clock` was added to `verify:ci` in the same commit, which the workflow runs. Every CI
+// run would have died with `ENOENT: mkdtemp` before probing a single shift. **A gate that
+// cannot run in CI is not a gate**, and this one would have taken the whole job down with it.
+// Confirmed by moving the directory aside and watching it throw.
+mkdirSync(join(process.cwd(), 'scripts', '.tmp'), { recursive: true })
 const dir = mkdtempSync(join(process.cwd(), 'scripts', '.tmp', 'clock-'))
 const setup = join(dir, 'shift.mjs')
 writeFileSync(setup, `const R = Date
@@ -149,6 +154,12 @@ const run = (shiftDays: number) => {
     return { ok: false, out: `${err.stdout ?? ''}${err.stderr ?? ''}` }
   }
 }
+
+// ⚠️ REMOVED ON EVERY EXIT PATH, including the two `process.exit`s below. Without this each
+// `verify` run left another `scripts/.tmp/clock-*` behind (/code-review, 2026-11-10) — harmless
+// but unbounded, and gitignored clutter is the kind nobody notices accumulating.
+const cleanup = () => { try { rmSync(dir, { recursive: true, force: true }) } catch { /* best effort */ } }
+process.on('exit', cleanup)
 
 let failed = 0
 for (const d of SHIFTS) {

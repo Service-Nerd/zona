@@ -193,8 +193,8 @@ describe('STORED-PLAN-VALIDATOR-INPUT-01 — stored-plan scripts do not hand-bui
    * calibration *"cannot be re-measured from a dev machine"*.
    *
    * 🔴 IT COULD: `plan_archive` HOLDS THE PRE-REPAIR STATE. Replayed across all **80**
-   * archived snapshots — **7 carry a REPAIRABLE code, and on every one the two verdict sets are
-   * IDENTICAL**, both the full error set and the driver's input (6/13/8/16/13/8/7 repairable
+   * archived snapshots — **9 carry a REPAIRABLE code, and on every one the two verdict sets are
+   * IDENTICAL**, both the full error set and the driver's input (1/6/13/8/16/13/8/1/7 repairable
    * verdicts, including the 16- and 13-code calibration cases). `repairPlan` is a pure function
    * of the verdicts it is handed, so identical input means identical remedies by construction.
    *
@@ -250,6 +250,26 @@ describe('STORED-PLAN-VALIDATOR-INPUT-01 — stored-plan scripts do not hand-bui
       + 'applies §116\'s kind dispatch AND the meta-first level merge, neither of which a '
       + 'hand-built input gets. An exemption goes in EXEMPT with its reason:\n' + strays.join('\n'),
     ).toEqual([])
+  })
+
+  it('🔴 the repair DRIVER is not severity-filtered — a warn is still repaired', () => {
+    // 🔴 CORRECTED BY /code-review, 2026-11-10. The driver was switched to the owner AND
+    // narrowed to `severity === 'error'` in one line, under a comment asserting the verdict sets
+    // were identical. They were not: `INV-PLAN-HEADER-PACE-MATCHES-WORK` is `warn` under §22's
+    // goal-pace override and `matchHeadersToSteps` dispatches on the CODE alone, so on **2 of 9**
+    // archived snapshots that warn is the ONLY repairable verdict — runner `ed0ebddf` would never
+    // have been repaired at all.
+    //
+    // ⚠️ And my own measurement missed it because it shared the bug: the replay filtered to
+    // errors before counting repairable codes, which is why the commit first said 7 snapshots
+    // instead of 9. *Measure with the composition the producer calls.*
+    const src = readFileSync(join(process.cwd(), 'scripts/recal-live-repair.ts'), 'utf8')
+      .replace(/\/\*[\s\S]*?\*\//g, m => m.replace(/[^\n]/g, ' '))
+      .replace(/\/\/[^\n]*/g, m => m.replace(/[^\n]/g, ' '))
+    const driver = src.match(/repairPlan\(after,[\s\S]{0,160}?\)\n/)
+    expect(driver, 'the repairPlan driver call must be findable').toBeTruthy()
+    expect(driver![0], 'the driver must receive EVERY severity — a warn-only repairable verdict '
+      + 'is the whole of some runners\' debt').not.toMatch(/severity/)
   })
 
   it('🔴 an EMPTY exemption map is the goal, and the arm above must not be vacuous', () => {

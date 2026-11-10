@@ -423,8 +423,8 @@ async function main() {
         //
         // 🔴 AND THE ITEM SAID THE CALIBRATION "CANNOT BE RE-MEASURED FROM A DEV MACHINE".
         // IT CAN — `plan_archive` HOLDS THE PRE-REPAIR STATE. Replayed across all 80 archived
-        // snapshots: **7 carry a REPAIRABLE code, and on every one the two verdict sets are
-        // IDENTICAL** — the full error set AND the driver's input (6/13/8/16/13/8/7 repairable
+        // snapshots: **9 carry a REPAIRABLE code, and on every one the two verdict sets are
+        // IDENTICAL** — the full error set AND the driver's input (1/6/13/8/16/13/8/1/7 repairable
         // verdicts each, including the 16- and 13-code calibration cases). `repairPlan` is a
         // pure function of the verdicts it is handed, so identical input means identical
         // remedies by construction, which is a stronger proof than replaying them.
@@ -443,7 +443,16 @@ async function main() {
         // ⚠️ I ONCE CHANGED THIS AND WROTE "deliberately the same call as before" NEXT TO THE
         // CHANGE. It was not the same call. `make the fix read the check's verdicts` cuts both
         // ways: change the check and you have changed the fix.
-        const r = repairPlan(after, validateRepairedPlan(before).filter((v: Violation) => v.severity === 'error'), nowPace)
+        // 🔴 ALL SEVERITIES, AND NARROWING TO `error` WAS A BEHAVIOUR CHANGE I ASSERTED WAS NONE
+        // (/code-review, 2026-11-10). The original passed `validatePlan(before, gi)` whole, warns
+        // included, and `matchHeadersToSteps` dispatches on the CODE alone.
+        // 📐 Measured on the archive: `INV-PLAN-HEADER-PACE-MATCHES-WORK` is `warn` under §22's
+        // goal-pace override, and on **2 of 9** snapshots it is the ONLY repairable verdict — so
+        // runner `ed0ebddf`'s header/step mismatch would simply never have been repaired.
+        // ⚠️ AND MY OWN MEASUREMENT MISSED IT BECAUSE IT SHARED THE BUG: the replay filtered to
+        // errors before counting repairable codes, which is why the commit said **7** snapshots
+        // carry one when the answer is **9**. *Measure with the composition the producer calls.*
+        const r = repairPlan(after, validateRepairedPlan(before), nowPace)
         console.log(`  repairs: ${r.steps} stale step(s) · ${r.headers} header(s) matched to their steps`
           + ` · ${r.stripped} effort-governed pace(s) REMOVED · ${r.segments} long-run segment(s) re-priced`)
       } else {
