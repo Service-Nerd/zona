@@ -39,6 +39,32 @@ All fields optional. Signals determine which trigger fires.
 }
 ```
 
+## Response — 200 (DEDUPLICATED: this adjustment is already in the ledger)
+
+```json
+{ "adjustment": { "id": "uuid", "status": "auto_applied", ... }, "requires_confirmation": false, "deduplicated": true }
+```
+
+🔴 **`deduplicated` exists because the guard that was meant to prevent this could not see it**
+(`ADJUST-LEDGER-DUPLICATE-01`, 2026-11-10). The route already returned an existing **pending**
+adjustment rather than creating a duplicate — and **an auto-applied adjustment never passes
+through `pending`**, so the only status that guard protected was the one that already blocks
+itself, while every status that actually duplicated in production (`auto_applied`, `reverted`)
+was unguarded.
+
+The match is on **`trigger_type` + `trigger_detail`** among the week's live rows
+(`lib/coaching/adjustmentLedger.ts → duplicateOf`), and the payload is the measured
+discriminator rather than a design preference: of the five sub-ten-second pairs in production,
+**four are distinct moves** (week 21 `wed → thu` then `tue → wed` two seconds later — a runner
+shuffling two sessions in one interaction) and **one is a true duplicate** (week 6 `zone_drift`,
+identical payload). ⚠️ **A unique index on `(user_id, week_n, trigger_type)` would have forbidden
+all four of those real moves.**
+
+⚠️ **`requires_confirmation` mirrors the EXISTING row's status, not the new detection's**
+(`existing?.status === 'pending'`) — a deduplicated response describes a row already in the
+ledger, so an `auto_applied` or `reverted` row answers `false` and a `pending` one `true`. Clients
+may ignore `deduplicated` safely: it is additive, and reports why no new row was written.
+
 ## Response — 200 (no adjustment needed)
 
 ```json
