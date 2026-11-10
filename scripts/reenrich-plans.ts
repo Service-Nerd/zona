@@ -30,7 +30,11 @@ import { judgeEnrichHealth, enrichmentStateOf, type EnrichStateRow } from '../li
 import { getUserTier } from '../lib/trial'
 import { PlanSchema } from '../lib/plan/schema'
 import type { Plan, Session } from '../types/plan'
-import { validatePlan } from '../lib/plan/invariants'
+// 🔴 REENRICH-REPAIR-VALIDATOR-KIND-01 (2026-11-10) — the BASELINE must use the same
+// function as `repairEnrichedCopy` does internally, so both move together. See that module's
+// header for the measurement (37 of 41 stored plans identical; the 4 that differ are all
+// base_build with no AI copy).
+import { validateSavedPlan } from '../lib/plan/validateStoredPlan'
 import { errorBaseline } from '../lib/plan/enrichAttribution'
 import { repairEnrichedCopy } from '../lib/plan/enrichRepair'
 import { hasAiCopy } from '../lib/plan/enrichmentState'
@@ -187,7 +191,7 @@ async function main() {
     // which `generator_input` does not always carry (the same construction as storedPlanRegen).
     const rule = JSON.parse(before) as Plan
     const vInput = { ...input, plan_start: (plan.meta as { plan_start?: string }).plan_start } as never
-    const repair = repairEnrichedCopy(res.plan, rule, errorBaseline(validatePlan(rule, vInput)), vInput)
+    const repair = repairEnrichedCopy(res.plan, rule, errorBaseline(validateSavedPlan(rule, vInput)), vInput)
     if (repair.outcome === 'full_revert') {
       console.log(`   STILL FAILS: the copy breaks ${repair.introduced.map(where).join(', ')} and no partial revert clears it`)
       continue
@@ -299,7 +303,7 @@ async function repairCopy(db: any, rows: PlanRow[]) {
     for (const p of drift.slice(0, 6)) console.log(`        ${p}`)
     return
   }
-  const repair = repairEnrichedCopy(plan, fresh, errorBaseline(validatePlan(fresh, input)), input)
+  const repair = repairEnrichedCopy(plan, fresh, errorBaseline(validateSavedPlan(fresh, input)), input)
   if (repair.outcome === 'clean') { console.log('   clean: no AI copy breaks an invariant'); return }
   if (repair.outcome === 'full_revert') {
     console.log(`   🔴 REFUSED: no partial revert clears ${repair.introduced.map(v => v.code).join(', ')}; a full revert would delete the voice`)
@@ -310,7 +314,7 @@ async function repairCopy(db: any, rows: PlanRow[]) {
   const changed = diffPaths(plan as unknown as Json, out as unknown as Json)
   const illegal = changed.filter(p => !isCopyPath(p))
   if (illegal.length) { console.log(`   🔴 REFUSED: ${illegal.length} non-copy path(s) would change`); return }
-  const left = validatePlan(out, input).filter(v => v.severity === 'error').map(v => v.code)
+  const left = validateSavedPlan(out, input).filter(v => v.severity === 'error').map(v => v.code)
   console.log(`   ✅ ${repair.outcome}: reverts ${repair.outcome === 'partial_revert_session' ? `${repair.badSessions.size} session(s) [${Array.from(repair.badSessions).join(', ')}]` : `${repair.badWeeks.size} week(s) [${Array.from(repair.badWeeks).join(', ')}]`} to rule copy`)
   console.log(`        fixes ${repair.introduced.map(where).join(', ')} · ${changed.length} copy path(s) · errors after: ${left.length ? left.join(', ') : 'none'}`)
   if (!WRITE || !AUTHORISED) { console.log('\nDRY RUN — nothing was written.'); return }

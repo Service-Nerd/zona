@@ -77,3 +77,66 @@ describe('repairEnrichedCopy (ENRICH-RESTORE-REPAIR-01)', () => {
     }
   })
 })
+
+/**
+ * 🔴 REENRICH-REPAIR-VALIDATOR-KIND-01 (2026-11-10) — THE REPAIR LADDER AND EVERY BASELINE THAT
+ * FEEDS IT USE THE SAME KIND-DISPATCHING VALIDATOR.
+ *
+ * `repairEnrichedCopy` compares a candidate against a baseline its CALLER built. If the two
+ * sides use different validators, `violationsIntroducedBy` diffs two constitutions and reports
+ * phantom introductions — *test the composition, not the halves*. So this is a property of the
+ * PAIR, not of either file, and a source arm is the only thing that can hold it: the behavioural
+ * tests above pass whichever validator is used, because every fixture is a race plan and for a
+ * race plan `validateSavedPlan` **is** `validatePlan`.
+ *
+ * ⚠️ `app/api/generate-plan/route.ts` is in the population and passes `composeViolations`, which
+ * `foundationCompose` derives with raw `validatePlan` — deliberately, because that branch
+ * destructures the `kind: 'plan'` outcome so only a race plan can reach it. That is asserted
+ * below rather than left as a comment, because it is the one place the pair is allowed to differ.
+ */
+describe('REENRICH-REPAIR-VALIDATOR-KIND-01 — one validator across the repair ladder', () => {
+  const src = (p: string) => readFileSync(join(process.cwd(), p), 'utf8')
+  const code = (p: string) => src(p)
+    .replace(/\/\*[\s\S]*?\*\//g, m => m.replace(/[^\n]/g, ' '))
+    .replace(/\/\/[^\n]*/g, m => m.replace(/[^\n]/g, ' '))
+
+  const LADDER = ['lib/plan/enrichRepair.ts', 'scripts/reenrich-plans.ts'] as const
+
+  it('the population is real — each file exists and calls the repair owner', () => {
+    // An empty or wrong population makes every arm below vacuous, which is this repo's
+    // most-recorded failure shape.
+    expect(code('lib/plan/enrichRepair.ts')).toContain('export function repairEnrichedCopy')
+    expect(code('scripts/reenrich-plans.ts')).toContain('repairEnrichedCopy(')
+  })
+
+  it('🔴 no file in the ladder calls raw validatePlan', () => {
+    for (const f of LADDER) {
+      expect(/\bvalidatePlan\(/.test(code(f)),
+        `${f} must use validateSavedPlan — §116's dispatch, on both sides of the comparison`)
+        .toBe(false)
+      expect(code(f), `${f} must call the dispatching owner`).toContain('validateSavedPlan(')
+    }
+  })
+
+  it('🔴 and both sides agree: the module and its baselines name the SAME function', () => {
+    // The defect this guards is a MISMATCH, so assert the shared name rather than each half.
+    const used = (f: string) => {
+      const m = code(f).match(/\bvalidate(SavedPlan|Plan|StoredPlan|RepairedPlan|ReshapedPlan)\(/g) ?? []
+      return Array.from(new Set(m.map(x => x.replace('(', '')))).sort()
+    }
+    expect(used('lib/plan/enrichRepair.ts')).toEqual(['validateSavedPlan'])
+    expect(used('scripts/reenrich-plans.ts')).toEqual(['validateSavedPlan'])
+  })
+
+  it('the route keeps `composeViolations`, and only a RACE plan can reach that branch', () => {
+    const route = code('app/api/generate-plan/route.ts')
+    expect(route, 'the live path reuses the compose verdicts rather than re-validating')
+      .toMatch(/errorBaseline\(composeViolations\)/)
+    // `composeViolations` is carried ONLY by the `kind: 'plan'` outcome, which is what makes
+    // the raw `validatePlan` behind it correct there. If that field ever appears on another
+    // variant, this arm is the place that finds out.
+    const engine = code('lib/plan/engine.ts')
+    expect((engine.match(/composeViolations/g) ?? []).length,
+      'composeViolations is declared once and returned once').toBe(2)
+  })
+})

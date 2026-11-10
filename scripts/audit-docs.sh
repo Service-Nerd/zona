@@ -315,7 +315,27 @@ for id in $ids; do
   # heading by construction. Measured, it was suppressing 5 of 10 🔻 headings and
   # 4 of 6 🔴 ones — so the discriminator was doing more hiding than
   # disambiguating on this arm. The bullet arm above keeps it.
-  if grep -qE "^#{3,4} (🔻|🔲|🔴|🔵|⏸️|🟠|🧭|⚖️) \`${id}\`[ —]" docs/releases/backlog.md; then
+  # 🔴 THE GLYPH ENUMERATION IS GONE — IT WAS THE STALE COPY, AND `BACKLOG-DUPLICATE-HEADING-01`
+  # FILED THAT AS ITS OWN RESIDUAL (2026-11-10).
+  #
+  # The list above was `🔻 🔲 🔴 🔵 ⏸️ 🟠 🧭 ⚖️`. `BACKLOG-STATUS-GLYPH-BLIND-01` had already
+  # made the OWNER glyph-agnostic — *"ONE arm, ANY leading glyph, and an item is CLOSED only when
+  # it SAYS so"* — and this arm never followed, so two derivations of "is this heading open"
+  # disagreed. Measured: **10 headings carry an open glyph while the owner correctly reads them
+  # closed** (9 stamped CLOSED/DEAD/WITHDRAWN/PARKED/VACATED, 1 the archive convention), and a
+  # `⚙️`-led heading was invisible to the list entirely. Latent, because this arm is scoped to
+  # TODAY'S ship scopes — but latent is how the last four instances of this class waited.
+  #
+  # 🔑 AND COMPARING THE TWO IS WHAT FOUND A LIVE LEAK IN THE OWNER: `STRENGTH-ENTRY-01` was
+  # closed by the capitalised `SHIPPED` in `items 1-5 SHIPPED 2026-10-17, item 6 OPEN`, so a
+  # PARTIAL ship read as finished and the outstanding half was outside the open count. An
+  # explicit `OPEN` now beats a stamp (one verdict in 492 headings).
+  #
+  # ⚠️ THE 🟡 EXCLUSION IS KEPT, and it is the one real policy difference rather than part of
+  # the stale list. 🟡 means "code shipped, item still open", which is legitimate; the owner
+  # calls such a heading OPEN, correctly, and this arm must not. Composed rather than replaced.
+  if heading_open_ids docs/releases/backlog.md | grep -qxF "$id" \
+     && ! grep -qE "^#{3,4} 🟡 \`${id}\`[ —]" docs/releases/backlog.md; then
     say "  STILL OPEN $id (shipped today, backlog HEADING says otherwise)"; bfail=1; fail=1
   fi
   # 🔴 AND THE BOARD-TAG BULLET, THE THIRD SHAPE — see the note at the top of
@@ -530,7 +550,13 @@ fi
 #     56 → 50 with six contracts. ⚠️ **Remove this exemption when the figure reaches 0, OR if a
 #     month passes with no payment** — per this file's own rule, a reason column is not a fixed
 #     problem, and a falling register that stops falling is just debt with a comment on it.
-_SHIPPED_AND_OPEN_OK='READINESS-SURFACE-01 STRENGTH-ENGINE-01 STEPPER-CONTROL-01 TODAY-CTA-CLEARANCE-01 NATIVE-BATCH-01 CONTRACT-COVERAGE-03'
+#   STRENGTH-ENTRY-01 (2026-11-10): a genuine PARTIAL — items 1–5 shipped 2026-10-17 with a
+#     registry row, item 6 is *"At release (SLT)"*. 🔴 It was not on this list because it was
+#     not VISIBLE: the capitalised `SHIPPED` in its own provenance block (`items 1-5 SHIPPED
+#     2026-10-17, item 6 OPEN`) closed it in `scripts/lib/open-items.sh`, so a partial ship read
+#     as finished and the outstanding half was outside every open population. An explicit `OPEN`
+#     beats a stamp now. **Remove when item 6 ships at release.**
+_SHIPPED_AND_OPEN_OK='READINESS-SURFACE-01 STRENGTH-ENGINE-01 STEPPER-CONTROL-01 TODAY-CTA-CLEARANCE-01 NATIVE-BATCH-01 CONTRACT-COVERAGE-03 STRENGTH-ENTRY-01'
 for id in $(comm -12 /tmp/_reg /tmp/_open); do
   case " $_SHIPPED_AND_OPEN_OK " in *" $id "*) continue ;; esac
   say "  STILL OPEN $id (has a feature-registry row)"; afail=1; fail=1
@@ -693,8 +719,24 @@ rcfail=0
 # fires on correct work gets switched off, which this repo records as equivalent
 # to having no check. 🟡 is excluded too: "code shipped, item still open" is a
 # legitimate state where a ✅ roadmap row is defensible.
-for id in $(grep -oE '^#{3,4} (🔻|🔲|🔵|⏸️|🟠|🧭|⚖️) `[A-Z][A-Z0-9]*(-[A-Z0-9]+)+`' docs/releases/backlog.md \
-              | grep -oE '[A-Z][A-Z0-9]*(-[A-Z0-9]+)+' | sort -u); do
+# 🔴 THE SECOND GLYPH ENUMERATION, AND IT WAS FOUND BY THE GATE WRITTEN FOR THE FIRST
+# (2026-11-10). `openItemsSingleOwner.test.ts` arm 9 fired on this line while I was adding it for
+# the shipped-today arm above — **two copies of the same stale vocabulary, and I had only seen
+# one.** Both now ask the owner.
+#
+# 📐 MEASURED BEFORE SWITCHING, because a wider set can mean new false positives: the glyph
+# list covered **60** ids and the owner (minus 🟡) covers **81** — **22 newly visible**, all of
+# them headings led by a glyph the list never knew (`⚙️`, `👤`, `📱`, unmarked, and `##`
+# parents) — while **1** correctly stops being checked: `LEDGER-RESET-01`, which the owner reads
+# as **PARKED**. ✅ **Verdict identical both ways (zero findings), so the widening costs nothing
+# and buys 22.**
+#
+# ⚠️ 🟡 IS STILL EXCLUDED, for the reason the comment above gives. 🔴's exclusion is now the
+# OWNER's job and no longer needs stating here: a `### 🔴 … CLOSED, NOTHING TO BUILD` heading
+# closes on the stamp word, which is why `RESHAPE-MOMENT-03` cannot false-positive any more.
+for id in $(heading_open_ids docs/releases/backlog.md | sort -u | while read -r _hid; do
+              grep -qE "^#{3,4} 🟡 \`${_hid}\`[ —]" docs/releases/backlog.md || echo "$_hid"
+            done); do
   # Skip anything with a registry row: shipped-but-open is the arms above's job,
   # and a part-shipped item legitimately carries both.
   grep -qxF "$id" /tmp/_reg 2>/dev/null && continue

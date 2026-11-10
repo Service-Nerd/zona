@@ -109,6 +109,29 @@ heading_sites_with_status() {
       n = split(stamps, w, "|"); for (i = 1; i <= n; i++) if (index(bare, w[i])) stamped = 1
       lo = tolower(bare)
       m = split(prose, q, "|");  for (i = 1; i <= m; i++) if (index(lo, tolower(q[i]))) archived = 1
+
+      # 🔴 AN EXPLICIT "OPEN" BEATS A STAMP, AND IT HID A LIVE ITEM (2026-11-10).
+      #
+      # The heading of STRENGTH-ENTRY-01 reads: ITEM 6 ONLY; items 1-5 shipped ... with the
+      # provenance block *(filed 2026-10-17; items 1-5 SHIPPED 2026-10-17, item 6 OPEN)*.
+      # The capitalised SHIPPED describes items 1-5; the same line says item 6 OPEN. The stamp
+      # matched and closed the whole item, so a PARTIAL ship read as a finished one and the
+      # outstanding half was invisible to the open count -- BACKLOG-STATUS-GLYPH-BLIND-01 in
+      # the opposite direction, and the same "matching the spelling, not the claim" shape this
+      # file already records for QUIT-TAB-DEAD-01.
+      #
+      # 📐 MEASURED BEFORE WIDENING, as this file requires: across all 492 item-naming
+      # headings, exactly ONE is closed-by-stamp while also declaring OPEN -- this one -- and 4
+      # already-open headings say OPEN, so the rule changes one verdict and nothing else.
+      # Capitalised and word-bounded, for the same reason the stamps are: ordinary prose
+      # ("opened", "an open question") must not re-open a shipped item.
+      #
+      # ⚠️ NO APOSTROPHES IN THIS BLOCK, AND THAT IS NOT STYLE. The first cut wrote
+      # "the heading of X" as a possessive, and the apostrophe CLOSED the single-quoted awk
+      # program -- a shell syntax error that made every function in this file undefined. Same
+      # desync the colour guard records ("one apostrophe inside a comment put the rest of the
+      # FILE inside a string"), one quoting layer out.
+      if (bare ~ /(^|[^A-Za-z])OPEN([^A-Za-z]|$)/) { stamped = 0; archived = 0 }
       status = stamped ? "STAMPED" : (archived ? "ARCHIVED" : "OPEN")
 
       # 🔴 A `##` PARENT HEADING IS AN ITEM TOO, AND NO ARM HAD EVER READ ONE (2026-11-07).

@@ -193,17 +193,23 @@ describe('STORED-PLAN-VALIDATOR-INPUT-01 — stored-plan scripts do not hand-bui
    * that cannot be re-measured from a dev machine. Moving it is its own item.
    */
   /**
-   * ⚠️ AND ONE MORE, FOR A DIFFERENT AND STRONGER REASON. `reenrich-plans.ts` builds the
-   * BASELINE that `repairEnrichedCopy` compares against — `errorBaseline(validatePlan(fresh,
-   * input))` — and `lib/plan/enrichRepair.ts` calls `validatePlan` on the candidate three
-   * times internally. **Both sides of a comparison must use the same function.** Moving only
-   * the baseline would make `violationsIntroducedBy` diff two different constitutions and
-   * report phantom introductions, which is the `test the composition, not the halves` class.
-   * Moving BOTH is an engine-adjacent change that belongs with the repair ladder, not here.
+   * ✅ THE SECOND EXEMPTION IS GONE — `REENRICH-REPAIR-VALIDATOR-KIND-01`, SHIPPED 2026-11-10.
+   *
+   * `reenrich-plans.ts` built the baseline `repairEnrichedCopy` compares against while
+   * `enrichRepair.ts` called `validatePlan` three times internally, and **both sides of a
+   * comparison must use the same function** — so it was recorded rather than half-fixed. Both
+   * moved to `validateSavedPlan` in one commit.
+   *
+   * 📐 Safe because it was measured first: of 41 stored plans with a usable input, **37 get an
+   * IDENTICAL verdict**, since for a RACE plan `validateSavedPlan` **is** `validatePlan`. The 4
+   * that differ are all `base_build` (59/42/22/13 phantom errors against **0**) and all four
+   * carry no AI copy, so `hasAiCopy` refuses them before the ladder today.
+   *
+   * ⚠️ IT WAS THIS ARM THAT NOTICED. The stale-exemption check below fired the moment the
+   * script stopped calling `validatePlan`, which is what it is for.
    */
   const EXEMPT = new Map([
     ['recal-live-repair.ts', 'the repairPlan DRIVER reads these verdicts; see the call site'],
-    ['reenrich-plans.ts', 'the baseline for repairEnrichedCopy, which calls validatePlan itself'],
   ])
 
   const readsStoredPlans = readdirSync(DIR)

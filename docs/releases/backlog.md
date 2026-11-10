@@ -1287,7 +1287,52 @@ last week did run 20 km that week.
 
 ---
 
-### 🔲 `REENRICH-REPAIR-VALIDATOR-KIND-01` — the repair ladder and its baseline both bypass §116's kind dispatch ⚙️ **NO BOARD**
+### ✅ `REENRICH-REPAIR-VALIDATOR-KIND-01` — **SHIPPED 2026-11-10. Both sides moved in one commit, and it is provably inert on today's fleet** ⚙️ **NO BOARD**
+
+✅ **SHIPPED 2026-11-10.** `lib/plan/enrichRepair.ts` (3 call sites) and
+`scripts/reenrich-plans.ts` (3) are all on `validateSavedPlan`, in one commit, because **both
+sides of a comparison must use the same function** — which is why the parent item declared this
+an exemption rather than half-fixing it.
+
+📐 **MEASURED ON THE LIVE FLEET BEFORE THE SWITCH, and it is the reason this was safe:**
+of **41 stored plans with a usable input, 37 get an IDENTICAL verdict** — because for a RACE plan
+`validateSavedPlan` **is** `validatePlan`, by its own docblock. The **4** that differ are all
+`base_build`, reporting **59 / 42 / 22 / 13** phantom errors against **0**, and **all four carry no
+AI copy**, so `hasAiCopy` refuses them before the ladder today. **The change alters nothing live
+and closes the hole for the next base-build plan that gains a voice.**
+
+🔴 **THE ITEM'S POPULATION WAS INCOMPLETE.** It named this module and `reenrich-plans.ts`;
+**`app/api/generate-plan/route.ts:462` calls `repairEnrichedCopy` too — the LIVE path.** Its
+baseline is `errorBaseline(composeViolations)`, which `foundationCompose` derives with raw
+`validatePlan`. ✅ **Left as it is, deliberately and now asserted:** that branch destructures the
+`kind: 'plan'` outcome, so only a race plan can reach it, and for a race plan the two functions
+agree. A dispatch there would be a branch that can never fire. The arm pins
+`composeViolations` to one declaration and one return in `engine.ts`, so if it ever appears on
+another variant the test is where that is found.
+
+✅ **The declared exemption is REMOVED from `storedPlanDebt.test.ts`, and that arm is what
+noticed** — the stale-exemption check fired the moment the script stopped calling `validatePlan`,
+which is exactly its job (*verify the exemption's justification, not the stamp*).
+🔻 `recal-live-repair.ts` remains exempt: that is `RECAL-REPAIR-DRIVER-VALIDATOR-01`, still open.
+
+✅ **Gate: 4 arms in `enrichRepair.test.ts`**, because this is a property of the PAIR and the
+behavioural tests cannot see it — every fixture there is a race plan, where both validators agree.
+Arms: a non-empty population · no raw `validatePlan` in the ladder · **both files name the SAME
+validator** · the route's `composeViolations` exception, asserted rather than commented.
+📐 **Falsified: reverting either side reddens 2 arms.** ⚠️ **A third mutation — adding an UNUSED
+`validatePlan` import — correctly stays green**, because the arms anchor on the CALL and not the
+name. That is `an unused import can exempt a file from its own gate` applied rather than repeated.
+
+⚠️ **The item asked to "re-run … the golden reframe suite" and that is not applicable:** the
+golden cases are a MANUAL doc-based suite for the reframe PROMPT
+(`docs/canonical/reframe-golden-cases.md`, referenced only by `sessionReframe.ts`), a different
+surface this change does not touch. The item named the wrong adjacent suite; the full suite and
+`enrichRepair.test.ts` are the ones that apply.
+
+🔻 **What this does not prove.** Nothing was re-enriched: the change is inert on all 37 race
+plans by measurement, and the 4 base-build plans cannot reach the ladder while they carry no AI
+copy. **The first base-build plan to gain a voice is the first real exercise of this path**, and
+nothing schedules that.
 
 Declared exemption from `STORED-PLAN-VALIDATOR-INPUT-01` (2026-11-08), recorded rather than
 fixed because **both sides of a comparison must use the same function.**
@@ -5323,7 +5368,14 @@ fixed.
 > before then; **contact is the founder's call**. `df2cc6e6`'s race was 2026-09-26, last opened 2026-07-29,
 > no subscription — no action.
 
-### 🔲 `STRENGTH-ENTRY-01` — ITEM 6 ONLY; items 1–5 shipped — strength entry points, icons, paywall and Coach *(filed 2026-10-17; items 1–5 SHIPPED 2026-10-17, item 6 OPEN)*
+### 🔲 `STRENGTH-ENTRY-01` — ITEM 6 ONLY; items 1–5 shipped — strength entry points, icons, paywall and Coach *(filed 2026-10-17; items 1–5 SHIPPED 2026-10-17, item 6 OPEN)* 💼 **SLT**
+
+> 🔴 **THIS ITEM WAS INVISIBLE TO THE OPEN COUNT UNTIL 2026-11-10.** The capitalised `SHIPPED` in its own
+> provenance block closed it in `scripts/lib/open-items.sh`, which matches the stamp word — while the same line
+> says **item 6 OPEN**. A PARTIAL ship read as a finished one. Found by comparing the owner against
+> `audit-docs.sh`'s glyph arm (`BACKLOG-DUPLICATE-HEADING-01`'s residual); an explicit `OPEN` now beats a stamp,
+> measured as changing **exactly one** verdict in 492 headings. 💼 **SLT** is the heading tag because item 6 is
+> *"At release (SLT)"*; the body's `**Tags:**` line already named the full order and the gate reads the heading.
 
 **Founder, verbatim (in substance):** *"How do I add strength sessions? Is it from the Me menu? Is it obvious? Should
 it be there? … the setup wizard (I think it should definitely be there) … ensure the entry points are clear and we
@@ -10262,13 +10314,25 @@ skips the blanking and scans raw, because a false fire is reviewable and a silen
 id fires · a tracker on the next line is found · one across a **blank line** is not · a
 status-bullet tracker passes · 46 lines fails · an unmatched backtick does not swallow the mark.
 
-🔺 **AND LANDING IT SURFACED AN INSTANCE OF `BACKLOG-DUPLICATE-HEADING-01`, WHICH IS STILL OPEN.**
-My *"original filing, for the record"* archive heading read as OPEN to `audit-docs.sh` and as
-CLOSED to `scripts/lib/open-items.sh`, because the audit's arm is **glyph-based** (`🔻 🔲 🔴 …`)
-while the owner closes on the **prose vocabulary** (*"for the record"*). Two derivations of *"is
-this heading open"* disagreeing is exactly that item's subject, and the glyph arm is the stale
-copy. Worked around by matching the archive convention (⚙️, which is not in the glyph list);
-**the divergence itself belongs to `BACKLOG-DUPLICATE-HEADING-01`.**
+✅ **RESOLVED 2026-11-10 — the divergence this residual named is GONE, and fixing it found a live
+leak.** My *"original filing, for the record"* archive heading read as OPEN to `audit-docs.sh` and
+as CLOSED to `scripts/lib/open-items.sh`, because the audit's arm was **glyph-based**
+(`🔻 🔲 🔴 …`) while the owner closes on the **prose vocabulary**. Two derivations of *"is this
+heading open"* disagreeing was exactly `BACKLOG-DUPLICATE-HEADING-01`'s subject, and **the glyph
+arm was the stale copy**: `BACKLOG-STATUS-GLYPH-BLIND-01` had already made the owner
+glyph-agnostic and this arm never followed.
+
+📐 **Measured: 10 headings carried an open glyph while the owner correctly read them closed**
+(9 stamped CLOSED/DEAD/WITHDRAWN/PARKED/VACATED, 1 the archive convention), and a `⚙️`-led heading
+was invisible to the list entirely. The arm now calls `heading_open_ids` and keeps only the
+**🟡 exclusion**, which is the one real policy difference rather than part of the stale list.
+
+🔑 **AND COMPARING THE TWO DERIVATIONS FOUND A LIVE LEAK IN THE OWNER.** `STRENGTH-ENTRY-01` was
+closed by the capitalised `SHIPPED` in its own provenance block — `items 1–5 SHIPPED 2026-10-17,
+item 6 OPEN` — so a **PARTIAL ship read as a finished one** and the outstanding half sat outside
+every open population. An explicit `OPEN` now beats a stamp, measured as changing **exactly one
+verdict in 492 headings**. The item is open, tagged 💼 SLT in its heading, and declared in
+`_SHIPPED_AND_OPEN_OK` with a removal condition.
 
 🔻 **WHAT THIS DOES NOT PROVE.** It cannot find a `🔻` that should have been a `🔺` — whether a cost
 was **accepted** or merely **noted** is a judgement and no script settles it. The 425 existing marks

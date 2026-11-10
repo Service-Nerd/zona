@@ -198,3 +198,79 @@ describe('BACKLOG-DUPLICATE-HEADING-01 — three states, one extraction, and the
       'half-closed is a duplicate too').toEqual(['THING-01'])
   })
 })
+
+/**
+ * 🔴 NO CALLER MAY HAND-LIST STATUS GLYPHS FOR AN ITEM HEADING (2026-11-10).
+ *
+ * `BACKLOG-STATUS-GLYPH-BLIND-01` made the owner glyph-agnostic — *"ONE arm, ANY leading glyph,
+ * and an item is CLOSED only when it SAYS so"* — and `audit-docs.sh` kept its own enumeration
+ * (`🔻 🔲 🔴 🔵 ⏸️ 🟠 🧭 ⚖️`) for the same question. **Two derivations of "is this heading open"
+ * disagreeing**, which `BACKLOG-DUPLICATE-HEADING-01` filed as a residual against itself.
+ *
+ * 📐 Measured when fixed: **10 headings carried an open glyph while the owner correctly read
+ * them closed** (9 stamped CLOSED/DEAD/WITHDRAWN/PARKED/VACATED, 1 the archive convention), and
+ * a `⚙️`-led heading was invisible to the list entirely.
+ *
+ * ⚠️ IT WAS LATENT, WHICH IS WHY THIS ARM EXISTS. That caller is scoped to TODAY'S ship scopes,
+ * so none of the 10 could fire unless one of them shipped that day — restoring the enumeration
+ * changes nothing observable on the current file. **A correctness fix with no behavioural
+ * difference today cannot be falsified by running it, so it is held structurally instead.**
+ *
+ * ⚠️ THE 🟡 EXCLUSION IS NOT A GLYPH LIST and is explicitly allowed. 🟡 means "code shipped,
+ * item still open" — a legitimate state the owner calls OPEN and that caller must not flag. One
+ * glyph, named with its reason, is a policy; eight enumerated as a status vocabulary is a copy.
+ */
+describe('BACKLOG-STATUS-GLYPH-BLIND-01 — no second status vocabulary', () => {
+  // The open-status glyphs the owner abandoned. 🟡 is deliberately absent: see above.
+  const STATUS_GLYPHS = ['🔻', '🔲', '🔵', '⏸️', '🟠', '🧭', '⚖️'] as const
+
+  const stripSh = (src: string) => src
+    .split('\n').map(l => (l.trimStart().startsWith('#') ? '' : l)).join('\n')
+
+  it('9. 🔴 no caller greps an item heading against a SET of status glyphs', () => {
+    for (const caller of CALLERS) {
+      const code = stripSh(read(caller))
+      // An alternation of two or more status glyphs applied to a heading is the shape.
+      // One on its own (the 🟡 exclusion) is a named policy and passes.
+      const lines = code.split('\n').filter(l => /#\{?3/.test(l) || /\^###/.test(l))
+      for (const line of lines) {
+        const hits = STATUS_GLYPHS.filter(g => line.includes(g))
+        expect(hits.length, `${caller} enumerates status glyphs for a heading — ask the owner `
+          + `(heading_open_ids) instead. BACKLOG-STATUS-GLYPH-BLIND-01 made it glyph-agnostic:\n`
+          + `  ${line.trim().slice(0, 140)}`).toBeLessThan(2)
+      }
+    }
+  })
+
+  it('10. and audit-docs.sh asks the owner for that question', () => {
+    const code = stripSh(read('scripts/audit-docs.sh'))
+    expect(code, 'the shipped-today heading arm must call the owner')
+      .toMatch(/heading_open_ids docs\/releases\/backlog\.md \| grep -qxF/)
+  })
+
+  it('11. 🔴 an explicit OPEN beats a stamp — the partial-ship leak', () => {
+    // `STRENGTH-ENTRY-01` was closed by the capitalised SHIPPED in
+    // `items 1-5 SHIPPED 2026-10-17, item 6 OPEN`, so a PARTIAL ship read as finished.
+    const lib = read(LIB)
+    expect(lib, 'the owner must re-open a heading that explicitly says OPEN')
+      .toMatch(/OPEN\(\[\^A-Za-z\]\|\$\)/)
+    // Behavioural, both directions, on constructed headings rather than the live file.
+    const verdict = (heading: string) => {
+      const f = join(tmpdir(), `oi-${Math.random().toString(36).slice(2)}.md`)
+      writeFileSync(f, `${heading}\n\nbody\n`)
+      try {
+        return execFileSync('bash',
+          ['-c', `. ${JSON.stringify(join(ROOT, LIB))}; heading_sites_with_status ${JSON.stringify(f)}`],
+          { encoding: 'utf8', cwd: ROOT }).trim().split('\t')[2] ?? 'NONE'
+      } finally { unlinkSync(f) }
+    }
+    expect(verdict('### 🔲 `A-01` — items 1-5 SHIPPED 2026-10-17, item 6 OPEN'),
+      'a partial ship is OPEN').toBe('OPEN')
+    expect(verdict('### ✅ `A-01` — SHIPPED 2026-10-17'), 'a plain stamp still closes').toBe('STAMPED')
+    expect(verdict('### 🔲 `A-01` — the original filing, for the record'),
+      'the archive marker still archives').toBe('ARCHIVED')
+    expect(verdict('### 🔲 `A-01` — SHIPPED, and it reopened a can of worms'),
+      'lower-case prose must not re-open a shipped item').toBe('STAMPED')
+    expect(verdict('### 🔲 `A-01` — still to do'), 'an unmarked heading is OPEN').toBe('OPEN')
+  })
+})

@@ -6,6 +6,46 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-11-10 — BACKLOG-DUPLICATE-HEADING-01 (residual) · the item was hidden by the word SHIPPED in its own heading
+**Shipped:** Two glyph enumerations retired in favour of the owner, and an explicit `OPEN` now beats a closure stamp.
+
+**Dev learning:** `backlog:verify` refused to let me close the item, because a 🔺 residual pointed at it as its tracker. That residual said the audit still had a glyph-based open-heading arm diverging from the owner — so I went to fix it, and the fix found something much better.
+
+**Comparing the two derivations found a live item that was invisible to the open count.** `STRENGTH-ENTRY-01`'s heading reads `*(filed 2026-10-17; items 1-5 SHIPPED 2026-10-17, item 6 OPEN)*`. The capitalised SHIPPED describes items 1-5. The owner matched it and closed the whole item — **a partial ship reading as a finished one** — so an item with work outstanding sat outside every open population. Exactly one heading in 492 has that shape, and an explicit `OPEN` beats a stamp now.
+
+**And there were two copies of the stale vocabulary, not one.** I found the first by hand. The second was found by the gate I was writing for the first: arm 9 fired on the roadmap arm mid-build. Measured before switching it — the glyph list covered 60 ids, the owner covers 81, so 22 ids were newly visible and one (`LEDGER-RESET-01`, PARKED) correctly stopped being checked, with an identical verdict either way. **The widening cost nothing and bought 22.**
+
+**The mistake:** the first cut of the OPEN-beats-stamp rule broke every function in `open-items.sh`. I wrote a comment containing `` `STRENGTH-ENTRY-01`'s `` and the apostrophe closed the single-quoted awk program — a shell syntax error, so every helper came back "command not found". That is the colour guard's own recorded desync (*"one apostrophe inside a comment put the rest of the FILE inside a string"*), one quoting layer out, on the same day I fixed two other versions of it.
+
+**What I did not claim:** the glyph-arm fix is **latent**. That arm is scoped to today's ship scopes, so restoring the enumeration changes nothing observable on the current file — I tried, and the verdict was identical. A correctness fix with no behavioural difference today cannot be falsified by running it, so it is held structurally instead, by an arm that forbids a second status vocabulary. Saying "falsified" there would have been false.
+
+**Product/creator learning:** this is the third time this week that closing an item surfaced the real defect in its consequences rather than in its subject. The item was about duplicate headings. The finding was a live, partially-shipped item that no count could see.
+
+**Hook material:** An item was invisible to the backlog for three weeks because its own heading contained the word SHIPPED — describing the five parts that had shipped, next to the one that had not.
+
+**Postable?:** yes
+
+---
+
+## 2026-11-10 — REENRICH-REPAIR-VALIDATOR-KIND-01 · the fix was a no-op for 37 of 41 plans, and that is why it was safe
+**Shipped:** The repair ladder and every baseline feeding it now use the same kind-dispatching validator.
+
+**Dev learning:** the item read as an engine-adjacent change — *"moving BOTH is an engine-adjacent change"* — and it is not, because of one line in `validateSavedPlan`'s docblock: for a race plan it dispatches straight to `validatePlan`. So I measured it on the fleet before touching anything: **37 of 41 stored plans get a byte-identical verdict.** The four that differ are all base-build, where raw `validatePlan` reports 59, 42, 22 and 13 phantom errors against zero — and all four carry no AI copy, so `hasAiCopy` refuses them before the ladder reaches them. **A change that is provably inert on the current fleet and closes a real hole is a very different proposition from an engine-adjacent one**, and the fifteen minutes of measuring is what told them apart.
+
+**What the item got wrong:** its population was two files. There are three — `app/api/generate-plan/route.ts` calls `repairEnrichedCopy` on the live path, with a baseline derived by `foundationCompose` with raw `validatePlan`. That one stays, because the branch destructures the `kind: 'plan'` outcome and only a race plan can reach it, so a dispatch there would be a branch that can never fire. I asserted that rather than writing it in a comment — the arm pins `composeViolations` to one declaration and one return, so if it ever appears on another engine variant the test is where that surfaces.
+
+**The gate that already worked:** I did not notice the declared exemption had gone stale. The stale-exemption arm in `storedPlanDebt.test.ts` did, the moment the script stopped calling `validatePlan`. That arm exists because of a recorded lesson — *verify the exemption's justification, not the stamp* — and this is the first time it has fired on a real change.
+
+**AI-building learning:** a source arm was the only thing that could hold this. Every behavioural fixture in `enrichRepair.test.ts` is a race plan, and for a race plan both validators agree — so the behavioural tests pass whichever function is wired, which is precisely the shape of a test that cannot see the defect it sits next to. And when I falsified by adding an *unused* `validatePlan` import, the gate correctly stayed green, because I had anchored the arms on the call rather than the name. That is a lesson from earlier the same week applied instead of repeated.
+
+**The honest bit:** the item told me to re-run "the golden reframe suite" afterwards. Those are manual doc-based cases for the reframe *prompt* — a different surface entirely, which this change does not touch. The item named the wrong adjacent suite, and running it to be able to say I had would have been theatre.
+
+**Hook material:** The ticket said the fix was an engine-adjacent change. Measured first: identical output on 37 of 41 production plans, and the 4 it changes cannot reach the code path at all.
+
+**Postable?:** yes
+
+---
+
 ## 2026-11-10 — BACKLOG-DUPLICATE-HEADING-01 · the gate the item asked for would have missed every real case
 **Shipped:** `backlog:verify` § 8 — an id with two live headings and no archive marker.
 
