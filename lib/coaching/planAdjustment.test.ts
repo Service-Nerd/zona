@@ -567,3 +567,80 @@ describe('SKIP-MAKEUP-DAY-01 — the route never offers a change that breaks the
     expect(after).toMatch(/refused:/)
   })
 })
+
+// 🔴 READINESS-LONG-DURATION-01 (2026-11-10) — A WARRANTED EASE THAT CHANGED NOTHING, AND TOLD
+// THE RUNNER IT HAD.
+//
+// `buildReadinessAdjustment` read `isLongRun(s) && s.distance_km` and fell through otherwise,
+// so on a duration-anchored long run the session came back UNCHANGED — **86.8% of a beginner's
+// long runs (21,916 of 25,250 generated; intermediate and experienced are 0%)**. `SESSION-KM-01/02`'s
+// class: the rule and the code that applies it were blind to the same cohort.
+//
+// 🔴 THE SECOND DEFECT WAS LARGER AND HIT THE MAJORITY. Of 48,221 generated long runs,
+// `distance_km` without `duration_mins` **never occurs** (0) while **34,264 carry BOTH** — and
+// the old code trimmed distance and left duration alone, so 71% of eased long runs showed a cut
+// distance beside the full original duration.
+//
+// 🔴 AND THE CLAIM CAME FROM THE SIGNAL, NOT THE COMPUTATION. `summary` read
+// `signal.sessionType === 'long'` regardless of whether the edit happened, so the untouched
+// beginner was still told **"Long run trimmed 15%."** with no `eased_for` mark to match.
+const readinessInput = (sessions: Session[]) => ({
+  ...baseInput(),
+  currentWeekSessions: sessions,
+  readinessSignal: {
+    hasBaseline: true, softeningWarranted: true,
+    sessionType: 'long' as const, sessionDay: 'sun' as const,
+    isElevatedRHR: true, isLowHRV: false, isShortSleep: false, isPoorSleepQuality: false,
+  },
+})
+
+describe('READINESS-LONG-DURATION-01 — the ease scales whichever anchor the session carries', () => {
+  it('🔴 a DURATION-anchored long run is trimmed — it used to come back untouched', () => {
+    const r = checkAdjustmentTriggers(readinessInput(longRunWeekMins(180)))
+    expect(r?.trigger.type, 'the readiness trigger did not fire at all').toBe('readiness_signal')
+    const after = r!.sessionsAfter[6]!
+    expect(after.duration_mins, '180 min was returned unchanged').toBe(153)  // 180 × 0.85
+    expect(after.eased_for, 'no "Eased for recovery" mark, so the surface cannot show it').toBe('recovery')
+  })
+
+  it('🔴 a long run carrying BOTH anchors has BOTH trimmed — duration used to be left behind', () => {
+    const both = longRunWeek(20).map((s, i) =>
+      i === 6 ? ({ ...s, duration_mins: 140 } as Session) : s)
+    const after = checkAdjustmentTriggers(readinessInput(both))!.sessionsAfter[6]!
+    expect(after.distance_km).toBe(17)     // 20 × 0.85
+    expect(after.duration_mins, 'the duration kept its original value beside a cut distance').toBe(119)  // 140 × 0.85
+  })
+
+  it('…and the SUMMARY claims a trim only when one happened', () => {
+    const r = checkAdjustmentTriggers(readinessInput(longRunWeekMins(180)))!
+    expect(r.summary).toContain('Long run trimmed')
+    expect(r.adjustmentType).toBe('reduce_volume')
+    expect(r.sessionsAfter[6]!.eased_for).toBe('recovery')
+  })
+
+  it('🔴 THE DISCRIMINATOR: a long run with NO anchor yields no readiness adjustment at all', () => {
+    // ⚠️ THIS ARM EXISTS BECAUSE THE ONE ABOVE WAS HOLLOW. With the summary merely derived from
+    // the edited session, reverting it to `signal.sessionType` left every other arm green: the
+    // only case that distinguishes them is a long run the ease cannot touch, and the builder
+    // now returns `null` for it rather than a proposal that changed nothing. The old code
+    // returned `reduce_volume` + "Long run trimmed 15%." here, having edited nothing.
+    const noAnchor = longRunWeek(20).map((s, i) =>
+      i === 6 ? ({ type: 'long', label: 'Long run', detail: null } as unknown as Session) : s)
+    const r = checkAdjustmentTriggers(readinessInput(noAnchor))
+    expect(r?.trigger.type, 'a readiness adjustment was proposed that changed nothing')
+      .not.toBe('readiness_signal')
+  })
+
+  it('a QUALITY day still swaps to easy and does NOT claim a volume trim', () => {
+    // The other branch, unchanged: the fix must not turn a swap into a trim.
+    const quality = longRunWeek(20).map((s, i) =>
+      i === 6 ? ({ type: 'quality', label: 'Tempo', detail: null, distance_km: 10 } as Session) : s)
+    const r = checkAdjustmentTriggers({
+      ...readinessInput(quality),
+      readinessSignal: { ...readinessInput(quality).readinessSignal, sessionType: 'quality' as const },
+    })!
+    expect(r.adjustmentType).toBe('swap_session')
+    expect(r.summary).toContain('Quality swapped to easy')
+    expect(r.sessionsAfter[6]!.type).toBe('easy')
+  })
+})

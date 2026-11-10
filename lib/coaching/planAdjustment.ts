@@ -287,7 +287,11 @@ export function checkAdjustmentTriggers(input: AdjustmentCheckInput): ProposedAd
     && input.readinessSignal.softeningWarranted
     && isHardDayLabel(input.readinessSignal.sessionType)
   ) {
-    return buildReadinessAdjustment(input, input.readinessSignal)
+    // ⚠️ `null` means "nothing on that day could be eased", which is NOT the same as "no
+    // readiness problem" — so fall through to the next trigger rather than returning null from
+    // the whole function. See READINESS-LONG-DURATION-01 at the builder.
+    const readiness = buildReadinessAdjustment(input, input.readinessSignal)
+    if (readiness) return readiness
   }
 
   // §12 Amendment 1 / TRIGGER-AUDIT-01 — drift is DIRECTIONAL.
@@ -591,7 +595,7 @@ function buildRpeDisconnectAdjustment(input: AdjustmentCheckInput, rpe: number, 
 function buildReadinessAdjustment(
   input: AdjustmentCheckInput,
   signal: NonNullable<AdjustmentCheckInput['readinessSignal']>,
-): ProposedAdjustment {
+): ProposedAdjustment | null {
   const sessions       = input.currentWeekSessions
   const sessionsBefore = sessions.map(s => ({ ...s }))
 
@@ -620,19 +624,56 @@ function buildReadinessAdjustment(
         coach_notes: [`${BRAND.voiceAnchor} Recovery signals are off (${reasonStr}). Easy day instead: the quality is on the bench.`] as [string],
       }
     }
-    if (isLongRun(s) && s.distance_km) {
-      return {
-        ...s,
-        distance_km: Math.round(s.distance_km * READINESS.LONG_RUN_SOFTEN_PCT * 10) / 10,
-        eased_for: 'recovery' as const,
-        coach_notes: [`${BRAND.voiceAnchor} Trimmed today (${reasonStr}). Body's not ready for the full distance.`] as [string],
+    // 🔴 READINESS-LONG-DURATION-01 (2026-11-10) — SCALE WHICHEVER ANCHOR THE SESSION CARRIES.
+    // This read `isLongRun(s) && s.distance_km` and fell through to `{ ...s }` otherwise, so a
+    // warranted ease on a duration-anchored long run returned the session UNCHANGED — and
+    // **86.8% of a beginner's long runs have no `distance_km`** (21,916 of 25,250 generated;
+    // intermediate and experienced are 0%). `SESSION-KM-01/02`'s class: the rule and the code
+    // that applies it were blind to the same cohort.
+    //
+    // 🔴 AND THE SECOND DEFECT IN THESE THREE LINES IS THE LARGER ONE. Measured over 48,221
+    // generated long runs: `distance_km` present without `duration_mins` **never happens**
+    // (0 cases), while **34,264 carry BOTH**. The old code cut the distance and left the
+    // duration alone, so on 71% of eased long runs the runner saw a trimmed distance beside
+    // the full original duration — two fields describing one session, one of them updated.
+    // The engine derives duration FROM distance (`distance × easy pace`), so both must move.
+    if (isLongRun(s)) {
+      const pct = READINESS.LONG_RUN_SOFTEN_PCT
+      const trimmed: { distance_km?: number; duration_mins?: number } = {}
+      if (s.distance_km != null) trimmed.distance_km = Math.round(s.distance_km * pct * 10) / 10
+      if (s.duration_mins != null) trimmed.duration_mins = Math.round(s.duration_mins * pct)
+      if (trimmed.distance_km != null || trimmed.duration_mins != null) {
+        return {
+          ...s,
+          ...trimmed,
+          eased_for: 'recovery' as const,
+          coach_notes: [`${BRAND.voiceAnchor} Trimmed today (${reasonStr}). Body's not ready for the full distance.`] as [string],
+        }
       }
+      // ⚠️ A long run with NEITHER anchor: 0 of 48,221 generated, so this is a guard and not a
+      // feature. It falls through deliberately, and the summary below reads what CHANGED, so
+      // an unreachable case cannot make the engine claim a trim it did not perform.
     }
     return { ...s }
   })
 
-  const adjustmentType: AdjustmentType = signal.sessionType === 'long' ? 'reduce_volume' : 'swap_session'
-  const summary = signal.sessionType === 'long'
+  // 🔴 THE CLAIM MUST COME FROM THE COMPUTATION, NOT FROM THE SIGNAL. `adjustmentType` and
+  // `summary` were derived from `signal.sessionType === 'long'`, independently of whether the
+  // edit above happened — so a beginner whose long run was left untouched was still told
+  // **"Long run trimmed 15%."**, with no `eased_for` mark to match it. The session said one
+  // thing and the summary said another; the summary was the one the runner read.
+  //
+  // ⚠️ AND AN ADJUSTMENT THAT CHANGED NOTHING IS NOT AN ADJUSTMENT. Returning `null` rather
+  // than inventing a third runner-facing sentence for a case that is 0 of 48,221 generated long
+  // runs: no new copy, honest semantics, and — the reason it is structural rather than tidy —
+  // **it is what makes the claim testable.** With the summary merely derived from `easedTarget`,
+  // the discriminating case was unreachable, so reverting the summary alone left every arm
+  // green. A guard whose failure cannot be constructed is not a guard.
+  const easedTarget = target >= 0 && sessionsAfter[target]?.eased_for === 'recovery'
+  if (!easedTarget) return null
+  const trimmedLongRun = signal.sessionType === 'long'
+  const adjustmentType: AdjustmentType = trimmedLongRun ? 'reduce_volume' : 'swap_session'
+  const summary = trimmedLongRun
     ? `Recovery signals off (${reasonStr}). Long run trimmed ${Math.round((1 - READINESS.LONG_RUN_SOFTEN_PCT) * 100)}%.`
     : `Recovery signals off (${reasonStr}). Quality swapped to easy.`
 

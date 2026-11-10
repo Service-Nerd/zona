@@ -5312,12 +5312,51 @@ an HRV / sleep dashboard (Silvanto: data without context breeds anxiety) · any 
 conversion effect is unpriced.
 **Tags:** 🧭 DESIGN BOARD (ruled) → 🏃 COACHING BOARD (website + push words) → 👤 FOUNDER (copy) → ⚙️ build.
 
-#### `READINESS-LONG-DURATION-01` — a recovery ease cannot trim a duration-anchored long run *(filed 2026-10-17, OPEN)*
-`buildReadinessAdjustment` trims a long run with `s.distance_km * LONG_RUN_SOFTEN_PCT` and skips it when
-`distance_km` is absent. Beginner plans are duration-anchored on 95.8% of sessions (SESSION-KM-01), so on a
-beginner's long-run day a warranted ease returns the session unchanged: an adjustment row that changes nothing.
-Found while building READINESS-SURFACE-01 item 3. The fix scales `duration_mins` by the same factor (§59's intent,
-no new prescription). **Tags:** ⚙️ NO BOARD (defect restoring documented intent).
+#### ✅ `READINESS-LONG-DURATION-01` — **SHIPPED 2026-11-10. Three defects in three lines, and the item named one** *(filed 2026-10-17)*
+`buildReadinessAdjustment` trimmed a long run with `s.distance_km * LONG_RUN_SOFTEN_PCT` and skipped it when
+`distance_km` was absent. **Tags:** ⚙️ NO BOARD (defect restoring documented intent) — confirmed, no prescription delta.
+
+📐 **Premise re-measured, and it is sharper than filed.** The item cited SESSION-KM-01's 95.8% of all beginner
+sessions; measured on the long run specifically: **86.8% of a beginner's long runs have no `distance_km` (21,916 of
+25,250), against 0% for intermediate and 0% for experienced.**
+
+🔴 **DEFECT 2 WAS LARGER AND HIT THE MAJORITY, NOT THE MINORITY.** Over 48,221 generated long runs, `distance_km`
+present without `duration_mins` **never occurs (0)**, while **34,264 carry BOTH**. The old code cut the distance and
+left the duration alone, so on **71% of eased long runs the runner saw a trimmed distance beside the full original
+duration** — two fields describing one session, one updated. The engine derives duration FROM distance, so both move.
+
+🔴 **DEFECT 3 IS THE ONE THE RUNNER ACTUALLY READ.** `adjustmentType` and `summary` were derived from
+`signal.sessionType === 'long'`, independently of whether the edit happened — so the untouched beginner was still
+told **"Long run trimmed 15%."**, with no `eased_for` mark to match it. The claim now comes from the edited session,
+and **an adjustment that changed nothing returns `null`** so the next trigger is considered instead.
+
+⚠️ **AND MY FIRST VERSION OF THAT THIRD GATE WAS HOLLOW.** Deriving the summary from the edit is not testable while
+the discriminating case — a long run the ease cannot touch — is unreachable: reverting the summary alone left every
+arm green. Returning `null` makes it constructible. **A guard whose failure cannot be constructed is not a guard.**
+It also avoids inventing a third runner-facing sentence for a case that is 0 of 48,221.
+
+📐 5 arms in `planAdjustment.test.ts`, reusing the `longSessionMins` / `longRunWeekMins` fixtures already there for
+§66 Am. 1. **Falsified four ways, each with a landing assertion:** distance-only (3 red) · summary back on the signal
+(**1 red — the discriminator, where nothing would have caught it before**) · no `eased_for` mark (3 red) · the
+`&& s.distance_km` guard restored (2 red).
+
+---
+
+🔴 **THE SAME ROOT CAUSE SITS IN TWO MORE PLACES AND ONE OF THEM IS SEVERE.** `scaleSession` exists twice —
+`lib/plan/taperRecalibration.ts:64` and `lib/coaching/postRaceReshape.ts:85` — both opening
+`if (!session.distance_km) return session`. ⚠️ **`taperRecalibration.test.ts` already knew**, calling the early
+return *"a property of a DIFFERENT function"* it was relying on for its rest-day guard.
+
+📐 **Measured, simulating a 40% build under-run on 1,370 generated plans: the taper recalibration is INERT FOR 100%
+OF BEGINNERS — 457 of 457 return `applied: true` and change nothing, against 0 of 913 for intermediate and
+experienced.** And it is worse than a no-op: `computeTaperRecalibration` stamps `taper_recalibrated_at`,
+`/api/recalibrate-taper` **saves that plan**, and every later call short-circuits on the stamp. **A beginner's
+one-shot taper recalibration is consumed by a run that did nothing**, and the API returns `recalibrated: true` with a
+non-empty `weeksModified` on all 457 — `weeksModified` counts weeks VISITED, not weeks ALTERED, which is defect 3
+again in the sibling function.
+
+🏃 **That one is the Coaching Board's**: it changes what every beginner is prescribed in the taper. Not filed as a new
+item — it is the next piece of work, with the measurement above as its submission.
 
 #### ✅ `STRENGTH-RECOVERY-01` — recovery softens strength. 🏃 Coaching Board **CORRECT WITH AMENDMENT** (re-sat 2026-10-17) · ✅ BUILT and LIVE 2026-10-18 (migration applied, deployed)
 

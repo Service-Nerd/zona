@@ -6,6 +6,30 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-11-10 — READINESS-LONG-DURATION-01 · three defects in three lines, and the item named one
+**Shipped:** A recovery ease now trims a long run whichever way it is measured, trims both figures when a session carries both, and only claims a trim when it performed one.
+
+**Dev learning:** The item was filed as "a recovery ease cannot trim a duration-anchored long run" and that was true, but it was the smallest of three faults in the same three lines.
+
+The filed one: `if (isLongRun(s) && s.distance_km)` fell through, and **86.8% of a beginner's long runs carry no `distance_km`** — 21,916 of 25,250 generated, against exactly 0% for intermediate and experienced.
+
+The bigger one, which I only saw because I measured anchor presence rather than absence: of 48,221 generated long runs, `distance_km` without `duration_mins` **never happens**, while **34,264 carry both**. The old code cut the distance and left the duration alone. So the minority got no trim and **the majority — 71% of eased long runs — got a trimmed distance sitting beside the full original duration.** I went in to fix a cohort of beginners and the larger defect was in everyone else.
+
+The third: `summary` was derived from `signal.sessionType === 'long'`, not from whether the edit happened. The beginner whose session was untouched was told **"Long run trimmed 15%."**
+
+**Product/creator learning:** The runner reads the summary, not the session object. Of the three faults, the one that actually reached a person was the sentence — and it was the only one with no code defect behind it at all; the computation was simply never consulted. A claim derived from an input rather than from an output will eventually describe something that did not happen.
+
+**AI-building learning:** My first version of the third gate was hollow and I nearly shipped it. I derived the summary from the edited session, which is correct, and wrote an arm asserting it. Then I checked whether reverting the summary alone would turn anything red, and it would not: the only case that distinguishes the two is a long run the ease cannot touch, and that case is 0 of 48,221. **A guard whose failure cannot be constructed is not a guard.** The fix was to change the semantics rather than the assertion — an adjustment that changed nothing now returns `null` — which makes the failure constructible and, as a bonus, avoids inventing a new runner-facing sentence for an unreachable branch.
+
+**The honest bit:** Measuring the sibling sites, I passed `weeklyActuals` as an array of objects into a function that takes a `Map`, silenced it with `as never`, and got `applied: 0` across all three levels. I read that as "the taper never fires" for a few seconds before recognising it — **this repo has a whole wave recorded under exactly that defect, four scripts passing the wrong shape through `as never` and getting NaN.** I did it again, in a script written to measure someone else's version of the same mistake.
+
+With the real `Map`, the finding is the serious one: **the taper recalibration is inert for 100% of beginners** — 457 of 457 return `applied: true` and change nothing, 0 of 913 for everyone else. And it stamps `taper_recalibrated_at`, the route saves the plan, and every later call short-circuits, so a beginner's one chance at a recalibrated taper is spent by a run that did nothing. The API reports `recalibrated: true` with a non-empty `weeksModified`, which counts weeks visited rather than altered.
+
+**Hook material:** A one-line bug report ("the ease reads distance, beginners get minutes") turned into three defects, and the one that hit the most runners was the opposite of the one reported: 86.8% of beginners got no trim, and 71% of everyone else got a trimmed distance beside an untouched duration. The same root cause then turned out to make the taper recalibration a no-op for 100% of beginners — while marking the plan as recalibrated.
+
+**Postable?:** yes — "I went to fix a bug affecting beginners and found the bigger version of it affecting everyone else" is a good shape, and the `as never` confession is the honest half.
+
+
 ## 2026-11-10 — BINGE-WEEK-DELIVERED-01 · the fix I almost proposed was the one the board had reversed
 **Shipped:** Nothing, deliberately. The item is closed DON'T SHIP, and what shipped is the gate that would have let the next person read the answer instead of re-deriving it.
 
