@@ -2652,7 +2652,62 @@ Within a week of the build: `X-Ingest-Path: native` appears in ops events, and m
 
 ---
 
-### 🔲 `PINNED-CLOCK-RUNWAY-01` — pinning `planStart` closes one of the engine's two clock reads ⚙️ **NO BOARD**
+### ✅ `PINNED-CLOCK-RUNWAY-01` — **SHIPPED 2026-11-10 as a HARNESS, not the sweep the item asked for — because nothing in the at-risk population actually expires** ⚙️ **NO BOARD**
+
+✅ **SHIPPED 2026-11-10: `npm run check:clock`**, in `verify:ci`.
+
+🔄 **RE-MEASURED AND THE FIGURES DRIFTED UPWARD: 162 test files / 554 call sites** pass
+`planStart` without `todayOverride` (the item said 136 / 451), of which **51 files** carry a
+runway signal — a subset the item never quantified.
+
+🔴 **THEN THE CLOCK WAS ACTUALLY MOVED, AND NOTHING BROKE: all 51 pass at +3, +7, +14, +28, +30,
++56, +90, +120, +240, +240 and +365 days.** Pinning 161 sites would have been churn against no
+demonstrated defect — and the item's own text warns that a blanket gate *"gets switched off"*.
+⚠️ **The incident was real and is why this exists:** four tests in two files went red on a date
+roll on 2026-11-09, and those sites were pinned. **The class is LATENT, not gone. A harness says
+the day it stops being latent; a sweep only ever covers the sites someone thought of.**
+
+⚙️ **HOW IT WORKS.** Re-runs a population at a shifted wall clock — `Date` is replaced, timers
+are not, so a pinned `planStart` must behave identically and anything that moves was reading
+`new Date()`. **Population DERIVED, never listed**, and all three figures are printed so the
+narrowing is visible: engine-calling test files (218) → with an unpinned clock (166) → and a
+runway signal (51). `--all` runs the full 218.
+⏱️ **Cost, measured:** the subset is **51 files / 537 tests / ~20 s** per shift, so the four
+default shifts are **~80 s**; `--all` is **218 files / 1,928 tests / 3 m 24 s** per shift.
+⚠️ **In `verify:ci`, NOT the pre-push hook** — the founder accepted a ~3 min pre-push budget for
+`tsc` + the suite, and adding 50% to every push without being asked is a scope decision rather
+than a technical one. An arm asserts both halves of that placement.
+
+🔴 **FALSIFIED, AND THE FALSIFICATION CHANGED THE DEFAULT.** A planted fixture whose foundation
+runway flips 0 → 3 is caught at **+7d and MISSED at both +30d and +365d** — the gap classification
+it crosses is a boundary a few days wide, and a longer shift steps over it and lands back in the
+same class. **My own declared limit, *"a shift only finds what a shift reaches"*, was live in my
+own default of two shifts.** Now four: +7 / +30 / +90 / +365.
+⚠️ **And two earlier falsification attempts were aimed at the wrong population** — a plan-LENGTH
+assertion (which comes from `planStart → race_date` and no clock shift can move) and a
+`generateRulePlan` runway stamp (which is 0 either way without a compose decision). The fixture
+that worked is the one `PINNED-CLOCK-04` had already proved flips.
+
+🔴 **AND THE HARNESS'S FIRST CUT REPORTED A RED RESULT FROM ITS OWN BREAKAGE.** The generated
+vitest config was written to `tmpdir()`, where `vitest/config` cannot resolve — node walks up
+from the FILE and there is no `node_modules` above the system temp directory — so every run died
+at startup and it printed `✗ +30d (no tally)` plus the failure banner. **A red result from a
+broken harness reads exactly like a real defect.** It now prints the raw output, says
+**BROKEN HARNESS**, and exits **2** rather than 1, so a finding and a dead runner are different
+outcomes. ⚠️ The arm asserting that was loose at first and a mutation proved it: `exit(2)`
+appeared twice in the file, so changing the broken-harness branch to `exit(1)` left it green.
+Bound to its message now.
+
+📐 **6 arms in `pinnedClock.test.ts`, all falsified** — population derived from a walk with no
+test file named · an empty population refuses rather than passing · broken harness distinguished
+· four shifts · `Date` replaced without fake timers · wired to `verify:ci` and not to pre-push.
+
+🔻 **What this does not prove.** The default population is a **heuristic**: a file with no runway
+signal can still expire — a benchmark ageing against §10's ramp is the recorded example, and
+`pinnedClock.test.ts`'s own arms own that rule. `--all` is the honest population and is one flag
+away, at 3 m 24 s a shift. And a shift only finds what a shift reaches: a test that breaks on a
+calendar boundary between two probed offsets is invisible. **161 sites remain unpinned, on
+purpose, with a harness watching them instead.**
 
 Found 2026-11-09 when the full suite went red on a date roll with **no code change**: 4 tests in
 2 files. Third instance of the `PINNED-CLOCK-01` family, and `CLAUDE.md` already predicts it —

@@ -6,6 +6,27 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-11-10 — PINNED-CLOCK-RUNWAY-01 · the item asked me to pin 161 call sites; I moved the clock instead
+**Shipped:** `npm run check:clock` — a harness that re-runs engine tests at a shifted wall clock.
+
+**Dev learning:** the item specified a sweep: pin `todayOverride` on every at-risk `generateRulePlan` call, and it had measured 136 files / 451 sites. Re-measured: **162 files / 554 sites**, of which 51 carry a runway signal. Then, instead of pinning 161 sites, I moved the clock: **all 51 files pass at +3, +7, +14, +28, +30, +56, +90, +120, +240 and +365 days.** So the sweep would have been churn against no demonstrated defect — and the item's own text warns that a blanket gate gets switched off. The incident was real (four tests red on a date roll the day before) and those sites were already pinned, which means the class is **latent**. A harness tells you the day it stops being latent; a sweep only ever covers the sites someone thought of.
+
+**The falsification changed the product.** I planted a fixture whose foundation runway flips 0 to 3. It is caught at **+7 days and missed at both +30 and +365** — the gap classification it crosses is a boundary a few days wide, and a longer shift steps straight over it and lands back in the same class. **My own declared limit, "a shift only finds what a shift reaches", was live in my own default of two shifts.** It is four now.
+
+**And two falsification attempts before that were aimed at the wrong population.** First I asserted plan LENGTH, which comes from `planStart` to `race_date` and no clock shift can move. Then a `generateRulePlan` runway stamp, which is 0 either way without a compose decision. The fixture that finally bit was the one I had already proved flips, earlier in the same session, for a different item. **I had the right fixture in my hand and reached for two wrong ones first.**
+
+**The worst moment:** the harness's first run printed `✗ +30d (no tally)` and the whole failure banner. I nearly reported a finding. The generated vitest config was being written to `tmpdir()`, where `vitest/config` cannot resolve — node walks up from the file and there is no `node_modules` above the system temp directory — so every run died at startup. **A red result from a broken harness reads exactly like a real defect.** It now prints the raw output, says BROKEN HARNESS, and exits 2 rather than 1, so a finding and a dead runner are different outcomes.
+
+**AI-building learning:** the arm I wrote to guarantee that distinction was loose, and a mutation proved it. `toMatch(/process.exit\(2\)/)` passed with the broken-harness branch changed to `exit(1)`, because the file has a second `exit(2)` elsewhere and one match satisfied the regex. **Asserting that two things exist somewhere in a file is not asserting they are connected.** It is bound to its own message now.
+
+**The honest bit:** I did not pin the 161 sites, and I am not pretending that is the same as fixing them. The default population is a heuristic — a file with no runway signal can still expire — and the full 218-file sweep costs 3m24s per shift, so it sits behind a flag. What shipped is a watcher, not a repair, and the item will look open to anyone who reads it as a sweep.
+
+**Hook material:** A ticket asked me to pin 161 call sites against clock drift. I moved the clock forward a year instead: every one of them passed. The real finding was that my own two-shift default missed the one fixture I planted to test it.
+
+**Postable?:** yes
+
+---
+
 ## 2026-11-10 — RECAL-REPAIR-DRIVER-VALIDATOR-01 · the measurement the item said was impossible was in plan_archive
 **Shipped:** The last validator exemption retired. The `EXEMPT` map is empty.
 

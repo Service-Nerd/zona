@@ -309,3 +309,75 @@ describe('PINNED-CLOCK-04 — runEngine forwards `today` to generation, not just
     expect(plannedFoundationWeeks('2026-11-17', PLAN_START), 'a gap at the later clock').toBeGreaterThan(0)
   })
 })
+
+/**
+ * 🔴 THE CLOCK-DRIFT HARNESS MUST DERIVE ITS POPULATION (`PINNED-CLOCK-RUNWAY-01`, 2026-11-10).
+ *
+ * `scripts/check-clock-drift.ts` re-runs engine tests at a shifted wall clock. Its whole value
+ * is that the population is computed — a hand-written file list would be *"the files someone
+ * thought of"*, which is the failure this repo has recorded for four separate checks.
+ *
+ * 📐 Why a harness rather than the sweep the item asked for: re-measured 2026-11-10, **162 test
+ * files / 554 call sites** pass `planStart` without `todayOverride` (the item said 136 / 451),
+ * of which **51 files** carry a runway signal — and **all of them pass at +7, +30, +90 and +365
+ * days**. Pinning 161 sites would be churn against no demonstrated defect; the incident that
+ * filed the item was real and already fixed, so the class is LATENT. A harness says the day it
+ * stops being.
+ */
+describe('PINNED-CLOCK-RUNWAY-01 — the drift harness derives its population', () => {
+  const SRC = readFileSync(join(process.cwd(), 'scripts/check-clock-drift.ts'), 'utf8')
+  const code = SRC
+    .replace(/\/\*[\s\S]*?\*\//g, m => m.replace(/[^\n]/g, ' '))
+    .replace(/\/\/[^\n]*/g, m => m.replace(/[^\n]/g, ' '))
+
+  it('walks the tree and never names a test file', () => {
+    expect(code, 'the population comes from a directory walk').toMatch(/readdirSync/)
+    // A `.test.ts` path spelled out in code is a hand-written population.
+    const named = code.match(/['"][\w/.-]*\.test\.tsx?['"]/g) ?? []
+    expect(named, 'no test file may be named in the script').toEqual([])
+  })
+
+  it('🔴 refuses an empty or tiny population rather than passing', () => {
+    // `an empty population must not render` — the recorded lesson. A broken derivation must
+    // exit non-zero, not print a tick over nothing.
+    expect(code).toMatch(/population\.length < \d+/)
+    expect(code).toMatch(/POPULATION TOO SMALL/)
+  })
+
+  it('🔴 distinguishes a BROKEN HARNESS from a clock-dependent test', () => {
+    // The first cut printed the failure banner for a vitest run that never started (the
+    // generated config sat in `tmpdir()` and could not resolve `vitest/config`). A red result
+    // from a broken harness reads exactly like a real defect.
+    expect(code).toMatch(/BROKEN HARNESS/)
+    // ⚠️ BOUND TO ITS BRANCH, and the loose form did not bite. `toMatch(/process\.exit\(2\)/)`
+    // passed with the broken-harness exit changed to 1, because the file has a SECOND
+    // `exit(2)` (the too-small population) and one match satisfied it. A mutation proved that,
+    // so the assertion ties the code to the message instead of asserting both exist somewhere.
+    expect(code, 'the broken-harness branch must exit 2, not 1 — a finding and a broken runner '
+      + 'are different outcomes').toMatch(/BROKEN HARNESS[\s\S]{0,200}?process\.exit\(2\)/)
+  })
+
+  it('probes more than one shift, and the default spans a week to a year', () => {
+    // 📐 The planted falsification fixture is caught at +7d and MISSED at +30d and +365d, so a
+    // two-shift default was insufficient — measured, not assumed.
+    expect(code).toMatch(/\[7, 30, 90, 365\]/)
+  })
+
+  it('replaces `Date` without touching timers, so a pinned planStart is unaffected', () => {
+    expect(code).toMatch(/globalThis\.Date = D/)
+    expect(code, 'fake timers would change async behaviour, not just the date')
+      .not.toMatch(/useFakeTimers/)
+  })
+
+  it('is wired into verify:ci, and NOT into the pre-push hook', () => {
+    const pkg = JSON.parse(readFileSync(join(process.cwd(), 'package.json'), 'utf8'))
+    expect(pkg.scripts['check:clock'], 'the script must exist').toBeTruthy()
+    expect(pkg.scripts['verify:ci'], 'CI runs it').toContain('check:clock')
+    // ⚠️ DELIBERATELY NOT in `.githooks/pre-push`. It costs ~80 s (4 shifts × ~20 s) and the
+    // founder accepted a ~3 min pre-push budget for tsc + the suite; adding 50% to every push
+    // without being asked is a scope decision, not a technical one. The class is latent and CI
+    // is the right cadence for it.
+    expect(readFileSync(join(process.cwd(), '.githooks/pre-push'), 'utf8'))
+      .not.toContain('check:clock')
+  })
+})

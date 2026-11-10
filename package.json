@@ -20,7 +20,7 @@
     "test:hooks": "bash scripts/test-hooks.sh",
     "verify:rules": "NODE_ENV=production tsx scripts/plan-rules-report.ts",
     "verify:coaching": "NODE_ENV=production tsx scripts/coaching-deviation-scan.ts",
-    "verify:ci": "npm run typecheck && npm run backlog:verify && npm run verify:hooks && npm run test:githooks && npm run sweep:colours && npm run test:hooks && npm run test:cap-config && npm run typecheck:ios && npm run test && npm run review:cohort && npm run verify:invariants && npm run verify:matrix && npm run verify:sweep && npm run verify:strength && npm run verify:rules && npm run verify:coaching && npm run audit:plans",
+    "verify:ci": "npm run typecheck && npm run backlog:verify && npm run verify:hooks && npm run test:githooks && npm run sweep:colours && npm run test:hooks && npm run test:cap-config && npm run typecheck:ios && npm run test && npm run review:cohort && npm run verify:invariants && npm run verify:matrix && npm run verify:sweep && npm run verify:strength && npm run verify:rules && npm run verify:coaching && npm run audit:plans && npm run check:clock",
     "verify": "npm run verify:ci && npm run check:slow",
     "sync:ios": "node scripts/preflight-node.mjs && npx cap sync ios && node scripts/fix-cap-config.mjs && node scripts/verify-cap-config.mjs",
     "verify:ios-plugins": "node scripts/verify-cap-config.mjs",
@@ -54,7 +54,8 @@
     "measure:build-specificity": "tsx scripts/measure-build-specificity.ts",
     "backlog:open": "bash scripts/backlog-open.sh",
     "backlog:verify": "node scripts/backlog-verify.mjs",
-    "sweep:colours": "bash scripts/sweep-colours.sh"
+    "sweep:colours": "bash scripts/sweep-colours.sh",
+    "check:clock": "tsx scripts/check-clock-drift.ts"
   },
   "dependencies": {
     "@capacitor/app": "^8.1.0",
