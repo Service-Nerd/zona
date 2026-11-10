@@ -867,7 +867,7 @@ say "  standing debt: ${uncontracted} of ${total} API routes have no contract (C
 # falling-only discipline as `UNCONTRACTED_BASELINE` and `UNCONTRACTED_ANY_BASELINE` above, and
 # the same obligation beside the number: say whether a fall was a contract WRITTEN or a route
 # DELETED, because only the first is progress.
-API_UNCONTRACTED_BASELINE=12   # 13 -> 12, 2026-11-08: `post-race-reshape` CONTRACT WRITTEN (not a route removed)
+API_UNCONTRACTED_BASELINE=11   # 12 -> 11, 2026-11-10: `strava/link-activity` CONTRACT WRITTEN (not a route removed) — AI-ROUTE-HTTP-HOP-CEILING-01 changed the route, which obliges one
 if [ "$uncontracted" -gt "$API_UNCONTRACTED_BASELINE" ]; then
   say "  GREW: ${uncontracted} uncontracted API routes, baseline ${API_UNCONTRACTED_BASELINE} — write the contract for the new route"
   cfail=1; fail=1
