@@ -18,6 +18,7 @@ import type { Plan, Week, Session, Phase } from '@/types/plan'
 import { GENERATION_CONFIG, raceDistanceKey } from '@/lib/plan/generationConfig'
 import { isLongRun, isHardEffort } from '@/lib/plan/sessionRole'
 import { sessionFloorsFor, type SessionFloors } from '@/lib/plan/sessionFloors'
+import { sessionKmSelfPaced } from '@/lib/plan/sessionDistance'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -60,17 +61,65 @@ export interface TaperRecalibrationResult {
  * for a missing longest run — "we do not know" must not read as "this runner
  * can only manage 2 km".
  */
+/**
+ * 🔴 TAPER-DURATION-ANCHOR-01 (2026-11-10) — THIS SCALED NOTHING FOR A BEGINNER, AND SAID IT HAD.
+ *
+ * It opened `if (!session.distance_km) return session`. **86.8% of a beginner's long runs and
+ * the bulk of their other sessions are duration-anchored** (`SESSION-KM-01`), so the whole
+ * recalibration was inert for them. Measured by simulating a 40% build under-run over 1,370
+ * generated plans: **457 of 457 beginner plans returned `applied: true` and changed not one
+ * session, against 0 of 913 for intermediate and experienced.**
+ *
+ * 🔴 AND INERT WAS THE KINDER HALF. The caller still sets `weekly_km: newWeeklyKm`, so the
+ * taper week's TOTAL fell while every session stayed put: the runner saw a smaller weekly
+ * number against the same runs. Measured after recalibration, |session sum − `weekly_km`|:
+ * **beginner median 11.71 km (p90 16.17, max 22.76) against 4.00–4.50 for the other two.**
+ * Some divergence is inherent to the 0.5 km rounding and the floors; **the beginner excess is
+ * this defect.** ADR-022's curve-versus-delivered class, created here.
+ *
+ * ⚠️ Worse still, `computeTaperRecalibration` stamps `taper_recalibrated_at`, the route SAVES
+ * that plan, and every later call short-circuits on the stamp — so **a beginner's one-shot
+ * taper recalibration was consumed by a run that did nothing.**
+ *
+ * 🔑 ONE FLOOR, IN KM, APPLIED AS A UNIT-FREE RATIO. `sessionKmSelfPaced` is the owner of "how
+ * far is this session" and prices a duration-anchored session through its own pace (and its
+ * structured steps, `SESSION-KM-STRUCTURED-PACE-01`). It is **not inverted here** — that
+ * mapping is one-way — so the floor is resolved in km exactly as before and the resulting
+ * ratio is applied to whichever anchor the session carries. No new numeric, and
+ * `MIN_SESSION_DISTANCE_KM` keeps its single meaning.
+ *
+ * ⚠️ A SESSION WITH NO PRICE IS LEFT ALONE, never scaled on a guess: `sessionKmSelfPaced`
+ * returns null when there is no pace to convert with, and `?? 0` here would assert the session
+ * covered no ground — the `SESSION-KM-01/02` trap.
+ *
+ * ⚠️ THE FLOOR CAN STILL RAISE A SESSION above its original, because `Math.max(minFloor, …)`
+ * always could. That is pre-existing behaviour for the distance path and is mirrored rather
+ * than quietly changed here; if it is wrong it is wrong for both anchors and is its own ruling.
+ */
 function scaleSession(session: Session, scaleFactor: number, floors: SessionFloors): Session {
-  if (!session.distance_km) return session
   const minFloor =
     isLongRun(session)          ? floors.long
     : isHardEffort(session)
       ? floors.quality
       : floors.easy
-  const scaled = Math.round(session.distance_km * scaleFactor * 2) / 2  // 0.5 km precision
-  const newKm = Math.max(minFloor, scaled)
-  if (newKm === session.distance_km) return session
-  return { ...session, distance_km: newKm, coach_notes: undefined }
+
+  if (session.distance_km != null) {
+    const scaled = Math.round(session.distance_km * scaleFactor * 2) / 2  // 0.5 km precision
+    const newKm = Math.max(minFloor, scaled)
+    if (newKm === session.distance_km) return session
+    return { ...session, distance_km: newKm, coach_notes: undefined }
+  }
+
+  if (session.duration_mins != null && session.duration_mins > 0) {
+    const km = sessionKmSelfPaced(session)
+    if (km == null || !(km > 0)) return session
+    const effective = Math.max(minFloor, km * scaleFactor) / km
+    const newMins = Math.round(session.duration_mins * effective)
+    if (newMins === session.duration_mins) return session
+    return { ...session, duration_mins: newMins, coach_notes: undefined }
+  }
+
+  return session
 }
 
 /** Derive the taper Phase from plan.phases or by scanning plan.weeks. */
@@ -186,7 +235,15 @@ export function computeTaperRecalibration(
       newSessions[d] = scaleSession(session, scaleFactor, floors)
     }
 
-    weeksModified.push(weekN)
+    // 🔴 `weeksModified` RECORDED EVERY WEEK VISITED, NOT EVERY WEEK ALTERED, so the route
+    // returned `recalibrated: true` with a non-empty list for all 457 beginner plans in which
+    // nothing moved. Same claim-versus-computation shape as the readiness summary
+    // (READINESS-LONG-DURATION-01), in the sibling function.
+    // ⚠️ `weekly_km` is compared too: a week whose total changed IS modified, even if the
+    // rounding left every session where it was. The claim must cover everything we wrote.
+    const sessionsChanged = (Object.entries(newSessions) as [string, Session | undefined][])
+      .some(([day, s]) => s !== week.sessions[day as keyof Week['sessions']])
+    if (sessionsChanged || newWeeklyKm !== originalWeeklyKm) weeksModified.push(weekN)
     return { ...week, sessions: newSessions, weekly_km: newWeeklyKm }
   })
 

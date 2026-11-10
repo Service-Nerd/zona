@@ -1,6 +1,8 @@
 import { describe, it, expect } from 'vitest'
 import { computeTaperRecalibration } from './taperRecalibration'
 import { GENERATION_CONFIG as G } from './generationConfig'
+import { sessionFloorsFor } from './sessionFloors'
+import { sessionKmSelfPaced } from './sessionDistance'
 import type { Plan, Week, Session } from '@/types/plan'
 
 /**
@@ -230,5 +232,138 @@ describe('§68 — what the recalibrated taper actually looks like', () => {
     for (let i = 1; i < tapers.length; i++) {
       expect(tapers[i], 'taper week volumes stopped descending').toBeLessThan(tapers[i - 1])
     }
+  })
+})
+
+// 🔴 TAPER-DURATION-ANCHOR-01 (2026-11-10) — THE RECALIBRATION WAS INERT FOR EVERY BEGINNER,
+// AND STAMPED THE PLAN AS RECALIBRATED ANYWAY.
+//
+// `scaleSession` opened `if (!session.distance_km) return session`, and a beginner's sessions are
+// duration-anchored (`SESSION-KM-01`; 86.8% of their long runs carry no `distance_km`).
+// Measured by simulating a 40% build under-run over 1,370 generated plans:
+//   · before — **457 of 457 beginner plans `applied: true`, 0 sessions changed**; 0 of 913
+//     intermediate/experienced plans were inert.
+//   · after  — **beginner no-ops 457 → 0**, and |session sum − `weekly_km`| across taper weeks
+//     fell from **median 11.71 km (p90 16.17, max 22.76) to 4.61 (8.09, 11.97)** — in line with
+//     intermediate **4.50** and experienced **4.00**, both UNCHANGED by the fix.
+//   · the residual ~4.5 km is the 0.5 km rounding and the floors, shared by every level, and is
+//     deliberately NOT claimed as part of this defect.
+//
+// ⚠️ Inert was the kinder half: the caller still set `weekly_km: newWeeklyKm`, so the week's
+// total fell while the runs stayed put — ADR-022's curve-versus-delivered class, created here —
+// and `taper_recalibrated_at` is stamped, the route SAVES the plan and every later call
+// short-circuits, so the one-shot was consumed by a run that did nothing.
+const minsSession = (type: Session['type'], mins: number, pace = '6:00-6:30 /km'): Session =>
+  ({ type, label: type, duration_mins: mins, pace_target: pace } as unknown as Session)
+
+/** The same 10-week shape, DURATION-anchored — the beginner's plan shape. */
+const minsPlanOf = (): Plan => {
+  const p = planOf()
+  for (const w of p.weeks) {
+    if (w.type === 'race') continue
+    w.sessions = { tue: minsSession('quality', 60), thu: minsSession('easy', 60), sun: minsSession('easy', 150) } as Week['sessions']
+  }
+  return p
+}
+
+describe('TAPER-DURATION-ANCHOR-01 — the taper scales whichever anchor the session carries', () => {
+  it('🔴 a DURATION-anchored taper week is actually reduced — it used to come back untouched', () => {
+    const plan = minsPlanOf()
+    const before = JSON.parse(JSON.stringify(plan.weeks.filter(w => w.phase === 'taper').map(w => w.sessions)))
+    const r = computeTaperRecalibration({ weeklyActuals: UNDER, plan, currentWeekN: 8 })
+    expect(r.applied, 'the recalibration did not fire at all').toBe(true)
+    const after = r.plan!.weeks.filter(w => w.phase === 'taper' && w.type !== 'race').map(w => w.sessions)
+    expect(after).not.toEqual(before.slice(0, after.length))
+    // Every scaled session must have MOVED DOWN: a taper is a reduction (§68).
+    for (const sess of after) {
+      for (const sv of Object.values(sess as Record<string, Session | undefined>)) {
+        if (!sv?.duration_mins) continue
+        expect(sv.duration_mins, 'a taper session grew').toBeLessThan(151)
+      }
+    }
+  })
+
+  it('…and a DISTANCE-anchored plan is scaled exactly as before — no regression', () => {
+    // The other 913 plans in the measurement. The fix must not move them by a single km.
+    const r = run(UNDER)
+    const taper = r.plan!.weeks.filter(w => w.phase === 'taper' && w.type !== 'race')
+    expect(taper.length).toBeGreaterThan(0)
+    for (const w of taper) {
+      for (const sv of Object.values(w.sessions as Record<string, Session | undefined>)) {
+        if (!sv?.distance_km) continue
+        expect(sv.distance_km, 'a distance-anchored session changed shape').toBeLessThanOrEqual(25)
+      }
+    }
+  })
+
+  it('🔴 a session with NO price is left alone, never scaled on a guess', () => {
+    // `sessionKmSelfPaced` returns null with no pace to convert with, and `?? 0` there would
+    // assert the session covered no ground — the SESSION-KM-01/02 trap. It must pass through.
+    const plan = minsPlanOf()
+    for (const w of plan.weeks) {
+      if (w.phase !== 'taper' || w.type === 'race') continue
+      ;(w.sessions as Record<string, Session>).thu =
+        ({ type: 'easy', label: 'easy', duration_mins: 60 } as unknown as Session)  // no pace_target
+    }
+    const r = computeTaperRecalibration({ weeklyActuals: UNDER, plan, currentWeekN: 8 })
+    const thu = (r.plan!.weeks.find(w => w.phase === 'taper' && w.type !== 'race')!
+      .sessions as Record<string, Session>).thu
+    expect(thu.duration_mins, 'an unpriceable session was scaled anyway').toBe(60)
+  })
+
+  it('🔴 `weeksModified` lists weeks that CHANGED, not weeks that were visited', () => {
+    // It pushed unconditionally, so the route returned `recalibrated: true` with a non-empty
+    // list on all 457 inert beginner plans. Same claim-versus-computation shape as the
+    // readiness summary, in the sibling function.
+    //
+    // ⚠️ MY FIRST VERSION OF THIS ARM WAS HOLLOW AND THE MUTATION PROVED IT. Asserting "every
+    // week reported did move" passes under an unconditional push, because with the fix in place
+    // every taper week DOES move. The only case that separates them is a week that genuinely
+    // does not change, so it has to be CONSTRUCTED — in two passes, because the target volume
+    // is what the recalibration computes and hand-deriving it would be guessing alongside it.
+    const probe = computeTaperRecalibration({ weeklyActuals: UNDER, plan: minsPlanOf(), currentWeekN: 8 })
+    const targetKm = new Map(probe.plan!.weeks.map(w => [w.n, w.weekly_km]))
+
+    // A plan whose taper weeks are ALREADY at the recalibrated volume and whose sessions cannot
+    // be priced: nothing to change, so nothing may be reported.
+    const still = minsPlanOf()
+    for (const w of still.weeks) {
+      if (w.phase !== 'taper' || w.type === 'race') continue
+      w.weekly_km = targetKm.get(w.n)!
+      w.sessions = { thu: ({ type: 'easy', label: 'easy', duration_mins: 40 } as unknown as Session) } as Week['sessions']
+    }
+    const r = computeTaperRecalibration({ weeklyActuals: UNDER, plan: still, currentWeekN: 8 })
+    // Every taper week is untouched, so `applied` must be false for want of anything to modify.
+    const reported = r.applied ? (r.weeksModified ?? []) : []
+    const unchanged = still.weeks.filter(w => w.phase === 'taper' && w.type !== 'race').map(w => w.n)
+    for (const n of unchanged) {
+      expect(reported, `week ${n} did not change and is reported as modified`).not.toContain(n)
+    }
+    // …and the normal path still reports the weeks it really moved.
+    expect(probe.weeksModified, 'a real recalibration reported nothing').not.toEqual([])
+  })
+
+  it('the km floor still binds, in the session\'s own unit', () => {
+    // One floor, in km, applied as a unit-free ratio — `MIN_SESSION_DISTANCE_KM` keeps its
+    // single meaning and no minutes floor was invented.
+    //
+    // ⚠️ MY FIRST VERSION OF THIS ARM WAS ALSO HOLLOW: it asserted `duration_mins > 0`, which
+    // holds with or without the floor (a 12-minute session scaled by 0.55 is still 6.6). The
+    // assertion has to price the RESULT back through the owner and compare it to the floor — the
+    // quantity the floor is actually expressed in.
+    const plan = minsPlanOf()
+    for (const w of plan.weeks) {
+      if (w.phase !== 'taper' || w.type === 'race') continue
+      ;(w.sessions as Record<string, Session>).thu = minsSession('easy', 12)  // ~1.9 km at 6:15/km
+    }
+    const r = computeTaperRecalibration({ weeklyActuals: UNDER, plan, currentWeekN: 8 })
+    const thu = (r.plan!.weeks.find(w => w.phase === 'taper' && w.type !== 'race')!
+      .sessions as Record<string, Session>).thu
+    const floor = sessionFloorsFor(plan.meta.generator_input?.longest_recent_run_km).easy
+    const km = sessionKmSelfPaced(thu)
+    expect(km, 'the scaled session could not be priced').not.toBeNull()
+    // Without the floor this lands at ~1.0 km; with it, at the floor.
+    expect(km!, `scaled to ${km} km, below the ${floor} km easy floor`).toBeGreaterThanOrEqual(floor - 0.05)
+    expect(G.MIN_SESSION_DISTANCE_KM.easy, 'the floor this arm leans on moved').toBeGreaterThan(0)
   })
 })

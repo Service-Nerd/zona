@@ -6,6 +6,30 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-11-10 — TAPER-DURATION-ANCHOR-01 · the taper recalibration was inert for every beginner and said otherwise
+**Shipped:** The taper recalibration now trims a session whichever way it is measured, and only reports the weeks it actually changed.
+
+**Dev learning:** This came out of the previous item's fallout. `scaleSession` opened `if (!session.distance_km) return session` and a beginner's sessions are duration-anchored, so the whole thing did nothing for them. Simulating a 40% build under-run over 1,370 generated plans: **457 of 457 beginner plans returned `applied: true` and changed not one session**, against 0 of 913 for everyone else.
+
+Inert was the kinder half. The caller still sets `weekly_km` to the recalibrated total, so the taper week's number fell while the runs stayed put — median |session sum − `weekly_km`| of **11.71 km** for beginners against 4.00–4.50 for the other two. And `taper_recalibrated_at` gets stamped, the route saves the plan, and every later call short-circuits on the stamp, so **a beginner's one chance at a recalibrated taper was spent by a run that did nothing.**
+
+The fix keeps one floor, in km. `sessionKmSelfPaced` prices a duration-anchored session through its own pace and structured steps, and it is deliberately **not** inverted — that mapping is one-way — so the floor resolves in km exactly as before and the resulting ratio, which is unit-free, goes to whichever anchor the session carries. No new numeric, and `MIN_SESSION_DISTANCE_KM` keeps its single meaning.
+
+**Product/creator learning:** None of the standing harnesses could have found this. `review:coaching`, `cohort:shape` and `verify:parity` all measure **generation**, and this runs post-hoc on a stored plan through an API route. A green run from any of them says nothing about it. The measurement that mattered — the no-op rate by level — had to be written for the occasion, which is the repeated shape in this codebase: the check exists, it is green, and the thing you care about is outside its population.
+
+**AI-building learning:** Two of my five test arms were hollow and only the mutations showed it. The `weeksModified` arm asserted "every week reported as modified did move" — which passes under the unconditional push I was trying to catch, **because with the fix in place every taper week does move.** The only case that separates them is a week that genuinely does not change, and that had to be constructed in two passes: run the recalibration once to learn the target volume, then build a plan already at it with sessions that cannot be priced. Hand-deriving that number would have been guessing alongside the producer.
+
+The floor arm was worse: it asserted `duration_mins > 0`, which is true with or without a floor. It now prices the result back through the owner and compares it to the floor — without the floor it lands at 1.12 km against a 4 km easy floor. **An assertion has to be made in the unit the rule is written in.**
+
+**The honest bit:** I ran five mutations expecting five reds and got three. Had I shipped on the first count, two of the five arms would have been decoration — and I would have written "falsified five ways" in the commit message, which is exactly the sentence that makes a hollow gate invisible later.
+
+And the third copy of this function, in `postRaceReshape.ts`, turns out to carry four defects including one that is plainly dimensional: `km / (duration_mins / distance_km)` is km²/min, so a recovery run comes back as 3 km in 0.5 minutes.
+
+**Hook material:** A taper recalibration that reported success, marked itself done so it could never run again, lowered the weekly total on screen, and changed not one run — for 457 of 457 beginner plans and 0 of 913 others. Then five mutations against my own five new tests returned three reds, and the two that stayed green were the two I would have quoted in the commit.
+
+**Postable?:** yes — "I ran five mutations expecting five reds and got three" is the honest version of test-writing with AI, and the inert-but-stamped taper is a concrete, understandable failure.
+
+
 ## 2026-11-10 — READINESS-LONG-DURATION-01 · three defects in three lines, and the item named one
 **Shipped:** A recovery ease now trims a long run whichever way it is measured, trims both figures when a session carries both, and only claims a trim when it performed one.
 

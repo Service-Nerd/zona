@@ -5355,8 +5355,48 @@ one-shot taper recalibration is consumed by a run that did nothing**, and the AP
 non-empty `weeksModified` on all 457 — `weeksModified` counts weeks VISITED, not weeks ALTERED, which is defect 3
 again in the sibling function.
 
-🏃 **That one is the Coaching Board's**: it changes what every beginner is prescribed in the taper. Not filed as a new
-item — it is the next piece of work, with the measurement above as its submission.
+✅ **`TAPER-DURATION-ANCHOR-01` — FIXED 2026-11-10, in the same wave, not filed.** ⚙️ **NO BOARD, stated:** §68's
+documented intent is that the taper re-anchors to what the body actually did; the code failed to do it for one cohort.
+That is a defect fix restoring documented intent, and the Coaching Board skill's own rule is to proceed without the
+board when a change closes a gap between documented intent and actual behaviour. ⚠️ It is also **not in the generation
+path** — `computeTaperRecalibration` runs post-hoc on a stored plan via `/api/recalibrate-taper` — so `review:coaching`,
+`cohort:shape` and `verify:parity` are all structurally blind to it and a green run from them proves nothing here. The
+measurement that matters is the no-op rate by level.
+
+📐 **Before → after**, simulating a 40% build under-run over 1,370 generated plans:
+
+| | beginner | intermediate | experienced |
+|---|---|---|---|
+| inert (`applied: true`, nothing changed) | **457 of 457 → 0** | 0 → 0 | 0 → 0 |
+| median \|session sum − `weekly_km`\| over taper weeks | **11.71 → 4.61 km** | 4.50 → **4.50** | 4.00 → **4.00** |
+| p90 / max | 16.17 / 22.76 → **8.09 / 11.97** | 7.00 / 10.00 unchanged | 7.00 / 10.00 unchanged |
+
+⚠️ **The residual ~4.5 km is the 0.5 km rounding and the floors, shared by every level, and is deliberately NOT claimed
+as part of this defect.** The other two cohorts are provably untouched, which is the regression evidence.
+
+🔑 **ONE FLOOR, IN KM, APPLIED AS A UNIT-FREE RATIO.** `sessionKmSelfPaced` is the owner of "how far is this session"
+and prices a duration-anchored one through its own pace and structured steps. **It is not inverted** — that mapping is
+one-way — so the floor is resolved in km exactly as before and the ratio is applied to whichever anchor the session
+carries. No new numeric; `MIN_SESSION_DISTANCE_KM` keeps its single meaning. A session with no pace is left alone,
+never `?? 0`.
+
+🔴 **AND TWO OF MY FIVE ARMS WERE HOLLOW, FOUND ONLY BY RUNNING THE MUTATIONS.** `weeksModified` asserted *"every week
+reported did move"*, which passes under an unconditional push **because with the fix every taper week does move** — the
+only discriminating case is a week that genuinely does not change, so it had to be constructed in two passes (the
+target volume is what the recalibration computes, and hand-deriving it would be guessing alongside it). And the floor
+arm asserted `duration_mins > 0`, true with or without a floor. It now prices the result back through the owner and
+compares it to the floor: without it, **1.12 km against a 4 km easy floor**. 📐 5 arms, all five falsified and red.
+
+---
+
+🔻 **THE THIRD SITE IS `postRaceReshape.ts` AND IT CARRIES FOUR DEFECTS, MEASURED 2026-11-10.** Not filed as a new item:
+it is the next piece of work. Run on an 8-week plan with a marathon result, `reshapedPlan` contains:
+**(1)** `toRecoveryRun` computes `km / (duration_mins / distance_km)`, which is **km²/min, not minutes** — a recovery
+run comes back as `dist=3 mins=0.5` and `dist=5 mins=0.8`; **(2)** `scaleSession` cuts the distance and leaves
+`duration_mins` **stale** — `dist=4 mins=140`, the same defect as the readiness one above; **(3)** the same
+`if (!session.distance_km) return session` guard, so a duration-anchored plan reports **`sessionsModified: 2` against
+6**; **(4)** a hardcoded `Math.max(3, …)` floor, the `MIN_SESSION_DISTANCE_KM` bypass that `TAPER-FLOOR-FLAT-01` fixed
+in the taper on 2026-09-19 and never applied here.
 
 #### ✅ `STRENGTH-RECOVERY-01` — recovery softens strength. 🏃 Coaching Board **CORRECT WITH AMENDMENT** (re-sat 2026-10-17) · ✅ BUILT and LIVE 2026-10-18 (migration applied, deployed)
 
