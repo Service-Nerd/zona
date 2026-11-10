@@ -8239,7 +8239,32 @@ function buildRulePlanOnce(
             return { volume_profile: 'build' as const }
           }
 
-          const reasons: string[] = []
+          // 🔴 NOTE-LEVER-INJURY-CAP-01 — EACH REASON CARRIES WHETHER A LEVER CAN MOVE IT.
+          //
+          // ⚠️ AND THE HONEST VERSION OF WHY, BECAUSE I GOT IT WRONG FIRST. I claimed a
+          // flag-based gate (`heldByInjury && lrFails && !volumeFails && !ratioFails`) left 856
+          // plans wrong and that reading `shown` fixed them. **It did not: measured, the two
+          // gates are IDENTICAL — both 0 — and the 856 was my probe's regex missing the reason
+          // text "Your biggest week reaches N km".** The probe was wrong, not the flag gate.
+          //
+          // 🔑 THEY ARE EQUIVALENT BY CONSTRUCTION TODAY, not just empirically — and code review
+          // corrected my proof of it, which is worth keeping because the corrected one is
+          // STRONGER. I wrote that "holds steady" requires `!lrFails`. It does not: its guard is
+          // `ratioFails && !volumeFails`, and a shipped note in `goldenPlans.test.ts.snap`
+          // carries both sentences. The real reason is that **"holds steady" and "biggest week"
+          // are mutually exclusive** (one needs `!volumeFails`, the other `volumeFails`), so
+          // `reasons.length <= 2` always: at most one volume reason beside the long-run one.
+          // All-unmovable is therefore exactly `lrFails && heldByInjury && !volumeFails &&
+          // !ratioFails` — the flag gate, verbatim.
+          //
+          // ⚠️ SO `slice(-2)` IS AN IDENTITY TODAY and the "a leverable reason gets truncated
+          // away" story I first told here was never possible. THE TAG IS KEPT FOR ONE HONEST
+          // REASON: it reads what the runner reads, so a THIRD reason — §45's week-on-week cap,
+          // a taper constraint — stays correct here and would silently break a flag gate. This
+          // copy has been rewritten three times, so a new reason is likely, not hypothetical.
+          // Tagged at the push rather than regexed out of the text afterwards, because matching
+          // the sentence is matching the spelling instead of the effect.
+          const reasons: { text: string; leverable: boolean }[] = []
           // ONE CAUSE, ONE TELLING — applied inside the note as well as between
           // tiles (SLT 2026-09-17). `ratioFails` and `volumeFails` are two
           // readings of the same fact: the weekly mileage does not get big
@@ -8271,14 +8296,14 @@ function buildRulePlanOnce(
             const baseNote = planMaxKm > peakKmActual && reasons.length === 0 && !volumeFails && !lrFails
               ? ` Your biggest week comes earlier in the block, not at the end.`
               : ''
-            reasons.push(`Your weekly mileage holds steady across this plan rather than climbing into the final weeks.${baseNote}`)
+            reasons.push({ text: `Your weekly mileage holds steady across this plan rather than climbing into the final weeks.${baseNote}`, leverable: true })
           }
           if (volumeFails) {
             // Keep BOTH figures — Hutchinson: the gap is the coaching fact, and a
             // note that reports a constraint without naming what it costs the
             // runner is a disclaimer, not coaching. Dropped: "floor", "% of race
             // distance", and the raw distance key.
-            reasons.push(`Your biggest week reaches ${peakKmActual} km, where a time goal at this distance usually wants nearer ${Math.round(volumeFloor)}km.`)
+            reasons.push({ text: `Your biggest week reaches ${peakKmActual} km, where a time goal at this distance usually wants nearer ${Math.round(volumeFloor)}km.`, leverable: true })
           }
           if (lrFails) {
             // COPY-GLYPH-01 (founder-reported, 2026-09-17) — this sentence used to
@@ -8294,13 +8319,21 @@ function buildRulePlanOnce(
             // LONG-RUN-BELOW-LONGEST-01 (Coaching Board 2026-10-28) — name the constraint that binds.
             // "It ran out of weeks" was said to runners whose long run was held by §9 Am. 3's injury
             // ceiling, with weeks to spare (graceemilyhill: 21 km now, held at 13.5 km by her back).
+            // 🔴 NOTE-LEVER-INJURY-CAP-01 — the note names an injury ceiling on the long run
+            // and then offers levers that lift WEEKLY VOLUME, which the ceiling holds whatever
+            // the runner changes. ⚠️ First hoisted above `volumeFails` "so the prescription can
+            // see it"; code review found nothing outside this block reads it, because the
+            // prescription reads `leverable`, not the flag. Scoped where it is set.
             const cap = longRunTimeCap(input)
             const heldByInjury = cap.source === 'injury' && pace.minPerKmEasy > 0
               && actualPeakLrKm >= cap.mins / pace.minPerKmEasy - GENERATION_CONFIG.DISTANCE_ROUNDING_PRECISION_KM
             const why = heldByInjury
               ? `Your ${INJURY_CAP_LABEL[cap.injury!]} history keeps the long run to ${durationText(cap.mins)}, so the plan stops it there.`
               : 'The long run can only grow so much week to week, and it ran out of weeks before it got there.'
-            reasons.push(`Your longest run reaches ${Math.round(actualPeakLrKm * 10) / 10} km, where this race wants nearer ${Math.round(longRunFloorKm * 10) / 10}km, so the closing stretch will be new ground on the day. ${why}`)
+            // ⚠️ `leverable: !heldByInjury` IS THE WHOLE FIX. A long run short because it ran
+            // out of WEEKS can be moved (more weeks, more volume to grow from). One held by an
+            // injury ceiling cannot be moved by anything the runner changes.
+            reasons.push({ text: `Your longest run reaches ${Math.round(actualPeakLrKm * 10) / 10} km, where this race wants nearer ${Math.round(longRunFloorKm * 10) / 10}km, so the closing stretch will be new ground on the day. ${why}`, leverable: !heldByInjury })
           }
           // MAINT-LABEL-01 (2026-09-11, second pass) — two defects in one string.
           //
@@ -8333,6 +8366,7 @@ function buildRulePlanOnce(
           // it is kept and the earlier, softer clauses are what drop. Taking
           // the LAST two rather than the first preserves that.
           const shown = reasons.slice(-2)
+          const shownText = shown.map(r => r.text)
           // ⚠️ TWO CAUSES WORE ONE SENTENCE, AND FOR THE COMMONER ONE IT WAS
           // FALSE (CB-PLAN-REVIEW-01, Coaching Board 2026-09-19).
           //
@@ -8362,7 +8396,7 @@ function buildRulePlanOnce(
           const closing = atCeiling
             ? ' The gains here come from the quality sessions, not from more miles.'
             : ' You will still get fitter: starting from where you are, you could hardly not.'
-          const diagnosis = opening + shown.join(' ') + closing
+          const diagnosis = opening + shownText.join(' ') + closing
 
           const suggestions: string[] = []
           if (input.days_available < 6) {
@@ -8380,7 +8414,33 @@ function buildRulePlanOnce(
           if ((lrFails || volumeFails) && totalWeeks < weeksWanted) {
             suggestions.push(`give yourself more weeks before race day (you have ${totalWeeks}, this distance wants at least ${weeksWanted})`)
           }
-          const prescription = suggestions.length > 0
+          // 🔴 NOTE-LEVER-INJURY-CAP-01 (2026-11-10) — A LEVER THAT CANNOT MOVE THE THING JUST
+          // NAMED IS NOT ADVICE. Found 2026-10-28 on graceemilyhill's plan: the note said
+          // *"Your back injury history keeps the long run to 2h, so the plan stops it there"*
+          // and then *"If you want it to build instead: run 4 days a week instead of 3, or give
+          // your weekday runs more room"*. **Both levers lift weekly volume. Neither touches the
+          // long run, which the injury ceiling holds whatever she changes.**
+          //
+          // 📐 MEASURED ON A CONSTRUCTED COHORT, because NEITHER STANDING GRID REACHES IT:
+          // `cohortGrid` carries `injury_history: []` and `targetedGrid`'s set is Knee / Shin /
+          // Achilles — not back or plantar, which are the two histories that carry the §9 Am. 3
+          // long-run ceiling. Over the FULL HM+ grid, un-strided — **41,472 attempts → 31,656
+          // notes, 15,888 naming the cap: 0 offer an inapplicable lever after the fix.** The
+          // strided corpus the test runs (stride 23) is 1,804 attempts → 1,378 notes, **692
+          // naming the cap, 290 of them wrong before the fix and 0 after**, with 402 correctly
+          // keeping theirs. ⚠️ I first quoted "5,432 plans" for a corpus that was 5,926 attempts
+          // / 4,522 notes — NEITHER figure. **Name the corpus, or the denominator is
+          // decoration**, and the figure drifts the moment the stride does.
+          //
+          // ⚠️ SUPPRESSED ONLY WHERE EVERY LEVER IS INAPPLICABLE. Where the volume or the ratio
+          // ALSO fails (460 of the 2,276) the levers genuinely move those, so they stay — the
+          // residual there is that the sentence still reads as though it lifts the long run too,
+          // and that is a WORDING change, which this item reserves to the founder.
+          // 🔑 READ FROM `shown`, NOT THE FLAGS — provably equivalent today (see above), and the
+          // form that stays correct when a third reason is added. If nothing the runner can
+          // READ is movable, no lever belongs in the sentence.
+          const everyLeverInapplicable = shown.length > 0 && shown.every(r => !r.leverable)
+          const prescription = suggestions.length > 0 && !everyLeverInapplicable
             ? ` If you want it to build instead: ${suggestions.join(', or ')}.`
             : ''
           return {

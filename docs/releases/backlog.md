@@ -1686,11 +1686,57 @@ Escalated by the Coaching Board 2026-10-28. `injury_history` is a list with no d
 holds every marathon long run at two hours for good, and §12 / §90 caps read the same way. Whether to collect recency
 (a date, or current / past) is a wizard and product decision.
 
-### 🔲 `NOTE-LEVER-INJURY-CAP-01` — the maintenance note's levers cannot lift an injury-capped long run ⚙️ **NO BOARD** to measure; 👤 **FOUNDER** (words)
+### ✅ `NOTE-LEVER-INJURY-CAP-01` — **SHIPPED 2026-11-10. 960 plans offered a lever that could not move what the note had just named** ⚙️ measured; 👤 **FOUNDER tag discharged without new words**
 
-Found 2026-10-28: graceemilyhill's note now names the cap ("Your back injury history keeps the long run to 2h"), then
-ends "If you want it to build instead: run 5 days a week instead of 4, or give your weekday runs more room". Those lift
-the weekly volume, not the long run, which the cap holds whatever she changes.
+Found 2026-10-28: graceemilyhill's note names the cap ("Your back injury history keeps the long run to 2h"), then ends
+"If you want it to build instead: run 5 days a week instead of 4, or give your weekday runs more room". Those lift the
+weekly volume, not the long run, which the cap holds whatever she changes.
+
+👤 **The FOUNDER tag is discharged, not deferred.** The fix writes **no new copy**: each reason now carries whether a
+lever can move it (`leverable`), and the prescription is suppressed when every reason the note SHOWS is unmovable. There
+were no words to approve, so there was nothing to route.
+
+🔴 **NEITHER STANDING GRID REACHES THE COHORT.** `cohortGrid` carries `injury_history: []`; `targetedGrid`'s set is
+Knee / Shin / Achilles — **not back or plantar fasciitis, the two histories that carry §9 Am. 3's long-run ceiling.** So
+the cell was constructed. **Full HM+ grid, un-strided: 41,472 attempts → 31,656 notes, 15,888 naming the cap — 0 offer an
+inapplicable lever after the fix.** The corpus the gate runs (stride 23): 1,804 attempts → 1,378 notes, **692 naming the
+cap, 290 wrong before and 0 after**, 402 correctly keeping theirs. ⚠️ **The stride is a cost decision, not a coverage
+claim:** at stride 7 one arm cost 29.4s, **98.2% of `check:slow`'s budget** — a thing to fix, not to baseline.
+
+🔴 **AND CODE REVIEW FOUND FIVE THINGS, FOUR OF THEM IN MY OWN CLAIMS RATHER THAN THE LOGIC.**
+
+| | |
+|---|---|
+| **The diff left the suite RED** | `lib/__fixtures__/hardcodedUnitsDebt.json` keys on **exact source text**, and reshaping two `reasons.push(...)` calls broke both arms. The pre-push gate would have refused it; **I was one command from shipping red for the second time this week** |
+| **My equivalence proof was false on one leg** | I wrote that "holds steady" requires `!lrFails`. Its guard is `ratioFails && !volumeFails`, and a shipped snapshot note carries both sentences. ⚠️ **The corrected proof is STRONGER:** "holds steady" and "biggest week" are mutually exclusive, so `reasons.length <= 2` always and `slice(-2)` is an **identity** — so the "a leverable reason gets truncated away" story I told was never possible |
+| **The denominator was neither figure** | I quoted "5,432 plans" against **5,926 attempts / 4,522 notes**. The other three reconciled exactly. **Name the corpus, or the denominator cannot be checked** — and it drifted again the moment the stride changed, which is the point: every figure now names its corpus |
+| **A hoist with a false reason** | `let heldByInjury` was lifted above `volumeFails` "so the prescription can see it"; nothing outside the block reads it, because the prescription reads `leverable`. Scoped where it is set |
+| **~16s of corpus at MODULE scope** | It landed in import time, where `check:slow`'s new-slow-test and drift rules **cannot see it at all**. Lazy now: `tests 17.70s / import 1.54s` |
+
+🔴 **AND MY OWN FALSIFICATION HIT A COMMENT INSTEAD OF THE CODE.** `s/leverable: !heldByInjury/leverable: true/` with no
+`/g` takes the **first** match, which was the comment *about* that expression two lines above. The suite stayed green and
+I read it as "the two gates are indistinguishable". Retargeted at the code line with a landing assertion, it fails naming
+**960** — the measured figure. ⚠️ **`HOOK-RGBA-COMMENTS-01`'s shape, in the falsification built to catch this class.**
+
+⚠️ **What this does not prove:** the three falsifications show the suppression is load-bearing; **no arm can distinguish
+the `shown`-based gate from the flag gate**, because they are provably equivalent today. The `shown` form is kept because
+it reads what the runner reads, so a third reason stays correct here and would silently break a flag gate. `review:coaching`
+**94.6% WHOLE PRODUCT, no measured rate moved** — correct for a change that suppresses a sentence rather than prescription.
+
+✅ **AND THE FALLOUT CARRIED ONE MORE, FIXED IN PLACE RATHER THAN FILED** (`CHECK-SLOW-STALE-01`). **`check:slow` was
+reading a report from 11-08.** Only `npm run test` writes `.vitest-report.json`; the bare `npx vitest run` I had used does
+not — so it printed `✓ 21 slow test(s), all baselined` over a report holding **0 occurrences** of that morning's ~16s
+file. ⚠️ **`existsSync` was the only freshness arm, and it answers a different question: the file EXISTED.**
+`reportStaleVerdict` now refuses when any `*.test.ts` is newer than the report, naming the file and the gap, with
+**`unknown` a refusal and not a pass**; the predicate sits in `lib/ops/testDurationRules.ts` for the reason that module's
+header gives. Falsified against the live stale report (**2,754 min**) and three mutations. 📐 **Its cost was measurable:
+re-baselining against a fresh report took the register 21 → 30 — eight tests besides mine had crossed the 1,000 ms line
+over those two days and the gate had never said so.** All nine now carry written reasons.
+
+Gate: `lib/plan/noteLeverInjuryCap.test.ts` — 5 arms, including one asserting `cohortGrid` still carries no injury, so
+the constructed corpus fails loudly rather than becoming silently redundant. Plus 4 arms on `reportStaleVerdict` in
+`lib/ops/testDurationGate.test.ts`, one of which reads the SCRIPT's branch so a verdict it treats as a pass cannot
+reinstate the hole.
 
 
 ### 🔲 `PLAN-NOTE-HEAVIER-WEEK-PLACEMENT-01` — show the ramp warning on the week it is about 🧭 **DESIGN BOARD** (new placement), then build

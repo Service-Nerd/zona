@@ -6,6 +6,30 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-11-10 — NOTE-LEVER-INJURY-CAP-01 · a lever that cannot move the thing it just named
+**Shipped:** The plan's maintenance note no longer offers "run 4 days a week instead of 3" after telling a runner her back injury caps the long run, because nothing she changes moves that cap.
+
+**Dev learning:** Two separate lessons, and the second is the one worth keeping.
+
+First: neither standing corpus could reach the cohort. `cohortGrid` carries `injury_history: []` and `targetedGrid`'s set is Knee / Shin / Achilles. The two histories that actually carry §9 Am. 3's long-run time ceiling are **back and plantar fasciitis**, and no grid in the repo contains either. So the cell had to be constructed by hand. Over the full HM+ grid: 41,472 attempts, 31,656 notes, 15,888 naming the cap, and **zero offering an inapplicable lever** once fixed.
+
+The gate itself runs a strided sample of that (692 cap-naming notes, 290 wrong before the fix), and the reason is worth recording: at the first stride, one arm cost **29.4 seconds, 98.2% of `check:slow`'s budget**. A 98% baseline entry is a thing to fix, not a thing to record. Re-striding took it to 5.8s with an identical verdict — but it also changed every figure I had just written into four documents, which is the second half of the denominator lesson: **a number without its corpus cannot be re-derived, and it drifts the moment anything about the corpus moves.**
+
+Second, and sharper: `/code-review` returned five findings and **four were wrong claims of mine rather than wrong code**. The worst was the equivalence proof. I had written that "holds steady" requires `!lrFails`; its guard is `ratioFails && !volumeFails`, and a shipped snapshot note carries both sentences at once. The correction made the proof *stronger* — the two volume reasons are mutually exclusive, so `reasons.length <= 2` always, `slice(-2)` is an identity, and the "a leverable reason gets truncated away" story I had told in a code comment was **never possible at all**. I had invented a mechanism to justify a design I had already chosen.
+
+**Product/creator learning:** The founder's tag on this item said FOUNDER (words), because the fix looked like a copy change. It was not: the fix **writes no new copy**, it withholds a sentence that was already there when the sentence cannot be true. There was nothing to route and nothing to approve. Reading a tag as binding without checking what the fix actually does would have parked this behind a decision nobody needed to make.
+
+**AI-building learning:** I ran a falsification, watched it stay green, and wrote "the two gates are indistinguishable" into two files as a measured finding. The mutation had hit **a code comment** — `s/leverable: !heldByInjury/leverable: true/` without `/g` takes the first match, and the first match was the comment *about* that expression two lines above the code. Retargeted at the real line with a landing assertion, it fails naming exactly 960 plans. This repo already has an item for this shape (`HOOK-RGBA-COMMENTS-01`: searching for the hardcoded colour finds the comment about the hardcoded colour) and I walked into it inside the falsification built to catch this class. **A mutation you did not assert landed is a mutation you did not run.**
+
+**The honest bit:** The diff left the full suite red and I would have pushed it. `lib/__fixtures__/hardcodedUnitsDebt.json` keys on the **exact source text** of each registered site, and reshaping two `reasons.push(...)` calls from a bare template string into an object broke both arms of that register. The pre-push hook would have blocked it, so the gate the founder added three days ago earned itself again, but the review caught it first. Second time this week I was one command away from shipping a red commit.
+
+And the fallout had one more: `check:slow` printed `✓ 21 slow test(s), all baselined` over a report written on **11-08**. Only `npm run test` writes `.vitest-report.json`; the bare `npx vitest run` I had used does not. The report held **zero** occurrences of the ~16-second test file I had added that morning, and the script's only freshness arm checked that the file *existed*.
+
+**Hook material:** A code review of my own two-file diff returned five findings. Four were not about the code — they were about things I had asserted *in comments* that the code did not do: a denominator ("5,432 plans") that was neither of the two real figures, a hoist justified by a reader that does not exist, a proof whose middle step was false, and a truncation hazard that was structurally impossible. The logic shipped unchanged. The prose around it was wrong four times out of five.
+
+**Postable?:** yes — "I reviewed my own diff and found four wrong claims and zero wrong lines" is a real post about what AI-assisted code actually gets wrong: not the logic, the story told about the logic.
+
+
 ## 2026-11-09 — NOTE-SURFACE-INERT-FINISH-01 · "stop raising new, just fix as you go" — and fixing as I went found four more
 **Shipped:** the note the Design Board refused that morning. It refused the *copy*, not the fact; I rewrote the copy to the board's own rule and placed it, instead of leaving it filed.
 **Dev learning:** the founder's correction was that I keep filing instead of finishing. He was right — I had closed an item while leaving its sharpest residual as a new ticket. Finishing it took about as long as filing it would have, and it found four more defects I would otherwise never have seen, each one in the fallout of the previous fix. That is the actual argument for finishing: the defects live in the consequences, and you only meet them if you follow through.

@@ -6,7 +6,7 @@ import { readFileSync } from 'node:fs'
 // green, and a mutation that turned it red killed the worker and reported "no tests"
 // instead of a failure. Found by a falsification that stayed green.
 import {
-  newSlowVerdict, driftVerdict, loadForTest, baselineStaleVerdict,
+  newSlowVerdict, driftVerdict, loadForTest, baselineStaleVerdict, reportStaleVerdict,
   DRIFT_TOLERANCE, BASELINE_STALE_GROWTH,
 } from '@/lib/ops/testDurationRules'
 
@@ -265,6 +265,46 @@ describe('SUITE-CONTENTION-01 — rule 1 measures the code, not the machine', ()
   })
 
   // ── 🔴 THE OTHER DENOMINATOR, WHICH HAD NO GATE AND WAS THE BIGGER ONE ─────────────
+  describe('reportStaleVerdict — the REPORT cannot rot in silence either', () => {
+    // 🔴 THE INCIDENT, 2026-11-10. `check:slow` printed `✓ 21 slow test(s), all baselined`
+    // over a report written on 11-08 that held ZERO occurrences of the ~16 s test file added
+    // that morning. Only `npm run test` writes `.vitest-report.json`; the bare `npx vitest run`
+    // used that day does not. The script's only freshness arm was `existsSync`, which answers a
+    // different question: the file EXISTED.
+    const REPORT = 1_000_000
+
+    it('🔴 THE INCIDENT: a test file newer than the report is STALE, by any margin', () => {
+      expect(reportStaleVerdict(REPORT, REPORT + 1).verdict).toBe('stale')
+      // The real gap, to the minute: 2,754 min between the 11-08 report and the new file.
+      expect(reportStaleVerdict(REPORT, REPORT + 2_754 * 60_000).staleByMs).toBe(2_754 * 60_000)
+    })
+
+    it('…and a report written AFTER the newest test is ok, including the same instant', () => {
+      // No tolerance in this direction and none wanted: `npm run test` writes the report last,
+      // so equality is the ordinary green case and anything later is greener still.
+      expect(reportStaleVerdict(REPORT, REPORT).verdict).toBe('ok')
+      expect(reportStaleVerdict(REPORT, REPORT - 60_000).verdict).toBe('ok')
+      expect(reportStaleVerdict(REPORT, REPORT).staleByMs).toBe(0)
+    })
+
+    it('⚠️ an unknown mtime is UNKNOWN, never a silent pass', () => {
+      // An allow-by-default arm is not a check. The script refuses on anything but `ok`.
+      expect(reportStaleVerdict(undefined, REPORT).verdict).toBe('unknown')
+      expect(reportStaleVerdict(REPORT, undefined).verdict).toBe('unknown')
+      expect(reportStaleVerdict(0, REPORT).verdict).toBe('unknown')
+      expect(reportStaleVerdict(REPORT, 0).verdict).toBe('unknown')
+      expect(reportStaleVerdict(undefined, undefined).staleByMs).toBeNull()
+    })
+
+    it('⚠️ the script refuses on `unknown`, not only on `stale`', () => {
+      // The seam this arm exists for: a verdict the SCRIPT treats as a pass would reinstate
+      // the hole. Read the real branch rather than restating it.
+      const src = readFileSync('scripts/check-test-duration.ts', 'utf8')
+      expect(src).toContain("stale.verdict !== 'ok'")
+      expect(src, 'the script must not test only for stale').not.toContain("stale.verdict === 'stale'")
+    })
+  })
+
   describe('baselineStaleVerdict — the denominator cannot rot in silence', () => {
     it('fires on growth past the declared line, and not before', () => {
       expect(BASELINE_STALE_GROWTH).toBe(1.15)

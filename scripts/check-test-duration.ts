@@ -57,7 +57,7 @@
  * projection below is printed as ORIENTATION, never as a gate.
  */
 
-import { readFileSync, writeFileSync, existsSync } from 'fs'
+import { readFileSync, writeFileSync, existsSync, readdirSync, statSync } from 'fs'
 import { join } from 'path'
 
 const REPORT   = join(process.cwd(), '.vitest-report.json')
@@ -84,7 +84,7 @@ const REPORT_MS = (() => {
 // instead of a failure. Found by a falsification that stayed green, not by review.
 // See `lib/ops/testDurationRules.ts`. SUITE-CONTENTION-01, 2026-10-15.
 import {
-  newSlowVerdict, driftVerdict, loadForTest, baselineStaleVerdict,
+  newSlowVerdict, driftVerdict, loadForTest, baselineStaleVerdict, reportStaleVerdict,
   NEW_FAIL_MS_MULTIPLE, DRIFT_TOLERANCE, BASELINE_STALE_GROWTH,
 } from '../lib/ops/testDurationRules'
 
@@ -124,6 +124,36 @@ let TEST_COUNT = 0
 function readSlowTests(): Array<{ file: string; title: string; ms: number }> {
   if (!existsSync(REPORT)) {
     console.error(`✗ ${REPORT} not found. Run \`npm run test\` first (it writes the report).`)
+    process.exit(2)
+  }
+  // 🔴 A STALE REPORT IS A GREEN GATE OVER TESTS IT CANNOT SEE (CHECK-SLOW-STALE-01,
+  // 2026-11-10). Only `npm run test` writes the report; a bare `npx vitest run` does not. So on
+  // 2026-11-10 this printed `✓ 21 slow test(s), all baselined` against a report from 11-08 that
+  // held **0 occurrences** of the ~16s test file added that morning. The absence check above was
+  // the only freshness arm and it answers a different question: the file EXISTED.
+  // ⚠️ **Unverified is never a pass** — the same rule `verify-cap-config.mjs` applies to an arm
+  // it cannot evaluate. A report older than any test file is a report that did not run it.
+  const newest = (() => {
+    let best = { mtime: 0, file: '' }
+    const walk = (dir: string) => {
+      for (const e of readdirSync(dir, { withFileTypes: true })) {
+        if (e.name === 'node_modules' || e.name === '.next' || e.name.startsWith('.')) continue
+        const full = join(dir, e.name)
+        if (e.isDirectory()) { walk(full); continue }
+        if (!/\.test\.tsx?$/.test(e.name)) continue
+        const ms = statSync(full).mtimeMs
+        if (ms > best.mtime) best = { mtime: ms, file: full }
+      }
+    }
+    walk(process.cwd())
+    return best
+  })()
+  const stale = reportStaleVerdict(statSync(REPORT).mtimeMs, newest.mtime || undefined)
+  if (stale.verdict !== 'ok') {
+    const age = stale.staleByMs === null ? '?' : Math.round(stale.staleByMs / 60000)
+    console.error(`✗ ${REPORT} is ${stale.verdict.toUpperCase()}: ${newest.file || '(no test file found)'} is ${age} min newer than the report.`)
+    console.error('  This gate would pass over a test it has never measured. Run `npm run test`')
+    console.error('  (NOT `npx vitest run` — only the npm script writes the JSON report), then re-run.')
     process.exit(2)
   }
   const report = JSON.parse(readFileSync(REPORT, 'utf8'))

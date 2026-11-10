@@ -163,11 +163,11 @@
   },
   {
    "file": "lib/plan/ruleEngine.ts",
-   "code": "reasons.push(`Your biggest week reaches ${peakKmActual} km, where a time goal at this distance usually wants nearer ${Math.round(volumeFloor)}km.`)"
+   "code": "reasons.push({ text: `Your biggest week reaches ${peakKmActual} km, where a time goal at this distance usually wants nearer ${Math.round(volumeFloor)}km.`, leverable: true })"
   },
   {
    "file": "lib/plan/ruleEngine.ts",
-   "code": "reasons.push(`Your longest run reaches ${Math.round(actualPeakLrKm * 10) / 10} km, where this race wants nearer ${Math.round(longRunFloorKm * 10) / 10}km, so the closing stretch will be new ground on the day. ${why}`)"
+   "code": "reasons.push({ text: `Your longest run reaches ${Math.round(actualPeakLrKm * 10) / 10} km, where this race wants nearer ${Math.round(longRunFloorKm * 10) / 10}km, so the closing stretch will be new ground on the day. ${why}`, leverable: !heldByInjury })"
   },
   {
    "file": "lib/plan/ruleEngine.ts",

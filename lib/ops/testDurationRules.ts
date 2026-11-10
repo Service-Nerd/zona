@@ -119,6 +119,35 @@ export function baselineStaleVerdict(
 }
 
 /**
+ * CHECK-SLOW-STALE-01 (2026-11-10) — is the report old enough that it cannot have seen the
+ * tests now on disk?
+ *
+ * 🔴 WHY. Only `npm run test` writes `.vitest-report.json`; a bare `npx vitest run` does not.
+ * So on 2026-11-10 `check:slow` printed `✓ 21 slow test(s), all baselined` against a report
+ * written on **11-08** that held **0 occurrences** of the ~16 s test file added that morning.
+ * ⚠️ The script's only freshness arm was `existsSync`, which answers a different question:
+ * the file EXISTED. **Unverified is never a pass** — the rule `verify-cap-config.mjs` applies
+ * to an arm it cannot evaluate, applied to the report this gate reads.
+ *
+ * ⚠️ IT READS THE NEWEST TEST FILE, NOT THE NEWEST FILE. A source edit does not invalidate a
+ * measurement — the same test may legitimately be re-measured later — but a test file newer
+ * than the report is a test the report provably never ran.
+ *
+ * ⚠️ AND AN UNKNOWN MTIME IS `unknown`, NEVER `ok`: a caller that cannot stat the tree must
+ * not be handed a pass. The script treats `unknown` as a refusal.
+ */
+export function reportStaleVerdict(
+  reportMtimeMs: number | undefined,
+  newestTestMtimeMs: number | undefined,
+): { verdict: 'stale' | 'ok' | 'unknown'; staleByMs: number | null } {
+  if (!reportMtimeMs || !newestTestMtimeMs || reportMtimeMs <= 0 || newestTestMtimeMs <= 0) {
+    return { verdict: 'unknown', staleByMs: null }
+  }
+  const staleByMs = newestTestMtimeMs - reportMtimeMs
+  return { verdict: staleByMs > 0 ? 'stale' : 'ok', staleByMs }
+}
+
+/**
  * The load factor RULE 3 must use for ONE test: the rest of the suite's growth, excluding
  * the test being judged from both sides.
  *
