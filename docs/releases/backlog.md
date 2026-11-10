@@ -5389,14 +5389,49 @@ compares it to the floor: without it, **1.12 km against a 4 km easy floor**. �
 
 ---
 
-🔻 **THE THIRD SITE IS `postRaceReshape.ts` AND IT CARRIES FOUR DEFECTS, MEASURED 2026-11-10.** Not filed as a new item:
-it is the next piece of work. Run on an 8-week plan with a marathon result, `reshapedPlan` contains:
-**(1)** `toRecoveryRun` computes `km / (duration_mins / distance_km)`, which is **km²/min, not minutes** — a recovery
-run comes back as `dist=3 mins=0.5` and `dist=5 mins=0.8`; **(2)** `scaleSession` cuts the distance and leaves
-`duration_mins` **stale** — `dist=4 mins=140`, the same defect as the readiness one above; **(3)** the same
-`if (!session.distance_km) return session` guard, so a duration-anchored plan reports **`sessionsModified: 2` against
-6**; **(4)** a hardcoded `Math.max(3, …)` floor, the `MIN_SESSION_DISTANCE_KM` bypass that `TAPER-FLOOR-FLAT-01` fixed
-in the taper on 2026-09-19 and never applied here.
+✅ **`SCALE-SESSION-OWNER-01` + `POSTRACE-ANCHOR-DIMENSION-01` — THE THIRD SITE, AND THE OWNER THE THREE WERE MISSING.
+Fixed 2026-11-10 in the same wave, not filed.** ⚙️ **NO BOARD:** defect fixes restoring documented intent, none in the
+generation path.
+
+🔴 **THERE WERE THREE HAND-WRITTEN COPIES AND EACH CARRIED A DIFFERENT SUBSET OF THE SAME FOUR DEFECTS.**
+
+| site | inert on duration | duration left stale | floor |
+|---|---|---|---|
+| `taperRecalibration.scaleSession` | yes, to 2026-11-10 | **yes, on the distance path** | runner-resolved |
+| `postRaceReshape.scaleSession` | **yes** | **yes** | **hardcoded `3`** |
+| the readiness ease | yes, to 2026-11-10 | yes, to 2026-11-10 | none, by design |
+
+`lib/plan/scaleSessionAnchors.ts` is now the single owner, and the differences became arguments (`floorKm`,
+`kmPrecision`, `clearCoachNotes`). **`SESSION-KM-01/02`'s shape exactly** — one expression written out by hand in
+several places, agreeing only by accident.
+
+🔴 **AND WIRING THE THIRD CALLER FOUND A DEFECT IN MY OWN OWNER.** It demanded a price before scaling a
+duration-anchored session, which is right when a km FLOOR must be honoured and wrong for a fixed-share soften — the
+readiness ease has no floor by design, so requiring a pace refused to ease sessions it could ease perfectly well, and
+two arms went red. **The price is now conditional on the floor.** Only the third caller could have shown that.
+
+🔴 **IT ALSO SHOWED MY PREVIOUS COMMIT'S CLAIM WAS INCOMPLETE.** `TAPER-DURATION-ANCHOR-01` reported intermediate and
+experienced as *"provably unchanged"* — true of what it measured (|session sum − `weekly_km`|) and **blind to the
+duration beside the distance.** Re-measured: the taper's distance path left `duration_mins` stale on **1,934
+intermediate and 1,953 experienced sessions — 3,887 across 913 plans**, now 0. **A before/after table only covers the
+quantity it prints.**
+
+📐 **`postRaceReshape`, 8-week plan with a marathon result, before → after:** a converted recovery run
+**`3 km / 0.5 min` → `4 km / 24 min`** (the `km²/min` dimensional error: `km / (duration_mins / distance_km)` instead
+of `km × minPerKm`); an eased session **`4 km / 140 min` → `4 km / 28 min`**; a duration-anchored plan's
+**`sessionsModified` 2 → 6**; and the floor **3 km → the resolved `floors.easy` of 4 km**, which is a real change in
+what a recovery week prescribes and is declared rather than absorbed.
+
+🔴 **THREE MORE HOLLOW ARMS, ALL FOUND BY MUTATION.** The post-race floor arm passed with the hardcoded `3` restored
+**in both places**, because nothing in the 120 km fixture is small enough for any floor to bind — **a floor can only
+be tested on a session the scale would push below it.** Rebuilt on a 20 km week, it now fails with *"smallest session
+3km is under the floor: expected 3 to be greater than or equal to 4"*, and carries a second assertion that the floor
+actually BOUND so it cannot go vacuous again. ⚠️ **And the recovery-duration arm failed on correct code**, because
+this file's own `session()` helper stamps `duration_mins: null` with no pace — a shape **production never emits**
+(0 of 48,221 long runs carry a distance without a duration). **Fixtures must use the product's values.**
+
+📐 **Falsification tally for the whole wave: owner 7 of 7 · post-race 4 of 4 · taper 5 of 5 · readiness 4 of 4**, each
+mutation with a landing assertion, and **five arms repaired because the first cut of them was hollow.**
 
 #### ✅ `STRENGTH-RECOVERY-01` — recovery softens strength. 🏃 Coaching Board **CORRECT WITH AMENDMENT** (re-sat 2026-10-17) · ✅ BUILT and LIVE 2026-10-18 (migration applied, deployed)
 

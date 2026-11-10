@@ -15,6 +15,9 @@
 // never touched — the runner may still have a Race B.
 
 import { isHardDay } from '@/lib/plan/sessionRole'
+import { scaleSessionAnchors, minPerKmOf } from '@/lib/plan/scaleSessionAnchors'
+import { sessionFloorsFor, type SessionFloors } from '@/lib/plan/sessionFloors'
+import { isLongRun, isHardEffort } from '@/lib/plan/sessionRole'
 import type { Plan, Session, Week, RaceResult } from '@/types/plan'
 import { GENERATION_CONFIG } from '@/lib/plan/generationConfig'
 import { TAPER_PROTECTION_WEEKS } from '@/lib/coaching/constants'
@@ -57,8 +60,15 @@ export function getDistanceBucket(km: number): DistanceBucket {
 // ── Session transformers ──────────────────────────────────────────────────────
 
 /** Convert a quality/long session to a passive recovery run for week+1/+2. */
-function toRecoveryRun(session: Session, targetKm: number): Session {
-  const km = Math.max(3, Math.round(targetKm * 2) / 2)
+function toRecoveryRun(session: Session, targetKm: number, floors: SessionFloors): Session {
+  const km = Math.max(floors.easy, Math.round(targetKm * 2) / 2)
+  // 🔴 THE DURATION WAS DIMENSIONALLY WRONG. It read
+  // `km / (session.duration_mins / (session.distance_km ?? km))`, i.e. km ÷ (min/km), which is
+  // **km² per minute**. A 20 km / 140 min long run converted to a 3 km recovery run came back
+  // as **0.4 minutes** and the runner was shown "3 km · 0 min". The quantity wanted is
+  // `km × minPerKm`, and `minPerKmOf` prices the ORIGINAL session through the owner so a
+  // duration-anchored one (no `distance_km` to divide by) is priced too.
+  const pace = minPerKmOf(session)
   return {
     ...session,
     type: 'recovery',
@@ -68,7 +78,7 @@ function toRecoveryRun(session: Session, targetKm: number): Session {
     label: 'Easy recovery',
     detail: null,
     distance_km:   km,
-    duration_mins: session.duration_mins ? Math.round(km / (session.duration_mins / (session.distance_km ?? km)) * 10) / 10 : undefined,
+    duration_mins: pace != null ? Math.round(km * pace) : undefined,
     zone:          'Zone 1–2',
     hr_target:     undefined,
     pace_target:   undefined,
@@ -80,16 +90,21 @@ function toRecoveryRun(session: Session, targetKm: number): Session {
   }
 }
 
-/** Scale a run session's distance proportionally but preserve its type/character. */
-function scaleSession(session: Session, scaleFactor: number): Session {
-  if (!session.distance_km) return session
-  const newKm = Math.max(3, Math.round(session.distance_km * scaleFactor * 2) / 2)
-  if (newKm === session.distance_km) return session
-  return {
-    ...session,
-    distance_km: newKm,
-    coach_notes:  undefined,  // AI enricher populates
-  }
+/**
+ * Scale a run session, preserving its type and character — and its ANCHOR.
+ *
+ * 🔴 This had three of the four defects in `SCALE-SESSION-OWNER-01`'s table: inert on a
+ * duration-anchored session (`sessionsModified: 2` against 6 on a duration-anchored plan), the
+ * duration left stale beside a cut distance (`dist=4 mins=140`), and a **hardcoded
+ * `Math.max(3, …)`** where `TAPER-FLOOR-FLAT-01` moved the taper onto `sessionFloorsFor` on
+ * 2026-09-19 and nobody carried it across. All three now come from the one owner.
+ */
+function scaleSession(session: Session, scaleFactor: number, floors: SessionFloors): Session {
+  return scaleSessionAnchors(session, scaleFactor, {
+    floorKm: isLongRun(session) ? floors.long : isHardEffort(session) ? floors.quality : floors.easy,
+    kmPrecision: 0.5,
+    clearCoachNotes: true,
+  })
 }
 
 // ── Main reshape function ─────────────────────────────────────────────────────
@@ -108,6 +123,11 @@ export function computePostRaceReshape(
 
   // Must have weeks after the race
   if (raceWeekN >= plan.weeks.length) return null
+
+  // §113 Am.1 / TAPER-FLOOR-FLAT-01 — the floors are resolved for the RUNNER, never read flat.
+  // This path used a hardcoded `3` until 2026-11-10; a plan with no recorded `generator_input`
+  // resolves to the configured floors unchanged, which is what "we do not know" must mean.
+  const floors: SessionFloors = sessionFloorsFor(plan.meta.generator_input?.longest_recent_run_km)
 
   // Distance: prefer the logged actual distance, fall back to plan target
   const distKm = result.distance_km ?? plan.meta.race_distance_km
@@ -169,10 +189,10 @@ export function computePostRaceReshape(
       if (session.type === 'rest') { newSessions[d] = session; continue }
 
       if (isQualityBlackout && isHardDay(session)) {
-        newSessions[d] = toRecoveryRun(session, sessionBudgetKm)
+        newSessions[d] = toRecoveryRun(session, sessionBudgetKm, floors)
         sessionsModified++
       } else {
-        const scaled = scaleSession(session, scaleFactor)
+        const scaled = scaleSession(session, scaleFactor, floors)
         newSessions[d] = scaled
         if (scaled !== session) sessionsModified++
       }

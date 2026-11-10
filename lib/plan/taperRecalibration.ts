@@ -18,7 +18,7 @@ import type { Plan, Week, Session, Phase } from '@/types/plan'
 import { GENERATION_CONFIG, raceDistanceKey } from '@/lib/plan/generationConfig'
 import { isLongRun, isHardEffort } from '@/lib/plan/sessionRole'
 import { sessionFloorsFor, type SessionFloors } from '@/lib/plan/sessionFloors'
-import { sessionKmSelfPaced } from '@/lib/plan/sessionDistance'
+import { scaleSessionAnchors } from '@/lib/plan/scaleSessionAnchors'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -97,29 +97,11 @@ export interface TaperRecalibrationResult {
  * than quietly changed here; if it is wrong it is wrong for both anchors and is its own ruling.
  */
 function scaleSession(session: Session, scaleFactor: number, floors: SessionFloors): Session {
-  const minFloor =
-    isLongRun(session)          ? floors.long
-    : isHardEffort(session)
-      ? floors.quality
-      : floors.easy
-
-  if (session.distance_km != null) {
-    const scaled = Math.round(session.distance_km * scaleFactor * 2) / 2  // 0.5 km precision
-    const newKm = Math.max(minFloor, scaled)
-    if (newKm === session.distance_km) return session
-    return { ...session, distance_km: newKm, coach_notes: undefined }
-  }
-
-  if (session.duration_mins != null && session.duration_mins > 0) {
-    const km = sessionKmSelfPaced(session)
-    if (km == null || !(km > 0)) return session
-    const effective = Math.max(minFloor, km * scaleFactor) / km
-    const newMins = Math.round(session.duration_mins * effective)
-    if (newMins === session.duration_mins) return session
-    return { ...session, duration_mins: newMins, coach_notes: undefined }
-  }
-
-  return session
+  return scaleSessionAnchors(session, scaleFactor, {
+    floorKm: isLongRun(session) ? floors.long : isHardEffort(session) ? floors.quality : floors.easy,
+    kmPrecision: 0.5,
+    clearCoachNotes: true,
+  })
 }
 
 /** Derive the taper Phase from plan.phases or by scanning plan.weeks. */

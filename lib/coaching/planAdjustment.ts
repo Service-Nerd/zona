@@ -22,6 +22,7 @@ import {
 } from './constants'
 import { acuteChronicRatio, shadowLoadPct, zoneDisciplineScore, zoneDriftScore } from './loadCalc'
 import { weekHasRestDay, findQualityLongSpacingViolations } from '@/lib/plan/invariants'
+import { scaleSessionAnchors } from '@/lib/plan/scaleSessionAnchors'
 import { isLongRun, isHardDay, isHardDayLabel, isQualitySession, isHardEffort } from '@/lib/plan/sessionRole'
 import { restSession } from '@/lib/plan/weekSessions'
 import { GENERATION_CONFIG } from '@/lib/plan/generationConfig'
@@ -638,14 +639,13 @@ function buildReadinessAdjustment(
     // the full original duration — two fields describing one session, one of them updated.
     // The engine derives duration FROM distance (`distance × easy pace`), so both must move.
     if (isLongRun(s)) {
-      const pct = READINESS.LONG_RUN_SOFTEN_PCT
-      const trimmed: { distance_km?: number; duration_mins?: number } = {}
-      if (s.distance_km != null) trimmed.distance_km = Math.round(s.distance_km * pct * 10) / 10
-      if (s.duration_mins != null) trimmed.duration_mins = Math.round(s.duration_mins * pct)
-      if (trimmed.distance_km != null || trimmed.duration_mins != null) {
+      // 🔑 SCALE-SESSION-OWNER-01 — the third of three hand-written copies, now one owner.
+      // No floor here, by design: this softens a single session by a fixed share (§59) rather
+      // than re-anchoring a week, so `MIN_SESSION_DISTANCE_KM` is not the governing quantity.
+      const eased = scaleSessionAnchors(s, READINESS.LONG_RUN_SOFTEN_PCT, { kmPrecision: 0.1 })
+      if (eased !== s) {
         return {
-          ...s,
-          ...trimmed,
+          ...eased,
           eased_for: 'recovery' as const,
           coach_notes: [`${BRAND.voiceAnchor} Trimmed today (${reasonStr}). Body's not ready for the full distance.`] as [string],
         }

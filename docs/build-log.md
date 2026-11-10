@@ -6,6 +6,32 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-11-10 — SCALE-SESSION-OWNER-01 · three copies, four defects between them, and a recovery run of 3 km in half a minute
+**Shipped:** One owner for "make this session a factor smaller", used by the taper, the post-race reshape and the readiness ease — and the four defects that were distributed across the three copies.
+
+**Dev learning:** The table is the whole story:
+
+| site | inert on a timed session | duration left stale | floor |
+|---|---|---|---|
+| taper | yes | **yes, on the distance path** | runner-resolved |
+| post-race | **yes** | **yes** | **hardcoded `3`** |
+| readiness ease | yes | yes | none, by design |
+
+Three hand-written copies of one expression, each missing a different piece. The `3` was the `MIN_SESSION_DISTANCE_KM` bypass that `TAPER-FLOOR-FLAT-01` fixed in the taper on 2026-09-19 and nobody carried across. And the post-race copy had a fourth, plainly dimensional: `km / (duration_mins / distance_km)` is km² per minute, so a converted recovery run came back as **3 km in 0.5 minutes** and the runner was shown "3 km · 0 min".
+
+**Product/creator learning:** Wiring the third caller found a defect in the owner I had just written. It demanded a pace before scaling a timed session — correct when a kilometre floor has to be honoured, and wrong for a fixed-share soften, because the readiness ease has no floor by design and proportion needs no price at all. Two arms went red and told me so. **Two callers would not have found it; the third did.** That is the argument for extracting an owner rather than fixing two sites and leaving the third.
+
+**AI-building learning:** Three more of my arms were hollow and only mutations showed it, bringing the session's total to five repaired. The worst: the post-race floor arm passed with the hardcoded `3` restored *in both places*, because nothing in the 120 km fixture is small enough for any floor to bind. **A floor can only be tested on a session the scale would actually push below it.** Rebuilt on a 20 km week it fails with "smallest session 3km is under the floor: expected 3 to be greater than or equal to 4", and it now also asserts that the floor *bound*, so it cannot quietly go vacuous again.
+
+The other one is the opposite error and more interesting: an arm failed on **correct code**, because that test file's own `session()` helper stamps `duration_mins: null` with no pace. Production never emits that shape — 0 of 48,221 generated long runs carry a distance without a duration — so the fixture was wrong and the code was right.
+
+**The honest bit:** The owner also exposed that my own commit from an hour earlier overclaimed. `TAPER-DURATION-ANCHOR-01` reported intermediate and experienced runners as "provably unchanged", which was true of the quantity I measured — |session sum − `weekly_km`| — and completely blind to the duration sitting beside the distance. Re-measured, the taper's distance path had been leaving `duration_mins` stale on **3,887 sessions across 913 plans**: exactly the cohort I had declared untouched. **A before/after table only covers the quantity it prints**, and I printed one column.
+
+**Hook material:** Four defects, three copies, one function. A post-race recovery run prescribed as "3 km · 0 min" because someone divided by pace instead of multiplying. And the commit I wrote an hour earlier said a cohort was "provably unchanged" while 3,887 of their sessions carried a distance that had moved and a duration that had not.
+
+**Postable?:** yes — "my before/after table only measured the column I printed" is the sharpest line, and the km²/min bug is the kind of concrete thing people remember.
+
+
 ## 2026-11-10 — TAPER-DURATION-ANCHOR-01 · the taper recalibration was inert for every beginner and said otherwise
 **Shipped:** The taper recalibration now trims a session whichever way it is measured, and only reports the weeks it actually changed.
 

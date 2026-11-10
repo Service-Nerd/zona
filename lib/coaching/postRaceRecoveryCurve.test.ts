@@ -208,3 +208,136 @@ describe('§62 — when there is nothing to reshape', () => {
     expect(computePostRaceReshape(plan, { distance_km: 42.2 } as RaceResult, 2)).toBeNull()
   })
 })
+
+// 🔴 POSTRACE-ANCHOR-DIMENSION-01 (2026-11-10) — FOUR DEFECTS IN THIS FILE'S PRODUCER, MEASURED.
+//
+// Run on an 8-week plan with a marathon result, `reshapedPlan` contained:
+//   **(1)** `toRecoveryRun` computed `km / (duration_mins / distance_km)`, which is **km² per
+//     minute, not minutes** — a recovery run came back as **`3 km in 0.5 min`**, shown to the
+//     runner as "3 km · 0 min";
+//   **(2)** `scaleSession` cut the distance and left `duration_mins` **stale** —
+//     **`4 km in 140 min`**;
+//   **(3)** the same `if (!session.distance_km) return session` guard, so a duration-anchored
+//     plan reported **`sessionsModified: 2` against 6**;
+//   **(4)** a hardcoded **`Math.max(3, …)`** floor — the `MIN_SESSION_DISTANCE_KM` bypass that
+//     `TAPER-FLOOR-FLAT-01` moved the taper off on 2026-09-19 and nobody carried across.
+//
+// All four now come from `SCALE-SESSION-OWNER-01`. ⚠️ **The floor moved 3 km → the resolved
+// `floors.easy` (4 km with no recorded `generator_input`), which is a real change in what a
+// recovery week prescribes** and is declared rather than absorbed.
+/** Both anchors, which is what the engine actually stamps (0 of 48,221 carry distance alone). */
+const both = (type: Session['type'], km: number, mins: number): Session =>
+  ({ type, label: type, distance_km: km, duration_mins: mins, pace_target: '6:00-6:30 /km' } as unknown as Session)
+
+const timed = (type: Session['type'], mins: number): Session =>
+  ({ type, label: type, duration_mins: mins, pace_target: '6:00-6:30 /km' } as unknown as Session)
+
+/** The same fixture, DURATION-anchored — the beginner's plan shape. */
+const timedPlanOf = (total: number, raceWeekN: number, raceKm: number): Plan => {
+  const plan = planOf(total, raceWeekN, raceKm)
+  for (const w of plan.weeks) {
+    w.sessions = {
+      mon: session('rest', 0), wed: session('rest', 0),
+      tue: timed('quality', 150), thu: timed('easy', 150),
+      sat: timed('easy', 150), sun: timed('easy', 300),
+    } as Week['sessions']
+  }
+  return plan
+}
+
+describe('POSTRACE-ANCHOR-DIMENSION-01 — the reshape respects the anchor and the runner\'s floors', () => {
+  it('🔴 a converted recovery run gets a SANE duration — it used to be km² per minute', () => {
+    // ⚠️ THIS ARM CANNOT USE THIS FILE'S OWN `session()` HELPER, and that is itself a finding.
+    // It stamps `duration_mins: null` with no `pace_target`, so a converted session has nothing
+    // to derive a duration from and `undefined` is the honest answer — the arm failed on
+    // correct code until the fixture was corrected. **Production does not emit that shape:**
+    // measured over 48,221 generated long runs, `distance_km` present WITHOUT `duration_mins`
+    // never occurs (0 cases), while 34,264 carry both. Fixtures must use the product's values.
+    const plan = planOf(5, 2, 42.2)
+    for (const w of plan.weeks) {
+      w.sessions = {
+        mon: session('rest', 0), wed: session('rest', 0),
+        tue: both('quality', 24, 150), thu: both('easy', 24, 150),
+        sat: both('easy', 24, 150),    sun: both('easy', 48, 300),
+      } as Week['sessions']
+    }
+    const r = computePostRaceReshape(plan, { distance_km: 42.2 } as RaceResult, 2)!
+    const recovery = r.reshapedPlan.weeks
+      .flatMap(w => Object.values(w.sessions ?? {}) as (Session | undefined)[])
+      .filter((x): x is Session => !!x && x.type === 'recovery')
+    expect(recovery.length, 'no session was converted, so this arm proves nothing').toBeGreaterThan(0)
+    for (const x of recovery) {
+      // `3 km in 0.5 min` was the old shape. A real recovery run is km × minutes per km.
+      expect(x.duration_mins, `recovery run of ${x.distance_km}km in ${x.duration_mins}min`)
+        .toBeGreaterThan(5)
+      // …and it is PROPORTIONATE to the distance, not merely non-zero.
+      expect(x.duration_mins! / x.distance_km!, 'the pace implied by the recovery run is wrong')
+        .toBeGreaterThan(3)
+    }
+  })
+
+  it('🔴 a DURATION-anchored plan is reshaped too — it used to report 2 of 6', () => {
+    const plan = timedPlanOf(5, 2, 42.2)
+    const before = JSON.stringify(plan.weeks.map(w => w.sessions))
+    const r = computePostRaceReshape(plan, { distance_km: 42.2 } as RaceResult, 2)!
+    expect(r.sessionsModified, 'the timed sessions were skipped').toBeGreaterThan(2)
+    expect(JSON.stringify(r.reshapedPlan.weeks.map(w => w.sessions))).not.toBe(before)
+    // And every surviving timed session came DOWN: this is a recovery curve.
+    for (const w of r.reshapedPlan.weeks) {
+      if (w.n <= 2) continue
+      for (const x of Object.values(w.sessions ?? {}) as (Session | undefined)[]) {
+        if (!x?.duration_mins || x.type === 'rest') continue
+        expect(x.duration_mins, 'a recovery-week session grew').toBeLessThan(301)
+      }
+    }
+  })
+
+  it('🔴 the floor is the RUNNER\'S, not a hardcoded 3', () => {
+    // TAPER-FLOOR-FLAT-01's fix, finally applied here.
+    //
+    // ⚠️ MY FIRST VERSION OF THIS ARM WAS HOLLOW AND TWO MUTATIONS PROVED IT: restoring the
+    // hardcoded `3` in either place left all 17 arms green, because **nothing in the 120 km
+    // fixture is small enough for any floor to bind.** A floor can only be tested on a session
+    // the scale would push below it, so the volume has to be small enough that it does.
+    const plan = planOf(5, 2, 42.2)
+    for (const w of plan.weeks) {
+      w.weekly_km = 20
+      w.sessions = {
+        mon: session('rest', 0), wed: session('rest', 0),
+        tue: both('quality', 5, 32), thu: both('easy', 5, 32),
+        sat: both('easy', 4, 25),    sun: both('easy', 6, 38),
+      } as Week['sessions']
+    }
+    const r = computePostRaceReshape(plan, { distance_km: 42.2 } as RaceResult, 2)!
+    const dists = r.reshapedPlan.weeks
+      .filter(w => w.n > 2)
+      .flatMap(w => Object.values(w.sessions ?? {}) as (Session | undefined)[])
+      .filter((x): x is Session => !!x && x.type !== 'rest' && x.distance_km != null)
+      .map(x => x.distance_km!)
+    expect(dists.length, 'no scaled sessions to measure').toBeGreaterThan(0)
+    // With the hardcoded 3 these land at 3; with the resolved floor, at MIN_SESSION_DISTANCE_KM.
+    expect(Math.min(...dists), `smallest session ${Math.min(...dists)}km is under the floor`)
+      .toBeGreaterThanOrEqual(G.MIN_SESSION_DISTANCE_KM.easy)
+    // The floor must BIND here or the arm is vacuous again.
+    expect(dists.some(d => d === G.MIN_SESSION_DISTANCE_KM.easy),
+      'nothing was floored, so this arm cannot tell the two floors apart').toBe(true)
+    // And the old hardcoded 3 is strictly below it, which is what makes them distinguishable.
+    expect(G.MIN_SESSION_DISTANCE_KM.easy, 'the floor no longer exceeds the old hardcoded 3')
+      .toBeGreaterThan(3)
+  })
+
+  it('a session whose distance moves carries its duration with it', () => {
+    const plan = planOf(5, 2, 42.2)
+    for (const w of plan.weeks) {
+      ;(w.sessions as Record<string, Session>).sun =
+        ({ type: 'easy', label: 'easy', distance_km: 48, duration_mins: 336, pace_target: '6:00-6:30 /km' } as unknown as Session)
+    }
+    const r = computePostRaceReshape(plan, { distance_km: 42.2 } as RaceResult, 2)!
+    for (const w of r.reshapedPlan.weeks) {
+      if (w.n <= 2) continue
+      const sun = (w.sessions as Record<string, Session>).sun
+      if (!sun || sun.distance_km === 48) continue
+      expect(sun.duration_mins, `${sun.distance_km}km still carries ${sun.duration_mins}min`).toBeLessThan(336)
+    }
+  })
+})
