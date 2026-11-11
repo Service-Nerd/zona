@@ -75,7 +75,7 @@ Every failure on that path now records a `run_unmatched` ops event naming **whic
 | `no_plan` | `autoMatchAndAnalyse` | the runner had no plan when the run arrived |
 | `plan_read_failed` | `autoMatchAndAnalyse` | the plan READ failed, so whether they had one is unknown |
 | `outside_plan_weeks` | `autoMatchAndAnalyse` | the run date is not inside the 7-day window of the week it resolved to |
-| `week_has_no_sessions` | `autoMatchAndAnalyse` | that week carries no session at all, after overrides |
+| `week_has_no_sessions` | `autoMatchAndAnalyse` | that week offers nothing to match: after overrides, and on a multi-session day after dropping ones already complete |
 | `below_threshold` | `autoMatchAndAnalyse` | a session was there and nothing reached the auto-link score |
 
 ⚠️ **`plan_read_failed` is separate from `no_plan` on purpose.** `readPlanJson` returns

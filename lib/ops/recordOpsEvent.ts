@@ -485,7 +485,19 @@ export type OpsEventKind =
   // plan. This event exists so the answer is RECORDED at the moment rather than
   // reconstructed from a table that does not keep history.
   //
-  // `detail`: `{ reason, source, activity_date, week_n? }`. No PII.
+  // `detail`: `{ reason, source, activity_id, activity_date, week_n?, candidates?,
+  //            within_week?, message?, tier? }`.
+  //
+  // ⚠️ IT CARRIES AN ACTIVITY ID, AND THAT IS A DELIBERATE TRADE. One row is recorded per
+  // ingest ATTEMPT — `clientSync` re-posts recent workouts on every sweep — so without the id
+  // a count reports sweeps rather than runs. The id is a HealthKit workout UUID or a Strava
+  // activity id: a join key into `strava_activities`, which CASCADES on account deletion, so
+  // after a delete it resolves to nothing and this row's `user_id` is already NULL
+  // (DB-USER-PURGE-01 keeps `ops_events` as an anonymised ledger on purpose).
+  // ⚠️ `message` is a truncated PostgREST error string on the `plan_read_failed` branch only,
+  // and it is what makes that reason actionable — a read failure with no message is
+  // indistinguishable from the `no_plan` it was split out of. The DATE is recorded, never the
+  // time.
   | 'run_unmatched'
 
 /**

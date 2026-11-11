@@ -56,7 +56,7 @@ export const RUN_UNMATCHED_REASONS = {
   no_plan:             'the runner had no plan at all when the run arrived',
   plan_read_failed:    'the plan read itself failed, so whether they had one is unknown',
   outside_plan_weeks:  'the run date is not inside the 7-day window of the week it resolved to',
-  week_has_no_sessions: 'the week the run resolved to carries no session at all, after overrides',
+  week_has_no_sessions: 'the week the run resolved to offers nothing to match: after overrides, and on a multi-session day after dropping ones already complete',
   below_threshold:     'a session was there and no candidate reached the auto-link score',
   tier_gated:          'free tier: the row lands, the read does not (recorded by the caller)',
 } as const
