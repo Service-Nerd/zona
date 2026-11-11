@@ -299,3 +299,57 @@ describe('§113 — the route holds no coaching number any more', () => {
     expect(branch).toContain('NextResponse.json(outcome.body, { status: outcome.status })')
   })
 })
+
+// ── §113 Amendment 2 — the door is named, and bounded above ──────────────────
+//
+// 📐 Measured 2026-11-11 over 10,800 swept inputs: 653 LongRunReadiness refusals,
+// 311 showing the 10K door, and **120 of those 311 were ultra runners** told a 10K
+// plan "builds the exact base this one needs" — true of a marathon, false of a 50 km.
+// Blagrove and Willy both refused it.
+describe('§113 Am. 2 — the 10K door is marathon-band only', () => {
+  const TENK = 'take a 10K plan for now'
+  const altsFor = (raceDistanceKm: number): string[] => {
+    // No `weeksAvailable`: Amendment 1's runway admission is deliberately not in play
+    // here, so the refusal is distance-only and the ALTERNATIVES are what is under test.
+    const r = assessLongRunReadiness({
+      race_distance_km: raceDistanceKm, longest_recent_run_km: 0, current_weekly_km: 10,
+      goal: 'finish', days_available: 3, age: 38,
+    } as any)
+    expect(r.ok, `${raceDistanceKm}km should refuse at longest 0`).toBe(false)
+    return r.alternatives ?? []
+  }
+
+  it('offers it to the marathon, which is where it was measured true', () => {
+    expect(altsFor(42.2).some(a => a.includes(TENK))).toBe(true)
+  })
+
+  it('does NOT offer it to a 50 km ultra — the claim is false there', () => {
+    expect(altsFor(50).some(a => a.includes(TENK))).toBe(false)
+  })
+
+  it('does not offer it to a 100 km either, so the bound is a BAND and not one value', () => {
+    expect(altsFor(100).some(a => a.includes(TENK))).toBe(false)
+  })
+
+  it('still does not offer it to a half marathon — Amendment 2 did not widen it', () => {
+    expect(altsFor(21.1).some(a => a.includes(TENK))).toBe(false)
+  })
+
+  it('leaves the ultra runner §44’s two reachable alternatives, never fewer', () => {
+    // Removing a false claim must not strip the refusal back to one line. The
+    // `get_running` offer is additional to these and is asserted where it is built.
+    expect(altsFor(50).length).toBeGreaterThanOrEqual(2)
+    expect(altsFor(100).length).toBeGreaterThanOrEqual(2)
+  })
+
+  it('reads both bounds from GENERATION_CONFIG, so neither is a literal again', () => {
+    // The whole first half of the item: a coaching numeric in `lib/plan/` is
+    // invisible to configPrincipleSync and to the coaching-guard hook.
+    expect(GENERATION_CONFIG.LONG_RUN_READINESS_ALT_RACE_DOOR_MIN_KM).toBe(42)
+    expect(GENERATION_CONFIG.ULTRA_MIN_RACE_KM).toBe(50)
+    const src = readFileSync('lib/plan/longRunReadiness.ts', 'utf8')
+      .replace(/\/\*[\s\S]*?\*\//g, m => m.replace(/[^\n]/g, ' '))
+      .replace(/\/\/[^\n]*/g, m => ' '.repeat(m.length))
+    expect(src).not.toMatch(/raceDistanceKm\s*>=\s*42\b/)
+  })
+})

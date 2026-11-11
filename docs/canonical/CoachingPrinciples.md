@@ -10896,6 +10896,55 @@ asserting the same rule is duplication, not coverage.
 
 ---
 
+### §113 Amendment 2 — the refusal's alternative door is named, and bounded above (Coaching Board 2026-11-11, LR-ALT-42-CONFIG-01)
+
+**Principle.** The band in which a refused runner is offered *"take a 10K plan for now"* is
+`LONG_RUN_READINESS_ALT_RACE_DOOR_MIN_KM` (42) up to, and excluding, `ULTRA_MIN_RACE_KM` (50).
+**An ultra runner is not offered it**, because the sentence makes a claim that is true of a marathon
+and false of a 50 km.
+
+**Two defects, and the item only knew about the first.**
+
+1. **The bound was a bare `42`** in `lib/plan/longRunReadiness.ts`, four lines below
+   `LONG_RUN_READINESS_MIN_RACE_KM` — a coaching numeric in `lib/plan/`, which the Configuration
+   Singularity forbids. It was invisible to `configPrincipleSync.test.ts` and to the coaching-guard
+   hook, so the one branch deciding what a refused marathoner reads was ungoverned.
+2. 🔴 **It had no upper bound, so the 50 km runner inherited the marathon's door.** 📐 Measured over
+   **10,800 swept inputs: 653 `LongRunReadinessError` refusals, of which 311 showed the door — and
+   120 of those 311 were ultra runners.** The sentence says the 10K plan *"builds the exact base this
+   one needs."* For a marathon that is measured and true (§113's own note: at a 4 km longest run the
+   marathon refuses, the half refuses, the 10K generates). For a 50 km it is false.
+
+**💪 Blagrove and 🩹 Willy both refused it**, independently and on the same ground: a 10K block does
+not build the base a 50 km needs, and telling a refused ultra runner it does spends their next
+attempt on the wrong thing. 🎯 **McMillan:** *"the marathon door is good coaching and I want it kept
+exactly as it is; it is simply being offered to the wrong second group."*
+
+**What the ultra runner gets instead, and why it is enough.** The two generic alternatives
+(*"Build up to one 5 km run…"*, *"Already run further than that?…"*) **plus** the §118 `get_running`
+offer, which **all 653** refusals carry. §44's obligation is two reachable alternatives and it is met.
+⚠️ **Nothing new is said to them.** Removing a false claim is the whole change; inventing a
+replacement sentence to fill the gap is how an overclaim gets rewritten rather than withdrawn.
+
+🔴 **AND THE SCOPE QUESTION THE ITEM ASKED IS WITHDRAWN, ON A RE-MEASUREMENT.** It asked whether the
+door should widen to every distance §113 can refuse, because *"a refused half-marathoner gets exactly
+one alternative."* **That has not been true since §118 shipped.** Measured the same day: every
+refusal carries a base-building plan that reaches the race door
+(*"15 weeks of base building takes you to 38km a week, and a race plan opens up at the end of it."*).
+The asymmetry the widening was meant to cure is now one sentence of marathon-specific routing, not a
+locked door. ⚠️ **342 of the 653 refusals (52.4%) are half-marathoners who do not see the 10K line,
+and the board is content with that** — they are being offered the plan that actually fits them.
+
+**Numeric.** `LONG_RUN_READINESS_ALT_RACE_DOOR_MIN_KM` (42) and `ULTRA_MIN_RACE_KM` (50).
+⚠️ **`ULTRA_MIN_RACE_KM` is deliberately ONE owner for two consumers.** §79/§80 already branch on
+*"race >= 50 km"* for `primary_metric: 'duration'` and had written the `50` out by hand in
+`ruleEngine.ts`; adding a second copy here to bound the door would have been a second answer to
+*"is this an ultra"*, which is `DELOAD-OWNER-01` and `TIER-OWNER-01`'s shape exactly. Same value,
+no behaviour delta at the §79 site.
+
+**Enforcement is a named test, not an invariant, for §113's own structural reason** — this refuses
+*before* a plan exists, so there is no `Plan` for `validatePlan()` to read. `lib/plan/longRunReadiness.test.ts`.
+
 ## 114. The long run fits the week it is in — the "get you round" plan
 
 *Added 2026-09-19. **Founder decision**, taken after the Coaching Board reached a genuine trilemma and recorded it. McMillan's position carried.*

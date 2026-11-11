@@ -7183,8 +7183,13 @@ function buildRulePlanOnce(
   // their current volume reads low. intensityFitness is 'beginner' only when every
   // signal agrees the runner is a true beginner, so this narrows duration to
   // exactly that cohort. (User-overridable per session/globally — Phase 3.)
+  // §113 Am. 2 — the bare `50` became `ULTRA_MIN_RACE_KM` so this and
+  // `longRunReadiness`'s door bound read ONE owner. Same value, no behaviour delta:
+  // two copies of "is this an ultra" is the shape DELOAD-OWNER-01 and TIER-OWNER-01
+  // both name, and the second copy was about to be written.
   const metric: 'distance' | 'duration' =
-    intensityFitness === 'beginner' || input.race_distance_km >= 50 ? 'duration' : 'distance'
+    intensityFitness === 'beginner' || input.race_distance_km >= GENERATION_CONFIG.ULTRA_MIN_RACE_KM
+      ? 'duration' : 'distance'
 
 
   // CoachingPrinciples §29 — fresh-from-layoff detection. Two paths:

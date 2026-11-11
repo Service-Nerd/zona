@@ -78,7 +78,17 @@ function alternativesFor(floor: number, raceDistanceKm: number): string[] {
   // `generationConfig.ts` edit and belongs to that item's board sitting, not to
   // this one. The §44 obligation is still met for an HM: two alternatives, both
   // reachable.
-  if (raceDistanceKm >= 42) {
+  // §113 Amendment 2 — BOUNDED ABOVE, and that is the half the item never asked for.
+  // Measured 2026-11-11: 120 of the 311 refusals showing this door were 50 km runners,
+  // because the branch was `>= 42` with no ceiling. The sentence below claims the 10K
+  // plan "builds the exact base this one needs" — measured and true for a marathon,
+  // false for an ultra, and refused by Blagrove and Willy on that ground. An ultra
+  // runner keeps the two generic alternatives and the `get_running` offer (§44's
+  // obligation is two reachable alternatives, which is met), and is told nothing untrue.
+  if (
+    raceDistanceKm >= GENERATION_CONFIG.LONG_RUN_READINESS_ALT_RACE_DOOR_MIN_KM &&
+    raceDistanceKm < GENERATION_CONFIG.ULTRA_MIN_RACE_KM
+  ) {
     // ⚠️ THIS USED TO SAY "start with a half marathon plan, which asks less of
     // your longest run." IT IS FALSE, and it is false for the single worst
     // reader: a first-time charity marathoner who has just been refused.

@@ -1270,6 +1270,28 @@ export const GENERATION_CONFIG = {
   // value with nothing to notice.
   LONG_RUN_READINESS_MIN_RACE_KM: 21,
 
+  // §113 Amendment 2 (Coaching Board 2026-11-11, LR-ALT-42-CONFIG-01) — the band in
+  // which a refused runner is offered "take a 10K plan for now".
+  //
+  // 🔴 IT WAS A BARE `42` IN `lib/plan/longRunReadiness.ts`, four lines below the
+  // constant above, which the Configuration Singularity forbids: invisible to
+  // `configPrincipleSync` and to the coaching-guard hook, so the one branch deciding
+  // what a refused marathoner reads was ungoverned.
+  //
+  // ⚠️ AND IT HAD NO UPPER BOUND, SO THE 50 KM ULTRA INHERITED THE MARATHON'S DOOR.
+  // Measured 2026-11-11 over 10,800 inputs: 653 LongRunReadiness refusals, 311 showing
+  // the door, and **120 of those 311 were ultra runners** being told a 10K plan "builds
+  // the exact base this one needs". For a marathon that is measured and true; for a 50 km
+  // it is false, and both Blagrove and Willy refused it. The claim is now bounded.
+  LONG_RUN_READINESS_ALT_RACE_DOOR_MIN_KM: 42,
+
+  // The ultra threshold, as ONE owner. §79/§80 already branch on "race >= 50 km" for
+  // `primary_metric: 'duration'` (time on feet) and wrote the 50 out by hand in
+  // `ruleEngine.ts`; a second copy here to bound the door above would have been a second
+  // answer to "is this an ultra", which is DELOAD-OWNER-01 / TIER-OWNER-01's shape.
+  // Both read this.
+  ULTRA_MIN_RACE_KM: 50,
+
   MIN_SESSION_DISTANCE_KM: {
     long:               5,
     easy:               4,
