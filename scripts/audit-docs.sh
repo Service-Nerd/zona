@@ -108,6 +108,20 @@ ids=$(git log "${RANGE_ARGS[@]}" --pretty=format:"%s" \
       | tr ',' '\n' | sed -E 's/^ +| +$//g' \
       | sed -E 's/[[:space:]]+(et al|etc\.?|and others)$//I' \
       | sed -E 's/^ +| +$//g' | grep -v '^$' | sort -u)
+# 🔴 A SAME-RANGE `revert(SCOPE)` CANCELS THE SHIP FOR THIS ARM, and the first revert in
+# this range is what exposed the gap. `BASEBUILD-DURATION-01` shipped as
+# `feat(BASEBUILD-DURATION-01)` and was vacated hours later as
+# `revert(BASEBUILD-DURATION-01)`; both commits are in today's history, so this arm saw a
+# ship and demanded the backlog heading be closed — for code that no longer exists. The
+# `reverts` arm below is the one that validates a revert (registry row marked REVERTED
+# AND the item re-opened), and it is the right owner of that question. Subtracting here
+# means the two arms stop contradicting each other.
+# ⚠️ SCOPED TO THE SAME RANGE deliberately. A revert of an OLD ship is not in `ids` to
+# begin with, and a revert outside the range must not silently excuse a ship inside it.
+reverted_ids=$(git log "${RANGE_ARGS[@]}" --pretty=format:"%s"       | grep -oE "^revert\([^)]+\)" | sed -E 's/^revert\(//; s/\)$//'       | tr ',' '\n' | sed -E 's/^ +| +$//g' | grep -v '^$' | sort -u)
+if [ -n "$reverted_ids" ]; then
+  ids=$(comm -23 <(printf '%s\n' "$ids") <(printf '%s\n' "$reverted_ids"))
+fi
 # ⚠️ LINE-WISE, NOT `for id in $ids`. A word-splitting loop turned the scope
 # `§117 Am.2` into two ids (`§117` and `Am.2`) and reported a gap against a
 # fragment that was never a scope. Caught by falsifying this very check.
@@ -556,7 +570,15 @@ fi
 #     2026-10-17, item 6 OPEN`) closed it in `scripts/lib/open-items.sh`, so a partial ship read
 #     as finished and the outstanding half was outside every open population. An explicit `OPEN`
 #     beats a stamp now. **Remove when item 6 ships at release.**
-_SHIPPED_AND_OPEN_OK='READINESS-SURFACE-01 STRENGTH-ENGINE-01 STEPPER-CONTROL-01 TODAY-CTA-CLEARANCE-01 NATIVE-BATCH-01 CONTRACT-COVERAGE-03 STRENGTH-ENTRY-01'
+#   BASEBUILD-DURATION-01 (2026-11-11): a REVERT, and the two arms of this script require
+#     exactly this state. §122 Am. 2 shipped and was vacated the same day (the cap binds the
+#     base-build ramp for the first time and the ramp flatlines: 135 of 189 swept plans
+#     overstate delivered volume). The reverts arm demands the id be "marked reverted in the
+#     registry AND re-opened in the backlog", which is precisely what this arm reads as
+#     shipped-but-open. The registry row says REVERTED in its first cell. **Remove when the
+#     Coaching Board rules on §116's ramp target versus §82/§122's weekday cap and the re-fix
+#     lands, or if the item is killed.**
+_SHIPPED_AND_OPEN_OK='READINESS-SURFACE-01 STRENGTH-ENGINE-01 STEPPER-CONTROL-01 TODAY-CTA-CLEARANCE-01 NATIVE-BATCH-01 CONTRACT-COVERAGE-03 STRENGTH-ENTRY-01 BASEBUILD-DURATION-01'
 for id in $(comm -12 /tmp/_reg /tmp/_open); do
   case " $_SHIPPED_AND_OPEN_OK " in *" $id "*) continue ;; esac
   say "  STILL OPEN $id (has a feature-registry row)"; afail=1; fail=1
