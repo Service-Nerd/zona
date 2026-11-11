@@ -93,13 +93,19 @@ describe('ACT-TRIAL-AT-FIRST-READ-01 — the ON arithmetic, through the shipped 
     }
   })
 
-  it('a FAILED read falls back to the signup window — an outage must not extend access', () => {
-    // 🔴 "No read" grants the 30-day cap, so swallowing a failed query as "no read" would hand
-    // out two extra weeks on our own error. The first cut discarded the error entirely.
+  it('a FAILED read resolves to the CAP, because the alternative REVOKES an entitled runner', () => {
+    // 🔴 BOTH EARLIER ATTEMPTS AT THIS WERE WRONG. Discarding the error made a failure
+    // indistinguishable from "no read". Falling back to the SIGNUP window was worse: a runner
+    // who read on day 2 has a window to day 16, so a failed query on day 15 resolved them
+    // `free` and took the product off them mid-trial because of our outage. The cap is bounded
+    // at 30 days and can never revoke.
     const w = on(null, plus(START, 20), true)
-    expect(w.basis).toBe('signup')
-    expect(w.endsAt!.getTime()).toBe(START.getTime() + TRIAL_DAYS * DAY)
-    expect(w.active, 'a failed read extended a trial that should have ended').toBe(false)
+    expect(w.basis).toBe('cap')
+    expect(w.endsAt!.getTime()).toBe(START.getTime() + TRIAL_MAX_DAYS_FROM_START * DAY)
+
+    // The direction that matters: an entitled runner keeps access through a failure.
+    const entitled = on(plus(START, 2), plus(START, 15), true)
+    expect(entitled.active, 'a failed read revoked a trial the runner had earned').toBe(true)
   })
 })
 
@@ -111,19 +117,36 @@ describe('ACT-TRIAL-AT-FIRST-READ-01 — the clock is MONOTONIC', () => {
     // come back between day 15 and day 30**. The emails count what a runner can open; this
     // answers whether they have ever been shown what the product does, and that cannot
     // un-happen.
-    for (const src of [TRIAL_TS, CLIENT_TSX]) {
-      const at = src.indexOf("from('run_analysis')")
-      expect(at, 'the first-read query is gone').toBeGreaterThan(-1)
-      const q = src.slice(at, at + 320)
-      expect(q, 'the first-read clock filters superseded rows again — that is non-monotonic')
+    for (const [label, src] of [['getUserTier', TRIAL_TS], ['DashboardClient', CLIENT_TSX]] as const) {
+      const q = firstReadQuery(src, label)
+      expect(q, `${label}: the first-read clock filters superseded rows again — non-monotonic`)
         .not.toMatch(/\.is\('superseded_at',\s*null\)/)
-      expect(q, 'the earliest read is no longer the one taken').toMatch(/ascending:\s*true/)
+      expect(q, `${label}: the earliest read is no longer the one taken`).toMatch(/ascending:\s*true/)
     }
   })
 })
 
 const TRIAL_TS   = readFileSync('lib/trial.ts', 'utf8')
 const CLIENT_TSX = readFileSync('app/dashboard/DashboardClient.tsx', 'utf8')
+
+/**
+ * The first-read query, bounded by the flag block it lives in.
+ *
+ * 🔴 The arms below used to take the file's FIRST `from('run_analysis')`. `DashboardClient.tsx`
+ * is ~8,900 lines with SIX of them, so they were correct by position and would have started
+ * asserting about an unrelated query the moment one moved. Anchor on the guard, not the order.
+ */
+function firstReadQuery(src: string, label: string): string {
+  // The read guarded by the flag: the occurrence with `TRIAL_STARTS_AT_FIRST_READ` close above
+  // it. Matching the guard rather than a literal `if (...)` survives the server's early-return
+  // shape and the client's block shape without either being hard-coded here.
+  const re = /from\('run_analysis'\)/g
+  for (let m = re.exec(src); m !== null; m = re.exec(src)) {
+    const before = src.slice(Math.max(0, m.index - 900), m.index)
+    if (before.includes('TRIAL_STARTS_AT_FIRST_READ')) return src.slice(m.index, m.index + 320)
+  }
+  throw new Error(`${label}: no run_analysis read guarded by TRIAL_STARTS_AT_FIRST_READ`)
+}
 
 /** Every `.ts`/`.tsx` under the given roots, excluding tests and fixtures. */
 function sourceFiles(roots: string[]): string[] {
@@ -147,21 +170,43 @@ describe('ACT-TRIAL-AT-FIRST-READ-01 — the interlock is DERIVED, not a list', 
   // is swept out of the tree each run.
   const FILES = sourceFiles(['app', 'lib', 'components'])
 
-  /** Consumers that still compute the trial from the signup stamp rather than the owner. */
+  /**
+   * Consumers that still compute the trial from the signup stamp rather than the owner.
+   *
+   * 🔴 THIS SWEEP IS BEST-EFFORT AND IS **NOT** THE GUARD. The first version matched two shapes
+   * and I called it mechanical; review found three more it missed — `TRIAL_DAYS - trialDaysLeft`
+   * in `TodayScreen`, `UpgradeScreen`, `runRead.ts`'s own `trialWindow` helper — and the whole
+   * SQL side, where `admin_user_tiers.trial_days_left` and its tier CASE are signup-relative
+   * across three migrations and no TypeScript sweep can see them.
+   *
+   * **The guard is the unconditional `it('is off')` arm at the top of this file**: flipping the
+   * constant fails the build whatever this sweep happens to recognise. What this produces is a
+   * CHECKLIST for the day that changes, and it is honest about being incomplete.
+   */
   const signupRelative = FILES.filter(f => {
     if (f === 'lib/trial.ts') return false            // the owner itself
     const src = readFileSync(f, 'utf8').replace(/\/\/[^\n]*/g, ' ').replace(/\/\*[\s\S]*?\*\//g, ' ')
     return /trialDayNumber\s*\(/.test(src)
         || /new Date\((trialStartedAt|settings\.trial_started_at)\)[^\n]*TRIAL_DAYS/.test(src)
+        || /TRIAL_DAYS\s*-\s*trialDaysLeft/.test(src)
+        || /trialWindow\s*\(\s*trialStartedAt/.test(src)
   })
 
   /** `resolveTier` callers that do not hand it the first read. */
   const unwiredCallers = FILES.filter(f => {
     if (f === 'lib/trial.ts') return false            // getUserTier is wired in-file
+    // ⚠️ COMMENTS STRIPPED, and EVERY occurrence checked. The first version read the file's
+    // first `resolveTier(` only and did not strip comments, so `shouldReconcile.ts` — which
+    // merely MENTIONS it in a doc comment — counted as an unwired caller, and a second real
+    // call site in any file would have been invisible.
     const src = readFileSync(f, 'utf8')
-    const at = src.indexOf('resolveTier(')
-    if (at === -1) return false                       // not a caller
-    return !/firstReadAt/.test(src.slice(at, at + 700))
+      .replace(/\/\/[^\n]*/g, ' ').replace(/\/\*[\s\S]*?\*\//g, ' ')
+    const re = /resolveTier\(/g
+    let unwired = false
+    for (let m = re.exec(src); m !== null; m = re.exec(src)) {
+      if (!/firstReadAt/.test(src.slice(m.index, m.index + 700))) unwired = true
+    }
+    return unwired
   })
 
   it('the population is non-empty, so this guard cannot pass by selecting nothing', () => {
@@ -198,17 +243,22 @@ describe('ACT-TRIAL-AT-FIRST-READ-01 — the interlock is DERIVED, not a list', 
   })
 
   it('the two callers that ARE wired hand over the same facts', () => {
-    expect(TRIAL_TS, 'getUserTier no longer passes firstReadAt').toMatch(/firstReadAt,\s*\n\s*firstReadUnavailable,/)
-    expect(CLIENT_TSX, 'the client mirror no longer passes firstReadAt').toMatch(/firstReadAt,\s*\n\s*firstReadUnavailable,/)
+    expect(TRIAL_TS, 'getUserTier no longer passes firstReadAt')
+      .toMatch(/firstReadAt:[\s\S]{0,120}firstReadUnavailable:/)
+    expect(CLIENT_TSX, 'the client mirror no longer passes firstReadAt')
+      .toMatch(/firstReadAt,\s*\n\s*firstReadUnavailable,/)
   })
 
   it('neither wired caller pays for the read while the flag is off', () => {
+    // `firstReadQuery` itself proves the read sits inside the flag block in both files.
     for (const [name, src] of [['getUserTier', TRIAL_TS], ['DashboardClient', CLIENT_TSX]] as const) {
-      const at = src.indexOf("from('run_analysis')")
-      const before = src.slice(Math.max(0, at - 400), at)
-      expect(before, `${name} fetches run_analysis outside the flag — the OFF path must cost nothing`)
-        .toMatch(/if\s*\(TRIAL_STARTS_AT_FIRST_READ\)/)
+      expect(firstReadQuery(src, name).length).toBeGreaterThan(50)
     }
+    // ⚠️ And `getUserTier` must resolve BEFORE asking: an admin, subscriber or grant holder is
+    // answered by `resolveTier` long before it looks at a trial, so the query bought for them
+    // was a serialised round trip for nothing.
+    expect(TRIAL_TS, 'getUserTier queries the read before knowing whether it can matter')
+      .toMatch(/first\.reason\s*!==\s*'trial'\s*&&\s*first\.reason\s*!==\s*'none'/)
   })
 
   it('the in-app countdown reads the owner, not its own arithmetic', () => {

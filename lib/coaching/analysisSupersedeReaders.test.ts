@@ -152,10 +152,14 @@ const EXPECT_FILTERS: Record<string, Expectation> = {
    * old plans REUSE week numbers, so unfiltering it would ship `PLAN-WEEK-COLLISION-01`
    * again (a new plan arrived 94% pre-completed).
    *
-   * UNFILTERED: the narrow zone-drift history query. §71 Am. 1 authorises crossing a
-   * race boundary for DISCIPLINE fields, and that query selects
-   * `hr_above_ceiling_pct` and nothing fitness-denominated — `ef_trend_pct` is
-   * deliberately absent, because the denominator changed at the boundary.
+   * UNFILTERED, and there are now TWO of them — the prose said one until
+   * ACT-TRIAL-AT-FIRST-READ-01's review, which is the kind of count that rots quietly:
+   *  (1) the narrow zone-drift history query. §71 Am. 1 authorises crossing a race boundary for
+   *      DISCIPLINE fields, and that query selects `hr_above_ceiling_pct` and nothing
+   *      fitness-denominated — `ef_trend_pct` is deliberately absent, because the denominator
+   *      changed at the boundary.
+   *  (2) the trial clock's first-read query, mirroring `lib/trial.ts`. A race change supersedes
+   *      every row, so filtering would bring an expired trial back between day 15 and day 30.
    *
    * ⚠️ Still the home of §71 Am. 1's second gap, the aerobic trend card.
    */

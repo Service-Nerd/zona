@@ -1928,7 +1928,12 @@ export default function DashboardClient() {
             .eq('user_id', user.id)
             .order('created_at', { ascending: true })
             .limit(1)
-          if (firstReadErr) firstReadUnavailable = true
+          // Logged, like the server mirror. A silent failure here resolves the runner on the
+          // cap path and nothing would say why.
+          if (firstReadErr) {
+            firstReadUnavailable = true
+            console.error('[DashboardClient] first-read query failed:', firstReadErr.message)
+          }
           else firstReadAt = (firstRead?.[0]?.created_at as string | undefined) ?? null
         }
 

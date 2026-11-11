@@ -66,9 +66,18 @@ export interface TrialWindowInputs {
   /**
    * True when the first-read query FAILED, as distinct from returning nothing.
    *
-   * ⚠️ A failed read must never EXTEND access: "no read" grants the 30-day cap, so swallowing
-   * an outage as "no read" hands out two extra weeks on our own error. On a failure the window
-   * falls back to the signup arithmetic, which is the answer that cannot give anything away.
+   * 🔴 ON A FAILURE THE WINDOW IS THE CAP, AND THE FIRST TWO ATTEMPTS AT THIS WERE BOTH WRONG.
+   * Swallowing the error as "no read" was wrong because the caller could not tell the two
+   * apart. Falling back to the SIGNUP window was wrong in the more dangerous direction: a
+   * runner who read on day 2 has a window to day 16, so a failed query on day 15 would have
+   * resolved them `free` and **revoked access they were entitled to**, mid-trial, because of
+   * our outage.
+   *
+   * The cap is the answer: it is the maximum this policy ever grants, it is bounded at 30 days,
+   * and it cannot revoke anyone. The cost of being wrong is at most a fortnight of access to
+   * someone who had not earned it; the cost the other way is taking the product off a runner
+   * who had. `/api/health/ingest`'s free-tier ruling settles that trade in this repo already:
+   * when one side is undoable and the other is cheap, you do not need a conversion model.
    */
   firstReadUnavailable?: boolean
 }
@@ -102,12 +111,16 @@ export function resolveTrialWindow(
   const started = asDate(i.trialStartedAt)
   if (!started) return { clockStartedAt: null, endsAt: null, active: false, basis: 'none' }
 
-  if (!startsAtFirstRead || i.firstReadUnavailable) {
+  if (!startsAtFirstRead) {
     const endsAt = new Date(started.getTime() + TRIAL_DAYS * MS_PER_DAY)
     return { clockStartedAt: started, endsAt, active: now < endsAt, basis: 'signup' }
   }
 
   const cap = new Date(started.getTime() + TRIAL_MAX_DAYS_FROM_START * MS_PER_DAY)
+  // See `firstReadUnavailable` above: the cap never revokes, and it is bounded.
+  if (i.firstReadUnavailable) {
+    return { clockStartedAt: null, endsAt: cap, active: now < cap, basis: 'cap' }
+  }
   const read = asDate(i.firstReadAt)
   if (!read) {
     // The clock has not started. Access runs to the cap, and `clockStartedAt` is null so a
@@ -272,41 +285,47 @@ export async function getUserTier(userId: string): Promise<UserTier> {
   // cost paid by everyone for a flag that is off. The condition is the flag itself, so the OFF
   // path is byte-for-byte what it was.
   //
-  // 🔴 SUPERSEDED ROWS INCLUDED, AND THAT IS THE OPPOSITE OF `lib/ops/runRead.ts`'S RULE ON
-  // PURPOSE. A race change supersedes every `run_analysis` row, so a clock keyed to live rows
-  // moves LATER and an expired trial would come back between day 15 and day 30. The emails
-  // count what a runner can open; this answers whether they have ever been shown what the
-  // product does, and that does not un-happen.
-  //
-  // ⚠️ THE ERROR IS CARRIED, NOT SWALLOWED. "No read" grants the 30-day cap, so treating a
-  // failed query as "no read" would hand out two extra weeks on our own outage.
-  let firstReadAt: string | null = null
-  let firstReadUnavailable = false
-  if (TRIAL_STARTS_AT_FIRST_READ) {
-    const { data: read, error: readErr } = await supabase
-      .from('run_analysis')
-      .select('created_at')
-      .eq('user_id', userId)
-      .order('created_at', { ascending: true })
-      .limit(1)
-    if (readErr) {
-      firstReadUnavailable = true
-      console.error('[lib/trial.ts] first-read query failed:', readErr.message)
-    } else {
-      firstReadAt = (read?.[0]?.created_at as string | undefined) ?? null
-    }
-  }
-
   // The ORDER lives in `resolveTier`, not here. This function's only job is to
-  // fetch the four rows; deciding what they mean is the pure owner's.
-  return resolveTier({
+  // fetch the rows; deciding what they mean is the pure owner's.
+  const base = {
     isAdmin: settings?.is_admin,
     subStatus: sub?.status,
     subPeriodEnd: sub?.current_period_end,
     grantExpiresAt: grant?.expires_at,
     trialStartedAt: settings?.trial_started_at,
-    firstReadAt,
-    firstReadUnavailable,
+  }
+  const first = resolveTier(base)
+
+  // ACT-TRIAL-AT-FIRST-READ-01 — A FOURTH QUERY, AND ONLY FOR THE ONE RUNNER IT CAN CHANGE.
+  //
+  // ⚠️ The first cut ran it alongside the other three for EVERYONE, including every admin,
+  // subscriber and charity-grant holder — all of whom `resolveTier` answers before it ever
+  // looks at the trial. `getUserTier` runs on a lot of routes, so that was a serialised round
+  // trip bought for nothing. Resolving first and asking only when the answer could still move
+  // keeps the cost on the cohort the policy is about.
+  if (!TRIAL_STARTS_AT_FIRST_READ || (first.reason !== 'trial' && first.reason !== 'none')) {
+    return first.tier
+  }
+
+  // 🔴 SUPERSEDED ROWS INCLUDED, THE OPPOSITE OF `lib/ops/runRead.ts`'S RULE, ON PURPOSE. A race
+  // change supersedes every `run_analysis` row, so a clock keyed to live rows moves LATER and an
+  // expired trial would come back between day 15 and day 30. The emails count what a runner can
+  // open; this answers whether they have ever been shown what the product does.
+  //
+  // ⚠️ THE ERROR IS CARRIED, NOT SWALLOWED — see `firstReadUnavailable`, which resolves to the
+  // cap rather than revoking an entitled runner on our own outage.
+  const { data: read, error: readErr } = await supabase
+    .from('run_analysis')
+    .select('created_at')
+    .eq('user_id', userId)
+    .order('created_at', { ascending: true })
+    .limit(1)
+  if (readErr) console.error('[lib/trial.ts] first-read query failed:', readErr.message)
+
+  return resolveTier({
+    ...base,
+    firstReadAt: readErr ? null : ((read?.[0]?.created_at as string | undefined) ?? null),
+    firstReadUnavailable: !!readErr,
   }).tier
 }
 

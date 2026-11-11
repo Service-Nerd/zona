@@ -4675,11 +4675,35 @@ DAY IT WAS FLIPPED:**
 `send-trial/route.ts` imports it — the very file the interlock points at. Renamed
 `resolveTrialWindow`.
 
-**Gate.** `lib/trialWindow.test.ts` — **18 arms**, falsified 6 ways: flip the flag · invert the cap
-comparison · filter to live reads · swallow the read error · give the countdown its own maths ·
-fetch unconditionally. Each fires. ⚠️ Registered in `analysisSupersedeReaders.test.ts` as a
-**HISTORY** reader (not plan-scoped), and argued into `supersedeCoverage.test.ts`'s allowlist on
-both sites — where the filter would be the defect rather than the fix.
+🔴 **THIRD REVIEW ROUND, SAME SHAPE: THE DERIVED SWEEP WAS NARROWER THAN ITS OWN CLAIM.** It
+recognised two syntactic shapes and missed three more — `TRIAL_DAYS - trialDaysLeft` in
+`TodayScreen` (which would render *"Kit's read 11 days of your runs"* to a runner 27 days in with
+**zero** reads), `UpgradeScreen`, and `runRead.ts`'s own `trialWindow` helper — plus **the entire
+SQL side**, where `admin_user_tiers.trial_days_left` and its tier CASE are signup-relative across
+three migrations and no TypeScript sweep can see them. 🔑 **The sweep is now declared BEST-EFFORT
+and is not the guard: the guard is the unconditional `it('is off')` arm**, which fails the build
+on any flip whatever the sweep happens to recognise. The sweep produces the CHECKLIST for the day
+that changes.
+
+🔴 **AND THE FAILURE FALLBACK WAS WRONG IN THE OTHER DIRECTION.** Falling back to the SIGNUP
+window on a failed read meant a runner who read on day 2 — window to day 16 — would resolve `free`
+if the query failed on day 15: **the product taken off a runner who had earned it, because of our
+outage.** It resolves to the CAP now: bounded at 30 days, and it can never revoke. Three more from
+the same round: the fourth query ran for **admins, subscribers and grant holders** who are answered
+before the trial is ever considered (it resolves first and asks only when the answer could still
+move); the client swallowed its read error with no log where the server logged it; and
+`supersedeCoverage`'s allowlist matched per-FILE, so one argued exemption covered **all thirteen**
+week-keyed chains in `DashboardClient` — entries are scoped to a TABLE now, with an arm requiring
+it on every new one.
+
+**Gate.** `lib/trialWindow.test.ts` — **18 arms**, falsified 9 ways across three rounds: flip the
+flag · invert the cap comparison · filter to live reads · swallow the read error · fall back to
+signup · query unconditionally · give the countdown its own maths · fetch outside the flag ·
+unscope the allowlist. ⚠️ Registered in `analysisSupersedeReaders.test.ts` as a **HISTORY** reader
+and argued into `supersedeCoverage`'s allowlist on both sites — where the filter would be the
+defect rather than the fix. ⚠️ Test anchors rebuilt too: three arms had been taking the FIRST
+`from('run_analysis')` in an 8,900-line file with six of them, and `unwiredCallers` counted a doc
+comment in `shouldReconcile.ts` as a call site while only ever reading a file's first one.
 
 ⚠️ **A stale comment corrected on the way past:** `isTrialActive` carried *"Defaulted, so the ~30
 existing call sites are unchanged"*. There are **none** — `resolveTier` is its only production

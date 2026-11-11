@@ -24,7 +24,14 @@ const SCAN_DIRS = ['app', 'lib']
 
 /** Reads/writes that deliberately do NOT filter, each with the argument for it.
  *  An entry here is a DECISION, not a TODO. */
-const ALLOWED: { file: string; why: string }[] = [
+/**
+ * 🔴 AN ENTRY IS SCOPED TO ITS TABLE, NOT ITS FILE (ACT-TRIAL-AT-FIRST-READ-01 review, 2026-11-11).
+ * Matching per-FILE meant exempting one read exempted every week-keyed chain in that file —
+ * **thirteen of them in `DashboardClient.tsx`** — so an entry argued for one table silently
+ * covered twelve others. `table` is required on every new entry; the one legacy entry without
+ * one is marked.
+ */
+const ALLOWED: { file: string; table?: string; why: string }[] = [
   // app/api/delete-account/route.ts was allowlisted here with the reason
   // "deletes every row for the user regardless of plan". IT DID NOT. It named
   // three tables out of twenty-four and there was no foreign key behind it, so
@@ -41,6 +48,7 @@ const ALLOWED: { file: string; why: string }[] = [
   // the DEFECT here rather than the fix.
   {
     file: 'lib/trial.ts',
+    table: 'run_analysis',
     why: 'Takes the EARLIEST run_analysis row to decide when the trial clock started. A LIFETIME '
        + 'question — "has this runner ever been shown what the product does" — which cannot '
        + 'un-happen. A race change supersedes every row, so filtering would lose their first '
@@ -49,6 +57,7 @@ const ALLOWED: { file: string; why: string }[] = [
   },
   {
     file: 'app/dashboard/DashboardClient.tsx',
+    table: 'run_analysis',
     why: 'The client mirror of the same first-read query, exempt for the same reason. ⚠️ Scoped '
        + 'to that ONE read: every other week-keyed read in this file is filtered, and this '
        + 'allowlist is per-FILE, so a future unfiltered read here would be silently covered. '
@@ -111,10 +120,19 @@ describe('every week-keyed read honours superseded_at', () => {
     expect(allChains.length).toBeGreaterThan(20)
   })
 
+  it('every allowlist entry but the one legacy exemption names its TABLE', () => {
+    // Per-FILE matching meant exempting one read exempted all 13 week-keyed chains in
+    // DashboardClient. `reframeTier.ts` predates the scoping and has a single chain, so it is
+    // the one entry allowed to omit it; anything new must say which table it is arguing for.
+    const unscoped = ALLOWED.filter(a => a.table == null).map(a => a.file)
+    expect(unscoped, 'a new allowlist entry must name its table, or it exempts the whole file')
+      .toEqual(['lib/coaching/reframeTier.ts'])
+  })
+
   it('no unfiltered week-keyed read outside the argued allowlist', () => {
     const offenders = allChains
       .filter(c => classify(c.body) === 'needs-filter')
-      .filter(c => !ALLOWED.some(a => c.file === a.file))
+      .filter(c => !ALLOWED.some(a => c.file === a.file && (a.table == null || a.table === c.table)))
       .map(c => `${c.file}:${c.line} (${c.table})`)
 
     expect(
