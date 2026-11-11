@@ -38,6 +38,57 @@ export interface MatchableActivity {
   name?:               string | null
 }
 
+/**
+ * ACT-RUNREAD-REACH-01 — every wall a run can hit between landing and being READ.
+ *
+ * 🔴 WHY A VOCABULARY AND NOT FOUR STRING LITERALS. This module has four early returns and
+ * the ingest route has a fifth, and all five were silent on both sides: the runner watches
+ * the run appear and never gets a read, and we could not say which one stopped it. The
+ * reasons are listed here so the recorder, the caller's tier-gate branch and the gate all
+ * name the same five things.
+ *
+ * ⚠️ `tier_gated` is recorded by the CALLER, not here — `/api/health/ingest` wraps this
+ * whole function in `if (canAnalyse)` (HK-FREE-INGEST-LINE-01), so a free runner's run never
+ * reaches this code at all. A reason that lives outside the function it describes is exactly
+ * the kind that goes uncounted, which is why it is in this list rather than in that route.
+ */
+export const RUN_UNMATCHED_REASONS = {
+  no_plan:             'the runner had no plan at all when the run arrived',
+  outside_plan_weeks:  'the run date is not inside the 7-day window of the week it resolved to',
+  week_has_no_sessions: 'the week the run resolved to carries no session at all (after overrides, and skipping ones already complete)',
+  below_threshold:     'a session was there and no candidate reached the auto-link score',
+  tier_gated:          'free tier: the row lands, the read does not (recorded by the caller)',
+} as const
+
+export type RunUnmatchedReason = keyof typeof RUN_UNMATCHED_REASONS
+
+/**
+ * Record why a run produced no read. Never throws and never blocks the path it watches —
+ * `recordOpsEvent` already guarantees both, and this is awaited only so the row lands before
+ * the function returns.
+ *
+ * ⚠️ SERVER ONLY, like `recordOpsEvent` itself. Both real callers of
+ * `autoMatchAndAnalyse` are API routes; `lib/health/observer.ts` only NAMES this module in a
+ * comment, which `grep -rl` reports identically to an import. Checked, not assumed.
+ */
+export async function noteRunUnmatched(
+  userId: string,
+  reason: RunUnmatchedReason,
+  ref: ActivitySourceRef,
+  activityStart: string,
+  extra: Record<string, unknown> = {},
+): Promise<void> {
+  const { recordOpsEvent } = await import('@/lib/ops/recordOpsEvent')
+  await recordOpsEvent('run_unmatched', {
+    reason,
+    source: ref.source,
+    // The DATE, never the time: it is enough to join a run back to a plan week and carries
+    // less about the runner's day than a timestamp would.
+    activity_date: activityStart.slice(0, 10),
+    ...extra,
+  }, userId)
+}
+
 export async function autoMatchAndAnalyse(
   supabase: any,
   userId: string,
@@ -45,6 +96,8 @@ export async function autoMatchAndAnalyse(
   ref: ActivitySourceRef,
   baseUrl: string,
 ): Promise<void> {
+  // ⚠️ NOT RECORDED. A walk or a ride is not a run that failed to be read; counting it would
+  // bury the four reasons that matter under the ones that are not failures at all.
   if (activity.type !== 'Run' && activity.sport_type !== 'Run') return
 
   const { plan: planRowPlan, error: planRowError } = await readPlanJson(supabase, userId)
@@ -52,7 +105,10 @@ export async function autoMatchAndAnalyse(
   if (planRowError) console.error('[lib/coaching/autoAnalyse.ts] plan read failed:', planRowError)
 
   const plan = planRowPlan
-  if (!plan?.weeks?.length) return
+  if (!plan?.weeks?.length) {
+    await noteRunUnmatched(userId, 'no_plan', ref, activity.start_date)
+    return
+  }
 
   const { findMatchCandidates, autoSelectMatch } = await import('@/lib/coaching/sessionMatch')
   const { getWeekIndexForDate } = await import('@/lib/plan')
@@ -65,7 +121,22 @@ export async function autoMatchAndAnalyse(
   const activityDate = new Date(activity.start_date)
   const weekIndex    = getWeekIndexForDate(plan.weeks, activityDate)
   const week         = plan.weeks[weekIndex]
+  // 🔴 THIS GUARD IS UNREACHABLE, AND FINDING THAT OUT IS WHY `outside_plan_weeks` IS DECIDED
+  // BELOW INSTEAD OF HERE. `getWeekIndexForDate` NEVER returns -1: it falls back to the nearest
+  // PAST week, else week 0 (`lib/plan/weekResolution.ts:82-87`). So `plan.weeks[weekIndex]` is
+  // always defined once `weeks.length > 0`, which the check above already guaranteed — and a run
+  // from outside the plan's calendar is quietly scored against the nearest past week rather than
+  // rejected. `isDateWithinWeek` exists for exactly this distinction and its own doc comment says
+  // so: *"callers can't otherwise tell 'genuinely inside this week' from 'pinned to the final week
+  // because the plan is over'"*. Nothing here had used it.
+  // ⚠️ THE BEHAVIOUR IS DELIBERATELY UNCHANGED. This item records WHY a run went unread; the
+  // item's own scope note puts changing what can match out of bounds. The fallback match is
+  // narrow in practice (`findMatchCandidates` filters to ±2 days of the session date), so what it
+  // mostly produces is a run reported as `below_threshold` when the truth is that it was never in
+  // the plan — a reason that misdescribes its cause. That is what the split below fixes.
   if (!week) return
+  const { isDateWithinWeek } = await import('@/lib/plan/weekResolution')
+  const withinWeek = isDateWithinWeek(week, activityDate)
 
   // 🔴 AUTOLINK-OVERRIDE-BLIND-01 (2026-10-07) — THE MATCHER MUST SEE THE WEEK THE
   // RUNNER SEES. This read `week.sessions[day]` straight out of `plan_json` and never
@@ -117,7 +188,11 @@ export async function autoMatchAndAnalyse(
   const done = new Set<string>((doneRows ?? []).filter((r: any) => r.status === 'complete').map((r: any) => r.session_day))
   const plannedSessions = plannedSessionsForMatch(effective, weekStartDate, done, DAY_KEYS)
 
-  if (!plannedSessions.length) return
+  if (!plannedSessions.length) {
+    await noteRunUnmatched(userId, 'week_has_no_sessions', ref, activity.start_date,
+      { week_n: week.n, within_week: withinWeek })
+    return
+  }
 
   // Cast to StravaActivity[] — MatchableActivity is a structural subset, but
   // the matcher's typed signature uses the canonical Strava shape. Both Strava
@@ -140,7 +215,17 @@ export async function autoMatchAndAnalyse(
       break
     }
   }
-  if (!bestDay) return
+  if (!bestDay) {
+    // ⚠️ TWO DIFFERENT FAILURES ARRIVE AT THE SAME `return`, and reporting them as one would
+    // make the commonest cause invisible. If the run is not inside the resolved week's own
+    // 7-day window it was never in the plan — `below_threshold` would blame the matcher for a
+    // run it should never have been given. Otherwise a session really was sitting there:
+    // `sameWeekday` is 40 of the 70 points `autoSelectMatch` needs, so that is usually a run on
+    // a day the plan did not expect, or one whose distance or duration missed its band.
+    await noteRunUnmatched(userId, withinWeek ? 'below_threshold' : 'outside_plan_weeks',
+      ref, activity.start_date, { week_n: week.n, candidates: plannedSessions.length })
+    return
+  }
 
   // The link-time push must fire EXACTLY ONCE per linked run. The same run is
   // frequently ingested more than once concurrently on app-open (foreground JS

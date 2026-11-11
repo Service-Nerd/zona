@@ -59,3 +59,31 @@ ceiling is what dies instead.
 cannot read a constant from a route config.** `lib/ai/aiRouteHopCeiling.test.ts` is the link: it
 derives the population from the import closure plus a brace-matched `fetch` reader, and fails if
 any hop has no signal, any waiting route has no ceiling, or the literal and the constant disagree.
+
+## Why a stored run produced no read (ACT-RUNREAD-REACH-01, 2026-11-11)
+
+The row landing and the run being **read** are different outcomes, and this route owns the seam
+between them. `autoMatchAndAnalyse` is called **only when `canAnalyse`** is true
+(HK-FREE-INGEST-LINE-01: the row is free, the coaching is paid), so a free runner's run never
+reaches the matcher at all.
+
+Every failure on that path now records a `run_unmatched` ops event naming **which** wall it hit:
+
+| reason | where | means |
+|---|---|---|
+| `tier_gated` | **this route**, in the `else` of `if (canAnalyse)` | free tier: the row lands, the read does not |
+| `no_plan` | `autoMatchAndAnalyse` | the runner had no plan when the run arrived |
+| `outside_plan_weeks` | `autoMatchAndAnalyse` | the run date is not inside the 7-day window of the week it resolved to |
+| `week_has_no_sessions` | `autoMatchAndAnalyse` | that week carries no session at all, after overrides and completions |
+| `below_threshold` | `autoMatchAndAnalyse` | a session was there and nothing reached the auto-link score |
+
+⚠️ **`tier_gated` is recorded HERE and nowhere else**, because the gate wraps the whole call. A
+reason that lives outside the function it describes is the kind that goes uncounted, which is why
+it is declared in `RUN_UNMATCHED_REASONS` alongside the other four rather than inline.
+
+⚠️ **A non-run records nothing.** A walk or a ride is not a run that failed to be read, and
+counting it would bury the four reasons that matter.
+
+`detail`: `{ reason, source, activity_date, week_n?, candidates?, within_week?, tier? }` — the
+**date**, never the time. Surfaced per runner by `v_activation_funnel.last_unmatched_reason`.
+Tests: `lib/coaching/runUnmatchedReason.test.ts` (behavioural, through the real matcher).

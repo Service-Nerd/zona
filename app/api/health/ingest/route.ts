@@ -7,7 +7,7 @@ import { getUserTier } from '@/lib/trial'
 import { isFeatureAllowed } from '@/lib/plan/canUseFeature'
 import { getUserHRZones } from '@/lib/strava'
 import { adaptHealthKitWorkout, adaptManualRun, type HealthKitWorkoutPayload, type ManualRunPayload } from '@/lib/health/adapter'
-import { autoMatchAndAnalyse, getInternalBaseUrl } from '@/lib/coaching/autoAnalyse'
+import { autoMatchAndAnalyse, getInternalBaseUrl, noteRunUnmatched } from '@/lib/coaching/autoAnalyse'
 import { consolidateIncomingHealthKitRow } from '@/lib/coaching/healthkitConsolidate'
 import { decideLateArrival, hrArrivalStamp } from '@/lib/coaching/lateArrivalGate'
 import { recordOpsEvent } from '@/lib/ops/recordOpsEvent'
@@ -354,6 +354,12 @@ export async function POST(req: NextRequest) {
       getInternalBaseUrl(),
     ).catch(err => console.error('[health-ingest] auto-analyse failed', err))
   )
+  // ACT-RUNREAD-REACH-01 — THE FIFTH WALL, AND THE ONLY ONE OUTSIDE THE MATCHER.
+  // `autoMatchAndAnalyse` records the four reasons it can see; a free runner's run never
+  // reaches it, because this gate wraps the whole call. Counting the other four and not this
+  // one would make the tier line invisible in exactly the surface built to explain the drop.
+  else await noteRunUnmatched(userId, 'tier_gated',
+    { source: 'apple_health', appleHealthUuid: payload.uuid }, payload.startDate, { tier })
 
   // Telemetry is SERVER-SIDE on purpose: a native ops POST would be a second
   // request that can be lost to the same process suspension this feature

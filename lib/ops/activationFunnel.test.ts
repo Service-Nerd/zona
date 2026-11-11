@@ -198,6 +198,15 @@ describe('ACT-FUNNEL-01 — v_activation_funnel', () => {
       .toMatch(/greatest\s*\(\s*v\.live_from\s*,\s*s\.trial_started_at\s*\)/i)
   })
 
+  it('exposes WHY a run went unread, beside the drop it explains (ACT-RUNREAD-REACH-01)', () => {
+    // The funnel's job is the drop AND the reason on one row. `run_unmatched` is recorded at all
+    // five walls; without this column the second half would be reconstructed from ops_events by
+    // hand, which is how the first version of this measurement got its answer wrong.
+    expect(sql).toMatch(/as\s+unmatched_runs/i)
+    expect(sql).toMatch(/as\s+last_unmatched_reason/i)
+    expect(sql).toMatch(/o\.kind\s*=\s*'run_unmatched'/i)
+  })
+
   it('stays off the client — it exposes user ids', () => {
     expect(sql).toMatch(/revoke\s+all\s+on\s+public\.v_activation_funnel\s+from\s+anon,\s*authenticated/i)
   })

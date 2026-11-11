@@ -4433,7 +4433,7 @@ metric view does not read `v_metric_users` (already exists — `metricViewExclus
 
 ---
 
-### 🔲 `ACT-RUNREAD-REACH-01` — a run can only be read inside a plan week, and most runs are not ⚙️ **NO BOARD**
+### ✅ `ACT-RUNREAD-REACH-01` — SHIPPED 2026-11-11 (a + b). A run that goes unread now says WHICH wall it hit ⚙️ **NO BOARD**
 
 **Problem.** `run_analysis` is keyed `(user_id, week_n, session_day, …)`, so a read REQUIRES a
 matched plan session. Nothing anywhere measures, records or surfaces a run that arrived with no
@@ -4447,12 +4447,39 @@ date range and 24 on a day the plan has a session**; 15 reads exist, 14 of them 
 **User impact.** The runner connects Apple Health, runs, sees the run appear, and never gets the
 one thing the product is for. Nothing tells them why, and nothing tells us.
 
-**Acceptance criteria.** (a) an ops event recorded when an activity is stored and
-`autoMatchAndAnalyse` returns without a match, naming WHICH gate stopped it (no plan · activity
-outside every plan week · no session that weekday · scored below 70); (b) the same reason exposed
-per-user in the funnel view; (c) a retro-match pass so activities already stored inside a plan
-window are re-offered when a plan is created or regenerated. **(d) is NOT in this item:** changing
-the match thresholds or the trial window is items 7 and 9's territory.
+**Acceptance criteria.** ✅ **(a)** `run_unmatched` is recorded at every wall, naming which one:
+`no_plan` · `outside_plan_weeks` · `week_has_no_sessions` · `below_threshold` · `tier_gated`.
+✅ **(b)** `v_activation_funnel` carries `unmatched_runs` and `last_unmatched_reason`, so the drop
+and its reason sit on one row. 🔻 **(c) retro-match: NOT BUILT, and the measurement argues against
+it as specified** — see below. **(d) was never in scope:** changing what can match is items 7 and
+9's territory.
+
+🔴 **WRITING THE TEST FOUND AN UNREACHABLE GUARD AND A REASON THAT WOULD HAVE LIED.**
+`autoAnalyse`'s `if (!week) return` **can never fire**: `getWeekIndexForDate` does not return -1,
+it falls back to the nearest PAST week and finally to week 0 (`weekResolution.ts:82-87`). So a run
+from outside the plan's calendar is quietly scored against the nearest past week, and the reason
+the telemetry would have reported is `below_threshold` — blaming the matcher for a run it should
+never have been handed. `isDateWithinWeek` exists for exactly this distinction, and its own doc
+comment says so; nothing in this path had used it. The two failures now split at the same
+`return`. ⚠️ **Behaviour deliberately unchanged** (the item's own scope note), so the fallback
+match still happens; what changes is that it is now named correctly.
+
+📐 **The reconstruction this replaces, measured over 377 run activities from 22 metric users,
+judged against the plan version LIVE AT THE TIME:** no plan live then **200 (53.1%)** · outside
+plan weeks **99 (26.3%)** · no session that weekday **25 (6.6%)** · a session was there and still
+nothing **42 (11.1%)** · has an analysis **12 (3.2%)**. ⚠️ **The same question against the `plans`
+snapshot gives 29 / 301 / 18 / 25 — wrong on every row**, because it judges a September run
+against today's plan. Second time in one day that distinction changed an answer.
+
+🔻 **WHY (c) IS NOT BUILT, and this is a finding rather than a deferral.** The biggest bucket by
+far is **no plan was live when the run arrived (53.1%)** — HealthKit back-fills 30 days, so most
+of those runs happened *before the runner ever generated a plan*. Retro-matching them would
+attribute **pre-plan runs to plan weeks**, which is wrong rather than merely late. The narrow
+honest case is a run inside the plan's own window that failed transiently, and that is a much
+smaller set. ⚠️ **It is also not a ⚙️ NO BOARD change:** a retro-match writes `session_completions`
+the runner sees on their plan and fires run-analysis pushes for runs from weeks ago. **Route it
+before building it** — and re-measure from `run_unmatched` once the instrumentation has run,
+rather than from this reconstruction.
 
 **Dependencies.** `ACT-FUNNEL-01`.
 

@@ -464,6 +464,29 @@ export type OpsEventKind =
   //
   // `detail`: `{ week_n, session_day, source, message }`. No PII.
   | 'completion_claim_failed'
+  // ACT-RUNREAD-REACH-01 (2026-11-11) — A RUN LANDED AND NO READ FOLLOWED, AND NOTHING
+  // ANYWHERE SAID WHY.
+  //
+  // A read requires a matched plan session: `run_analysis` is keyed
+  // `(user_id, week_n, session_day, …)`. `autoMatchAndAnalyse` has four early returns and
+  // the caller has a fifth (the tier gate), and every one of them was silent on both
+  // sides — the runner sees the run appear and never gets the one thing the product is
+  // for, and we cannot tell which wall they hit.
+  //
+  // 📐 MEASURED 2026-11-11 by reconstruction, over 377 run activities from 22 metric
+  // users: **12 (3.2%) have an analysis.** Of the rest — judged against the plan version
+  // that was LIVE AT THE TIME, not today's — 200 (53.1%) had no plan live then (HealthKit
+  // back-fills 30 days before anyone generates a plan), 99 (26.3%) fell outside every plan
+  // week, 25 (6.6%) landed on a weekday with no session, and 42 (11.1%) had a session
+  // sitting there and still produced nothing.
+  //
+  // ⚠️ THE SAME QUESTION AGAINST THE `plans` SNAPSHOT GIVES A COMPLETELY DIFFERENT AND
+  // WRONG ANSWER — 29 / 301 / 18 / 25 — because it judges a September run against today's
+  // plan. This event exists so the answer is RECORDED at the moment rather than
+  // reconstructed from a table that does not keep history.
+  //
+  // `detail`: `{ reason, source, activity_date, week_n? }`. No PII.
+  | 'run_unmatched'
 
 /**
  * Record an internal ops event. Fire-and-forget by nature but awaitable, so a

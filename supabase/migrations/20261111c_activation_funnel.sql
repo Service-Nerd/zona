@@ -166,6 +166,19 @@ select
          and r.created_at <  s.trial_started_at + interval '14 days')
   end                                             as reads_in_trial,
 
+  -- ACT-RUNREAD-REACH-01 — WHY a run produced no read, per runner. `run_unmatched` is recorded
+  -- at each of the five walls (four inside `autoMatchAndAnalyse`, plus the caller's tier gate),
+  -- so the funnel can show the DROP and the REASON on the same row instead of leaving the second
+  -- half to be reconstructed. Empty until the instrumentation has run; `reads_total = 0` with no
+  -- reason means nothing has been ingested since it shipped, which is a different fact from "we
+  -- do not know why".
+  (select count(*) from ops_events o
+     where o.user_id = m.user_id and o.kind = 'run_unmatched')
+                                                  as unmatched_runs,
+  (select o.detail->>'reason' from ops_events o
+     where o.user_id = m.user_id and o.kind = 'run_unmatched'
+     order by o.created_at desc limit 1)          as last_unmatched_reason,
+
   (select min(e.created_at) from analytics_events e
      where e.user_id = m.user_id and e.event = 'upgrade_view')
                                                   as first_paywall_view_at,
