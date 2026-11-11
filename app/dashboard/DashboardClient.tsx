@@ -65,7 +65,7 @@ import { buildWeekVoiceContext, getWeekVoiceHeadline, getWeekVoiceItems, PHASE_L
 import { planArcSeries } from '@/lib/plan/weekVolume'
 import { daysDueByEndOfYesterday } from '@/lib/coaching/dayBoundary'
 import { SESSION_COLORS, SESSION_LABELS, getSessionColor, getSessionLabel } from '@/lib/session-types'
-import { resolveTier, TRIAL_DAYS, type TierReason } from '@/lib/trial'
+import { resolveTier, TRIAL_DAYS, TRIAL_STARTS_AT_FIRST_READ, type TierReason } from '@/lib/trial'
 import { shouldReconcile } from '@/lib/subscriptions/shouldReconcile'
 import { RedeemCodeLink } from '@/components/shared/RedeemCodeLink'
 import type { AfterSheet } from '@/lib/subscriptions/redeemCode'
@@ -1909,12 +1909,34 @@ export default function DashboardClient() {
         }
         const now = new Date()
 
+        // ACT-TRIAL-AT-FIRST-READ-01 — THE CLIENT MIRROR HAS TO READ THE SAME FACTS, or the
+        // flag would resolve one way on the server and another in the UI. That is precisely
+        // the drift TIER-OWNER-01 exists to prevent, and the one owner is only an owner if
+        // both callers hand it the same inputs.
+        //
+        // ⚠️ Conditional on the flag, so the OFF path issues no extra query. The definition of
+        // a read is `lib/ops/runRead.ts`'s — `run_analysis` with `superseded_at IS NULL` — and
+        // it is spelled the same way on both sides deliberately: a client that counted
+        // superseded rows would start someone's paid clock on a read they cannot open.
+        let firstReadAt: string | null = null
+        if (TRIAL_STARTS_AT_FIRST_READ) {
+          const { data: firstRead } = await supabase
+            .from('run_analysis')
+            .select('created_at')
+            .eq('user_id', user.id)
+            .is('superseded_at', null)
+            .order('created_at', { ascending: true })
+            .limit(1)
+          firstReadAt = (firstRead?.[0]?.created_at as string | undefined) ?? null
+        }
+
         const { tier, reason } = resolveTier({
           isAdmin: data?.is_admin,
           subStatus: sub?.status,
           subPeriodEnd: sub?.current_period_end,
           grantExpiresAt: charityExpiry,
           trialStartedAt,
+          firstReadAt,
         }, now)
 
         setTierReason(reason)

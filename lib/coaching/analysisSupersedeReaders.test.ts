@@ -177,6 +177,19 @@ const EXPECT_FILTERS: Record<string, Expectation> = {
   'lib/ops/runRead.ts': true,
 
   /**
+   * ACT-TRIAL-AT-FIRST-READ-01 — `getUserTier` reads the FIRST live analysis to decide when a
+   * runner's trial clock started. FILTERED, and this is the least forgiving place in the repo
+   * to get it wrong: a superseded row belongs to a plan week that was replaced, so starting
+   * someone's countdown to being CHARGED on a read they can no longer open would be a billing
+   * decision made on evidence the runner cannot see.
+   *
+   * ⚠️ The query only runs while `TRIAL_STARTS_AT_FIRST_READ` is on, which it is not. It is
+   * registered anyway: a reader that exists is a reader, and the gate is what will stop the
+   * filter being dropped on the day the flag is flipped.
+   */
+  'lib/trial.ts': true,
+
+  /**
    * ⚠️ DELIBERATELY UNFILTERED, AND THIS GATE IS WHAT MADE IT AN EXPLICIT
    * DECISION RATHER THAN AN OVERSIGHT.
    *

@@ -477,7 +477,7 @@ one while they were paying attention. Full filing and evidence: `backlog.md` § 
 | `ACT-EMAIL-DAY14-01` — 13 of 16 day-14 emails said "no runs read" | NEXT | 👤 founder (voice) | open |
 | `ACT-EMAIL-POSTTRIAL-01` — nothing is sent after day 14 | NEXT | 👤 founder (voice) | open |
 | `ACT-FIRSTRUN-01` — days 1 to 3 are not designed around the first read | NEXT | 🧭 design | open |
-| `ACT-TRIAL-AT-FIRST-READ-01` — **the dominant cause** | NEXT | 💼 SLT → 👤 **written sign-off** | open, built behind a flag when reached |
+| `ACT-TRIAL-AT-FIRST-READ-01` — **the dominant cause** | NEXT | 💼 SLT → 👤 **written sign-off** | ✅ **BUILT 2026-11-11, flag OFF**, interlocked against the day-11/14 emails. Enabling is the founder's call |
 | `ACT-FREE-TEASE-01` — a free user sees nothing of what a read would say | LATER | 💼 SLT → 🧭 design | open |
 | `ACT-PAYWALL-01` — the paywall leads with a generic feature list | LATER | 🧭 design (+ 💼 SLT on price) | open |
 | `ACT-REPORTED-DISTANCE-DOOR-01` — latent, 0 live instances | LATER | ⚙️ none | filed, not sized |

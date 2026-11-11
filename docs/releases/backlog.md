@@ -4613,7 +4613,7 @@ first.
 
 ---
 
-### 🔲 `ACT-TRIAL-AT-FIRST-READ-01` — the trial starts at sign-up, and for 4 of 10 the plan starts after it ends 💼 **SLT**, then 👤 **FOUNDER WRITTEN SIGN-OFF** (brief, explicit)
+### ✅ `ACT-TRIAL-AT-FIRST-READ-01` — **BUILT 2026-11-11, FLAG OFF, WAITING AT ITS GATE.** 💼 **SLT**, then 👤 **FOUNDER WRITTEN SIGN-OFF** (brief, explicit)
 
 🔑 **THIS IS THE DOMINANT CAUSE, MEASURED.** Plan first week minus trial end: **+2, +19, +40, +242
 days** for 4 of the 10. The 14 days are counted from sign-up; the plan may not begin for weeks or
@@ -4622,7 +4622,38 @@ months, because a distant race defers the start.
 **Acceptance criteria per the brief.** Trial starts when the first run is read, capped at 30 days
 from sign-up; **fully behind a feature flag, OFF by default**; not enabled without written sign-off.
 
-⚠️ **Pricing and trial policy, so it does not ship on my judgement.** Built and left at the gate.
+✅ **BUILT. `TRIAL_STARTS_AT_FIRST_READ = false` in `lib/trial.ts`.** The founder authorised the
+BUILD on 2026-11-11 ("Yes") and has not authorised enabling it; that stays his call.
+
+**What it does when on.** `trialWindow()` is the single owner of *"when does this runner's trial
+end"*: no read yet → access runs to `TRIAL_MAX_DAYS_FROM_START` (30 days) and `clockStartedAt` is
+**null**, so a caller cannot compute a "day N of 14" that does not exist; a read at T → ends at
+`min(T + 14d, cap)`; a read dated before the stamp is clamped, so a trial can never end before it
+began. `isTrialActive` and `resolveTier` both read it, so the flag cannot be honoured in one place
+and missed in another — TIER-OWNER-01's shape applied to the clock.
+
+⚠️ **BOTH CALLERS OF `resolveTier` WERE WIRED, NOT ONE.** `getUserTier` (server) and
+`DashboardClient` (client mirror) each fetch the first live read **only while the flag is on**, so
+the OFF path issues no extra query and costs nothing. Wiring one would have resolved a runner
+`trial` on the server and `free` in the UI, which is exactly the drift TIER-OWNER-01 exists for.
+
+🔴 **IT CANNOT BE TURNED ON ALONE, AND THAT IS MECHANICAL.** The day-11 and day-14 emails count
+days from `trial_started_at`. With the flag on and no read yet, a runner's trial runs to the
+30-day cap while `trialDayNumber` still reaches 11 on day 11 — so **"3 days left." would be sent
+to someone with nineteen**, which is a false statement to a customer about when they will be
+charged. `lib/trialWindow.test.ts` **fails the build if the flag is true while the email route
+still keys off the signup stamp**, and a second arm proves that interlock is not vacuous by
+asserting the shape it watches for is present today. Moving the emails is items 4 and 5.
+
+**Gate.** `lib/trialWindow.test.ts` — 14 arms, falsified 5 ways: flip the flag · drop the client's
+input · fetch unconditionally · drop the `superseded_at` filter · change the OFF arithmetic. Each
+fires. ⚠️ Registered in `analysisSupersedeReaders.test.ts` as a PLAN-SCOPED `run_analysis` reader:
+**the least forgiving place in the repo to read a superseded row**, since it would start a
+runner's countdown to being charged on an analysis they can no longer open.
+
+⚠️ **A stale comment corrected on the way past:** `isTrialActive` carried *"Defaulted, so the ~30
+existing call sites are unchanged"*. There are **none** — `resolveTier` is its only production
+caller. A stale count makes the next person think a change here is wide when it is narrow.
 
 ---
 
