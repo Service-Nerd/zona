@@ -92,7 +92,7 @@ select
   -- Did any plan at all exist during the trial?
   -- ⚠️ NULL, NOT FALSE, for a runner who never started a trial. `false` means "had no plan during
   -- their trial" and they had no trial; `where not trainable_week_in_trial` would otherwise sweep
-  -- every non-trialist into the headline. The sibling `earliest_plan_start_in_trial` is already
+  -- every non-trialist into the headline. The sibling `earliest_live_plan_first_week` is already
   -- NULL for them, and three columns about one question must not disagree about absence.
   case when s.trial_started_at is null then null else
     exists (select 1 from plan_versions v
@@ -124,10 +124,18 @@ select
   end                                             as trainable_week_in_trial,
 
   -- The earliest start any live-in-trial version offered, so the SIZE of the gap is readable.
+  -- ⚠️ RENAMED, because the name made it contradict the column above. As
+  -- `earliest_plan_start_in_trial` it read as "the start that made the trial trainable", and after
+  -- the intersection tightening a runner could score `trainable_week_in_trial = false` while this
+  -- showed a date INSIDE the trial — the day-10 case, where the version holding that start was no
+  -- longer live by the time it arrived. It measures something narrower and useful: the earliest
+  -- calendar start ON OFFER from any version that was live at some point during the trial,
+  -- **whether or not that start was reachable while it was live**. That is what sizes the gap
+  -- (242 days for the worst case), and it is deliberately NOT conditioned on trainability.
   (select min(v.first_week) from plan_versions v
     where v.user_id = m.user_id and s.trial_started_at is not null
       and v.live_from <  s.trial_started_at + interval '14 days'
-      and v.live_to   >  s.trial_started_at)      as earliest_plan_start_in_trial,
+      and v.live_to   >  s.trial_started_at)      as earliest_live_plan_first_week,
 
   (select min(a.start_date) from strava_activities a where a.user_id = m.user_id)
                                                   as first_activity_at,

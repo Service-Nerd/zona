@@ -33,7 +33,7 @@ describe('ACT-FUNNEL-01 — v_activation_funnel', () => {
     // those runners a read during the trial is impossible. Without this column the funnel would
     // show the drop and not the reason.
     expect(sql).toMatch(/as\s+trainable_week_in_trial/i)
-    expect(sql).toMatch(/as\s+earliest_plan_start_in_trial/i)
+    expect(sql).toMatch(/as\s+earliest_live_plan_first_week/i)
   })
 
   it('uses the SAME trial length as the tier resolver', () => {
@@ -138,7 +138,7 @@ describe('ACT-FUNNEL-01 — v_activation_funnel', () => {
 
   it('answers NULL, not false, for a runner who never started a trial', () => {
     // `false` means "had no plan during their trial"; they had no trial. Three columns about one
-    // question must not disagree about absence — `earliest_plan_start_in_trial` is already NULL.
+    // question must not disagree about absence — `earliest_live_plan_first_week` is already NULL.
     // 🔴 THE FIRST CUT OF THIS ARM USED A FIXED 600-CHARACTER LOOKBACK — the exact anti-pattern
     // this file warns about twice, three arms above and three arms below, written minutes after
     // the warning. Code review proved it BOTH WAYS: dropping the guard from
@@ -187,8 +187,15 @@ describe('ACT-FUNNEL-01 — v_activation_funnel', () => {
     const before = sql.slice(0, label)
     const openIdx = before.search(/exists\s*\(\s*select\s+1(?![\s\S]*exists\s*\(\s*select\s+1)/i)
     const expr = sql.slice(openIdx, label)
-    expect(expr, 'the windows are tested independently again').toMatch(/least\s*\(\s*v\.live_to/i)
-    expect(expr).toMatch(/greatest\s*\(\s*v\.live_from/i)
+    // ⚠️ THE SECOND ARGUMENT IS THE WHOLE POINT, and the first cut never looked at it. Code review
+    // showed `least(v.live_to, v.live_to)`, `greatest(v.live_from, v.live_from)` and
+    // `greatest(v.live_from, s.healthkit_connected_at)` all passing — each silently drops a trial
+    // bound, and the last degrades to `live_from` alone for anyone without HealthKit, because
+    // Postgres `greatest` ignores NULLs. Assert BOTH operands.
+    expect(expr, 'the live_to bound is not intersected with the trial END')
+      .toMatch(/least\s*\(\s*v\.live_to\s*,\s*s\.trial_started_at\s*\+\s*interval\s*'14 days'\s*\)/i)
+    expect(expr, 'the live_from bound is not intersected with the trial START')
+      .toMatch(/greatest\s*\(\s*v\.live_from\s*,\s*s\.trial_started_at\s*\)/i)
   })
 
   it('stays off the client — it exposes user ids', () => {

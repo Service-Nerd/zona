@@ -147,7 +147,7 @@ export const DERIVED_VIEWS: Record<string, string> = {
                         + '(HealthKit connected, first run imported, first run READ, paywall, '
                         + 'purchase attempt). The trial question is answered by '
                         + 'had_live_plan_in_trial, trainable_week_in_trial and '
-                        + 'earliest_plan_start_in_trial, all computed from PLAN HISTORY '
+                        + 'earliest_live_plan_first_week, all computed from PLAN HISTORY '
                         + '(plan_archive + plans); current_plan_* are snapshot columns and say '
                         + 'nothing about the trial. Reads v_metric_users.',
 }
