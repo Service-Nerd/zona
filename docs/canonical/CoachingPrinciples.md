@@ -6867,6 +6867,48 @@ minutes for a runner who already runs 135 is a question about §106's peak ceili
 runner's existing base. Re-filed as `PLAN-PEAK-BELOW-BASE-01`.
 
 ---
+### §122 Amendment 2 — a benchmark derives a pace, so the base-build ramp carries duration (Coaching Board 2026-11-11, BASEBUILD-DURATION-01)
+
+**Principle.** §122's permission to omit `duration_mins` holds **only where no pace is
+derivable**. A finished plan is one way to derive one. **A benchmark is another**, and it is
+present when the base-build on-ramp is generated. So the ramp sizes its weeks against the
+runner's own easy pace, shows them the band it used, and the weekday cap binds.
+
+🔴 **The second caller shipped half of §122, and the half it dropped was the half §122 was
+ratified FOR.** `generateBaseBuildOnRamp` passed `paceTarget: null` with the comment *"there
+is no finished plan to read a pace from here"* — a true sentence and the wrong conclusion.
+The consequence was the exact defect §122 closed, reopened: a session with no duration is
+skipped by `applyWeekdayMinsCap`, by `INV-PLAN-MAX-WEEKDAY-MINS` and by the overrun note, all
+three on `!s.duration_mins`.
+
+📐 **Measured on LIVE data, 2026-11-11 — the item was filed with "population not yet
+measured":** four stored base-build plans carrying **51/51, 12/12, 30/30 and 7/7 sessions
+with no duration**, and **two of them carrying a stated 45-minute weekday cap that therefore
+never applied**. 📐 Generated: **0 of 72** base-builds carried duration on every session
+before; **72 of 72 with a benchmark** after, and **2,965 weekday sessions became cappable
+with 0 over the runner's stated cap**.
+
+⚠️ **A NULL STILL MEANS DECLINE.** No benchmark, or a benchmark yielding no finite VDOT, and
+every field stays absent exactly as before: **0 of 72** in that cohort, deliberately. §122's
+own words, unchanged: *"a foundation block sized against a guessed pace is worse than one
+sized against none."*
+
+⚠️ **AND THIS REACHES NO EXISTING PLAN.** It is a generation-time fix, so the four live plans
+keep their missing durations until they are regenerated. Stated because an engine fix reads
+like a data fix and is not.
+
+**Numeric.** None new. `easyPaceMinPerKm` is threaded from `vdotFor` + `buildPaceFromVDOT`,
+which are the engine's **own two owners** of VDOT-from-benchmark and bands-from-VDOT — the
+same pair the race plan reaches its easy pace through. Calling the owner is not a second
+producer of it, which is the distinction `DELOAD-OWNER-01` turns on.
+
+**Enforcement.** `lib/plan/baseBuildOnRamp.test.ts` — duration on every session with a
+benchmark, the band shown alongside it, the decline without one, and the weekday cap holding.
+🔴 **The cap arm was HOLLOW on its first cut and the falsification is what found it:** with no
+durations the "nothing over the cap" filter yields `[]` and passes vacuously, so it stayed
+green against the pre-amendment code. It now asserts its population first. Falsified by three
+mutations, the first restoring the exact pre-amendment call (fires 3 arms).
+
 
 ### §82 Amendment 1 — "a few minutes" is scoped to the magnitude it was ruled on *(Coaching Board 2026-10-03)*
 
