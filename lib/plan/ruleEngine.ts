@@ -44,7 +44,7 @@ import { buildHRZonesWithFallback } from './hrZones'
 import { effectiveStartKm } from './startVolume'
 import { weeksBetweenLocal } from './length'
 import { enforcePrepTime, enforceDaysAvailable, validateInputFields, coherentGoal, type PrepTimeAwareInput, type PrepTimeResult, type DaysAvailableResult } from './inputs'
-import { normaliseDays, longRunDayFor } from './days'
+import { normaliseDays, longRunDayFor, dayGap, canHoldSpacedQuality } from './days'
 import { sessionKmOrZero, sessionKmSelfPaced } from '@/lib/plan/sessionDistance'
 import { zoneStringFromZoneKeys } from '@/lib/coaching/zoneRules'
 import { isLongRun, isShakeout, classifyStimulus, STIMULUS_OF_CATEGORY, isStructuredSession, isVo2maxSession, isQualitySession } from './sessionRole'
@@ -652,10 +652,7 @@ function buildVolumeSequence(
 const DAY_ORDER: Day[] = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']
 const DAY_INDEX: Record<Day, number> = { mon: 0, tue: 1, wed: 2, thu: 3, fri: 4, sat: 5, sun: 6 }
 
-function dayGap(a: Day, b: Day): number {
-  const diff = Math.abs(DAY_INDEX[a] - DAY_INDEX[b])
-  return Math.min(diff, 7 - diff)
-}
+// `dayGap` now has ONE owner in `./days` (§110 Am. 3). This local copy is retired.
 
 // CoachingPrinciples §18 — accept both short ('mon') and full ('monday') forms.
 // Wizard sends full names; API/test inputs may send short. The parser is the
@@ -10373,6 +10370,50 @@ function buildRulePlanOnce(
     }
     if (meta.rule_adjustments) meta.rule_adjustments.push(adjustment)
     else meta.rule_adjustments = [adjustment]
+  }
+
+  // 🔴 §110 AMENDMENT 3 (Coaching Board 2026-11-11, ALL-DAYS-BLOCKED-01) — WHEN THE
+  // WEEK'S OPEN DAYS CANNOT HOLD BOTH A LONG RUN AND A §7-SPACED QUALITY, SAY SO.
+  //
+  // The placement simply fell through: `if (qualDay && dayGap(qualDay, longDay) >= min)`
+  // skipped the whole block and nothing was recorded, so the plan carried zero quality
+  // and no explanation, and `INV-PLAN-QUALITY-NOT-ZERO` reported an error whose cause was
+  // arithmetic. CD-22's treatment, applied: the engine RECORDS the unreachability, §7's
+  // spacing is NOT relaxed to make the plan pass (Willy: a single weekly session carrying
+  // the long run and the only intensity is the highest-risk week we could write), and
+  // generation does not throw.
+  //
+  // 📐 Measured across all 21 two-open-day placements: gap 1 gives 0 quality, gap 2+ gives
+  // 6. Exactly the 7 adjacent pairs, `sat+sun` among them.
+  {
+    const minQualGapDays = Math.ceil(GENERATION_CONFIG.MIN_HOURS_BETWEEN_QUALITY_AND_LONG / 24)
+    const openDays = DAY_ORDER.filter(d => !blockedDays(input).has(d))
+    const longDayUsed = weeks
+      .flatMap(w => Object.entries(w.sessions ?? {}))
+      .find(([, sn]) => sn && (sn as Session).role === 'long_run')?.[0] as Day | undefined
+    const qualityPlaced = weeks
+      .filter(w => w.phase === 'build' || w.phase === 'peak')
+      .flatMap(w => Object.values(w.sessions ?? {}))
+      .filter(sn => sn && (sn as Session).type === 'quality').length
+    if (
+      qualityPlaced === 0 && longDayUsed != null &&
+      !canHoldSpacedQuality(openDays, longDayUsed, minQualGapDays)
+    ) {
+      const adjustment = {
+        rule: '§110 Am. 3 — quality floor unreachable on the available days',
+        violation: `The only training days are ${openDays.join(', ')}, and the long run takes `
+          + `${longDayUsed}. §7 asks for ${minQualGapDays} days between a quality session and the `
+          + `long run, and no remaining day is that far from it.`,
+        resolution: 'No quality session is scheduled. The long run is kept, because it is the '
+          + 'session this plan is built on. Opening one more day, or a day further from the long '
+          + 'run, puts the quality work back.',
+        weeks_affected: [] as number[],
+      }
+      // Same trap as the block above: create the key if absent, or the only adjustment a
+      // plan has vanishes — and this is exactly the plan that needs the audit line.
+      if (meta.rule_adjustments) meta.rule_adjustments.push(adjustment)
+      else meta.rule_adjustments = [adjustment]
+    }
   }
 
   const plan: Plan = {

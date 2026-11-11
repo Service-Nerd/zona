@@ -14,7 +14,7 @@ import type { Plan, GeneratorInput, Session, Week } from '@/types/plan'
 import { storedPlanInput } from './storedPlanInput'
 import { runWalkPrescriptionApplies } from './runWalkPlan'
 import { strideCarrierDay, isDayAfterLongRun, hasHillRestrictingInjury } from './neuromuscular'
-import { normaliseDays } from './days'
+import { normaliseDays, dayGap, canHoldSpacedQuality, DAY_ORDER as DAY_ORDER_OWNED } from './days'
 import { sessionFloorsFor } from './sessionFloors'
 import { easyPaceFromPlan } from './easyPace'
 import { fitnessAnchorMap } from './fitnessAnchorMap'
@@ -328,10 +328,8 @@ type Day = typeof DAYS[number]
 const DAY_SET: Set<Day> = new Set(DAYS)
 
 
-function dayGap(a: Day, b: Day): number {
-  const ai = DAYS.indexOf(a), bi = DAYS.indexOf(b)
-  return Math.min(Math.abs(ai - bi), 7 - Math.abs(ai - bi))
-}
+// `dayGap` now has ONE owner in `./days` (§110 Am. 3). This checker-side copy is
+// retired: holding its own copy of the producer's predicate is what it exists to catch.
 
 // Parse "M:SS–M:SS /km" pace string → midpoint in min/km. Used by
 // INV-PLAN-LABEL-MATCHES-PACE pace-band check. Returns null when the string
@@ -3096,7 +3094,39 @@ export function validatePlan(plan: Plan, rawInput: GeneratorInput): Violation[] 
     // Fourth instance of that shape today (LR-CAP-BLIND-01, SESSION-KM-01/02,
     // V4-ANCHOR-01).
     const isBeginner = (plan.meta.fitness_intensity_level ?? plan.meta.fitness_level) === 'beginner'
-    if (!isBeginner && hasBuildOrPeak && longEnough && qualityCount === 0) {
+
+    // 🔴 §110 AMENDMENT 3 (Coaching Board 2026-11-11, ALL-DAYS-BLOCKED-01) — THE FLOOR
+    // DOES NOT FIRE WHERE THE WEEK'S OPEN DAYS CANNOT HOLD BOTH A LONG RUN AND A
+    // §7-SPACED QUALITY. That is arithmetic, not a coaching choice, and CD-22 already
+    // settled the treatment for an arithmetically unsatisfiable rule: the engine RECORDS
+    // the unreachability (`V2-vo2max-onset-unreachable`), the number is not lowered to
+    // make the plan pass, and generation does not throw.
+    //
+    // 📐 Measured across all 21 two-open-day placements: **gap 1 gives 0 quality, gap 2
+    // or more gives 6.** So exactly the 7 adjacent pairs cannot hold both, `sat+sun`
+    // among them — the commonest two-day week there is. At one open day §9 takes the only
+    // session as the long run, so it is trivially unsatisfiable.
+    //
+    // ⚠️ THIS IS NOT A DAY-COUNT EXEMPTION, and the distinction is §1 CD-21 Amendment 1's
+    // exactly: a 2-day runner whose days are **3 apart gets 6 quality sessions** and the
+    // floor binds on them in full. The exemption is keyed to the GEOMETRY, not the count.
+    //
+    // ⚠️ AND IT CALLS THE OWNER (`canHoldSpacedQuality`) RATHER THAN RE-DERIVING THE
+    // PLACEMENT RULE. A checker holding its own copy of its producer's predicate cannot
+    // catch the producer being wrong, only drift from it — the same reason this gate reads
+    // `fitness_intensity_level` as a stamp instead of re-running the classifier.
+    const openDays = DAY_ORDER_OWNED.filter(d => !normaliseDays(input.days_cannot_train).has(d))
+    const planLongDay = plan.weeks
+      .flatMap(w => Object.entries(w.sessions ?? {}))
+      .find(([, sn]) => sn && (sn as Session).role === 'long_run')?.[0] as Day | undefined
+    const geometryCanHoldQuality =
+      planLongDay == null ||
+      canHoldSpacedQuality(
+        openDays, planLongDay,
+        Math.ceil(GENERATION_CONFIG.MIN_HOURS_BETWEEN_QUALITY_AND_LONG / 24),
+      )
+
+    if (!isBeginner && hasBuildOrPeak && longEnough && qualityCount === 0 && geometryCanHoldQuality) {
       violations.push({
         code: 'INV-PLAN-QUALITY-NOT-ZERO',
         principle_ref: 'CoachingPrinciples §110 (§1)',

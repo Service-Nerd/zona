@@ -10376,6 +10376,69 @@ plan with build/peak weeks and `QUALITY_FLOOR_MIN_PLAN_WEEKS`+ weeks must carry
 at least one quality session. A floor on the COUNT, not the dose.
 
 ---
+### Amendment 3 — the quality floor does not fire where the open days cannot hold it (Coaching Board 2026-11-11, ALL-DAYS-BLOCKED-01)
+
+**Principle.** §110's floor requires at least one quality session across build and peak. It
+**does not apply to a week whose open days cannot hold both a long run and a quality session
+spaced from it by §7's minimum.** That is arithmetic, not a coaching choice, and the engine
+**records** the unreachability rather than resolving it in silence.
+
+🔑 **The treatment is CD-22's, verbatim in shape.** An arithmetically unsatisfiable rule is
+recorded, the number is **not** lowered to make the plan pass, and generation does **not**
+throw. Precedent: `V2-vo2max-onset-unreachable` for §8's adaptation window, CD-20's withheld
+second quality, CD-21's maintenance carve-out from §1.
+
+📐 **Measured 2026-11-11 across all 21 two-open-day placements: a gap of 1 day gives 0
+quality sessions; a gap of 2 or more gives 6.** So exactly the **7 adjacent pairs** cannot
+hold both, and `sat+sun` is one of them, which is the commonest two-day week there is. At one
+open day it is trivially unsatisfiable: §9 takes the only session as the long run.
+
+⚠️ **THIS IS NOT A DAY-COUNT EXEMPTION, and that distinction is the whole amendment.** §1
+CD-21 Amendment 1 is keyed to a *profile*; this one is keyed to the *geometry*. **A 2-day
+runner whose days are 3 apart gets 6 quality sessions and the floor binds on them in full** —
+asserted, because an exemption that buys silence instead of precision is worse than no
+exemption. §110 exists because `suppressQuality` zeroed quality on **2,197 non-beginner
+plans** and raised nothing anywhere; strip the quality from an ample-day plan and this floor
+still fires.
+
+**What was NOT done, and who refused it.** 🩹 **Willy:** §7's spacing is not relaxed to fit a
+quality session next to the long run — *"a single weekly session carrying the week's long run
+and its only intensity is the highest-risk week we could write."* 🎯 **McMillan:** the long
+run is kept rather than traded for the quality, because it is the session the plan is built
+on. 📊 **Seiler:** no objection; §1 is a ceiling and a week with one running session has no
+distribution to describe, which is CD-21 Amendment 1's own reasoning.
+
+🔴 **AND THE ITEM THIS CAME FROM WAS WRONG ABOUT ITSELF.** `ALL-DAYS-BLOCKED-01` reported
+that an all-seven-days-blocked input *"generates a plan whose long run sits on a blocked
+Sunday"*. In the shape the wizard actually posts — `days_available = 7 − blocked` — that
+input is **REFUSED**, and **0 sessions land on a blocked day at any day count**. The symptom
+does not exist. The defect above is what the re-measurement found instead.
+
+⚠️ **AND MY FIRST MEASUREMENT OF *THAT* WAS ALSO WRONG, in a way worth recording.** Blocking
+the first *n* days always leaves the **weekend** open, so every two-day case I generated was
+`sat+sun` — gap 1 — and I reported *"150 of 150 two-day plans"* to the board when the real
+answer is **7 of 21 placements**. **Varying the day COUNT is not reaching the day-PLACEMENT
+axis**, and the ruling that came out of the corrected number is narrower and does not change
+what the engine prescribes to anyone.
+
+**Numeric.** None new. §7's `MIN_HOURS_BETWEEN_QUALITY_AND_LONG` (48) is the only threshold,
+read through the new single owner `lib/plan/days.ts → canHoldSpacedQuality`.
+
+🔑 **One owner, called by producer AND checker.** `dayGap` existed **twice** — once in
+`ruleEngine.ts` and once in `invariants.ts`, two implementations of the same circular
+arithmetic. They agreed, so nothing was wrong; the shape is `DELOAD-OWNER-01`'s, and this
+amendment needed a **third** copy, which is where it stopped. Both local copies are retired
+and the geometry predicate lives beside `dayGap` in `days.ts`.
+
+**Enforcement.** `INV-PLAN-QUALITY-NOT-ZERO` consults the owner, and the engine writes
+`§110 Am. 3 — quality floor unreachable on the available days` into `rule_adjustments`,
+naming the open days, the long-run day, §7's spacing and the lever
+(*"Opening one more day, or a day further from the long run, puts the quality work back."*).
+`lib/plan/qualityFloorGeometry.test.ts`, 15 arms, **falsified by six mutations** — including
+making the exemption unconditional (fires both "still fires" arms), making it a day-count
+exemption instead of a geometry one, relaxing §7 inside the predicate, and removing the
+record.
+
 
 ## 110b. What a beginner may be prescribed — the rung ladder
 

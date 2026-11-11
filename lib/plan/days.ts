@@ -92,3 +92,43 @@ export function spreadDays(open: readonly Day[], count: number, fixed: readonly 
   pick(0, [])
   return best.sort((a, b) => idx(a) - idx(b))
 }
+
+/**
+ * Circular distance between two weekdays, in days. Sunday and Monday are 1 apart.
+ *
+ * 🔴 IT EXISTED TWICE — `ruleEngine.ts` (producer) and `invariants.ts` (checker) — with
+ * two different implementations of the same arithmetic. They agreed, so nothing was
+ * wrong; the shape is the one `DELOAD-OWNER-01` and `TIER-OWNER-01` both name, and a
+ * checker holding its own copy of its producer's predicate cannot catch the producer
+ * being wrong, only drift from it. §110 Amendment 3 needed a THIRD copy, which is where
+ * this stopped.
+ */
+export function dayGap(a: Day, b: Day): number {
+  const diff = Math.abs(DAY_ORDER.indexOf(a) - DAY_ORDER.indexOf(b))
+  return Math.min(diff, 7 - diff)
+}
+
+/**
+ * §110 Amendment 3 — can this week's open days hold a long run AND a quality session
+ * spaced from it by §7's minimum?
+ *
+ * 🔑 THE ONE OWNER OF THE GEOMETRY, called by the engine's placement and by
+ * `INV-PLAN-QUALITY-NOT-ZERO`. The alternative was the invariant re-deriving the
+ * placement rule, which is the producer/checker split above.
+ *
+ * 📐 Measured 2026-11-11 across all 21 two-open-day placements: **gap 1 gives 0 quality
+ * sessions, gap 2 or more gives 6**, so exactly the 7 adjacent pairs cannot hold both —
+ * `sat+sun` among them, which is the commonest real two-day week there is. At one open
+ * day it is trivially false: §9 takes the only session as the long run.
+ *
+ * @param minDaysFromLongRun §7's spacing, in days, from
+ *        `MIN_HOURS_BETWEEN_QUALITY_AND_LONG`. Passed in rather than imported so this
+ *        module stays free of `generationConfig` and both callers provably use one value.
+ */
+export function canHoldSpacedQuality(
+  openDays: readonly Day[],
+  longDay: Day,
+  minDaysFromLongRun: number,
+): boolean {
+  return openDays.some(d => d !== longDay && dayGap(d, longDay) >= minDaysFromLongRun)
+}
