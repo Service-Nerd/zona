@@ -1268,17 +1268,6 @@ export const GENERATION_CONFIG = {
   // `longRunReadiness.minLongestRunKm()`. The route used to hardcode its own
   // `5`; changing the engine's floor would have left the gate matching the old
   // value with nothing to notice.
-  // §116 Amendment 12 (Coaching Board 2026-11-11, BASEBUILD-DURATION-01) — how far the
-  // STORED week may sit from the week actually placed, before it is a broken promise.
-  //
-  // Not zero, and the reason is rounding rather than tolerance for drift: the curve is
-  // floored to 1dp per week while the placed total is a sum of 1dp sessions, so an exact
-  // match is not always arithmetically available. 2% is tight enough that the measured
-  // failure (13.5 placed against 37.9 stored = 64% apart) is caught by a wide margin, and
-  // loose enough that rounding alone never fires it. Measured after the fix: 0 of 144
-  // plans exceed it.
-  ONRAMP_DELIVERED_DRIFT_TOLERANCE_PCT: 2,
-
   LONG_RUN_READINESS_MIN_RACE_KM: 21,
 
   // §113 Amendment 2 (Coaching Board 2026-11-11, LR-ALT-42-CONFIG-01) — the band in

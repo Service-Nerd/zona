@@ -56,35 +56,19 @@ function bodyAfter(src: string, landmark: string): string {
 
 /** A base-build plan, as production stores one: every week carries `phase: 'base_build'`,
  *  which `validatePlan` skips per §116 — so the race rules then run against a plan that
- *  has no race week, no taper and no peak.
- *
- *  🔴 THE SESSIONS NOW SUM TO `weekly_km`, AND THEY DID NOT. This fixture declared
- *  `weekly_km: 20 + i * 2` (20 → 30) while its sessions always totalled 5 + 5 + 10 = 20 km,
- *  so from week 2 the stored figure overstated the placed one by 10% rising to 50%. It
- *  passed for as long as nothing compared the two — and `INV-PLAN-ONRAMP-DELIVERED-MATCHES`
- *  (§116 Amendment 12) caught it on its first run, firing on weeks 2–6.
- *
- *  ⚠️ The docstring above said "as production stores one", which was the part that made it
- *  hard to doubt. Production stores the PLACED total; this stored an intention. The
- *  `fixtures-must-use-product-values` class. */
+ *  has no race week, no taper and no peak. */
 function baseBuildPlan(): Plan {
-  const weeks = Array.from({ length: 6 }, (_, i) => {
-    const weekly = 20 + i * 2
-    // §9's shape: the long run is half the week, the two easy runs a quarter each.
-    const easy = Math.round(weekly / 4 * 10) / 10
-    const long = Math.round((weekly - easy * 2) * 10) / 10
-    return {
-      n: i + 1,
-      phase: 'base_build',
-      weekly_km: weekly,
-      sessions: {
-        tue: { type: 'easy', label: 'Easy run', distance_km: easy, zone: 'Zone 2', pace_target: '6:30–7:30 /km' },
-        thu: { type: 'easy', label: 'Easy run', distance_km: easy, zone: 'Zone 2', pace_target: '6:30–7:30 /km' },
-        sat: { type: 'easy', label: 'Long run', distance_km: long, zone: 'Zone 2', pace_target: '6:30–7:30 /km' },
-        sun: { type: 'rest', label: 'Rest' },
-      },
-    }
-  }) as unknown as Plan['weeks']
+  const weeks = Array.from({ length: 6 }, (_, i) => ({
+    n: i + 1,
+    phase: 'base_build',
+    weekly_km: 20 + i * 2,
+    sessions: {
+      tue: { type: 'easy', label: 'Easy run', distance_km: 5, zone: 'Zone 2', pace_target: '6:30–7:30 /km' },
+      thu: { type: 'easy', label: 'Easy run', distance_km: 5, zone: 'Zone 2', pace_target: '6:30–7:30 /km' },
+      sat: { type: 'easy', label: 'Long run', distance_km: 10, zone: 'Zone 2', pace_target: '6:30–7:30 /km' },
+      sun: { type: 'rest', label: 'Rest' },
+    },
+  })) as unknown as Plan['weeks']
   return {
     meta: {
       plan_kind: 'base_build',

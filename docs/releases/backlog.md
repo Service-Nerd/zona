@@ -1634,15 +1634,11 @@ which arms `INV-PLAN-ONRAMP-SPACED`; `validateStoredPlan` returns **0 violations
 3.2 (deload) → 5.7 → 6.4 → 6.8 → 7.6 km, so `INV-PLAN-ONRAMP-CURVE-CLIMBS` holds too. The per-run dip from 2.2 → 1.6 km at
 week 3 is frequency rising against a lawful weekly increase, not a drop in load.
 
-✅ **The one live half is CLOSED 2026-11-11 by §116 Amendment 12** — the second attempt, after the first was built
-and vacated the same day. The base-build ramp now carries `duration_mins` from the runner's benchmark, so §82's weekday
-cap binds (**46.3% of weekday sessions were over the stated cap; 0.0% after**).
-
-⚠️ **M7 ITSELF STILL CARRIES NO DURATION, AND THAT IS NOW RATIFIED RATHER THAN OPEN.** Verified after the ship:
-M7 has **no benchmark**, so `vdotFor` yields nothing and **51 of 51 sessions carry no duration** — which is §122's own
-decline, restated in §116 Am. 12 (*"null still means decline"*): a block sized against a guessed pace is worse than
-one sized against none. 🔑 I closed this residual once before on a ruling that was vacated an hour later; this time
-the ruling's own decline clause is what closes it, and the persona's state was re-measured rather than assumed.
+🔺 **The one live half is STILL OPEN, and I closed it in error for about an hour.** No session carries a
+duration — `BASEBUILD-DURATION-01`. I closed this residual on §122 Amendment 2, then **that amendment was vacated the
+same day** when `/code-review` showed the fix flatlines the ramp under a weekday cap (135 of 189 swept base-builds
+overstate delivered volume). ⚠️ **A residual closed on a ruling is only as closed as the ruling**, and this one
+outlived its basis by one commit. M7 has no `benchmark`, so even the shipped form would not have reached it.
 
 ---
 
@@ -8411,6 +8407,61 @@ the gap so widening a corpus fails loudly and the arm gets replaced by a floor. 
 > nothing in it knows whether a firing would have been CORRECT. **The detector returns the
 > FIRST match in priority order**, so a silent trigger may be unreachable or merely always
 > outranked — `TRIGGER-BACKTEST-02` (masking analysis) is stubbed and not built.
+
+### 🔴 `BASEBUILD-DURATION-01` — the base-build ramp ignores the runner's weekday budget 🏃 **COACHING BOARD** *(re-filed 2026-11-11 after a SECOND build and revert — read this before touching it)*
+
+✅ **THE DIAGNOSIS IS SETTLED AND MEASURED. IT IS THE REMEDY THAT HAS FAILED TWICE.**
+
+**The defect.** Base-build sessions carry `distance_km` and **no `duration_mins`**, so `applyWeekdayMinsCap`,
+`INV-PLAN-MAX-WEEKDAY-MINS` and the overrun note all skip them on `!s.duration_mins`. §122 permits that **only
+where no pace is derivable**, and a benchmark derives one.
+📐 **2,406 of 5,202 base-build weekday sessions (46.3%) exceed the runner's STATED cap, median +53%, worst
+188 minutes against a stated 30.** §118's get-running plan shares the generator and has the same defect:
+**8,232 sessions with no duration, 21.7% of weekday sessions over cap, worst +318%.** 4 live stored plans carry
+51/51, 12/12, 30/30 and 7/7 sessions with none.
+
+🔴 **WHY BOTH BUILDS FAILED, AND IT IS THE SAME WALL BOTH TIMES.** Threading the pace makes §82's cap bind.
+Once it binds, **the ramp cannot climb inside a tight budget** — and §116 **Amendment 8** forbids shipping a ramp
+that does not climb (*"if they never return it must still be a good eleven weeks"*).
+
+| attempt | what happened |
+|---|---|
+| **1st** (§122 Am. 2, `1dd8e331`) | left `weekly_km` on the uncapped curve → **135 of 189 plans overstated delivered volume**, 30 flatlined, one claiming 56.9 km/wk and delivering 9. The lie hid the flatness |
+| **2nd** (§116 Am. 12, `b85d3e4f`) | made `weekly_km` honest → the flatness became visible to `INV-PLAN-ONRAMP-CURVE-CLIMBS` and **20.8% of generated plans failed their OWN error-severity validator** |
+
+🔑 **THE FLAT RAMP WAS NEVER A BUG IN THE CAP. THE DISHONEST CURVE WAS HIDING IT.** Attempt 2 did not
+introduce the flatness; it revealed it. Both reverts were correct.
+
+🏃 **WHAT IS ACTUALLY MISSING — the board's option 3, which I dropped in analysis in error.** I reasoned that
+`engine.ts:329` already routes `acceptBaseBuild` to `generateGetRunningPlan`, so no gating was needed. **It
+routes; it does not GATE.** Get-running uses the SAME `onRampCurve` and is equally unable to climb inside a
+tight budget. So the missing piece is a **fourth `assessOnRamp` outcome**: when the runner's stated budget
+cannot carry a climbing block, do not offer one.
+
+⚠️ **THAT IS A NEW REFUSAL PATH AND IT MOVES THE ENVELOPE RATE** (`review:coaching` step 4, currently
+**94.6%**, target 90–95%). Who gets served is a board-and-SLT number, which is why it was not bolted on at the
+end of a session. **It needs its own sitting.**
+
+🔑 **THREE PARTS ARE RIGHT AND ARE READY TO RE-APPLY ONCE THE GATE EXISTS** (all in `b85d3e4f`, reverted):
+1. thread `vdotFor` + `buildPaceFromVDOT` so the cap can bind (reaches §118 free — shared generator);
+2. pass uncapped days as `spreadDays`' existing `prefer` — **ONRAMP-SPACING-01 preserved, adjacent-pair count
+   unchanged at every day count**, and it moved unreachable 91.7% → 75.0%;
+3. restate `weekly_km` / `base_build_target_km` from the **placed** sessions, plus
+   `INV-PLAN-ONRAMP-DELIVERED-MATCHES` — which caught an inconsistent fixture on its first run.
+
+⚠️ **AND FIVE CONSUMERS STILL SPEAK FOR THE CURVE** (code review of attempt 2, all unaddressed): `endsAtKm`
+in `getRunningPlan.ts`, `door_km`/`reachesDoor` in `stagedRacePlan.ts`, the climbs invariant's input, §52's
+long-run share (**13.4% of multi-run weeks breach the 60% cap** once easy runs are capped and the long run is
+exempt), and §117's door for weekend-blocked runners. **Fixing `weekly_km` alone is half a seam.**
+
+🔴 **AND MY RATIFYING MEASUREMENT FOR ATTEMPT 2 WAS MADE ON A GRID THAT COULD NOT SEE ANY OF IT.** I swept
+cap × days × volume × runway and **never varied `days_cannot_train`**, then reported *"0 of 288 lose §117's
+door"* as the number that made a −21% volume reduction acceptable. With the weekend blocked the uncapped-day
+preference has nothing to prefer. **Any re-measurement must vary blocked days.**
+
+🔻 **Do not attempt a third build without the board ruling on the fourth outcome first.**
+
+---
 
 ### 🟡 `ADJUST-TRIGGER-REACH-02` — RUN the backtest and report which of the 8 detectors a real runner reaches *(filed 2026-10-08, P1)* ⚙️ **NO BOARD**
 

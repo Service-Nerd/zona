@@ -326,36 +326,8 @@ function buildFoundationSessions(
 
   // ONRAMP-SPACING-01 (R1): a base-building RAMP never puts runs on consecutive days where the open days allow (Sims,
   // Willy: a novice's tissue needs the day between). Race-plan foundation blocks keep their placement: not ruled.
-  // ⚠️ HOISTED from further down this function: §116 Am. 12's spread (below) reads it, and
-  // a `const` declared after its use is a temporal dead zone, not a hoist — it threw
-  // `Cannot access 'WEEKDAY_SET' before initialization` at runtime while `tsc` passed.
-  const WEEKDAY_SET = new Set(['mon', 'tue', 'wed', 'thu', 'fri'])
-
-  // 🔑 §116 Amendment 12 — THE SPREAD PREFERS DAYS THE WEEKDAY CAP DOES NOT GOVERN.
-  //
-  // Measured 2026-11-11: the ramp placed every session Mon/Wed/Fri and NOTHING at the
-  // weekend, so 100% of a base-build block sat inside `max_weekday_mins` — and a 3-day
-  // runner on a 30-minute weekday budget was limited to ~9 km/week while their Saturday
-  // was free. That was not neglect: Mon/Wed/Fri is a maximal spread, and `spreadDays`
-  // optimises SPACING and is blind to the BUDGET. Two capped weekdays and one free
-  // Saturday are not equivalent, and the chooser treated them as equivalent.
-  //
-  // ⚠️ ONRAMP-SPACING-01 (R1, Sims + Willy: "a novice's tissue needs the day between") IS
-  // PRESERVED, NOT TRADED. `spreadDays` scores `pairs * 10 + miss + early`, so spacing
-  // outweighs the preference tenfold and the budget only ever breaks a TIE. Measured at
-  // every day count 2–5: the adjacent-pair count is **unchanged**, and one weekend day is
-  // taken up at 3 days (mon/wed/fri → mon/wed/sat), two at 4–5.
-  //
-  // ⚠️ RAMP ONLY. A race-plan foundation block keeps its placement — ONRAMP-SPACING-01 is
-  // explicit that it was "not ruled" for that curve, and widening this to §57 would be a
-  // placement change no board has seen.
-  const uncappedDays = spread
-    ? available.filter(d => !WEEKDAY_SET.has(d)
-        || weekdayBudgetFor({ day_budgets: dayBudgets, max_weekday_mins: maxWeekdayMins }, d) == null)
-    : []
   const easyDays = spread
-    ? spreadDays(available.filter(d => d !== longDay), plan.easyCount, longDay ? [longDay] : [],
-                 uncappedDays.filter(d => d !== longDay))
+    ? spreadDays(available.filter(d => d !== longDay), plan.easyCount, longDay ? [longDay] : [])
     : available.filter(d => d !== longDay).slice(0, plan.easyCount)
 
   // §122 Amendment 1 (Coaching Board 2026-10-03, FOUNDATION-LR-S9-01) — THE FOUNDATION
@@ -443,6 +415,7 @@ function buildFoundationSessions(
   // behaviour IS §82: where the ceiling sits below `floors.easy` it returns the floor,
   // which exceeds the budget on purpose rather than prescribe a session that trains
   // nothing. That case is stamped so it stays visible and declarable.
+  const WEEKDAY_SET = new Set(['mon', 'tue', 'wed', 'thu', 'fri'])
   const budgetFor = (d: string): number | null =>
     WEEKDAY_SET.has(d) ? (weekdayBudgetFor({ day_budgets: dayBudgets, max_weekday_mins: maxWeekdayMins }, d)?.cap ?? null) : null
 

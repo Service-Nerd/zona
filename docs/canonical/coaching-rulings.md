@@ -3062,44 +3062,34 @@ the ramp from the cap, or **refuse to OFFER the on-ramp when the stated budget c
 measurements. **The amendment is removed from `CoachingPrinciples.md` rather than left standing over code that no
 longer exists.**
 
----
+🔴 **§116 AMENDMENT 12 WAS RATIFIED, BUILT AND VACATED THE SAME DAY — the SECOND revert of
+`BASEBUILD-DURATION-01` in one day, and the third instance of the `TAPER-OVER-PEAK-01` shape.**
 
-## 2026-11-11 — `BASEBUILD-DURATION-01` · §116 Amendment 12 · **CORRECT WITH AMENDMENT** (second sitting; the first was vacated the same day)
+The diagnosis is not in question. What failed twice is the remedy, and **both attempts hit the same wall**:
+threading the pace makes §82's weekday cap bind, and once it binds **the ramp cannot climb inside a tight
+budget** — which §116 Amendment 8 forbids shipping outright.
 
-**Convened** on the founder's instruction after §122 Am. 2 was built and vacated this morning, and the item
-re-routed ⚙️ NO BOARD → 🏃 COACHING.
+| attempt | outcome |
+|---|---|
+| §122 Am. 2 | left `weekly_km` on the uncapped curve → **135 of 189 plans overstated delivered volume**, 30 flatlined |
+| §116 Am. 12 | made `weekly_km` honest → the flatness became visible and **20.8% of plans failed their OWN error-severity validator** |
 
-**Conflict scan.** §116 Am. 1–11, §118 + 3, §82 + Am. 1/2, §122 + Am. 1, §111 Am. 2/4, §117, §2, §3, §45, §9,
-§52, ONRAMP-SPACING-01 (R1), §110 Am. 3. **Two existing amendments decided most of it before any seat spoke:**
-§116 **Am. 8** (*"if they never return it must still be a good eleven weeks"*) forbids a flat ramp outright, and
-§118's own text — *"the target is DERIVED FROM THE RUNWAY, not fixed"* — is the answer to the target question,
-needing only to be extended to the budget.
+🔑 **THE FLAT RAMP WAS NEVER A BUG IN THE CAP. THE DISHONEST CURVE WAS HIDING IT**, and attempt 2 revealed
+rather than caused it. Both reverts were correct.
 
-**Ruling.** The ramp is sized against the runner's easy pace so §82's cap can bind; prefers days the cap does not
-govern when spacing allows; and every week states the volume it **placed**, not the volume the curve intended.
+🏃 **The board's own option 3 is what is missing, and the chair dropped it in analysis in error.** The
+reasoning was that `engine.ts:329` already routes `acceptBaseBuild` to `generateGetRunningPlan`. **It routes; it
+does not GATE** — get-running uses the same `onRampCurve` and is equally unable to climb inside a tight budget.
+The missing piece is a **fourth `assessOnRamp` outcome**. ⚠️ That is a new refusal path and it moves the envelope
+rate (94.6%, target 90–95%), so **who gets served** is a board-and-SLT question and gets its own sitting rather
+than being added at the end of a build.
 
-🩹 **Willy's binding condition, discharged by measurement.** §118's get-running plan reuses
-`generateBaseBuildPlan` wholesale, so it carried the identical defect — **180 plans, 8,232 sessions with no
-duration, 21.7% of weekday sessions over the stated cap, worst +318%**. One fix reached both; after, 0 and 0.0%.
+⚠️ **AND THE RATIFYING MEASUREMENT FOR ATTEMPT 2 WAS MADE ON A GRID THAT COULD NOT SEE THE FAILURE.** The
+submission accepted a −21% volume reduction on the strength of *"0 of 288 lose §117's door"* — swept over
+cap × days × volume × runway and **never over `days_cannot_train`**. With the weekend blocked the uncapped-day
+preference has nothing to prefer. **Varying an axis is not reaching the interaction**, recorded twice in one day.
 
-⚕️ **Sims's ONRAMP-SPACING-01 preserved, not traded.** `spreadDays` scores `pairs * 10 + miss + early`, so the
-budget only breaks a tie. **Adjacent-pair count unchanged at every day count 2–5.**
-
-**⚠️ The cost, declared: 135 of 144 endpoints reduced, median −21%, worst −56%** — and **0 of 288 lose §117's
-9 km/week door**, 83.3% clearing it before and after. That is why the reduction is correct rather than merely
-honest: §118's purpose is preserved exactly.
-
-🔴 **AND TWO PARTS OF THIS BOARD'S OWN SUBMISSION WERE WRONG, FOUND IN ANALYSIS BEFORE ANY CODE.** The sitting
-ruled cohort (b) — 72.2% — should be *"routed to §118's get-running plan"* and cohort (c) refused. **Neither was
-needed:** `engine.ts:329` already routes `acceptBaseBuild` to `generateGetRunningPlan`, which sets
-`targetKm: endsAtKm`, so the target **is** the curve's endpoint and is reachable by construction. **Every probe
-in the submission passed `acceptBaseBuild: true`, so every plan measured was already a get-running plan**, and
-the "unreachable target" was the submission comparing capped delivery against the plan's own uncapped promise.
-No routing branch and no new refusal were built. **Running the board does not exempt the submission from
-re-measurement.**
-
-**Artifacts.** Principle: §116 Amendment 12. Numeric: `ONRAMP_DELIVERED_DRIFT_TOLERANCE_PCT` (2). Invariant:
-`INV-PLAN-ONRAMP-DELIVERED-MATCHES` (error) + its `plan-invariants.md` row — 168 invariants, falsified against
-the real flat ramp (fires on weeks 2–6, silent on an honest block) and it **caught an inconsistent fixture on
-its first run**. `review:coaching` 7 of 7, no measured rate moved. `verify:parity`: 109 of 6,210 changed, **every
-one a BASE_BUILD outcome**, 0 at 5 km and 10 km — an intended, contained prescription change.
+**§116 Amendment 12 is removed from `CoachingPrinciples.md`** rather than left standing over code that no longer
+exists; the registry row is marked REVERTED rather than deleted; the item is re-opened carrying all three
+re-usable parts, the five unaddressed consumers, and an instruction not to attempt a third build before the
+board rules on the fourth outcome.

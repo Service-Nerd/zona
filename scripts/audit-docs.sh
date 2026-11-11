@@ -575,7 +575,15 @@ fi
 #     2026-10-17, item 6 OPEN`) closed it in `scripts/lib/open-items.sh`, so a partial ship read
 #     as finished and the outstanding half was outside every open population. An explicit `OPEN`
 #     beats a stamp now. **Remove when item 6 ships at release.**
-_SHIPPED_AND_OPEN_OK='READINESS-SURFACE-01 STRENGTH-ENGINE-01 STEPPER-CONTROL-01 TODAY-CTA-CLEARANCE-01 NATIVE-BATCH-01 CONTRACT-COVERAGE-03 STRENGTH-ENTRY-01'
+#   BASEBUILD-DURATION-01 (2026-11-11): a REVERT, and the two arms of this script require
+#     exactly this state. §122 Am. 2 shipped and was vacated the same day (the cap binds the
+#     base-build ramp for the first time and the ramp flatlines: 135 of 189 swept plans
+#     overstate delivered volume). The reverts arm demands the id be "marked reverted in the
+#     registry AND re-opened in the backlog", which is precisely what this arm reads as
+#     shipped-but-open. The registry row says REVERTED in its first cell. **Remove when the
+#     Coaching Board rules on §116's ramp target versus §82/§122's weekday cap and the re-fix
+#     lands, or if the item is killed.**
+_SHIPPED_AND_OPEN_OK='READINESS-SURFACE-01 STRENGTH-ENGINE-01 STEPPER-CONTROL-01 TODAY-CTA-CLEARANCE-01 NATIVE-BATCH-01 CONTRACT-COVERAGE-03 STRENGTH-ENTRY-01 BASEBUILD-DURATION-01'
 for id in $(comm -12 /tmp/_reg /tmp/_open); do
   case " $_SHIPPED_AND_OPEN_OK " in *" $id "*) continue ;; esac
   say "  STILL OPEN $id (has a feature-registry row)"; afail=1; fail=1
