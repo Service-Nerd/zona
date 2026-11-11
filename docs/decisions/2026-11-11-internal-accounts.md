@@ -105,12 +105,29 @@ surfaces. **Pre-existing; not introduced here.** `anon` cannot (the policy needs
 ⚠️ It is not reachable through the app's UI, but the anon key and the PostgREST endpoint are public
 by design in a Supabase app, so "not reachable through our UI" is not a defence.
 
-**Fix:** `revoke update (is_admin, is_internal, internal_reason) on public.user_settings from anon,
-authenticated`. Nothing client-side writes these columns (grepped: the only `is_admin` hit outside
-reads is the column manifest), both are set by hand or by migration, and `service_role` bypasses
-column grants so the server is unaffected. A `WITH CHECK` is added too, so the row rule states its
-intent rather than relying on a default — it cannot see `OLD`, so the revoke is what stops a column
-change.
+**Fix, third attempt — a BEFORE UPDATE trigger.** `guard_privileged_user_settings`, SECURITY
+**INVOKER**, reverts `is_admin`, `is_internal` and `internal_reason` to their `OLD` values for any
+caller that is not `postgres`, `service_role` or `supabase_admin`. Nothing client-side writes these
+columns (grepped: the only `is_admin` hit outside reads is the column manifest), they are set by
+hand or by migration, and `service_role` passes the guard so the server is unaffected. A
+`WITH CHECK` is added too, so the row rule states its intent rather than relying on a default.
+
+🔴 **The first two attempts were INERT, and this paragraph recorded the first one as the fix for
+several hours.**
+
+1. `revoke update (is_admin, is_internal, internal_reason) ... from anon, authenticated` —
+   **column privileges in Postgres are ADDITIVE.** A column REVOKE removes a column grant, and
+   there was none: `pg_class.relacl` held a **table-level** UPDATE grant for `authenticated` and
+   `pg_attribute.attacl` was NULL. `has_column_privilege` returned the same answer before and
+   after. I had read “45 of 45 columns” in `information_schema.column_privileges` as evidence of
+   column grants; it is the expansion of the one table grant.
+2. The replacement trigger was `SECURITY DEFINER`, and **inside a DEFINER function `current_user`
+   is the function OWNER**, never the caller — so the `current_user not in (...)` test could never
+   be true and the guard would never have fired. An inert fix for an inert fix.
+
+Verified in production after the apply: 1 non-internal trigger on `user_settings`, `prosecdef`
+false. ⚠️ **Still unexercised:** the decisive test is an ordinary signed-in `PATCH` of
+`is_admin` on one’s own row, which cannot be run from this machine — see the runbook § 3.
 
 ## Consequences to know
 
@@ -118,9 +135,19 @@ change.
   Its denominator moves 56 → 38. The gate fires in roughly seven weeks; it should be read knowing the
   population changed, not just the rate.
 - `lib/contracts/tableColumns.ts` lists the column sets for `admin_user_directory` and
-  `admin_user_tiers`; both views gain two columns, so `npm run check:db` reports drift **until the
-  migration is applied and that manifest updated**. Per CLAUDE.md the manifest describes what the
-  table *actually* has, so it is deliberately **not** edited ahead of the apply.
+  `admin_user_tiers`; both views gain two columns. ✅ **Applied 2026-11-11 and the manifest updated
+  from the live schema afterwards** — `npm run check:db` is clean. Per CLAUDE.md the manifest
+  describes what the table *actually* has, so it was deliberately **not** edited ahead of the apply.
+- 🔴 **The brief’s part 3 was only three-quarters done at first.** `v_paying_users` was filed as
+  exempt because “the tier ladder already excludes admins and internal accounts”. True for admin by
+  construction, **false for internal** — the flag grants nothing, so an internal account reads its
+  real tier. Latent today (premium = 23 rows, 0 internal), structural after
+  `20261111b_paying_users_excludes_internal.sql`, which is **written and awaiting apply**.
+- ⚠️ **The comped assertion covered one of two comp mechanisms.** It tested
+  `subscriptions.is_comped` — correct for Make-A-Wish, which uses Apple offer codes — and was clear
+  at 0 of 18. `charity_codes` is the other, and **1 of the 18 holds an active grant**
+  (`test13@test.com`, a test claim from the charity build, so flagging it is right). A real
+  charity-partner runner in that list would have passed. Both queries are in the runbook § 7.
 - ⚠️ Noted, not fixed: `lib/brand.ts`'s comment says *"~73% of logged runs currently arrive
   **without**"* a heart-rate stream, while `v_hr_present_pct` reports 74% **with** one. The two
   disagree in direction. The published string carries no number, so no claim is affected.

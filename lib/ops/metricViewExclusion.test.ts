@@ -44,11 +44,18 @@ const NOT_A_USER_METRIC: Record<string, string> = {
     'An ADMIN tier view, and deliberately NOT filtered: the flag grants nothing and testers '
     + 'keep full access, so hiding them here would make the view lie about what they can do. '
     + 'It exposes is_internal alongside the real tier.',
-  v_paying_users:
-    'Counts TIERS, not users: `count(*) from admin_user_tiers where tier = premium`. Admins '
-    + 'and internal accounts are excluded as a side effect of the tier ladder, so a where '
-    + 'clause here would be wrong rather than redundant.',
 }
+
+// 🔴 `v_paying_users` WAS EXEMPT HERE AND THE REASON WAS HALF FALSE.
+// It read: "Counts TIERS, not users ... admins and internal accounts are excluded as a side
+// effect of the tier ladder, so a where clause here would be wrong rather than redundant."
+// An ADMIN is excluded by construction (`resolveTier` puts admin first, so an admin reads
+// tier='admin' and can never read 'premium'). **AN INTERNAL ACCOUNT IS EXCLUDED BY NOTHING** —
+// the flag grants and removes nothing, so an internal account reads its real tier. Measured in
+// production: premium = 23 rows, 0 internal, so the view is clean TODAY and clean only by
+// accident of who happens to hold a subscription. The brief named this view explicitly.
+// `20261111b_paying_users_excludes_internal.sql` adds the filter (23 -> 23, no value change),
+// so the view now reads `is_internal` and the derived arm below covers it like the rest.
 
 /** The migration that introduces the owner, and therefore the floor for this rule. */
 const INTRODUCED_IN = '20261111_internal_accounts.sql'

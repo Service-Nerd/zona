@@ -139,3 +139,81 @@ definition confusion, three times in one day.**
 | `admin_user_directory` | `20260528_admin_user_directory.sql` |
 
 `v_metric_users` is new, so `drop view if exists public.v_metric_users;` completes the rollback.
+
+---
+
+## 6. Second migration — `20261111b_paying_users_excludes_internal.sql` (NOT yet applied)
+
+🔴 **Why there is a second one.** The first pass filed `v_paying_users` as exempt with the
+reason *"admins and internal accounts are excluded as a side effect of the tier ladder"*. The
+admin half is true by construction: `resolveTier` puts admin first, so an admin reads
+`tier='admin'` and can never read `'premium'`. **The internal half is false** — the flag grants
+and removes nothing, so an internal account reads whatever its real tier is. The brief named
+this view explicitly and it was the one view of the four that did not get the rule.
+
+📐 **Measured in production 2026-11-11, before applying:**
+
+| tier | rows | internal | admin |
+|---|---|---|---|
+| admin | 1 | 0 | 1 |
+| free | 27 | 17 | 0 |
+| grant | 1 | 1 | 0 |
+| premium | 23 | **0** | 0 |
+| trial | 4 | 0 | 0 |
+
+So the number is clean **today**, and clean only because no internal account happens to hold a
+subscription. One tester on a real subscription, or one comped offer code landing on an internal
+id, and the headline paying-user figure is wrong with nothing to say so.
+
+### Apply
+Paste the whole of `supabase/migrations/20261111b_paying_users_excludes_internal.sql` into the
+Supabase SQL editor. The column list is unchanged (one column), so `create or replace view` is
+legal here and will not raise `42P16`.
+
+### Verify
+
+⚠️ **The VALUE cannot verify this apply: it is 23 before and 23 after.** That is the point of the
+change, and a predicate that returns the same answer in both states is worthless (this repo has
+nearly declared a good migration failed on exactly that). Read the **definition** instead:
+
+```sql
+-- MUST be false before the apply and true after. This is the arm that distinguishes.
+select position('is_internal' in pg_get_viewdef('public.v_paying_users'::regclass)) > 0
+         as filter_present;
+
+-- MUST still be 23 (or whatever `premium` legitimately is on the day): the change is
+-- structural, not a restatement of the number.
+select paying_users from public.v_paying_users;
+
+-- MUST be 0: no internal account is being counted as a paying user.
+select count(*) from public.admin_user_tiers where tier = 'premium' and is_internal;
+```
+
+Both were confirmed from this machine before hand-over: `filter_present` = **false**,
+`paying_users` = **23**, internal-premium = **0**.
+
+### Rollback
+Re-run the `v_paying_users` block from `20260920_charity_tier_and_partner_cohort.sql`, or simply
+drop the `and not coalesce(is_internal, false)` line and replace the view again.
+
+---
+
+## 7. One thing the brief's blocking assertion did NOT cover
+
+The brief said: *"assert none of the 18 has a comped subscription (Make-A-Wish code). If any
+does, stop and report."* The assertion in the migration tests `subscriptions.is_comped`, which is
+where an **Apple offer code** lands, and that is the Make-A-Wish mechanism. It was clear: **0 of
+18**, against 24 comped subscriptions overall, so it was not an empty-population pass.
+
+⚠️ **There is a SECOND comp mechanism and the assertion does not see it:** `charity_codes`.
+Measured — **1 of the 18 holds an active charity grant**: `test13@test.com`, code `37G94M6Y`,
+claimed 2026-09-23, expiring 2026-12-22, reading `tier='grant'`. That is a test claim made during
+the charity-codes build, so flagging it internal is correct and excluding it from metrics is
+exactly what the brief wants. **But a real charity-partner runner in that id list would have
+passed the assertion**, because the assertion asks about the wrong table for that mechanism. If
+the list is ever extended, check both:
+
+```sql
+select count(*) from public.subscriptions where is_comped and user_id = any($1);
+select count(*) from public.charity_codes  where claimed_by = any($1) and expires_at > now();
+```
