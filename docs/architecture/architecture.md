@@ -187,6 +187,59 @@ The `ANTHROPIC_API_KEY` environment variable must remain server-only. It must no
 
 ---
 
+## Metric Exclusion Invariant (INTERNAL-ACCOUNTS-01)
+
+**All user metrics exclude `is_admin` AND `is_internal`.**
+
+`user_settings.is_internal` marks a non-admin internal account — tester, friend, Apple App
+Review, demo. It is a **reporting flag and grants nothing**: `resolveTier` remains the single
+owner of access (admin → subscription → grant → trial → free) and never reads it, so testers
+keep receiving plans, coaching, emails and push. That is deliberate; they are the QA population.
+
+**One owner: `public.v_metric_users`** — the set of users that count toward metrics. Every
+user-metric view joins it rather than restating the predicate.
+
+```sql
+create or replace view public.v_metric_users as
+  select s.id as user_id from public.user_settings s
+  where not coalesce(s.is_admin, false)
+    and not coalesce(s.is_internal, false);
+```
+
+🔴 **There was no mechanism to copy, which is why this exists.** Before 2026-11-11, of the five
+metric views only `v_trial_conversion` referenced `is_admin` at all — and it did not filter on
+it. Three shapes were in use: a tier **ladder** (`admin_user_tiers`, so admins fall out of
+`v_paying_users` as a side effect of never being `'premium'`), a **`_real` boolean** plus a
+`looks_like_test` email heuristic (`v_trial_conversion`), and **nothing** (`v_coach_engagement`,
+`v_partner_cohort`, `v_hr_present_pct`).
+
+**Two shapes obey the rule**, and the gate accepts both:
+- **join `v_metric_users`** — for a view that should not contain the rows at all;
+- **expose `is_internal` and exclude it in the computed column** — for a row-per-user analytical
+  view like `v_trial_conversion`, which must keep the internal rows in order to mark them.
+
+**Exempt by kind, not by debt:** `admin_user_directory` and `admin_user_tiers` are admin views and
+must SHOW the flag; `v_paying_users` counts *tiers*, not users, so a `where` clause there would be
+wrong rather than redundant.
+
+⚠️ **`v_partner_cohort` is split.** Capacity columns (`codes_minted`, `codes_redeemed`,
+`grants_active`) are the **batch's** record of its own capacity, not user metrics, and
+`GTM-CHARITY-07` is ratified that a seat is spent when it was claimed. Filtering a tester out of
+them would make a partner's redeemed count disagree with `charity_codes`. Engagement columns are
+filtered.
+
+**Gate:** `lib/ops/metricViewExclusion.test.ts`. It scans migrations from
+`20261111_internal_accounts.sql` onward, so a new metric view is in scope the moment it is
+written. ⚠️ It proves what we WROTE, not what is APPLIED — `npm run check:db` is the live-schema
+check and is not in `verify:ci`.
+
+🔴 **Related, and worse than the task that found it:** the `user_settings` UPDATE policy is
+`USING (auth.uid() = id)` with **no `WITH CHECK`**, and `authenticated` held table-wide UPDATE on
+all 45 columns — so a signed-in user could set `is_admin = true` on their own row and obtain
+`{tier:'paid', reason:'admin'}`. Closed by `revoke update (is_admin, is_internal,
+internal_reason) … from anon, authenticated`. See
+`docs/decisions/2026-11-11-internal-accounts.md`.
+
 ## Deployment
 
 - Vercel auto-deploys from GitHub main branch
