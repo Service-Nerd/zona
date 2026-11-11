@@ -140,6 +140,8 @@ export const DERIVED_VIEWS: Record<string, string> = {
   v_hr_present_pct:     'Share of activities carrying an HR stream (ADR-011 §5).',
   v_partner_cohort:     'Charity partner cohort rollup (GTM-CHARITY-04).',
   v_paying_users:       'Active-subscription rollup over subscriptions.',
+  v_metric_users:       'INTERNAL-ACCOUNTS-01: the users that COUNT toward metrics (not admin, '
+                        + 'not internal). Single owner of the exclusion; every user metric joins it.',
   v_trial_conversion:   'Trial-to-paid funnel rollup.',
 }
 

@@ -24,33 +24,59 @@ select count(*) from user_settings where is_internal;                      -- 18
 select internal_reason, count(*) from user_settings
   where is_internal group by 1 order by 1;      -- app_review_or_demo 5, tester/friend 13
 select count(*) from v_metric_users;                                      -- 37  (56 users - 18 internal - 1 admin)
-select count(*) from v_trial_conversion;                                  -- 38  (was 56)
+select count(*) from v_trial_conversion;                                  -- 56  UNCHANGED, by design
+select count(*) from v_trial_conversion where not is_internal;            -- 38  the honest denominator
 select count(distinct user_id) from v_coach_engagement;                    -- 16  (was 21)
 select hr_present_pct from v_hr_present_pct;                              -- 73.0 (was 74.0)
 select codes_redeemed, runners_with_a_plan from v_partner_cohort
   where batch_id = '7c2ae3a2-506b-46b0-ab59-613738e247d7';                -- 1, 0  (was 1, 1)
 ```
 
+🔴 **`v_trial_conversion`'s ROW COUNT DOES NOT CHANGE, and the first write-up said it went 56 → 38.**
+That view is row-per-trialling-user and deliberately keeps the internal rows so an analyst can SEE the
+difference; the exclusion lives in `converted_real` and in the new `is_internal` column. **38 is the
+count of a query that adds `where not is_internal`, not of the view.** Corrected after code review.
+⚠️ Anything that reports a trial denominator must add that clause — including the 1 January
+trial-to-paid gate, which `lib/analytics.ts` records as reading this view.
+
 ⚠️ **The before-values are measured, not predicted** — each was read from production on
 2026-11-11 and the after-values were computed by stubbing `is_internal` with the 18 ids.
 
 ## 3. Verify the privilege fix — the part that matters most
 
+🔴 **DO NOT USE `has_column_privilege` HERE. It returns `true` before AND after, so it proves
+nothing** — which is exactly the trap `/build` § 4b warns about, and the first draft of this runbook
+fell into it. The table-level UPDATE grant is deliberately left in place (revoking it would mean
+re-granting the other 43 columns and re-doing that bookkeeping on every future column), so
+`has_column_privilege('authenticated','user_settings','is_admin','UPDATE')` is `true` either way.
+**Column privileges in Postgres are ADDITIVE: a column REVOKE cannot subtract from a table grant.**
+
+The mechanism is a BEFORE UPDATE trigger, so **verify it as a WRITE**:
+
 ```sql
-select has_column_privilege('authenticated','user_settings','is_admin','UPDATE');     -- false
-select has_column_privilege('authenticated','user_settings','is_internal','UPDATE');  -- false
-select has_column_privilege('anon','user_settings','is_admin','UPDATE');              -- false
-select has_column_privilege('service_role','user_settings','is_admin','UPDATE');      -- true
+-- 1. confirm the trigger exists and is INVOKER (not SECURITY DEFINER — inside a definer
+--    function `current_user` is the OWNER and the guard would never fire):
+select tgname from pg_trigger where tgrelid = 'public.user_settings'::regclass
+  and not tgisinternal;                                      -- guard_privileged_user_settings
+select prosecdef from pg_proc where proname = 'guard_privileged_user_settings';   -- false
 ```
 
-🔴 **Before this migration all four returned `true`.** The UPDATE policy is
-`USING (auth.uid() = id)` with no `WITH CHECK`, `authenticated` held table-wide UPDATE on all 45
-columns, and there are zero triggers — so a signed-in user could grant themselves admin. If the
-first three do not return `false`, **stop and say so**: the escalation is still open.
+Then, as an ordinary signed-in user through PostgREST (not the service role, which is allowed):
 
-⚠️ **Each predicate returns a DIFFERENT answer before and after**, which is why they are written as
-`has_column_privilege` rather than as a `grep`. A check that returns the same value in both states
-proves nothing (`/build` § 4b).
+```
+PATCH /rest/v1/user_settings?id=eq.<that user's own id>
+{ "is_admin": true }
+```
+
+and read it back **as `service_role`**:
+
+```sql
+select is_admin from user_settings where id = '<that user>';  -- still false
+```
+
+🔴 **Before this migration that PATCH would have SUCCEEDED** and `resolveTier` would have
+returned `{tier:'paid', reason:'admin'}`. If `is_admin` comes back `true`, **stop and say so**: the
+escalation is still open.
 
 ## 4. Then, in the repo
 
@@ -76,15 +102,20 @@ commit;
 ⚠️ **Dropping `is_internal` while the views reference it will fail — replace the views first.**
 
 Every prior definition IS in git, so a rollback re-runs the view block of the migration that last
-defined each one. (I first wrote that they were not in git; that was wrong, and checking took one
-command.)
+defined each one.
+
+🔴 **I got this table wrong TWICE.** First I wrote that the definitions were not in git at all.
+Then I built the table with `grep -rl "<view>"`, which matches any file that MENTIONS the view — so
+2 of the 6 rows named a migration that defines no such view. The correct query matches a
+DEFINITION: `grep -rliE 'create (or replace )?view (public\.)?<view>\b'`. **The mention-versus-
+definition confusion, three times in one day.**
 
 | view | re-run the view block from |
 |---|---|
 | `v_trial_conversion` | `20260928_comped_entitlement_not_a_conversion.sql` |
-| `admin_user_tiers` | `20260925_trial_conversion_real.sql` |
+| `admin_user_tiers` | `20260920_charity_tier_and_partner_cohort.sql` |
 | `v_partner_cohort` | `20260920_charity_tier_and_partner_cohort.sql` |
-| `v_coach_engagement` | `20260918_supersede_week_keyed_rows.sql` |
+| `v_coach_engagement` | `20260722_analytics_events.sql` |
 | `v_hr_present_pct` | `20260722_analytics_events.sql` |
 | `admin_user_directory` | `20260528_admin_user_directory.sql` |
 

@@ -40,13 +40,20 @@ compared, marked superseded.
 | metric | before | after |
 |---|---|---|
 | users total / admins / to flag | 56 / 1 / **18** | — |
-| `v_trial_conversion` rows (the funnel denominator) | 56 | **38** |
+| `v_trial_conversion` rows | 56 | **56 — UNCHANGED, by design** |
+| the honest trial denominator (`where not is_internal`) | 56 | **38** |
 | `converted_real` | 0 | 0 |
 | `v_coach_engagement` distinct runners | 21 | **16** |
 | `v_hr_present_pct` | 74.0 | **73.0** |
 
 **18 of 56 users (32.1%) are internal.** `converted_real` is 0 either way, so the conversion *rate*
 does not move; the denominator becomes honest, which is what the brief was for.
+
+🔴 **CORRECTED AFTER CODE REVIEW: the first write-up said `v_trial_conversion` itself went 56 → 38.
+It does not.** That view is row-per-trialling-user and deliberately KEEPS the internal rows so an
+analyst can see the difference; the exclusion lives in `converted_real` and in the new `is_internal`
+column. **38 is the count of a query that adds `where not is_internal`, not of the view.** Anything
+reporting a trial denominator must add that clause, the 1 January gate included.
 
 ## The three judgement calls
 

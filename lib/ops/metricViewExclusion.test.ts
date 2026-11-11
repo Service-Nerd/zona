@@ -136,13 +136,25 @@ describe('INTERNAL-ACCOUNTS-01 — the exclusion has one owner and every metric 
     }
   })
 
-  it('the privileged columns are revoked from the client roles', () => {
+  it('the privileged columns are guarded by a TRIGGER, not an inert column REVOKE', () => {
     // 🔴 The brief asked whether the UPDATE policy blocks a user setting this on their own
-    // row. It did not, and the same hole already applied to `is_admin`: the policy is
-    // `USING (auth.uid() = id)` with NO with_check, `authenticated` held table-wide UPDATE
-    // on all 45 columns, and there are zero triggers. Column REVOKE is the fix.
+    // row. It does not: the policy is `USING (auth.uid() = id)` with NO with_check,
+    // `pg_class.relacl` holds a TABLE-level UPDATE grant for `authenticated`, and there
+    // were zero triggers — so a signed-in user could set is_admin = true on their own row.
+    //
+    // 🔴 AND MY FIRST FIX WAS INERT: column privileges in Postgres are ADDITIVE, so
+    // `revoke update (is_admin) ...` removes a column grant that does not exist and the
+    // table grant still carries the write. This arm asserts the mechanism that actually
+    // works, and asserts the inert one is NOT what we rely on.
     const sql = readFileSync(join(DIR, INTRODUCED_IN), 'utf8')
-    expect(sql).toMatch(/revoke\s+update\s*\([^)]*is_admin[^)]*\)\s*\n?\s*on\s+public\.user_settings\s+from\s+anon,\s*authenticated/i)
-    expect(sql).toMatch(/revoke\s+update\s*\([^)]*is_internal[^)]*\)/i)
+    expect(sql).toMatch(/create\s+trigger\s+guard_privileged_user_settings/i)
+    expect(sql).toMatch(/new\.is_admin\s*:=\s*old\.is_admin/i)
+    expect(sql).toMatch(/new\.is_internal\s*:=\s*old\.is_internal/i)
+    // ⚠️ INVOKER, not DEFINER: inside a SECURITY DEFINER function `current_user` is the
+    // function OWNER, so the guard would never fire. An inert fix for an inert fix.
+    const fn = sql.slice(sql.indexOf('create or replace function public.guard_privileged_user_settings'))
+    expect(fn.slice(0, 400)).not.toMatch(/security\s+definer/i)
+    // The inert instrument must not come back as the thing we depend on.
+    expect(sql).not.toMatch(/^revoke\s+update\s*\(/im)
   })
 })

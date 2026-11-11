@@ -34,7 +34,13 @@ function liveViewSql(): string {
   const files = readdirSync(MIGRATIONS)
     .filter(f => f.endsWith('.sql'))
     .sort()
-    .filter(f => readFileSync(join(MIGRATIONS, f), 'utf8').includes('VIEW public.admin_user_tiers'))
+    // 🔴 CASE-INSENSITIVE, AND IT WAS NOT. `includes('VIEW public.admin_user_tiers')` is
+    // case-SENSITIVE, so a migration writing lowercase `create or replace view
+    // public.admin_user_tiers` escaped this population entirely and left the gate
+    // validating a SUPERSEDED definition while staying green. Found by code review of
+    // INTERNAL-ACCOUNTS-01, whose first cut was lowercase. **Match the effect, not the
+    // spelling.**
+    .filter(f => /VIEW\s+public\.admin_user_tiers/i.test(readFileSync(join(MIGRATIONS, f), 'utf8')))
   expect(files.length, 'no migration defines admin_user_tiers').toBeGreaterThan(0)
   return readFileSync(join(MIGRATIONS, files[files.length - 1]), 'utf8')
 }
@@ -42,7 +48,14 @@ function liveViewSql(): string {
 const TRIAL_TS = readFileSync(join(process.cwd(), 'lib/trial.ts'), 'utf8')
 
 describe('GTM-CHARITY-05 — admin_user_tiers tracks resolveTier', () => {
-  const sql = liveViewSql()
+  // 🔴 COMMENTS STRIPPED, AND EVERY ARM BELOW READS THE STRIPPED FORM. This file's own
+  // note already records the forwards-search version matching the word CASE inside a
+  // migration's header comment; the backwards search has the same exposure, and
+  // INTERNAL-ACCOUNTS-01 proved it by writing a comment that mentioned CASE and reducing
+  // `tierCase` to nine characters.
+  // ✅ Stripping helps the REVOKE arm too, deliberately: a commented-out
+  // `-- REVOKE ALL ON ...` must NOT satisfy it. Asserted below.
+  const sql = liveViewSql().replace(/\/\*[\s\S]*?\*\//g, ' ').replace(/--[^\n]*/g, ' ')
   // Only the CASE that produces `tier`; the ORDER BY repeats the arms and
   // would otherwise make every index below ambiguous.
   // ⚠️ Anchored BACKWARDS from `END AS tier`, not forwards from the first
@@ -50,8 +63,25 @@ describe('GTM-CHARITY-05 — admin_user_tiers tracks resolveTier', () => {
   // this migration's own header comment, so the slice began ~40 lines early
   // and the ordering assertions compared positions in prose. Caught because
   // the test went red on a view that was correct.
-  const tierEnd = sql.indexOf('END AS tier')
-  const tierCase = sql.slice(sql.lastIndexOf('CASE', tierEnd), tierEnd)
+  // ⚠️ CASE-INSENSITIVE ANCHORS, for the same reason as the population filter above: a
+  // lowercase `end as tier` found nothing and every assertion below then compared
+  // positions in an empty string. Found by code review of INTERNAL-ACCOUNTS-01.
+  // 🔴 COMMENTS STRIPPED FIRST. This file's own note already records the forwards-search
+  // version matching the word CASE inside a migration's header comment; the backwards
+  // search has the same exposure, and INTERNAL-ACCOUNTS-01 proved it by writing a comment
+  // that mentioned `CASE` and reducing `tierCase` to nine characters. Strip, then anchor.
+  const endMatch = /END\s+AS\s+tier/i.exec(sql)
+  expect(endMatch, 'no `END AS tier` in the live view — this check has stopped looking').toBeTruthy()
+  const tierEnd = endMatch!.index
+  // ⚠️ A loop, not `[...matchAll()]`: the spread needs `--downlevelIteration` under this
+  // tsconfig and `tsc --noEmit` rejected it (vitest's esbuild did not, so the SUITE was
+  // green while the typecheck was red).
+  const before = sql.slice(0, tierEnd)
+  const caseRe = /\bCASE\b/gi
+  let lastCase = -1
+  for (let m = caseRe.exec(before); m !== null; m = caseRe.exec(before)) lastCase = m.index
+  expect(lastCase, 'no `CASE` before `END AS tier`').toBeGreaterThan(-1)
+  const tierCase = sql.slice(lastCase, tierEnd)
 
   it('reads a real view definition, so the test cannot pass on an empty string', () => {
     expect(tierCase.length).toBeGreaterThan(100)
@@ -94,6 +124,6 @@ describe('GTM-CHARITY-05 — admin_user_tiers tracks resolveTier', () => {
   })
 
   it('stays off the client — it exposes email and name', () => {
-    expect(sql).toMatch(/REVOKE ALL ON public\.admin_user_tiers FROM anon, authenticated/)
+    expect(sql).toMatch(/REVOKE\s+ALL\s+ON\s+public\.admin_user_tiers\s+FROM\s+anon,\s*authenticated/i)
   })
 })
