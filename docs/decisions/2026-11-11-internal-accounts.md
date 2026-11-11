@@ -1,6 +1,6 @@
 # Internal accounts: exclude testers from metrics without granting anything
 
-**Date:** 2026-11-11 · **Id:** `INTERNAL-ACCOUNTS-01` · **Status:** migration written, **NOT YET APPLIED**
+**Date:** 2026-11-11 · **Id:** `INTERNAL-ACCOUNTS-01` · **Status:** ✅ **APPLIED 2026-11-11**, verified from here
 
 ## The decision
 
@@ -43,8 +43,8 @@ compared, marked superseded.
 | `v_trial_conversion` rows | 56 | **56 — UNCHANGED, by design** |
 | the honest trial denominator (`where not is_internal`) | 56 | **38** |
 | `converted_real` | 0 | 0 |
-| `v_coach_engagement` distinct runners | 21 | **16** |
-| `v_hr_present_pct` | 74.0 | **73.0** |
+| `v_coach_engagement` distinct runners | 21 | **15** |
+| `v_hr_present_pct` | 74.0 | **77.2** (it goes UP — see below) |
 
 **18 of 56 users (32.1%) are internal.** `converted_real` is 0 either way, so the conversion *rate*
 does not move; the denominator becomes honest, which is what the brief was for.
@@ -54,6 +54,15 @@ It does not.** That view is row-per-trialling-user and deliberately KEEPS the in
 analyst can see the difference; the exclusion lives in `converted_real` and in the new `is_internal`
 column. **38 is the count of a query that adds `where not is_internal`, not of the view.** Anything
 reporting a trial denominator must add that clause, the 1 January gate included.
+
+🔴 **TWO OF THESE I PREDICTED WRONG, CORRECTED AFTER THE APPLY.** I wrote 16 and 73.0. I simulated
+the fix by subtracting the **18 internal ids**; the shipped `v_metric_users` subtracts internal **AND
+admin**, which I had written into it myself. There is 1 admin with **97 activities at 45.5%
+HR-present**, so excluding them takes coach runners 16 → 15 and *raises* HR-present 73.0 → 77.2.
+**The view was right; the prediction was measured with a weaker predicate than the shipped code** —
+and the runbook's stated expectations would have read as a failed apply.
+🔑 Separately worth knowing: the admin account was dragging the ADR-011 §5 HR-present figure down
+by **4.2 percentage points**.
 
 ## The three judgement calls
 

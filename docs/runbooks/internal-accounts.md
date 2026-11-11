@@ -1,7 +1,7 @@
 # Runbook — apply `INTERNAL-ACCOUNTS-01` (internal-account flag)
 
 **Migration:** `supabase/migrations/20261111_internal_accounts.sql`
-**Status when written:** NOT applied. Everything below is handed over because **a production
+**Status: ✅ APPLIED 2026-11-11** by the founder, and verified from here (reads). Everything below is handed over because **a production
 WRITE and DDL are refused from the assistant's sandbox** — PostgREST cannot run DDL and the CLI is
 not linked. Reads were used throughout to verify.
 
@@ -26,8 +26,8 @@ select internal_reason, count(*) from user_settings
 select count(*) from v_metric_users;                                      -- 37  (56 users - 18 internal - 1 admin)
 select count(*) from v_trial_conversion;                                  -- 56  UNCHANGED, by design
 select count(*) from v_trial_conversion where not is_internal;            -- 38  the honest denominator
-select count(distinct user_id) from v_coach_engagement;                    -- 16  (was 21)
-select hr_present_pct from v_hr_present_pct;                              -- 73.0 (was 74.0)
+select count(distinct user_id) from v_coach_engagement;                    -- 15  (was 21)
+select hr_present_pct from v_hr_present_pct;                              -- 77.2 (was 74.0)
 select codes_redeemed, runners_with_a_plan from v_partner_cohort
   where batch_id = '7c2ae3a2-506b-46b0-ab59-613738e247d7';                -- 1, 0  (was 1, 1)
 ```
@@ -39,8 +39,15 @@ count of a query that adds `where not is_internal`, not of the view.** Corrected
 ⚠️ Anything that reports a trial denominator must add that clause — including the 1 January
 trial-to-paid gate, which `lib/analytics.ts` records as reading this view.
 
-⚠️ **The before-values are measured, not predicted** — each was read from production on
-2026-11-11 and the after-values were computed by stubbing `is_internal` with the 18 ids.
+⚠️ **The before-values are measured. TWO OF THE AFTER-VALUES WERE PREDICTED WRONG AND ARE
+CORRECTED ABOVE** — I first wrote 16 and 73.0. I simulated the fix by subtracting the **18 internal
+ids**, while the shipped `v_metric_users` subtracts internal **AND admin**. There is 1 admin, with
+**97 activities at 45.5% HR-present**, so excluding them moves coach runners 16 → 15 and *raises*
+HR-present 73.0 → 77.2. **The view is correct; my simulation used a weaker predicate than the code
+I shipped.** Verified against the applied migration.
+
+🔑 Worth noting on its own: the admin account was dragging the ADR-011 §5 HR-present figure down
+by **4.2 percentage points**.
 
 ## 3. Verify the privilege fix — the part that matters most
 
@@ -73,6 +80,18 @@ and read it back **as `service_role`**:
 ```sql
 select is_admin from user_settings where id = '<that user>';  -- still false
 ```
+
+✅ **WHAT I VERIFIED FROM HERE (reads only), 2026-11-11 after the apply:** the trigger
+`guard_privileged_user_settings` exists on `user_settings`, `tgtype = 19` (BEFORE + FOR EACH ROW +
+UPDATE), `prosecdef = false` (INVOKER, so `current_user` is the caller and not the owner), its body
+names all three columns, it exempts `service_role`, and the UPDATE policy now carries a
+`WITH CHECK`.
+
+🔴 **WHAT I CANNOT VERIFY FROM HERE, AND IT IS THE DECISIVE ONE: that a real client's PATCH is
+actually reverted.** In a plain SQL session `auth.uid()` is NULL, so `set role authenticated` plus an
+update is blocked by RLS for a DIFFERENT reason and would pass for the wrong reason — a false
+positive, which is worse than no test. The write test above needs a real signed-in JWT. **Until
+someone runs it, the escalation is closed by construction and unproven by experiment.**
 
 🔴 **Before this migration that PATCH would have SUCCEEDED** and `resolveTier` would have
 returned `{tier:'paid', reason:'admin'}`. If `is_admin` comes back `true`, **stop and say so**: the
