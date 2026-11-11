@@ -1272,21 +1272,6 @@ Willy objected to on the record, and nothing here revisits it. 🔻 **The 3-day 
 remains the engine's highest-risk emission, by the board's own reasoning** — that is §52 Am. 1's open cost, not a new
 item.
 
-### 🔲 `WIZARD-CONTRADICTORY-VOLUME-01` — the wizard accepts a longest run bigger than the weekly total ⚙️ **NO BOARD**
-
-📐 **Found 2026-11-03, same measurement.** `INV-INPUT-LONGEST-LE-WEEKLY` (§18/§10) survives regeneration on
-**2 stored plans** — *"Self-reported longest run 20km exceeds stated weekly volume 10km — a single run cannot
-exceed the week's total"* and a 6 km / 5 km pair. The engine cannot fix it: it is the runner's own answers.
-
-**The invariant exists and fires; the wizard that collects the two numbers never compares them.** So the only
-thing the check achieves today is to make the plan permanently invalid, which §134 now correctly tolerates.
-The fix belongs at the input: reconcile the pair in the wizard (the step that asks the second number knows
-the first), not in the validator. ⚠️ **`GATE-EVERY-EXIT-FROM-A-STEP` applies** — and the honest handling is
-probably to accept the larger number as the weekly floor rather than to block, since a runner who ran 20 km
-last week did run 20 km that week.
-
----
-
 ### ✅ `REENRICH-REPAIR-VALIDATOR-KIND-01` — **SHIPPED 2026-11-10. Both sides moved in one commit, and it is provably inert on today's fleet** ⚙️ **NO BOARD**
 
 ✅ **SHIPPED 2026-11-10.** `lib/plan/enrichRepair.ts` (3 call sites) and
@@ -1649,7 +1634,12 @@ which arms `INV-PLAN-ONRAMP-SPACED`; `validateStoredPlan` returns **0 violations
 3.2 (deload) → 5.7 → 6.4 → 6.8 → 7.6 km, so `INV-PLAN-ONRAMP-CURVE-CLIMBS` holds too. The per-run dip from 2.2 → 1.6 km at
 week 3 is frequency rising against a lawful weekly increase, not a drop in load.
 
-🔺 **The one live half is already filed elsewhere:** no session carries a duration — `BASEBUILD-DURATION-01`, untouched.
+✅ **The one live half is CLOSED 2026-11-11, and not by the fix reaching it.** `BASEBUILD-DURATION-01` shipped as §122
+Amendment 2: the base-build ramp now sizes against the runner's benchmark, so its sessions carry a duration and the
+weekday cap binds. **M7 has no `benchmark`**, so M7's sessions still carry none — and that is now the amendment's
+RATIFIED DECLINE rather than an open defect (§122's own words: *"a foundation block sized against a guessed pace is
+worse than one sized against none"*). Measured: 72 of 72 generated base-builds carry duration WITH a benchmark,
+**0 of 72 without**, deliberately. ⚠️ The residual is resolved by a ruling, not by a code path reaching this persona.
 
 ---
 
@@ -2502,12 +2492,6 @@ Found 2026-10-26 by the code review of OVERRUN-NOTE-ALL-01. `applyEdits` spreads
 
 ---
 
-### 🔲 `BASEBUILD-DURATION-01` — base-building weeks carry no duration, so weekday limits never apply ⚙️ **NO BOARD** (restores §122's own condition)
-
-Found 2026-10-26 in OVERRUN-NOTE-ALL-01's fixture. `generateBaseBuildOnRamp` calls `generateFoundationBlock` with `paceTarget: null` ("no finished plan to read a pace from"), so every ramp session has `distance_km` and **no `duration_mins`**. §122 permits that only where no pace is derivable, but a runner with a **benchmark** has one. Measured on a 7:40 marathoner with Mon 60 / Wed 45 / Fri 30: base-building easy runs of 5 km (~65 min at her pace) with no duration, so `applyWeekdayMinsCap`, `INV-PLAN-MAX-WEEKDAY-MINS` and the overrun note all skip them. **Population not yet measured** (finish-goal, low-volume runners with a benchmark and budgets; the slow-goal grid never reaches `base_build`). Fix: derive the easy pace from the benchmark when present, so duration exists and the cap and note apply.
-
----
-
 ### ✅ `HK-NATIVE-BG-INGEST-01` — ingest a run from native code when iOS wakes the app ⚙️ **NO BOARD** — **PHASE 1 SHIPPED 2026-11-05, pending a binary. Phase 2 is `HK-NATIVE-BG-INGEST-02` below.**
 
 Filed 2026-10-25. The only remaining route to *link without opening the app*: `HealthObserverPlugin` would read the new workout and POST `/api/health/ingest` itself, with a token held natively, instead of handing off to a web page that is not loaded during a background wake. A user force-quit still blocks it (iOS rule). New binary.
@@ -2979,13 +2963,6 @@ from the catalogue. Question for the board: a beginner taper race row for HM/MAR
 notes prescribe marathon and HM-pace segments, so the HR cap and the segments cannot both be met (the GOALPACE-5K-01
 brief's W7). Beginners no longer reach §24b; intermediates and marathon runners still do. Needs a ruling on how a
 segmented session states its HR, and a measurement of how many sessions it moves.
-
-### 🔲 `ALL-DAYS-BLOCKED-01` — an input with every day blocked still generates a plan ⚙️ **NO BOARD** *(filed 2026-10-22, P3)*
-
-Found building `LONGRUN-BLOCKED-DAY-01`: `days_cannot_train` naming all seven days generates a plan whose long run sits
-on a blocked Sunday (the only remaining `'sun'` fallback in `ruleEngine.ts`, kept deliberately with a comment). No wizard
-or edit path can send it (both need a run day). Fix at the input boundary as a designed refusal, never by matching a
-message. Count stored inputs first.
 
 ### 🔲 `CALENDAR-DONE-DOT-SOURCE-01` — the Plan calendar's completion ● is Strava orange for Apple Health runs too 🧭 **DESIGN BOARD** *(filed 2026-10-22)*
 
@@ -15271,29 +15248,6 @@ how, without a modal — Wood's standing kill-threat); 🏃 then rules on the re
 design decides not to ask. ⚠️ **What would settle it is evidence, not argument:** do runners who
 leave the slider at zero mean it? That is `ops_events` on wizard submissions, which we do not
 yet record for this pair.
-
----
-
-### 🔻 `LR-ALT-42-CONFIG-01` — §44's 10K door is marathon-only, behind a hardcoded `42` ⚙️ **NO BOARD** for the move · 🏃 **COACHING BOARD** for the scope
-
-**Filed properly 2026-10-09.** It was named in `longRunReadiness.test.ts`'s comments as "filed"
-and **had no backlog entry** — a declared reason that reached nobody, which is the pattern this
-repo keeps paying for.
-
-`alternativesFor` reads `21` from `GENERATION_CONFIG.LONG_RUN_READINESS_MIN_RACE_KM` four lines
-above a literal **`42`** — a coaching numeric living in `lib/plan/`, which the Configuration
-Singularity forbids, invisible to `configPrincipleSync` and to the coaching-guard hook.
-
-🔴 **AND THE SCOPE QUESTION IS NOW LIVE, WHICH IT WAS NOT WHEN THIS WAS FILED.** §113 governs
-every race at or above 21 km, so a refused **half**-marathoner gets exactly one alternative:
-*"build up to one 5 km run."* The §10 Amendment made a declared zero refusable, so that refusal
-now reaches runners who have not run at all, for whom 5 km is a long way off — while a **10K
-plan generates for them today** (measured). Widening the condition was tried during that build
-and **backed out in the same session**: the boundary is pinned by `longRunReadiness.test.ts` and
-inferring a ruling the board was not asked for is how settled ground gets reversed quietly.
-
-**Two artifacts, one sitting:** move the `42` into `GENERATION_CONFIG` with a principle, and
-rule on whether the door is marathon-only or belongs to every distance §113 can refuse.
 
 ---
 

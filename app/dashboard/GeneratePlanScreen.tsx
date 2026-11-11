@@ -51,6 +51,7 @@ import { type DayKey } from '@/components/shared/DayGridSelector'
 import { Ruler } from '@/components/shared/Ruler'
 import { BenchmarkFields } from '@/components/shared/BenchmarkFields'
 import { FieldLabel, FieldNote, FieldReadback } from '@/components/shared/FieldText'
+import { volumePairProblem, volumePairMessage } from '@/lib/plan/volumeConsistency'
 import { benchmarkFromFields, benchmarkProblem, type BenchmarkFieldValues } from '@/lib/plan/benchmarkCheck'
 import { CardSelect } from '@/components/shared/CardSelect'
 import { STRENGTH_WIZARD, type StrengthWizardChoice } from '@/lib/strength-bridge/display'
@@ -960,7 +961,12 @@ export default function GeneratePlanScreen({
       case 'goal':           return goal !== null
       case 'target-time':    return targetHours > 0 || targetMins > 0 || targetSecs > 0
       case 'weekly-volume':  return weeklyKm !== null
-      case 'longest-run':    return longestRun !== null
+      // WIZARD-CONTRADICTORY-VOLUME-01 (Coaching Board 2026-11-11) — both numbers are
+      // known by this step, and `INV-INPUT-LONGEST-LE-WEEKLY` has been firing on them
+      // AFTER the fact for months: 2 of 43 stored plans are permanently invalid because
+      // the wizard never compared them. `GATE-EVERY-EXIT-FROM-A-STEP` — the gate is here,
+      // and it calls the same owner the server does so the two cannot diverge.
+      case 'longest-run':    return longestRun !== null && volumePairProblem(weeklyKm, longestRun) === null
       // training-age + birth-year are optional (App Store 5.1.1 — year of birth
       // "should be optional"; the engine falls back to age 30 / no training-age).
       case 'training-age':   return true
@@ -2044,16 +2050,25 @@ export default function GeneratePlanScreen({
 
       case 'longest-run':
         return (
-          <Ruler
-            ariaLabel="Longest run in the last 6 weeks"
-            value={longestRun}
-            onChange={setLongestRun}
-            min={GENERATION_CONFIG.WIZARD_VOLUME_RULER.LONGEST_RUN_KM_MIN}
-            max={GENERATION_CONFIG.WIZARD_VOLUME_RULER.LONGEST_RUN_KM_MAX}
-            step={GENERATION_CONFIG.WIZARD_VOLUME_RULER.LONGEST_RUN_KM_STEP}
-            restAnchor={GENERATION_CONFIG.WIZARD_VOLUME_RULER.LONGEST_RUN_KM_ANCHOR}
-            unit="km"
-          />
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
+            <Ruler
+              ariaLabel="Longest run in the last 6 weeks"
+              value={longestRun}
+              onChange={setLongestRun}
+              min={GENERATION_CONFIG.WIZARD_VOLUME_RULER.LONGEST_RUN_KM_MIN}
+              max={GENERATION_CONFIG.WIZARD_VOLUME_RULER.LONGEST_RUN_KM_MAX}
+              step={GENERATION_CONFIG.WIZARD_VOLUME_RULER.LONGEST_RUN_KM_STEP}
+              restAnchor={GENERATION_CONFIG.WIZARD_VOLUME_RULER.LONGEST_RUN_KM_ANCHOR}
+              unit="km"
+            />
+            {/* WIZARD-CONTRADICTORY-VOLUME-01 — `canProceed` blocks this step on the same
+                owner, and a disabled Next with no stated reason is worse than no gate at
+                all. Same `<FieldReadback alert>` the benchmark step uses for its blocking
+                reason, so this introduces no pattern. */}
+            {volumePairProblem(weeklyKm, longestRun) && (
+              <FieldReadback alert>{volumePairMessage(weeklyKm as number, longestRun as number)}</FieldReadback>
+            )}
+          </div>
         )
 
       case 'training-age':

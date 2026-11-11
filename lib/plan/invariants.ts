@@ -15,6 +15,7 @@ import { storedPlanInput } from './storedPlanInput'
 import { runWalkPrescriptionApplies } from './runWalkPlan'
 import { strideCarrierDay, isDayAfterLongRun, hasHillRestrictingInjury } from './neuromuscular'
 import { normaliseDays, dayGap, canHoldSpacedQuality, DAY_ORDER as DAY_ORDER_OWNED } from './days'
+import { volumePairProblem } from './volumeConsistency'
 import { sessionFloorsFor } from './sessionFloors'
 import { easyPaceFromPlan } from './easyPace'
 import { fitnessAnchorMap } from './fitnessAnchorMap'
@@ -1157,7 +1158,11 @@ export function validatePlan(plan: Plan, rawInput: GeneratorInput): Violation[] 
   {
     const statedWeekly  = input.current_weekly_km ?? 0
     const statedLongest = input.longest_recent_run_km ?? 0
-    if (statedWeekly > 0 && statedLongest > statedWeekly) {
+    // WIZARD-CONTRADICTORY-VOLUME-01 — the predicate moved to
+    // `volumeConsistency.ts` so the WIZARD that collects these two numbers refuses
+    // exactly what this refuses (`benchmarkCheck.ts`'s pattern). The guard on
+    // `weekly > 0` lives there now and is unchanged.
+    if (volumePairProblem(statedWeekly, statedLongest)) {
       violations.push({
         code: 'INV-INPUT-LONGEST-LE-WEEKLY',
         principle_ref: 'CoachingPrinciples §18, §10',

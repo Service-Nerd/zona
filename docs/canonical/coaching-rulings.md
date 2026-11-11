@@ -3008,3 +3008,36 @@ behaviour change to a shipped surface: **measured 0 of 3 live runners' notes mov
 one mistake three times — the call site omitted `isRun`, `dedupeRuns` and the `overridesReady` gate, the three
 helpers every sibling consumer of that same array already applies. ⚠️ **Four rounds of falsifying my own arms
 found none of the four.**
+
+---
+
+## 2026-11-11 — four prescription items, one sitting · **three of four premises had drifted, and one of my own measurements was wrong**
+
+**Convened** on the founder's instruction to sit the board for the four mis-tagged prescription items.
+Every premise was re-derived first, which is the only reason the rulings are the ones they are.
+
+| Item | Ruling |
+|---|---|
+| `BASEBUILD-DURATION-01` | **EXEMPT, ⚙️ NO BOARD tag CONFIRMED** — restores §122's own condition. §122 Am. 2 records it |
+| `ALL-DAYS-BLOCKED-01` | **INCORRECT AS FILED** (the input cannot be sent and the symptom does not occur); replaced by §110 Am. 3 on what the re-measurement found |
+| `WIZARD-CONTRADICTORY-VOLUME-01` | **SPLIT.** Reconciliation is ⚙️ NO BOARD; the item's PROPOSED FIX is prescription and is **REFUSED**. §18 Am. 3 |
+| `LR-ALT-42-CONFIG-01` | **Move EXEMPT; scope question MOOT as framed; one NEW defect ruled INCORRECT** (the ultra's door). §113 Am. 2 |
+
+**Conflict scan ran against amendments, not headings** — §1 CD-21 Am. 1 (the trap the skill names), §110's
+floor clause, §9, §52, §113 Am. 1, §118, §122, §18, §10, §134, and CD-22's unsatisfiable-window precedent.
+Two things checked rather than assumed: `INV-PLAN-QUALITY-NOT-ZERO` cites `§110 (§1)` and **that is
+correct**; and **§110 nowhere mentions `maintenance`, `volume_profile` or day count**, so the low-day case
+was genuinely unaddressed doctrine.
+
+🔴 **AND I GAVE THE BOARD A WRONG NUMBER, WHICH I CORRECTED BEFORE BUILDING.** I submitted
+*"150 of 150 two-day plans deliver zero quality, the engine is wrong at 2 days."* Blocking
+`DAYS.slice(0, n)` always leaves the **weekend** open, so every two-day case I generated was `sat+sun`
+— gap 1 — and I measured one cell of the placement space 150 times. The real answer is **7 of 21
+placements**, all adjacent pairs, and the engine is **right** at 2 days whenever the days are ≥ 2 apart
+(6 quality sessions). **Varying the day COUNT is not reaching the day-PLACEMENT axis.** The corrected
+ruling changes what the engine prescribes to nobody.
+
+⚠️ **`verify:parity` is IDENTICAL on 6,210 cases and that is not verification of any of this**: the
+grid holds no `days_cannot_train`, leaves `acceptBaseBuild` unset, and sets `longest_recent_run_km >= 5`
+so nothing is ever refused. It proves no collateral damage to the race-plan path and is structurally
+blind to all four amendments.

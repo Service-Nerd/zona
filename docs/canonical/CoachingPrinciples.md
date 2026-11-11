@@ -2464,6 +2464,46 @@ block (whose own copy fell back to the latest free day: the same walk, proven on
 `INV-PLAN-NO-SESSIONS-ON-BLOCKED-DAYS` (error), falsified by shrinking the fallback list; `lib/plan/longRunDay.test.ts`.
 
 ---
+### §18 Amendment 3 — the two volume numbers are reconciled where they are ASKED, and neither is promoted (Coaching Board 2026-11-11, WIZARD-CONTRADICTORY-VOLUME-01)
+
+**Principle.** A self-reported longest run may not exceed the stated weekly volume. The
+contradiction is caught **at the step that asks the second number**, not after a plan exists,
+and **neither number is promoted to resolve it.** The runner is told both figures and adjusts
+either.
+
+🔴 **Ruled, and the item's own proposed fix was REFUSED.** It suggested *"accept the larger
+number as the weekly floor rather than block, since a runner who ran 20 km last week did run
+20 km that week."* 🩹 **Willy:** *"the single long run is the fact; the week is not."* A
+runner who ran 20 km once off a 10 km week has a longest of 20 and a weekly of 10. Promoting
+the week to 20 **invents tonnage they never ran**, and §2's 10% ramp would then build every
+subsequent week from a false base. 🎯 **McMillan** concurring: the honest move is to ask,
+because we do not know which number is wrong and the runner does.
+
+📐 **Measured 2026-11-11: 2 of 43 stored plans trip `INV-INPUT-LONGEST-LE-WEEKLY`** and are
+therefore **permanently invalid** — the engine cannot fix them, because they are the runner's
+own answers. The item said 2 and the item was right. ⚠️ **A third plan carries `longest 5 km
+> weekly 0 km` and does NOT trip it**, because the rule is guarded on `weekly > 0` so the
+meta-empty validation path self-skips. **The raw comparison finds 3 and the rule finds 2;
+both are right about different populations**, and the guard is **mirrored, not tightened** —
+a screen that refuses what the server accepts is a second answer, not a stricter one. The
+declared zero is §10's business, not this amendment's.
+
+**Numeric.** None. The predicate is a comparison, and `lib/plan/volumeConsistency.ts →
+volumePairProblem` is its **single owner, called by the wizard's step gate and by
+`INV-INPUT-LONGEST-LE-WEEKLY`** — `benchmarkCheck.ts`'s pattern and its stated reason, *"the
+screen and the server refuse the same thing."* Before this the comparison existed only inside
+the invariant, so the only thing the check achieved was to make the plan invalid after the
+fact.
+
+**Enforcement.** `lib/plan/volumeConsistency.test.ts`, 12 arms, falsified by five mutations:
+removing the wizard gate (the pre-ruling state), adopting the refused promote-the-larger fix,
+tightening the guard past the server's, giving the invariant back its own copy of the
+comparison, and replacing the stated reason with a bare *"Check your numbers."*
+⚠️ **A disabled Next with no stated reason is worse than no gate at all**, so the step renders
+the same `<FieldReadback alert>` the benchmark step uses, and the copy names **both** numbers
+and tells the runner to adjust **either** — it does not say which one was wrong, because we
+do not know.
+
 
 ## 19. Session label integrity — name matches prescribed physiology
 
