@@ -332,6 +332,38 @@ const DAY_SET: Set<Day> = new Set(DAYS)
 // `dayGap` now has ONE owner in `./days` (§110 Am. 3). This checker-side copy is
 // retired: holding its own copy of the producer's predicate is what it exists to catch.
 
+/**
+ * §110 Amendment 3 — can this plan's open days hold a long run AND a §7-spaced quality?
+ *
+ * 🔴 BOTH QUALITY FLOORS READ IT. The first cut put the condition inside
+ * `INV-PLAN-QUALITY-NOT-ZERO` only, and code review reproduced the consequence: at open
+ * days sat+sun a `finish` plan validated clean while a `time_target` plan violated
+ * `INV-PLAN-TIME-TARGET-QUALITY-FLOOR` at error severity — and under `NODE_ENV=test`
+ * `generateRulePlan` THROWS on that. The exemption I had just ratified turned a silent
+ * zero into a crash for the time-target half of the same cohort.
+ *
+ * ⚠️ THE LONG DAY COMES FROM `isLongRun`, THE OWNER, NOT FROM A RAW `role` READ. A legacy
+ * plan carries `type: 'long'` with no role (INV-CLASS-002 stamps the role only from
+ * 2026-08), so a raw read skipped the exemption on exactly the oldest plans.
+ *
+ * ⚠️ AND IT READS A RACE WEEK, NOT A FOUNDATION ONE. A prepended foundation block has its
+ * own long day chosen under §57/§116, and letting week −2 decide the geometry of the race
+ * plan is the ADR-020 boundary leaking into a checker.
+ */
+function geometryCanHoldQuality(plan: Plan, input: GeneratorInput | undefined): boolean {
+  const openDays = DAY_ORDER_OWNED.filter(d => !normaliseDays(input?.days_cannot_train).has(d))
+  const longDay = plan.weeks
+    .filter(w => w.n >= 1)
+    .flatMap(w => Object.entries(w.sessions ?? {}))
+    .find(([, sn]) => sn && isLongRun(sn as Session))?.[0] as Day | undefined
+  // No long run found means no geometry to judge, and the floor keeps its full reach.
+  if (longDay == null) return true
+  return canHoldSpacedQuality(
+    openDays, longDay,
+    Math.ceil(GENERATION_CONFIG.MIN_HOURS_BETWEEN_QUALITY_AND_LONG / 24),
+  )
+}
+
 // Parse "M:SS–M:SS /km" pace string → midpoint in min/km. Used by
 // INV-PLAN-LABEL-MATCHES-PACE pace-band check. Returns null when the string
 // doesn't match (defensive — engine emits ranges, but legacy plans may not).
@@ -3120,18 +3152,7 @@ export function validatePlan(plan: Plan, rawInput: GeneratorInput): Violation[] 
     // PLACEMENT RULE. A checker holding its own copy of its producer's predicate cannot
     // catch the producer being wrong, only drift from it — the same reason this gate reads
     // `fitness_intensity_level` as a stamp instead of re-running the classifier.
-    const openDays = DAY_ORDER_OWNED.filter(d => !normaliseDays(input.days_cannot_train).has(d))
-    const planLongDay = plan.weeks
-      .flatMap(w => Object.entries(w.sessions ?? {}))
-      .find(([, sn]) => sn && (sn as Session).role === 'long_run')?.[0] as Day | undefined
-    const geometryCanHoldQuality =
-      planLongDay == null ||
-      canHoldSpacedQuality(
-        openDays, planLongDay,
-        Math.ceil(GENERATION_CONFIG.MIN_HOURS_BETWEEN_QUALITY_AND_LONG / 24),
-      )
-
-    if (!isBeginner && hasBuildOrPeak && longEnough && qualityCount === 0 && geometryCanHoldQuality) {
+    if (!isBeginner && hasBuildOrPeak && longEnough && qualityCount === 0 && geometryCanHoldQuality(plan, input)) {
       violations.push({
         code: 'INV-PLAN-QUALITY-NOT-ZERO',
         principle_ref: 'CoachingPrinciples §110 (§1)',
@@ -3186,7 +3207,14 @@ export function validatePlan(plan: Plan, rawInput: GeneratorInput): Violation[] 
     // comes from §9's session floors rather than from this rule at all.
     const canCarryQuality = plan.weeks.some(w =>
       (w.weekly_km ?? 0) >= GENERATION_CONFIG.BEGINNER_QUALITY_MIN_WEEKLY_KM)
-    if (isTimeTarget && hasBuildOrPeak && longEnough && canCarryQuality && qualityTotal === 0) {
+    // 🔴 §110 Am. 3 APPLIES TO THIS FLOOR TOO, AND THE FIRST CUT ADDED IT TO THE SIBLING
+    // ONLY. Code review reproduced it: open days sat+sun with `goal: 'finish'` validates
+    // clean while `goal: 'time_target'` violates, and under `NODE_ENV=test`
+    // `generateRulePlan` THROWS on an error-severity violation. So the exemption I had
+    // just ratified turned a silent zero into a CRASH for the time-target half of the
+    // same cohort. Two floors, one geometry, one predicate.
+    if (isTimeTarget && hasBuildOrPeak && longEnough && canCarryQuality && qualityTotal === 0
+        && geometryCanHoldQuality(plan, input)) {
       violations.push({
         code: 'INV-PLAN-TIME-TARGET-QUALITY-FLOOR',
         principle_ref: 'CoachingPrinciples §110 Am.2, §22',

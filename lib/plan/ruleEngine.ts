@@ -10388,9 +10388,15 @@ function buildRulePlanOnce(
   {
     const minQualGapDays = Math.ceil(GENERATION_CONFIG.MIN_HOURS_BETWEEN_QUALITY_AND_LONG / 24)
     const openDays = DAY_ORDER.filter(d => !blockedDays(input).has(d))
+    // ⚠️ `isLongRun`, THE OWNER, NOT A RAW `role` READ — a legacy plan carries
+    // `type: 'long'` with no role, so a raw read misses exactly the oldest plans
+    // (INV-CLASS-002 stamps the role only from 2026-08). And `w.n >= 1`, because a
+    // prepended foundation block picks its own long day under §57/§116 and must not
+    // decide the race plan's geometry (ADR-020's boundary). Both found by code review.
     const longDayUsed = weeks
+      .filter(w => w.n >= 1)
       .flatMap(w => Object.entries(w.sessions ?? {}))
-      .find(([, sn]) => sn && (sn as Session).role === 'long_run')?.[0] as Day | undefined
+      .find(([, sn]) => sn && isLongRun(sn as Session))?.[0] as Day | undefined
     const qualityPlaced = weeks
       .filter(w => w.phase === 'build' || w.phase === 'peak')
       .flatMap(w => Object.values(w.sessions ?? {}))

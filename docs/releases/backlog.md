@@ -1634,12 +1634,44 @@ which arms `INV-PLAN-ONRAMP-SPACED`; `validateStoredPlan` returns **0 violations
 3.2 (deload) → 5.7 → 6.4 → 6.8 → 7.6 km, so `INV-PLAN-ONRAMP-CURVE-CLIMBS` holds too. The per-run dip from 2.2 → 1.6 km at
 week 3 is frequency rising against a lawful weekly increase, not a drop in load.
 
-✅ **The one live half is CLOSED 2026-11-11, and not by the fix reaching it.** `BASEBUILD-DURATION-01` shipped as §122
-Amendment 2: the base-build ramp now sizes against the runner's benchmark, so its sessions carry a duration and the
-weekday cap binds. **M7 has no `benchmark`**, so M7's sessions still carry none — and that is now the amendment's
-RATIFIED DECLINE rather than an open defect (§122's own words: *"a foundation block sized against a guessed pace is
-worse than one sized against none"*). Measured: 72 of 72 generated base-builds carry duration WITH a benchmark,
-**0 of 72 without**, deliberately. ⚠️ The residual is resolved by a ruling, not by a code path reaching this persona.
+🔺 **The one live half is STILL OPEN, and I closed it in error for about an hour.** No session carries a
+duration — `BASEBUILD-DURATION-01`. I closed this residual on §122 Amendment 2, then **that amendment was vacated the
+same day** when `/code-review` showed the fix flatlines the ramp under a weekday cap (135 of 189 swept base-builds
+overstate delivered volume). ⚠️ **A residual closed on a ruling is only as closed as the ruling**, and this one
+outlived its basis by one commit. M7 has no `benchmark`, so even the shipped form would not have reached it.
+
+---
+
+### 🔴 `BASEBUILD-DURATION-01` — base-building weeks carry no duration, so weekday limits never apply 🏃 **COACHING BOARD** *(re-filed 2026-11-11 after a BUILD AND REVERT)*
+
+✅ **The diagnosis is settled and measured.** `generateBaseBuildOnRamp` calls `generateFoundationBlock` with
+`paceTarget: null`, so every ramp session carries `distance_km` and **no `duration_mins`** — and §122 permits that only
+where no pace is derivable. A **benchmark** derives one. 📐 Measured LIVE: **4 stored base-build plans carrying 51/51,
+12/12, 30/30 and 7/7 sessions with no duration**, two of them carrying a stated **45-minute weekday cap that therefore
+never applied** (`applyWeekdayMinsCap`, `INV-PLAN-MAX-WEEKDAY-MINS` and the overrun note all skip on `!s.duration_mins`).
+
+🔴 **IT WAS BUILT AS §122 AMENDMENT 2 AND VACATED THE SAME DAY** (the `TAPER-OVER-PEAK-01` precedent: a ruling
+withdrawn at a re-measurement). Threading the pace makes `max_weekday_mins` bind to the ramp **for the first time**, and
+the ramp then **flatlines**: at a 45-minute cap it delivers **13.5 km/week for eleven of fifteen weeks** against a target
+of 37.9, while `week.weekly_km` still claims 14.6 → 37.9. 📐 **135 of 189 swept base-builds overstate delivered
+volume by >5% and 30 flatline entirely** — one claims 56.9 km/week and delivers 9. Found by `/code-review`, not by me.
+
+⚠️ **AND MY RATIFYING MEASUREMENT WAS ONE-SIDED, WHICH IS THE TRANSFERABLE PART.** I reported *"2,965 weekday sessions
+became cappable, 0 over the stated cap"* — trivially true once the cap has shrunk everything. **I measured COMPLIANCE
+with the bound and never measured whether the plan still built the runner.** `measure:fitness` exists for exactly that
+question and base-build is outside its corpus.
+
+🏃 **THE BOARD QUESTION, which is why this is no longer ⚙️ NO BOARD:** §116's ramp target and §82/§122's weekday cap
+are **incompatible** for a 3-day runner on a 30-minute budget — 3 × 30 min cannot reach 18 km/week, let alone 37.9. Three
+candidate answers, and picking one is a ruling:
+1. **Declare the shortfall and flatten** — honest, and ships eleven weeks of no progression.
+2. **Exempt the ramp from the cap** — keeps the duration (so the cap is at least *checkable*) and leaves the defect.
+3. **Do not OFFER the on-ramp when the budget cannot carry its target** — a fourth `assessOnRamp` outcome beside
+   `below_floor` and `insufficient_runway`. **Most likely correct**, and it is the one the invariants point at: make
+   `weekly_km` state what is placed and `INV-PLAN-ONRAMP-CURVE-CLIMBS` fires on a budget-flattened ramp by itself.
+
+🔻 **Do not rebuild this without the ruling.** The revert is in `9a608017..HEAD`; the measurement scripts are the
+ones quoted above. ⚠️ Reaching the 4 live plans is a separate question again: an engine fix reaches no existing plan.
 
 ---
 

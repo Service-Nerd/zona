@@ -3041,3 +3041,23 @@ ruling changes what the engine prescribes to nobody.
 grid holds no `days_cannot_train`, leaves `acceptBaseBuild` unset, and sets `longest_recent_run_km >= 5`
 so nothing is ever refused. It proves no collateral damage to the race-plan path and is structurally
 blind to all four amendments.
+
+🔴 **§122 AMENDMENT 2 WAS RATIFIED, BUILT, AND VACATED THE SAME DAY — the `TAPER-OVER-PEAK-01` precedent, second
+instance.** `BASEBUILD-DURATION-01`'s diagnosis was right: the base-build ramp carries no `duration_mins`, §122 permits
+that only where no pace is derivable, and a benchmark derives one. The fix threads the pace — and in doing so makes
+`max_weekday_mins` bind to the ramp **for the first time**, at which point the ramp FLATLINES. At a 45-minute cap it
+delivers **13.5 km/week for eleven of fifteen weeks** against a target of 37.9, while `week.weekly_km` still claims
+14.6 → 37.9. 📐 **135 of 189 swept base-builds overstate delivered volume by >5%, 30 flatline entirely**, one
+claiming 56.9 km/week and delivering 9.
+
+⚠️ **THE RATIFYING MEASUREMENT WAS ONE-SIDED AND THAT IS THE LESSON.** The submission read *"2,965 weekday sessions
+became cappable, 0 over the stated cap"* — trivially true once the cap has shrunk everything. **Compliance with a
+safety bound was measured; whether the plan still built the runner was not.** `measure:fitness` answers exactly that
+question and base-build sits outside its corpus, so nothing standing would have caught it either.
+
+🏃 **RE-ROUTED TO THIS BOARD, from ⚙️ NO BOARD.** §116's ramp target and §82/§122's weekday cap are **incompatible**
+for a 3-day runner on a 30-minute budget, and reconciling them is a ruling: declare the shortfall and flatten, exempt
+the ramp from the cap, or **refuse to OFFER the on-ramp when the stated budget cannot carry its target** (a fourth
+`assessOnRamp` outcome, and the one the invariants point at). The item is re-filed with all three options and the
+measurements. **The amendment is removed from `CoachingPrinciples.md` rather than left standing over code that no
+longer exists.**

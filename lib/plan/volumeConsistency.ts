@@ -20,6 +20,8 @@
 // ran, and §2's 10% ramp would then build from a false base. **The wizard asks again. It
 // does not silently pick a winner.**
 
+import { formatDistance, type DistanceUnits } from '@/lib/format'
+
 /** The one predicate. `null` when the pair is consistent or cannot be judged. */
 export function volumePairProblem(
   weeklyKm: number | null | undefined,
@@ -34,11 +36,22 @@ export function volumePairProblem(
 /**
  * What the runner reads on the step. One sentence, states the two numbers back, no blame.
  *
+ * 🔴 `units` IS REQUIRED, AND THE FIRST CUT WELDED `km` TO THE INTERPOLATED VALUES.
+ * `lib/hardcodedUnits.test.ts` (PREF-SWEEP-01) caught it and the suite went RED — a
+ * miles-preferring runner would have read kilometres on a step that exists to make two
+ * numbers agree. ADR-015 / INV-PREF-001: `lib/format.ts` is the sole owner of every
+ * distance string, and the caller passes the runner's preference in.
+ *
  * ⚠️ No em dash: a sentence the runner reads (founder, 2026-09-22).
  * ⚠️ It names the LEVER, per §44's habit: the runner can fix either number, and the copy
  * does not tell them which one was wrong, because we do not know.
  */
-export function volumePairMessage(weeklyKm: number, longestRunKm: number): string {
-  return `A single run of ${longestRunKm} km will not fit inside a ${weeklyKm} km week. `
-    + 'Adjust either number.'
+export function volumePairMessage(
+  weeklyKm: number,
+  longestRunKm: number,
+  units: DistanceUnits,
+): string {
+  const longest = formatDistance(longestRunKm, units, { exact: true })
+  const weekly = formatDistance(weeklyKm, units, { exact: true })
+  return `A single run of ${longest} will not fit inside a ${weekly} week. Adjust either number.`
 }

@@ -19,6 +19,7 @@
 // `sat+sun` — gap 1 — and I reported "150 of 150 two-day plans" when the real answer is
 // 7 of 21 PLACEMENTS. Varying the day COUNT is not reaching the day-PLACEMENT axis.
 import { describe, it, expect } from 'vitest'
+import { readFileSync } from 'fs'
 import { canHoldSpacedQuality, dayGap, DAY_ORDER, type Day } from './days'
 import { GENERATION_CONFIG } from './generationConfig'
 import { runEngine } from './engine'
@@ -178,5 +179,62 @@ describe('§110 Am. 3 end to end — the floor goes quiet ONLY on the geometry',
     const adj = (planFor(mk()).meta.rule_adjustments ?? [])
       .filter(a => a.rule.includes('§110 Am. 3'))
     expect(adj).toEqual([])
+  })
+})
+
+// ── The two code-review findings on §110 Am. 3, each with its own arm ────────
+describe('§110 Am. 3 — the exemption reaches BOTH quality floors, and reads the owner', () => {
+  const planStart2 = (() => {
+    const d = new Date(); d.setDate(d.getDate() + ((8 - d.getDay()) % 7 || 7))
+    return d.toISOString().slice(0, 10)
+  })()
+  const raceIn2 = (w: number) =>
+    new Date(Date.parse(`${planStart2}T00:00:00Z`) + (w * 7 - 1) * 864e5).toISOString().slice(0, 10)
+
+  // 🔴 THE FIRST CUT ADDED THE EXEMPTION TO `INV-PLAN-QUALITY-NOT-ZERO` ONLY.
+  // `INV-PLAN-TIME-TARGET-QUALITY-FLOOR` sits twelve lines below it and fired at ERROR on
+  // the identical geometry — and under `NODE_ENV=test` `generateRulePlan` THROWS on an
+  // error violation. So the exemption I had just ratified turned a silent zero into a
+  // CRASH for the time-target half of the same cohort. Two floors, one geometry.
+  it.each(['finish', 'time_target'] as const)(
+    'a %s plan on adjacent days validates clean, so neither floor fires', goal => {
+      const input = {
+        race_distance_km: 10, race_date: raceIn2(16), goal,
+        user_declared_level: 'intermediate', days_available: 2, current_weekly_km: 30,
+        longest_recent_run_km: 12, age: 38, training_age: '3-5yr',
+        recent_quality_training: 'regular', injury_history: [], acknowledged_prep_warning: true,
+        days_cannot_train: ['mon', 'tue', 'wed', 'thu', 'fri'],
+        ...(goal === 'time_target' ? { target_time: '00:52:00' } : {}),
+      } as unknown as GeneratorInput
+      const r = runEngine({ input, tier: 'paid', displayUnits: 'km', planStart: planStart2, today: planStart2 })
+      expect(r.kind).toBe('plan')
+      const plan = (r as Extract<typeof r, { kind: 'plan' }>).plan
+      const errs = (validatePlan(plan, input) ?? []).filter(v => v.severity === 'error')
+      expect(errs.map(e => e.code)).toEqual([])
+    },
+  )
+
+  it('finds the long day through isLongRun, not a raw role read', () => {
+    // A legacy plan carries `type: 'long'` with no `role` (INV-CLASS-002 stamps the role
+    // only from 2026-08), so a raw `role === 'long_run'` read skipped the exemption on
+    // exactly the oldest plans. Both the engine's record and the invariant now use the
+    // owner, and neither names the raw field.
+    const strip = (f: string) => readFileSync(f, 'utf8')
+      .replace(/\/\*[\s\S]*?\*\//g, m => m.replace(/[^\n]/g, ' '))
+      .replace(/\/\/[^\n]*/g, m => ' '.repeat(m.length))
+    for (const f of ['lib/plan/invariants.ts', 'lib/plan/ruleEngine.ts']) {
+      const src = strip(f)
+      expect(src, f).not.toMatch(/role === 'long_run'\)\?\.\[0\]/)
+    }
+    expect(strip('lib/plan/invariants.ts')).toMatch(/isLongRun\(sn as Session\)\)\?\.\[0\]/)
+    expect(strip('lib/plan/ruleEngine.ts')).toMatch(/isLongRun\(sn as Session\)\)\?\.\[0\]/)
+  })
+
+  it('judges the geometry on RACE weeks only, never a prepended foundation week', () => {
+    // A foundation block picks its own long day under §57/§116; letting week −2 decide the
+    // race plan's geometry is ADR-020's construction boundary leaking into a checker.
+    const strip = (f: string) => readFileSync(f, 'utf8').replace(/\/\/[^\n]*/g, '')
+    expect(strip('lib/plan/invariants.ts')).toMatch(/\.filter\(w => w\.n >= 1\)\s*\n\s*\.flatMap\(w => Object\.entries/)
+    expect(strip('lib/plan/ruleEngine.ts')).toMatch(/\.filter\(w => w\.n >= 1\)\s*\n\s*\.flatMap\(w => Object\.entries/)
   })
 })

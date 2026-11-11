@@ -3,13 +3,6 @@ import { generateFoundationBlock } from './foundationBlock'
 import { GENERATION_CONFIG } from './generationConfig'
 import { effectiveStartKm } from './startVolume'
 import { buildHRZonesWithFallback } from './hrZones'
-// §122 Amendment 2 — the engine's OWN two pace owners, called rather than copied.
-// `vdotFor` is the single owner of "what VDOT does this benchmark give, discounted by
-// §10", and `buildPaceFromVDOT` the single owner of "what bands does that VDOT mean".
-// The race plan reaches its easy pace through exactly these two, so this is the owner
-// being used, not a second producer of it (the distinction `DELOAD-OWNER-01` turns on).
-import { vdotFor } from './ruleEngine'
-import { buildPaceFromVDOT } from './paceBands'
 
 /**
  * P-16 — the base-build on-ramp. §116.
@@ -238,27 +231,9 @@ export function generateBaseBuildPlan(
   // conversation, slow down."* — is UNCHANGED and stays FIRST. The talk test governs; the
   // number is the backstop.
   //
-  // 🔴 §122 AMENDMENT 2 (Coaching Board 2026-11-11, BASEBUILD-DURATION-01) — THIS USED TO
-  // READ "`paceTarget` stays null, deliberately. There is no finished plan to read a pace
-  // from here", and the sentence was true while the conclusion was wrong.
-  //
-  // §122 permits a missing duration only **where no pace is derivable**. A finished plan
-  // is one way to derive one; a BENCHMARK is another, and it is present at this point in
-  // generation. Measured 2026-11-11 on live data: **4 stored base-build plans, 51/51,
-  // 12/12, 30/30 and 7/7 sessions carrying no `duration_mins`** — and TWO of them carry a
-  // stated 45-minute weekday cap that therefore never applied, which is precisely the
-  // defect §122 was ratified to close, reopened by its own second caller.
-  //
-  // ⚠️ NULL STILL MEANS DECLINE. No benchmark, or a benchmark that yields no finite VDOT,
-  // and every field below stays absent exactly as before. §122's own words: "a foundation
-  // block sized against a guessed pace is worse than one sized against none."
+  // ⚠️ `paceTarget` stays null, deliberately. There is no finished plan to read a pace
+  // from here — the same reason the ramp's sessions carry no `duration_mins` (§122, below).
   const hr = buildHRZonesWithFallback(input)
-  const { vdot, vdotRaw } = vdotFor(input)
-  const paceGuide = vdot != null && vdotRaw != null ? buildPaceFromVDOT(vdot, vdotRaw) : null
-  const easyPaceMinPerKm =
-    paceGuide && Number.isFinite(paceGuide.minPerKmEasy) && paceGuide.minPerKmEasy > 0
-      ? paceGuide.minPerKmEasy
-      : null
   // 🔴 AMENDMENT 2, AND THE SCHEMA CAUGHT ME NOT IMPLEMENTING IT. The first cut wrote
   // these fields unconditionally. With no `age` and no `max_hr` there is nothing for
   // Tanaka to work from, so the ceiling comes back non-finite and the plan failed
@@ -274,11 +249,7 @@ export function generateBaseBuildPlan(
     && Number.isFinite(hr.derived_max) && hr.derived_max > 0
 
   const { weeks: built } = generateFoundationBlock({
-    easyTargets: {
-      // The band the runner READS, from the same guide that sizes the week below.
-      paceTarget: easyPaceMinPerKm != null ? paceGuide!.easyPaceStr : null,
-      hrTarget: hrDerivable ? hr.zones.easyHR : null,
-    },
+    easyTargets: { paceTarget: null, hrTarget: hrDerivable ? hr.zones.easyHR : null },
     input,
     // The block generator dates weeks BACKWARDS from a plan start, so handing
     // it the start of the race plan would date the ramp into the past. The
@@ -287,14 +258,11 @@ export function generateBaseBuildPlan(
     today: planStart,
     curve: 'ramp',
     rampWeeklyKm: weeklyKm,
-    // §122 Amendment 2 — the SECOND caller now passes what the first one does.
-    //
-    // ⚠️ THE PACE IS THE ONLY MISSING PIECE. `generateFoundationBlock` already reads
-    // `input.day_budgets` and `input.max_weekday_mins` off the input it is handed, so the
-    // cap and the overrun note start binding the moment a duration exists. That pairing is
-    // the whole of §122 — a budget with no duration is a cap that cannot bind — and the
-    // ramp was the half that shipped without it.
-    easyPaceMinPerKm,
+    // §122 — the SECOND caller of generateFoundationBlock, and the one I missed on the
+    // first pass: the consumer check covered readers of `duration_mins` and not callers of
+    // the function whose signature widened. There is no finished plan to read a pace from
+    // at this point in generation, so the ramp's sessions carry no duration — which the
+    // §122 invariant permits, because it only requires one where a pace is derivable.
   })
 
   // Restamp: a standalone plan counts from week 1, and carries its own phase.

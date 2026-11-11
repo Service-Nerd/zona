@@ -1023,6 +1023,20 @@ export default function GeneratePlanScreen({
     const ageYears      = birthYear !== null ? new Date().getFullYear() - birthYear : 30
     const weeklyKmVal   = weeklyKm   ?? GENERATION_CONFIG.WIZARD_VOLUME_RULER.WEEKLY_KM_ANCHOR
     const longestRunVal = longestRun ?? GENERATION_CONFIG.WIZARD_VOLUME_RULER.LONGEST_RUN_KM_ANCHOR
+
+    // 🔴 §18 Am. 3 — THE GATE IS ALSO HERE, AND THE FIRST CUT HAD IT ONLY IN
+    // `canProceed()`. Code review found two ways past that: a restored draft sets
+    // `appStep` from sessionStorage, so a runner resuming past `longest-run` never
+    // re-evaluates the step; and the two lines above substitute RULER ANCHORS for nulls,
+    // so the pair that gets posted is not always the pair the step saw. `inputs.ts` only
+    // range-checks each field, so the server does not refuse the combination either.
+    // `GATE-EVERY-EXIT-FROM-A-STEP` means every exit, and submit is one.
+    if (volumePairProblem(weeklyKmVal, longestRunVal)) {
+      // `setAppStep('generating')` already ran above, so returning the runner to the step
+      // IS the whole action: the step renders the reason and `canProceed` holds them there.
+      setAppStep('longest-run')
+      return
+    }
     const targetTimeStr = goal === 'time_target' && (targetHours > 0 || targetMins > 0)
       // TIME-INPUT-SECONDS-01 — the runner's own seconds, not a fabricated :00.
       ? `${targetHours}:${String(targetMins).padStart(2, '0')}:${String(targetSecs).padStart(2, '0')}` : undefined
@@ -2066,7 +2080,7 @@ export default function GeneratePlanScreen({
                 all. Same `<FieldReadback alert>` the benchmark step uses for its blocking
                 reason, so this introduces no pattern. */}
             {volumePairProblem(weeklyKm, longestRun) && (
-              <FieldReadback alert>{volumePairMessage(weeklyKm as number, longestRun as number)}</FieldReadback>
+              <FieldReadback alert>{volumePairMessage(weeklyKm as number, longestRun as number, preferredUnits)}</FieldReadback>
             )}
           </div>
         )
