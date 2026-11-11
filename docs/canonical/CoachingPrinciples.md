@@ -11468,6 +11468,87 @@ see a page. Enforced on the marketing surface instead by `lib/marketing/stagedPa
 **marathon** block and is **refused** for a **half**, at every runway from 12 to 30 weeks. §117 Amendment 5's logic
 — readiness to run is answered by the longest run — applies identically to both distances. Returned to this board
 as its own item (`STAGED-HM-DOOR-01`).
+### §116 Amendment 12 — the ramp is sized in the runner's own time, and states what it placed (Coaching Board 2026-11-11, BASEBUILD-DURATION-01)
+
+**Principle.** A base-build block is sized against the runner's **own easy pace**, so §82's
+weekday cap can bind on it; it **prefers days the cap does not govern** when spacing allows; and
+every week **states the volume it actually placed**, never the volume the curve intended.
+
+**Three things were wrong and they compounded.**
+
+1. **No duration.** `generateBaseBuildOnRamp` passed `paceTarget: null`, so every session carried
+   `distance_km` and no `duration_mins` — and `applyWeekdayMinsCap`,
+   `INV-PLAN-MAX-WEEKDAY-MINS` and the overrun note all skip on `!s.duration_mins`. §122 permits
+   that **only where no pace is derivable**, and a benchmark derives one.
+   📐 **2,406 of 5,202 base-build weekday sessions (46.3%) exceeded the runner's stated cap,
+   median +53%, worst 188 minutes against a stated 30.** ⚠️ 46.3% is within a point of §122's
+   original finding for the race-plan foundation (47.6%): **the same defect, the same magnitude,
+   in the second caller.**
+2. **The spread was budget-blind.** The ramp placed every session Mon/Wed/Fri and **nothing at
+   the weekend**, so 100% of a block sat inside `max_weekday_mins` while the runner's Saturday
+   was free. Not neglect: Mon/Wed/Fri is a maximal spread and `spreadDays` optimises **spacing**.
+   Two capped weekdays and one free Saturday are not equivalent and it treated them as equivalent.
+3. **The curve was budget-blind.** `onRampCurve(startKm, weeks)` takes a start and a week count
+   and nothing else, so once the cap could bind, `week.weekly_km` went on reporting the uncapped
+   line. 📐 **A 45-minute cap delivered 13.5 km/week for eleven of fifteen weeks against a stored
+   figure climbing 14.6 → 37.9**, and `base_build_target_km` promised 37.9.
+
+🔴 **THAT THIRD ONE IS ADR-022's DIVERGENCE, IN THE RAMP, AND IT IS WHY THE FIRST BUILD OF THIS
+AMENDMENT SHIPPED A FLAT RAMP UNDER A GREEN SUITE.** `INV-PLAN-ONRAMP-CURVE-CLIMBS` reads
+`weekly_km`; the runner reads the placed sessions; every gate read the records. **135 of 189
+swept base-builds overstated delivered volume by more than 5% and 30 flatlined entirely**, one
+claiming 56.9 km/week and delivering 9 — and nothing could see any of it.
+
+**🩹 Willy's binding condition, discharged by measurement.** §118's get-running plan **reuses
+`generateBaseBuildPlan` wholesale** ("one week-builder, one curve owner, one validator"), so it
+carried the identical defect: **180 plans, 8,232 sessions with no duration, 1,569 of 7,236
+weekday sessions (21.7%) over the stated cap, median +36%, worst +318% against a stated 30.**
+One fix reached both. **After: 0 and 0.0%.**
+
+**📐 After, measured across 144 base-build plans:**
+
+| | before | after |
+|---|---|---|
+| sessions with no `duration_mins` | all | **0** |
+| weekday sessions over the stated cap | **46.3%** | **0.0%** |
+| stored `weekly_km` overstating placed by >5% | 135 of 189 | **0** |
+| blocks that climb (§116 Am. 8) | — | **144 of 144, 0 flat** |
+
+**⚠️ THE COST, STATED RATHER THAN BURIED: 135 of 144 endpoints (93.8%) are REDUCED, median
+−21%, worst −56%.** The block now ends lower because it no longer asks for time the runner said
+they did not have. 🔑 **And it costs nobody their route back in: 0 of 288 lose §117's 9 km/week
+door — 83.3% cleared it before and 83.3% clear it after, identically.** That is the number that
+decides whether this is correct, and it is why the reduction is acceptable: §118's purpose is
+preserved exactly.
+
+**⚠️ ONRAMP-SPACING-01 (R1, Sims + Willy) IS PRESERVED, NOT TRADED.** `spreadDays` scores
+`pairs * 10 + miss + early`, so spacing outweighs the budget preference tenfold and the budget
+only breaks a **tie**. Measured at every day count 2–5: **the adjacent-pair count is unchanged**,
+and one weekend day is taken up at 3 days (mon/wed/fri → mon/wed/sat), two at 4–5. **Ramp only** —
+a race-plan foundation block keeps its placement, which ONRAMP-SPACING-01 explicitly left unruled.
+
+**🔴 AND TWO PARTS OF THIS BOARD'S OWN SUBMISSION WERE WRONG, FOUND IN ANALYSIS BEFORE ANY CODE.**
+The sitting ruled that cohort (b) — 72.2% — should be *"routed to §118's get-running plan"*, and
+that cohort (c) should be refused. **Neither was needed.** `engine.ts` already routes
+`acceptBaseBuild` straight to `generateGetRunningPlan`, which sets `targetKm: endsAtKm` — so the
+target **is** the curve's own endpoint and is reachable by construction. Every probe in the
+submission passed `acceptBaseBuild: true`, so **every plan measured was already a get-running
+plan**, and the "unreachable target" was the submission comparing capped delivery against the
+plan's own uncapped promise. **No routing branch and no new refusal were built.** §118's own text
+had the answer already: *"the target is DERIVED FROM THE RUNWAY, not fixed"* — it must also be
+derived from the budget, which is what clause 3 above does.
+
+**Numeric.** `ONRAMP_DELIVERED_DRIFT_TOLERANCE_PCT` (2). ⚠️ Not zero, and for rounding rather
+than tolerance: the curve is floored to 1dp per week while the placed total sums 1dp sessions, so
+an exact match is not always arithmetically available. 2% catches the measured failure (64% apart)
+by a wide margin and never fires on rounding — 0 of 144 exceed it. No other new numeric: the pace
+comes from `vdotFor` + `buildPaceFromVDOT` and the budget from §82's own `weekdayBudgetFor`.
+
+**Enforcement.** `INV-PLAN-ONRAMP-DELIVERED-MATCHES` (error, `baseBuildValidate.ts`) — a week may
+not state a volume its sessions do not place. 🔴 **It caught an inconsistent FIXTURE on its first
+run**: `reshapeValidatorKind.test.ts`'s base-build plan declared `weekly_km` 20 → 30 while its
+sessions always totalled 20 km, and its docstring said *"as production stores one"*. Falsified
+against the real defect: fires on weeks 2–6 of the flat ramp, silent on an honest block.
 
 ## 117. The finish-goal run-walk marathon — a lower target, not a looser rule
 

@@ -3061,3 +3061,45 @@ the ramp from the cap, or **refuse to OFFER the on-ramp when the stated budget c
 `assessOnRamp` outcome, and the one the invariants point at). The item is re-filed with all three options and the
 measurements. **The amendment is removed from `CoachingPrinciples.md` rather than left standing over code that no
 longer exists.**
+
+---
+
+## 2026-11-11 — `BASEBUILD-DURATION-01` · §116 Amendment 12 · **CORRECT WITH AMENDMENT** (second sitting; the first was vacated the same day)
+
+**Convened** on the founder's instruction after §122 Am. 2 was built and vacated this morning, and the item
+re-routed ⚙️ NO BOARD → 🏃 COACHING.
+
+**Conflict scan.** §116 Am. 1–11, §118 + 3, §82 + Am. 1/2, §122 + Am. 1, §111 Am. 2/4, §117, §2, §3, §45, §9,
+§52, ONRAMP-SPACING-01 (R1), §110 Am. 3. **Two existing amendments decided most of it before any seat spoke:**
+§116 **Am. 8** (*"if they never return it must still be a good eleven weeks"*) forbids a flat ramp outright, and
+§118's own text — *"the target is DERIVED FROM THE RUNWAY, not fixed"* — is the answer to the target question,
+needing only to be extended to the budget.
+
+**Ruling.** The ramp is sized against the runner's easy pace so §82's cap can bind; prefers days the cap does not
+govern when spacing allows; and every week states the volume it **placed**, not the volume the curve intended.
+
+🩹 **Willy's binding condition, discharged by measurement.** §118's get-running plan reuses
+`generateBaseBuildPlan` wholesale, so it carried the identical defect — **180 plans, 8,232 sessions with no
+duration, 21.7% of weekday sessions over the stated cap, worst +318%**. One fix reached both; after, 0 and 0.0%.
+
+⚕️ **Sims's ONRAMP-SPACING-01 preserved, not traded.** `spreadDays` scores `pairs * 10 + miss + early`, so the
+budget only breaks a tie. **Adjacent-pair count unchanged at every day count 2–5.**
+
+**⚠️ The cost, declared: 135 of 144 endpoints reduced, median −21%, worst −56%** — and **0 of 288 lose §117's
+9 km/week door**, 83.3% clearing it before and after. That is why the reduction is correct rather than merely
+honest: §118's purpose is preserved exactly.
+
+🔴 **AND TWO PARTS OF THIS BOARD'S OWN SUBMISSION WERE WRONG, FOUND IN ANALYSIS BEFORE ANY CODE.** The sitting
+ruled cohort (b) — 72.2% — should be *"routed to §118's get-running plan"* and cohort (c) refused. **Neither was
+needed:** `engine.ts:329` already routes `acceptBaseBuild` to `generateGetRunningPlan`, which sets
+`targetKm: endsAtKm`, so the target **is** the curve's endpoint and is reachable by construction. **Every probe
+in the submission passed `acceptBaseBuild: true`, so every plan measured was already a get-running plan**, and
+the "unreachable target" was the submission comparing capped delivery against the plan's own uncapped promise.
+No routing branch and no new refusal were built. **Running the board does not exempt the submission from
+re-measurement.**
+
+**Artifacts.** Principle: §116 Amendment 12. Numeric: `ONRAMP_DELIVERED_DRIFT_TOLERANCE_PCT` (2). Invariant:
+`INV-PLAN-ONRAMP-DELIVERED-MATCHES` (error) + its `plan-invariants.md` row — 168 invariants, falsified against
+the real flat ramp (fires on weeks 2–6, silent on an honest block) and it **caught an inconsistent fixture on
+its first run**. `review:coaching` 7 of 7, no measured rate moved. `verify:parity`: 109 of 6,210 changed, **every
+one a BASE_BUILD outcome**, 0 at 5 km and 10 km — an intended, contained prescription change.

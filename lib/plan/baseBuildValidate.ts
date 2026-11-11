@@ -53,6 +53,52 @@ export function validateBaseBuildBlock(weeks: Week[], startKm: number,
     }
   }
 
+  // ── §116 Amendment 12 — THE STORED WEEK MUST BE THE WEEK THAT WAS PLACED ───
+  //
+  // 🔴 THIS IS THE CHECK THAT WOULD HAVE CAUGHT THE FIRST BUILD OF THIS AMENDMENT.
+  // The climbs arm below reads `w.weekly_km`, and `onRampCurve` is budget-BLIND — it
+  // takes a start and a week count and nothing else. So when §122's duration finally let
+  // §82's weekday cap bind, the placed sessions shrank while `weekly_km` kept reporting
+  // the uncapped curve: measured 13.5 km/week delivered for eleven of fifteen weeks
+  // against a stored figure climbing 14.6 → 37.9. **Every arm here passed.** A ramp that
+  // flatlines is what §116 Amendment 8 forbids ("if they never return it must still be a
+  // good eleven weeks"), and nothing could see it.
+  //
+  // ⚠️ ADR-022's DIVERGENCE, IN THE RAMP: the runner reads the placed sessions, the
+  // records state the curve, and every gate read the records. This closes it by refusing
+  // to let the two differ at all, rather than by adding a second arm on the delivered
+  // side that could drift from this one.
+  //
+  // ⚠️ `sessionKmSelfPaced`, which this file already imports: a base-build session is
+  // distance-anchored where a pace was derivable and duration-anchored where it was not,
+  // and `?? 0` on a duration-anchored session is the SESSION-KM-02 defect. A session it
+  // cannot measure returns null and is skipped rather than counted as zero.
+  for (const w of ramp) {
+    const stored = w.weekly_km ?? 0
+    if (stored <= 0) continue
+    let placed = 0, measurable = 0
+    for (const s of runsOf(w)) {
+      const km = sessionKmSelfPaced(s)
+      if (km == null) continue
+      placed += km; measurable++
+    }
+    if (!measurable) continue
+    const drift = Math.abs(stored - placed) / stored
+    if (drift > GENERATION_CONFIG.ONRAMP_DELIVERED_DRIFT_TOLERANCE_PCT / 100) {
+      v.push({
+        code: 'INV-PLAN-ONRAMP-DELIVERED-MATCHES',
+        principle_ref: 'CoachingPrinciples §116 Amendment 12 (§82, ADR-022)',
+        severity: 'error',
+        week: w.n,
+        message: `Base-build W${w.n} states ${stored}km but its sessions place ${placed.toFixed(1)}km (${(drift * 100).toFixed(0)}% apart). `
+          + `The curve is budget-blind, so once §82's weekday cap binds the stored figure becomes a promise the block does not keep — `
+          + `and every other arm here reads the stored figure.`,
+        actual: `${placed.toFixed(1)}km placed`,
+        expected: `within ${GENERATION_CONFIG.ONRAMP_DELIVERED_DRIFT_TOLERANCE_PCT}% of ${stored}km`,
+      })
+    }
+  }
+
   // ── Amendment 1 (Willy) — the curve climbs ─────────────────────────────────
   //
   // ⚠️ §57's invariant checks a CEILING and a flat block never breaches a
