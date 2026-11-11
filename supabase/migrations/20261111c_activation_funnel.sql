@@ -114,8 +114,13 @@ select
              where v.user_id = m.user_id
                and v.live_from <  s.trial_started_at + interval '14 days'
                and v.live_to   >  s.trial_started_at
-               and v.first_week <= (s.trial_started_at + interval '14 days')::date
-               and v.last_day   >= s.trial_started_at::date)
+               -- ⚠️ THE TWO WINDOWS MUST COINCIDE, not merely both be true. A version live only
+               -- on trial days 1–3 whose weeks begin on day 10 passes "live during the trial" and
+               -- "calendar overlaps the trial" independently while no session was ever matchable
+               -- WHILE IT WAS LIVE. Intersect first: the plan must overlap
+               -- [live_from, live_to) ∩ [trial_start, trial_end).
+               and v.first_week <= least(v.live_to, s.trial_started_at + interval '14 days')::date
+               and v.last_day   >= greatest(v.live_from, s.trial_started_at)::date)
   end                                             as trainable_week_in_trial,
 
   -- The earliest start any live-in-trial version offered, so the SIZE of the gap is readable.
@@ -128,11 +133,17 @@ select
                                                   as first_activity_at,
   (select count(*) from strava_activities a where a.user_id = m.user_id)
                                                   as activities_total,
-  (select count(*) from strava_activities a
-     where a.user_id = m.user_id and s.trial_started_at is not null
-       and a.start_date >= s.trial_started_at
-       and a.start_date <  s.trial_started_at + interval '14 days')
-                                                  as activities_in_trial,
+  -- ⚠️ NULL FOR A NON-TRIALIST, like the two booleans above. `0` reads as "had a trial and did
+  -- nothing in it", so `count(*) filter (where reads_in_trial = 0)` — the view's headline — would
+  -- carry every non-trialist in its numerator. Columns about one question must not disagree about
+  -- absence; the first cut made the booleans NULL and left these two at 0, which is the same
+  -- defect one line down from its own fix.
+  case when s.trial_started_at is null then null else
+    (select count(*) from strava_activities a
+       where a.user_id = m.user_id
+         and a.start_date >= s.trial_started_at
+         and a.start_date <  s.trial_started_at + interval '14 days')
+  end                                             as activities_in_trial,
 
   (select min(r.created_at) from run_analysis r
      where r.user_id = m.user_id and r.superseded_at is null)
@@ -140,11 +151,12 @@ select
   (select count(*) from run_analysis r
      where r.user_id = m.user_id and r.superseded_at is null)
                                                   as reads_total,
-  (select count(*) from run_analysis r
-     where r.user_id = m.user_id and r.superseded_at is null and s.trial_started_at is not null
-       and r.created_at >= s.trial_started_at
-       and r.created_at <  s.trial_started_at + interval '14 days')
-                                                  as reads_in_trial,
+  case when s.trial_started_at is null then null else
+    (select count(*) from run_analysis r
+       where r.user_id = m.user_id and r.superseded_at is null
+         and r.created_at >= s.trial_started_at
+         and r.created_at <  s.trial_started_at + interval '14 days')
+  end                                             as reads_in_trial,
 
   (select min(e.created_at) from analytics_events e
      where e.user_id = m.user_id and e.event = 'upgrade_view')

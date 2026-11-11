@@ -139,12 +139,25 @@ describe('ACT-FUNNEL-01 — v_activation_funnel', () => {
   it('answers NULL, not false, for a runner who never started a trial', () => {
     // `false` means "had no plan during their trial"; they had no trial. Three columns about one
     // question must not disagree about absence — `earliest_plan_start_in_trial` is already NULL.
-    for (const col of ['had_live_plan_in_trial', 'trainable_week_in_trial']) {
+    // 🔴 THE FIRST CUT OF THIS ARM USED A FIXED 600-CHARACTER LOOKBACK — the exact anti-pattern
+    // this file warns about twice, three arms above and three arms below, written minutes after
+    // the warning. Code review proved it BOTH WAYS: dropping the guard from
+    // `trainable_week_in_trial` alone left the arm GREEN (the window reached back and matched its
+    // sibling's guard), and two more correct predicate lines would have turned it RED on correct
+    // SQL. **Bound from the column's own guard and prove nothing intervened.**
+    for (const col of ['had_live_plan_in_trial', 'trainable_week_in_trial',
+                       'activities_in_trial', 'reads_in_trial']) {
       const label = sql.search(new RegExp(`as\\s+${col}`, 'i'))
       expect(label, `${col} is gone`).toBeGreaterThan(-1)
-      const region = sql.slice(Math.max(0, label - 600), label)
-      expect(region, `${col} returns false for a non-trialist`)
-        .toMatch(/case\s+when\s+s\.trial_started_at\s+is\s+null\s+then\s+null/i)
+      const before = sql.slice(0, label)
+      const guardRe = /case\s+when\s+s\.trial_started_at\s+is\s+null\s+then\s+null(?![\s\S]*case\s+when\s+s\.trial_started_at\s+is\s+null\s+then\s+null)/i
+      const guardIdx = before.search(guardRe)
+      expect(guardIdx, `${col} has no absence guard — it answers 0/false for a non-trialist`)
+        .toBeGreaterThan(-1)
+      // The guard must be THIS column's: no other column may terminate between them.
+      const between = sql.slice(guardIdx, label)
+      expect(between, `${col}'s nearest guard belongs to another column`)
+        .not.toMatch(/\bas\s+[a-z_]+\s*,/i)
     }
   })
 
@@ -163,6 +176,19 @@ describe('ACT-FUNNEL-01 — v_activation_funnel', () => {
     expect(raw, 'the two conditions that actually trigger an archive must be named')
       .toMatch(/isRaceIdentityChange/)
     expect(raw).toMatch(/calendarChangedWeeks/)
+  })
+
+  it('intersects the live window with the trial before testing the calendar', () => {
+    // A version live only on trial days 1–3 whose weeks begin on day 10 satisfies "live during the
+    // trial" and "calendar overlaps the trial" independently, while no session was matchable WHILE
+    // IT WAS LIVE. Measured: 13 either way today — latent, and in the direction the previous fix
+    // was already tightening.
+    const label = sql.search(/as\s+trainable_week_in_trial/i)
+    const before = sql.slice(0, label)
+    const openIdx = before.search(/exists\s*\(\s*select\s+1(?![\s\S]*exists\s*\(\s*select\s+1)/i)
+    const expr = sql.slice(openIdx, label)
+    expect(expr, 'the windows are tested independently again').toMatch(/least\s*\(\s*v\.live_to/i)
+    expect(expr).toMatch(/greatest\s*\(\s*v\.live_from/i)
   })
 
   it('stays off the client — it exposes user ids', () => {
