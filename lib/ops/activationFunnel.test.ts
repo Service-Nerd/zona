@@ -27,13 +27,13 @@ describe('ACT-FUNNEL-01 — v_activation_funnel', () => {
     expect(sql, 're-deriving the exclusion defeats v_metric_users').not.toMatch(/is_admin/)
   })
 
-  it('carries plan_starts_after_trial — the column the whole item exists for', () => {
+  it('carries trainable_week_in_trial — the column the whole item exists for', () => {
     // 📐 Measured 2026-11-11: 19 of 29 trialists with a plan (65.5%) have a plan whose first week
     // begins AFTER their trial ends, worst gap 242 days. A read needs a matched session, so for
     // those runners a read during the trial is impossible. Without this column the funnel would
     // show the drop and not the reason.
-    expect(sql).toMatch(/as\s+plan_starts_after_trial/i)
-    expect(sql).toMatch(/plan_first_week/i)
+    expect(sql).toMatch(/as\s+trainable_week_in_trial/i)
+    expect(sql).toMatch(/as\s+earliest_plan_start_in_trial/i)
   })
 
   it('uses the SAME trial length as the tier resolver', () => {
@@ -51,22 +51,51 @@ describe('ACT-FUNNEL-01 — v_activation_funnel', () => {
     }
   })
 
-  it('defines "run read" the same way lib/ops/runRead.ts does', () => {
+  it('defines "run read" the same way lib/ops/runRead.ts does — EVERY read, not most of them', () => {
     // One definition, two languages. A superseded row belongs to a replaced plan week and would
     // report a read the runner can no longer open.
-    expect(sql).toMatch(/from\s+run_analysis\s+r/i)
-    expect(sql).toMatch(/r\.superseded_at\s+is\s+null/i)
     const owner = readFileSync('lib/ops/runRead.ts', 'utf8')
     expect(owner).toMatch(/\.is\('superseded_at',\s*null\)/)
-    // The view must not count anything the owner would exclude.
-    const reads: RegExpExecArray[] = []
-    const raRe = /from\s+run_analysis\s+r\s+([\s\S]{0,200}?)\)/gi
-    for (let m = raRe.exec(sql); m !== null; m = raRe.exec(sql)) reads.push(m)
-    expect(reads.length, 'no run_analysis subquery found — this arm has stopped looking').toBeGreaterThan(0)
-    for (const r of reads) {
-      expect(r[1], `a run_analysis read with no superseded filter: ${r[1].slice(0, 80)}`)
+
+    // 🔴 THE FIRST CUT OF THIS ARM REACHED 2 OF THE 3 SUBQUERIES AND CODE REVIEW FOUND IT.
+    // It matched `from run_analysis r` then `([\s\S]{0,200}?)\)` — a fixed 200-character window
+    // with the alias hard-coded — so `reads_in_trial`, whose predicate is the longest of the
+    // three, fell outside it. Deleting the filter from that one subquery alone left the suite
+    // GREEN, in the arm written to prevent exactly that. **Bound the region, never guess its
+    // length**: segment on the table name and read to the next FROM.
+    const segments = sql.split(/from\s+run_analysis\b/i).slice(1)
+    expect(segments.length, 'no run_analysis read found — this arm has stopped looking')
+      .toBeGreaterThan(0)
+    segments.forEach((seg, i) => {
+      const next = seg.search(/\bfrom\s+/i)
+      const region = next === -1 ? seg : seg.slice(0, next)
+      expect(region, `run_analysis read #${i + 1} has no superseded filter: ${region.slice(0, 90)}`)
         .toMatch(/superseded_at\s+is\s+null/i)
-    }
+    })
+  })
+
+  it('computes the trial plan question from HISTORY, not the plans snapshot', () => {
+    // 🔴 `plans` holds ONE row per user, upserted. Reading it answers "where does this runner's
+    // plan start TODAY" and the question is "where did it start DURING THEIR TRIAL". Two of the
+    // four runners first reported as having a plan that began after their trial had in fact been
+    // training inside it and regenerated weeks later; the headline moved 65.5% → 51.9%.
+    expect(sql).toMatch(/with\s+plan_versions\s+as/i)
+    expect(sql).toMatch(/from\s+plan_archive\s+pa/i)
+    expect(sql).toMatch(/as\s+trainable_week_in_trial/i)
+    expect(sql).toMatch(/as\s+had_live_plan_in_trial/i)
+    // The snapshot columns must SAY they are a snapshot.
+    expect(sql).toMatch(/as\s+current_plan_first_week/i)
+    // And the boolean itself must read the history CTE, not the snapshot.
+    // ⚠️ Bound the region from its OWN `exists (`, not by counting characters backwards: the
+    // first attempt reached back 900 chars into the CTE, which legitimately contains `from plans
+    // p` as its "live now" arm, and failed on correct SQL. Same lesson as the arm above.
+    const label = sql.search(/as\s+trainable_week_in_trial/i)
+    expect(label, 'trainable_week_in_trial is gone').toBeGreaterThan(-1)
+    const openIdx = sql.lastIndexOf('exists (select 1', label)
+    expect(openIdx, 'trainable_week_in_trial is no longer an exists() over plan versions').toBeGreaterThan(-1)
+    const expr = sql.slice(openIdx, label)
+    expect(expr, 'the trial boolean must read plan_versions').toMatch(/from\s+plan_versions\s+v\b/i)
+    expect(expr, 'the trial boolean reads the plans snapshot again').not.toMatch(/from\s+plans\b/i)
   })
 
   it('keeps COMPED separate from subscribed, so a Make-A-Wish seat is not a conversion', () => {

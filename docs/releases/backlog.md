@@ -4358,20 +4358,34 @@ read, 0 tried to buy, 0 paid, all confirmed (paywall views measured **4**, the b
 What the brief did not have:
 
 > 📐 **Across those ten runners' 14-day trials, 27 runs happened. TWO were matchable. ONE was
-> read.** And for **4 of the 10 the plan's first week begins AFTER the trial has ended** — by 2
-> days, 19 days, 40 days and **242 days**. For those four a run read during the trial was not
-> unlikely, it was **structurally impossible**: there were no plan sessions inside the trial
-> window to match a run against.
+> read.** And **4 of the 10 had no trainable plan week inside their trial at all** — two because
+> every plan they held began after the trial ended (by **40 days** and by **242 days**), two
+> because they had no plan whatsoever. For those four a run read during the trial was not
+> unlikely, it was **structurally impossible**: there were no plan sessions inside the window to
+> match a run against.
 
-| who | runs in trial | matchable | read | why |
+🔴 **AND THE FIRST VERSION OF THIS TABLE WAS WRONG, MEASURED AGAINST THE WRONG TABLE, AND CODE
+REVIEW CAUGHT IT.** It read `plans`, which holds **ONE row per user, upserted** — a snapshot, not
+a history. That answers *"where does this runner's plan start TODAY"*; the question is *"where did
+it start DURING THEIR TRIAL"*. `a089b7a7` and `charlotte` were filed as +2 days and +19 days and
+**both in fact had a plan running inside their trial** (first weeks 2026-08-03 and 2026-09-28) and
+regenerated weeks later. Re-derived from `plan_archive`, which is the history:
+
+| who | runs in trial | matchable | read | plan live DURING the trial |
 |---|---|---|---|---|
-| `a089b7a7` | 4 | 0 | 0 | plan starts **2 days after** trial ends |
-| `de8e70cd` | 8 | 0 | 0 | plan starts **40 days after** trial ends |
-| `t4w26gvyrr` | 2 | 0 | 0 | plan starts day 5; both runs on unplanned days |
-| `charlotte…` | 6 | 0 | 0 | plan starts **19 days after** trial ends |
+| `a089b7a7` | 4 | 0 | 0 | started **2026-08-03, inside** — runs on unplanned days |
+| `de8e70cd` | 8 | 0 | 0 | started **2026-11-16**, 40 days after it ended |
+| `t4w26gvyrr` | 2 | 0 | 0 | started 2026-09-28, inside; both runs on unplanned days |
+| `charlotte…` | 6 | 0 | 0 | started **2026-09-28, inside** — not impossible, unmatched |
 | `harv…` | 2 | **2** | **1** | the only one |
-| `hmafrici` | 5 | 0 | 0 | plan starts **242 days after** trial ends |
-| 4 others | 0 | 0 | 0 | no runs during the trial |
+| `hmafrici` | 5 | 0 | 0 | started **2027-06-21**, 242 days after it ended |
+| 4 others | 0 | 0 | 0 | no runs during the trial (2 of them had no plan either) |
+
+📐 **The corrected fleet figure: of 37 trialists, 10 had no plan live during their trial at all,
+and of the 27 who did, 14 (51.9%) held only versions that began after it ended — so 24 of 37
+(64.9%) had no trainable plan week inside their trial.** The first filing said 19 of 29 (65.5%)
+from the snapshot. **The finding survives and is still the dominant cause; the number moved 13.6
+points and two of the four names were wrong.**
 
 ⚠️ **So item 1's question — "are Apple Health running workouts picked up and matched?" — is
 answered YES on the first half and the brief's framing sends the work to the wrong place.**
@@ -4394,7 +4408,7 @@ go first.
 
 ---
 
-### 🔲 `ACT-FUNNEL-01` — the activation half of the funnel is unobservable ⚙️ **NO BOARD**
+### ✅ `ACT-FUNNEL-01` — SHIPPED 2026-11-11. The activation half of the funnel is observable ⚙️ **NO BOARD**
 
 **Problem.** Every metric in the brief's table needs a measurement that does not exist. The brief
 asks for `v_activation_funnel`; there is no such view (production has **8** views, none a funnel).
@@ -4446,7 +4460,7 @@ the match thresholds or the trial window is items 7 and 9's territory.
 
 ---
 
-### 🔲 `ACT-READ-COUNT-01` — the trial read count is capped at 10 and is not scoped to the trial ⚙️ **NO BOARD**
+### ✅ `ACT-READ-COUNT-01` — SHIPPED 2026-11-11. The cap is gone and the window is an argument ⚙️ **NO BOARD**
 
 🔴 **THE ITEM'S PREMISE AS BRIEFED IS FALSE AND THE REAL DEFECTS ARE DIFFERENT.** The brief says
 *"Harvey completed 14 sessions; his day-14 email said '1 run read'"*. Measured: at day 14 he had

@@ -6,15 +6,19 @@
 -- no events and no view, so a 0% trial-to-paid reading cannot distinguish "they never saw the
 -- value" from "they saw it and declined".
 --
--- 📐 MEASURED 2026-11-11, and the reason this view carries the columns it does. Of the ten real
--- trial-ended runners (not admin, not internal, no subscription): 27 runs happened during their
--- 14-day trials, **2 were matchable against a plan session and 1 was read**. For 4 of the 10 the
--- plan's FIRST WEEK begins after the trial has already ENDED — by 2, 19, 40 and 242 days. A read
--- requires a matched session (`run_analysis` is keyed `(user_id, week_n, session_day, …)`), so for
--- those four a run read during the trial was not unlikely, it was impossible.
+-- 📐 MEASURED 2026-11-11. A read REQUIRES a matched plan session (`run_analysis` is keyed
+-- `(user_id, week_n, session_day, …)`). Across the 37 trialists in the metric population:
+--   · 10 had no plan live during their trial at all;
+--   · of the 27 who did, **14 (51.9%) had EVERY live version starting after their trial ended**;
+--   · so **24 of 37 (64.9%) had no trainable plan week inside their trial**, worst gap 242 days;
+--   · and **exactly 1 of 37 has ever had a run read during their trial**.
 --
--- ⚠️ `plan_starts_after_trial` IS THE COLUMN THAT MAKES THAT VISIBLE, and it is the reason this is
--- a view rather than a query someone runs once.
+-- 🔴 AND THE FIRST CUT OF THIS VIEW MEASURED THAT AGAINST THE WRONG TABLE. `plans` holds ONE row
+-- per user, upserted — it is a snapshot, not a history. Reading it answers "where does this
+-- runner's plan start TODAY", and the question is "where did it start DURING THEIR TRIAL". Two of
+-- the four runners first reported as having a plan that began after their trial actually had a
+-- plan running inside it, and had regenerated weeks later; the headline moved 65.5% → 51.9%.
+-- Found by code review, not by me. **`plan_archive` is the history, and this view now reads it.**
 --
 -- ⚠️ POPULATION: `v_metric_users`, never a re-derived `is_admin`/`is_internal` pair
 -- (INTERNAL-ACCOUNTS-01's pattern; `lib/ops/metricViewExclusion.test.ts` enforces it).
@@ -25,6 +29,27 @@
 -- was replaced; counting it would report reads the runner can no longer open.
 
 create or replace view public.v_activation_funnel as
+with plan_versions as (
+  -- Every plan a runner has had, with the window it was LIVE for.
+  -- An archived row is the plan that was in force until it was archived; `plan_archive` is
+  -- written before every `savePlanForUser`, so the previous row's `archived_at` is this one's
+  -- start, and the first one starts when the `plans` row was created.
+  select pa.user_id,
+         (select min((w.value->>'date')::date) from jsonb_array_elements(pa.plan_json->'weeks') w) as first_week,
+         coalesce(
+           lag(pa.archived_at) over (partition by pa.user_id order by pa.archived_at),
+           (select p.created_at from plans p where p.user_id = pa.user_id)
+         )                                                           as live_from,
+         pa.archived_at                                              as live_to
+  from plan_archive pa
+  union all
+  -- …and the one in force now.
+  select p.user_id,
+         (select min((w.value->>'date')::date) from jsonb_array_elements(p.plan_json->'weeks') w),
+         coalesce((select max(pa.archived_at) from plan_archive pa where pa.user_id = p.user_id), p.created_at),
+         'infinity'::timestamptz
+  from plans p
+)
 select
   m.user_id,
   au.created_at                                   as signed_up_at,
@@ -35,20 +60,37 @@ select
   (s.trial_started_at + interval '14 days')       as trial_ends_at,
   s.healthkit_connected_at,
 
-  -- The plan's own window. A read can only happen inside it.
+  -- The plan the runner has NOW. Named `current_` because it is a snapshot and says nothing
+  -- about the trial; the two columns below are the ones that answer the trial question.
   (select min((w.value->>'date')::date)
      from plans p, jsonb_array_elements(p.plan_json->'weeks') w
-    where p.user_id = m.user_id)                  as plan_first_week,
+    where p.user_id = m.user_id)                  as current_plan_first_week,
   (select max((w.value->>'date')::date) + 6
      from plans p, jsonb_array_elements(p.plan_json->'weeks') w
-    where p.user_id = m.user_id)                  as plan_last_day,
+    where p.user_id = m.user_id)                  as current_plan_last_day,
 
-  -- 🔑 THE DOMINANT CAUSE, AS A BOOLEAN. True when the plan cannot be trained inside the trial.
-  (s.trial_started_at is not null
-   and (select min((w.value->>'date')::date)
-          from plans p, jsonb_array_elements(p.plan_json->'weeks') w
-         where p.user_id = m.user_id) > (s.trial_started_at + interval '14 days')::date)
-                                                  as plan_starts_after_trial,
+  -- Did any plan at all exist during the trial?
+  exists (select 1 from plan_versions v
+           where v.user_id = m.user_id and s.trial_started_at is not null
+             and v.live_from <  s.trial_started_at + interval '14 days'
+             and v.live_to   >  s.trial_started_at)
+                                                  as had_live_plan_in_trial,
+
+  -- 🔑 THE DOMINANT CAUSE, AS A BOOLEAN, FROM HISTORY. True when some plan version that was live
+  -- during the trial had already begun by the time the trial ended — i.e. there was a session to
+  -- match a run against. False is the runner for whom a read was IMPOSSIBLE.
+  exists (select 1 from plan_versions v
+           where v.user_id = m.user_id and s.trial_started_at is not null
+             and v.live_from <  s.trial_started_at + interval '14 days'
+             and v.live_to   >  s.trial_started_at
+             and v.first_week <= (s.trial_started_at + interval '14 days')::date)
+                                                  as trainable_week_in_trial,
+
+  -- The earliest start any live-in-trial version offered, so the SIZE of the gap is readable.
+  (select min(v.first_week) from plan_versions v
+    where v.user_id = m.user_id and s.trial_started_at is not null
+      and v.live_from <  s.trial_started_at + interval '14 days'
+      and v.live_to   >  s.trial_started_at)      as earliest_plan_start_in_trial,
 
   (select min(a.start_date) from strava_activities a where a.user_id = m.user_id)
                                                   as first_activity_at,
@@ -94,9 +136,9 @@ join auth.users au          on au.id = m.user_id;
 
 comment on view public.v_activation_funnel is
   'ACT-FUNNEL-01 — one row per metric user with each activation milestone. "Run read" = a '
-  'run_analysis row with superseded_at IS NULL (see lib/ops/runRead.ts). plan_starts_after_trial '
-  'marks the runner whose plan begins after their trial ends, for whom a read in the trial is '
-  'impossible.';
+  'run_analysis row with superseded_at IS NULL (see lib/ops/runRead.ts). trainable_week_in_trial '
+  'is computed from PLAN HISTORY (plan_archive + plans), not the current plans row, because that '
+  'table is a snapshot and the question is historical.';
 
 -- It exposes user ids and nothing else identifying, but it is an ops surface and never client-read.
 revoke all on public.v_activation_funnel from anon, authenticated;
