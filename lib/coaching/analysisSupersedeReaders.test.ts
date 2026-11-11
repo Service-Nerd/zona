@@ -165,6 +165,18 @@ const EXPECT_FILTERS: Record<string, Expectation> = {
   'lib/coaching/weeklyActualLoad.ts': true,
 
   /**
+   * ACT-READ-COUNT-01 — the owner of "run read", FILTERED, and the reasoning is §71 Am. 1's.
+   *
+   * It answers "how many runs has Zonna read for this runner" for the trial emails and the
+   * activation funnel. A superseded row belongs to a plan week that was replaced, so the runner
+   * cannot open it; counting it would put a number in front of them that their own app contradicts.
+   *
+   * ⚠️ Not a history scan, so Am. 1's discipline-fields exemption does not apply: the question is
+   * about what is CURRENTLY readable, not about a trend crossing a race boundary.
+   */
+  'lib/ops/runRead.ts': true,
+
+  /**
    * ⚠️ DELIBERATELY UNFILTERED, AND THIS GATE IS WHAT MADE IT AN EXPLICIT
    * DECISION RATHER THAN AN OVERSIGHT.
    *

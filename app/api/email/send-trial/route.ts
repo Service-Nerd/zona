@@ -3,8 +3,9 @@ import { createClient } from '@supabase/supabase-js'
 import { secretMatches } from '@/lib/security/secrets'
 import { sendToUser } from '@/lib/email/sendToUser'
 import { buildDay11Email, buildDay14Email, type RunSummary } from '@/lib/email/trialEmailTemplates'
+import { countRunsRead, latestRunRead, trialWindow } from '@/lib/ops/runRead'
 import { trialDayNumber, decideTrialEmails } from '@/lib/email/trialEmailWindow'
-import { resolveTier } from '@/lib/trial'
+import { resolveTier, TRIAL_DAYS } from '@/lib/trial'
 
 // POST /api/email/send-trial
 //
@@ -25,31 +26,37 @@ import { resolveTier } from '@/lib/trial'
 
 const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
 
+/**
+ * ACT-READ-COUNT-01 — the trial read summary, counted by the owner and SCOPED TO THE TRIAL.
+ *
+ * 🔴 TWO DEFECTS CLOSED HERE, NEITHER OF THEM THE ONE THAT WAS REPORTED. The brief said a runner
+ * who had completed 14 sessions was told *"1 run read"*. Measured: at day 14 he had **1 completion
+ * and 1 read**; the 15 of each arrived afterwards and the email was right. What was actually wrong:
+ *
+ * 1. `.limit(10)` followed by `rows.length` — **a hard ceiling of ten presented as a total**, in
+ *    the mail that asks the runner to pay for reads. `countRunsRead` does an exact HEAD count, so
+ *    there is no limit to forget.
+ * 2. The query had **no trial window** while the copy it feeds says *"Fourteen days, N runs read"*
+ *    and *"N sessions across your trial"*. It counted the runner's whole history. The window is
+ *    now passed explicitly, from the same `TRIAL_DAYS` the tier resolver uses.
+ *
+ * ⚠️ A read FAILURE is not a zero. `countRunsRead` throws rather than returning 0, because 0 renders
+ * as "no runs read" — a sentence about the runner — where an error is a sentence about us.
+ */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-async function getRunSummary(supabase: any, userId: string): Promise<RunSummary> {
-  const { data: analyses } = await supabase
-    .from('run_analysis')
-    .select('actual_load_km, hr_in_zone_pct, hr_above_ceiling_pct, verdict, created_at')
-    .eq('user_id', userId)
-    .is('superseded_at', null)   // PLAN-WEEK-COLLISION-01: live plan only
-    .order('created_at', { ascending: false })
-    .limit(10)
-
-  const rows = (analyses ?? []) as Array<{
-    actual_load_km: number | null
-    hr_in_zone_pct: number | null
-    hr_above_ceiling_pct: number | null
-    verdict: string | null
-    created_at: string
-  }>
-  const latest = rows[0] ?? null
+async function getRunSummary(supabase: any, userId: string, trialStartedAt: string | null): Promise<RunSummary> {
+  const window = trialWindow(trialStartedAt, TRIAL_DAYS) ?? undefined
+  const [analysedRunCount, latest] = await Promise.all([
+    countRunsRead(supabase, userId, window),
+    latestRunRead(supabase, userId, window),
+  ])
 
   return {
     actualLoadKm: latest?.actual_load_km ?? null,
     hrInZonePct: latest?.hr_in_zone_pct ?? null,
     hrAboveCeilingPct: latest?.hr_above_ceiling_pct ?? null,
     verdict: latest?.verdict ?? null,
-    analysedRunCount: rows.length,
+    analysedRunCount,
     dayName: latest?.created_at ? DAY_NAMES[new Date(latest.created_at).getDay()] : null,
   }
 }
@@ -132,7 +139,7 @@ export async function POST(req: NextRequest) {
       const email = user.email
       const firstName = (user.user_metadata?.full_name as string | undefined)?.split(' ')[0] ?? null
 
-      const run = await getRunSummary(supabase, settings.id)
+      const run = await getRunSummary(supabase, settings.id, settings.trial_started_at)
 
       if (needsDay11) {
         const { subject, html } = buildDay11Email(firstName, run, settings.email_unsubscribe_token)

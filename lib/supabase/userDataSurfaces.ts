@@ -143,6 +143,9 @@ export const DERIVED_VIEWS: Record<string, string> = {
   v_metric_users:       'INTERNAL-ACCOUNTS-01: the users that COUNT toward metrics (not admin, '
                         + 'not internal). Single owner of the exclusion; every user metric joins it.',
   v_trial_conversion:   'Trial-to-paid funnel rollup.',
+  v_activation_funnel:  'ACT-FUNNEL-01: one row per metric user with each activation milestone '
+                        + '(HealthKit connected, first run imported, first run READ, paywall, '
+                        + 'purchase attempt) plus plan_starts_after_trial. Reads v_metric_users.',
 }
 
 /** Discovery aliases: identity columns that are NOT called `user_id`. The gate

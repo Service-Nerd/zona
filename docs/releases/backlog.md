@@ -4346,6 +4346,276 @@ ungate one of three triggers · drop the weekly-report gate). ⚠️ Source-shap
 such: the route needs auth, a tier lookup and a service-role client, none of which stand up under
 `environment: 'node'`.
 
+## 🎯 FILED 2026-11-11 — ACTIVATION & CONVERSION PROGRAMME (founder brief, 9 items + 3 defects)
+
+**Input:** founder brief, pasted 2026-11-11, *"Zonna: Activation & Conversion Programme (backlog,
+spec, build)"*. Nine items in three releases, plus "build the measurement first".
+
+🔴 **EVERY NUMBER IN THE BRIEF WAS RE-DERIVED FROM PRODUCTION BEFORE ANYTHING WAS FILED, AND THE
+DOMINANT CAUSE IS NOT IN THE BRIEF.** The cohort reproduces exactly — *trial ended · not admin ·
+not internal · no subscription row* = **10 users**, and 8 connected Apple Health, 1 had a run
+read, 0 tried to buy, 0 paid, all confirmed (paywall views measured **4**, the brief said 5).
+What the brief did not have:
+
+> 📐 **Across those ten runners' 14-day trials, 27 runs happened. TWO were matchable. ONE was
+> read.** And for **4 of the 10 the plan's first week begins AFTER the trial has ended** — by 2
+> days, 19 days, 40 days and **242 days**. For those four a run read during the trial was not
+> unlikely, it was **structurally impossible**: there were no plan sessions inside the trial
+> window to match a run against.
+
+| who | runs in trial | matchable | read | why |
+|---|---|---|---|---|
+| `a089b7a7` | 4 | 0 | 0 | plan starts **2 days after** trial ends |
+| `de8e70cd` | 8 | 0 | 0 | plan starts **40 days after** trial ends |
+| `t4w26gvyrr` | 2 | 0 | 0 | plan starts day 5; both runs on unplanned days |
+| `charlotte…` | 6 | 0 | 0 | plan starts **19 days after** trial ends |
+| `harv…` | 2 | **2** | **1** | the only one |
+| `hmafrici` | 5 | 0 | 0 | plan starts **242 days after** trial ends |
+| 4 others | 0 | 0 | 0 | no runs during the trial |
+
+⚠️ **So item 1's question — "are Apple Health running workouts picked up and matched?" — is
+answered YES on the first half and the brief's framing sends the work to the wrong place.**
+Measured: **489 Apple Health activities across 26 users.** Detection and import work. The reasons
+nobody gets a read in the trial are, in order of size: **(1)** the plan starts after the trial
+ends, 4 of 10; **(2)** `sameWeekday` is 40 of the 70 points `autoSelectMatch` requires, so a run
+on an unplanned day can almost never link; **(3)** 4 of 10 never ran during the trial at all;
+**(4)** `activity_intelligence` is paid-gated, so once day 14 passes a perfect match still yields
+nothing.
+
+🥇 **Cause 4 has a worked example that settles it.** Charlotte's run on 2026-11-05 scored exactly
+**70** — 40 for the weekday plus 30 for duration (48.9 min against 43 planned, ratio 1.137, inside
+the ±15% band) — which is `autoSelectMatch`'s 'high' threshold. It was never read, because her
+trial ended 2026-10-07 and her plan did not begin until 2026-10-26. **She did everything right,
+nineteen days too early.**
+
+⚠️ **THE DOMINANT CAUSE IS THE BRIEF'S OWN ITEM 7**, which it marked flag-off and gated on written
+sign-off. That is recorded, not worked around: item 7 stays gated and the items that need no gate
+go first.
+
+---
+
+### 🔲 `ACT-FUNNEL-01` — the activation half of the funnel is unobservable ⚙️ **NO BOARD**
+
+**Problem.** Every metric in the brief's table needs a measurement that does not exist. The brief
+asks for `v_activation_funnel`; there is no such view (production has **8** views, none a funnel).
+
+**Evidence.** `OPS-FUNNEL-01` (2026-09-28) shipped the *conversion* half — `upgrade_view`,
+`upgrade_purchase_attempt`, `upgrade_purchase_result`, all live and populated. The *activation*
+half — signed up → HealthKit connected → first run imported → first run **read** → paywall — has
+**no events and no view**. `analytics_events` holds 10 event types, none of them activation.
+
+**User impact.** None directly; it is the reason every other item in this programme would ship
+unmeasured, and the 1 January trial-to-paid gate currently reads a rate it cannot explain.
+
+**Acceptance criteria.** A row-per-user `v_activation_funnel` over `v_metric_users` carrying each
+milestone and its timestamp, plus the trial window; the brief's six metrics derivable from it; a
+single owner for the phrase **"run read"** shared by SQL and TypeScript; a gate that fails if a new
+metric view does not read `v_metric_users` (already exists — `metricViewExclusion.test.ts`).
+
+**Dependencies.** `INTERNAL-ACCOUNTS-01` (shipped and applied 2026-11-11) — depend on
+`v_metric_users`, never re-derive the exclusion.
+
+**Gate.** `lib/ops/activationFunnel.test.ts`.
+
+---
+
+### 🔲 `ACT-RUNREAD-REACH-01` — a run can only be read inside a plan week, and most runs are not ⚙️ **NO BOARD**
+
+**Problem.** `run_analysis` is keyed `(user_id, week_n, session_day, …)`, so a read REQUIRES a
+matched plan session. Nothing anywhere measures, records or surfaces a run that arrived with no
+session to match. The failure is silent on every side.
+
+**Evidence.** Of 136 activities belonging to the ten trial runners, **49 fall inside their plan's
+date range and 24 on a day the plan has a session**; 15 reads exist, 14 of them one runner's. For
+5 of 8 runners with both a plan and activities, **zero** activities fall inside the plan's dates.
+`ops_events` has 28,522 `health_sync_swept` rows and **no event for "stored, nothing to match"**.
+
+**User impact.** The runner connects Apple Health, runs, sees the run appear, and never gets the
+one thing the product is for. Nothing tells them why, and nothing tells us.
+
+**Acceptance criteria.** (a) an ops event recorded when an activity is stored and
+`autoMatchAndAnalyse` returns without a match, naming WHICH gate stopped it (no plan · activity
+outside every plan week · no session that weekday · scored below 70); (b) the same reason exposed
+per-user in the funnel view; (c) a retro-match pass so activities already stored inside a plan
+window are re-offered when a plan is created or regenerated. **(d) is NOT in this item:** changing
+the match thresholds or the trial window is items 7 and 9's territory.
+
+**Dependencies.** `ACT-FUNNEL-01`.
+
+**Gate.** Unit arms on the reason classifier beside `autoAnalyse`'s real early returns.
+
+---
+
+### 🔲 `ACT-READ-COUNT-01` — the trial read count is capped at 10 and is not scoped to the trial ⚙️ **NO BOARD**
+
+🔴 **THE ITEM'S PREMISE AS BRIEFED IS FALSE AND THE REAL DEFECTS ARE DIFFERENT.** The brief says
+*"Harvey completed 14 sessions; his day-14 email said '1 run read'"*. Measured: at day 14 he had
+**1 completion and 1 read**. His 15 completions and 15 reads accumulated AFTER the trial ended —
+he is still running (last run 2026-11-11). **The email was right.** The lifetime total was read as
+the day-14 state.
+
+**The two real defects, in `app/api/email/send-trial/route.ts → getRunSummary`:**
+1. `.select(...).limit(10)` then `analysedRunCount = rows.length`. **A hard ceiling of 10 presented
+   as a total.** Latent today (nobody in the cohort exceeded it) and wrong the moment someone does.
+2. The query is **not scoped to the trial window** while the copy it feeds says *"across your
+   trial"* and *"Fourteen days, N runs read"*. Two different claims from one number.
+
+**User impact.** A number that under-reports what Zonna did for an engaged runner, in the one email
+that asks them to pay.
+
+**Acceptance criteria.** One owner for "runs read in a window", used by the day-11 and day-14
+emails and by the funnel view; no implicit cap; the window is an argument, not a default.
+
+**Gate.** Unit arms on the owner, including an 11-read user and a read outside the window.
+
+---
+
+### 🔲 `ACT-RC-ANON-LINK-01` — 20 anonymous RevenueCat purchases never reached Supabase ⚙️ **NO BOARD**
+
+**Problem.** A redemption made before sign-in arrives with `app_user_id = $RCAnonymousID:…`, which
+is not a Supabase uuid, so the webhook records it as unusable and drops it.
+
+**Evidence.** `ops_events.revenuecat_event_unusable` = **22 rows**, of which **20 are
+`INITIAL_PURCHASE`** with an `$RCAnonymousID:` shape, 2026-09-28 → 2026-11-05. The brief named one
+(`613a0abb`, 5 Nov) — it is the most recent of twenty. 🔑 **And one of the 22 is a `TRANSFER` event
+with `app_user_id_shape: "undefined"` — TRANSFER is precisely RevenueCat's anonymous→identified
+alias signal, so the mechanism that would link these is itself unhandled.**
+
+**User impact.** A runner pays or redeems a code, signs in, and has nothing. 20 known instances.
+
+**Acceptance criteria.** Handle `TRANSFER` (and the alias payload) so an anonymous id maps to the
+account at sign-in; link on the client side at sign-in via `Purchases.logIn` where RevenueCat
+exposes the previous id; record a reconcilable event so an orphan is countable; backfill the known
+20 as far as RevenueCat's API allows. ⚠️ **`app_user_id_shape` stores only a 9-character prefix by
+design, so the repo cannot resolve these alone** — the backfill needs the RevenueCat dashboard or API.
+
+**Out of scope, per the brief.** The StoreKit/RevenueCat **purchase** flow. This item touches the
+webhook and the sign-in link only; if a fix needs purchase-flow code, it stops and flags.
+
+**Gate.** Webhook unit arms per event type, including the anonymous and `undefined` shapes.
+
+---
+
+### 🔲 `ACT-EMAIL-DAY14-01` — 13 of 16 day-14 emails told the runner "no runs read" 👤 **FOUNDER** (voice)
+
+**Evidence.** `ops_events.email_sent`, by subject: **"Fourteen days, no runs read." × 13**, "…1 run
+read." × 1, "…3 runs read." × 1, "…4 runs read." × 1. The day-11 "3 days left." went out 14 times.
+
+**User impact.** The last thing 13 of 16 trial runners heard from Zonna was a count of zero, in a
+mail asking them to pay for reads.
+
+**Acceptance criteria.** With no reads: never state the zero; offer 7 more days. With reads:
+summarise what Zonna saw. Copy in `brand.md` voice, no em dashes, locked strings untouched.
+
+**Gate.** Template arms on both branches asserting the zero-count string cannot be produced.
+
+**Board.** Email copy is voice (`brand.md` → founder). No new visual pattern: the existing
+`wrapper`/`ctaButton` primitives are reused, so the Design Board is **not** convened — exemption
+stated.
+
+---
+
+### 🔲 `ACT-EMAIL-POSTTRIAL-01` — nothing is sent after day 14 👤 **FOUNDER** (voice)
+
+**Evidence.** `trial_email_day11_sent_at` and `trial_email_day14_sent_at` are the only trial email
+stamps on `user_settings`; `email_sent` holds no post-trial id. Confirmed: nothing after day 14.
+
+**Acceptance criteria.** Day 17 (extend or summarise) and day 30 (one honest question). Respect
+`email_unsubscribed_at` and quiet hours; **never** send to `is_internal`; stamped-range windows per
+`lib/email/trialEmailWindow.ts` (N-014), never exact-day equality.
+
+**Dependencies.** `ACT-READ-COUNT-01` for the summarise branch.
+
+**Gate.** Window arms plus an internal-recipient arm that fails if an internal account is targeted.
+
+---
+
+### 🔲 `ACT-FIRSTRUN-01` — days 1 to 3 are not designed around the first read 🧭 **DESIGN BOARD**
+
+**Acceptance criteria.** A push on the first planned run day; a sample run read in onboarding so the
+value is seen before it is earned. Design Board approval required before build; `frontend-design`
+first.
+
+**Dependencies.** `ACT-FUNNEL-01` (so the effect is measurable), `ACT-RUNREAD-REACH-01`.
+
+---
+
+### 🔲 `ACT-TRIAL-AT-FIRST-READ-01` — the trial starts at sign-up, and for 4 of 10 the plan starts after it ends 💼 **SLT**, then 👤 **FOUNDER WRITTEN SIGN-OFF** (brief, explicit)
+
+🔑 **THIS IS THE DOMINANT CAUSE, MEASURED.** Plan first week minus trial end: **+2, +19, +40, +242
+days** for 4 of the 10. The 14 days are counted from sign-up; the plan may not begin for weeks or
+months, because a distant race defers the start.
+
+**Acceptance criteria per the brief.** Trial starts when the first run is read, capped at 30 days
+from sign-up; **fully behind a feature flag, OFF by default**; not enabled without written sign-off.
+
+⚠️ **Pricing and trial policy, so it does not ship on my judgement.** Built and left at the gate.
+
+---
+
+### 🔲 `ACT-FREE-TEASE-01` — a free user is shown nothing of what a read would have said 💼 **SLT** (the FREE/PAID line), then 🧭 **DESIGN BOARD**
+
+**Acceptance criteria.** After a run on free tier, show that a read exists (e.g. the effort score)
+and lock the coaching advice. ⚠️ Moves the FREE/PAID line, so the SLT rules first; `HK-FREE-INGEST-LINE-01`
+(2026-10-07) is the precedent and must be read before proposing.
+
+---
+
+### 🔲 `ACT-PAYWALL-01` — the paywall leads with a generic feature list 🧭 **DESIGN BOARD** (+ 💼 **SLT** on price presentation)
+
+**Acceptance criteria.** Lead with the annual price shown alongside its monthly equivalent; show the
+runner's own data instead of a feature list. ⚠️ **Design and content only** — the brief puts the
+purchase flow out of scope; if a change needs purchase-flow code it stops and flags.
+
+---
+
+### 🔲 `OPS-PAYING-COMPED-01` — `v_paying_users` reports 23 and nobody is paying ⚙️ **NO BOARD**
+
+**Evidence, measured 2026-11-11.** `v_paying_users` = **23**. Subscriptions that are **not**
+comped and active, fleet-wide: **0**. All 23 are comped Make-A-Wish offer-code redemptions, and
+`admin_user_tiers` resolves them to `premium` because the tier ladder reads an active subscription
+without asking whether it was paid for. `v_trial_conversion.converted_real` gets this right and
+excludes comped; the headline paying-user number does not.
+
+**User impact.** None to runners. It is the number that would be read as revenue traction, and it
+is 23 against a true 0.
+
+**Acceptance criteria.** `v_paying_users` counts subscriptions that are active **and not comped**;
+a comped count is exposed separately so the Make-A-Wish cohort stays visible.
+
+**Gate.** Extend `lib/ops/metricViewExclusion.test.ts`.
+
+---
+
+### 🔲 `OPS-RC-CANCEL-UNHANDLED-01` — 8 RevenueCat CANCELLATION events were dropped ⚙️ **NO BOARD**
+
+**Evidence.** `ops_events.revenuecat_event_unhandled`: **8 rows, all `CANCELLATION`**, 5 carrying a
+real `user_id`, 2026-10-02 → 2026-11-05. The handler has no branch for it, so a cancelled
+subscription keeps its `status` and stays `premium`.
+
+**Acceptance criteria.** Handle `CANCELLATION` and `EXPIRATION`; a cancelled subscription leaves
+`premium` at the right moment (RevenueCat's CANCELLATION means auto-renew off, not access ended —
+read the payload's expiry, do not revoke early).
+
+**Gate.** Webhook unit arms per event type.
+
+---
+
+### 🔻 `ACT-REPORTED-DISTANCE-DOOR-01` — latent, 0 live instances, recorded not fixed ⚙️ **NO BOARD**
+
+**87 of 489 Apple Health activities (17.8%, 5 users) arrive with zero distance**, and **0 of 533
+activities ever had a distance typed in** by the runner, though `AddDistanceSheet` /
+`AddDistanceRow` are live and wired (`UNMEASURED-DISTANCE-01`). Both render sites require a run
+that is **already linked to a session** (`SessionPopupInner`'s `linkedRun`, and the post-run
+screen's `canAddPostRunDistance`, which needs a `session`). For a **distance-primary** session a
+zero-distance run can never reach 70 points — 40 for the weekday plus at most 10 for effort — so
+the door that would supply the distance sits behind the link the missing distance prevents.
+
+⚠️ **MEASURED BEFORE FILING AND THE TRAP IS EMPTY: 0 of the 87 land on a distance-primary planned
+day.** All five planned-day cases are duration-primary, where `distance_km` is null and the
+distance band never applies at all. **Real in the code, no live instance** — filed so the next
+instance has a name, not sized as a current defect.
+
 ## 🔲 PARKED 2026-11-04 — two strength engine items from the device review
 
 ### 🔴 `STRENGTH-PAIR-STRIDE-01` — the superset pairing strands most of what S10 says it should pair 🏃 **COACHING BOARD** (re-sat, INSUFFICIENT EVIDENCE)
