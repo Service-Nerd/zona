@@ -10401,8 +10401,19 @@ function buildRulePlanOnce(
       .filter(w => w.phase === 'build' || w.phase === 'peak')
       .flatMap(w => Object.values(w.sessions ?? {}))
       .filter(sn => sn && (sn as Session).type === 'quality').length
+    // 🔴 THE SAME GUARDS BOTH INVARIANT FLOORS APPLY, and the first cut had none of them.
+    // A BEGINNER legitimately gets no quality (§110's own scope: *"a genuine beginner still
+    // gets no quality sessions, and that remains correct"*), and a plan with no build/peak
+    // or below `BEGINNER_QUALITY_MIN_WEEKLY_KM` declined for its own reasons. Without these
+    // the note blamed the day geometry for an absence it did not cause, and promised that
+    // opening a day would restore work that was never going to be scheduled. Found by
+    // code review.
+    const noteIsBeginner = intensityFitness === 'beginner'
+    const noteHasBuildOrPeak = weeks.some(w => w.phase === 'build' || w.phase === 'peak')
+    const noteCanCarry = weeks.some(w => (w.weekly_km ?? 0) >= GENERATION_CONFIG.BEGINNER_QUALITY_MIN_WEEKLY_KM)
     if (
       qualityPlaced === 0 && longDayUsed != null &&
+      !noteIsBeginner && noteHasBuildOrPeak && noteCanCarry &&
       !canHoldSpacedQuality(openDays, longDayUsed, minQualGapDays)
     ) {
       const adjustment = {

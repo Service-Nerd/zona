@@ -44,6 +44,22 @@ export interface ZoneDriftRow {
   /** Raw `session.type`. Stamped on the row (ADR-018 shape) or resolved from the
    *  current plan for pre-2026-10-07 rows. `null` = unknowable, and excluded. */
   sessionType: string | null
+  /**
+   * 🔴 §12 Am. 5 SAID THE LONG RUN WAS EXCLUDED AND NOTHING EXCLUDED IT.
+   *
+   * A generated long run carries `type: 'easy'` with `role: 'long_run'` (CLAUDE.md states
+   * it plainly: §52/§9 treat it as aerobic volume), and `run_analysis.session_type` is
+   * stamped straight from `session.type` — so **'easy' matched it on BOTH paths** and
+   * 537 of 2,054 stored `easy` sessions (26.1%) are long runs. The amendment's own text
+   * claims *"the board did not extend it, deliberately"*; that was a false record, not a
+   * mis-measurement, and it was true of the shipped analysis path before this amendment
+   * existed. Found by code review of the amendment.
+   *
+   * ⚠️ `session.type` CANNOT CARRY THIS. Classification is `isLongRun`'s (INV-CLASS-001),
+   * the caller holds the whole session, and a second type test here would be the
+   * label-based classification the pre-commit hook blocks.
+   */
+  isLongRun?: boolean
   hrAboveCeilingPct: number
   /** True when the row belongs to a plan the runner has since left. */
   fromPreviousBlock: boolean
@@ -60,6 +76,10 @@ export interface ZoneDriftPattern {
 /** Only an easy or recovery run can drift, per §12. */
 export function countsForDrift(row: ZoneDriftRow): boolean {
   if (row.source === 'manual') return false          // no HR stream to judge
+  // §12 Am. 5 — a long run is NOT an easy session for this rule, whatever its `type` says.
+  // §12 Am. 1 made drift directional precisely so a long run's final kilometres are not
+  // read as indiscipline, and §52 caps it at the same ceiling for a different reason.
+  if (row.isLongRun) return false
   return isDriftEligibleType(row.sessionType)
 }
 
@@ -106,6 +126,8 @@ export interface DriftActivity {
 export interface DayPrescription {
   weekN: number
   sessionType: string | null
+  /** From `isLongRun(session)`, the owner. See `ZoneDriftRow.isLongRun`. */
+  isLongRun?: boolean
 }
 
 /**
@@ -131,9 +153,11 @@ export function driftRowsFromActivities(
     if (Number.isNaN(day.getTime())) continue
     const p = prescriptionFor(day)
     if (!p || !isDriftEligibleType(p.sessionType)) continue
+    if (p.isLongRun) continue
     rows.push({
       weekN: p.weekN,
       sessionType: p.sessionType,
+      isLongRun: false,
       hrAboveCeilingPct: a.hrAboveCeilingPct,
       // These rows come from the runner's LIVE plan by construction — the resolver
       // returns null for any day outside it — so they never cross a block boundary.

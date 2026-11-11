@@ -2085,6 +2085,22 @@ was considered and declined:** §52 caps it at the same ceiling, but its final k
 reasons that are not discipline, and Amendment 1 made drift directional precisely to avoid punishing
 those. Quality is never eligible: above Z2 on a tempo is the prescription being followed.
 
+🔴 **AND FOR A FEW HOURS THAT SENTENCE WAS A FALSE RECORD, WHICH IS WORSE THAN AN OUT-OF-DATE ONE.**
+Nothing excluded the long run. A generated long run carries **`type: 'easy'`** with `role: 'long_run'`
+(CLAUDE.md states it plainly: §52/§9 treat it as aerobic volume), and `run_analysis.session_type` is
+stamped straight from `session.type`, so `'easy'` matched it on **both** paths. 📐 Measured across
+stored plans: **537 of 2,054 `easy`-typed sessions (26.1%) are long runs.** ⚠️ **It was wrong on the
+SHIPPED analysis path before this amendment existed**, so the amendment did not introduce the defect:
+its own text asserted the defect was handled. Found by a second code review, not by the four rounds of
+falsification that preceded it.
+
+✅ Fixed by carrying `isLongRun` on `ZoneDriftRow` and `DayPrescription`, read from **`isLongRun()`,
+the owner** (INV-CLASS-001) — `session.type` cannot answer this, and a second type test would be the
+label-based classification the pre-commit hook blocks. ⚠️ **Declared as a behaviour change to a shipped
+surface, and measured: 1 of 3 live runners' drift note moves**, from *"6 of your last 7 easy sessions
+crept above Zone 2"* to *"5 of your last 6"*. Only 1 of 129 analysis rows is a long run; the exposure
+was overwhelmingly on the prescribed-day path this amendment opened.
+
 🔴 **CODE REVIEW FOUND FOUR DEFECTS IN THE FIRST CUT, ALL MINE, AND ONE WOULD HAVE MADE THE AMENDMENT
 INERT FOR THE RUNNER IT WAS MEASURED ON.** `computeZoneDriftPattern` windowed by `weekN` descending, and
 **a week number is not a time axis across plans** — old plans REUSE week numbers (`PLAN-WEEK-COLLISION-01`,

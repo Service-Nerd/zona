@@ -2303,6 +2303,13 @@ export default function DashboardClient() {
         .select('week_n, session_day, source, session_type, hr_above_ceiling_pct, superseded_at, strava_activity_id, apple_health_uuid')
         .eq('user_id', user.id)
         .not('hr_above_ceiling_pct', 'is', null)
+        // 🔴 LIVE BLOCK FIRST IN THE QUERY TOO, not only in the sort. Fixing
+        // `computeZoneDriftPattern`'s sort while this still truncated on `week_n` alone
+        // left the same defect one layer out: old plans REUSE week numbers, so superseded
+        // rows numbered weeks 15-35 can fill the 60-row window and the live block never
+        // reaches the sort at all. ⚠️ Latent today and measured as such: the one runner
+        // whose window binds has 72 rows and 0 superseded. Found by code review.
+        .order('superseded_at', { ascending: true, nullsFirst: true })
         .order('week_n', { ascending: false })
         .limit(60)
       if (driftErr) console.warn('[coach] drift history load failed', driftErr.message)
@@ -3386,21 +3393,45 @@ export default function DashboardClient() {
               // `allOverrides` is `[]` and a moved session resolves on its ORIGINAL day,
               // which is the opposite of what the resolver comment claims. `TodayScreen`
               // gates on it for this exact reason.
+              // 🔴 THE ANALYSED CHECK BELONGS TO THE DUPLICATE GROUP, NOT THE SURVIVOR.
+              // `dedupeRuns` keeps the LONGER of two rows for one physical run, and the
+              // copies carry DIFFERENT ids (`ACTIVITY-DUPLICATE-01`: 4.2% of the log), so
+              // when the kept copy is the one `run_analysis` did NOT score, the same run
+              // contributed an analysis row AND a prescribed row — the double-count the
+              // comment claimed to prevent. Found by code review.
+              //
+              // ⚠️ THE GROUPING IS NOT RE-IMPLEMENTED. `dedupeRuns` groups on a time window
+              // and a distance tolerance; a second copy of that heuristic is the
+              // `DELOAD-OWNER-01` shape. Instead the OWNER is used as the predicate: a
+              // survivor belongs to an analysed group exactly when adding it to the deduped
+              // analysed rows does not grow that list.
+              const isAnalysedRow = (a: any) =>
+                (a.strava_activity_id && analysedActivityKeys.has(`s:${a.strava_activity_id}`)) ||
+                (a.apple_health_uuid  && analysedActivityKeys.has(`h:${a.apple_health_uuid}`)) || false
+              const runRows = (recentActivity ?? []).filter(isRun)
+              const analysedDeduped = dedupeRuns(runRows.filter(isAnalysedRow) as any)
               const prescribedDriftRows = !overridesReady ? [] : driftRowsFromActivities(
-                dedupeRuns((recentActivity ?? []).filter(isRun) as any).map((a: any) => ({
+                dedupeRuns(runRows as any).map((a: any) => ({
                   startDate:         a.start_date as string,
                   hrAboveCeilingPct: (a.hr_above_ceiling_pct ?? null) as number | null,
                   source:            (a.source ?? null) as string | null,
-                  alreadyAnalysed:
-                    (a.strava_activity_id && analysedActivityKeys.has(`s:${a.strava_activity_id}`)) ||
-                    (a.apple_health_uuid  && analysedActivityKeys.has(`h:${a.apple_health_uuid}`)) || false,
+                  alreadyAnalysed: isAnalysedRow(a)
+                    || dedupeRuns([...analysedDeduped, a] as any).length === analysedDeduped.length,
                 })),
                 // ADR-016's canonical resolver, so a swapped or moved session is judged on
                 // the day it actually sits. Returns [] outside the plan, which the owner
                 // reads as "no prescription to borrow".
                 (day: Date) => {
                   const r = getSessionsForDate(plan.weeks as any, day, allOverrides as any)[0]
-                  return r ? { weekN: r.weekN, sessionType: (r.session as any)?.type ?? null } : null
+                  if (!r) return null
+                  return {
+                    weekN: r.weekN,
+                    sessionType: (r.session as any)?.type ?? null,
+                    // §12 Am. 5 — a long run is `type: 'easy'`, so the TYPE cannot answer
+                    // this. `isLongRun` is the owner (INV-CLASS-001) and the resolver holds
+                    // the whole session, which is exactly why it is passed one.
+                    isLongRun: r.session ? isLongRun(r.session as any) : false,
+                  }
                 },
               )
               const zoneDriftPattern = computeZoneDriftPattern([
@@ -3408,9 +3439,15 @@ export default function DashboardClient() {
                 ...(zoneDriftRows ?? []).map((r: any) => {
                   const legacyType = (plan.weeks.find((w: any) => w.n === r.week_n)
                     ?.sessions as any)?.[r.session_day]?.type ?? null
+                  // §12 Am. 5 — the same long-run exclusion on the analysis path, where it
+                  // was wrong BEFORE this amendment: `run_analysis.session_type` is stamped
+                  // from `session.type`, which is 'easy' for a long run.
+                  const liveSession = (plan.weeks.find((w: any) => w.n === r.week_n)
+                    ?.sessions as any)?.[r.session_day] ?? null
                   return {
                     weekN:             r.week_n as number,
                     sessionType:       (r.session_type as string | null) ?? legacyType,
+                    isLongRun:         liveSession ? isLongRun(liveSession) : false,
                     hrAboveCeilingPct: (r.hr_above_ceiling_pct ?? 0) as number,
                     fromPreviousBlock: r.superseded_at != null,
                     source:            r.source as string | null,

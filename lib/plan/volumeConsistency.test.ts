@@ -105,8 +105,24 @@ describe('both consumers call the owner — not a copy of it', () => {
     // it grepped for the call, and `if (false && volumePairProblem(...))` left the call
     // text intact and the arm green. A source assertion must pin the condition, not its
     // substring. (It still cannot prove the branch RUNS — declared limit.)
-    expect(WIZ).toMatch(/\n\s*if \(volumePairProblem\(weeklyKmVal, longestRunVal\)\) \{/)
+    // ⚠️ Updated by the code-review round: the gate now judges the RAW pair, so this arm
+    // pins `weeklyKm, longestRun`. It went red on that change, which is what it is for.
+    expect(WIZ).toMatch(/\n\s*if \(volumePairProblem\(weeklyKm, longestRun\)\) \{/)
     expect(WIZ).toMatch(/setAppStep\('longest-run'\)/)
+  })
+
+  it('the submit gate judges the RAW pair, never the anchor-substituted one', () => {
+    // 🔴 The first cut gated on `weeklyKmVal`/`longestRunVal`, which fall back to the
+    // ruler ANCHORS when the state is null. With `weeklyKm` null the substituted pair
+    // could violate while the step saw nothing to fix: no reason rendered, `canProceed`
+    // true, and the runner loops submit → longest-run → submit. Found by code review.
+    expect(WIZ).toMatch(/\n\s*if \(volumePairProblem\(weeklyKm, longestRun\)\) \{/)
+    expect(WIZ).not.toMatch(/volumePairProblem\(weeklyKmVal, longestRunVal\)/)
+  })
+
+  it('bounces to the step that owns the MISSING number, not always to longest-run', () => {
+    expect(WIZ).toMatch(/if \(weeklyKm == null\) \{ setAppStep\('weekly-volume'\); return \}/)
+    expect(WIZ).toMatch(/if \(longestRun == null\) \{ setAppStep\('longest-run'\); return \}/)
   })
 
   it('neither consumer re-implements the comparison', () => {

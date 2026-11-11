@@ -1031,7 +1031,17 @@ export default function GeneratePlanScreen({
     // so the pair that gets posted is not always the pair the step saw. `inputs.ts` only
     // range-checks each field, so the server does not refuse the combination either.
     // `GATE-EVERY-EXIT-FROM-A-STEP` means every exit, and submit is one.
-    if (volumePairProblem(weeklyKmVal, longestRunVal)) {
+    // 🔴 JUDGE THE RAW PAIR, NOT THE ANCHOR-SUBSTITUTED ONE. The first cut gated on
+    // `weeklyKmVal`/`longestRunVal`, which fall back to the ruler ANCHORS when the state is
+    // null — so with `weeklyKm` null the substituted pair could violate while the step
+    // itself saw nothing to fix: the step renders no reason, `canProceed` returns true, and
+    // the runner loops submit → longest-run → submit. Found by code review.
+    //
+    // ⚠️ And it bounces to the step that owns the MISSING number, not always to
+    // `longest-run`: a null weekly volume is answered on `weekly-volume`.
+    if (weeklyKm == null) { setAppStep('weekly-volume'); return }
+    if (longestRun == null) { setAppStep('longest-run'); return }
+    if (volumePairProblem(weeklyKm, longestRun)) {
       // `setAppStep('generating')` already ran above, so returning the runner to the step
       // IS the whole action: the step renders the reason and `canProceed` holds them there.
       setAppStep('longest-run')

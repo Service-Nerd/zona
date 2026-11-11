@@ -29,12 +29,16 @@ const DC = readFileSync('app/dashboard/DashboardClient.tsx', 'utf8')
  * calls the result a finding.
  */
 function driftCall(): string {
-  // Anchored on the DECLARATION, not the function name: the readiness guard sits BEFORE
-  // the call (`!overridesReady ? [] : driftRowsFromActivities(...)`), so a region starting
-  // at the name silently excluded the very arm written for it.
-  const i = DC.indexOf('const prescribedDriftRows')
-  expect(DC.indexOf('driftRowsFromActivities(', i)).toBeGreaterThan(i)
+  // Anchored on the FIRST declaration of the block, not the function name, and widened
+  // twice for the same reason both times: the readiness guard sits BEFORE the call
+  // (`!overridesReady ? [] : driftRowsFromActivities(...)`), and the code-review round
+  // hoisted `isAnalysedRow` / `runRows` above it too. A region that starts at the call
+  // silently drops the very arms written for the code around it — which is how the
+  // `isRun` arm went red on a change that kept `isRun`.
+  const i = DC.indexOf('const isAnalysedRow')
   expect(i, '§12 Am. 5 call site not found — this check has stopped looking').toBeGreaterThan(-1)
+  expect(DC.indexOf('const prescribedDriftRows', i)).toBeGreaterThan(i)
+  expect(DC.indexOf('driftRowsFromActivities(', i)).toBeGreaterThan(i)
   const end = DC.indexOf('computeZoneDriftPattern(', i)
   expect(end, 'the call site no longer feeds computeZoneDriftPattern').toBeGreaterThan(i)
   return stripComments(DC.slice(i, end))
@@ -60,6 +64,33 @@ describe('§12 Am. 5 call site — the three helpers every sibling consumer of r
     // Until that async read lands `allOverrides` is `[]`, so `getSessionsForDate` resolves
     // the original day. `TodayScreen` gates on this for the same reason.
     expect(driftCall()).toMatch(/overridesReady/)
+  })
+
+  // ── The code-review round's three call-site findings ──────────────────────
+  it('passes the LONG-RUN fact from isLongRun, because the type cannot answer it', () => {
+    // 537 of 2,054 stored `easy` sessions (26.1%) are long runs, and the amendment's own
+    // text claimed they were excluded while nothing excluded them.
+    expect(driftCall()).toMatch(/isLongRun: r\.session \? isLongRun\(/)
+  })
+
+  it('judges ALREADY-ANALYSED on the duplicate GROUP, not on the dedupe survivor', () => {
+    // `dedupeRuns` keeps the LONGER copy and the copies carry different ids, so checking
+    // only the survivor double-counts the run whose kept copy was never scored. The owner
+    // is used as the grouping predicate rather than re-implemented.
+    expect(driftCall()).toMatch(/dedupeRuns\(\[\.\.\.analysedDeduped, a\] as any\)\.length === analysedDeduped\.length/)
+  })
+
+  it('orders the analysis query LIVE-FIRST, not on week_n alone', () => {
+    // Fixing the owner's sort while the query still truncated on `week_n` left the same
+    // defect one layer out: superseded rows numbered weeks 15-35 can fill the 60-row
+    // window before the live block is ever read.
+    // ⚠️ Anchored on the DRIFT query's own select, not on the first `from('run_analysis')`
+    // in the file — there are several, and the first one is a different read entirely.
+    const at = DC.indexOf("'week_n, session_day, source, session_type, hr_above_ceiling_pct")
+    expect(at, 'the drift query select no longer matches — this check has stopped looking').toBeGreaterThan(-1)
+    const region = stripComments(DC.slice(at, at + 1200))
+    expect(region).toMatch(/\.order\('superseded_at', \{ ascending: true, nullsFirst: true \}\)/)
+    expect(region.indexOf("superseded_at', { ascending")).toBeLessThan(region.indexOf("'week_n', { ascending"))
   })
 
   it('passes the canonical resolver, never a hand-rolled date test', () => {

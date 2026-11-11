@@ -326,3 +326,60 @@ describe('ZONE-DRIFT-WEEK-COLLISION-01 — a finished block extends the window, 
     expect(computeZoneDriftPattern(rows)).toMatchObject({ count: 8, total: 8 })
   })
 })
+
+// ── §12 Am. 5, code-review round: THE LONG RUN WAS NEVER ACTUALLY EXCLUDED ──
+//
+// 🔴 The amendment's own text says *"the board did not extend it, deliberately"* about the
+// long run. **Nothing excluded it.** A generated long run carries `type: 'easy'` with
+// `role: 'long_run'`, and `run_analysis.session_type` is stamped straight from
+// `session.type`, so `'easy'` matched it on BOTH paths. 📐 Measured across stored plans:
+// **537 of 2,054 `easy`-typed sessions (26.1%) are long runs.**
+//
+// ⚠️ IT WAS WRONG ON THE SHIPPED ANALYSIS PATH BEFORE THIS AMENDMENT EXISTED. The
+// amendment did not introduce it; the amendment's DOC asserted it was handled when it was
+// not, which is a false record rather than a mis-measurement.
+describe('§12 Am. 5 — a long run is not an easy session for this rule', () => {
+  const easyRow = (over: Partial<ZoneDriftRow> = {}): ZoneDriftRow =>
+    ({ weekN: 3, sessionType: 'easy', hrAboveCeilingPct: 55, fromPreviousBlock: false, ...over })
+
+  it('EXCLUDES an analysis row flagged as a long run, though its type says easy', () => {
+    expect(countsForDrift(easyRow({ isLongRun: true }))).toBe(false)
+    // The type alone still reads eligible — which is exactly why the flag is needed.
+    expect(isDriftEligibleType('easy')).toBe(true)
+  })
+
+  it('still counts an ordinary easy run', () => {
+    expect(countsForDrift(easyRow())).toBe(true)
+    expect(countsForDrift(easyRow({ isLongRun: false }))).toBe(true)
+  })
+
+  it('EXCLUDES a prescribed long-run day on the unmatched path', () => {
+    const act = {
+      startDate: '2026-11-03T07:00:00Z', hrAboveCeilingPct: 55,
+      source: 'apple_health', alreadyAnalysed: false,
+    }
+    expect(driftRowsFromActivities([act], () =>
+      ({ weekN: 3, sessionType: 'easy', isLongRun: true }))).toEqual([])
+    // and the same day without the flag still counts, so the arm is not vacuous
+    expect(driftRowsFromActivities([act], () =>
+      ({ weekN: 3, sessionType: 'easy', isLongRun: false }))).toHaveLength(1)
+  })
+
+  it('stamps isLongRun: false on the rows it does emit, never leaves it absent', () => {
+    const rows = driftRowsFromActivities(
+      [{ startDate: '2026-11-03T07:00:00Z', hrAboveCeilingPct: 55, source: 'strava', alreadyAnalysed: false }],
+      () => ({ weekN: 3, sessionType: 'easy' }),
+    )
+    expect(rows[0].isLongRun).toBe(false)
+  })
+
+  it('a long run never reaches the pattern, even four of them', () => {
+    const four = [0, 1, 2, 3].map(i => ({
+      startDate: `2026-11-0${i + 1}T07:00:00Z`, hrAboveCeilingPct: 55,
+      source: 'strava', alreadyAnalysed: false,
+    }))
+    expect(computeZoneDriftPattern(
+      driftRowsFromActivities(four, () => ({ weekN: 3, sessionType: 'easy', isLongRun: true })),
+    )).toBeNull()
+  })
+})

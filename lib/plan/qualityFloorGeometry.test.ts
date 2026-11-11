@@ -238,3 +238,30 @@ describe('§110 Am. 3 — the exemption reaches BOTH quality floors, and reads t
     expect(strip('lib/plan/ruleEngine.ts')).toMatch(/\.filter\(w => w\.n >= 1\)\s*\n\s*\.flatMap\(w => Object\.entries/)
   })
 })
+
+// ── The §110 Am. 3 NOTE must carry the guards both floors apply ──────────────
+//
+// 🔴 The first cut wrote the note on geometry alone. A BEGINNER legitimately gets no
+// quality (§110's own scope: *"a genuine beginner still gets no quality sessions, and that
+// remains correct"*), so the note blamed the day geometry for an absence it did not cause
+// and promised that opening a day would restore work that was never going to be scheduled.
+// Found by code review.
+describe('§110 Am. 3 — the note is not written where the absence has another cause', () => {
+  const strip = (f: string) => readFileSync(f, 'utf8')
+    .replace(/\/\*[\s\S]*?\*\//g, m => m.replace(/[^\n]/g, ' '))
+    .replace(/\/\/[^\n]*/g, m => ' '.repeat(m.length))
+
+  it('guards the note on beginner, build/peak and carryable volume', () => {
+    const at = strip('lib/plan/ruleEngine.ts').indexOf('noteIsBeginner')
+    expect(at, 'the §110 Am. 3 note guards are gone — this check has stopped looking').toBeGreaterThan(-1)
+    const region = strip('lib/plan/ruleEngine.ts').slice(at, at + 1400)
+    expect(region).toMatch(/!noteIsBeginner && noteHasBuildOrPeak && noteCanCarry/)
+  })
+
+  it('uses the SAME threshold the invariant floor uses, not a second number', () => {
+    // `INV-PLAN-TIME-TARGET-QUALITY-FLOOR` reads `BEGINNER_QUALITY_MIN_WEEKLY_KM`; a
+    // separate literal here would be two answers to one question.
+    expect(strip('lib/plan/ruleEngine.ts'))
+      .toMatch(/noteCanCarry = weeks\.some\(w => \(w\.weekly_km \?\? 0\) >= GENERATION_CONFIG\.BEGINNER_QUALITY_MIN_WEEKLY_KM\)/)
+  })
+})

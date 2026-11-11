@@ -118,7 +118,12 @@ ids=$(git log "${RANGE_ARGS[@]}" --pretty=format:"%s" \
 # means the two arms stop contradicting each other.
 # ⚠️ SCOPED TO THE SAME RANGE deliberately. A revert of an OLD ship is not in `ids` to
 # begin with, and a revert outside the range must not silently excuse a ship inside it.
-reverted_ids=$(git log "${RANGE_ARGS[@]}" --pretty=format:"%s"       | grep -oE "^revert\([^)]+\)" | sed -E 's/^revert\(//; s/\)$//'       | tr ',' '\n' | sed -E 's/^ +| +$//g' | grep -v '^$' | sort -u)
+# ⚠️ ORDER MATTERS, AND THE FIRST CUT WAS ORDER-BLIND. `revert(X)` followed by `feat(X)` in
+# one range is a RE-SHIP, not a revert, and subtracting it left X unchecked by every arm:
+# no registry row demanded, no build-log entry, ALL CLEAN. The `reverts` arm this one defers
+# to walks commits newest-first for exactly that reason. So a revert cancels a ship only when
+# it is the LAST word on that id in the range. Found by code review of the arm itself.
+reverted_ids=$(git log "${RANGE_ARGS[@]}" --pretty=format:"%s" | grep -oE "^(feat|fix|perf|revert)\([^)]+\)" | sed -E 's/\)$//; s/^(feat|fix|perf|revert)\(/\1|/' | awk -F'|' '!seen[$2]++ && $1 == "revert" { print $2 }' | tr ',' '\n' | sed -E 's/^ +| +$//g' | grep -v '^$' | sort -u)
 if [ -n "$reverted_ids" ]; then
   ids=$(comm -23 <(printf '%s\n' "$ids") <(printf '%s\n' "$reverted_ids"))
 fi
