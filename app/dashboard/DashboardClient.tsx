@@ -16,6 +16,7 @@ import { TAP_TARGET_MIN_PX } from '@/components/ui/tapTarget'
 import ModifyPlanSheet from '@/components/shared/ModifyPlanSheet'
 import ModifyPlanConfirm from '@/components/shared/ModifyPlanConfirm'
 import { canModifyPlan, type PlanEdits } from '@/lib/plan/modifyPlan'
+import { getSessionsForDate } from '@/lib/plan/weekResolution'
 import { ACK_LABEL, warnKindOf, withAcknowledgement, type WarnKind } from '@/lib/plan/warnAcknowledgement'
 import { handoverState, handoverInput, handoverSeenPatch } from '@/lib/plan/baseBuildHandover'
 import { declaredVolumeEdit, stagedDisplay, stagedRaceOf, isCheckpointWeek, checkpointPassed, type CheckpointChoice } from '@/lib/plan/stagedRacePlan'
@@ -140,6 +141,8 @@ import { formatDistance, formatDuration, sumRoundedDistance, resolveSessionMetri
 import { backfillAndLoadSessionMetricOverrides, setSessionMetricOverride, clearSessionMetricOverride } from '@/lib/sessionMetricOverrides'
 import { didSessionHitZone, sessionHRBand, zoneForSessionType, zonesFromZoneString, hrBandForZoneString, zoneKeyForZoneString } from '@/lib/coaching/zoneRules'
 import { zoneDiscipline, zoneTimeSplit, weightOf, weekZoneSplitRows, weeklyEasyShares, easyShare } from '@/lib/coaching/weeklyZoneAggregate'
+// §12 Am. 5 — the same two the sibling consumers of `recentActivity` already apply.
+import { dedupeRuns, isRun } from '@/lib/coaching/weeklyActualLoad'
 import { EasyShareHeader, EasyShareBars, EASY_SHARE_BARS } from '@/components/shared/EasyShare'
 import EffortRecord from '@/components/shared/EffortRecord'
 import { effortRecord, plannedTypeByActivity, type EffortRun } from '@/lib/coaching/runEffort'
@@ -192,7 +195,7 @@ import type { PostRunData, SessionEntry } from '@/components/dashboard/dashboard
 import IconMe from '@/components/dashboard/IconMe'
 import AppleHealthConnectionRow from '@/components/dashboard/AppleHealthConnectionRow'
 import { fetchRunAnalysis } from '@/lib/coaching/fetchRunAnalysis'
-import { computeZoneDriftPattern, zoneDriftLine } from '@/lib/coaching/zoneDrift'
+import { computeZoneDriftPattern, zoneDriftLine, driftRowsFromActivities } from '@/lib/coaching/zoneDrift'
 import CoachTeaser from '@/components/dashboard/CoachTeaser'
 import OrientationScreen from '@/components/dashboard/OrientationScreen'
 import HRZonesSection from '@/components/dashboard/HRZonesSection'
@@ -1176,7 +1179,14 @@ export default function DashboardClient() {
     // The longer of the load picture's lookback and the easy-share record's (COACH-DISCIPLINE-HEADLINE-01).
     const since = new Date(Date.now() - Math.max(LOAD_PICTURE_LOOKBACK_DAYS, (EASY_SHARE_BARS + 1) * 7) * 86_400_000).toISOString()
     supabase.from('strava_activities')
-      .select('start_date, distance_m, reported_distance_m, activity_type, sport_type, strava_activity_id, apple_health_uuid, manual_uuid, hr_pct_z1, hr_pct_z2, hr_pct_z3, hr_pct_z4_5')
+      // §12 Am. 5 — `source` and `hr_above_ceiling_pct` are added for the zone-drift
+      // detector, which now reads the prescribed DAY rather than a matched row. This read
+      // already covers the whole activity log (every source, ADR-011), so the amendment
+      // needs no sixth `strava_activities` query. ⚠️ Its bound is a DAY window
+      // (≥ 56 days) while the drift window is a ROW count (8), which covers any runner
+      // doing more than about one easy run a week; below that the pattern's own floor
+      // (`ZONE_DRIFT_MIN_ROWS`) keeps it silent anyway.
+      .select('start_date, distance_m, reported_distance_m, activity_type, sport_type, strava_activity_id, apple_health_uuid, manual_uuid, source, hr_above_ceiling_pct, hr_pct_z1, hr_pct_z2, hr_pct_z3, hr_pct_z4_5')
       .eq('user_id', userId)
       .gte('start_date', since)
       .then(({ data, error }: { data: any[] | null; error: unknown }) => {
@@ -2287,7 +2297,10 @@ export default function DashboardClient() {
       // fitness-denominated and the amendment forbids it crossing.
       const { data: driftRows, error: driftErr } = await supabase
         .from('run_analysis')
-        .select('week_n, session_day, source, session_type, hr_above_ceiling_pct, superseded_at')
+        // §12 Am. 5 — the two activity ids come back so the prescribed-day path can tell
+        // which activities a live analysis ALREADY speaks for. Without them the same run
+        // would be counted twice: once as an analysis row, once as an unmatched activity.
+        .select('week_n, session_day, source, session_type, hr_above_ceiling_pct, superseded_at, strava_activity_id, apple_health_uuid')
         .eq('user_id', user.id)
         .not('hr_above_ceiling_pct', 'is', null)
         .order('week_n', { ascending: false })
@@ -3349,8 +3362,50 @@ export default function DashboardClient() {
               // `session_type` is stamped at write time from 2026-10-07; older rows
               // fall back to the current-plan join, which resolves `null` for a
               // previous block and is correctly EXCLUDED rather than assumed easy.
-              const zoneDriftPattern = computeZoneDriftPattern(
-                (zoneDriftRows ?? []).map((r: any) => {
+              // §12 Am. 5 (Coaching Board, 2026-11-11, ANALYSIS-HR-CEILING-ABSENT-01) —
+              // a run the MATCHER refused still counts, because `hr_above_ceiling_pct` is
+              // computed at ingest against the RUNNER'S OWN Z2 ceiling and needs no
+              // session. The eligibility fact is what the DAY prescribed.
+              //
+              // ⚠️ It does NOT become the session: no completion claim, no
+              // planned-versus-actual, no auto-reshape (clause 3). Only this sentence.
+              const analysedActivityKeys = new Set<string>(
+                (zoneDriftRows ?? []).flatMap((r: any) => [
+                  r.strava_activity_id ? `s:${r.strava_activity_id}` : null,
+                  r.apple_health_uuid  ? `h:${r.apple_health_uuid}`  : null,
+                ].filter(Boolean) as string[]),
+              )
+              // ⚠️ THE SAME THREE HELPERS EVERY SIBLING CONSUMER OF `recentActivity` USES,
+              // and all three were missing from the first cut of this call (code review,
+              // 2026-11-11). `isRun` because a legacy Ride or Walk row with an HR summary on
+              // an easy-prescribed day would read as a failed easy run; `dedupeRuns` because
+              // `DUPLICATE_ACTIVITY` measured 4.2% of the production log as two rows for one
+              // physical run, and the copies carry DIFFERENT ids, so `alreadyAnalysed`
+              // suppresses at most one of them — two hard runs logged twice reach the
+              // 4-of-8 floor on their own. `overridesReady` because until that read lands
+              // `allOverrides` is `[]` and a moved session resolves on its ORIGINAL day,
+              // which is the opposite of what the resolver comment claims. `TodayScreen`
+              // gates on it for this exact reason.
+              const prescribedDriftRows = !overridesReady ? [] : driftRowsFromActivities(
+                dedupeRuns((recentActivity ?? []).filter(isRun) as any).map((a: any) => ({
+                  startDate:         a.start_date as string,
+                  hrAboveCeilingPct: (a.hr_above_ceiling_pct ?? null) as number | null,
+                  source:            (a.source ?? null) as string | null,
+                  alreadyAnalysed:
+                    (a.strava_activity_id && analysedActivityKeys.has(`s:${a.strava_activity_id}`)) ||
+                    (a.apple_health_uuid  && analysedActivityKeys.has(`h:${a.apple_health_uuid}`)) || false,
+                })),
+                // ADR-016's canonical resolver, so a swapped or moved session is judged on
+                // the day it actually sits. Returns [] outside the plan, which the owner
+                // reads as "no prescription to borrow".
+                (day: Date) => {
+                  const r = getSessionsForDate(plan.weeks as any, day, allOverrides as any)[0]
+                  return r ? { weekN: r.weekN, sessionType: (r.session as any)?.type ?? null } : null
+                },
+              )
+              const zoneDriftPattern = computeZoneDriftPattern([
+                ...prescribedDriftRows,
+                ...(zoneDriftRows ?? []).map((r: any) => {
                   const legacyType = (plan.weeks.find((w: any) => w.n === r.week_n)
                     ?.sessions as any)?.[r.session_day]?.type ?? null
                   return {
@@ -3361,7 +3416,7 @@ export default function DashboardClient() {
                     source:            r.source as string | null,
                   }
                 }),
-              )
+              ])
 
               // R30 dismiss handler — 14-day window
               async function dismissZoneDrift() {

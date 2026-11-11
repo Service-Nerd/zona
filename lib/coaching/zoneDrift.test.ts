@@ -16,7 +16,7 @@
 // regression here is a regression against observed data rather than invented
 // numbers.
 import { describe, it, expect } from 'vitest'
-import { ZONE_DRIFT_ABOVE_CEILING_PCT } from './constants'
+import { ZONE_DRIFT_ABOVE_CEILING_PCT, ZONE_DRIFT_ELIGIBLE_SESSION_TYPES } from './constants'
 
 /** The rule as shipped, kept executable so the fix cannot silently revert. */
 const oldRuleFlags = (r: Row) => r.inZone < 60
@@ -112,7 +112,9 @@ describe('§12 Amendment 1 — drift is measured above the ceiling, not outside 
 
 import {
   computeZoneDriftPattern, zoneDriftLine, countsForDrift,
-  ZONE_DRIFT_MIN_ROWS, ZONE_DRIFT_WINDOW, type ZoneDriftRow,
+  isDriftEligibleType, driftRowsFromActivities,
+  ZONE_DRIFT_MIN_ROWS, ZONE_DRIFT_WINDOW,
+  type ZoneDriftRow, type DriftActivity, type DayPrescription,
 } from './zoneDrift'
 
 const row = (o: Partial<ZoneDriftRow> & { weekN: number }): ZoneDriftRow => ({
@@ -202,5 +204,125 @@ describe('ANALYSIS-SUPERSEDE-PATTERN-01 — drift reads across a race boundary',
     const line = zoneDriftLine(computeZoneDriftPattern(PREVIOUS_BLOCK)!)
     expect(line).not.toMatch(/fail|wrong|bad|months|always|never improve/i)
     expect(line).not.toContain('—')   // no em dash: a sentence the runner reads
+  })
+})
+
+// ── §12 AMENDMENT 5 — THE PRESCRIBED DAY, NOT THE MATCH ─────────────────────
+//
+// ⚠️ `validatePlan()` CANNOT CHECK THIS. It reads a plan; this rule reads a RUN
+// against a plan, so there is no plan-only predicate to assert. Same reasoning
+// §12 Am. 3 and Am. 4 recorded for `zoneTrace` and `completionCopy`.
+//
+// 📐 The numbers these arms defend, measured 2026-11-11 against production:
+// 419 activities across 24 runners carry `hr_above_ceiling_pct`; the detector
+// reached 77 across 3. Of the 419, 34 have no live plan and 353 fall outside
+// every live plan week, leaving 27 eligible — 4 already analysed, 23 new. The
+// note goes from silent for 5 of 5 runners with eligible runs to firing for 3.
+describe('§12 Am. 5 — an unmatched run on an easy-prescribed day still counts', () => {
+  const EASY: DayPrescription = { weekN: 4, sessionType: 'easy' }
+  const act = (over: Partial<DriftActivity> = {}): DriftActivity => ({
+    startDate: '2026-11-03T07:00:00Z',
+    hrAboveCeilingPct: 44,
+    source: 'apple_health',
+    alreadyAnalysed: false,
+    ...over,
+  })
+  const always = (p: DayPrescription | null) => () => p
+
+  it('counts a run the matcher refused, because the DAY was prescribed easy', () => {
+    const rows = driftRowsFromActivities([act()], always(EASY))
+    expect(rows).toHaveLength(1)
+    expect(rows[0]).toMatchObject({ weekN: 4, sessionType: 'easy', hrAboveCeilingPct: 44 })
+  })
+
+  it('never double-counts an activity a live analysis already speaks for', () => {
+    expect(driftRowsFromActivities([act({ alreadyAnalysed: true })], always(EASY))).toEqual([])
+  })
+
+  it('is silent on a day the plan prescribed quality — above Z2 there is COMPLIANCE', () => {
+    expect(driftRowsFromActivities([act()], always({ weekN: 4, sessionType: 'quality' }))).toEqual([])
+  })
+
+  it('is silent on a day outside the live plan, where there is no prescription to borrow', () => {
+    expect(driftRowsFromActivities([act()], always(null))).toEqual([])
+  })
+
+  it('excludes a manual row and a run with no heart-rate stream', () => {
+    expect(driftRowsFromActivities([act({ source: 'manual' })], always(EASY))).toEqual([])
+    expect(driftRowsFromActivities([act({ hrAboveCeilingPct: null })], always(EASY))).toEqual([])
+  })
+
+  it('reads the day from the ACTIVITY, so the resolver is asked about the run it is judging', () => {
+    const asked: string[] = []
+    driftRowsFromActivities([act({ startDate: '2026-11-05T18:30:00Z' })], d => {
+      asked.push(d.toISOString())
+      return EASY
+    })
+    expect(asked).toEqual(['2026-11-05T18:30:00.000Z'])
+  })
+
+  it('never claims a cross-block reach it does not have', () => {
+    // §71 Am. 1's boundary clause belongs to the analysis rows. The resolver
+    // returns null outside the live plan, so these rows are always in-block —
+    // and a false `true` here would add ", including your last block" to the
+    // runner's sentence on evidence that cannot support it.
+    expect(driftRowsFromActivities([act()], always(EASY))[0].fromPreviousBlock).toBe(false)
+  })
+
+  it('COMPOSES: the new rows reach the pattern and the floor still holds', () => {
+    const four = [0, 1, 2, 3].map(i => act({ startDate: `2026-11-0${i + 1}T07:00:00Z` }))
+    const rows = driftRowsFromActivities(four, always(EASY))
+    expect(rows).toHaveLength(4)
+    const p = computeZoneDriftPattern(rows)
+    expect(p).toMatchObject({ count: 4, total: 4, crossesBlockBoundary: false })
+    // Three is a bad fortnight, not a pattern: the floor is a SILENCE rule.
+    expect(computeZoneDriftPattern(rows.slice(0, 3))).toBeNull()
+  })
+
+  it('the eligible-type set is the ONE owner, shared with countsForDrift', () => {
+    for (const t of ZONE_DRIFT_ELIGIBLE_SESSION_TYPES) {
+      expect(isDriftEligibleType(t)).toBe(true)
+      expect(countsForDrift({ weekN: 1, sessionType: t, hrAboveCeilingPct: 44, fromPreviousBlock: false })).toBe(true)
+      expect(driftRowsFromActivities([act()], always({ weekN: 1, sessionType: t }))).toHaveLength(1)
+    }
+    expect(isDriftEligibleType(null)).toBe(false)
+    expect(isDriftEligibleType('long')).toBe(false)   // §12 Am. 5 declined to extend it
+  })
+})
+
+// ── ZONE-DRIFT-WEEK-COLLISION-01 — the live block must never lose the window ──
+//
+// 🔴 Found by code review of §12 Am. 5, and it is a defect in the PRE-EXISTING sort:
+// `b.weekN - a.weekN` treats a week number as a time axis, and old plans REUSE week
+// numbers (`PLAN-WEEK-COLLISION-01`). The founder's hidden rows are weeks 15-35, so a
+// block he had left outranked the live one and consumed all 8 slots.
+//
+// ⚠️ It restores §71 Am. 1's stated intent: the previous block EXTENDS the window when
+// the live block has too few rows. It was never meant to displace it.
+describe('ZONE-DRIFT-WEEK-COLLISION-01 — a finished block extends the window, never displaces it', () => {
+  const clean = (weekN: number): ZoneDriftRow =>
+    ({ weekN, sessionType: 'easy', hrAboveCeilingPct: 2, fromPreviousBlock: true, source: 'strava' })
+  const drifted = (weekN: number): ZoneDriftRow =>
+    ({ weekN, sessionType: 'easy', hrAboveCeilingPct: 55, fromPreviousBlock: false, source: 'strava' })
+
+  it('still speaks when a HIGHER-numbered finished block would have filled the window', () => {
+    const live = [1, 2, 3, 4].map(() => drifted(4))
+    const old  = [28, 29, 30, 31, 32, 33, 34, 35].map(clean)
+    // The whole defect in one assertion: 4 live drifted runs, 8 clean rows from a plan
+    // the runner has left. Under the old sort this was null — total silence. Now the live
+    // four take the front of the window and the finished block fills the rest, so the
+    // sentence reads "4 of your last 8 ... including your last block": both halves true.
+    expect(computeZoneDriftPattern([...live, ...old])).toMatchObject({ count: 4, total: 8, crossesBlockBoundary: true })
+  })
+
+  it('still lets the finished block EXTEND a thin live block, which is §71 Am. 1', () => {
+    const p = computeZoneDriftPattern([drifted(2), drifted(3), ...[20, 21, 22].map(w => ({ ...clean(w), hrAboveCeilingPct: 55 }))])
+    expect(p).toMatchObject({ count: 5, total: 5, crossesBlockBoundary: true })
+  })
+
+  it('orders by week number WITHIN a block, where only one plan is in play', () => {
+    const rows: ZoneDriftRow[] = [1, 2, 3, 4, 5, 6, 7, 8, 9].map(w => ({ ...drifted(w), hrAboveCeilingPct: w === 1 ? 2 : 55 }))
+    // Nine live rows, the OLDEST of them clean: the window drops week 1, not week 9.
+    expect(computeZoneDriftPattern(rows)).toMatchObject({ count: 8, total: 8 })
   })
 })

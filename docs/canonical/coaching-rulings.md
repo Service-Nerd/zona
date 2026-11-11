@@ -2960,3 +2960,51 @@ and §117 Am.5's logic applies identically to both.
 
 **Evidence:** measured this sitting through `runEngine` across distances × runways; boundary probe showed the half
 builds normally from 5 km/week with a 2 km longest run.
+
+---
+
+## 2026-11-11 — `ANALYSIS-HR-CEILING-ABSENT-01` · §12's drift detector reads the PRESCRIBED DAY, not a matched row · **CORRECT WITH AMENDMENT**
+
+**Convened by:** an RCA, not a doctrine edit. The item was filed ⚙️ NO BOARD *"to measure the writer"* and
+routed up in analysis once the measurement showed the writer was fine. ⚠️ **The fix the item specified was the
+wrong one** — the fourth consecutive item in this programme of which that is true.
+
+**Conflict scan.** §12 Am. 1 (drift is directional — the metric is unchanged and the reason the long run was
+NOT added), §12 Am. 2 (praise is stricter — untouched, this is the accusation side), §12 Am. 4 and §11 Am. 4
+(the completion headline — explicitly forbidden to these rows), §1 Am. 4 cl. 2 (no auto-reshape — binds
+clause 3), §71 Am. 1 (the cross-block reach — belongs to the analysis rows, not these), §14 (the Z2 ceiling the
+share is already measured against), §52 (the long run's own cap — considered, declined). **No contradiction.**
+
+**The measurement, because it is the whole argument.** `hr_above_ceiling_pct` is computed at INGEST against the
+runner's own Z2 ceiling and needs no session. **419 activities across 24 runners carry it; the detector reached
+77 across 3.** Of the 419: 34 no live plan, 353 outside every live plan week, **27 eligible, 23 new**. The note
+goes from silent for 5 of 5 runners with eligible runs to firing for 3.
+
+**Ruling: CORRECT WITH AMENDMENT.** The amendment is clause 3 — these rows reach the runner's sentence and
+nothing else. The matcher is NOT widened; a run outside the 0.75–1.40 band does not become the session.
+
+🩹 **Willy, BINDING, and discharged on evidence:** the drift note and `shadow_load` must not both fire in one
+week, drift taking precedence. Measured: the overlap is real for **one runner across 5 consecutive weeks**
+(+45/+69/+72/+82/+27% over plan). ✅ **Already satisfied by existing architecture** —
+`checkAdjustmentTriggers` returns at most one adjustment on `… > zone_drift > shadow_load > …` and
+`selectPrimaryInsight` tests `zone_drift` first. **No new code; a test holds the claim.**
+
+📊 **Seiler:** adds a population, changes no definition. 🎯 **McMillan:** *"whether our matcher liked the
+distance is our problem, not theirs."* ⚕️ **Sims:** heat, illness and the luteal phase lift HR at unchanged
+effort, which is why this feeds a note and never a prescription. 🏃 **Hutchinson (chair):** the band stays.
+💪 **Blagrove:** no objection.
+
+**Artifacts.** Principle: §12 Amendment 5. Numeric: `ZONE_DRIFT_ELIGIBLE_SESSION_TYPES`. Check:
+`lib/coaching/zoneDrift.test.ts`, 9 arms, **7 mutations each firing the arm written for it**.
+⚠️ **Not an engine invariant, structurally:** `validatePlan()` reads a plan; this rule reads a RUN against a
+plan, so there is no plan-only predicate — as Amendments 3 and 4 recorded for `zoneTrace` and `completionCopy`.
+
+🔴 **Code review of the artifacts found four defects, all mine, and one would have made the amendment inert
+for the runner it was measured on.** `computeZoneDriftPattern` windowed by `weekN` descending and a week number
+is not a time axis across plans: a finished block outranked the live one and took every slot (reproduced — 5 of 5
+above the ceiling in live week 4 returned **null**). Fixed by ordering the live block first, which **restores §71
+Amendment 1's stated intent** rather than changing it, so it is an exempt defect fix and is declared as a
+behaviour change to a shipped surface: **measured 0 of 3 live runners' notes move today.** The other three were
+one mistake three times — the call site omitted `isRun`, `dedupeRuns` and the `overridesReady` gate, the three
+helpers every sibling consumer of that same array already applies. ⚠️ **Four rounds of falsifying my own arms
+found none of the four.**

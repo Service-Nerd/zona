@@ -62,6 +62,25 @@ export const ZONE_DRIFT_MIN_ROWS = 4
 export const ZONE_DRIFT_WINDOW   = 8
 
 /**
+ * §12 Amendment 5 (Coaching Board, 2026-11-11, ANALYSIS-HR-CEILING-ABSENT-01) — WHICH
+ * prescribed session types make a run drift-eligible.
+ *
+ * 🔑 The amendment's substance is that this is a property of **the day's prescription**,
+ * not of a matched analysis row. The set was an inline `=== 'easy' || === 'recovery'`
+ * in `countsForDrift`, and the identical literal pair was about to be written out a
+ * second time by the prescribed-day path — the `DELOAD-OWNER-01` shape, caught on the
+ * way in rather than after the two copies drifted.
+ *
+ * ⚠️ It is a genuine coaching choice and not a fact: a coach could reasonably argue the
+ * long run belongs here, since §52 caps it at the same ceiling. The board did not extend
+ * it, deliberately — a long run's final kilometres drift for reasons that are not
+ * discipline, and §12 Am. 1 made drift directional precisely to avoid punishing those.
+ *
+ * ⚠️ Quality is NEVER eligible: above Z2 on a tempo is the prescription being followed.
+ */
+export const ZONE_DRIFT_ELIGIBLE_SESSION_TYPES: readonly string[] = ['easy', 'recovery']
+
+/**
  * §12 Amendment 2 (Coaching Board, 2026-09-24) — the ceiling for PRAISE.
  *
  * 🔴 TWO THRESHOLDS, TWO JOBS, AND THE ASYMMETRY IS THE PRINCIPLE. `§12 Am.1`

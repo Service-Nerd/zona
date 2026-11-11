@@ -8432,32 +8432,6 @@ the gap so widening a corpus fails loudly and the arm gets replaced by a floor. 
 > FIRST match in priority order**, so a silent trigger may be unreachable or merely always
 > outranked — `TRIGGER-BACKTEST-02` (masking analysis) is stubbed and not built.
 
-### 🔲 `ANALYSIS-HR-CEILING-ABSENT-01` — the drift detector's input is missing for every real runner *(filed 2026-11-09, P1)* ⚙️ **NO BOARD** to measure the writer; 🏃 **COACHING BOARD** only if a threshold or a claim moves
-
-Found running `ADJUST-TRIGGER-REACH-02`'s backtest after `TRIGGER-BACKTEST-02` made starvation visible.
-
-📐 **Measured 2026-11-09, live `run_analysis`, superseded rows excluded:** `hr_above_ceiling_pct` — the field
-`zoneDriftScore` reads, and therefore the only input to §12's drift trigger — is present on **75 of 97 rows
-(77.3%)**. ⚠️ **72 of those 75 belong to ONE user**, whose 72 analyses were all written on a single day: a
-backfill, not history. Of the **four** genuine users, **two** have any at all, and one of those has **three
-rows**. 🔴 **The runner with the deepest real history — 6 plan weeks, 14 analyses, 13 separate write days —
-has ZERO.** `ef_trend_pct` tracks it at 74 of 97 with the same concentration. `actual_load_mins` /
-`planned_load_mins`, which `long_run_shortfall` needs, are on **10 of 97**.
-
-⚠️ **THE AGGREGATE IS THE TRAP AND IT IS WHY THIS WAS NEVER NOTICED.** 77.3% reads healthy and describes one
-account. `ADJUST-SESSIONDAY-PREFIX-01` (2026-10-15) fixed the **selector** — the route was filtering on a
-`week_N_` prefix that matched nothing — and that repair was real and verified. **This is a different cause
-with the same effect:** the selector now works and there is nothing to select.
-
-**So §12's ceiling is still enforced in the plan and unwatched in the data**, which is the exact sentence that
-item was written to retire. Measure the WRITER before proposing anything: which ingest path populates
-`hr_above_ceiling_pct`, and whether an Apple-Health run without an HR stream (ADR-011 §5: the iPhone-only
-cohort) simply cannot produce it. **If that is the answer, it is an honest consequence and the DETECTOR is
-fine — but then `zone_drift` can never fire for most runners and the product should not claim it watches.**
-
-🔻 **It also re-prices `ADJUST-TRIGGER-REACH-02`'s January gate.** A December cohort with 4+ weeks and no
-HR-in-zone data starves the same two detectors, so waiting does not settle the question on its own.
-
 ### 🟡 `ADJUST-TRIGGER-REACH-02` — RUN the backtest and report which of the 8 detectors a real runner reaches *(filed 2026-10-08, P1)* ⚙️ **NO BOARD**
 
 > ✅ **UNBLOCKED AND RUN, 2026-10-08.** First real result: **37 week-checks across 7 runners,

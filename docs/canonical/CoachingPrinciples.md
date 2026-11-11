@@ -2028,6 +2028,99 @@ makes no claim. McMillan: RPE is real evidence and the runner gave it; the neutr
 `lib/coaching/completionCopy.test.ts`, falsified by dropping the heart-rate condition, the RPE condition, the
 no-evidence rule, the long-run role, and by reverting one caller to the bare type.
 
+### Amendment 5 — the PRESCRIBED DAY makes a run drift-eligible, not a matched row — added 2026-11-11 (Coaching Board, ANALYSIS-HR-CEILING-ABSENT-01)
+
+**Principle.** A run on a calendar day whose prescribed session is easy or recovery contributes its
+above-ceiling share to this section's detector, **whether or not the matcher accepted it as that
+session**. The eligibility fact is what the day prescribed. It is not a property of a match.
+
+**Three things the amendment does NOT do, each stated rather than implied.**
+
+1. **It does not widen the matcher.** A run outside `sessionMatch`'s 0.75–1.40 distance band, or on
+   the wrong weekday, still does not become the session.
+2. **It makes no claim about the session.** No completion headline (Amendment 4), no
+   planned-versus-actual comparison, no `catalogue_id`, no score.
+3. **It drives no auto-reshape.** §1 Amendment 4 clause 2 stands: these rows reach the runner's
+   sentence and nothing else. The adjustment engine keeps reading matched analyses only, which is
+   why `checkAdjustmentTriggers` was deliberately left untouched.
+
+**Why, and the measurement is the whole argument.** `hr_above_ceiling_pct` is computed at INGEST by
+`bucketHRSamples(hrValues, zones)` against the RUNNER'S OWN Zone 2 ceiling (§14's
+`Z2.karvonen_pct[1]`), and is stored on `strava_activities` for every ingested run with a heart-rate
+stream. **No session is involved in producing it.** The detector nonetheless read `run_analysis`,
+which has a row only once the matcher has accepted the activity AS a session.
+
+📐 **Measured 2026-11-11 against production: 419 activities across 24 runners carry the share. The
+detector reached 77, across 3.** Of the 419, 34 belong to runners with no live plan and 353 fall
+outside every live plan week, leaving **27 eligible** under this amendment: 4 already analysed, **23
+new**. The runner-facing note goes from **silent for 5 of 5** runners with eligible runs to **firing
+for 3 of 5**.
+
+⚠️ **The 353 are not a defect and must not be chased.** A prescription has to come from a plan week;
+an activity outside every week has no day to borrow from. §71 Amendment 1's cross-block reach belongs
+to the analysis rows, which carry `superseded_at`. The prescribed-day rows are in-block by
+construction and declare `fromPreviousBlock: false`, so they never add *", including your last
+block"* to a sentence on evidence that cannot support it.
+
+**The seats.** Seiler: the share is already the directional metric Amendment 1 requires, measured
+against the right ceiling, so this adds a population and changes no definition. McMillan: *"the runner
+went out on Tuesday and ran it too hard; whether our matcher liked the distance is our problem, not
+theirs."* Sims: heat, illness and the luteal phase lift heart rate at unchanged effort, which is why
+this feeds a note and not a prescription. Hutchinson: the band stays as it is; a run two kilometres
+long of its session is still a run on an easy day.
+
+🩹 **Willy, BINDING, and now measured.** The drift note and the `shadow_load` note must not both fire
+in one week: *"tissue-wise the drift note is the better of the two, the volume is already in the
+cap."* Measured: the overlap is real for exactly **one runner, across 5 consecutive weeks** (+45%,
++69%, +72%, +82%, +27% over plan, with 1–2 drift-eligible runs each week). ✅ **The condition is
+already satisfied by existing architecture, not by new code** — `checkAdjustmentTriggers` returns **at
+most one** adjustment on the documented priority `… > zone_drift > shadow_load > …`, and
+`selectPrimaryInsight` returns one primary insight testing `zone_drift` first. Both order drift above
+shadow load today. ⚠️ **That is a claim about code and it is held by a test, not by this paragraph.**
+
+**Numeric.** `ZONE_DRIFT_ELIGIBLE_SESSION_TYPES` (`['easy', 'recovery']`) — the set was an inline
+`=== 'easy' || === 'recovery'` in `countsForDrift` and the prescribed-day path was about to write the
+identical pair a second time (the `DELOAD-OWNER-01` shape, caught on the way in). ⚠️ **The long run
+was considered and declined:** §52 caps it at the same ceiling, but its final kilometres drift for
+reasons that are not discipline, and Amendment 1 made drift directional precisely to avoid punishing
+those. Quality is never eligible: above Z2 on a tempo is the prescription being followed.
+
+🔴 **CODE REVIEW FOUND FOUR DEFECTS IN THE FIRST CUT, ALL MINE, AND ONE WOULD HAVE MADE THE AMENDMENT
+INERT FOR THE RUNNER IT WAS MEASURED ON.** `computeZoneDriftPattern` windowed by `weekN` descending, and
+**a week number is not a time axis across plans** — old plans REUSE week numbers (`PLAN-WEEK-COLLISION-01`,
+warned about in `DashboardClient`'s own comment four hundred lines from the call site). The founder's hidden
+rows are weeks 15-35, so a block he had LEFT outranked the live one and consumed every slot. 📐 Reproduced: a
+runner **5 of 5 above the ceiling in live week 4**, mixed with 8 clean rows from a finished block, produced
+**null**. Fixed by sorting the live block first, which restores §71 Amendment 1's stated intent — the previous
+block **extends** a thin window, it was never meant to displace it. ⚠️ **That is a behaviour change to a
+shipped surface beyond this amendment and is declared as one: measured against production it moves 0 of 3
+runners' notes today**, so it is latent, exactly as `DB-USER-PURGE-01` was. It becomes reachable the moment
+this amendment starts adding low-numbered live rows.
+
+⚠️ **The other three were the same mistake three times: the call site did not use the helpers every sibling
+consumer of that same array already uses.** `isRun` (a legacy Ride with an HR summary on an easy day reads as
+a failed easy run), `dedupeRuns` (`DUPLICATE_ACTIVITY` measured **4.2%** of the production log as two rows for
+one physical run, and the copies carry DIFFERENT ids, so the already-analysed guard suppresses at most one —
+two hard runs logged twice reach the 4-of-8 floor by themselves), and the `overridesReady` gate (until that
+read lands the override list is empty and a MOVED session resolves on the day it left, which is the opposite
+of what the resolver was added to do). **Four rounds of falsifying my own arms found none of the four**, which
+is the standing lesson: a falsification proves an arm bites and says nothing about the array handed to it.
+
+**Not mechanically checkable by `validatePlan()`** — it reads a plan; this rule reads a RUN against a
+plan, so there is no plan-only predicate to assert. Same reasoning Amendments 3 and 4 recorded for
+`zoneTrace` and `completionCopy`. Enforced by `lib/coaching/zoneDrift.test.ts` (12 arms) plus
+`lib/coaching/driftSourcingCallSite.test.ts` (5 arms on the CALL SITE, which the owner's own tests cannot
+reach — comment-stripped, because every helper name they look for is also named in the comment explaining why
+it is there, which is `HOOK-RGBA-COMMENTS-01`): the refused run
+counting, no double-count of an analysed activity, silence on a quality day and outside the plan,
+manual and stream-less rows excluded, the resolver asked about the activity's own day, the cross-block
+claim never made, the composition through to the pattern floor, and the eligible set as one owner.
+**Falsified by FOURTEEN mutations** — seven on the owner (dropping the already-analysed guard, accepting any
+prescription type, claiming a cross-block reach, dropping the manual guard, extending the set to `long`,
+resolving the day from `now`, returning nothing at all), two on the window (**reverting to the real original
+sort**, and dropping the within-block ordering), and five on the call site, of which the decisive one restores
+**the exact code the review flagged** and fails three arms at once. Each fires the arm written for it.
+
 ## 13. Fitness classification — VDOT first, volume fallback
 
 > **Superseded for the classifier logic by §79 (dual-signal), SLT-approved 2026-08-06 (GEN-FIX-07/D2).** VDOT-first with a volume fallback misclassified a 30 km/week runner as a beginner on one slow 5K. §79 now requires VDOT *and* volume to agree before applying the beginner intensity ceiling. This section is retained for the definition of the three levels and their thresholds; the *derivation* rule is §79's.

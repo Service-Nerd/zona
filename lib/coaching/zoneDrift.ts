@@ -1,4 +1,9 @@
-import { ZONE_DRIFT_ABOVE_CEILING_PCT, ZONE_DRIFT_MIN_ROWS, ZONE_DRIFT_WINDOW } from './constants'
+import {
+  ZONE_DRIFT_ABOVE_CEILING_PCT,
+  ZONE_DRIFT_MIN_ROWS,
+  ZONE_DRIFT_WINDOW,
+  ZONE_DRIFT_ELIGIBLE_SESSION_TYPES,
+} from './constants'
 
 // ANALYSIS-SUPERSEDE-PATTERN-01 (Coaching Board, 2026-10-07) — the zone drift
 // detector, and the single owner of "has this runner been drifting?".
@@ -55,7 +60,89 @@ export interface ZoneDriftPattern {
 /** Only an easy or recovery run can drift, per §12. */
 export function countsForDrift(row: ZoneDriftRow): boolean {
   if (row.source === 'manual') return false          // no HR stream to judge
-  return row.sessionType === 'easy' || row.sessionType === 'recovery'
+  return isDriftEligibleType(row.sessionType)
+}
+
+/** §12 Am. 5 — the one owner of "does this prescription make a run drift-eligible?" */
+export function isDriftEligibleType(sessionType: string | null | undefined): boolean {
+  return sessionType != null && ZONE_DRIFT_ELIGIBLE_SESSION_TYPES.includes(sessionType)
+}
+
+// ── §12 AMENDMENT 5 — THE PRESCRIBED DAY, NOT THE MATCH ─────────────────────
+//
+// 🔴 WHY THIS EXISTS. `hr_above_ceiling_pct` is computed at INGEST, by
+// `bucketHRSamples(hrValues, zones)`, against the RUNNER'S OWN Zone 2 ceiling
+// (§14's `Z2.karvonen_pct[1]`). **No session is involved in producing it.** It is
+// stored on `strava_activities` for every ingested run with a heart-rate stream.
+//
+// The detector nonetheless read `run_analysis`, which only has a row once the
+// matcher has accepted the activity AS a session. So a run the matcher refused —
+// wrong distance band, no same-weekday, outside ±2 days — carried a perfectly good
+// measurement that §12 could not see. ⚠️ **Measured 2026-11-11: 419 activities
+// across 24 runners hold the share; the detector reached 77 across 3.**
+//
+// ⚠️ THE AMENDMENT DOES NOT WIDEN THE MATCHER. A run outside the band does not
+// become the session: no completion claim (§11 Am. 4), no planned-versus-actual,
+// and no auto-reshape (§1 Am. 4 cl. 2 / §12 Am. 5 cl. 3). The ONLY fact borrowed
+// from the plan is what the day PRESCRIBED, which is why this takes a resolver and
+// not a session.
+
+export interface DriftActivity {
+  /** ISO timestamp of the run. */
+  startDate: string
+  /** `strava_activities.hr_above_ceiling_pct`. Null when the run had no HR stream. */
+  hrAboveCeilingPct: number | null
+  /** ADR-011 provenance. A `manual` row has no stream and is excluded, as in `countsForDrift`. */
+  source?: string | null
+  /**
+   * True when a live `run_analysis` row already speaks for this activity, so it is
+   * ALREADY in the `analyses` list. ⚠️ The caller owns the id plumbing; the
+   * double-counting RULE lives here, where it is tested.
+   */
+  alreadyAnalysed: boolean
+}
+
+/** What the plan prescribed on a given calendar day, or null if that day is outside it. */
+export interface DayPrescription {
+  weekN: number
+  sessionType: string | null
+}
+
+/**
+ * Rows for activities the matcher never accepted, on days the plan prescribed easy or
+ * recovery. Concatenate with the `run_analysis` rows and hand the whole list to
+ * `computeZoneDriftPattern`, which already owns the window and the floor.
+ *
+ * @param prescriptionFor the canonical date→prescription resolver (ADR-016's
+ *        `getSessionsForDate`, closed over the runner's live plan and overrides).
+ *        Injected rather than imported so this module stays free of plan types and so
+ *        the gate can reach it without a Plan fixture.
+ */
+export function driftRowsFromActivities(
+  activities: readonly DriftActivity[],
+  prescriptionFor: (day: Date) => DayPrescription | null,
+): ZoneDriftRow[] {
+  const rows: ZoneDriftRow[] = []
+  for (const a of activities) {
+    if (a.alreadyAnalysed) continue
+    if (a.source === 'manual') continue
+    if (a.hrAboveCeilingPct == null || !Number.isFinite(a.hrAboveCeilingPct)) continue
+    const day = new Date(a.startDate)
+    if (Number.isNaN(day.getTime())) continue
+    const p = prescriptionFor(day)
+    if (!p || !isDriftEligibleType(p.sessionType)) continue
+    rows.push({
+      weekN: p.weekN,
+      sessionType: p.sessionType,
+      hrAboveCeilingPct: a.hrAboveCeilingPct,
+      // These rows come from the runner's LIVE plan by construction — the resolver
+      // returns null for any day outside it — so they never cross a block boundary.
+      // §71 Am. 1's cross-block reach belongs to the analysis rows, which carry it.
+      fromPreviousBlock: false,
+      source: a.source ?? null,
+    })
+  }
+  return rows
 }
 
 /**
@@ -68,7 +155,23 @@ export function countsForDrift(row: ZoneDriftRow): boolean {
 export function computeZoneDriftPattern(rows: ZoneDriftRow[]): ZoneDriftPattern | null {
   const eligible = rows
     .filter(countsForDrift)
-    .sort((a, b) => b.weekN - a.weekN)
+    // 🔴 THE LIVE BLOCK FIRST, ALWAYS — `ZONE-DRIFT-WEEK-COLLISION-01`, found by code
+    // review of §12 Am. 5 (2026-11-11). This was `b.weekN - a.weekN` alone, and **a week
+    // number is not a time axis across plans**: old plans REUSE week numbers, which is
+    // `PLAN-WEEK-COLLISION-01`, warned about in `DashboardClient`'s own comment four
+    // hundred lines from here. The founder's hidden rows are weeks 15-35, so a finished
+    // block outranked the live one and consumed every slot in the window.
+    //
+    // 📐 Measured: a runner 5 of 5 above the ceiling in live week 4, mixed with 8 clean
+    // rows from a block they had left, produced **null** — total silence, on exactly the
+    // runner whose history motivated the measurement.
+    //
+    // ⚠️ This restores §71 Amendment 1's stated intent rather than changing it: the
+    // previous block EXTENDS the window when the live block has too few rows. It was never
+    // meant to displace it. Within each side the week number is a sound ordering, because
+    // there only one plan is in play.
+    .sort((a, b) =>
+      (a.fromPreviousBlock ? 1 : 0) - (b.fromPreviousBlock ? 1 : 0) || b.weekN - a.weekN)
     .slice(0, ZONE_DRIFT_WINDOW)
 
   if (eligible.length < ZONE_DRIFT_MIN_ROWS) return null
