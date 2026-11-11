@@ -17,7 +17,7 @@ const sql = readFileSync(MIGRATION, 'utf8')
 
 describe('ACT-FUNNEL-01 — v_activation_funnel', () => {
   it('creates the view the brief asked for', () => {
-    expect(sql).toMatch(/create\s+or\s+replace\s+view\s+public\.v_activation_funnel\s+as/i)
+    expect(sql).toMatch(/create\s+(or\s+replace\s+)?view\s+public\.v_activation_funnel\s+as/i)
   })
 
   it('takes its POPULATION from v_metric_users, never a re-derived admin/internal pair', () => {
@@ -91,7 +91,13 @@ describe('ACT-FUNNEL-01 — v_activation_funnel', () => {
     // p` as its "live now" arm, and failed on correct SQL. Same lesson as the arm above.
     const label = sql.search(/as\s+trainable_week_in_trial/i)
     expect(label, 'trainable_week_in_trial is gone').toBeGreaterThan(-1)
-    const openIdx = sql.lastIndexOf('exists (select 1', label)
+    // ⚠️ A case-insensitive, whitespace-flexible search for the LAST `exists (select 1` before the
+    // label — not `lastIndexOf` on an exact string. The first version matched literal
+    // `'exists (select 1'`, so reformatting correct SQL turned this arm red, in the file whose own
+    // comment says to bound by syntax rather than by guessing. (It also broke the moment the
+    // expression was wrapped in a `case when`.)
+    const before = sql.slice(0, label)
+    const openIdx = before.search(/exists\s*\(\s*select\s+1(?![\s\S]*exists\s*\(\s*select\s+1)/i)
     expect(openIdx, 'trainable_week_in_trial is no longer an exists() over plan versions').toBeGreaterThan(-1)
     const expr = sql.slice(openIdx, label)
     expect(expr, 'the trial boolean must read plan_versions').toMatch(/from\s+plan_versions\s+v\b/i)
@@ -103,6 +109,60 @@ describe('ACT-FUNNEL-01 — v_activation_funnel', () => {
     // draws this line; a funnel that merged them would report 23 conversions against a true 0.
     expect(sql).toMatch(/not\s+coalesce\(b\.is_comped,\s*false\)[\s\S]{0,80}as\s+subscribed_at/i)
     expect(sql).toMatch(/as\s+is_comped/i)
+  })
+
+  it('DROPS before creating — the column set changed, so a replace would apply NOTHING', () => {
+    // 🔴 `create or replace view` may only APPEND columns. This version renames
+    // `plan_first_week` → `current_plan_first_week` and removes `plan_starts_after_trial`, so a
+    // replace raises 42P16 and the whole file — grants and comment included — does nothing.
+    // `20260920` documents that error code verbatim and INTERNAL-ACCOUNTS-01's review caught two
+    // instances of it the same morning.
+    const drop = sql.search(/drop\s+view\s+if\s+exists\s+public\.v_activation_funnel/i)
+    const create = sql.search(/create\s+(or\s+replace\s+)?view\s+public\.v_activation_funnel/i)
+    expect(drop, 'no drop before the create').toBeGreaterThan(-1)
+    expect(drop).toBeLessThan(create)
+  })
+
+  it('requires the plan to OVERLAP the trial, not merely to have started by the end of it', () => {
+    // A plan that had already finished before the trial opened is not a trainable week.
+    // `trial_started_at` is stamped on first dashboard load, not at signup, so that ordering is
+    // reachable. Measured: changes nothing today (13 either way) and it is wrong, which is what
+    // latent means.
+    const label = sql.search(/as\s+trainable_week_in_trial/i)
+    const before = sql.slice(0, label)
+    const openIdx = before.search(/exists\s*\(\s*select\s+1(?![\s\S]*exists\s*\(\s*select\s+1)/i)
+    const expr = sql.slice(openIdx, label)
+    expect(expr, 'the overlap test is gone — a finished plan would score trainable')
+      .toMatch(/v\.last_day\s*>=/i)
+  })
+
+  it('answers NULL, not false, for a runner who never started a trial', () => {
+    // `false` means "had no plan during their trial"; they had no trial. Three columns about one
+    // question must not disagree about absence — `earliest_plan_start_in_trial` is already NULL.
+    for (const col of ['had_live_plan_in_trial', 'trainable_week_in_trial']) {
+      const label = sql.search(new RegExp(`as\\s+${col}`, 'i'))
+      expect(label, `${col} is gone`).toBeGreaterThan(-1)
+      const region = sql.slice(Math.max(0, label - 600), label)
+      expect(region, `${col} returns false for a non-trialist`)
+        .toMatch(/case\s+when\s+s\.trial_started_at\s+is\s+null\s+then\s+null/i)
+    }
+  })
+
+  it('does not claim plan_archive is a complete history, because it is not', () => {
+    // 🔴 The first version of the CTE comment said the archive is "written before every
+    // savePlanForUser". `lib/plan.ts` archives only on `isRaceIdentityChange` or a non-empty
+    // `calendarChangedWeeks`. Writing a false premise into the migration as fact is how the next
+    // reader stops checking. Measured residual: 6 of 37 trialists.
+    // ⚠️ POSITIVE, NOT NEGATIVE, and the first cut got that wrong in the most on-the-nose way
+    // available: it searched for the false claim and the comment QUOTES the false claim in order
+    // to correct it, so the guard fired on the fix. A detector whose pattern is the text it
+    // forbids cannot tell an assertion from a quotation. Assert what must be PRESENT instead.
+    const raw = readFileSync(MIGRATION, 'utf8')
+    expect(raw, 'the incompleteness of the history must stay stated')
+      .toMatch(/INCOMPLETE/i)
+    expect(raw, 'the two conditions that actually trigger an archive must be named')
+      .toMatch(/isRaceIdentityChange/)
+    expect(raw).toMatch(/calendarChangedWeeks/)
   })
 
   it('stays off the client — it exposes user ids', () => {

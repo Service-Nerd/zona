@@ -28,14 +28,33 @@
 -- `activationFunnel.test.ts` fails if the two drift. A superseded row belongs to a plan week that
 -- was replaced; counting it would report reads the runner can no longer open.
 
-create or replace view public.v_activation_funnel as
+-- 🔴 DROP FIRST, AND THIS IS THE SECOND TIME TODAY. `create or replace view` may only APPEND
+-- columns at the end; renaming `plan_first_week` → `current_plan_first_week` and removing
+-- `plan_starts_after_trial` is a column-set change, so a replace raises `42P16` and the WHOLE FILE
+-- applies nothing — grants and comment included. `20260920` documents that error code verbatim and
+-- `INTERNAL-ACCOUNTS-01`'s review caught two instances of it this morning. Nothing depends on this
+-- view yet, so the drop is free.
+drop view if exists public.v_activation_funnel;
+
+create view public.v_activation_funnel as
 with plan_versions as (
-  -- Every plan a runner has had, with the window it was LIVE for.
-  -- An archived row is the plan that was in force until it was archived; `plan_archive` is
-  -- written before every `savePlanForUser`, so the previous row's `archived_at` is this one's
-  -- start, and the first one starts when the `plans` row was created.
+  -- Every plan a runner has had, with the window it was LIVE for. An archived row is the plan
+  -- that was in force until it was archived, so the previous row's `archived_at` is this one's
+  -- start and the first one starts when the `plans` row was created.
+  --
+  -- ⚠️ AND THIS HISTORY IS INCOMPLETE, DELIBERATELY STATED. The first version of this comment
+  -- claimed `plan_archive` is "written before every `savePlanForUser`". **It is not**, and code
+  -- review caught the claim: `lib/plan.ts` archives only when `isRaceIdentityChange` is true or
+  -- `calendarChangedWeeks` is non-empty. A same-race, same-calendar edit — the deferred foundation
+  -- compose prepending weeks is the known one — changes the plan and leaves no archive row, so
+  -- that change is attributed to the neighbouring window.
+  -- 📐 Measured 2026-11-11: **6 of 37 trialists** have a `plans` row updated after their trial
+  -- began with no archive row covering it, so their reconstruction could be off by one edit.
+  -- It is still strictly better than the `plans` snapshot, which is wrong for ALL of them, and
+  -- the gap is the two cases the archive deliberately ignores.
   select pa.user_id,
          (select min((w.value->>'date')::date) from jsonb_array_elements(pa.plan_json->'weeks') w) as first_week,
+         (select max((w.value->>'date')::date) + 6 from jsonb_array_elements(pa.plan_json->'weeks') w) as last_day,
          coalesce(
            lag(pa.archived_at) over (partition by pa.user_id order by pa.archived_at),
            (select p.created_at from plans p where p.user_id = pa.user_id)
@@ -46,6 +65,7 @@ with plan_versions as (
   -- …and the one in force now.
   select p.user_id,
          (select min((w.value->>'date')::date) from jsonb_array_elements(p.plan_json->'weeks') w),
+         (select max((w.value->>'date')::date) + 6 from jsonb_array_elements(p.plan_json->'weeks') w),
          coalesce((select max(pa.archived_at) from plan_archive pa where pa.user_id = p.user_id), p.created_at),
          'infinity'::timestamptz
   from plans p
@@ -70,21 +90,33 @@ select
     where p.user_id = m.user_id)                  as current_plan_last_day,
 
   -- Did any plan at all exist during the trial?
-  exists (select 1 from plan_versions v
-           where v.user_id = m.user_id and s.trial_started_at is not null
-             and v.live_from <  s.trial_started_at + interval '14 days'
-             and v.live_to   >  s.trial_started_at)
-                                                  as had_live_plan_in_trial,
+  -- ⚠️ NULL, NOT FALSE, for a runner who never started a trial. `false` means "had no plan during
+  -- their trial" and they had no trial; `where not trainable_week_in_trial` would otherwise sweep
+  -- every non-trialist into the headline. The sibling `earliest_plan_start_in_trial` is already
+  -- NULL for them, and three columns about one question must not disagree about absence.
+  case when s.trial_started_at is null then null else
+    exists (select 1 from plan_versions v
+             where v.user_id = m.user_id
+               and v.live_from <  s.trial_started_at + interval '14 days'
+               and v.live_to   >  s.trial_started_at)
+  end                                             as had_live_plan_in_trial,
 
   -- 🔑 THE DOMINANT CAUSE, AS A BOOLEAN, FROM HISTORY. True when some plan version that was live
   -- during the trial had already begun by the time the trial ended — i.e. there was a session to
   -- match a run against. False is the runner for whom a read was IMPOSSIBLE.
-  exists (select 1 from plan_versions v
-           where v.user_id = m.user_id and s.trial_started_at is not null
-             and v.live_from <  s.trial_started_at + interval '14 days'
-             and v.live_to   >  s.trial_started_at
-             and v.first_week <= (s.trial_started_at + interval '14 days')::date)
-                                                  as trainable_week_in_trial,
+  -- ⚠️ THE PLAN MUST OVERLAP THE TRIAL, NOT MERELY HAVE STARTED BY THE END OF IT. The first cut
+  -- tested `first_week <= trial_end` alone, so a plan that had already FINISHED before the trial
+  -- opened scored true — and `trial_started_at` is stamped on first dashboard load, not at signup,
+  -- so that ordering is reachable. Measured: it changes nothing today (13 either way) and it is
+  -- wrong, which is the definition of latent.
+  case when s.trial_started_at is null then null else
+    exists (select 1 from plan_versions v
+             where v.user_id = m.user_id
+               and v.live_from <  s.trial_started_at + interval '14 days'
+               and v.live_to   >  s.trial_started_at
+               and v.first_week <= (s.trial_started_at + interval '14 days')::date
+               and v.last_day   >= s.trial_started_at::date)
+  end                                             as trainable_week_in_trial,
 
   -- The earliest start any live-in-trial version offered, so the SIZE of the gap is readable.
   (select min(v.first_week) from plan_versions v

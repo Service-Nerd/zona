@@ -145,7 +145,11 @@ export const DERIVED_VIEWS: Record<string, string> = {
   v_trial_conversion:   'Trial-to-paid funnel rollup.',
   v_activation_funnel:  'ACT-FUNNEL-01: one row per metric user with each activation milestone '
                         + '(HealthKit connected, first run imported, first run READ, paywall, '
-                        + 'purchase attempt) plus plan_starts_after_trial. Reads v_metric_users.',
+                        + 'purchase attempt). The trial question is answered by '
+                        + 'had_live_plan_in_trial, trainable_week_in_trial and '
+                        + 'earliest_plan_start_in_trial, all computed from PLAN HISTORY '
+                        + '(plan_archive + plans); current_plan_* are snapshot columns and say '
+                        + 'nothing about the trial. Reads v_metric_users.',
 }
 
 /** Discovery aliases: identity columns that are NOT called `user_id`. The gate
