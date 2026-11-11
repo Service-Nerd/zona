@@ -146,6 +146,20 @@ export async function POST(req: NextRequest) {
     // the raw `period_type` and `price_amount` behind every decision are recorded.
     // Without them a mismarked row is unfalsifiable after the fact.
     ...read.comped,
+    // ACT-RC-ANON-LINK-01 — THE JOIN KEY THAT MAKES AN ORPHAN COUNTABLE.
+    //
+    // 📐 Measured 2026-11-11: 20 anonymous `INITIAL_PURCHASE` events the webhook correctly
+    // declined (an anonymous id is not a Supabase uuid, and answering 200 is deliberate), and
+    // 21 users reconciled. The two sets could not be compared, because the webhook stores only
+    // the first 24 characters of the anonymous id and the reconcile stored nothing about it —
+    // so "redeemed and never signed in" and "signed in and the link failed" were
+    // indistinguishable, and the brief's own metric ("offer-code redemptions linked to an
+    // account: 0 orphans") was not computable.
+    //
+    // RevenueCat keeps the id it first knew the customer by, so recording it here closes the
+    // join: an unusable webhook row whose shape prefixes no reconciled original is an orphan.
+    // ⚠️ `null` when the purchase was made signed in — that is an answer, not a gap.
+    original_app_user_id: payload?.subscriber?.original_app_user_id ?? null,
   }, user.id)
 
   return NextResponse.json({

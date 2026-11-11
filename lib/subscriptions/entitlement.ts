@@ -22,6 +22,20 @@ import { compedEvidence, compedFromSubscriber, type CompedEvidence } from './com
 /** The shape we care about from `GET /v1/subscribers/{app_user_id}`. */
 export interface RevenueCatSubscriber {
   subscriber?: {
+    /**
+     * ACT-RC-ANON-LINK-01 — the id RevenueCat first knew this customer by.
+     *
+     * A runner who redeems an offer code before installing boots signed out, so the entitlement
+     * attaches to `$RCAnonymousID:…`; `Purchases.logIn` later aliases it to the Supabase id and
+     * RevenueCat keeps the ORIGINAL here. Recording it on a successful reconcile is what makes
+     * an orphan countable: the webhook's `revenuecat_event_unusable` rows store the first 24
+     * characters of that anonymous id, so a redemption with no matching reconcile is a
+     * redemption that never reached an account.
+     *
+     * ⚠️ OPTIONAL, and absence is not a failure: when the purchase was made while signed in
+     * there is no anonymous ancestor and this equals the Supabase id, or is missing entirely.
+     */
+    original_app_user_id?: string | null
     entitlements?: Record<string, {
       expires_date?: string | null
       product_identifier?: string

@@ -4511,7 +4511,7 @@ emails and by the funnel view; no implicit cap; the window is an argument, not a
 
 ---
 
-### 🔲 `ACT-RC-ANON-LINK-01` — 20 anonymous RevenueCat purchases never reached Supabase ⚙️ **NO BOARD**
+### ✅ `ACT-RC-ANON-LINK-01` — **RE-SCOPED AND SHIPPED 2026-11-11. The linking works; what was missing is the ORPHAN COUNT.** ⚙️ **NO BOARD**
 
 **Problem.** A redemption made before sign-in arrives with `app_user_id = $RCAnonymousID:…`, which
 is not a Supabase uuid, so the webhook records it as unusable and drops it.
@@ -4524,11 +4524,43 @@ alias signal, so the mechanism that would link these is itself unhandled.**
 
 **User impact.** A runner pays or redeems a code, signs in, and has nothing. 20 known instances.
 
-**Acceptance criteria.** Handle `TRANSFER` (and the alias payload) so an anonymous id maps to the
-account at sign-in; link on the client side at sign-in via `Purchases.logIn` where RevenueCat
-exposes the previous id; record a reconcilable event so an orphan is countable; backfill the known
-20 as far as RevenueCat's API allows. ⚠️ **`app_user_id_shape` stores only a 9-character prefix by
-design, so the repo cannot resolve these alone** — the backfill needs the RevenueCat dashboard or API.
+🔴 **THE PREMISE WAS WRONG IN BOTH HALVES, AND THE MEASUREMENT IS WHAT CORRECTED IT.**
+
+· *"The `TRANSFER` event is itself unhandled."* **It is handled**: `toStatus('TRANSFER')` returns
+  `'active'`, with a note explaining it is the event that re-keys a purchase made before the runner
+  had an account. The single unusable TRANSFER row carries `app_user_id_shape: "undefined"`, which
+  is a payload with no `app_user_id`, not an unhandled type.
+· *"20 purchases never reached Supabase."* The webhook DECLINING an anonymous id is deliberate and
+  documented (`CHARITY-OFFER-CODE-01`): `$RCAnonymousID:…` is not a uuid, every retry would fail
+  identically, so it answers 200 on purpose and **`POST /api/subscriptions/reconcile` closes it
+  server-side** by asking RevenueCat about the Supabase id after `logIn` aliases it.
+· 📐 **Measured:** 20 anonymous `INITIAL_PURCHASE` declined · **21 users reconciled** across 27
+  events · **24 subscriptions, every one comped**. The mechanism works.
+
+⚠️ **WHAT WAS ACTUALLY MISSING IS THE BRIEF'S OWN METRIC.** *"Offer-code redemptions linked to an
+account: 0 orphans"* **was not computable**: the webhook stores a 24-character prefix of the
+anonymous id and the reconcile stored nothing about it, so *"redeemed and never signed in"* and
+*"signed in and the link failed"* were indistinguishable — **and only the second is a defect.**
+
+✅ **Built:** a successful reconcile now records `original_app_user_id` — the id RevenueCat first
+knew the customer by — so an unusable webhook row whose shape prefixes no reconciled original is an
+orphan, and the metric has an answer. `null` when the purchase was made signed in, which is an
+answer rather than a gap.
+
+🔻 **The one named orphan (`613a0abb`, 5 Nov) is most likely a redemption by someone who has not
+signed in yet** — 0 subscriptions have been created since that date — in which case there is no
+account to attach it to and nothing is lost: reconcile attaches it the moment they arrive. **That
+is now distinguishable from a failure, which it was not before.**
+
+**Out of scope, per the brief.** The StoreKit/RevenueCat **purchase** flow. Untouched.
+
+**Gate.** `lib/subscriptions/anonLinkOrphan.test.ts` — 5 arms, falsified 2 ways.
+🔴 **Writing it tripped a comment-stripping trap twice.** `revenuecatEvents.ts` line 5 contains the
+glob `lib` plus a double star inside a `//` comment, which reads as a block-comment opener: stripping
+block comments FIRST swallowed 107 lines including the whole `toStatus` switch, so an arm asserting
+`case 'TRANSFER'` failed against a file that contains it. Line comments first, then block. ⚠️ **And
+the note explaining that could not be written as a block comment, because spelling the two
+delimiters inside one closes it early** — the explanation of the trap tripped the trap.
 
 **Out of scope, per the brief.** The StoreKit/RevenueCat **purchase** flow. This item touches the
 webhook and the sign-in link only; if a fix needs purchase-flow code, it stops and flags.
@@ -4610,7 +4642,7 @@ purchase flow out of scope; if a change needs purchase-flow code it stops and fl
 
 ---
 
-### 🔲 `OPS-PAYING-COMPED-01` — `v_paying_users` reports 23 and nobody is paying ⚙️ **NO BOARD**
+### ✅ `OPS-PAYING-COMPED-01` — SHIPPED 2026-11-11. The number is 0 paying, 23 comped ⚙️ **NO BOARD**
 
 **Evidence, measured 2026-11-11.** `v_paying_users` = **23**. Subscriptions that are **not**
 comped and active, fleet-wide: **0**. All 23 are comped Make-A-Wish offer-code redemptions, and
@@ -4628,17 +4660,33 @@ a comped count is exposed separately so the Make-A-Wish cohort stays visible.
 
 ---
 
-### 🔲 `OPS-RC-CANCEL-UNHANDLED-01` — 8 RevenueCat CANCELLATION events were dropped ⚙️ **NO BOARD**
+### 🔴 `OPS-RC-CANCEL-UNHANDLED-01` — **WITHDRAWN 2026-11-11, same day it was filed. The premise was false and the doctrine was one file away.** ⚙️ **NO BOARD**
 
 **Evidence.** `ops_events.revenuecat_event_unhandled`: **8 rows, all `CANCELLATION`**, 5 carrying a
 real `user_id`, 2026-10-02 → 2026-11-05. The handler has no branch for it, so a cancelled
 subscription keeps its `status` and stays `premium`.
 
-**Acceptance criteria.** Handle `CANCELLATION` and `EXPIRATION`; a cancelled subscription leaves
-`premium` at the right moment (RevenueCat's CANCELLATION means auto-renew off, not access ended —
-read the payload's expiry, do not revoke early).
+🔴 **I FILED THIS FROM AN ops_events COUNT WITHOUT READING THE CODE, AND THE CODE ALREADY HELD THE
+ANSWER AT LENGTH.** `toStatus` has `case 'CANCELLATION': return null` with a 25-line note above it:
+in Apple's vocabulary CANCELLATION means **auto-renew was turned off**, not access ended. Mapping
+it to `cancelled` was a **live defect** (`SUBS-CANCELLATION-TIER-01`, measured in production
+2026-09-28): `resolveTier` grants paid only on `['trialing','active']`, so it demoted runners still
+inside a period they had paid for — and an offer code created with auto-renew OFF emits
+CANCELLATION about two minutes after the purchase, so **all 500 Make-A-Wish runners would have
+dropped to free.** `EXPIRATION` already maps to `expired`, and `resolveTier` independently requires
+`current_period_end > now`, so access self-terminates even if EXPIRATION never arrives.
 
-**Gate.** Webhook unit arms per event type.
+**The 8 `revenuecat_event_unhandled` rows are the system working as designed.** ⚠️ The one thing
+worth keeping is that the event NAME says "unhandled" for a deliberate `null`, which is what made
+an ops count read as a defect — noted, not worth a migration.
+
+✅ **Gated so it cannot be re-filed:** `lib/subscriptions/anonLinkOrphan.test.ts` asserts
+CANCELLATION maps to `null` and that `SUBS-CANCELLATION-TIER-01` is still named in the file.
+⚠️ **The first cut of that arm asserted the case was ABSENT**, which would have passed if someone
+deleted it and let it fall through — losing the recorded reasoning. It asserts the mapping now.
+
+🥇 **The lesson is already in my own memory: CHECK DOCTRINE BEFORE FILING A FINDING.** A count of
+dropped events is a symptom; the repo had the diagnosis written down.
 
 ---
 

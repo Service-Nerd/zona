@@ -110,3 +110,27 @@ single owner and a second copy of *"are they paid now?"* is the TIER-OWNER-01 dr
 
 **`REVENUECAT_SECRET_API_KEY`** (RevenueCat dashboard → API keys → secret). Without it this
 route returns 503 and **offer codes redeemed before sign-up will not be recognised.**
+
+## The orphan join (ACT-RC-ANON-LINK-01, 2026-11-11)
+
+The success event `revenuecat_reconciled` now also records **`original_app_user_id`** — the id
+RevenueCat first knew this customer by.
+
+**Why.** A runner who redeems an offer code before installing attaches the entitlement to
+`$RCAnonymousID:…`; the webhook correctly declines it (not a uuid, 200 on purpose, nothing to
+retry) and records `revenuecat_event_unusable` with the **first 24 characters** of that id. This
+route is what closes the loop after `Purchases.logIn` aliases it. Until now it recorded nothing
+about the anonymous ancestor, so the two sides could not be joined and the brief's metric —
+*"offer-code redemptions linked to an account: 0 orphans"* — had no answer.
+
+**An orphan is** an unusable webhook row whose `app_user_id_shape` prefixes **no** reconciled
+`original_app_user_id`. Measured 2026-11-11 before this shipped: 20 anonymous `INITIAL_PURCHASE`
+declined, **21 users reconciled** across 27 events, 24 subscriptions (all comped).
+
+⚠️ **`null` is an answer, not a gap.** A purchase made while signed in has no anonymous ancestor,
+so RevenueCat returns the Supabase id or omits the field.
+
+⚠️ **This does not change who gets access.** The route still refuses rather than grants when it
+cannot verify, and the client still never asserts entitlement.
+
+Tests: `lib/subscriptions/anonLinkOrphan.test.ts`.
