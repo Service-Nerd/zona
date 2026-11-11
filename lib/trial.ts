@@ -28,11 +28,14 @@ export const TRIAL_MAX_DAYS_FROM_START = 30
  * ON, the 14 days begin at the FIRST RUN READ, capped at `TRIAL_MAX_DAYS_FROM_START` from the
  * stamp.
  *
- * ⚠️ IT CANNOT BE TURNED ON ALONE, AND THAT IS MECHANICAL, NOT A NOTE. The day-11 and day-14
- * emails count days from `trial_started_at`; with this ON and no read yet, "3 days left" would
- * be sent to a runner whose trial runs on to the cap. `trialWindowEmailInterlock.test.ts` fails
- * the build if this is `true` while those sends still key off the signup stamp. Items 4 and 5
- * of the activation brief are that wiring.
+ * 🔴 IT CANNOT BE TURNED ON ALONE, AND THE INTERLOCK IS DERIVED, NOT LISTED. `lib/trialWindow.test.ts`
+ * greps `app/` and `lib/` for every consumer that still computes the trial from
+ * `trial_started_at` — the day-11/14 emails, the trial-insight push, the in-app countdown — and
+ * for every `resolveTier` caller that does not pass `firstReadAt`, and it fails the build while
+ * this is `true` and ANY of them remain. ⚠️ The first version of that interlock watched ONE FILE
+ * and the commit message called it mechanical; code review found **three more signup-relative
+ * consumers and two unwired callers**. A guard over a hand-written list is a guard over the part
+ * you remembered. Items 4 and 5 of the activation brief are the email half of that wiring.
  */
 export const TRIAL_STARTS_AT_FIRST_READ = false
 
@@ -47,13 +50,27 @@ export interface TrialWindowInputs {
   /** `user_settings.trial_started_at` — stamped on first dashboard load, not at signup. */
   trialStartedAt?: string | Date | null
   /**
-   * The runner's FIRST live run read (`run_analysis`, `superseded_at IS NULL` — see
-   * `lib/ops/runRead.ts`, the single owner of that definition).
+   * The runner's EARLIEST run read, superseded rows INCLUDED.
    *
-   * ⚠️ Read ONLY when `TRIAL_STARTS_AT_FIRST_READ` is on. Callers must not pay for a query
-   * that the current policy ignores, which is why `getUserTier` fetches it conditionally.
+   * 🔴 DELIBERATELY NOT `lib/ops/runRead.ts`'s live-rows-only definition, and the first cut got
+   * this wrong in the most dangerous direction available. A race change supersedes every
+   * `run_analysis` row the runner has, so a clock keyed to live rows **moves later** — and
+   * between day 15 and day 30 an already-expired trial would come back. The question here is
+   * not "how many reads can they open today" (which is what the emails count) but **"has this
+   * runner ever been shown what the product does"**, and that cannot un-happen.
+   *
+   * ⚠️ Read ONLY when `TRIAL_STARTS_AT_FIRST_READ` is on. Callers must not pay for a query that
+   * the current policy ignores, which is why `getUserTier` fetches it conditionally.
    */
   firstReadAt?: string | Date | null
+  /**
+   * True when the first-read query FAILED, as distinct from returning nothing.
+   *
+   * ⚠️ A failed read must never EXTEND access: "no read" grants the 30-day cap, so swallowing
+   * an outage as "no read" hands out two extra weeks on our own error. On a failure the window
+   * falls back to the signup arithmetic, which is the answer that cannot give anything away.
+   */
+  firstReadUnavailable?: boolean
 }
 
 export interface TrialWindow {
@@ -70,11 +87,22 @@ export interface TrialWindow {
  * both read it, so the flag cannot be honoured in one place and missed in another — the
  * TIER-OWNER-01 shape, applied to the clock rather than the order.
  */
-export function trialWindow(i: TrialWindowInputs, now: Date = new Date()): TrialWindow {
+export function resolveTrialWindow(
+  i: TrialWindowInputs,
+  now: Date = new Date(),
+  /**
+   * ⚠️ INJECTED, with the constant as its default, so the ON path is testable against THIS
+   * function. The first version asserted the ON arithmetic against a copy written inside the
+   * test, and inverting the cap comparison here left the suite green — a checker sharing the
+   * producer's predicate cannot catch the producer being wrong (the `deloadCadence` lesson).
+   * Production never passes it.
+   */
+  startsAtFirstRead: boolean = TRIAL_STARTS_AT_FIRST_READ,
+): TrialWindow {
   const started = asDate(i.trialStartedAt)
   if (!started) return { clockStartedAt: null, endsAt: null, active: false, basis: 'none' }
 
-  if (!TRIAL_STARTS_AT_FIRST_READ) {
+  if (!startsAtFirstRead || i.firstReadUnavailable) {
     const endsAt = new Date(started.getTime() + TRIAL_DAYS * MS_PER_DAY)
     return { clockStartedAt: started, endsAt, active: now < endsAt, basis: 'signup' }
   }
@@ -114,8 +142,9 @@ export function isTrialActive(
   trialStartedAt: string | Date | null | undefined,
   now: Date = new Date(),
   firstReadAt?: string | Date | null,
+  firstReadUnavailable?: boolean,
 ): boolean {
-  return trialWindow({ trialStartedAt, firstReadAt }, now).active
+  return resolveTrialWindow({ trialStartedAt, firstReadAt, firstReadUnavailable }, now).active
 }
 
 /** WHY access resolved the way it did. The tier alone cannot answer "what do we
@@ -135,11 +164,15 @@ export interface TierInputs {
   /** `user_settings.trial_started_at` */
   trialStartedAt?: string | Date | null
   /**
-   * ACT-TRIAL-AT-FIRST-READ-01 — the runner's first live run read. Ignored entirely while
-   * `TRIAL_STARTS_AT_FIRST_READ` is off, which is why it is optional: requiring it would make
-   * every caller fetch a row the current policy does not read.
+   * ACT-TRIAL-AT-FIRST-READ-01 — the runner's EARLIEST run read, superseded rows included.
+   * Ignored entirely while `TRIAL_STARTS_AT_FIRST_READ` is off, which is why it is optional:
+   * requiring it would make every caller fetch a row the current policy does not read.
+   * ⚠️ `lib/trialWindow.test.ts` fails the build if the flag is on and any `resolveTier` caller
+   * is still not passing it.
    */
   firstReadAt?: string | Date | null
+  /** True when that query FAILED. Falls back to the signup window; never extends access. */
+  firstReadUnavailable?: boolean
 }
 
 export interface TierResolution {
@@ -187,7 +220,8 @@ export function resolveTier(input: TierInputs, now: Date = new Date()): TierReso
     return { tier: 'paid', reason: 'grant' }
   }
 
-  if (isTrialActive(input.trialStartedAt, now, input.firstReadAt)) return { tier: 'trial', reason: 'trial' }
+  if (isTrialActive(input.trialStartedAt, now, input.firstReadAt, input.firstReadUnavailable))
+    return { tier: 'trial', reason: 'trial' }
 
   return { tier: 'free', reason: 'none' }
 }
@@ -238,20 +272,29 @@ export async function getUserTier(userId: string): Promise<UserTier> {
   // cost paid by everyone for a flag that is off. The condition is the flag itself, so the OFF
   // path is byte-for-byte what it was.
   //
-  // ⚠️ The definition of a "read" is `lib/ops/runRead.ts`'s and not re-derived here:
-  // `run_analysis` with `superseded_at IS NULL`. A superseded row belongs to a replaced plan
-  // week, and starting someone's paid clock on a read they can no longer open would be the
-  // worst possible place to get that wrong.
+  // 🔴 SUPERSEDED ROWS INCLUDED, AND THAT IS THE OPPOSITE OF `lib/ops/runRead.ts`'S RULE ON
+  // PURPOSE. A race change supersedes every `run_analysis` row, so a clock keyed to live rows
+  // moves LATER and an expired trial would come back between day 15 and day 30. The emails
+  // count what a runner can open; this answers whether they have ever been shown what the
+  // product does, and that does not un-happen.
+  //
+  // ⚠️ THE ERROR IS CARRIED, NOT SWALLOWED. "No read" grants the 30-day cap, so treating a
+  // failed query as "no read" would hand out two extra weeks on our own outage.
   let firstReadAt: string | null = null
+  let firstReadUnavailable = false
   if (TRIAL_STARTS_AT_FIRST_READ) {
-    const { data: read } = await supabase
+    const { data: read, error: readErr } = await supabase
       .from('run_analysis')
       .select('created_at')
       .eq('user_id', userId)
-      .is('superseded_at', null)
       .order('created_at', { ascending: true })
       .limit(1)
-    firstReadAt = (read?.[0]?.created_at as string | undefined) ?? null
+    if (readErr) {
+      firstReadUnavailable = true
+      console.error('[lib/trial.ts] first-read query failed:', readErr.message)
+    } else {
+      firstReadAt = (read?.[0]?.created_at as string | undefined) ?? null
+    }
   }
 
   // The ORDER lives in `resolveTier`, not here. This function's only job is to
@@ -263,6 +306,7 @@ export async function getUserTier(userId: string): Promise<UserTier> {
     grantExpiresAt: grant?.expires_at,
     trialStartedAt: settings?.trial_started_at,
     firstReadAt,
+    firstReadUnavailable,
   }).tier
 }
 

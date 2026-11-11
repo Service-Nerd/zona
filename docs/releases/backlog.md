@@ -4645,11 +4645,41 @@ charged. `lib/trialWindow.test.ts` **fails the build if the flag is true while t
 still keys off the signup stamp**, and a second arm proves that interlock is not vacuous by
 asserting the shape it watches for is present today. Moving the emails is items 4 and 5.
 
-**Gate.** `lib/trialWindow.test.ts` — 14 arms, falsified 5 ways: flip the flag · drop the client's
-input · fetch unconditionally · drop the `superseded_at` filter · change the OFF arithmetic. Each
-fires. ⚠️ Registered in `analysisSupersedeReaders.test.ts` as a PLAN-SCOPED `run_analysis` reader:
-**the least forgiving place in the repo to read a superseded row**, since it would start a
-runner's countdown to being charged on an analysis they can no longer open.
+🔴 **AND THE FIRST CUT OF THAT INTERLOCK WATCHED ONE FILE WHILE THE COMMIT CALLED IT MECHANICAL.**
+Code review found **three more signup-relative consumers** (the in-app countdown, the trial-insight
+push, `trialEmailWindow`) **and two unwired `resolveTier` callers** (`lib/ops/trialFunnel.ts`,
+`send-trial/route.ts`) — there are **four** callers, not the two I wired. The interlock is now
+**derived**: it sweeps `app/`, `lib/` and `components/` each run for anything still computing the
+trial from `trial_started_at` and for any `resolveTier` caller not passing `firstReadAt`, and
+refuses the flag while either set is non-empty. **A guard over a hand-written list is a guard over
+the part you remembered.**
+
+🔴 **FOUR MORE DEFECTS FROM THE SAME REVIEW, EACH ONE A WAY THE FLAG WOULD HAVE MISBEHAVED ON THE
+DAY IT WAS FLIPPED:**
+- **The clock was not MONOTONIC.** It keyed off LIVE reads, and a race change supersedes every
+  `run_analysis` row — so a runner's first read would vanish, the window would jump to the 30-day
+  cap, and **an already-expired trial would come back between day 15 and day 30.** Superseded rows
+  now count: the question is *"has this runner ever been shown what the product does"*, which
+  cannot un-happen. ⚠️ `lib/ops/runRead.ts` stays FILTERED for the opposite and equally correct
+  reason — it counts what a runner can still open.
+- **The in-app countdown kept its own arithmetic**, so on the cap path it would have shown
+  *"0 days left"* to a runner with ten, while the tier said Pro. It reads the owner now.
+- **The first-read query discarded its error**, so an outage read as "no read" — which grants the
+  **30-day cap**, handing out two extra weeks on our own failure. A failed read now falls back to
+  the signup window, the answer that cannot give anything away.
+- **The ON arithmetic was asserted against a copy inside the test**, so inverting the cap
+  comparison in the shipped function left the suite green. The policy is an injected argument
+  now and every ON case drives the real branch.
+
+⚠️ **A name collision, too:** `lib/ops/runRead.ts` already exports `trialWindow`, and
+`send-trial/route.ts` imports it — the very file the interlock points at. Renamed
+`resolveTrialWindow`.
+
+**Gate.** `lib/trialWindow.test.ts` — **18 arms**, falsified 6 ways: flip the flag · invert the cap
+comparison · filter to live reads · swallow the read error · give the countdown its own maths ·
+fetch unconditionally. Each fires. ⚠️ Registered in `analysisSupersedeReaders.test.ts` as a
+**HISTORY** reader (not plan-scoped), and argued into `supersedeCoverage.test.ts`'s allowlist on
+both sites — where the filter would be the defect rather than the fix.
 
 ⚠️ **A stale comment corrected on the way past:** `isTrialActive` carried *"Defaulted, so the ~30
 existing call sites are unchanged"*. There are **none** — `resolveTier` is its only production

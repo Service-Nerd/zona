@@ -177,17 +177,25 @@ const EXPECT_FILTERS: Record<string, Expectation> = {
   'lib/ops/runRead.ts': true,
 
   /**
-   * ACT-TRIAL-AT-FIRST-READ-01 — `getUserTier` reads the FIRST live analysis to decide when a
-   * runner's trial clock started. FILTERED, and this is the least forgiving place in the repo
-   * to get it wrong: a superseded row belongs to a plan week that was replaced, so starting
-   * someone's countdown to being CHARGED on a read they can no longer open would be a billing
-   * decision made on evidence the runner cannot see.
+   * ACT-TRIAL-AT-FIRST-READ-01 — `getUserTier` reads the EARLIEST analysis to decide when a
+   * runner's trial clock started.
    *
-   * ⚠️ The query only runs while `TRIAL_STARTS_AT_FIRST_READ` is on, which it is not. It is
-   * registered anyway: a reader that exists is a reader, and the gate is what will stop the
-   * filter being dropped on the day the flag is flipped.
+   * 🔴 DELIBERATELY UNFILTERED, AND THE FIRST CUT FILTERED IT AND WAS WRONG IN THE MOST
+   * DANGEROUS DIRECTION. §71 Am. 1 asks whether a reader is PLAN-SCOPED or a HISTORY reader.
+   * This is a history reader and the strictest kind: the question is **"has this runner ever
+   * been shown what the product does"**, which cannot un-happen. A race change supersedes every
+   * `run_analysis` row, so a live-rows-only clock would lose their first read, jump the window
+   * to the 30-day cap, and **bring an already-expired trial back between day 15 and day 30.**
+   *
+   * ⚠️ The sibling `lib/ops/runRead.ts` is registered FILTERED for the opposite and equally
+   * correct reason: it counts what a runner can still OPEN, for the trial emails. Two readers
+   * of one table, two answers, both argued — which is what this register is for.
+   *
+   * ⚠️ The query only runs while `TRIAL_STARTS_AT_FIRST_READ` is on, which it is not.
+   * Registered anyway: a reader that exists is a reader, and this entry is what will stop a
+   * filter being ADDED here on the day the flag is flipped.
    */
-  'lib/trial.ts': true,
+  'lib/trial.ts': false,
 
   /**
    * ⚠️ DELIBERATELY UNFILTERED, AND THIS GATE IS WHAT MADE IT AN EXPLICIT

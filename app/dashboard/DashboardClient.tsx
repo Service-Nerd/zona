@@ -65,7 +65,7 @@ import { buildWeekVoiceContext, getWeekVoiceHeadline, getWeekVoiceItems, PHASE_L
 import { planArcSeries } from '@/lib/plan/weekVolume'
 import { daysDueByEndOfYesterday } from '@/lib/coaching/dayBoundary'
 import { SESSION_COLORS, SESSION_LABELS, getSessionColor, getSessionLabel } from '@/lib/session-types'
-import { resolveTier, TRIAL_DAYS, TRIAL_STARTS_AT_FIRST_READ, type TierReason } from '@/lib/trial'
+import { resolveTier, resolveTrialWindow, TRIAL_STARTS_AT_FIRST_READ, type TierReason } from '@/lib/trial'
 import { shouldReconcile } from '@/lib/subscriptions/shouldReconcile'
 import { RedeemCodeLink } from '@/components/shared/RedeemCodeLink'
 import type { AfterSheet } from '@/lib/subscriptions/redeemCode'
@@ -1914,20 +1914,22 @@ export default function DashboardClient() {
         // the drift TIER-OWNER-01 exists to prevent, and the one owner is only an owner if
         // both callers hand it the same inputs.
         //
-        // ⚠️ Conditional on the flag, so the OFF path issues no extra query. The definition of
-        // a read is `lib/ops/runRead.ts`'s — `run_analysis` with `superseded_at IS NULL` — and
-        // it is spelled the same way on both sides deliberately: a client that counted
-        // superseded rows would start someone's paid clock on a read they cannot open.
+        // ⚠️ Conditional on the flag, so the OFF path issues no extra query. SUPERSEDED ROWS
+        // ARE INCLUDED, which is the opposite of `lib/ops/runRead.ts`'s rule and deliberate: a
+        // race change supersedes every analysis, so a live-rows-only clock moves LATER and an
+        // expired trial would come back. The error is carried rather than read as "no read",
+        // because "no read" grants the 30-day cap.
         let firstReadAt: string | null = null
+        let firstReadUnavailable = false
         if (TRIAL_STARTS_AT_FIRST_READ) {
-          const { data: firstRead } = await supabase
+          const { data: firstRead, error: firstReadErr } = await supabase
             .from('run_analysis')
             .select('created_at')
             .eq('user_id', user.id)
-            .is('superseded_at', null)
             .order('created_at', { ascending: true })
             .limit(1)
-          firstReadAt = (firstRead?.[0]?.created_at as string | undefined) ?? null
+          if (firstReadErr) firstReadUnavailable = true
+          else firstReadAt = (firstRead?.[0]?.created_at as string | undefined) ?? null
         }
 
         const { tier, reason } = resolveTier({
@@ -1937,6 +1939,7 @@ export default function DashboardClient() {
           grantExpiresAt: charityExpiry,
           trialStartedAt,
           firstReadAt,
+          firstReadUnavailable,
         }, now)
 
         setTierReason(reason)
@@ -1966,8 +1969,13 @@ export default function DashboardClient() {
         // so collapsing a lapsed trial to null would silently delete it for
         // every ordinary free user.
         if (reason === 'trial') {
-          const trialEnd = new Date(trialStartedAt).getTime() + TRIAL_DAYS * 24 * 60 * 60 * 1000
-          const msLeft = trialEnd - now.getTime()
+          // ACT-TRIAL-AT-FIRST-READ-01 — THE COUNTDOWN READS THE OWNER, not its own arithmetic.
+          // This computed `trial_started_at + TRIAL_DAYS` directly, so on the cap path a runner
+          // with ten days left would have been shown "0 days left" and labelled Pro — the tier
+          // and the number on the screen disagreeing, which is the worse half of that pair.
+          // Found by code review of the first cut, which wired the tier and left the number.
+          const win = resolveTrialWindow({ trialStartedAt, firstReadAt, firstReadUnavailable }, now)
+          const msLeft = (win.endsAt?.getTime() ?? 0) - now.getTime()
           setTrialDaysLeft(msLeft > 0 ? Math.ceil(msLeft / (24 * 60 * 60 * 1000)) : 0)
         } else if (trialIsWhatEnded) {
           setTrialDaysLeft(0)

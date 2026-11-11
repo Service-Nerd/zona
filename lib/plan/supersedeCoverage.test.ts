@@ -37,6 +37,23 @@ const ALLOWED: { file: string; why: string }[] = [
     file: 'lib/coaching/reframeTier.ts',
     why: 'Counts how much history exists on a runner to choose the reframe data tier. That is a LIFETIME measure — a previous plan\'s logs are still signal about this runner, not noise.',
   },
+  // ACT-TRIAL-AT-FIRST-READ-01 (2026-11-11). Two sites, one question, and the filter would be
+  // the DEFECT here rather than the fix.
+  {
+    file: 'lib/trial.ts',
+    why: 'Takes the EARLIEST run_analysis row to decide when the trial clock started. A LIFETIME '
+       + 'question — "has this runner ever been shown what the product does" — which cannot '
+       + 'un-happen. A race change supersedes every row, so filtering would lose their first '
+       + 'read, jump the window to the 30-day cap and bring an ALREADY-EXPIRED TRIAL BACK '
+       + 'between day 15 and day 30. Only runs while TRIAL_STARTS_AT_FIRST_READ is on.',
+  },
+  {
+    file: 'app/dashboard/DashboardClient.tsx',
+    why: 'The client mirror of the same first-read query, exempt for the same reason. ⚠️ Scoped '
+       + 'to that ONE read: every other week-keyed read in this file is filtered, and this '
+       + 'allowlist is per-FILE, so a future unfiltered read here would be silently covered. '
+       + 'Checked 2026-11-11 — the file has one unfiltered week-keyed read and this is it.',
+  },
 ]
 
 function walk(dir: string): string[] {
