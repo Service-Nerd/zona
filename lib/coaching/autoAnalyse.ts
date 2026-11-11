@@ -54,8 +54,9 @@ export interface MatchableActivity {
  */
 export const RUN_UNMATCHED_REASONS = {
   no_plan:             'the runner had no plan at all when the run arrived',
+  plan_read_failed:    'the plan read itself failed, so whether they had one is unknown',
   outside_plan_weeks:  'the run date is not inside the 7-day window of the week it resolved to',
-  week_has_no_sessions: 'the week the run resolved to carries no session at all (after overrides, and skipping ones already complete)',
+  week_has_no_sessions: 'the week the run resolved to carries no session at all, after overrides',
   below_threshold:     'a session was there and no candidate reached the auto-link score',
   tier_gated:          'free tier: the row lands, the read does not (recorded by the caller)',
 } as const
@@ -82,6 +83,13 @@ export async function noteRunUnmatched(
   await recordOpsEvent('run_unmatched', {
     reason,
     source: ref.source,
+    // 🔴 ONE ROW PER INGEST ATTEMPT, NOT PER RUN, SO THE ID HAS TO BE HERE. `clientSync`
+    // re-posts recent workouts on every sweep and the route documents concurrent app-open
+    // ingests, so the same unread run is recorded again and again — `count(*)` would report
+    // sweeps, not runs. The link-time push got an atomic one-winner claim for exactly this
+    // hazard; telemetry cannot take a write lock, so it carries the id instead and
+    // `v_activation_funnel.unmatched_runs` counts DISTINCT.
+    activity_id: ref.source === 'strava' ? String(ref.stravaActivityId) : ref.appleHealthUuid,
     // The DATE, never the time: it is enough to join a run back to a plan week and carries
     // less about the runner's day than a timestamp would.
     activity_date: activityStart.slice(0, 10),
@@ -106,7 +114,12 @@ export async function autoMatchAndAnalyse(
 
   const plan = planRowPlan
   if (!plan?.weeks?.length) {
-    await noteRunUnmatched(userId, 'no_plan', ref, activity.start_date)
+    // ⚠️ A FAILED READ IS NOT "NO PLAN", AND no_plan IS THE 53.1% BUCKET. `readPlanJson`
+    // returns `{ plan: null, error }` for a genuine database failure as well as for a runner
+    // who has not generated one, and folding the two together would quietly pad the largest
+    // reason with our own outages — unrecoverably, since the error is not carried.
+    await noteRunUnmatched(userId, planRowError ? 'plan_read_failed' : 'no_plan',
+      ref, activity.start_date, planRowError ? { message: String(planRowError).slice(0, 200) } : {})
     return
   }
 
@@ -189,8 +202,13 @@ export async function autoMatchAndAnalyse(
   const plannedSessions = plannedSessionsForMatch(effective, weekStartDate, done, DAY_KEYS)
 
   if (!plannedSessions.length) {
-    await noteRunUnmatched(userId, 'week_has_no_sessions', ref, activity.start_date,
-      { week_n: week.n, within_week: withinWeek })
+    // ⚠️ THE SAME SPLIT AS THE SCORE RETURN BELOW, and leaving it out mislabelled the
+    // commonest post-plan case: a run after the plan ends is pinned to the final week, and if
+    // that week is empty it would read as "that week has no session" when the truth is the run
+    // was never in the plan. `last_unmatched_reason` surfaces only `reason`, so a `within_week`
+    // flag in the detail could not have corrected it downstream.
+    await noteRunUnmatched(userId, withinWeek ? 'week_has_no_sessions' : 'outside_plan_weeks',
+      ref, activity.start_date, { week_n: week.n, within_week: withinWeek })
     return
   }
 

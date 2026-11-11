@@ -172,7 +172,10 @@ select
   -- half to be reconstructed. Empty until the instrumentation has run; `reads_total = 0` with no
   -- reason means nothing has been ingested since it shipped, which is a different fact from "we
   -- do not know why".
-  (select count(*) from ops_events o
+  -- ⚠️ DISTINCT, because `run_unmatched` is recorded per ingest ATTEMPT. `clientSync` re-posts
+  -- recent workouts on every sweep, so `count(*)` would report sweeps rather than runs. The
+  -- event carries `activity_id` for exactly this.
+  (select count(distinct o.detail->>'activity_id') from ops_events o
      where o.user_id = m.user_id and o.kind = 'run_unmatched')
                                                   as unmatched_runs,
   (select o.detail->>'reason' from ops_events o

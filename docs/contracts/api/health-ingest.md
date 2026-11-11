@@ -73,9 +73,25 @@ Every failure on that path now records a `run_unmatched` ops event naming **whic
 |---|---|---|
 | `tier_gated` | **this route**, in the `else` of `if (canAnalyse)` | free tier: the row lands, the read does not |
 | `no_plan` | `autoMatchAndAnalyse` | the runner had no plan when the run arrived |
+| `plan_read_failed` | `autoMatchAndAnalyse` | the plan READ failed, so whether they had one is unknown |
 | `outside_plan_weeks` | `autoMatchAndAnalyse` | the run date is not inside the 7-day window of the week it resolved to |
-| `week_has_no_sessions` | `autoMatchAndAnalyse` | that week carries no session at all, after overrides and completions |
+| `week_has_no_sessions` | `autoMatchAndAnalyse` | that week carries no session at all, after overrides |
 | `below_threshold` | `autoMatchAndAnalyse` | a session was there and nothing reached the auto-link score |
+
+⚠️ **`plan_read_failed` is separate from `no_plan` on purpose.** `readPlanJson` returns
+`{ plan: null, error }` for a genuine database failure as well as for a runner who has not
+generated a plan, and `no_plan` is the largest bucket by far: folding the two together would pad
+it with our own outages, unrecoverably.
+
+⚠️ **`week_has_no_sessions` and `below_threshold` both split on whether the run is actually inside
+the resolved week.** `getWeekIndexForDate` pins a run from outside the plan to the nearest past
+week, so without the split a post-plan run lands under a reason that blames the plan's shape for
+a run that was never in the plan.
+
+⚠️ **ONE ROW PER INGEST ATTEMPT, NOT PER RUN.** `clientSync` re-posts recent workouts on every
+sweep, so `detail.activity_id` is what makes these dedupable and
+`v_activation_funnel.unmatched_runs` counts **DISTINCT** ids. A plain `count(*)` would report
+sweeps.
 
 ⚠️ **`tier_gated` is recorded HERE and nowhere else**, because the gate wraps the whole call. A
 reason that lives outside the function it describes is the kind that goes uncounted, which is why
@@ -84,6 +100,6 @@ it is declared in `RUN_UNMATCHED_REASONS` alongside the other four rather than i
 ⚠️ **A non-run records nothing.** A walk or a ride is not a run that failed to be read, and
 counting it would bury the four reasons that matter.
 
-`detail`: `{ reason, source, activity_date, week_n?, candidates?, within_week?, tier? }` — the
+`detail`: `{ reason, source, activity_id, activity_date, week_n?, candidates?, within_week?, message?, tier? }` — the
 **date**, never the time. Surfaced per runner by `v_activation_funnel.last_unmatched_reason`.
 Tests: `lib/coaching/runUnmatchedReason.test.ts` (behavioural, through the real matcher).

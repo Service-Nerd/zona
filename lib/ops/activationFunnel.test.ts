@@ -205,6 +205,11 @@ describe('ACT-FUNNEL-01 — v_activation_funnel', () => {
     expect(sql).toMatch(/as\s+unmatched_runs/i)
     expect(sql).toMatch(/as\s+last_unmatched_reason/i)
     expect(sql).toMatch(/o\.kind\s*=\s*'run_unmatched'/i)
+    // 🔴 DISTINCT, NOT count(*). `run_unmatched` is recorded per ingest ATTEMPT and `clientSync`
+    // re-posts recent workouts on every sweep, so a plain count reports sweeps rather than runs.
+    // This arm was ADDED after a `count(*)` mutation stayed green — the fix had no gate.
+    expect(sql, 'unmatched_runs counts ingest attempts, not runs')
+      .toMatch(/count\s*\(\s*distinct\s+o\.detail\s*->>\s*'activity_id'\s*\)/i)
   })
 
   it('stays off the client — it exposes user ids', () => {

@@ -74,9 +74,10 @@ const run = (tables: Record<string, unknown>, activity = RUN) =>
 beforeEach(() => { recorded.length = 0 })
 
 describe('ACT-RUNREAD-REACH-01 — the vocabulary', () => {
-  it('names all five walls, including the one outside this module', () => {
+  it('names every wall, including the one outside this module', () => {
     expect(Object.keys(RUN_UNMATCHED_REASONS).sort()).toEqual(
-      ['below_threshold', 'no_plan', 'outside_plan_weeks', 'tier_gated', 'week_has_no_sessions'])
+      ['below_threshold', 'no_plan', 'outside_plan_weeks', 'plan_read_failed', 'tier_gated',
+       'week_has_no_sessions'])
   })
 
   it('every reason carries a real explanation, not a restated name', () => {
@@ -117,6 +118,36 @@ describe('ACT-RUNREAD-REACH-01 — each wall records itself', () => {
     await run({ plans: planWith(week('2026-10-05', { tue: { type: 'quality', distance_km: 3, primary_metric: 'distance' } })) })
     expect(recorded.map(r => r.detail.reason)).toEqual(['below_threshold'])
     expect(recorded[0].detail).toMatchObject({ week_n: 1, candidates: 1 })
+  })
+
+  it('carries the ACTIVITY ID, because one row is recorded per ingest ATTEMPT', async () => {
+    // `clientSync` re-posts recent workouts on every sweep, so `count(*)` over these rows would
+    // report sweeps rather than runs. The funnel counts DISTINCT activity_id.
+    await run({ plans: null })
+    expect(recorded[0].detail.activity_id).toBe('uuid-1')
+  })
+
+  it('plan_read_failed: a database failure is NOT "the runner had no plan"', async () => {
+    // `readPlanJson` returns `{ plan: null, error }` for both, and `no_plan` is the 53.1%
+    // bucket — folding our own outages into it would pad the largest reason unrecoverably.
+    const s = supabaseWith({})
+    const failing = {
+      ...s,
+      from: (t: string) => t === 'plans'
+        ? { select: () => ({ eq: () => ({ maybeSingle: async () => ({ data: null, error: { message: 'connection reset' } }) }) }) }
+        : s.from(t),
+    }
+    await autoMatchAndAnalyse(failing as never, 'user-1', RUN as never, REF, 'http://localhost:3000')
+    expect(recorded.map(r => r.detail.reason)).toEqual(['plan_read_failed'])
+    expect(String(recorded[0].detail.message)).toContain('connection reset')
+  })
+
+  it('a run AFTER the plan ends, pinned to an empty final week, is outside_plan_weeks', async () => {
+    // `getWeekIndexForDate` pins a post-plan run to the last week. If that week is empty, calling
+    // it `week_has_no_sessions` blames the plan's shape for a run that was never in the plan.
+    await run({ plans: planWith(week('2026-08-31', {})) })   // run is 2026-10-06, weeks before
+    expect(recorded.map(r => r.detail.reason)).toEqual(['outside_plan_weeks'])
+    expect(recorded[0].detail).toMatchObject({ within_week: false })
   })
 
   it('records the DATE and not the time', async () => {
