@@ -193,8 +193,18 @@ Both were confirmed from this machine before hand-over: `filter_present` = **fal
 `paying_users` = **23**, internal-premium = **0**.
 
 ### Rollback
-Re-run the `v_paying_users` block from `20260920_charity_tier_and_partner_cohort.sql`, or simply
-drop the `and not coalesce(is_internal, false)` line and replace the view again.
+
+🔴 **ORDER MATTERS ONCE `20261111d` HAS APPLIED.** That migration adds a `comped_users` column, so
+re-running the single-column `CREATE OR REPLACE VIEW` from
+`20260920_charity_tier_and_partner_cohort.sql` raises **`42P16`** and applies nothing. Rolling back
+either migration now means `drop view if exists public.v_paying_users;` first, then re-creating the
+version you want, then re-granting (`revoke all … from anon, authenticated; grant select … to
+service_role;`).
+
+⚠️ **AND THE VERIFICATION ABOVE READS DIFFERENTLY AFTER `20261111d`.** `paying_users` is **0**, not
+23 — that migration is the one that stops comped offer-code redemptions being counted as revenue,
+and the 23 move to the new `comped_users` column. If you apply b and d together, expect
+`paying_users = 0` and `comped_users = 23`.
 
 ---
 

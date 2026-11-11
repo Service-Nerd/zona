@@ -66,7 +66,7 @@ Records an ops event on **every** outcome (SUBS-RECONCILE-RACE-01, 2026-09-28):
 
 | Outcome | Ops kind | `detail` |
 |---|---|---|
-| Entitlement found and written | `revenuecat_reconciled` | `{ entitlement, expires_at, offer_code, is_comped, period_type, price_amount }` |
+| Entitlement found and written | `revenuecat_reconciled` | `{ entitlement, expires_at, offer_code, is_comped, period_type, price_amount, original_app_user_id }` |
 | RevenueCat 404 | `revenuecat_reconcile_none` | `{ reason: 'unknown_to_revenuecat' }` |
 | No active entitlement | `revenuecat_reconcile_none` | `{ reason: 'no_active_entitlement' }` |
 | RevenueCat non-2xx / unreachable | `revenuecat_reconcile_failed` | `{ reason, status? , detail? }` |
@@ -124,7 +124,18 @@ about the anonymous ancestor, so the two sides could not be joined and the brief
 *"offer-code redemptions linked to an account: 0 orphans"* — had no answer.
 
 **An orphan is** an unusable webhook row whose `app_user_id_shape` prefixes **no** reconciled
-`original_app_user_id`. Measured 2026-11-11 before this shipped: 20 anonymous `INITIAL_PURCHASE`
+`original_app_user_id`.
+
+🔴 **THE METRIC IS FORWARD-LOOKING, AND A JOIN OVER TODAY'S ROWS WOULD BE WRONG BY 20.**
+`shouldReconcile` returns false once `tierReason === 'subscription'`, so the 21 runners already
+linked will not call this route again and will never record an ancestor. The existing 20 declined
+redemptions cannot be resolved from this repo (the webhook kept 24 characters) and need the
+RevenueCat dashboard. Count orphans from the next redemption onward, not from the backlog.
+
+⚠️ **Only an ANONYMOUS ancestor is recorded.** For a purchase made while signed in RevenueCat
+returns the Supabase id as the original, and writing that here would put a user uuid into a ledger
+that deliberately outlives the account (`DB-USER-PURGE-01` nulls `ops_events.user_id` rather than
+deleting the row). `isSupabaseAppUserId` filters it to `null`. Measured 2026-11-11 before this shipped: 20 anonymous `INITIAL_PURCHASE`
 declined, **21 users reconciled** across 27 events, 24 subscriptions (all comped).
 
 ⚠️ **`null` is an answer, not a gap.** A purchase made while signed in has no anonymous ancestor,

@@ -3,7 +3,7 @@ import { createClient } from '@supabase/supabase-js'
 import { getUserFromRequest } from '@/lib/supabase/getUserFromRequest'
 import { recordOpsEvent } from '@/lib/ops/recordOpsEvent'
 import { readEntitlement, type RevenueCatSubscriber } from '@/lib/subscriptions/entitlement'
-import { NON_EXPIRING_GRANT_YEARS } from '@/lib/subscriptions/revenuecatEvents'
+import { NON_EXPIRING_GRANT_YEARS, isSupabaseAppUserId } from '@/lib/subscriptions/revenuecatEvents'
 
 // POST /api/subscriptions/reconcile — CHARITY-OFFER-CODE-01 (2026-09-28).
 //
@@ -154,12 +154,26 @@ export async function POST(req: NextRequest) {
     // the first 24 characters of the anonymous id and the reconcile stored nothing about it —
     // so "redeemed and never signed in" and "signed in and the link failed" were
     // indistinguishable, and the brief's own metric ("offer-code redemptions linked to an
-    // account: 0 orphans") was not computable.
+    // account: 0 orphans") was not computable. RevenueCat keeps the id it first knew the
+    // customer by, so recording it here closes the join.
     //
-    // RevenueCat keeps the id it first knew the customer by, so recording it here closes the
-    // join: an unusable webhook row whose shape prefixes no reconciled original is an orphan.
-    // ⚠️ `null` when the purchase was made signed in — that is an answer, not a gap.
-    original_app_user_id: payload?.subscriber?.original_app_user_id ?? null,
+    // 🔴 ONLY THE ANONYMOUS ANCESTOR IS RECORDED, NEVER A SUPABASE UUID. For a purchase made
+    // while signed in, RevenueCat returns the Supabase id as the original — and writing that
+    // into `ops_events.detail` would defeat the `SET NULL` anonymisation DB-USER-PURGE-01
+    // relies on, since these rows outlive the account as a ledger. The webhook already avoids
+    // exactly this by storing a SHAPE only for non-uuid ids. A uuid is also useless for the
+    // join: the thing being matched is the `$RCAnonymousID:` the webhook saw.
+    // ⚠️ So `null` here genuinely means "no anonymous ancestor", and that is an answer.
+    //
+    // ⚠️ AND THIS IS FORWARD-LOOKING, WHICH THE RUNBOOK SAYS IN FULL. `shouldReconcile` returns
+    // false once `tierReason === 'subscription'`, so the 21 runners already linked will not call
+    // this route again and will never record an ancestor. The existing 20 declined redemptions
+    // cannot be resolved from this repo — the webhook kept 24 characters — and need the
+    // RevenueCat dashboard. **A join over today's rows would report all 20 as orphans, which is
+    // wrong.** The metric starts from the next redemption.
+    original_app_user_id: isSupabaseAppUserId(payload?.subscriber?.original_app_user_id)
+      ? null
+      : payload?.subscriber?.original_app_user_id ?? null,
   }, user.id)
 
   return NextResponse.json({

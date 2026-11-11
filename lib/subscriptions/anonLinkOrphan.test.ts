@@ -36,7 +36,30 @@ const strip = (s: string) => s.replace(/\/\/[^\n]*/g, ' ').replace(/\/\*[\s\S]*?
 
 describe('ACT-RC-ANON-LINK-01 — the orphan join', () => {
   it('a successful reconcile records the id RevenueCat first knew the customer by', () => {
-    expect(strip(ROUTE)).toMatch(/original_app_user_id:\s*payload\?\.subscriber\?\.original_app_user_id\s*\?\?\s*null/)
+    expect(strip(ROUTE)).toMatch(/original_app_user_id:\s*isSupabaseAppUserId\(/)
+  })
+
+  it('NEVER writes a Supabase uuid into the ledger', () => {
+    // 🔴 The first cut recorded `original_app_user_id` unconditionally. For a purchase made
+    // while signed in RevenueCat returns the SUPABASE ID as the original, so that wrote the
+    // user's uuid into `ops_events.detail` — defeating the `SET NULL` anonymisation
+    // DB-USER-PURGE-01 relies on, since these rows outlive the account as a ledger. The webhook
+    // already avoids exactly this by storing a shape only for non-uuid ids, and a uuid is
+    // useless for the join anyway: the thing being matched is the `$RCAnonymousID:`.
+    const s = strip(ROUTE)
+    expect(s, 'a uuid original is no longer filtered out').toMatch(
+      /isSupabaseAppUserId\(payload\?\.subscriber\?\.original_app_user_id\)\s*\n?\s*\?\s*null/)
+  })
+
+  it('states that the metric is FORWARD-LOOKING, because the join cannot reach the 21 already linked', () => {
+    // `shouldReconcile` returns false once `tierReason === 'subscription'`, so a runner who is
+    // already linked never calls this route again and never records an ancestor. A join over
+    // today's rows would report all 20 declined redemptions as orphans, which is wrong — the
+    // webhook kept 24 characters and a backfill needs the RevenueCat dashboard.
+    expect(ROUTE, 'the reach limit is no longer stated where the code is').toMatch(/FORWARD-LOOKING/)
+    const gate = readFileSync('lib/subscriptions/shouldReconcile.ts', 'utf8')
+    expect(gate, "the premise of that limit is gone: shouldReconcile no longer skips subscribers")
+      .toMatch(/tierReason\s*!==\s*'subscription'/)
   })
 
   it('it is recorded on the SUCCESS event, which is the only one an orphan can be joined against', () => {
@@ -48,7 +71,10 @@ describe('ACT-RC-ANON-LINK-01 — the orphan join', () => {
       .toMatch(/original_app_user_id/)
   })
 
-  it('absence is recorded as null, never dropped — a signed-in purchase has no anonymous ancestor', () => {
+  it('absence is recorded as null, never dropped', () => {
+    // ⚠️ The arm NAME used to say "a signed-in purchase has no anonymous ancestor", which
+    // contradicted the interface and the contract: RevenueCat returns the Supabase id in that
+    // case. It is null here because we DELIBERATELY drop a uuid, not because none arrives.
     expect(strip(ROUTE)).toMatch(/\?\?\s*null/)
     expect(IFACE).toMatch(/original_app_user_id\?:\s*string\s*\|\s*null/)
   })
