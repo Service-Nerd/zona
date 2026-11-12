@@ -6,6 +6,28 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-11-12 — ULTRA-VOICE-REPURPOSED-01 · the note described a weekend the plan did not prescribe
+**Shipped:** a paced ultra catalogue row delivered into the midweek quality slot no longer keeps its own name or its own voice; §33's existing remedy now covers it, in one predicate term.
+
+**Dev learning:** the item estimated the fix as "both the note AND the label", with label changes rippling into §19 and §53's machinery on ultra plans. That was wrong, and reading the code rather than the item is what showed it: `aerobicRepurposedAsQuality` already drove three sites — the fallback label, the replacement voice, and the §1/Q2 grey-zone cue. One `||` term did all three, and the rename to `rowRepurposedAsQuality` was the only other change.
+
+The discriminator mattered more than the category. All four ultra rows share `category: 'ultra_specific'`, including the one that must *not* be caught — `vert_hike_repeats`, which §40b Am. 4 already delivers correctly at Zone 2 with no HR band and a voice that is true. The split was sitting in the output the whole time: the two defective rows carry an HR band and a pace target because they are paced; the climb row carries neither. `effortGovernedPlan` was already computed 120 lines above the predicate.
+
+**Product/creator learning:** the item said "decide the slot first, then the voice" — defer to the open question of whether this session should exist. I nearly honoured that. Then I read the blocker: it is SLT-gated on *ultra acquisition*, so the board cannot sit until an ultra runner exists, which means the first real ultra runner hears the false note before the ruling that might delete the session. A dependency that waits on the same event as the harm is not a reason to wait.
+
+And the production check was worth the five minutes: one stored ultra plan, the demo account's, generated in May by an older engine — correctly Zone 2, honest notes, carrying none of this. So the cost of being wrong either way was zero, which is what made the call easy rather than brave.
+
+**AI-building learning:** I reported "the two rows are absent from today's round" and it was false. I had grepped an alternation of three patterns and piped it through `head -12`, and one pattern's 24 hits filled the window. Counting each pattern separately: 2 and 2 in both rounds, unchanged. That is the second time today I destroyed my own instrumentation with a pipe, and the lesson is already in my memory file.
+
+Before that, my own E6 probe generated a 15-week plan with no ultra rows at all, because I hand-built the race date instead of calling `charityInput` — the owner the round itself uses. I spent three probes on a reproduction that the corpus already had a function for.
+
+**The honest bit:** my first regression arm asserted `session.rpe === 7`, because I read "RPE 7" off the round's markdown. There is no `rpe` field on a session — the renderer derives it. The arm was comparing `undefined` to a number and I only found out because it failed. Asserting a field that does not exist is the same class as reading a value off the wrong instrument, which I also did today.
+
+**Hook material:** the ultra session that told the runner "eat on the clock, hunger is too late" was a 78-minute tempo run. The row exists to rehearse race-day fuelling and is too short to need any.
+
+**Postable?:** yes
+
+
 ## 2026-11-12 — GETRUNNING-WALKRUN-FLOOR-01 · the plan for people who cannot run was the only one that never offered a walk
 **Shipped:** §118's get-running producer now composes a walk-run start below §116's running floor, through a new single owner the staged path also calls, and the invariant that checks it can finally see non-staged plans.
 

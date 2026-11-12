@@ -1691,8 +1691,34 @@ function makeQualitySession(args: {
   // replaced — an aerobic row's "most of the work happens here" note is wrong
   // on a threshold session. Keyed on the structural category, never the label
   // (INV-CLASS), same as the §1/Q2 cue below.
-  const aerobicRepurposedAsQuality = !useGoalPace && !isVo2max
-    && catalogueRow?.category === 'aerobic'
+  //
+  // 🔴 `ultra_specific` JOINS `aerobic` HERE (`ULTRA-VOICE-REPURPOSED-01`, 2026-11-12). The same three
+  // sites below then do the whole job, which is why this is one predicate term and not label machinery.
+  // Measured on E6 (50K) as generated today: `Ultra race simulation` delivered as **78 min at Zone 3,
+  // 4:45–5:20 /km, RPE 7** carrying *"Eat on the clock. Hunger is too late."* — you do not fuel a
+  // 78-minute tempo, and the row exists to rehearse fuelling it is too short to do (Sims,
+  // `CAT-ULTRA-FUELLING-01`); and `Back-to-back long` at the same prescription carrying *"Sunday is
+  // meant to feel heavy. That's the adaptation."* while the Sunday two days later is a normal Z2 long
+  // run. **The note narrates a weekend that is not prescribed.** §33's own words transfer verbatim: the
+  // borrowed voice "describes a Zone 2 run and is false on a session prescribed at T-pace."
+  //
+  // ⚠️ `effortPlan === null` IS THE DISCRIMINATOR AND THE CATEGORY ALONE WOULD BE WRONG.
+  // All four ultra rows are `category: 'ultra_specific'`, `vert_hike_repeats` included — and that one
+  // must NOT be caught: §40b Am. 4 delivers it correctly (**86 min at Zone 2, RPE 6, no HR band**) and
+  // its voice is true. The split is visible in the output itself: the two defective rows carry an HR
+  // band and a pace target because they are PACED; the climb row carries neither because its work steps
+  // are effort-targeted, which is exactly what `effortGovernedPlan` returns non-null for.
+  //
+  // ⚠️ WHY THIS SHIPS WHILE `SIG-ULTRA-UNBUILT-01` IS OPEN, since the item itself said to decide the
+  // slot first. That blocker is **SLT-gated on ultra ACQUISITION**, so the board cannot sit until an
+  // ultra runner exists — which means the first real ultra runner would receive the false voice BEFORE
+  // the ruling that might delete the session. Production today: **1 stored ultra plan, the demo
+  // account's, generated 2026-05-28 by an older engine — its rows are correctly Zone 2 with honest
+  // notes and carry none of this.** So nobody is affected either way, and if the slot is later removed
+  // this term simply matches nothing. There is no label machinery to unwind.
+  const rowRepurposedAsQuality = !useGoalPace && !isVo2max
+    && (catalogueRow?.category === 'aerobic'
+      || (catalogueRow?.category === 'ultra_specific' && effortPlan === null))
 
   let label: string
   let minPerKm: number
@@ -1829,7 +1855,7 @@ function makeQualitySession(args: {
     // ("Tempo run" / "Cruise intervals" / "Tempo run — short"), which is what
     // this slot would have been called with no catalogue row at all. That is
     // exactly what it is: a threshold slot with nothing threshold to put in it.
-    label = aerobicRepurposedAsQuality ? fallbackLabel : (catalogueRow?.name ?? fallbackLabel)
+    label = rowRepurposedAsQuality ? fallbackLabel : (catalogueRow?.name ?? fallbackLabel)
     // §85 — a mixed-pace rep displays its TIME-WEIGHTED MEAN, not the category
     // band. `pacedRepPlan` already computes it (total work time over total work
     // distance); reading it here is what keeps the header honest about a session
@@ -1902,7 +1928,7 @@ function makeQualitySession(args: {
     // VO2max sessions keep their catalogue voice (the catalogue's vo2max
     // entries — Three minutes is long, Heroic openers ruin it — are correct).
     notes.push(catalogueRow.coach_voice_notes)
-  } else if (aerobicRepurposedAsQuality) {
+  } else if (rowRepurposedAsQuality) {
     // §33 — the borrowed aerobic voice ("Build the aerobic engine. Most of the
     // work happens here.") describes a Zone 2 run and is false on a session
     // prescribed at T-pace. Replace it rather than carry it through, and say
@@ -1941,7 +1967,7 @@ function makeQualitySession(args: {
   // would never receive the §1/Q2 cue at all, which is the one note that names
   // the grey zone the whole product exists to keep runners out of.
   if (cueCtx && !cueCtx.thresholdCuePlaced
-      && (catalogueRow?.category === 'threshold' || aerobicRepurposedAsQuality)
+      && (catalogueRow?.category === 'threshold' || rowRepurposedAsQuality)
       && !isVo2max && !useGoalPace && !isDeload) {
     notes.push(CONTROLLED_THRESHOLD_CUE)
     cueCtx.thresholdCuePlaced = true

@@ -1529,34 +1529,54 @@ against `INTENSITY_DISTRIBUTION['50K']`. That measurement is the first step when
 
 ---
 
-### 🔲 `ULTRA-VOICE-REPURPOSED-01` — an ultra row delivered as a tempo keeps a voice that describes a session the runner is not doing 🏃 **COACHING BOARD** (with `SIG-ULTRA-UNBUILT-01`)
+### ✅ `ULTRA-VOICE-REPURPOSED-01` — SHIPPED 2026-11-12 🏃 **COACHING BOARD** (exempt: defect against §33)
 
-📐 **Found by the Coaching Board's read of the 2026-11-02 sample packet** (`coaching-review/2026-11-02/generated-plans.md`,
-case e6), which is the review step the harnesses cannot do. Not caught by `review:coaching` — its objection count is
-**identical before and after** this session's fixes (3,908), so nothing in it reads a note against the session delivered.
+Board sitting 2026-11-12 ruled it **exempt — defect against documented intent**. §33's own words transfer
+verbatim: the borrowed voice *"describes a Zone 2 run and is false on a session prescribed at T-pace.
+Replace it rather than carry it through."*
 
-E6 (50K, finish), as generated TODAY after §40b Am.4:
+🔑 **ONE PREDICATE TERM, NOT LABEL MACHINERY, WHICH IS WHY THE ITEM'S OWN COST ESTIMATE WAS WRONG.**
+The item said the fix is *"both the note AND the label"* and that changing the label *"moves §19 and §53's
+label machinery on ultra plans"*. It does not: `aerobicRepurposedAsQuality` (now
+`rowRepurposedAsQuality`) already drives **three** sites — the label falls back to the engine's own
+threshold name, the voice is replaced with §33's sentence, and the §1/Q2 grey-zone cue becomes eligible.
+Adding `|| (category === 'ultra_specific' && effortPlan === null)` did all three.
 
-- **fri** — `Back-to-back long` · 78min · Zone 3 · 4:45–5:20 /km · RPE 7 — *"Sunday is meant to feel heavy. That's the
-  adaptation."* The Sunday two days later is a normal Z2 long run. **The note narrates a weekend that is not prescribed.**
-- **fri** — `Ultra race simulation` · 78min · Zone 3 · 4:45–5:20 /km · RPE 7 — *"Eat on the clock. Hunger is too late."*
-  You do not need to fuel a 78-minute tempo; the row exists to rehearse fuelling and is too short to (Sims, `CAT-ULTRA-FUELLING-01`).
+🔴 **AND THE ITEM'S "DECIDE THE SLOT FIRST" HELD UNTIL THE BLOCKER WAS RE-READ.** It defers to
+`SIG-ULTRA-UNBUILT-01` on the grounds that *"making an unwanted session honest may be the wrong move if
+the session is about to be removed."* That blocker is **SLT-gated on ultra ACQUISITION**, so the board
+cannot sit until an ultra runner exists — **the first real ultra runner would receive the false voice
+BEFORE the ruling that might delete the session.** 📐 Production: **1 stored ultra plan, the demo
+account's, generated 2026-05-28 by an older engine** — `catalogue_id` unstamped, `type: 'run'`, rows
+correctly Zone 2 with honest notes, carrying none of this. So nobody is affected either way, and if the
+slot is later removed the new term matches nothing. Nothing to unwind.
 
-**§33 already rules this and the remedy already exists one branch away.** `aerobicRepurposedAsQuality`
-(`ruleEngine.ts:1687`) is `!useGoalPace && !isVo2max && category === 'aerobic'`, and §33's reasoning for it transfers
-verbatim: *"the borrowed aerobic voice describes a Zone 2 run and is false on a session prescribed at T-pace. Replace it
-rather than carry it through."* An `ultra_specific` row at Zone 3 is the same sentence. ⚠️ **`vert_hike_repeats` must NOT be
-caught** — it is effort-governed, its voice is true, and §40b Am.4 now delivers it correctly.
+📐 **Re-measured on E6 as generated 2026-11-12** (through `charityInput`, the owner the round calls
+— a hand-built race date gave a 15-week plan with no ultra rows at all, and a fixture must use the
+product's values): `Ultra race simulation` and `Back-to-back long`, both **78 min / Zone 3 /
+4:45–5:20 /km / RPE 7**, both now **`Tempo run`** with *"Threshold work: the pace you could hold for
+about an hour. Not a race."* Labels **2 → 0** each; `Climb repeats` **2 → 2, untouched**.
 
-🔴 **WHY THIS IS NOT ⚙️ NO BOARD, despite §33 being ratified.** The fix is both the note **and** the label — "Back-to-back
-long" is as false as its note, and replacing one without the other reads worse than either lie alone. Changing the label
-moves §19 and §53's label machinery on ultra plans, and it describes a session the board has **just declined to rule should
-exist at all** (ruling (c), 2026-11-02 → `SIG-ULTRA-UNBUILT-01`, SLT-gated). **Making an unwanted session honest may be the
-wrong move if the session is about to be removed.** Decide the slot first, then the voice.
+⚠️ **`effortPlan === null` IS THE DISCRIMINATOR AND THE CATEGORY ALONE WOULD HAVE BEEN WRONG.** All
+four ultra rows are `category: 'ultra_specific'`, `vert_hike_repeats` included — and §40b Am. 4 delivers
+that one correctly (**86 min, Zone 2, RPE 6, no HR band**), so catching it would replace a true sentence
+with a false one. The split is visible in the output: the defective rows carry an HR band and a pace
+target because they are PACED; the climb row carries neither.
 
-⚠️ **Deliberately NOT fixed in the session that found it.** The note I deleted the same day (`PEAK-RACEPACE-NOTE-01`) was
-exempt because it restored intent on sessions whose existence is settled. This one is not, and shipping it unilaterally
-would have pre-empted a board question.
+⚠️ **The prescription did not move** — same zone, duration and pace band either side. Warn tally
+unchanged (74 firings, 9 codes), which is the signature of a name-and-sentence fix.
+
+⚠️ **`verify:parity` IDENTICAL on 6,210 and it is BLIND HERE, measured not assumed:** its grid holds
+50 km and 100 km, but **182 parity-shaped ultra plans select 0 `ultra_specific` rows** — it sets
+`user_declared_level` and sends no `training_age`, so §79 never assesses a runner into a
+`fitness_level_min: 'intermediate'`, `difficulty_tier: 3` row. `PARITY-GRID-UNSET-LEVEL-01`'s class.
+
+⚠️ **Not reviewed as a reading experience:** weeks 17 and 18 now carry `Pyramid` + `Tempo run` and
+`Continuous tempo` + `Tempo run`. §53 counts the ROW, so it does not fire and no warn moved — but two
+tempo-named sessions in one week is a legibility question. **Not filed as its own item, deliberately:
+it is SC-02's fallback label behaving exactly as ratified** (every 5K/10K build week has read this way
+since 2026-08-20), it is pre-existing rather than introduced here, and with 0 ultra runners it reaches
+nobody. Recorded here so the next reader of an ultra plan knows it was seen and not missed.
 
 ### 🔲 `EFFORT-GOVERNED-HR-DISPLAY-01` — the screen can still show a type-derived HR band on an effort-governed session 🧭 **DESIGN BOARD** (§84 family) · P3
 

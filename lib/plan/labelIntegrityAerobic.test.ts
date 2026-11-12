@@ -3,6 +3,8 @@ import { generateRulePlan } from './ruleEngine'
 import { validatePlan } from './invariants'
 import { V1_SESSION_CATALOGUE } from './sessionCatalogueData'
 import type { GeneratorInput } from '@/types/plan'
+import { PLAN_PERSONAS, charityInput, CHARITY_PLAN_START } from './charityCohort'
+import { catalogueRowFor } from './catalogueLink'
 
 /**
  * SC-02 / CD-15 — an aerobic catalogue row prescribed at threshold pace kept
@@ -104,5 +106,91 @@ describe('SC-02 — aerobic row repurposed as a quality session', () => {
     const found = validatePlan(poisoned, INPUT).filter(v => v.code === 'INV-PLAN-LABEL-MATCHES-PACE')
     expect(found.length).toBeGreaterThan(0)
     expect(found[0].message).toContain('Steady aerobic')
+  })
+})
+
+/**
+ * `ULTRA-VOICE-REPURPOSED-01` (2026-11-12) — §33's SAME DEFECT, ON THE ULTRA ROWS.
+ *
+ * Found by the Coaching Board's read of the 2026-11-02 sample packet, which is the review step no
+ * harness performs: `review:coaching`'s objection count is identical either side of the fix, because
+ * nothing in it reads a NOTE against the session actually delivered.
+ *
+ * Re-measured on E6 as generated 2026-11-12, through `charityInput` (the owner the round calls — a
+ * hand-built race date gave a different plan entirely, and a fixture must use the product's values):
+ *   · `Ultra race simulation` · 78 min · Zone 3 · 4:45–5:20 /km · RPE 7 · *"Eat on the clock. Hunger
+ *     is too late."* You do not fuel a 78-minute tempo, and the row exists to rehearse the fuelling
+ *     it is too short to do (Sims, `CAT-ULTRA-FUELLING-01`).
+ *   · `Back-to-back long` · same prescription · *"Sunday is meant to feel heavy. That's the
+ *     adaptation."* The Sunday two days later is a normal Zone 2 long run. **The note narrates a
+ *     weekend that is not prescribed.**
+ *
+ * ⚠️ THE PRESCRIPTION IS UNCHANGED AND THAT IS WHAT MAKES THIS A DEFECT FIX, not a board question:
+ * 78 min, Zone 3, the same pace band and the same RPE, before and after. Only the name and the voice
+ * move, which is precisely what §33 ratified ("replace it rather than carry it through").
+ */
+describe('ULTRA-VOICE-REPURPOSED-01 — a paced ultra row does not keep its own voice', () => {
+  const persona = PLAN_PERSONAS.find(p => p.id.startsWith('E6'))!
+  const input = charityInput(persona)
+  const plan = generateRulePlan(input, 'paid', CHARITY_PLAN_START)
+
+  /** Every session whose catalogue row is one of the ultra rows, with its row id. */
+  const ultraSessions = () => plan.weeks.flatMap(w =>
+    Object.values(w.sessions ?? {})
+      .filter((s): s is NonNullable<typeof s> => !!s)
+      .map(s => ({ week: w.n, session: s, row: catalogueRowFor(s) }))
+      .filter(x => x.row?.category === 'ultra_specific'))
+
+  it('the population is not empty — E6 really does carry ultra rows', () => {
+    // Without this the arms below pass by looking at nothing, which is how a green tick ends up with
+    // nothing behind it. Measured: 3 rows, 6 sessions.
+    const rows = new Set(ultraSessions().map(x => x.row!.id))
+    // ⚠️ `Array.from`, NOT `[...rows]` — CLAUDE.md § TypeScript documents that spread on a
+    // `Set<string>` fails this target (TS2802). vitest was green; `tsc` was not.
+    expect(rows.size, `rows found: ${Array.from(rows).join(', ')}`).toBeGreaterThanOrEqual(3)
+    expect(rows).toContain('ultra_race_sim')
+    expect(rows).toContain('back_to_back_long')
+    expect(rows).toContain('vert_hike_repeats')
+  })
+
+  it('🔴 a PACED ultra row ships neither its own name nor its own voice', () => {
+    const paced = ultraSessions().filter(x => x.row!.id !== 'vert_hike_repeats')
+    expect(paced.length, 'E6 must deliver at least one paced ultra row').toBeGreaterThan(0)
+    for (const { week, session, row } of paced) {
+      expect(session.label, `wk${week}: row ${row!.id} kept its own name on a Zone 3 session`)
+        .not.toBe(row!.name)
+      const notes = (session.coach_notes ?? []).join(' ')
+      if (row!.coach_voice_notes) {
+        expect(notes, `wk${week}: row ${row!.id} kept its borrowed voice`)
+          .not.toContain(row!.coach_voice_notes)
+      }
+      expect(notes, `wk${week}: §33's replacement voice is missing`).toContain('Threshold work')
+    }
+  })
+
+  it('⚠️ and an EFFORT-GOVERNED ultra row keeps both, because its voice is true', () => {
+    // §40b Am. 4 delivers `vert_hike_repeats` correctly — 86 min at Zone 2, RPE 6, no HR band — so
+    // catching it would replace a true sentence with a false one. The category alone cannot tell
+    // them apart: all four ultra rows share `category: 'ultra_specific'`.
+    const hike = ultraSessions().filter(x => x.row!.id === 'vert_hike_repeats')
+    expect(hike.length, 'E6 must deliver the climb row').toBeGreaterThan(0)
+    for (const { week, session, row } of hike) {
+      expect(session.label, `wk${week}: the climb row must keep its own name`).toContain('Climb repeats')
+      expect((session.coach_notes ?? []).join(' '), `wk${week}: the climb row's voice is true`)
+        .toContain(row!.coach_voice_notes!.slice(0, 40))
+      expect(session.hr_target, `wk${week}: effort-governed, so no HR band (§40b Am. 4)`).toBeUndefined()
+    }
+  })
+
+  it('and the PRESCRIPTION did not move — this is a name and a sentence, nothing else', () => {
+    const paced = ultraSessions().filter(x => x.row!.id !== 'vert_hike_repeats')
+    for (const { week, session } of paced) {
+      expect(session.zone, `wk${week}`).toBe('Zone 3')
+      expect(session.duration_mins, `wk${week}`).toBe(78)
+      // ⚠️ NOT `session.rpe` — there is no such field. The `RPE 7` in the round's markdown is
+      // DERIVED by the renderer, and asserting it here would have been asserting `undefined`
+      // against a number, which is what the first cut did. Pace is the third prescribed field.
+      expect(session.pace_target, `wk${week}`).toBe('4:45–5:20 /km')
+    }
   })
 })
