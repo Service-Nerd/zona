@@ -144,9 +144,8 @@ export const TABLE_COLUMNS: Record<string, string[]> = {
  * ⚠️ AND THE ENTRY MUST NOT OUTLIVE THE APPLY. `pendingColumns.test.ts` fails once the migration
  * appears in `.claude/state/applied-migrations.txt` and the entry is still here, so "refresh the
  * snapshot" stops depending on anyone remembering.
+ * ✅ EMPTY AS OF 2026-11-12. `20261111e` was applied to production and the three
+ * `user_settings` columns verified live, so the entries came out in the same change. An empty
+ * list is the normal state: it fills only between writing a migration and applying it.
  */
-export const PENDING_COLUMNS: { table: string; column: string; migration: string }[] = [
-  { table: 'user_settings', column: 'trial_extended_at',         migration: '20261111e_trial_lifecycle.sql' },
-  { table: 'user_settings', column: 'trial_email_day17_sent_at', migration: '20261111e_trial_lifecycle.sql' },
-  { table: 'user_settings', column: 'trial_email_day30_sent_at', migration: '20261111e_trial_lifecycle.sql' },
-]
+export const PENDING_COLUMNS: { table: string; column: string; migration: string }[] = []

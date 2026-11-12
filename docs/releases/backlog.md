@@ -4661,11 +4661,17 @@ walks every boundary asserting **exactly one** email fires.
 - And `withinSendHours(null)` answered TRUE, which was harmless on a daily cron and is not on an
   hourly one. It falls back to the UTC hour: a guess, but a civil-hours guess.
 
-🔻 **ONE DEPLOY-ORDERING CONSTRAINT, DECLARED AND GATED.** The cron SELECTs three columns that
-`20261111e` creates, and production DDL cannot be applied from here. `PENDING_COLUMNS` in
-`tableColumns.ts` declares the window — **the unsafe direction for that file, stated rather than
-hidden** — and `pendingColumns.test.ts` fails the build once the migration is in the applied
-ledger and the entry is still there. Runbook § 8 carries the order.
+✅ **THE DEPLOY-ORDERING CONSTRAINT IS DISCHARGED — `20261111e` APPLIED 2026-11-12.** The cron
+SELECTs three columns that migration creates, and production DDL cannot be applied from here, so
+`PENDING_COLUMNS` in `tableColumns.ts` declared the window — **the unsafe direction for that file,
+stated rather than hidden** — and `pendingColumns.test.ts` failed the build once the migration
+reached the applied ledger with the entry still there. All five columns and views verified live
+against production (0 before, 1 after, the predicate handed over with the SQL); the register is
+empty again, which is its normal state. Runbook § 8 carries the order for next time.
+
+⚠️ **AND `20261111b` HAD BEEN LIVE AND UNRECORDED**, so every session since had warned about a
+migration that had already run. A ledger that over-warns gets ignored, which is the same failure as
+one that under-warns.
 
 ---
 

@@ -88,3 +88,7 @@
 20261104_live_week_keys_survivors.sql
 20261104_completion_activity_unique.sql
 20261111_internal_accounts.sql
+20261111b_paying_users_excludes_internal.sql
+20261111c_activation_funnel.sql
+20261111d_paying_users_excludes_comped.sql
+20261111e_trial_lifecycle.sql
