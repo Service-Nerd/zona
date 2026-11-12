@@ -6,6 +6,28 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-11-12 — GETRUNNING-WALKRUN-FLOOR-01 · the plan for people who cannot run was the only one that never offered a walk
+**Shipped:** §118's get-running producer now composes a walk-run start below §116's running floor, through a new single owner the staged path also calls, and the invariant that checks it can finally see non-staged plans.
+
+**Dev learning:** `validateStagedRace` began with `if (!staged) return []`, and it was *also* the only route to `validateWalkRunStart`. So the walk-run gate's population was "plans with a `staged_race` key" when the rule it enforces has nothing to do with staging. The limit was already written down, in English, in the validated function's own header, with a measured example next to it. Writing a limit down is not guarding it. One line changed: the early return yields `validateWalkRunStart(plan)`.
+
+The other lesson is about where a predicate's reasoning stops. I was ready to widen the fix to §117 Am. 7's longest-run half, reasoning that the hazard which forced Am. 7's narrowing belonged to a different predicate. Then I simulated it: §118 reseeds its ramp at the floor, so applying it above the floor cuts what the plan reaches by 11 km at 6 km/week and 34 km at 12. The deferral in the item was right and my re-derivation was wrong, for a reason the item had not written down: the staged path's walk-run start is additive inside a race runway, and §118's is subtractive.
+
+**Product/creator learning:** I measured 2,304 wrong plans and nearly reported it as impact. It is a count of plans the producer gets wrong when called; the number of runners reaching it today is **zero**, because a sub-floor runner is served unprompted by the staged path, so is never refused, so never sees the offer that sets `acceptBaseBuild`. The item's own one-line `📏 0 affected plans in production today` was right and my larger number was answering a different question. And the inversion is the useful part: the half I deferred to the board is the half that *is* reachable — 524 of 748 accepted base-build plans, all of them now raising the new warn.
+
+**AI-building learning:** my first falsification was worthless and looked fine. I disabled the producer, re-ran the probe, and got identical counts with the gate widened and narrowed — because my probe called `validateWalkRunStart` directly and so could not see the caller I had changed. A mutation aimed at the wrong population tells you nothing and reads exactly like a passing check. Re-pointed at `validateStagedRace`, the same defective engine scored 1,728 errors wide and 0 errors / 0 warns narrow.
+
+Earlier, three separate probes of mine were wrong before any of them was right: `days_available` passed as an array of day names (production sends a number) made every base-build week come back with zero sessions; `goal: 'time'` where the enum is `'time_target'` produced 48 "throws" I briefly treated as a defect; and a third guessed at the refusal payload's field names and reported `(none)` for every offer. Each one was my fixture, not the engine. The corpora in this repo exist for exactly that reason and I did not reach for one until the fourth attempt.
+
+**The honest bit:** four tests went red and my instinct was that they were stale. Three were — they hardcoded `current_weekly_km` as the denominator for §111's build ratio, correct for as long as the ramp always started at the declared volume. But the fourth was telling me something real: a 2 km/week runner's plan now ends at 22.7 km, which is 11.35× their declared volume, and §111 does not bind it because its denominator is the block's start. I wrote that number into a test of its own rather than letting the corrected denominators bury it. If the board ever rules the declared volume *is* the denominator for this cohort, that case fails, which is the point.
+
+Also: two pre-existing defects fell out of the measurement and neither is mine — 6 firings of `INV-PLAN-GET-RUNNING-BUILD-RATIO` at **4.17×** against a 4.0 ceiling on the staged path, and 192 of `INV-PLAN-FOUNDATION-BLOCK` at the bottom of the volume range. Identical counts on both sides of my change. Both filed.
+
+**Hook material:** the plan built for people who cannot yet run continuously was the only plan kind in the product that never offered them a walk break — and the check written to catch that could not see it, because its only caller returned an empty array for every plan without a race attached to it.
+
+**Postable?:** yes
+
+
 ## 2026-11-12 — OPS-VERIFY-CI-IOS-SDK-01 · Fixing one red step just shows you the next one
 
 **Shipped:** the iOS Swift typecheck now skips when the Apple SDK is missing rather than failing, so CI gets past it.

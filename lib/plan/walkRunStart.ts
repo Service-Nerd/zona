@@ -11,9 +11,11 @@
  * pace for these runners, and a distance computed from an assumed one would be a number we invented.
  */
 
-import type { GeneratorInput, Session, Week } from '@/types/plan'
+import type { GeneratorInput, Plan, Session, Week } from '@/types/plan'
 import { GENERATION_CONFIG } from './generationConfig'
 import { DAY_ORDER, normaliseDays, spreadDays, type Day } from './days'
+import { onRampCurve, generateBaseBuildPlan } from './baseBuildOnRamp'
+import { applyRunWalk } from './runWalkPlan'
 
 export interface WalkRunLevel { run_mins: number; walk_mins: number }
 
@@ -145,6 +147,69 @@ export function generateWalkRunWeeks(
       sessions,
     } as unknown as Week
   })
+}
+
+/**
+ * THE WALK-RUN START PLUS ITS RAMP, COMPOSED ONCE (`GETRUNNING-WALKRUN-FLOOR-01`, 2026-11-12).
+ *
+ * 🔴 WHY THIS EXISTS: §118's producer had no walk-run path at all, so a runner below §116's floor was handed
+ * CONTINUOUS RUNNING by the one plan kind built for people who cannot yet run — against the floor note's own
+ * text. Measured on a 3,264-row production-shape grid: **2,304 of 2,394 blocks prescribed a walk-run start did
+ * not get one, and every single one came from `generateGetRunningPlan`** (0 from §116's marathon on-ramp).
+ *
+ * ⚠️ IT IS AN EXTRACTION, NOT A NEW SHAPE. `generateWalkRunStagedPlan` has composed exactly this since
+ * 2026-10-25 and §118 was about to be the second copy — the `DELOAD-OWNER-01` / `SESSION-KM-01` class, where
+ * two writings of one rule agree only by accident. The callers keep what differs (how many ramp weeks they
+ * get, and their own meta); this owns what does not.
+ *
+ * ⚠️ `rampStart` IS A PARAMETER, NOT COMPUTED HERE. `addWeeksIso` lives in `stagedRacePlan.ts`, which imports
+ * this module — computing the date here would be an import cycle.
+ *
+ * The three things it holds, each ratified and none of them obvious:
+ *  - the ramp is seeded at `BASE_BUILD_ONRAMP_MIN_START_KM`, never at the runner's declared volume: seven weeks
+ *    of walk-run is what brings them TO the floor, so the ramp starts where they now are.
+ *  - every ramp session goes through `applyRunWalk` (L5, Willy, binding): the continuous bout must not
+ *    near-triple in the week the walk-run start ends.
+ *  - rampWeeks 0 is legal and is L4 — the walk-run start is never shortened, the ramp is cut first. The base
+ *    plan is still built (its meta and HR zones are needed) and none of its weeks are kept.
+ */
+export function composeWalkRunStart(
+  input: GeneratorInput,
+  args: {
+    planStart: string
+    rampStart: string
+    rampWeeks: number
+    remainingWeeks: number
+    schedule?: { level: number; deload: boolean }[]
+  },
+): { weeks: Week[]; base: Plan; startKm: number; endsAtKm: number } {
+  const schedule = args.schedule ?? walkRunSchedule()
+  const wrWeeks = schedule.length
+  const startKm = GENERATION_CONFIG.BASE_BUILD_ONRAMP_MIN_START_KM
+  const rampWeeks = Math.max(0, args.rampWeeks)
+  // ⚠️ `max(1, …)` ONLY INSIDE THE BASE PLAN. At rampWeeks 0 the plan is the walk-run start alone, but the
+  // generator still has to run: it is where the meta and the HR zones come from. Its weeks are discarded.
+  const curve = onRampCurve(startKm, Math.max(1, rampWeeks))
+  const endsAtKm = rampWeeks > 0 ? curve[curve.length - 1] : startKm
+  const base = generateBaseBuildPlan(input, args.rampStart, {
+    outcome: 'offered',
+    rampWeeks: Math.max(1, rampWeeks),
+    remainingWeeks: args.remainingWeeks,
+    targetKm: endsAtKm,
+    startKm,
+  })
+  const ramp: Week[] = rampWeeks === 0 ? [] : base.weeks.map((w, i) => ({
+    ...w,
+    n: wrWeeks + i + 1,
+    sessions: Object.fromEntries(Object.entries(w.sessions ?? {})
+      .map(([d, s]) => [d, s ? applyRunWalk(s as Session) : s])),
+  })) as Week[]
+  const hr = (Object.values(base.weeks[0]?.sessions ?? {})[0] as Session | undefined)?.hr_target ?? null
+  const weeks = [
+    ...generateWalkRunWeeks(input, args.planStart, typeof hr === 'string' ? hr : null, schedule),
+    ...ramp,
+  ]
+  return { weeks, base, startKm, endsAtKm }
 }
 
 /** E3 — the resumed walk-run weeks: `WALK_RUN_RESUME_WEEKS` held at the ladder's last level (§117's 6/1), no deload. */

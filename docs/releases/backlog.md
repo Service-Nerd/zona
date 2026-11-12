@@ -359,33 +359,40 @@ before planning against any number below (an item is a snapshot of the code on t
   ⚠️ **`week1CeilingKm` was written for this and DELETED** — a helper with no consumer is the decorative-config class.
   Re-derive it where the lever lands.
 
-- 🏃 **COACHING BOARD** `GETRUNNING-WALKRUN-FLOOR-01` — **§118's own producer has no walk-run path, so a runner
-  BELOW §116's floor gets continuous running from it — against the floor note's own text.** Found by
-  `/code-review` of `WEEK1-FROM-LONGEST-RUN-01`, 2026-11-07, and the probe found something sharper than the
-  review did. §116's floor note reads: *"Below `BASE_BUILD_ONRAMP_MIN_START_KM`, including 0, the runner starts
-  with a WALK-RUN start."* Measured through `runEngine` with `acceptBaseBuild`:
-  | declared | what week 1 actually is |
-  |---|---|
-  | `cw 0 / lr 0` | ✅ `walk_run_start`, three 30-minute walk-run sessions |
-  | **`cw 2 / lr 0`** | 🔴 `base_build`, **continuous `Easy run: 2`** |
-  | **`cw 4 / lr 0`** | 🔴 `base_build`, **two continuous `Easy run: 2`** |
-  | `cw 10 / lr 0` | `base_build`, `Long easy: 3.5` + two `Easy run: 2.1`, continuous |
-  | `cw 20 / lr 0` | `base_build`, **`Long easy: 7`** + two `Easy run: 4.3`, continuous |
-  **Only `cw 0` is served.** `generateGetRunningPlan` delegates to `generateBaseBuildPlan`, which has no
-  walk-run branch; the `cw 0` case works only because `getRunningApplies` is false there and the staged path
-  picks it up instead.
-  ⚠️ **TWO QUESTIONS, AND THEY SHOULD NOT BE ANSWERED TOGETHER.** The `cw < 6` rows are a **defect against
-  documented intent** (§116's floor note), board-exempt to fix, and the fix is a real one: §118's producer
-  needs a walk-run composition path it does not have. The `lr 0` rows at cw 10–20 are the **same question
-  §117 Am. 7 answered for staged blocks**, and extending it here carries the volume-reduction hazard that
-  forced Am. 7's own narrowing — a 20 km/week runner restarted at 6. **That half is the board's.**
-  ⚠️ **NOT REACHABLE BY THE NEW INVARIANT, AND THE LIMIT IS STATED IN THE CODE:** `validateWalkRunStart`'s
-  only caller is `validateStagedRace`, which returns early on a plan with no `staged_race`.
-  📏 **0 affected plans in production today** (no stored plan has this shape), so it is latent — reachable
-  via the Adjust sheet's rebuild of a plain base-build plan.
-  🔻 **This supersedes the claim in `SHORTDIST-RUNWALK-SCOPE-01` that "Am. 7 widened the base-build
-  on-ramp's gate".** It did not; it widened the staged block's start only.
+- 🏃 **COACHING BOARD** `GETRUNNING-WALKRUN-LRHALF-01` — **the half of `GETRUNNING-WALKRUN-FLOOR-01` that was
+  deferred to the board, and measurement has INVERTED which half matters.** §117 Am. 7 prescribes a walk-run start
+  to a runner at or above §116's volume floor whose declared longest run is under
+  `WALK_RUN_START_MIN_LONGEST_RUN_KM` (2 km). That is ratified for a STAGED block and §118's producer does not do it.
+  📏 **524 of 748 accepted base-build plans (70%) are exactly this shape, and all 524 raise the new `warn`** —
+  measured over 16,320 production-sequence rows (generate unprompted → refusal carrying a §118 offer → accept).
+  🔴 **THE DEFERRED HALF IS THE REACHABLE ONE.** The volume half, fixed 2026-11-12, is reached by **0** runners
+  today: a sub-floor runner is served unprompted (staged, which already walk-runs) and so is never refused, never
+  offered, and never sets `acceptBaseBuild`. ⚠️ **The parent item's `2,304 blocks` was a LATENT count** measured by
+  calling the producer directly with the flag — correct as a count of plans the producer gets wrong, and not an
+  impact figure. Its own 📏 line said *"0 affected plans in production today"* and was right.
+  ⚠️ **WHY IT NEEDS A SITTING AND NOT A FIX:** §118's composition reseeds the ramp at the floor, so applying it
+  above the floor REDUCES what the plan builds — measured **−11.1 km at 6 km/week, −18.7 at 8, −33.9 at 12**. That
+  is the volume-reduction hazard that forced Am. 7's own narrowing (a 30 km/week runner restarted at 6), and it is
+  🩹 Willy's. **The options are not symmetric:** honouring Am. 7 here costs destination; not honouring it leaves a
+  runner who cannot run 2 km continuously being prescribed continuous running.
 
+- 🏃 **COACHING BOARD** `STAGED-RAMP-RATIO-16W-01` — **`INV-PLAN-GET-RUNNING-BUILD-RATIO` fires at 4.17× against
+  Willy's 4.0 ceiling, on the staged path, today.** Found incidentally 2026-11-12 while measuring
+  `GETRUNNING-WALKRUN-FLOOR-01`; **pre-existing — 6 firings on both sides of that change, identical.** The message is
+  the invariant's own prediction: *"16 weeks of a lawful 10% under §3's deloads compounds to a 4.17x total build"*.
+  `GET_RUNNING_MAX_WEEKS = 15` exists to prevent exactly this and **the staged path's `placed.rampWeeks` does not
+  read it** — the invariant's own comment says the two are *"deliberately independent"*, which is what makes this
+  reachable rather than a contradiction. ⚠️ **It is `error` severity, so it THROWS in dev and test and only
+  `console.error`s in production** — which is why a plan carrying it still reaches a runner. Which side yields (the
+  week count, or the ratio) is Willy's call, exactly as the §2/§116 Am. 2 conflict is pinned rather than fixed.
+
+- 🏃 **COACHING BOARD** `FOUNDATION-FLOOR-SUBKM-01` — **`INV-PLAN-FOUNDATION-BLOCK` fires 192 times at the very
+  bottom of the volume range**, again pre-existing and unchanged by the 2026-11-12 fix (192 on both sides). At
+  `current_weekly_km: 1` a foundation week is built at **1.5 km against a §57 ceiling of 1.1 km** (`cw × 1.10`):
+  the block's minimum session cannot go below 1.5, so the floor and the ceiling cross. Two ratified rules that
+  cannot both hold below ~1.4 km/week, the same shape as the §2 / §116 Am. 2 conflict §118's tests already pin.
+  ⚠️ **Reachability unmeasured** — these rows came from a grid, and whether any runner declares 1 km/week and
+  reaches a foundation block is a production question nothing here answers.
 - 🏃 **COACHING BOARD** `SHORTDIST-RUNWALK-SCOPE-01` — **a 5K or 10K runner whose longest run is 0 is prescribed a
   16-MINUTE CONTINUOUS long run, and §117's run-walk prescription cannot reach them by construction.**
   Filed at the `WEEK1-FROM-LONGEST-RUN-01` sitting, 2026-11-07. Measured: at `cw 6 / lr 0` the 5K and 10K **generate
@@ -399,7 +406,13 @@ before planning against any number below (an item is a snapshot of the code on t
   runner is on an ordinary **race-plan** path with neither a readiness floor nor an on-ramp.
   🔴 **CORRECTED by `/code-review` the same day: an earlier draft of this item said "Am. 7 widened the
   base-build on-ramp's gate". IT DID NOT** — Am. 7 widened the STAGED block's start only, and §118's own
-  producer has no walk-run path at all. See `GETRUNNING-WALKRUN-FLOOR-01` above.
+  producer had no walk-run path at all — **fixed below §116's volume floor on 2026-11-12**
+  (`GETRUNNING-WALKRUN-FLOOR-01`, shipped), with the longest-run half still open as
+  `GETRUNNING-WALKRUN-LRHALF-01` above. ⚠️ **Neither reaches THIS runner**, which is the point: a 5K/10K
+  runner at `lr 0` generates an ordinary RACE plan, so no base-build block exists for a walk-run start to sit in.
+  Measured 2026-11-12: of 2,394 grid plans prescribed a walk-run start, **48 are exactly this shape** — a 5K or
+  10K off `cw 0`, with no base-build block at all, invisible to `INV-PLAN-WALKRUN-START-PROGRESSION` by
+  construction (its arm requires a `base_build` or `walk_run_start` week to be present).
   **So serving them reopens a DISTANCE SCOPE**, which is a prescription decision for the board, not an amendment.
   ⚠️ **The 5K/10K have no long-run readiness floor at all** — §113's `LONG_RUN_READINESS_MIN_RACE_KM` starts above
   them — so the options are not symmetrical: a floor would REFUSE them, a run-walk prescription would SERVE them.
@@ -563,6 +576,13 @@ before planning against any number below (an item is a snapshot of the code on t
   deload → 4/2 → 5/2 → 6/1), but every week renders as *"Walk-run · 30 min · Zone 2"*, so a runner reading the Plan
   screen sees the same week seven times. **Not a coaching question** — the prescription is right; the question is
   whether the interval is visible on the week. Nobody has looked at it on a phone.
+  ⚠️ **A SECOND OBSERVATION, MEASURED 2026-11-12 (`GETRUNNING-WALKRUN-FLOOR-01`): one plan now says
+  "an easier week" TWICE, in two different sentences.** A walk-run deload reads *"An easier week, on purpose."*
+  (`walkRunStart.ts`, ratified at the 2026-10-25 sitting) and a ramp deload reads *"Step back"*
+  (`BASEBUILD-WEEK-COPY-01`) — two copies for one concept, four weeks apart in the same plan. It was invisible
+  while only staged plans carried walk-run weeks; §118's plans now carry both phases too.
+  `baseBuildWeekCopy.test.ts` asserts each phase against its OWN marker and deliberately does not reconcile them:
+  changing either sentence is this board's, not a base-build test's.
 
 - 🔻 `STAGED-DOOR-AT-CAP-01` — **the staged door's modal outcome is exactly 4.00×**, because the search stops at
   the first volume inside §111's cap. 🏃 The chair declined a buffer at the sitting on his own standard

@@ -2,6 +2,8 @@ import type { GeneratorInput, Plan } from '@/types/plan'
 import { GENERATION_CONFIG } from './generationConfig'
 import { effectiveStartKm } from './startVolume'
 import { onRampCurve, generateBaseBuildPlan, type OnRampAssessment } from './baseBuildOnRamp'
+import { walkRunStartApplies, walkRunStartWeeks, composeWalkRunStart } from './walkRunStart'
+import { addWeeksIso } from './stagedRacePlan'
 
 /**
  * GET-RUNNING PLAN — what we offer the runner no marathon plan can serve.
@@ -62,6 +64,51 @@ export function generateGetRunningPlan(
   runwayWeeks: number,
 ): { plan: Plan; endsAtKm: number; weeks: number } {
   const startKm = effectiveStartKm(input)
+
+  // 🔴 BELOW §116's RUNNING FLOOR THIS PLAN USED TO HAND THE RUNNER CONTINUOUS RUNNING
+  // (`GETRUNNING-WALKRUN-FLOOR-01`, Coaching Board 2026-11-12: *"there is nothing to rule. The doctrine is
+  // written, the engine disagrees with it"*). The floor note has read *"below
+  // `BASE_BUILD_ONRAMP_MIN_START_KM`, including 0, the runner starts with a WALK-RUN start"* since 2026-10-24,
+  // and this producer had no walk-run path at all — so **the one plan kind built for people who cannot yet run
+  // was the only one that never offered a walk-run.** Measured on a 3,264-row production-shape grid: 2,304 of
+  // the 2,394 blocks that should have started with one did not, and every one of them came from here.
+  //
+  // ⚠️ `walkRunStartApplies`, NOT `walkRunStartPrescribed`, AND THE NARROWER GATE IS DELIBERATE.
+  // §117 Am. 7 also prescribes a walk-run start to a runner AT or ABOVE the volume floor whose declared longest
+  // run is under `WALK_RUN_START_MIN_LONGEST_RUN_KM`. On a STAGED plan that is additive inside a race runway.
+  // Here it is SUBTRACTIVE: this composition reseeds the ramp at the floor, so applying it above the floor cuts
+  // what the plan reaches — measured **-11.1 km at 6 km/week, -18.7 at 8, -33.9 at 12**. That is the same
+  // volume-reduction hazard that forced Am. 7's own narrowing (a 30 km/week runner restarted at 6), so the
+  // longest-run half stays the board's and is marked, not silently fixed: `INV-PLAN-WALKRUN-START-PROGRESSION`
+  // raises it as a `warn` naming `GETRUNNING-WALKRUN-FLOOR-01`'s open half.
+  if (walkRunStartApplies(startKm)) {
+    const wrWeeks = walkRunStartWeeks()
+    // ⚠️ THE RAMP GETS THE RUNWAY THAT IS LEFT, AND SPENDS NONE OF ITS BUDGET ON THE WALK-RUN START.
+    // `GET_RUNNING_MAX_WEEKS` is 15 because 16 weeks of §2's 10% compounds past §111's `MAX_BASE_BUILD_RATIO`
+    // (Willy: *"I will not have two total-build ceilings in one constitution"*) — so it bounds the RUNNING
+    // ramp's total build, and a walk-run week carries no distance at all. Measured across the cohort the ramp
+    // ratio stays <= 3.78x, inside the 4.0 cap, at every runway.
+    const rampWeeks = getRunningWeeks(Math.max(0, runwayWeeks - wrWeeks))
+    const composed = composeWalkRunStart(input, {
+      planStart,
+      rampStart: addWeeksIso(planStart, wrWeeks),
+      rampWeeks,
+      remainingWeeks: Math.max(0, runwayWeeks - wrWeeks - rampWeeks),
+    })
+    const plan = { ...composed.base, weeks: composed.weeks }
+    const m = plan.meta as unknown as Record<string, unknown>
+    m.plan_kind = 'base_build'
+    delete m.base_build_onramp
+    m.race_name = 'Base building'
+    m.enrichment = 'skipped_plan_kind'
+    // ⚠️ `plan_start` IS THE WALK-RUN START'S, NOT THE RAMP'S. `generateBaseBuildPlan` was handed `rampStart`,
+    // so its meta says the plan begins seven weeks late — the same override the staged path makes.
+    m.plan_start = planStart
+    m.walk_run_start_weeks = wrWeeks
+    m.base_build_start_km = composed.startKm
+    return { plan, endsAtKm: composed.endsAtKm, weeks: composed.weeks.length }
+  }
+
   const weeks = getRunningWeeks(runwayWeeks)
   const curve = onRampCurve(startKm, weeks)
   const endsAtKm = curve[curve.length - 1]

@@ -42,11 +42,31 @@ describe('BASEBUILD-WEEK-COPY-01', () => {
 
   it('2. a STEP-BACK week says so, and only on weeks the engine marks deload', () => {
     const { plan } = generateGetRunningPlan(input(), PINNED, 29)
-    const deloads = plan.weeks.filter(w => w.type === 'deload')
-    expect(deloads.length, 'the fixture must contain a deload').toBeGreaterThan(0)
+    // ⚠️ SCOPED TO `base_build` WEEKS, WHICH IS THE POPULATION THIS ITEM OWNS, AND THE NARROWING IS MEASURED
+    // RATHER THAN CONVENIENT. `GETRUNNING-WALKRUN-FLOOR-01` (2026-11-12) gave this producer a walk-run start,
+    // whose weeks are written by `walkRunStart.ts` under the 2026-10-25 L1-L5 ruling and whose deload says
+    // *"An easier week, on purpose."* — a second sentence for one concept, in one plan. The copy is the board's
+    // (noted on `WALKRUN-WEEK-LEGIBILITY-01`, same screen, same cohort); changing it here would rewrite ratified
+    // staged-plan copy from a base-build test. The arm below is what stops the narrowing being a hole.
+    const ramp = plan.weeks.filter(w => w.phase === 'base_build')
+    const deloads = ramp.filter(w => w.type === 'deload')
+    expect(deloads.length, 'the fixture must contain a ramp deload').toBeGreaterThan(0)
     for (const w of deloads) expect(String(w.theme)).toMatch(/Step back/)
-    for (const w of plan.weeks.filter(x => x.type !== 'deload'))
+    for (const w of ramp.filter(x => x.type !== 'deload'))
       expect(String(w.theme), `week ${w.n} is not a deload`).not.toMatch(/Step back/)
+  })
+
+  it('2b. and a WALK-RUN deload still says it is easier, in its own words', () => {
+    // Without this, scoping case 2 to the ramp would leave seven weeks of every sub-floor runner's plan with
+    // no assertion that a deload is legible at all.
+    const { plan } = generateGetRunningPlan(input(), PINNED, 29)
+    const wr = plan.weeks.filter(w => w.phase === 'walk_run_start')
+    expect(wr.length, 'the fixture is sub-floor, so it carries a walk-run start').toBeGreaterThan(0)
+    const deloads = wr.filter(w => w.type === 'deload')
+    expect(deloads.length, 'the walk-run ladder deloads under §3').toBeGreaterThan(0)
+    for (const w of deloads) expect(String(w.theme)).toMatch(/easier week/)
+    for (const w of wr.filter(x => x.type !== 'deload'))
+      expect(String(w.theme), `walk-run week ${w.n} is not a deload`).not.toMatch(/easier week/)
   })
 
   it('3. 🔴 NO DISTANCE IN PROSE — ADR-015, and the measured units debt', () => {

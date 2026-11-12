@@ -12,6 +12,20 @@ const mk = (over: Partial<GeneratorInput> = {}): GeneratorInput => ({
   ...over,
 } as unknown as GeneratorInput)
 
+/**
+ * The denominator §111's ceiling is measured against: **the volume the BLOCK starts at**, which is what
+ * `engine.ts` passes (`meta.base_build_start_km`) and is not always the runner's declared volume.
+ *
+ * 🔴 EVERY RATIO CASE BELOW USED TO PASS `cwk` ITSELF, AND IT WAS RIGHT UNTIL IT WASN'T.
+ * Before `GETRUNNING-WALKRUN-FLOOR-01` (2026-11-12) this producer always seeded its ramp at the declared
+ * volume, so the two numbers were equal and nothing distinguished them. A runner below §116's floor now gets a
+ * walk-run start first and the ramp begins at the FLOOR — so passing `cwk` measures the block against a start
+ * it does not have, and reported 11.35x on a plan production validates at 3.78x. **A fixture that reads the
+ * field the producer stamps cannot drift from the producer again.**
+ */
+const blockStartKm = (plan: { meta: unknown }) =>
+  Number((plan.meta as Record<string, unknown>).base_build_start_km ?? 0)
+
 describe('§118 — the get-running plan', () => {
   it('is a plan with NO RACE, and says so in its own metadata', () => {
     const { plan } = generateGetRunningPlan(mk(), '2026-10-05', 29)
@@ -60,7 +74,7 @@ describe('§118 — the get-running plan', () => {
           mk({ current_weekly_km: cwk, longest_recent_run_km: Math.max(1, Math.round(cwk * 0.4)),
                training_age: '<6mo' }),
           '2026-10-05', runway)
-        expect(validateBaseBuildBlock(plan.weeks, cwk), `cwk ${cwk} runway ${runway}`).toEqual([])
+        expect(validateBaseBuildBlock(plan.weeks, blockStartKm(plan)), `cwk ${cwk} runway ${runway}`).toEqual([])
       }
     }
   })
@@ -108,19 +122,43 @@ describe('§118 — the get-running plan', () => {
   it('never builds past §111s total-build ceiling, at any start', () => {
     for (const cwk of [2, 3, 5, 7, 8]) {
       const { plan, endsAtKm } = generateGetRunningPlan(mk({ current_weekly_km: cwk }), '2026-10-05', 29)
-      const ratio = endsAtKm / cwk
-      expect(ratio, `cwk ${cwk} builds ${ratio.toFixed(2)}x`).toBeLessThanOrEqual(G.MAX_BASE_BUILD_RATIO)
-      expect(validateBaseBuildBlock(plan.weeks, cwk).map(v => v.code))
+      const start = blockStartKm(plan)
+      const ratio = endsAtKm / start
+      expect(ratio, `cwk ${cwk} builds ${ratio.toFixed(2)}x from a ${start}km block start`).toBeLessThanOrEqual(G.MAX_BASE_BUILD_RATIO)
+      expect(validateBaseBuildBlock(plan.weeks, start).map(v => v.code))
         .not.toContain('INV-PLAN-GET-RUNNING-BUILD-RATIO')
     }
+  })
+
+  /**
+   * 🔴 THE RESIDUAL, ASSERTED RATHER THAN LEFT FOR SOMEONE TO FIND.
+   *
+   * Measured against the runner's DECLARED volume a sub-floor plan builds far past 4.0 — a 2 km/week runner
+   * ends at 22.7 km, **11.35x**. §111's ceiling does not bind that, because its denominator is the block's
+   * start and the walk-run start is ratified as bringing the runner TO the floor (Coaching Board 2026-10-25,
+   * L1-L5; the staged path has had the same arithmetic since, and the 2026-11-07 HM sitting recorded it as
+   * "label artefacts at cw <= 2 where the denominator is zero").
+   *
+   * This case exists so the number is visible and so nobody reads the case above as a claim it is not. If the
+   * board ever rules the declared volume IS the denominator for this cohort, this is the case that fails.
+   */
+  it('and the DECLARED-volume ratio is large for a sub-floor runner, which §111 does not bind', () => {
+    const { plan, endsAtKm } = generateGetRunningPlan(mk({ current_weekly_km: 2, longest_recent_run_km: 1 }), '2026-10-05', 29)
+    expect(plan.weeks.some(w => w.phase === 'walk_run_start'), 'below the floor, so a walk-run start').toBe(true)
+    expect(blockStartKm(plan), 'the ramp starts at the floor, not at the runner').toBe(G.BASE_BUILD_ONRAMP_MIN_START_KM)
+    expect(endsAtKm / 2).toBeGreaterThan(G.MAX_BASE_BUILD_RATIO)
+    expect(endsAtKm / blockStartKm(plan)).toBeLessThanOrEqual(G.MAX_BASE_BUILD_RATIO)
   })
 
   // The ratio is a property of the CURVE, not the runner — which is why the fix
   // was one number and not a per-runner cap.
   it('builds by the same RATIO whatever the start — it is the curve, not the runner', () => {
+    // ⚠️ MEASURED OFF THE BLOCK'S START, WHICH IS WHAT MAKES THE PROPERTY TRUE ACROSS §116's FLOOR.
+    // 2, 3 and 5 km/week now share one ramp (seeded at the floor after a walk-run start) and 7 has its own,
+    // and all four land on the same ratio — which is the point: it is the curve.
     const ratios = [2, 3, 5, 7].map(cwk => {
-      const { endsAtKm } = generateGetRunningPlan(mk({ current_weekly_km: cwk }), '2026-10-05', 29)
-      return endsAtKm / cwk
+      const { plan, endsAtKm } = generateGetRunningPlan(mk({ current_weekly_km: cwk }), '2026-10-05', 29)
+      return endsAtKm / blockStartKm(plan)
     })
     for (const r of ratios) expect(r).toBeCloseTo(ratios[0], 1)
   })

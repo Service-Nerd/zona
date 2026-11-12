@@ -37,7 +37,7 @@ import { auditPlanQuality, objectionsOnly } from './planQuality'
 import { validatePlan } from './invariants'
 import { isBaseBuildPlan } from './validateStoredPlan'
 import { isDateBeforePlan } from './weekResolution'
-import { walkRunStartApplies, walkRunStartPrescribed, walkRunStartWeeks, generateWalkRunWeeks, walkRunSchedule, walkRunResumeSchedule } from './walkRunStart'
+import { walkRunStartApplies, walkRunStartPrescribed, walkRunStartWeeks, walkRunSchedule, walkRunResumeSchedule, composeWalkRunStart } from './walkRunStart'
 import { BaseVolumeError, baseBuildRatioApplies, baseBuildRatioOf } from './baseVolume'
 import { LongRunReadinessError } from './longRunReadiness'
 import { applyRunWalk } from './runWalkPlan'
@@ -495,24 +495,18 @@ function generateWalkRunStagedPlan(input: GeneratorInput, planStart: string, min
   const doorKm = target ?? rampDoorFloor(minBaseKm, startKm)
   const placed = checkpointPlacement(input, doorKm, rampRunway, startKm)
 
-  let rampWeeks: Week[] = []
-  let base: Plan
-  if (placed) {
-    const curve = onRampCurve(startKm, placed.rampWeeks)
-    base = generateBaseBuildPlan(input, rampStart, {
-      outcome: 'offered', rampWeeks: placed.rampWeeks, remainingWeeks: placed.raceWeeks, targetKm: curve[curve.length - 1], startKm,
-    })
-    // L5 (Willy): the ramp keeps the 6/1 pattern, so the continuous bout does not near-triple in one week.
-    rampWeeks = base.weeks.map((w, i) => ({
-      ...w, n: wrWeeks + i + 1,
-      sessions: Object.fromEntries(Object.entries(w.sessions ?? {}).map(([d, s]) => [d, s ? applyRunWalk(s as Session) : s])),
-    })) as Week[]
-  } else {
-    // No ramp fits: build the meta from a one-week ramp and keep none of its weeks.
-    base = generateBaseBuildPlan(input, rampStart, { outcome: 'offered', rampWeeks: 1, remainingWeeks: rampRunway - 1, targetKm: startKm, startKm })
-  }
-  const hr = (Object.values(base.weeks[0]?.sessions ?? {})[0] as Session | undefined)?.hr_target ?? null
-  const weeks = [...generateWalkRunWeeks(input, planStart, typeof hr === 'string' ? hr : null, schedule), ...rampWeeks]
+  // ⚠️ THE COMPOSITION IS `composeWalkRunStart`'s, NOT THIS FUNCTION'S, SINCE `GETRUNNING-WALKRUN-FLOOR-01`
+  // (2026-11-12). §118's producer needed the identical three steps — walk-run weeks, a ramp seeded at the
+  // floor, L5's run-walk on every ramp session — and writing them a second time there is the duplication
+  // class this repo keeps paying for. What stays here is what is STAGED-specific: the door, the checkpoint
+  // placement, and how many ramp weeks that leaves. L4's "no ramp fits" case is `rampWeeks: 0`.
+  const { weeks, base } = composeWalkRunStart(input, {
+    planStart,
+    rampStart,
+    rampWeeks: placed ? placed.rampWeeks : 0,
+    remainingWeeks: placed ? placed.raceWeeks : rampRunway - 1,
+    schedule,
+  })
   const meta = base.meta as unknown as Record<string, unknown>
   delete meta.base_build_onramp
   meta.enrichment = 'skipped_plan_kind'

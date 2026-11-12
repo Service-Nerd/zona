@@ -7,7 +7,7 @@ import type { Plan, GeneratorInput } from '@/types/plan'
 import { stagedRaceOf, stagedDisplay, probeCheckpointInput, raceBlockVerdict, longestSessionKm } from './stagedRacePlan'
 import { baseBuildRatioApplies, baseBuildRatioOf } from './baseVolume'
 import { prepBlockWeeks } from './inputs'
-import { walkRunStartPrescribed } from './walkRunStart'
+import { walkRunStartPrescribed, walkRunStartApplies } from './walkRunStart'
 import { effectiveStartKm } from './startVolume'
 
 /**
@@ -222,7 +222,14 @@ export function validateBaseBuildBlock(weeks: Week[], startKm: number,
  */
 export function validateStagedRace(plan: Plan): Violation[] {
   const staged = stagedRaceOf(plan)
-  if (!staged) return []
+  // 🔴 NOT `return []` SINCE `GETRUNNING-WALKRUN-FLOOR-01` (2026-11-12). This function is the plan-level arm
+  // every caller pairs with `validateBaseBuildBlock`, and it was ALSO the only route to `validateWalkRunStart`
+  // — so a base-build plan with no `staged_race`, which is every plan §118's producer makes, was outside the
+  // walk-run gate's population entirely. The limit was written down in `validateWalkRunStart`'s own header and
+  // measured there (`cw 2 / lr 0` given continuous running); writing a limit down is not guarding it.
+  // **2,304 of 2,394 blocks, every one from `generateGetRunningPlan`.** The staged arms below still need
+  // `staged`; the walk-run arm never did.
+  if (!staged) return validateWalkRunStart(plan)
   const v: Violation[] = []
   const push = (week: number, message: string, actual: string, expected: string) => v.push({
     code: 'INV-PLAN-STAGED-NO-RACE-BLOCK', principle_ref: 'CoachingPrinciples §116 Am. 9', severity: 'error',
@@ -356,9 +363,9 @@ export function validateWalkRunStart(plan: Plan): Violation[] {
   const carried = (plan.meta as unknown as Record<string, unknown>).walk_run_carried === true
   const v: Violation[] = []
   const C = GENERATION_CONFIG
-  const push = (week: number, message: string, actual: string, expected: string) => v.push({
+  const push = (week: number, message: string, actual: string, expected: string, severity: Violation['severity'] = 'error') => v.push({
     code: 'INV-PLAN-WALKRUN-START-PROGRESSION', principle_ref: 'CoachingPrinciples §116 (floor note), §117 Am. 7, §118 Am. 4',
-    severity: 'error', week, message, actual, expected,
+    severity, week, message, actual, expected,
   })
   const input = (plan.meta as unknown as { generator_input?: GeneratorInput }).generator_input
 
@@ -393,9 +400,19 @@ export function validateWalkRunStart(plan: Plan): Violation[] {
   if (stagedBlock && wr.length === 0 && !carried
       && input && walkRunStartPrescribed(effectiveStartKm(input), input.longest_recent_run_km)) {
     const first = weeks.find(w => w.phase === 'base_build')
+    // ⚠️ TWO SEVERITIES, AND THE SPLIT IS THE RULING BOUNDARY, NOT A TOLERANCE.
+    // Below the VOLUME floor, §116's floor note is ratified and both producers now implement it, so a block
+    // that still starts with continuous running is an `error`. At or above the floor the routing comes from
+    // §117 Am. 7's longest-run half, which is ratified for a STAGED block and OPEN for §118's — reseeding that
+    // producer's ramp at the floor cuts what the plan reaches (-11.1 km at 6 km/week, -33.9 at 12), which is
+    // the hazard Am. 7's own narrowing exists to refuse. So on a non-staged plan that half is a `warn`: visible
+    // and counted, never silent, and not throwing a build for a prescription nobody has ruled on.
+    const ratified = !!stagedRaceOf(plan) || walkRunStartApplies(effectiveStartKm(input))
     push(first?.n ?? 1,
-      `This runner is routed to the walk-run start (declared longest run ${String(input.longest_recent_run_km)}km, weekly ${String(input.current_weekly_km)}km), but the block starts with continuous running (§117 Am. 7).`,
-      'continuous running', 'a walk-run start')
+      ratified
+        ? `This runner is routed to the walk-run start (declared longest run ${String(input.longest_recent_run_km)}km, weekly ${String(input.current_weekly_km)}km), but the block starts with continuous running (§117 Am. 7).`
+        : `This runner's declared longest run is ${String(input.longest_recent_run_km)}km, under ${String(C.WALK_RUN_START_MIN_LONGEST_RUN_KM)}km, so §117 Am. 7 routes them to a walk-run start — but they are at or above §116's volume floor and this is not a staged plan, where applying it would cut what the plan builds. Open: GETRUNNING-WALKRUN-FLOOR-01, longest-run half.`,
+      'continuous running', 'a walk-run start', ratified ? 'error' : 'warn')
   }
 
   if (wr.length === 0 && !carried) return v

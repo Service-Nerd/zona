@@ -537,14 +537,18 @@ the board did not rule on them; **the week-1 leap is IDENTICAL at every distance
 runner types 5K or marathon) and only the ratio falls. ⚠️ §111's own text now contradicts itself — the chair's
 **ratio** reasoning transfers to 5K unchanged while the scope sentence justifies itself on **absolute** grounds, and
 one of the two has to give. §116 Am. 11's staged-door objection is currently the only ratio guard below 21 km.
-🏃 `GETRUNNING-WALKRUN-FLOOR-01` — **§118's own producer has no walk-run path, so a runner BELOW §116's
-floor gets continuous running from it, against the floor note's own text.** Found by `/code-review` of
-§117 Am. 7. Measured: `cw 0 / lr 0` correctly gets the walk-run start, but **`cw 2 / lr 0` and
-`cw 4 / lr 0` get continuous `Easy run: 2`** — only `cw 0` is served, and only because `getRunningApplies`
-is false there and the staged path picks it up. Two questions in one item: the `cw < 6` rows are a defect
-against documented intent (board-exempt to fix, but §118's producer needs a walk-run composition path it
-does not have); the `lr 0` rows at cw 10–20 carry the volume-reduction hazard that forced Am. 7's own
-narrowing, and that half is the board's. **0 affected plans in production, so latent.**
+✅ **`GETRUNNING-WALKRUN-FLOOR-01` SHIPPED 2026-11-12 (volume half) — board-exempt, defect against §116's own
+text.** §118's producer composes a walk-run start below the floor, through a new single owner
+`composeWalkRunStart` the staged path also calls (it had been the second copy), and `validateStagedRace` no longer
+returns `[]` on a non-staged plan — so `INV-PLAN-WALKRUN-START-PROGRESSION` can see §118's output at all.
+**2,304 of 2,394 grid blocks were wrong, every one from this producer; errors 2,304 → 0.** ⚠️ **Latent and
+it stays latent: 0 runners reach the fixed branch today** — a sub-floor runner is staged, so is never refused, so
+never sets `acceptBaseBuild`. 🔴 **AND THE DEFERRED HALF IS THE REACHABLE ONE: 524 of 748 accepted
+base-build plans** are at or above the floor with a longest run under 2 km, all now raising a `warn` →
+🏃 `GETRUNNING-WALKRUN-LRHALF-01`, which needs a sitting because honouring Am. 7 there CUTS what the plan
+builds (**−11.1 km at 6 km/week, −33.9 at 12**). 🔻 Also filed from the measurement, both pre-existing
+and unchanged by this ship: 🏃 `STAGED-RAMP-RATIO-16W-01` (**4.17× against Willy's 4.0 ceiling, 6 firings**)
+and 🏃 `FOUNDATION-FLOOR-SUBKM-01` (**192 firings**, a §57 floor and ceiling that cross below ~1.4 km/week).
 
 ✅ **`WALKRUN-GATE-VOLUME-ONLY-01` RULED AND SHIPPED 2026-11-07 — §117 Amendment 7.** The walk-run start is gated on the LONGEST RUN; Willy withdrew his own volume trigger, 18 days after §117 Am. 5 had already ratified that discriminator. **8,064 engine inputs: 335 move, all `refusal → base_build`, SERVED → REFUSED 0, no race plan changes**; continuous running **108 → 0**; all 335 newly-staged plans carry **0 error-severity violations**. 🔻 The 5K/10K face is NOT covered (§117 is marathon-only by construction) → 🏃 `SHORTDIST-RUNWALK-SCOPE-01`.
 
