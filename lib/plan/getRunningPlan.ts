@@ -103,7 +103,29 @@ export function generateGetRunningPlan(
     // cw 1 **+4.9 to +7.9 km**, cw 2 **+2.5 to +4.1**, cw 3 **+0.2 to +0.3**, cw 4 **−2.2 to −3.5**,
     // cw 5 **−4.5 to −7.3**. The negatives are §116's ratified trade, not a regression: today's larger
     // number is reached by prescribing continuous running off a base the runner cannot run.
-    const rampWeeks = Math.max(0, getRunningWeeks(runwayWeeks) - wrWeeks)
+    //
+    // 🔴 AND `Math.max(0, …)` WAS STILL DEAD, which the SECOND review round caught: `getRunningWeeks`
+    // floors at 8 and the walk-run start is 7, so the budget is never below 1 — measured 1 for every
+    // runway from 1 to 8. My own corrected comment then claimed *"at 7 or less it is 0 and the plan is
+    // the walk-run start alone"*, and that was **false twice over**: the floor made 0 unreachable, and
+    // I wrote the claim without re-running the arithmetic I had just changed.
+    //
+    // ✅ **A ONE-WEEK RAMP IS NOT A RAMP AND IS WHAT MAKES L4 REAL HERE.** `onRampCurve(6, 1)` is
+    // `[6]`, so `endsAtKm === startKm`: at runway 4 and 8 the plan published *"you will reach 6 km a
+    // week"* having built nothing, and `INV-PLAN-ONRAMP-CURVE-CLIMBS` cannot see it because a
+    // single-element curve never enters its loop — **the one guard against a non-climbing ramp is
+    // blind to the only shape that cannot climb.** Below two weeks the ramp is cut entirely and the
+    // plan is the walk-run start alone, which is L4's own words (*"never shortened; the ramp is cut
+    // first, else the walk-run start alone"*) and the shape the staged path already builds when no
+    // ramp fits.
+    //
+    // ⚠️ THE `2` IS INLINE AND NOT A `GENERATION_CONFIG` KEY, deliberately. The singularity's own
+    // tunability test asks whether a coach could reasonably want to tune it: **two is the number of
+    // points a curve needs in order to rise at all.** That is arithmetic, in the same class as `7` for
+    // days in a week, and the Exempt clause names exactly this. A config key would also demand a
+    // principle section for a fact.
+    const rampBudget = getRunningWeeks(runwayWeeks) - wrWeeks
+    const rampWeeks = rampBudget < 2 ? 0 : rampBudget
     const composed = composeWalkRunStart(input, {
       planStart,
       rampStart: addWeeksIso(planStart, wrWeeks),

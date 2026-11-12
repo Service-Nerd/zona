@@ -6,6 +6,26 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-11-12 — the SECOND /code-review round · the fix round had four of its own, and one was a claim I wrote without re-running it
+**Shipped:** a ramp too short to climb is now cut entirely (L4, reachable from §118 for the first time), two unfalsifiable test arms replaced, and a false claim about §111 corrected into an assertion of both its invariants.
+
+**Dev learning:** I fixed a dead `Math.max(0, …)` by writing a different dead `Math.max(0, …)`. `getRunningWeeks` floors at 8 and the walk-run start is 7 weeks, so the budget is never below 1 — and I wrote a comment saying "at 7 or less it is 0 and the plan is the walk-run start alone" **in the same commit that made that impossible**. The first version of the bug was an oversight; the second was a claim written without re-running the arithmetic I had just changed. The review measured it in one line: rampWeeks across runways 1–29 is `1,1,1,1,1,1,1,1,2,…`.
+
+Underneath it was the real defect. A one-week ramp cannot climb — `onRampCurve(6, 1)` is `[6]` — so at a four-week runway the plan published "you will reach 6 km a week" having built nothing, and `INV-PLAN-ONRAMP-CURVE-CLIMBS` cannot see it, because a single-element curve never enters its loop. **The one guard against a non-climbing ramp is blind to the only shape that cannot climb.** Cutting the ramp below two weeks fixes the plan and makes L4 — "never shortened; the ramp is cut first, else the walk-run start alone" — reachable here for the first time, so it finally has a test.
+
+**Product/creator learning:** the worst finding was a sentence I had written as fact. My residual arm said the declared-volume build ratio "is large for a sub-floor runner, which §111 does not bind", and I justified it from `INV-PLAN-GET-RUNNING-BUILD-RATIO`, whose denominator is the block's start. §111 has a **second** invariant, `INV-PLAN-BASE-BUILD-RATIO`, at error severity, on peak over the runner's raw declared volume — and it fires at 5.8× where the first reads 1.93×. Its own comment says it exists to catch "any plan that reaches validatePlan over the ceiling by another route", and a §118 plan, built because the runner was refused, is that route. I read one of two registers and wrote the conclusion down.
+
+It is not a new class — the staged path seeds its ramp at the same floor and the board recorded these in November as "label artefacts where the denominator is zero" — but which denominator governs a ramp that follows a walk-run start is a ruling, so it is filed rather than chosen. The arm now asserts both verdicts, so neither can be quoted without the other.
+
+**AI-building learning:** two of my test arms were unfalsifiable and both looked thorough. One compared four ratios that are identical by construction, because below the floor the ramp is seeded at 6 regardless of what the runner declared — four runners, one plan, `x === x` four times. The fix was to vary the axis that actually moves the output (the runway, which moves the ramp length) and to assert the by-construction part as by-construction. The other asserted a `session.rpe` field that does not exist. Both passed on the first run.
+
+**The honest bit:** this is the second review round on one wave, and between them they found eight things, seven of them mine. The ratio is not improving across rounds — the first round found four, the second found four — which says the first round's fixes were written at the same standard as the code it was fixing, and the recorded lesson about reviewing the fix round is the only reason the second round happened.
+
+**Hook material:** the guard against a ramp that does not climb never runs on a one-week ramp, because its loop starts at the second week. The only shape that cannot climb is the one shape it cannot see.
+
+**Postable?:** yes
+
+
 ## 2026-11-12 — the /code-review round on Wave 1 · four findings, all mine, and one was a regression my own analysis had ruled out
 **Shipped:** the walk-run start now comes out of §118's plan length instead of being added to it, the effort-governed discriminator uses its real owner (removing a duplicate predicate), and walk-run weeks stop failing the canonical plan schema.
 

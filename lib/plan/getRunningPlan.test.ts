@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { generateGetRunningPlan, getRunningWeeks, getRunningApplies } from './getRunningPlan'
 import { validateBaseBuildBlock } from './baseBuildValidate'
+import { validatePlan } from './invariants'
 import { GENERATION_CONFIG as G } from './generationConfig'
 import type { GeneratorInput } from '@/types/plan'
 
@@ -131,23 +132,77 @@ describe('§118 — the get-running plan', () => {
   })
 
   /**
-   * 🔴 THE RESIDUAL, ASSERTED RATHER THAN LEFT FOR SOMEONE TO FIND.
+   * 🔴 L4 — *"the walk-run start is never shortened; the ramp is cut first, else the walk-run start alone"* —
+   * AND IT WAS UNREACHABLE FROM THIS CALLER THROUGH TWO SUCCESSIVE VERSIONS OF THIS CODE.
    *
-   * Measured against the runner's DECLARED volume a sub-floor plan builds far past 4.0 — a 2 km/week runner
-   * ends at 22.7 km, **11.35x**. §111's ceiling does not bind that, because its denominator is the block's
-   * start and the walk-run start is ratified as bringing the runner TO the floor (Coaching Board 2026-10-25,
-   * L1-L5; the staged path has had the same arithmetic since, and the 2026-11-07 HM sitting recorded it as
-   * "label artefacts at cw <= 2 where the denominator is zero").
-   *
-   * This case exists so the number is visible and so nobody reads the case above as a claim it is not. If the
-   * board ever rules the declared volume IS the denominator for this cohort, this is the case that fails.
+   * `getRunningWeeks` floors at `GET_RUNNING_MIN_WEEKS` (8) and the walk-run start is 7 weeks, so the ramp
+   * budget was never below 1 — a `Math.max(0, …)` that can never return 0, twice, and a comment claiming
+   * otherwise. Worse, a ONE-week ramp cannot climb: `onRampCurve(6, 1)` is `[6]`, so `endsAtKm === startKm`
+   * and the offer published *"you will reach 6 km a week"* having built nothing. **And the guard for a
+   * non-climbing ramp, `INV-PLAN-ONRAMP-CURVE-CLIMBS`, never enters its loop on a single-element curve —
+   * blind to the only shape that cannot climb.**
    */
-  it('and the DECLARED-volume ratio is large for a sub-floor runner, which §111 does not bind', () => {
-    const { plan, endsAtKm } = generateGetRunningPlan(mk({ current_weekly_km: 2, longest_recent_run_km: 1 }), '2026-10-05', 29)
+  it('🔴 a runway too short for a real ramp gets the walk-run start ALONE (L4), not a ramp of one week', () => {
+    for (const runway of [1, 4, 8]) {
+      const { plan, weeks, endsAtKm } = generateGetRunningPlan(mk({ current_weekly_km: 2 }), '2026-10-05', runway)
+      const ramp = plan.weeks.filter(w => w.phase === 'base_build')
+      const wr = plan.weeks.filter(w => w.phase === 'walk_run_start')
+      expect(ramp.length, `runway ${runway}: a one-week ramp is not a ramp`).toBe(0)
+      expect(wr.length, `runway ${runway}: the walk-run start is never shortened`).toBe(G.WALK_RUN_START_SESSIONS > 0 ? wr.length : 0)
+      expect(wr.length).toBeGreaterThan(0)
+      expect(weeks, `runway ${runway}: the plan IS the walk-run start`).toBe(wr.length)
+      expect(endsAtKm, 'and it ends at the floor the walk-run start brings them to')
+        .toBe(G.BASE_BUILD_ONRAMP_MIN_START_KM)
+    }
+  })
+
+  it('and a runway that does hold a ramp gets one that CLIMBS', () => {
+    // The other side of the cut, so the arm above cannot pass by cutting every ramp.
+    const { plan } = generateGetRunningPlan(mk({ current_weekly_km: 2 }), '2026-10-05', 29)
+    const km = plan.weeks.filter(w => w.phase === 'base_build').map(w => w.weekly_km ?? 0)
+    expect(km.length).toBeGreaterThan(1)
+    expect(Math.max(...km), 'the ramp must rise above its own start').toBeGreaterThan(km[0])
+  })
+
+  /**
+   * 🔴 THE RESIDUAL — AND THIS CASE'S FIRST VERSION STATED IT BACKWARDS.
+   *
+   * It read *"the DECLARED-volume ratio is large for a sub-floor runner, which §111 does not bind"*, and I
+   * justified that from `INV-PLAN-GET-RUNNING-BUILD-RATIO`, whose denominator is the caller-supplied block
+   * start. **§111 has a SECOND invariant with the other denominator.**
+   * `INV-PLAN-BASE-BUILD-RATIO` (`invariants.ts`, **error** severity) is peak over the runner's **raw
+   * `current_weekly_km`**, and its own comment says it exists to catch *"any plan that reaches validatePlan
+   * over the ceiling by ANOTHER ROUTE"* — a §118 plan, built because the runner was refused, is that route.
+   * Measured: it fires at **5.8x** on a 2 km/week runner. **I reasoned from one of two registers and wrote
+   * the conclusion as fact.**
+   *
+   * ⚠️ IT IS NOT A NEW CLASS AND THE BOARD HAS SEEN IT. The staged path seeds its ramp at the same floor and
+   * has since 2026-10-25 (L1–L5), and the 2026-11-07 HM sitting recorded exactly these as *"label artefacts
+   * at cw <= 2 where the denominator is zero"*. What this ship did was extend the shape to §118's path.
+   * ⚠️ AND NOTHING REPORTS IT TODAY: `engine.ts`'s §118 branch returns the plan without calling
+   * `validatePlan` or `enforceViolations` at all, so the error is latent on that path. Filed as
+   * `GETRUNNING-S111-DENOMINATOR-01` — which denominator governs a ramp that follows a walk-run start is the
+   * board's, not an implementer's, and it applies to the staged path identically.
+   *
+   * This case now asserts BOTH invariants' verdicts, so neither can be quoted without the other.
+   */
+  it('🔴 the two §111 ratio invariants DISAGREE on a sub-floor plan, and both verdicts are asserted', () => {
+    const input = mk({ current_weekly_km: 2, longest_recent_run_km: 1 })
+    const { plan, endsAtKm } = generateGetRunningPlan(input, '2026-10-05', 29)
     expect(plan.weeks.some(w => w.phase === 'walk_run_start'), 'below the floor, so a walk-run start').toBe(true)
     expect(blockStartKm(plan), 'the ramp starts at the floor, not at the runner').toBe(G.BASE_BUILD_ONRAMP_MIN_START_KM)
-    expect(endsAtKm / 2).toBeGreaterThan(G.MAX_BASE_BUILD_RATIO)
+
+    // (a) block-start denominator — satisfied, which is what `validateBaseBuildBlock` checks.
     expect(endsAtKm / blockStartKm(plan)).toBeLessThanOrEqual(G.MAX_BASE_BUILD_RATIO)
+    expect(validateBaseBuildBlock(plan.weeks, blockStartKm(plan)).map(v => v.code))
+      .not.toContain('INV-PLAN-GET-RUNNING-BUILD-RATIO')
+
+    // (b) raw declared-volume denominator — NOT satisfied, and it is an `error`.
+    const s111 = validatePlan(plan, input).filter(v => v.code === 'INV-PLAN-BASE-BUILD-RATIO')
+    expect(s111.length, 'if this goes empty the board has ruled, or the seeding changed — update the filing')
+      .toBeGreaterThan(0)
+    expect(s111[0].severity).toBe('error')
+    expect(endsAtKm / 2).toBeGreaterThan(G.MAX_BASE_BUILD_RATIO)
   })
 
   // The ratio is a property of the CURVE, not the runner — which is why the fix
@@ -160,14 +215,28 @@ describe('§118 — the get-running plan', () => {
     // being ADDED to the plan's length and made it come out of it instead. Same curve, fewer weeks of
     // it. Asserting one ratio across the boundary would be asserting the two cohorts get the same
     // number of ramp weeks, which they must not.
-    const ratioFor = (cwk: number) => {
-      const { plan, endsAtKm } = generateGetRunningPlan(mk({ current_weekly_km: cwk }), '2026-10-05', 29)
+    // 🔴 THE SUB-FLOOR SIDE VARIES THE RUNWAY, NOT THE VOLUME, AND THE FIRST CUT DID THE OPPOSITE.
+    // Below the floor the ramp is seeded at `BASE_BUILD_ONRAMP_MIN_START_KM` regardless of what the runner
+    // declared, so cwk 1/2/3/5 produce **the same plan**: four identical ratios, an arm that could not
+    // fail, and a property that reads as tested while asserting `x === x`. Varying the runway varies the
+    // ramp LENGTH, which is the thing the curve property is actually about.
+    const ratioFor = (cwk: number, runway = 29) => {
+      const { plan, endsAtKm } = generateGetRunningPlan(mk({ current_weekly_km: cwk }), '2026-10-05', runway)
       return { ratio: endsAtKm / blockStartKm(plan), ramp: plan.weeks.filter(w => w.phase === 'base_build').length }
     }
-    const sub = [1, 2, 3, 5].map(ratioFor)      // below the floor — walk-run start, then a short ramp
-    const over = [7, 8, 10].map(ratioFor)       // at or above it — all ramp
+    const sub = [1, 2, 3, 5].map(c => ratioFor(c))
+    const over = [7, 8, 10].map(c => ratioFor(c))
     for (const r of sub) expect(r.ratio, `sub-floor ${r.ramp}w`).toBeCloseTo(sub[0].ratio, 1)
     for (const r of over) expect(r.ratio, `above-floor ${r.ramp}w`).toBeCloseTo(over[0].ratio, 1)
+    // The sub-floor cohort is identical BY CONSTRUCTION (same seed, same length), so assert that rather
+    // than dressing it as the curve property, and get the real variation from the runway.
+    expect(new Set(sub.map(r => r.ramp)).size, 'the seed does not depend on the declared volume').toBe(1)
+    const byRunway = [12, 16, 22, 29].map(rw => ratioFor(2, rw))
+    expect(new Set(byRunway.map(r => r.ramp)).size, 'the runway must actually move the ramp length')
+      .toBeGreaterThan(1)
+    for (let i = 1; i < byRunway.length; i++)
+      expect(byRunway[i].ratio, `runway grew, so the ramp climbs further (${byRunway[i].ramp}w)`)
+        .toBeGreaterThanOrEqual(byRunway[i - 1].ratio)
     // 🔑 And the REASON they differ is the ramp length, asserted so the next reader does not read the
     // two ratios as a defect. Without this the case would pass on two cohorts that differ for any reason.
     expect(sub[0].ramp, 'a sub-floor ramp is shortened by the walk-run start').toBeLessThan(over[0].ramp)

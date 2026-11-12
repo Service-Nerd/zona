@@ -375,6 +375,29 @@ before planning against any number below (an item is a snapshot of the code on t
   no ground. What the hero should SAY for a plan whose first weeks have no distance is the board's.
   📐 Found by `/code-review` of `GETRUNNING-WALKRUN-FLOOR-01`.
 
+- 🏃 **COACHING BOARD** `GETRUNNING-S111-DENOMINATOR-01` — **§111 HAS TWO RATIO INVARIANTS WITH
+  DIFFERENT DENOMINATORS, AND ON A POST-WALK-RUN RAMP THEY DISAGREE.** Which one governs is a ruling.
+  - `INV-PLAN-GET-RUNNING-BUILD-RATIO` (`baseBuildValidate.ts`) is peak over the **caller-supplied block
+    start**, which after a walk-run start is `BASE_BUILD_ONRAMP_MIN_START_KM` (6). **Satisfied: 1.93×.**
+  - `INV-PLAN-BASE-BUILD-RATIO` (`invariants.ts`, **error**) is peak over the runner's **raw
+    `current_weekly_km`**. **Violated: 5.8× on a 2 km/week runner, against the 4.0 cap.**
+  🔴 **Its own comment says it exists for this:** *"the engine refuses over the ceiling … so in the
+  generation path this backstop never fires — the refusal pre-empts it. It catches any plan that reaches
+  `validatePlan` over the ceiling by ANOTHER ROUTE."* **A §118 plan, built precisely because the runner was
+  refused, IS that other route.**
+  ⚠️ **NOT A NEW CLASS, AND THE BOARD HAS ALREADY SEEN IT:** the staged path seeds its ramp at the same
+  floor and has since 2026-10-25 (L1–L5), and the 2026-11-07 `HM-BASE-RATIO-SCOPE-01` sitting recorded
+  exactly these as *"label artefacts at `cw <= 2` where the denominator is zero"*. `GETRUNNING-WALKRUN-FLOOR-01`
+  extended the shape to §118's path; it did not invent it. **The ruling, if the board wants one, applies to
+  both paths identically.**
+  ⚠️ **Nothing reports it today:** `engine.ts`'s §118 branch returns the plan **without calling
+  `validatePlan` or `enforceViolations` at all**, so the error is latent on that path — which is itself worth
+  the board's attention, because it means §118's output has no constitutional gate.
+  📐 **I asserted the opposite in a test and it shipped for 40 minutes.** The arm read *"the
+  DECLARED-volume ratio … which §111 does not bind"*, justified from the block-start invariant alone. **One
+  of two registers, read as the answer.** The arm now asserts BOTH verdicts so neither can be quoted without
+  the other, and it fails if either moves. Found by the SECOND `/code-review` round.
+
 - 🏃 **COACHING BOARD** `GETRUNNING-WALKRUN-LRHALF-01` — **the half of `GETRUNNING-WALKRUN-FLOOR-01` that was
   deferred to the board, and measurement has INVERTED which half matters.** §117 Am. 7 prescribes a walk-run start
   to a runner at or above §116's volume floor whose declared longest run is under
