@@ -25,9 +25,35 @@
  * the finding. Findings are reported, never auto-resolved.
  */
 import { readFileSync, existsSync, readdirSync } from 'node:fs'
+import { classifyPathRef } from './lib/backlog-path-ref.mjs'
 import { execFileSync } from 'node:child_process'
 
 const sh = (cmd, args) => { try { return execFileSync(cmd, args, { encoding: 'utf8' }) } catch { return '' } }
+/** Exit code only — `git check-ignore -q` answers through its status, not stdout. */
+const shOk = (cmd, args) => {
+  try { execFileSync(cmd, args, { stdio: 'ignore' }); return true } catch { return false }
+}
+/**
+ * 🔴 IS THIS PATH DELIBERATELY ABSENT FROM GIT? A gitignored path is a GENERATED ARTEFACT, not a
+ * dead reference — and, far more importantly, **asking the filesystem gives a different answer in
+ * CI than on the machine that wrote the item.**
+ *
+ * 📐 Measured 2026-11-12: `ULTRA-VOICE-REPURPOSED-01` names
+ * `coaching-review/2026-11-02/generated-plans.md`, a 1.6 MB corpus output matched by
+ * `.gitignore:32`. It exists on the authoring machine, so `existsSync` said "fine" and this
+ * script exited 0; a fresh CI checkout has never had it, so the same script exited 1 and **every
+ * `verify:ci` job failed.** 47 of the 88 files under `coaching-review/` are tracked.
+ *
+ * ⚠️ The pre-existing git fallback could not catch it: it globs the BASENAME
+ * (`git ls-files '*generated-plans.md'`), and a file that is ignored in every dated folder is
+ * tracked nowhere, so the glob is empty by construction.
+ *
+ * The verdict is now identical in both places: tracked → fine; ignored → artefact, listed but not
+ * a failure; neither → dead.
+ */
+const gitIgnored = (p) => shOk('git', ['check-ignore', '-q', '--', p])
+
+
 const ROOT = sh('git', ['rev-parse', '--show-toplevel']).trim()
 process.chdir(ROOT)
 
@@ -160,6 +186,10 @@ const contractDir = 'docs/contracts'
 const contractFiles = sh('bash', ['-c', `find ${contractDir} -name '*.md' | sort`])
   .split('\n').map(s => s.trim()).filter(Boolean)
 const deadContractRefs = []
+/** Paths an item names that git deliberately does not carry — generated corpus output and the
+ *  like. Listed rather than silent: an artefact reference is legitimate, and an artefact that
+ *  stops being generated should still be noticeable. */
+const artefactRefs = []
 for (const cf of contractFiles) {
   const body = readFileSync(cf, 'utf8')
   for (const m of body.matchAll(/`([a-zA-Z0-9_.-]+(?:\/[a-zA-Z0-9_.-]+)+\.(?:ts|tsx|sh|mjs|py|css|sql))`/g)) {
@@ -170,11 +200,16 @@ for (const cf of contractFiles) {
 }
 for (const [id, body] of bodies) {
   for (const [, p] of body.matchAll(FILE)) {
-    if (existsSync(p)) continue
+    // ⚠️ EVERY INPUT FROM GIT, NONE FROM THE FILESYSTEM — see `classifyPathRef`.
     const base = p.split('/').pop()
-    if (sh('git', ['ls-files', `*${base}`]).trim()) continue
-    if (DEAD_BY_DESIGN.has(`${id}|${p}`)) continue
-    deadFiles.push([id, p])
+    const verdict = classifyPathRef({
+      tracked:         !!sh('git', ['ls-files', '--', p]).trim(),
+      ignored:         gitIgnored(p),
+      basenameTracked: !!sh('git', ['ls-files', `*${base}`]).trim(),
+      declaredDead:    DEAD_BY_DESIGN.has(`${id}|${p}`),
+    })
+    if (verdict === 'artefact') artefactRefs.push([id, p])
+    else if (verdict === 'dead') deadFiles.push([id, p])
   }
   for (const [, s] of body.matchAll(SYM)) {
     if (SKIP.test(s) || /^[A-Z][A-Z0-9]*$/.test(s)) continue
@@ -451,6 +486,14 @@ head('0. DEAD BY DESIGN — declared, with a reason')
 })
 head('1. DEAD FILE REFERENCES (a named path that exists nowhere)')
 deadFiles.length ? deadFiles.forEach(([i, p]) => console.log(`  ${i.padEnd(34)} ${p}`)) : console.log('  none')
+head('1a. GENERATED ARTEFACTS an item names \u2014 gitignored, so absent in CI by design')
+artefactRefs.length
+  ? artefactRefs.forEach(([i, p]) => console.log(`  \u00b7 ${i.padEnd(34)} ${p}`))
+  : console.log('  none')
+console.log('    \u26A0\uFE0F  Not a failure, and not silent. These exist on whichever machine generated')
+console.log('       them and in no checkout. Asking the FILESYSTEM for them is what made this')
+console.log('       script pass locally and fail every CI job on 2026-11-12.')
+
 head('1b. A CONTRACT CITING A FILE THAT DOES NOT EXIST')
 deadContractRefs.length
   ? deadContractRefs.forEach(([c, p]) => console.log(`  ✗ ${c.padEnd(38)} cites ${p}`))
