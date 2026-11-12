@@ -59,7 +59,7 @@ describe('ACT-TRIAL-AT-FIRST-READ-01 — the ON arithmetic, through the shipped 
   // sharing the producer's predicate cannot catch the producer being wrong. The policy is an
   // injected argument now, so these drive the real branch.
 
-  it('no read yet: access runs to the 30-day cap and the clock has NOT started', () => {
+  it('no read yet: access runs to the CAP and the clock has NOT started', () => {
     const w = on(null, plus(START, 20))
     expect(w.endsAt!.getTime()).toBe(START.getTime() + TRIAL_MAX_DAYS_FROM_START * DAY)
     expect(w.clockStartedAt, 'a null clock is what stops a caller computing "day N of 14"').toBeNull()
@@ -73,7 +73,7 @@ describe('ACT-TRIAL-AT-FIRST-READ-01 — the ON arithmetic, through the shipped 
     expect(w.active).toBe(true)
   })
 
-  it('a read on day 25: the CAP wins, because 25 + 14 is past 30', () => {
+  it('a read on day 25: the CAP wins, because 25 + 14 is past it', () => {
     const w = on(plus(START, 25), plus(START, 26))
     expect(w.endsAt!.getTime()).toBe(plus(START, TRIAL_MAX_DAYS_FROM_START).getTime())
     expect(w.basis).toBe('cap')
@@ -93,12 +93,46 @@ describe('ACT-TRIAL-AT-FIRST-READ-01 — the ON arithmetic, through the shipped 
     }
   })
 
+  it('🔴 the cap TRUNCATES a late starter, and the boundary is cap - TRIAL_DAYS', () => {
+    // 🔴 THE ARM ABOVE IS NOT THIS ONE, AND THE DIFFERENCE IS WHAT THE FOUNDER'S 30 → 21 ACTUALLY
+    // BOUGHT. "Never shortens a trial the old rule would have allowed" compares against day 14
+    // and passes at ANY cap above 14 — so it was green before and after the change and could not
+    // see it. The property that moved is: `endsAt = min(firstRead + TRIAL_DAYS, cap)`, so a
+    // runner whose first read lands after `cap - TRIAL_DAYS` gets FEWER than TRIAL_DAYS.
+    //
+    // 📐 Measured 2026-11-12 on the only 4 trialists who have ever had a read: first reads land
+    // on day 6.1 and three later, out to 40.2 — **3 of those 4 are truncated at a cap of 21,
+    // against 2 of 4 at 30.** n = 4, so that is a direction and not a rate.
+    //
+    // ⚠️ This arm is written against the CONSTANT, so it follows a future change rather than
+    // pinning today's number — but it makes the COST of that change visible, which is the thing
+    // nobody was looking at.
+    const boundary = TRIAL_MAX_DAYS_FROM_START - TRIAL_DAYS
+    expect(boundary, 'a cap at or below TRIAL_DAYS would truncate every runner').toBeGreaterThan(0)
+
+    // On the boundary day the runner still gets the full window, to the hour.
+    const exact = on(plus(START, boundary), plus(START, boundary))
+    expect(exact.endsAt!.getTime(),
+      `a read on day ${boundary} should still be a full ${TRIAL_DAYS} days`)
+      .toBe(plus(START, boundary + TRIAL_DAYS).getTime())
+
+    // One day later it is clipped, and clipped to the cap rather than to anything else.
+    const late = on(plus(START, boundary + 1), plus(START, boundary + 1))
+    expect(late.endsAt!.getTime()).toBe(plus(START, TRIAL_MAX_DAYS_FROM_START).getTime())
+    expect(late.basis).toBe('cap')
+
+    // And the clipped runner still gets at least the old rule's 14 days from SIGNUP, which is
+    // the floor that makes the cap safe to lower at all.
+    expect(late.endsAt!.getTime()).toBeGreaterThanOrEqual(plus(START, TRIAL_DAYS).getTime())
+  })
+
   it('a FAILED read resolves to the CAP, because the alternative REVOKES an entitled runner', () => {
     // 🔴 BOTH EARLIER ATTEMPTS AT THIS WERE WRONG. Discarding the error made a failure
     // indistinguishable from "no read". Falling back to the SIGNUP window was worse: a runner
     // who read on day 2 has a window to day 16, so a failed query on day 15 resolved them
     // `free` and took the product off them mid-trial because of our outage. The cap is bounded
-    // at 30 days and can never revoke.
+    // (`TRIAL_MAX_DAYS_FROM_START`, 21 since the founder's decision of 2026-11-12) and can never
+    // revoke.
     const w = on(null, plus(START, 20), true)
     expect(w.basis).toBe('cap')
     expect(w.endsAt!.getTime()).toBe(START.getTime() + TRIAL_MAX_DAYS_FROM_START * DAY)
@@ -153,8 +187,8 @@ describe('ACT-TRIAL-AT-FIRST-READ-01 — the clock is MONOTONIC', () => {
   it('a superseded read still counts, so a race change cannot resurrect an expired trial', () => {
     // 🔴 The first cut keyed the clock to LIVE reads only (`superseded_at IS NULL`). A race
     // change supersedes every `run_analysis` row a runner has — so their first read would
-    // vanish, the window would jump to the 30-day cap, and **an already-expired trial would
-    // come back between day 15 and day 30**. The emails count what a runner can open; this
+    // vanish, the window would jump to the cap, and **an already-expired trial would come
+    // back between day 15 and the cap**. The emails count what a runner can open; this
     // answers whether they have ever been shown what the product does, and that cannot
     // un-happen.
     for (const [label, src] of [['getUserTier', TRIAL_TS], ['DashboardClient', CLIENT_TSX]] as const) {
@@ -257,7 +291,7 @@ describe('ACT-TRIAL-AT-FIRST-READ-01 — the interlock is DERIVED, not a list', 
   })
 
   it('while ANY consumer still counts from the signup stamp, the flag must be off', () => {
-    // With the flag on and no read yet, a runner's trial runs to the 30-day cap while
+    // With the flag on and no read yet, a runner's trial runs to the CAP while
     // `trialDayNumber` still reaches 11 on day 11 — so "3 days left." goes to someone with
     // nineteen. That is a false statement to a customer about when they will be charged.
     if (signupRelative.length > 0) {
@@ -269,7 +303,7 @@ describe('ACT-TRIAL-AT-FIRST-READ-01 — the interlock is DERIVED, not a list', 
 
   it('while ANY resolveTier caller is unwired, the flag must be off', () => {
     // One owner is only an owner if every caller supplies the same inputs (TIER-OWNER-01).
-    // An unwired caller resolves every trialist on the 30-day cap path.
+    // An unwired caller resolves every trialist on the cap path.
     if (unwiredCallers.length > 0) {
       expect(TRIAL_STARTS_AT_FIRST_READ,
         `these call resolveTier without firstReadAt: ${unwiredCallers.join(', ')}`).toBe(false)

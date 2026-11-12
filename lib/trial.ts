@@ -7,10 +7,25 @@ export const TRIAL_DAYS = 14
 
 /**
  * ACT-TRIAL-AT-FIRST-READ-01 — the ceiling on a trial whose clock has not started.
- * Thirty days from the trial stamp, whatever happens, so a runner who never gets a read does
- * not hold full access forever.
+ * **Twenty-one days** from the trial stamp, whatever happens, so a runner who never gets a read
+ * does not hold full access forever.
+ *
+ * 👤 **FOUNDER DECISION, 2026-11-12: 30 → 21.** *"make it 21 days"*, asked after the trade was
+ * put to him: with the flag ON, a runner who connects nothing and logs nothing gets the cap
+ * instead of `TRIAL_DAYS`, and **33 of 37 trialists have never had a single run read.**
+ *
+ * ⚠️ **THE CAP IS NOT ONLY A CEILING ON THE NEVER-READ — IT TRUNCATES A LATE STARTER'S 14 DAYS,
+ * AND THAT IS THE HALF THAT IS EASY TO MISS.** `endsAt = min(firstRead + TRIAL_DAYS, cap)`, so at
+ * 21 anyone whose first read lands after **day 7** gets fewer than 14 days. 📐 Measured
+ * 2026-11-12 on the only 4 trialists who have ever had a read: first reads land on days **6.1,
+ * and three later, out to 40.2** — so **3 of those 4 would be truncated at 21, against 2 of 4 at
+ * 30.** ⚠️ n = 4. That is a direction, not a rate, and it is stated rather than smoothed.
+ *
+ * ⚠️ **INERT UNTIL THE FLAG FLIPS.** `resolveTrialWindow` returns on the signup path before this
+ * constant is read, so changing it moves nothing for anyone today. It is the value that will
+ * apply on the day `TRIAL_STARTS_AT_FIRST_READ` becomes true.
  */
-export const TRIAL_MAX_DAYS_FROM_START = 30
+export const TRIAL_MAX_DAYS_FROM_START = 21
 
 /**
  * ACT-EMAIL-DAY14-01 — the extra days offered at day 14 to a runner we never managed to read a

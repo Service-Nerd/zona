@@ -1922,7 +1922,7 @@ export default function DashboardClient() {
         // ARE INCLUDED, which is the opposite of `lib/ops/runRead.ts`'s rule and deliberate: a
         // race change supersedes every analysis, so a live-rows-only clock moves LATER and an
         // expired trial would come back. The error is carried rather than read as "no read",
-        // because "no read" grants the 30-day cap.
+        // because "no read" grants the CAP (`TRIAL_MAX_DAYS_FROM_START`).
         // 🔴 A SEPARATE, FAILURE-TOLERANT READ, for the same reason the server splits it.
         // `trial_extended_at` is created by `20261111e` and applied by hand. Naming it in the
         // boot select above would mean that on any deploy before the apply, `.single()` fails,

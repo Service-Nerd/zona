@@ -52,7 +52,7 @@ const ALLOWED: { file: string; table?: string; why: string }[] = [
     why: 'Takes the EARLIEST run_analysis row to decide when the trial clock started. A LIFETIME '
        + 'question — "has this runner ever been shown what the product does" — which cannot '
        + 'un-happen. A race change supersedes every row, so filtering would lose their first '
-       + 'read, jump the window to the 30-day cap and bring an ALREADY-EXPIRED TRIAL BACK '
+       + 'read, jump the window to the CAP and bring an ALREADY-EXPIRED TRIAL BACK '
        + 'between day 15 and day 30. Only runs while TRIAL_STARTS_AT_FIRST_READ is on.',
   },
   {

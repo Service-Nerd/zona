@@ -4716,7 +4716,7 @@ example render the paywall link · let it keep the "This run" eyebrow.
 days** for 4 of the 10. The 14 days are counted from sign-up; the plan may not begin for weeks or
 months, because a distant race defers the start.
 
-**Acceptance criteria per the brief.** Trial starts when the first run is read, capped at 30 days
+**Acceptance criteria per the brief.** Trial starts when the first run is read, capped at `TRIAL_MAX_DAYS_FROM_START` days
 from sign-up; **fully behind a feature flag, OFF by default**; not enabled without written sign-off.
 
 ✅ **BUILT. `TRIAL_STARTS_AT_FIRST_READ = false` in `lib/trial.ts`.** The founder authorised the
@@ -4736,7 +4736,7 @@ the OFF path issues no extra query and costs nothing. Wiring one would have reso
 
 🔴 **IT CANNOT BE TURNED ON ALONE, AND THAT IS MECHANICAL.** The day-11 and day-14 emails count
 days from `trial_started_at`. With the flag on and no read yet, a runner's trial runs to the
-30-day cap while `trialDayNumber` still reaches 11 on day 11 — so **"3 days left." would be sent
+cap while `trialDayNumber` still reaches 11 on day 11 — so **"3 days left." would be sent
 to someone with nineteen**, which is a false statement to a customer about when they will be
 charged. `lib/trialWindow.test.ts` **fails the build if the flag is true while the email route
 still keys off the signup stamp**, and a second arm proves that interlock is not vacuous by
@@ -4762,7 +4762,7 @@ DAY IT WAS FLIPPED:**
 - **The in-app countdown kept its own arithmetic**, so on the cap path it would have shown
   *"0 days left"* to a runner with ten, while the tier said Pro. It reads the owner now.
 - **The first-read query discarded its error**, so an outage read as "no read" — which grants the
-  **30-day cap**, handing out two extra weeks on our own failure. A failed read now falls back to
+  **cap**, handing out extra weeks on our own failure. A failed read now falls back to
   the signup window, the answer that cannot give anything away.
 - **The ON arithmetic was asserted against a copy inside the test**, so inverting the cap
   comparison in the shipped function left the suite green. The policy is an injected argument

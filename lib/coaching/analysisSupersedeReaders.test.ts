@@ -189,7 +189,7 @@ const EXPECT_FILTERS: Record<string, Expectation> = {
    * This is a history reader and the strictest kind: the question is **"has this runner ever
    * been shown what the product does"**, which cannot un-happen. A race change supersedes every
    * `run_analysis` row, so a live-rows-only clock would lose their first read, jump the window
-   * to the 30-day cap, and **bring an already-expired trial back between day 15 and day 30.**
+   * to the CAP, and **bring an already-expired trial back between day 15 and the cap.**
    *
    * ⚠️ The sibling `lib/ops/runRead.ts` is registered FILTERED for the opposite and equally
    * correct reason: it counts what a runner can still OPEN, for the trial emails. Two readers
