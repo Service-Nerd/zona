@@ -3093,3 +3093,54 @@ preference has nothing to prefer. **Varying an axis is not reaching the interact
 exists; the registry row is marked REVERTED rather than deleted; the item is re-opened carrying all three
 re-usable parts, the five unaddressed consumers, and an instruction not to attempt a third build before the
 board rules on the fourth outcome.
+
+## 🏃 2026-11-12 — the 31 open coaching items, analysed and triaged · **1 ruled · 1 exempted · 1 unbuildable-as-stated · 1 INSUFFICIENT EVIDENCE · 27 routed**
+
+Founder: *"I want analysis ran for the 31 to the coaching board and sit the board. I want a plan to
+fix and prioritisation on them off the back of it."* Sitting:
+`docs/decisions/coaching-board-open-items-2026-11-12.md`.
+
+🔴 **THE FINDING THAT GOVERNS THE SITTING: six of the thirty-one are blocked on evidence that does
+not exist, and the quantity of that evidence is not a coaching problem.** Measured 2026-11-12,
+non-admin non-internal: **377 runs · 27 reads · 5 users who have ever completed a session · 21 live
+completions, 4 carrying a linked activity and 0 from Strava · 2 users with any HR-bearing analysis,
+1 with three.** 🏃 Hutchinson: *"the honest ruling on most of these is not CORRECT or INCORRECT, it
+is that **we are not the blocker**."* ⚠️ **Not an argument for doing nothing** — 15 of the 31 are
+answerable from a 41,472-input corpus that needs no users at all.
+
+📐 **THREE GATES RE-MEASURED BEFORE ANY SEAT SPOKE, AND TWO HAD MOVED.**
+`EMAIL-WAVE-4-PATTERN-01` needs ≥3 users with ≥3 HR-bearing ANALYSES: **1 clears it, and only 2
+users have a single one.** ⚠️ Re-measured rather than read because that item's 2026-10-06 "unblock"
+counted HR-bearing **runs** and reported 14 where the answer was 1 — **the same mistake is available
+today.** `LOG-OFFPLAN-03`'s blocker (the link rate) is confirmed and **worse than filed**.
+`GRID-NO-MENOPAUSAL-TENDON-01` verified in source: `cohortGrid` sets `injury_history: []`,
+`targetedGridCore` hardcodes `age: 40`, `MASTERS_AGE_THRESHOLD` is 45 — **the cell is unreachable
+by both grids by construction.**
+
+| Ruling | Outcome |
+|---|---|
+| **`SHORTDIST-RUNWALK-SCOPE-01`** | ⚖️ **CORRECT WITH AMENDMENT.** A 5K/10K runner at longest-run 0 gets a **16-minute continuous long run** while the half and marathon REFUSE the identical runner — *type the harder race, get the safer answer*, third appearance in three days. §117's run-walk must **reach** 5K/10K; the amendment forbids fixing it by extending the refusal, because a 5K is the right first race. 🩹 Willy: *"we are not inconsistent about risk, we are inconsistent about which form asked."* |
+| **`GETRUNNING-WALKRUN-FLOOR-01`** | ⛔ **EXEMPT — not this board's.** §116's floor note already says a runner below the floor starts with a walk-run; the producer has no walk-run path. *"A board sitting to re-affirm what §116 already says is theatre."* Build it. |
+| **`WEEK1-DELIVERED-CEILING-01`** | ⏸️ **INSUFFICIENT EVIDENCE, with the evidence named.** Week 1 is **13 km at a declared 5, 6, 8 AND 10 km/week** — the §2 step reads 2.60×/2.17×/1.63×/1.30× purely because the denominator moves. 📊 Seiler: *"the step ratios are arithmetic, not evidence."* **Condition: `measure:fitness` with and without a declared-week bound, every distance, `neverBuildsPct` and net build in the submission.** |
+| **`STRENGTH-CARRY-PATTERN-01`** | ⚖️ **CORRECT WITH AMENDMENT — the board's own prior ruling is unbuildable as stated.** 💪 Blagrove: *"we ruled two carries back to back is one part. There is no `carry` pattern — `suitcase_carry` is `anti_rotation`, `farmer_carry` is `lateral_core`. The ruling named a thing the data model does not have, which is my error."* The merge keys on a **named exercise set**. 🔻 Behind `STRENGTH-PAIR-STRIDE-01`. |
+
+🔑 **THE HIGHEST-LEVERAGE ITEM IS A MEASUREMENT, NOT A PRESCRIPTION.**
+`GRID-NO-MENOPAUSAL-TENDON-01` — add injury to `cohortGrid`, age to `targetedGrid`. Four other
+items (`ACHILLES-QUALITY-ONSET-01`, `LONG-RUN-CAP-INJURY-VALUE-01`, `DELIVERED-TAIL-LEVERS-01`,
+`COACH-READ-1027-FOLLOWUPS-01`) all need cells it would open. ⚠️ **Its cost must be declared before
+it starts: widening the grid moves every baseline that reads it**, so the first run is a
+re-baseline with a reason, never a green tick.
+
+⚖️ **FIVE ITEMS LEAVE THIS QUEUE WITHOUT A RULING** (31 → 26): `HR-SAVE-UNEDITED-CONFIRMS-01`
+closes — its own research concludes a save IS a confirmation by design, and making it conditional
+left a genuine low-max athlete no route to confirm; the two Runked items are 💼 SLT then 👤 founder,
+with this board owning only the claims; `ENGINE-COPY-SHARPEN-01`'s tag follows its 2026-10-10
+re-route; `DOUBLE-STRIDES-01` splits, because one item carries a coaching and a design question.
+
+⚖️ **AND SIX BLOCKED ITEMS GET A DATE, NOT A QUEUE POSITION — re-measure the gates 2026-12-12.**
+*"A blocked item re-read monthly is governance; one re-read whenever someone remembers is a
+backlog."*
+
+⚠️ **What this sitting does not prove: no ruling was made with `measure:fitness` in front of it**,
+which is why one item was ruled outright and the rest carry named conditions — the precedent being
+a sitting that ruled on classification alone and sent a low-base beginner 7.3 → 18.5 km in a week.
