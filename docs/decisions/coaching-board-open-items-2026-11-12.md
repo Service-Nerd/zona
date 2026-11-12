@@ -208,6 +208,52 @@ enforces while the manifest says nothing can — a **records** reconciliation, n
    Runked items, split `DOUBLE-STRIDES-01`. **Five items leave the coaching queue without a
    ruling** — 31 → 26.
 
+---
+
+## ✅ WAVE 1 BUILT, 2026-11-12 — AND THE QUEUE IS **28**, NOT 26
+
+Recorded here rather than only in the backlog, because three of this sitting's own lines rested on
+a partial read of the item they summarise, and the next sitting should see that before it trusts a
+one-line triage again.
+
+| | predicted | actual |
+|---|---|---|
+| coaching queue | 31 → **26** | 31 → **28** |
+
+**Reconciliation, derived from `open_item_boards` rather than counted by hand:**
+closed 3 (§D's three items) · **filed 3 new coaching items from their own measurements** · re-tagged
+3 out (`ENGINE-COPY-SHARPEN-01` → 👤 FOUNDER, both Runked items → 💼 SLT) · **1 did not close** ·
+**1 needed no split.** Live tally after: **95 open · COACHING 28 · DESIGN 28 · FOUNDER 8 ·
+NO BOARD 17 · SLT 14.**
+
+🔴 **Three lines of this sitting were right about the headline and wrong about the body:**
+
+1. **`GETRUNNING-WALKRUN-FLOOR-01`** — ruled exempt on §116's floor note, which is correct. The
+   item's own scope split (volume half ours, longest-run half the board's) was **not** in the
+   sitting's line, and it turns out to be load-bearing: the deferred half is the one that reaches
+   runners (**524 of 748** accepted base-build plans) while the half we fixed reaches **0** today.
+   Honouring Am. 7 there CUTS what the plan builds (**−11.1 km at 6 km/week, −33.9 at 12**), so it
+   is genuinely a sitting → **`GETRUNNING-WALKRUN-LRHALF-01`**, filed with the numbers.
+2. **`ULTRA-VOICE-REPURPOSED-01`** — the item said *"decide the slot first, then the voice"* and
+   deferred to `SIG-ULTRA-UNBUILT-01`. That blocker is **SLT-gated on ultra ACQUISITION**, so the
+   board cannot sit until an ultra runner exists — the first one would hear the false voice before
+   the ruling. Built; the fix is one predicate term and unwinds to nothing if the slot is removed.
+3. **`HR-SAVE-UNEDITED-CONFIRMS-01`** — listed as *"Closeable … nothing to rule."* True of the
+   item's FIRST half, which is now recorded as settled. Its body names a second case — a
+   resting-HR-only save promoting an observed FLOOR to a confirmed max — and re-measuring it found
+   the at-risk population had gone **3 → 7 in four days**, exactly as the item predicted it would.
+   **Narrowed and kept, not closed.**
+
+⚠️ **And `DOUBLE-STRIDES-01` needed no split:** it is already a standalone item, and the design
+question (`TODAY-DOUBLE-HEADLINE-01`) is a separate item with its own 🧭 tag. They read as one
+because they sit adjacent under the 2026-10-17 inventory heading — which is what a triage from a
+list of ids cannot see.
+
+🔑 **The pattern, for the next sitting: a triage line inherits the item's headline, and in this
+repo an item's headline is routinely narrower than its body.** Three of four here. The cheap
+correction is to re-read the item's own text before acting on its summary — not to re-measure
+everything, just to read to the end.
+
 ### Wave 2 — one measurement, unblocking the most
 5. **`GRID-NO-MENOPAUSAL-TENDON-01`: add the axes.** Injury to `cohortGrid`, age to
    `targetedGrid`. ⚠️ **This is the highest-leverage item in the 31** — it is a measurement gap,

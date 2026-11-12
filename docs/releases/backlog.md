@@ -1618,16 +1618,36 @@ population: `volumeShortfallNote` fires **1,060** times (→ `SHORTFALL-PINNED-D
 suggestion's *"more room than the 30 min you have allowed"* is **true** for a per-day runner — they did allow 30, on the
 tight days — so it is recorded, not changed.
 
-### 🔲 `HR-SAVE-UNEDITED-CONFIRMS-01` — does saving the HR form confirm a max the runner never touched? 🏃 **COACHING BOARD** (§50 asymmetry)
+### 🔲 `HR-SAVE-UNEDITED-CONFIRMS-01` — a RESTING-HR-only save promotes an observed FLOOR to a confirmed max 🏃 **COACHING BOARD** (§50 asymmetry)
 
-Found in the `/code-review` round on `PLAN-META-HR-DIVERGENCE-01`, where **I had already changed this
-behaviour and had to reverse it.** `handleHrSave` stamps `max_hr_source: 'user_confirmed'` on every
-save. §50's own copy promises it — the form says *"Zones use {estimate}. If {typed} really is your
-max, tap Save to confirm it"* — and `git log -S` shows that sentence and the unconditional stamp
-**landed in the same commit** (`c44e0e53`, HR-MAX-01, 2026-08-31). So a save IS a confirmation, by
-design, and making it conditional left a genuine low-max athlete no route to confirm at all.
+✅ **HALF ANSWERED AND CLOSED 2026-11-12. 🔴 THE OTHER HALF IS NOT CLOSEABLE AND ITS POPULATION HAS
+MORE THAN DOUBLED IN FOUR DAYS.** The board sitting listed this item as *"Closeable — the item's own
+research concludes a save IS a confirmation by design … Nothing to rule."* **That is the first half
+only.** It is correct and is recorded as settled below; the item's own body then names a second,
+different case that the sitting's one-line summary did not carry, and re-measuring it is what makes
+the case for a sitting stronger rather than weaker.
 
-**The open question is the other case:** a runner who opens the sheet to change only their RESTING
+✅ **SETTLED — do not re-raise:** `handleHrSave` stamps `max_hr_source: 'user_confirmed'` on every
+save, and that is **by design**. §50's own copy promises it — *"Zones use {estimate}. If {typed}
+really is your max, tap Save to confirm it"* — and `git log -S` shows that sentence and the
+unconditional stamp **landed in the same commit** (`c44e0e53`, HR-MAX-01, 2026-08-31). Making it
+conditional left a genuine low-max athlete no route to confirm at all, which is why it was reversed
+once already.
+
+📐 **RE-MEASURED IN PRODUCTION 2026-11-12, and every figure has moved the wrong way** (the item's
+numbers were taken 2026-11-08):
+
+| | 11-08 | 11-12 |
+|---|---|---|
+| `user_settings` rows | 53 | **56** |
+| with a max | 37 | **40** |
+| `max_hr_source = 'observed'` | 24 | **26** |
+| **observed AND below their Tanaka estimate — the population at risk** | **3** | **🔴 7** |
+
+**The item predicted this** (*"grows as device maxes accumulate"*) and the growth rate is the finding:
+the at-risk set more than doubled in four days while the item sat in the queue as closeable.
+
+**The open question:** a runner who opens the sheet to change only their RESTING
 HR also saves, and that promotes a device-observed FLOOR to a confirmed max — which §50's asymmetry
 exists to prevent, because an observed value below the estimate says nothing about the ceiling and
 trusting it drags every zone DOWN. The warning IS on screen whenever the max is floored, so the
@@ -2360,7 +2380,13 @@ amber for warnings"* (`ux-principles.md`, CLAUDE.md). Seen in `docs/investigatio
 Fix: the amber warning shade through `hueText` for the words, and move `loadRatioContext` to a shared owner so the verdict
 can be reused. Reaches 2 runners today (see `RUNKED-LOAD-VIEW-01`), so small but real; do it before or with that item.
 
-### 🔲 `RUNKED-COMPARE-PAGE-01` — a comparison page answering the gamified running apps 🏃 **COACHING BOARD** (claims) → 👤 **FOUNDER** (copy; naming a competitor)
+### 🔲 `RUNKED-COMPARE-PAGE-01` — a comparison page answering the gamified running apps 💼 **SLT** (build order) → 👤 **FOUNDER** (copy; naming a competitor) → 🏃 **COACHING BOARD** (claims only)
+
+⚠️ **RE-TAGGED 2026-11-12, Coaching Board sitting:** *"this board owns only the **claims**, which the
+existing claims gate already checks."* The decisions in front of it — whether to build a comparison page at
+all, in what order, and whether to name a competitor — are the SLT's and the founder's. The board tag stays
+last and narrow rather than being removed, because a page arguing that streaks cannot tell you to rest IS a
+physiology claim (the W-03 precedent).
 
 Runked's game rewards more running (streaks, chests, leagues); our argument is that an app built on streaks cannot tell
 you to rest. **Crossover:** the comparison series (7 live, page 8 pending), `ArticlePage`, `COMPETITOR_FACTS` (every
@@ -2368,7 +2394,11 @@ competitor price owned and dated), the price and page-claims gates. **Default: o
 is page 8 or a ninth is the founder's call. Runked's facts (price, no free tier, iPhone only) enter `COMPETITOR_FACTS`
 with a verification date. Plan gate applies.
 
-### 🔲 `RUNKED-GUIDES-01` — easy-running guides on the searches Runked owns 🏃 **COACHING BOARD** (each claim cites a principle) → 👤 **FOUNDER** (reads)
+### 🔲 `RUNKED-GUIDES-01` — easy-running guides on the searches Runked owns 💼 **SLT** (build order) → 👤 **FOUNDER** (reads) → 🏃 **COACHING BOARD** (claims only)
+
+⚠️ **RE-TAGGED 2026-11-12, Coaching Board sitting** — same reasoning as `RUNKED-COMPARE-PAGE-01` above:
+whether to write 66 guides' worth of content is a build-order decision, not a coaching one. Each guide's
+claims remain this board's, via the claims gate.
 
 Runked has 66 guides; we have 1 guide and 7 comparison pages. Their topics on our ground: zone 2, 80/20, signs of
 overtraining, how slow a recovery run should be. **Crossover:** guide 1 (`/guides/should-easy-runs-feel-this-slow`) and
@@ -6331,6 +6361,13 @@ session is typed `easy` and `isStructuredSession` is false, so the Plan move flo
 efforts (§28), not threshold work, so allowing it is defensible, but it is a coaching decision, not a build one.
 **Tags:** 🏃 COACHING BOARD (rule on strides in a double; if refused, `canDouble` and the check need a strides test).
 
+⚠️ **NO SPLIT NEEDED — CHECKED 2026-11-12.** The Coaching Board sitting listed this as *"one question
+inside an item carrying a design question too — split it."* It is already split: this is a standalone
+`###` item tagged 🏃 COACHING BOARD, and the design question (`TODAY-DOUBLE-HEADLINE-01`, the headline
+naming the hero's distance on a double day) is a **separate `###` item** with its own 🧭 DESIGN BOARD
+tag, filed the same day. They are adjacent under the 2026-10-17 inventory heading, which is what reads
+as one item from a list of ids. **Nothing to do; recorded so the next sitting does not re-propose it.**
+
 ### `TODAY-DOUBLE-HEADLINE-01` — Today's headline names the hero's distance on a double day *(filed 2026-10-17, OPEN)*
 
 On a double day the Today headline reads the hero session (*"10km, slowly."*) while the day holds two 10 km runs.
@@ -8223,7 +8260,10 @@ Decision note: `docs/decisions/slt-2026-10-10-basebuild-enrichment.md`.
 ---
 
 ### `ENGINE-COPY-SHARPEN-01` — the engine's own taper copy trips the engine's own check
-🏃 **COACHING BOARD → 👤 FOUNDER** — ⚠️ **RE-ROUTED 2026-10-10 AFTER MEASURING.** Filed as
+👤 **FOUNDER** — ⚠️ **TAG CORRECTED 2026-11-12 to follow the 2026-10-10 RE-ROUTE.** The body has
+said 👤 FOUNDER since then and the leading glyph still said 🏃, so `open_item_boards` — which takes the
+**earliest** glyph in the line — counted it against the coaching queue for a month. Coaching Board sitting
+2026-11-12: *"already re-routed 👤 FOUNDER; the tag should follow."* Originally filed as
 "NO BOARD, defect fix"; the honest fix **changes generated plans**, so it is not mine to ship
 
 Found while measuring `COPY-CLAIM-CROSS-WEEK-01`. `INV-PLAN-COPY-MATCHES-SESSIONS` fires
