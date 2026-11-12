@@ -41,6 +41,7 @@ import { sessionFloorsFor, heldEasyMins, type SessionFloors } from './sessionFlo
 import { strideCarrierDay, isDayAfterLongRun, neuromuscularNote, neuromuscularLabel, hasHillRestrictingInjury, weekHasNeuromuscular } from './neuromuscular'
 import { computeZones, type ZoneTargets } from './zones'
 import { buildHRZonesWithFallback } from './hrZones'
+import { isEffortGovernedRow } from './hrBand'
 import { effectiveStartKm } from './startVolume'
 import { weeksBetweenLocal } from './length'
 import { enforcePrepTime, enforceDaysAvailable, validateInputFields, coherentGoal, type PrepTimeAwareInput, type PrepTimeResult, type DaysAvailableResult } from './inputs'
@@ -1470,13 +1471,13 @@ function makeQualitySession(args: {
   // to be computed ~40 lines below, which meant §22's goal-pace override could
   // not see it and claimed effort-governed rows for itself. See the veto note on
   // `useGoalPace` immediately below.
-  const isEffortGoverned = (() => {
-    if (!catalogueRow || !isV2Structure(catalogueRow.main_set_structure)) return false
-    const parsed = StructureV2Schema.safeParse(catalogueRow.main_set_structure)
-    if (!parsed.success) return false
-    const work = parsed.data.blocks.flatMap(b => b.steps).filter(st => st.role === 'work')
-    return work.length > 0 && work.every(st => st.target.kind === 'effort')
-  })()
+  // 🔴 THIS WAS AN INLINE IIFE AND `hrBand.ts` HELD A BYTE-IDENTICAL COPY OF IT, whose own doc comment
+  // points back here (*"`ruleEngine.ts:1513` — a row is effort-governed when every v2 work step is anchored
+  // to an EFFORT rather than a pace"*). It was extracted and the original was never removed, so the
+  // predicate had two writings agreeing by accident — `DELOAD-OWNER-01` / `SESSION-KM-01`'s class.
+  // Collapsed to the single owner 2026-11-12, found by `/code-review` of `ULTRA-VOICE-REPURPOSED-01`
+  // while reaching for the right name for the same question. `verify:parity` IDENTICAL.
+  const isEffortGoverned = isEffortGovernedRow(catalogueRow)
 
   // Catalogue rows can request goal-pace prescription intrinsically (not
   // conditional on goalPaceWeek) — v1 rows via `work.pace_target: 'goal'`
@@ -1702,12 +1703,19 @@ function makeQualitySession(args: {
   // run. **The note narrates a weekend that is not prescribed.** §33's own words transfer verbatim: the
   // borrowed voice "describes a Zone 2 run and is false on a session prescribed at T-pace."
   //
-  // ⚠️ `effortPlan === null` IS THE DISCRIMINATOR AND THE CATEGORY ALONE WOULD BE WRONG.
+  // ⚠️ `isEffortGoverned` IS THE DISCRIMINATOR AND THE CATEGORY ALONE WOULD BE WRONG.
   // All four ultra rows are `category: 'ultra_specific'`, `vert_hike_repeats` included — and that one
   // must NOT be caught: §40b Am. 4 delivers it correctly (**86 min at Zone 2, RPE 6, no HR band**) and
   // its voice is true. The split is visible in the output itself: the two defective rows carry an HR
   // band and a pace target because they are PACED; the climb row carries neither because its work steps
-  // are effort-targeted, which is exactly what `effortGovernedPlan` returns non-null for.
+  // are effort-targeted.
+  //
+  // 🔴 THE FIRST CUT SPELLED THIS `effortPlan === null` AND THAT IS A WEAKER TEST (`/code-review`).
+  // `effortGovernedPlan` is a SIZING helper: it returns null when a row is not effort-governed AND when
+  // it is but its `repeat` param cannot be resolved from the variant. So an unresolvable effort row would
+  // have read as paced and taken §33's threshold voice plus the §1/Q2 grey-zone cue onto an RPE-6 hike.
+  // Not reachable with today's two effort rows, which is exactly why it would have survived. The property
+  // wanted is "is this row effort-governed", and `isEffortGoverned` (one owner, in `hrBand.ts`) is it.
   //
   // ⚠️ WHY THIS SHIPS WHILE `SIG-ULTRA-UNBUILT-01` IS OPEN, since the item itself said to decide the
   // slot first. That blocker is **SLT-gated on ultra ACQUISITION**, so the board cannot sit until an
@@ -1718,7 +1726,7 @@ function makeQualitySession(args: {
   // this term simply matches nothing. There is no label machinery to unwind.
   const rowRepurposedAsQuality = !useGoalPace && !isVo2max
     && (catalogueRow?.category === 'aerobic'
-      || (catalogueRow?.category === 'ultra_specific' && effortPlan === null))
+      || (catalogueRow?.category === 'ultra_specific' && !isEffortGoverned))
 
   let label: string
   let minPerKm: number

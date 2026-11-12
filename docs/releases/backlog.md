@@ -359,6 +359,22 @@ before planning against any number below (an item is a snapshot of the code on t
   ⚠️ **`week1CeilingKm` was written for this and DELETED** — a helper with no consumer is the decorative-config class.
   Re-derive it where the lever lands.
 
+- 🧭 **DESIGN BOARD** `HERO-WALKRUN-TOTAL-01` — **the hero states a plan total that silently omits
+  seven of its weeks.** `PlanHeroMetrics.tsx` computes `totalKm = sum(weekly_km ?? 0)`, and a §116
+  walk-run week carries **no** `weekly_km` by ratified doctrine (it is time on feet; a distance would be
+  a number we invented). So a plan whose first seven weeks are walk-run renders *"N weeks · X km in
+  total"* where X covers only the ramp.
+  🔴 **THE DESIGN BOARD HAS ALREADY RULED THE PRINCIPLE AND ITS IMPLEMENTATION IS NARROWER THAN THE
+  RULING.** 2026-10-25 (S2): *"a STAGED plan's built weeks are not the plan. Its hero states the weeks to
+  the race … never '33 km in total' for a marathon."* That is this exact reasoning — and the code keys on
+  `stagedRaceOf(plan)`, so a §118 walk-run plan, which has **no `staged_race`**, falls through to the
+  generic hero the ruling was written to avoid. *The ruling's mechanism is narrower than its intent.*
+  ⚠️ **Latent: 0 runners reach the §118 sub-floor branch today** (a sub-floor runner is staged, so never
+  refused, so never sets `acceptBaseBuild`), and a staged walk-run plan renders the staged hero correctly.
+  ⚠️ **`?? 0` is not the fix** — that is the `distance_km ?? 0` class: it would assert the runner covered
+  no ground. What the hero should SAY for a plan whose first weeks have no distance is the board's.
+  📐 Found by `/code-review` of `GETRUNNING-WALKRUN-FLOOR-01`.
+
 - 🏃 **COACHING BOARD** `GETRUNNING-WALKRUN-LRHALF-01` — **the half of `GETRUNNING-WALKRUN-FLOOR-01` that was
   deferred to the board, and measurement has INVERTED which half matters.** §117 Am. 7 prescribes a walk-run start
   to a runner at or above §116's volume floor whose declared longest run is under

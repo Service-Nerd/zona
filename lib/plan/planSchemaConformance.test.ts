@@ -24,6 +24,7 @@
 import { describe, it, expect } from 'vitest'
 import { generateRulePlan } from './ruleEngine'
 import { PlanSchema } from './schema'
+import { generateGetRunningPlan } from './getRunningPlan'
 import { isDesignedRefusal } from './designedRefusal'
 import type { GeneratorInput } from '@/types/plan'
 
@@ -152,5 +153,58 @@ describe('PLAN-SCHEMA-CONFORMANCE-01', () => {
     expect(broken(p => { delete (p as never as { weeks?: unknown }).weeks })).toBe(false)
     // and the control: untouched, it still passes
     expect(PlanSchema.safeParse(good).success).toBe(true)
+  })
+})
+/**
+ * 🔴 WALK-RUN WEEKS FAILED THIS SCHEMA FROM 2026-10-25 TO 2026-11-12, ON EVERY PLAN THAT HAD ONE.
+ *
+ * §116's walk-run start carries NO DISTANCE by ratified doctrine — `walkRunStart.ts`: *"it progresses
+ * the run share, not the distance. The sessions are time on feet and carry no distance: there is no
+ * pace for these runners, and a distance computed from an assumed one would be a number we invented."*
+ * So those weeks omit `weekly_km` and `long_run_hrs`, and `WeekSchema` required both. Measured:
+ * `PlanSchema.safeParse` was `false` for every sub-floor plan on BOTH the staged path and §118's, and
+ * `true` for every plan at or above the floor — a `plan_schema_drift` on save for seven weeks of each.
+ *
+ * ⚠️ Found by `/code-review` of `GETRUNNING-WALKRUN-FLOOR-01`, which did not cause it but widened its
+ * reach. **It is the third instance of the pair class `schema.ts` already records twice** (`plan_kind`
+ * fixed without `phase`; `phase` hidden by the audit's code-list truncation).
+ *
+ * The fix must hold in BOTH directions, which is what the second case is for: relaxing the two fields
+ * for every week shape would let a RACE week ship with no volume — the field every load invariant reads.
+ */
+describe('WALKRUN-SCHEMA-VOLUME-01 — a walk-run week may omit volume; nothing else may', () => {
+  const subFloor: GeneratorInput = {
+    ...B, race_distance_km: 42.2, goal: 'finish', current_weekly_km: 2, longest_recent_run_km: 0,
+    days_available: 3, age: 40, training_age: '6-18mo', recent_quality_training: 'none',
+    race_date: '2027-06-06', acknowledged_days_warning: true, acknowledged_prep_warning: true,
+  } as unknown as GeneratorInput
+
+  // ⚠️ `generateGetRunningPlan`, NOT `generateRulePlan`, and the first cut got this wrong: the raw
+  // engine REFUSES this runner (§113's `LongRunReadinessError`), which is correct and is why §118
+  // exists. A walk-run plan is only ever reached through a producer that handles the refusal.
+  const build = () => generateGetRunningPlan(subFloor, '2026-11-16', 29).plan
+
+  it('a plan carrying a walk-run start parses, and really does carry one', () => {
+    const plan = build()
+    const wr = plan.weeks.filter(w => w.phase === 'walk_run_start')
+    // Without this the case could pass on a plan with no walk-run week at all.
+    expect(wr.length, 'the fixture must be sub-floor, so it carries a walk-run start').toBeGreaterThan(0)
+    expect(wr.every(w => w.weekly_km === undefined),
+      'these weeks carry no distance — absence is the prescription, 0 would assert ground covered').toBe(true)
+    const parsed = PlanSchema.safeParse(plan)
+    expect(parsed.success, parsed.success ? '' : JSON.stringify(parsed.error.issues.slice(0, 3))).toBe(true)
+  })
+
+  it('🔴 and a NON-walk-run week with no volume is still rejected — the relaxation is not a hole', () => {
+    const plan = build()
+    const ramp = plan.weeks.find(w => w.phase === 'base_build')
+    expect(ramp, 'the fixture must also carry a ramp week').toBeTruthy()
+    const poisoned = structuredClone(plan)
+    const target = poisoned.weeks.find(w => w.phase === 'base_build')!
+    delete (target as { weekly_km?: number }).weekly_km
+    const parsed = PlanSchema.safeParse(poisoned)
+    expect(parsed.success).toBe(false)
+    if (parsed.success) throw new Error('unreachable')
+    expect(JSON.stringify(parsed.error.issues)).toContain('weekly_km')
   })
 })

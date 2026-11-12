@@ -153,14 +153,27 @@ describe('§118 — the get-running plan', () => {
   // The ratio is a property of the CURVE, not the runner — which is why the fix
   // was one number and not a per-runner cap.
   it('builds by the same RATIO whatever the start — it is the curve, not the runner', () => {
-    // ⚠️ MEASURED OFF THE BLOCK'S START, WHICH IS WHAT MAKES THE PROPERTY TRUE ACROSS §116's FLOOR.
-    // 2, 3 and 5 km/week now share one ramp (seeded at the floor after a walk-run start) and 7 has its own,
-    // and all four land on the same ratio — which is the point: it is the curve.
-    const ratios = [2, 3, 5, 7].map(cwk => {
+    // ⚠️ THE PROPERTY HOLDS WITHIN EACH SIDE OF §116's FLOOR AND NOT ACROSS IT, and the asymmetry is
+    // deliberate rather than a regression. A sub-floor runner spends seven of the plan's weeks on the
+    // walk-run start, so their ramp is SHORTER (8 weeks) than an above-floor runner's (15) — the
+    // `/code-review` correction to `GETRUNNING-WALKRUN-FLOOR-01`, which stopped the walk-run start
+    // being ADDED to the plan's length and made it come out of it instead. Same curve, fewer weeks of
+    // it. Asserting one ratio across the boundary would be asserting the two cohorts get the same
+    // number of ramp weeks, which they must not.
+    const ratioFor = (cwk: number) => {
       const { plan, endsAtKm } = generateGetRunningPlan(mk({ current_weekly_km: cwk }), '2026-10-05', 29)
-      return endsAtKm / blockStartKm(plan)
-    })
-    for (const r of ratios) expect(r).toBeCloseTo(ratios[0], 1)
+      return { ratio: endsAtKm / blockStartKm(plan), ramp: plan.weeks.filter(w => w.phase === 'base_build').length }
+    }
+    const sub = [1, 2, 3, 5].map(ratioFor)      // below the floor — walk-run start, then a short ramp
+    const over = [7, 8, 10].map(ratioFor)       // at or above it — all ramp
+    for (const r of sub) expect(r.ratio, `sub-floor ${r.ramp}w`).toBeCloseTo(sub[0].ratio, 1)
+    for (const r of over) expect(r.ratio, `above-floor ${r.ramp}w`).toBeCloseTo(over[0].ratio, 1)
+    // 🔑 And the REASON they differ is the ramp length, asserted so the next reader does not read the
+    // two ratios as a defect. Without this the case would pass on two cohorts that differ for any reason.
+    expect(sub[0].ramp, 'a sub-floor ramp is shortened by the walk-run start').toBeLessThan(over[0].ramp)
+    expect(sub[0].ratio).toBeLessThan(over[0].ratio)
+    // Both inside §111's ceiling, which is the thing that actually matters.
+    for (const r of [...sub, ...over]) expect(r.ratio).toBeLessThanOrEqual(G.MAX_BASE_BUILD_RATIO)
   })
 
   it('the invariant catches a build past the ceiling that no week-on-week rule can see', () => {

@@ -6,6 +6,24 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-11-12 — the /code-review round on Wave 1 · four findings, all mine, and one was a regression my own analysis had ruled out
+**Shipped:** the walk-run start now comes out of §118's plan length instead of being added to it, the effort-governed discriminator uses its real owner (removing a duplicate predicate), and walk-run weeks stop failing the canonical plan schema.
+
+**Dev learning:** the worst finding was a regression I had argued myself into. My analysis block said the ramp gets `getRunningWeeks(max(0, runway − 7))` and that this "respects the runway as §118's text says". Two things were wrong. `getRunningWeeks` floors at `GET_RUNNING_MIN_WEEKS` (8), so `max(0, …)` can never return less than 8 — dead arithmetic, and L4's "the walk-run start is never shortened, the ramp is cut first" was unreachable from that caller. And because the ramp could not shrink, the plan grew: a runner with a four-week runway went from an eight-week plan to a fifteen-week one, overshooting their race date by eleven weeks instead of four. I had even simulated the correct version first and rejected it, because it reached less far. Reaching further by overrunning the race is not reaching further.
+
+The second lesson is about naming. I spelled the ultra discriminator `effortPlan === null`, where `effortPlan` is a *sizing* helper that returns null both when a row is not effort-governed and when it is but its `repeat` param will not resolve. The property I wanted was "is this row effort-governed", and that has an owner. Reaching for the owner then found that `ruleEngine.ts` held a byte-identical inline copy of it, and `hrBand.ts`'s version carries a doc comment pointing back at the line it was extracted from — extracted, and the original never deleted. Two writings of one predicate, agreeing by accident, for however long.
+
+**Product/creator learning:** the schema finding was not mine and is the more interesting one. §116's walk-run weeks carry no distance by ratified doctrine — writing a number there would be inventing one — so they omit `weekly_km` and `long_run_hrs`, and `WeekSchema` required both. Every walk-run plan has failed its own canonical schema since the staged walk-run start shipped on 25 October, on all seven of those weeks, logging `plan_schema_drift` on save. My change did not cause it; it widened its reach, which is how the review found it. `schema.ts` already records this exact pair class twice in its own comments.
+
+**AI-building learning:** the fix for it broke the app at module load on the first try. I put a `.superRefine` on `WeekSchema`, and `EnrichedWeekSchema` is `WeekSchema.pick({ label, theme, n })` — Zod v4 refuses `.pick()` on a refined object, as an error thrown at import. A schema change is a change to every consumer of that schema, including the ones that only take three fields out of it.
+
+**The honest bit:** fixing the runway regression then turned a test of mine red, and it was right to. I had written an arm asserting the build ratio is "the same whatever the start — it is the curve, not the runner", and under the corrected composition a sub-floor runner gets an eight-week ramp while an above-floor runner gets fifteen, so the two ratios genuinely differ. The property holds within each side of the floor and not across it. I restated it per side and added an assertion that the *reason* they differ is the ramp length, so the next reader does not read two ratios as a defect — but my first instinct was that the test was stale, and it was the fix that was incomplete.
+
+**Hook material:** my analysis block said the composition "respects the runway". `Math.max(0, runway - 7)` fed into a function that floors at 8, so a four-week runway produced a fifteen-week plan — and the dead `max(0, …)` is what made it look like it couldn't.
+
+**Postable?:** yes
+
+
 ## 2026-11-12 — PRINCIPLE-REGISTER-CROSSCHECK-01 · the manifest was blocked on a number the board had already thrown out
 **Shipped:** §120 reclassified from `unverified` to `invariant`, `UNVERIFIED_BASELINE` 1 → 0, and the two remaining cross-check entries now have to state why they are cross-references rather than claims.
 

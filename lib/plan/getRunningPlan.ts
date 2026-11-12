@@ -83,12 +83,27 @@ export function generateGetRunningPlan(
   // raises it as a `warn` naming `GETRUNNING-WALKRUN-FLOOR-01`'s open half.
   if (walkRunStartApplies(startKm)) {
     const wrWeeks = walkRunStartWeeks()
-    // ⚠️ THE RAMP GETS THE RUNWAY THAT IS LEFT, AND SPENDS NONE OF ITS BUDGET ON THE WALK-RUN START.
-    // `GET_RUNNING_MAX_WEEKS` is 15 because 16 weeks of §2's 10% compounds past §111's `MAX_BASE_BUILD_RATIO`
-    // (Willy: *"I will not have two total-build ceilings in one constitution"*) — so it bounds the RUNNING
-    // ramp's total build, and a walk-run week carries no distance at all. Measured across the cohort the ramp
-    // ratio stays <= 3.78x, inside the 4.0 cap, at every runway.
-    const rampWeeks = getRunningWeeks(Math.max(0, runwayWeeks - wrWeeks))
+    // 🔴 THE WALK-RUN START COMES OUT OF THE PLAN'S OWN WEEKS, AND THE FIRST CUT OF THIS MADE IT ADDITIVE.
+    // That version read `getRunningWeeks(Math.max(0, runwayWeeks - wrWeeks))`, and `/code-review` found two
+    // things wrong with it. **The `Math.max(0, …)` was dead arithmetic**: `getRunningWeeks` floors at
+    // `GET_RUNNING_MIN_WEEKS` (8), so it can never return less than 8 and L4's "the ramp is cut first" was
+    // unreachable from this caller. And the plan therefore **grew**: at a 4-week runway a runner went from an
+    // 8-week plan to a 15-week one, overshooting their race date by eleven weeks instead of four.
+    // ⚠️ My own analysis block claimed this composition "respects the runway". It did not, for every runway
+    // at or below 15.
+    //
+    // ✅ So the ramp takes what is left of the plan's OWN length: `getRunningWeeks(runwayWeeks)` is the plan
+    // envelope §118 has always produced (8–15 weeks, bounded because 16 weeks of §2's 10% compounds past
+    // §111's `MAX_BASE_BUILD_RATIO` — Willy: *"I will not have two total-build ceilings in one
+    // constitution"*), and the walk-run start is subtracted from it rather than added to it. **No runner's
+    // plan changes length; only what the first seven weeks contain changes.** L4 is reachable again: at a
+    // runway of 8 the ramp is 1 week, and at 7 or less it is 0 and the plan is the walk-run start alone.
+    //
+    // ⚠️ THE COST, STATED: the ramp is shorter than it was, so the plan reaches less far. Measured at
+    // cw 1 **+4.9 to +7.9 km**, cw 2 **+2.5 to +4.1**, cw 3 **+0.2 to +0.3**, cw 4 **−2.2 to −3.5**,
+    // cw 5 **−4.5 to −7.3**. The negatives are §116's ratified trade, not a regression: today's larger
+    // number is reached by prescribing continuous running off a base the runner cannot run.
+    const rampWeeks = Math.max(0, getRunningWeeks(runwayWeeks) - wrWeeks)
     const composed = composeWalkRunStart(input, {
       planStart,
       rampStart: addWeeksIso(planStart, wrWeeks),

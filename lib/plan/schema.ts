@@ -128,8 +128,27 @@ export const WeekSchema = z.object({
   // partialRecord (Zod v4): the plan populates only the days that have sessions.
   // Plain z.record(enum, …) requires ALL seven day keys — see enrichMaintenance.ts.
   sessions:             z.partialRecord(DayKeySchema, SessionSchema).optional(),
-  long_run_hrs:         z.number().nullable(),
-  weekly_km:            z.number().nonnegative(),
+  // 🔴 OPTIONAL SINCE 2026-11-12, AND ONLY FOR A WALK-RUN WEEK — THE THIRD INSTANCE OF THE PAIR
+  // CLASS THIS FILE ALREADY RECORDS TWICE. §116's walk-run start carries NO DISTANCE by ratified
+  // doctrine (`walkRunStart.ts`: *"it progresses the run share, not the distance. The sessions are
+  // time on feet and carry no distance: there is no pace for these runners, and a distance computed
+  // from an assumed one would be a number we invented"*), so these two keys are absent, not zero —
+  // and the schema required both. **Every walk-run plan has failed its own schema since the staged
+  // walk-run start shipped on 2026-10-25**, on all seven of its walk-run weeks, which is a
+  // `plan_schema_drift` on save and was invisible for the same reason `weeks.N.phase` was: the audit
+  // truncates its code list.
+  //
+  // ⚠️ Found by `/code-review` of `GETRUNNING-WALKRUN-FLOOR-01`, which did not cause it but widened
+  // its reach to §118's plans. Measured: `PlanSchema.safeParse` is `false` for every sub-floor plan
+  // on both the staged and the §118 path, `true` for every plan at or above the floor.
+  //
+  // ⚠️ THE FIX IS NOT `.optional()` ON ITS OWN. Loosening these for every week shape would let a
+  // RACE week ship with no volume, which is the field every load invariant reads. The refinement
+  // below requires both unless the week is a walk-run week, so the strictness is kept exactly where
+  // the doctrine does not forbid it. **Absence is the prescription; writing 0 would assert the
+  // runner covered no ground.**
+  long_run_hrs:         z.number().nullable().optional(),
+  weekly_km:            z.number().nonnegative().optional(),
   weekly_duration_mins: z.number().nonnegative().optional(),
   race_notes:           z.string().optional(),
   tune_up_callout:      z.string().optional(),
@@ -154,6 +173,30 @@ export const WeekSchema = z.object({
   // reverted week's engine copy still rendered Kit's byline. Absent on every
   // other week and on every legacy plan, which reads as "not reverted".
   enrichment_reverted:  z.boolean().optional(),
+})
+
+/**
+ * 🔑 THE OTHER HALF OF `WeekSchema`'s RELAXATION. `long_run_hrs` and `weekly_km` are optional on the
+ * object so a §116 walk-run week can omit them, and REQUIRED here for every other phase — so a race,
+ * base, build, peak, taper or ramp week still cannot ship without the volume field every load
+ * invariant reads. **Without this the relaxation would be a hole the width of the schema.**
+ *
+ * ⚠️ IT IS A SIBLING RATHER THAN A `.superRefine` ON `WeekSchema` ITSELF, and the reason is mechanical:
+ * `EnrichedWeekSchema` is `WeekSchema.pick({ label, theme, n })`, and Zod v4 refuses — *".pick() cannot
+ * be used on object schemas containing refinements"* — at module load, which took the whole app down
+ * on the first cut. The enricher's subset does not carry these fields anyway, so it has nothing to check.
+ */
+export const WeekSchemaChecked = WeekSchema.superRefine((w, ctx) => {
+  if (w.phase === 'walk_run_start') return
+  for (const k of ['long_run_hrs', 'weekly_km'] as const) {
+    if (w[k] === undefined) {
+      ctx.addIssue({
+        code: 'custom',
+        path: [k],
+        message: `${k} is required on a ${String(w.phase ?? 'plan')} week; only a walk_run_start week may omit it (§116 — those weeks carry no distance).`,
+      })
+    }
+  }
 })
 
 // ─── Phase ────────────────────────────────────────────────────────────────────
@@ -428,7 +471,7 @@ export const PrePlanGuidanceSchema = z.object({
 export const PlanSchema = z.object({
   meta:     PlanMetaSchema,
   phases:   z.array(PhaseSchema).optional(),
-  weeks:    z.array(WeekSchema),
+  weeks:    z.array(WeekSchemaChecked),
   pre_plan: PrePlanGuidanceSchema.optional(),
 })
 
