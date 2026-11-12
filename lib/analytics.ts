@@ -264,6 +264,11 @@ export async function currentUserId(supabase: SupabaseClient): Promise<string | 
 export const UPGRADE_SOURCES = [
   'today', 'coach_teaser', 'coach_teaser_empty', 'me', 'session', 'wizard',
   'recal_tile', 'link_email', 'link_strava',
+  // ACT-FREE-TEASE-01 — the free post-run card's "Unlock the read" link. Distinct from
+  // `session` on purpose: this door opens in the minutes after a run, and whether a paywall
+  // reached at that moment converts differently from one reached by browsing a session later is
+  // the question `ACT-FUNNEL-01` exists to answer. One source per door or the funnel cannot tell.
+  'post_run',
 ] as const
 
 export type UpgradeSource = typeof UPGRADE_SOURCES[number]

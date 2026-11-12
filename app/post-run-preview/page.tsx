@@ -19,6 +19,9 @@ import { RunFeedbackCard, SessionScreen } from '../dashboard/DashboardClient'
 import harnessPlanJson from '@/components/dashboard/__fixtures__/harnessPlan.json'
 import SessionCompleteCard from '@/components/shared/SessionCompleteCard'
 import { buildRunTrace } from '@/lib/coaching/zoneTrace'
+import FreeRunReadCard from '@/components/shared/FreeRunRead'
+import { freeRunRead } from '@/lib/coaching/freeRunRead'
+import { DEMO_FIRST_READ } from '@/lib/marketing/demoSurfaces'
 
 // SESSION-SCREENS-WOW-01 — the completion card with a Zone Trace, on SYNTHETIC traces (no runner's data is committed).
 // Shapes copied from what the prototype saw on real runs: held with one hill, a late drift, early-and-often.
@@ -180,6 +183,31 @@ const CASES: Case[] = [
   },
 ]
 
+/** ACT-FREE-TEASE-01 / ACT-FIRSTRUN-01 — every state the free card has, in one place.
+ *  Rows are shaped like the stored columns, because that is what the owner reads. */
+const FREE_READ_CASES: {
+  title: string; note: string
+  read: ReturnType<typeof freeRunRead>
+  loading?: boolean
+  example?: { eyebrow: string; next: string }
+}[] = [
+  { title: 'Measured \u00b7 a grey run', note: 'The run the brand exists to name. One number, no verdict, one link.',
+    read: freeRunRead({ hr_pct_z1: 3, hr_pct_z2: 10, hr_pct_z3: 64, hr_pct_z4_5: 23 }) },
+  { title: 'Measured \u00b7 an easy run', note: 'Same card, the easy share. Still no evaluative word (Hutchinson, binding).',
+    read: freeRunRead({ hr_pct_z1: 22, hr_pct_z2: 70, hr_pct_z3: 8, hr_pct_z4_5: 0 }) },
+  { title: 'Measured \u00b7 a session meant to be hard', note: 'Completed an intervals session, so the HARD share is the fact; the easy share would be a true number about nothing.',
+    read: freeRunRead({ hr_pct_z1: 5, hr_pct_z2: 10, hr_pct_z3: 20, hr_pct_z4_5: 65 }, 'intervals') },
+  { title: 'No heart rate', note: 'An iPhone-only runner (ADR-011 \u00a75). A missing sensor, never a lock \u2014 and NO buy link, because upgrading cannot give them heart rate.',
+    read: freeRunRead({ hr_pct_z1: null, hr_pct_z2: null, hr_pct_z3: null, hr_pct_z4_5: null }) },
+  { title: 'Loading', note: 'The hydration read has not resolved. Loading outranks absent, so the card cannot pop in after a blank beat.',
+    read: freeRunRead(null), loading: true },
+  { title: 'Absent', note: 'No run linked. Renders nothing at all \u2014 there is no run to describe.',
+    read: freeRunRead(null) },
+  { title: 'The onboarding EXAMPLE (ACT-FIRSTRUN-01)', note: 'Somebody else\u2019s run, on the shared demo runner. The declaration replaces the eyebrow rather than sitting under the card as small print, and there is no paywall link.',
+    read: freeRunRead({ hr_pct_z1: DEMO_FIRST_READ.z1, hr_pct_z2: DEMO_FIRST_READ.z2, hr_pct_z3: DEMO_FIRST_READ.z3, hr_pct_z4_5: DEMO_FIRST_READ.z45 }),
+    example: { eyebrow: 'An example, not your runs', next: 'This is what Kit sends after a run. Yours starts with the first one you do.' } },
+]
+
 export default function PostRunPreviewPage() {
   // Committed so the next person can use it, unreachable on www.zonna.run:
   // it renders invented run data, and an unlinked route is still a public one.
@@ -232,6 +260,27 @@ export default function PostRunPreviewPage() {
             {c.note}
           </p>
           <RunFeedbackCard analysis={c.analysis} paceTarget={c.paceTarget ?? null} driftContext={c.driftContext ?? null} preferredMetric={c.preferredMetric ?? 'distance'} />
+        </section>
+      ))}
+
+      {/* ── ACT-FREE-TEASE-01 + ACT-FIRSTRUN-01 ─────────────────────────────────────────
+          The FREE runner's half of this screen, in every state, plus the onboarding example.
+          Here for the same reason the rest of this page exists: the card is tier-gated and
+          behind auth, so without a harness nobody can LOOK at it, and this repo has already
+          shipped a comment describing a component nobody could see. */}
+      <h2 style={{ fontSize: '15px', fontWeight: 800, color: 'var(--ink)', margin: '44px 0 4px' }}>
+        Free post-run read (ACT-FREE-TEASE-01)
+      </h2>
+      <p style={{ fontSize: '12px', color: 'var(--mute)', margin: '0 0 16px', lineHeight: 1.5 }}>
+        Every branch above this is <code>hasPaidAccess &amp;&amp;</code>, so a free runner used to
+        reach the bottom of the screen and it ended. Measured 2026-11-12: free/trial runners hold
+        146 activities, 122 of them carrying the split.
+      </p>
+      {FREE_READ_CASES.map(c => (
+        <section key={c.title} data-free-read-case={c.title} style={{ marginBottom: '28px' }}>
+          <h3 style={{ fontSize: '13px', fontWeight: 700, color: 'var(--ink)', margin: '0 0 4px' }}>{c.title}</h3>
+          <p style={{ fontSize: '12px', color: 'var(--mute)', margin: '0 0 10px', lineHeight: 1.5 }}>{c.note}</p>
+          <FreeRunReadCard read={c.read} loading={c.loading ?? false} example={c.example ?? null} onUpgrade={() => {}} />
         </section>
       ))}
     </main>

@@ -6653,3 +6653,87 @@ plausible, the same reasoning as `resumeGuided` refusing a step the session no l
 
 **Checks:** `components/dashboard/strengthGuided.markup.test.ts` (4 arms, 4 mutations red) ·
 `lib/strength-bridge/guidedSession.test.ts` (19 arms, 3 mutations red).
+
+---
+
+### 40. FreeRunReadCard — the measured, unadvised state
+
+`ACT-FREE-TEASE-01` / `ACT-FIRSTRUN-01`, SLT + Design Board 2026-11-12. Sitting:
+`docs/decisions/activation-release-3-2026-11-12.md`.
+
+**The job:** tell a runner who is not paying one true thing about the run they just finished, and
+withhold what it means. It fills the hole where the paid read sits.
+
+🔴 **It is NOT pattern 11's locked state, and the pattern was corrected rather than the build.**
+Pattern 11 draws a locked percent as `—%` at 0.4 opacity, *"because the live percent is HR-derived
+from `run_analysis` — paid"*. **That premise is false at ingest**: `hr_in_zone_pct`,
+`hr_above_ceiling_pct` and `hr_pct_z1…z4_5` are written by `lib/health/adapter.ts`, the Strava
+webhook and `link-activity` for every tier, because `HK-FREE-INGEST-LINE-01` moved the gate down to
+the analysis. ✋ Silvanto: *"do not dress a real number in the withheld-number treatment — that
+teaches the runner the number is fake."* So this is a **third state: measured, unadvised.**
+
+```
+┌─────────────────────────────────────────────┐
+│  THIS RUN                                   │
+│                                             │
+│  64%                                        │
+│  of this run was in Zone 3.                 │
+│                                             │
+│  Kit's read turns this into one thing to do │
+│  next. That part is Pro.                    │
+│                                             │
+│  Unlock the read →                          │
+└─────────────────────────────────────────────┘
+```
+
+**Structure**
+- `--card`, `1px solid --line`, `--radius-lg`, padding `16px 18px`. **No rail** — see below.
+- Eyebrow: `MICRO_LABELS.eyebrow`, `--mute`.
+- Number: **`--fs-metric` (26px)** / 800 / tabular-nums / `--ink`, with the words beneath it
+  (§ Metric Pair: never put the label above the value). ⚠️ **NOT `--fs-metric-lg` (38px)** — the
+  first cut reached for it and `appTypeScale.test.ts` refused: 38 is a MARKETING size and the
+  app's declared set is 10/11/12/14/15/17/20/26/44/56. 26 against 14px body is a 1.86× step.
+  **Reaching outside the scale to get a bigger number is the type regression the veto exists for.**
+- Sentence: `--fs-body` / `--ink-2`. Withheld line: `--fs-caption` / `--mute`.
+- CTA: pattern 11's locked form — a `--moss-strong` text button, no background, no border, one tap
+  target at `minHeight: TAP_TARGET_MIN_PX`. ⚠️ **The bare identifier, never `'44px'` and never a
+  template literal**: the inline-44 ratchet refuses the literal and `buttonGeometry.test.ts`'s
+  constant resolver reads only an identifier, so a template literal falls through to padding and
+  reports 37px on a 44px control.
+
+**⛔ NO RAIL, AND THAT IS THE RULING RATHER THAN THE STYLING.** P-01's pair draws moss for *held*
+and amber for *cooked it*, and every other zone surface carries it. Hutchinson's SLT condition
+withholds the verdict, and **a moss-or-amber rail IS the verdict, stated in colour** — the one
+channel a copy review never checks. ⚠️ A *neutral* rail was the first answer and it was wrong:
+`var(--line)` on a card bordered in `var(--line)` renders invisible at 375px, so it was a device
+carrying nothing. **The absence of a rail is what reads as "no verdict"**, against the cards above
+it that have one.
+
+**⛔ NO EVALUATIVE WORD.** Binding, from the SLT: the split is a measurement, the advice is an
+interpretation. `freeRunRead.test.ts` checks every sentence against a word list rather than trusting
+a copy review. "Easy" is deliberately **not** on that list: `Zones 1–2` is a band name.
+
+**One number, never four** (🎪 Collins: *"nobody feels a histogram; if we show all four zones on
+free we have built a dashboard, and we killed dashboards"*). The band is the one the run spent
+itself in, decided by `runEffortKind` — so no new threshold — except that the three structurally
+hard kinds quote the **hard** share, because for a run meant to be hard the easy share is a true
+number about nothing.
+
+**States (all five ship together).** `measured` · `no_hr` · `absent` (renders nothing) · `loading`
+· paid, which is unchanged and is the existing read cluster.
+⚠️ **`loading` outranks `absent`**, because `freeRunRead(null)` answers `absent` both for "not
+arrived" and "no run"; the caller holds a tri-state and the card honours it.
+⚠️ **`no_hr` carries NO buy link.** An iPhone-only runner (ADR-011 §5) cannot buy heart rate from
+us, and the type enforces it — `cta` does not exist on that variant.
+
+**`example` — somebody else's run, in onboarding.** `ACT-FIRSTRUN-01`. The declaration replaces the
+**eyebrow**, never sitting under the card as small print (✋ Silvanto: *"grey small print is what
+every app uses to disclaim something it hopes you read as real"*), and the lock line and paywall
+link do not render — a runner in onboarding has full access. Data comes from `DEMO_FIRST_READ` in
+`lib/marketing/demoSurfaces.ts`, **by reference**, so the app and the website describe the same
+runner on the same day (standing rule: *marketing stills must be the REAL components*).
+
+**Owner:** `lib/coaching/freeRunRead.ts`. **Call sites:** `PostRunScreen`, `OrientationScreen`,
+`/post-run-preview`. **Checks:** `lib/coaching/freeRunRead.test.ts` (13 arms) ·
+`components/shared/freeRunRead.markup.test.ts` (23 arms); 12 mutations red across both.
+⚠️ **Not seen on a device.** Rendered and measured at 375px in `/post-run-preview`.

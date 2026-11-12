@@ -145,6 +145,10 @@ import { zoneDiscipline, zoneTimeSplit, weightOf, weekZoneSplitRows, weeklyEasyS
 import { dedupeRuns, isRun } from '@/lib/coaching/weeklyActualLoad'
 import { EasyShareHeader, EasyShareBars, EASY_SHARE_BARS } from '@/components/shared/EasyShare'
 import EffortRecord from '@/components/shared/EffortRecord'
+import FreeRunReadCard from '@/components/shared/FreeRunRead'
+import { freeRunRead } from '@/lib/coaching/freeRunRead'
+import type { RunEffortRow } from '@/lib/coaching/runEffort'
+
 import { effortRecord, plannedTypeByActivity, type EffortRun } from '@/lib/coaching/runEffort'
 import { kitReceipts, type KitReceipt } from '@/lib/coaching/kitReceipts'
 import { easiestWeekSpan, easyCostSentence } from '@/lib/coaching/moments'
@@ -3674,7 +3678,7 @@ export default function DashboardClient() {
             }}
           />
         )}
-        {screen === 'post-run' && activePostRunData && <PostRunScreen data={activePostRunData} restingHR={restingHR} maxHR={effectiveMaxHR} preferredMetric={preferredMetric} driftContext={buildDriftContext(plan, runAnalysisMap, activePostRunData.weekN, activePostRunData.session?.key)} onBack={() => { setActivePostRunData(null); setScreen(postRunOrigin === 'session' && activeSessionData ? 'session' : 'today') }} onDone={() => {
+        {screen === 'post-run' && activePostRunData && <PostRunScreen data={activePostRunData} restingHR={restingHR} maxHR={effectiveMaxHR} preferredMetric={preferredMetric} onUpgrade={() => openUpgrade('post_run')} driftContext={buildDriftContext(plan, runAnalysisMap, activePostRunData.weekN, activePostRunData.session?.key)} onBack={() => { setActivePostRunData(null); setScreen(postRunOrigin === 'session' && activeSessionData ? 'session' : 'today') }} onDone={() => {
           // POST-RUN-02: terminus. Route to SessionScreen for this session
           // with the freshest completion merged in, so the verdict (which
           // SessionScreen renders inline) is the resting state — not Today.
@@ -7466,7 +7470,9 @@ export function SessionScreen({ session, aiNotes, preloadedRuns, onBack, onSaved
 
         {/* Locked coaching preview — free users who have completed the session */}
         {!hasPaidAccess && isComplete && session.type !== 'rest' && session.type !== 'strength' && (
-          <LockedCoachingPreview onUpgrade={onUpgrade} onOpenCoach={onOpenCoach} />
+          // ACT-FREE-TEASE-01 — the card could not tell a linked completion from a manual
+          // tick, and told the linked half we did not have their run.
+          <LockedCoachingPreview onUpgrade={onUpgrade} onOpenCoach={onOpenCoach} hasLinkedRun={!!linkedActivityId} />
         )}
 
         {/* Up next — next scheduled session in the week, promoted above the unlink escape hatch (UX-POSTRUN-01) */}
@@ -7637,6 +7643,7 @@ function PostRunScreen({
   driftContext = null,
   restingHR = null,
   maxHR = null,
+  onUpgrade,
 }: {
   data: PostRunData
   /** SESSION-SCREENS-WOW-01 — the runner's HR inputs, so the Zone Trace draws the ceiling they were shown. */
@@ -7669,6 +7676,9 @@ function PostRunScreen({
    *  `driftContextFor`. Computed by the parent, which holds the plan and the
    *  analysis map; this screen holds neither and cannot derive it. */
   driftContext?: { show: boolean; drifted: number; total: number } | null
+  /** ACT-FREE-TEASE-01 — the free card's "Unlock the read" link. `post_run` is its own
+   *  funnel door (OPS-FUNNEL-02). Optional so the screen still mounts in a harness. */
+  onUpgrade?: () => void
 }) {
   const supabase = createClient()
   const { session, weekN, pendingActivityId, pendingAppleHealthUuid, linkedActivity } = data
@@ -7695,6 +7705,10 @@ function PostRunScreen({
   const [hkUuid, setHkUuid] = useState<string | null>(pendingAppleHealthUuid ?? null)
   // UNMEASURED-DISTANCE-01: the linked run's measured and runner-reported distance (metres), and a just-saved entry (km).
   const [actDistance, setActDistance] = useState<{ measured: number | null; reported: number | null } | null>(null)
+  // ACT-FREE-TEASE-01 — the linked run's stored zone split. `null` means the hydration read has
+  // not returned yet (a loading state); a row whose four columns are all null means the run
+  // carried no heart rate, which is an ANSWER. Absence must not be written as a value.
+  const [zoneRow, setZoneRow] = useState<RunEffortRow | null | undefined>(undefined)
   const [reportedKmSaved, setReportedKmSaved] = useState<number | null>(null)
   // SESSION-LOGGED-HERO-01 — the run's duration, so the card's sentence can quote minutes without a trace.
   const [movingMin, setMovingMin] = useState<number | null>(null)
@@ -7764,7 +7778,11 @@ function PostRunScreen({
           {
             const q = supabase
               .from('strava_activities')
-              .select('avg_hr, start_date, moving_time_s, avg_speed, distance_m, reported_distance_m')
+              // ACT-FREE-TEASE-01 adds the four zone columns to a select that was ALREADY
+              // here, so the free card costs no extra round trip. They are written at ingest
+              // for every tier (`lib/health/adapter.ts`), which is what makes the card free.
+              // ⚠️ SELECT-COLUMN-GATE-01: all ten are declared in `tableColumns.ts`.
+              .select('avg_hr, start_date, moving_time_s, avg_speed, distance_m, reported_distance_m, hr_pct_z1, hr_pct_z2, hr_pct_z3, hr_pct_z4_5')
               .eq('user_id', user.id)
             const { data: act } = await (isHK
               ? q.eq('apple_health_uuid', row.apple_health_uuid)
@@ -7774,6 +7792,15 @@ function PostRunScreen({
               setAvgSpeedMs((act.avg_speed as number | null) ?? null)
               setMovingMin(act.moving_time_s != null ? Number(act.moving_time_s) / 60 : null)
               setActDistance({ measured: (act.distance_m as number | null) ?? null, reported: (act.reported_distance_m as number | null) ?? null })
+              // ACT-FREE-TEASE-01 — the stored split, for the free card. A row with all four
+              // null is a real answer (no heart rate), not a loading state, so it is stored as
+              // the row rather than left undefined.
+              setZoneRow({
+                hr_pct_z1:   (act.hr_pct_z1   as number | null) ?? null,
+                hr_pct_z2:   (act.hr_pct_z2   as number | null) ?? null,
+                hr_pct_z3:   (act.hr_pct_z3   as number | null) ?? null,
+                hr_pct_z4_5: (act.hr_pct_z4_5 as number | null) ?? null,
+              })
               if (isHK) {
                 setHrPendingActivity({
                   avg_hr:        (act.avg_hr as number | null) ?? null,
@@ -7784,9 +7811,19 @@ function PostRunScreen({
             }
           }
         }
-      } catch {}
+      } catch {
+        /* swallowed as before; the finally below still resolves the free card's state. */
+      } finally {
+        // ACT-FREE-TEASE-01 — ABSENCE MUST NOT BE WRITTEN AS A VALUE, AND IT MUST NOT BE LEFT
+        // AS A LOADING STATE EITHER. `undefined` means this read has not resolved; `null` means
+        // it resolved and there is no linked run to describe. Without this the free card would
+        // shimmer for ever on an unlinked session, and on a thrown read.
+        if (!cancelled) setZoneRow(prev => (prev === undefined ? null : prev))
+      }
     }
     if (sessionDay) void loadCompletion()
+    // No session day: nothing will ever hydrate, so resolve rather than shimmer.
+    else setZoneRow(null)
     return () => { cancelled = true }
   }, [sessionDay, weekN, supabase, linkedActivity])
 
@@ -8267,6 +8304,21 @@ function PostRunScreen({
         )}
         {hasPaidAccess && !hrPendingState && !analysis && pollGaveUp && (
           <GaveUpCard onOpenCoach={onOpenCoach} />
+        )}
+
+        {/* ── ACT-FREE-TEASE-01 — THE FREE RUNNER'S HALF OF THIS SPOT ─────────
+            Every branch above is `hasPaidAccess &&`, so a free runner reached the bottom of
+            this screen and it simply ENDED. That is a truncation, not restraint, and it
+            breached the standing ruling *"gate richness, never access — a locked row stays
+            visible and readable"*. The number is the runner's own, from columns ingest
+            already wrote for every tier (SLT 2026-11-12: FREE). The read, the verdict and
+            the advice stay PAID. */}
+        {!hasPaidAccess && (
+          <FreeRunReadCard
+            read={freeRunRead(zoneRow ?? null, (session?.type ?? null) as string | null)}
+            loading={zoneRow === undefined}
+            onUpgrade={() => onUpgrade?.()}
+          />
         )}
 
 

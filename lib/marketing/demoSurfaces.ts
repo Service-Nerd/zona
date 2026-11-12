@@ -189,6 +189,24 @@ export const DEMO_EFFORT_RUNS = [
   { date: '2026-04-12', z1: 14, z2: 84, z3: 1,  z45: 1,  kind: 'easy'   as const, thisWeek: true },
 ]
 
+/**
+ * ACT-FIRSTRUN-01 — the one run the app shows a runner IN ONBOARDING, before they have earned a
+ * read of their own. Design Board 2026-11-12, SHIP with three amendments.
+ *
+ * 🔴 IT IS THE FIRST ROW OF `DEMO_EFFORT_RUNS`, BY REFERENCE AND NOT BY COPY, so onboarding and
+ * the marketing homepage describe the same runner on the same day. 🎪 Collins ruled it must be
+ * the REAL component with this data rather than a hand-written imitation, and the reason is on
+ * the record in this file's own header: the last hand-copied app surface drifted and shipped
+ * wrong for weeks.
+ *
+ * ⚠️ IT IS DELIBERATELY A GREY RUN — 52% in Zone 3. The whole product exists to name that run,
+ * and showing a runner a tidy 90%-easy example teaches them nothing about what they are buying.
+ *
+ * ⚠️ THIS MODULE'S HEADER SAID "the data the MARKETING SITE feeds to real app components". The
+ * APP is now a consumer too, which is a widening and is stated here rather than discovered later.
+ */
+export const DEMO_FIRST_READ = DEMO_EFFORT_RUNS[0]!
+
 export const DEMO_COACH_NOTE = {
   timestamp: 'Sunday',
   observation:

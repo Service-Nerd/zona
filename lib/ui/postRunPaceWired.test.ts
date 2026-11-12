@@ -52,10 +52,30 @@ describe('POSTRUN-PACE-NULL-01 — the post-run card gets the real pace', () => 
   it('the HR-pending gate stays HealthKit-only', () => {
     // `classifyHrPending` is about HealthKit's late HR delivery and is meaningless
     // for Strava. Generalising the SPEED read must not generalise that.
+    //
+    // ⚠️ BOUNDED BY ITS OWN SYNTAX, NEVER BY A CHARACTER COUNT. This read `SRC.slice(i, i + 600)`
+    // and went red on `ACT-FREE-TEASE-01`, which added a `setZoneRow({...})` with its comment
+    // between the two things this arm looks for — pushing `if (isHK) {` past 600 characters.
+    // Nothing about the property under test had changed. **A fixed lookback is a region bound
+    // that drifts whenever anything near it grows**, which is the same class as the 200- and
+    // 600-character windows this repo has already recorded, and it reports the right answer for
+    // the wrong reason in whichever direction the file happens to move.
+    //
+    // The region is the handler block that `setAvgSpeedMs(` opens: from that call to the closing
+    // of its enclosing `if (!cancelled && act) {`, found by brace balance.
     const i = SRC.indexOf('setAvgSpeedMs(')
-    const after = SRC.slice(i, i + 600)
-    expect(after).toContain('if (isHK) {')
-    expect(after).toContain('setHrPendingActivity({')
+    expect(i, 'the speed write is gone entirely').toBeGreaterThan(-1)
+    const open = SRC.lastIndexOf('if (!cancelled && act) {', i)
+    expect(open, 'the enclosing hydration block moved or was renamed').toBeGreaterThan(-1)
+    let depth = 0, end = -1
+    for (let k = SRC.indexOf('{', open); k < SRC.length; k++) {
+      if (SRC[k] === '{') depth++
+      else if (SRC[k] === '}') { depth--; if (depth === 0) { end = k; break } }
+    }
+    expect(end, 'could not balance the hydration block — unverified is not a pass').toBeGreaterThan(i)
+    const block = SRC.slice(i, end)
+    expect(block).toContain('if (isHK) {')
+    expect(block).toContain('setHrPendingActivity({')
   })
 
   it('SessionScreen, the twin that was always right, is unchanged', () => {

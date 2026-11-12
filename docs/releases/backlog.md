@@ -4675,13 +4675,38 @@ one that under-warns.
 
 ---
 
-### 🔲 `ACT-FIRSTRUN-01` — days 1 to 3 are not designed around the first read 🧭 **DESIGN BOARD**
+### ✅ `ACT-FIRSTRUN-01` — SHIPPED 2026-11-12. Half of it was already true, and the half that was not reaches everyone 🧭 **DESIGN BOARD**
 
-**Acceptance criteria.** A push on the first planned run day; a sample run read in onboarding so the
-value is seen before it is earned. Design Board approval required before build; `frontend-design`
-first.
+**Two acceptance criteria, and they measured very differently.** Sitting:
+`docs/decisions/activation-release-3-2026-11-12.md`.
 
-**Dependencies.** `ACT-FUNNEL-01` (so the effect is measurable), `ACT-RUNREAD-REACH-01`.
+⛔ **(a) "A push on the first planned run day" — DECLINED ON MEASUREMENT.** It is already satisfied
+by construction: `/api/push/send-daily` sends on **every** day that resolves a session and has no
+skip-day-one branch, so the first planned day is included. A second sender would reach **nobody
+new**. 📐 What actually binds, measured 2026-11-12 over 37 non-admin non-internal trialists:
+`daily_push_enabled` is **37 of 37** (the default), **23 hold a push subscription at all**, **10
+ever received a daily push**, **3 in trial days 1–3**, mean 4.4 days to the first (range 1.2–8.6) —
+and **only 6 of 37 have a planned session inside days 1–3.** The gap is not a missing sender.
+
+✅ **(b) "A sample run read in onboarding" — BUILT.** `OrientationScreen` told a new runner their
+race, their block length, their first session and their zones and **never what the product SAYS**.
+One card now sits under *"The whole job"*, rendering the REAL `FreeRunReadCard` on `DEMO_FIRST_READ`
+— a **52%-Zone-3 run**, deliberately, because a tidy 90%-easy example teaches a runner nothing about
+what they are buying.
+
+**Three amendments, all built.** ✋ Silvanto: the declaration **replaces the eyebrow**, never small
+print beneath the card — *"grey small print is what every app uses to disclaim something it hopes
+you read as real."* 🎪 Collins: the **real component** on the shared demo runner, **by reference**,
+per the standing *marketing stills must be the REAL components* rule, so the app and the website
+describe the same runner on the same day. 🧭 Zhuo: one card, existing screen, existing data.
+
+⚠️ **`orientation_seen` is 4 of 37**, so this reaches new runners from here, not the existing 33.
+⚠️ **`OrientationScreen` is in no harness**, so the card's placement rests on its own measured
+height at 375px plus that screen's existing `overflowY: auto`, not on a render of the composition.
+
+**Gate.** `components/shared/freeRunRead.markup.test.ts`, the example block (9 arms), falsified four
+ways: drop the declaration · type the zone numbers in rather than reference the owner · let the
+example render the paywall link · let it keep the "This run" eyebrow.
 
 ---
 
@@ -4783,19 +4808,79 @@ caller. A stale count makes the next person think a change here is wide when it 
 
 ---
 
-### 🔲 `ACT-FREE-TEASE-01` — a free user is shown nothing of what a read would have said 💼 **SLT** (the FREE/PAID line), then 🧭 **DESIGN BOARD**
+### ✅ `ACT-FREE-TEASE-01` — SHIPPED 2026-11-12. The screen ENDED, and the number was already in the runner's own row 💼 **SLT** → 🧭 **DESIGN BOARD**
 
-**Acceptance criteria.** After a run on free tier, show that a read exists (e.g. the effort score)
-and lock the coaching advice. ⚠️ Moves the FREE/PAID line, so the SLT rules first; `HK-FREE-INGEST-LINE-01`
-(2026-10-07) is the precedent and must be read before proposing.
+**The content premise was largely false; the MOMENT premise was true, and it was a breach of a
+standing ruling.** Sitting: `docs/decisions/activation-release-3-2026-11-12.md`.
+
+Free **Coach** already does what the item asks (`COACH-KIT-CAUGHT-01` + `KIT-TASTE-01`, 2026-10-31):
+`KitReceipts`, the every-run picture, the free weekly insight, and the lock stated in words. 🔴 **But
+the item says "after a run", and the post-run moment showed a free runner NOTHING** — every read
+branch on `PostRunScreen` is `hasPaidAccess &&`, so a free runner logged a run, answered RPE and
+fatigue (both free, DS-06) and **the screen stopped.** That breaches *"gate richness, never access:
+a locked row stays visible and readable."*
+
+🔴 **AND `SessionScreen`'S LOCKED CARD TOLD A LIE.** `LockedCoachingPreview` renders only on a
+COMPLETED session and said *"He needs your runs first: Strava or Apple Health"* — false for every
+runner who completed by **linking** one, which is most of them. It branches on `hasLinkedRun` now,
+and the honest other branch is not *"Kit read it"* either: on free, `analyse-run` never ran.
+
+💼 **SLT: BUILD, FREE.** The zone split of a runner's own run is FREE; the read, the verdict, the
+advice, the weekly score and the reshape stay PAID. 📐 `hr_in_zone_pct`, `hr_above_ceiling_pct` and
+`hr_pct_z1…z4_5` are written at **ingest** for every tier — free/trial runners hold **146 activities,
+122 (83.6%) carrying the split** — so this costs no computation and no model call. ⚠️ **It is still
+a tier decision and `HK-FREE-INGEST-LINE-01` is not the precedent it looks like**: there the route
+contradicted a ruling forty lines above it. Here the line was coherent, so there was nothing to
+restore. 💰 Fried: *"0 of 37 are paying. We are not protecting revenue, we are protecting a
+hypothesis."* 🏃 **Hutchinson's condition is binding: the surface states the MEASUREMENT, never a
+VERDICT.**
+
+🧭 **Design: SHIP, four amendments** — a **third state**, not pattern 11's locked state (its stated
+premise, *"the live percent is HR-derived from `run_analysis` — paid"*, is **false at ingest**);
+**one number, never four**; no evaluative word; all five states in one commit. ⚠️ **A fifth was found
+by LOOKING: the card has no rail.** A moss-or-amber rail IS the verdict in colour, and a *neutral*
+rail renders invisible at 375px — a device carrying nothing. **The absence is what reads as "no
+verdict".**
+
+**Gate.** `lib/coaching/freeRunRead.test.ts` (13 arms, including a mechanical word list for the SLT
+condition and an arm reading `kitReceipts.ts` so the band spellings cannot drift) +
+`components/shared/freeRunRead.markup.test.ts` (23). Falsified eight ways. ⚠️ **One arm caught
+itself**: asserting the loading markup held no `%` went red on `width:32%`, a skeleton bar's CSS.
 
 ---
 
-### 🔲 `ACT-PAYWALL-01` — the paywall leads with a generic feature list 🧭 **DESIGN BOARD** (+ 💼 **SLT** on price presentation)
+### ✅ `ACT-PAYWALL-01` — SHIPPED 2026-11-12 as a two-element reorder, because both criteria were substantially already built 🧭 **DESIGN BOARD** (+ 💼 **SLT** on price presentation)
 
-**Acceptance criteria.** Lead with the annual price shown alongside its monthly equivalent; show the
-runner's own data instead of a feature list. ⚠️ **Design and content only** — the brief puts the
-purchase flow out of scope; if a change needs purchase-flow code it stops and flags.
+Sitting: `docs/decisions/activation-release-3-2026-11-12.md`.
+
+📐 **Re-measured before planning against it, and both halves had moved.** *"Shown alongside its
+monthly equivalent"* was already shipped — the annual card reads **£59.99 · per year · £5 / month ·
+£1.15 / week · Save 37% / year**, every string from `BRAND.PRICING`. *"The runner's own data instead
+of a feature list"* was ruled and built on 2026-10-31 (`COACH-KIT-CAUGHT-01`: `KitReceipts` under
+the headline, above the list, ≤3, no taps) — re-proposing it would be re-proposing settled ground.
+
+✅ **The one unmet word was LEAD.** 📱 Wroblewski: *"two equal cards in a left-to-right row: the left
+one is read first"* — annual was on the right and **the only thing giving it precedence was the
+badge pinned above it.** ✋ Silvanto: *"care should be visible in the thing, not applied on top of
+it."* 💰 Fried, advisory: no theatre, no strike-through; ordering so the honest option is first is a
+recommendation, not a dark pattern. **The DOM order moved**, so a screen reader and a thumb now
+agree with the eye. Badge kept, no copy change, no price change, no new string.
+
+⛔ **AND THE MAJORITY COHORT IS NOT IN THE ITEM — DON'T SHIP, with the cause named.** 📐 At the moment
+their trial ended, **20 of 33 runners past day 14 reached the paywall with nothing of their own.**
+🎪 Collins: *"a card that says 'we never read a run of yours' on the BUY screen is us explaining our
+own failure at the moment we ask for money."* 🎓 Sierra: the SLT settled this for the same card in
+October — *one true sentence beats an empty card, and a padded one is worse than none.* 🧭 Zhuo:
+**"this is not a design problem"** — 61% arrive empty because the product never ran for them inside
+their trial, **and a nicer empty paywall would treat the symptom and make the cause harder to see.**
+🔻 The cause is `ACT-TRIAL-AT-FIRST-READ-01`, built, flag off, founder's call.
+
+**Gate.** `lib/subscriptions/paywallOrder.test.ts`, 5 arms, falsified two ways (put monthly back
+first · drop the saving badge). ⚠️ **Source-shaped and declared** — `UpgradeScreen` calls RevenueCat
+on mount and cannot render under `environment: 'node'`; what a source arm can still prove is the only
+thing that changed, which is the order. ⚠️ **One arm caught itself**: the no-typed-price check went
+red on prices quoted in the ruling's own comment and in P-09's — `HOOK-RGBA-COMMENTS-01` with a price
+in place of a colour.
 
 ---
 

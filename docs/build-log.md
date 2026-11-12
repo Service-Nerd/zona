@@ -6,6 +6,25 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-11-12 — ACT-FREE-TEASE-01 / ACT-FIRSTRUN-01 / ACT-PAYWALL-01 · All three items were partly already built, and the real defect was in none of them
+
+**Shipped:** a free runner now sees one true number about the run they just finished, onboarding shows a sample read before one is earned, and the annual price leads on the paywall.
+
+**Dev learning:** I measured all three items against production before planning, and **all three premises had moved.** Item 9 asked for the annual price "alongside its monthly equivalent" — already there. It asked to show "the runner's own data instead of a feature list" — ruled and built twelve days earlier. The one unmet word was *lead*. Item 8 asked to show a free runner that a read exists — already done on the Coach screen, by two prior ships. What was actually broken was narrower and worse: on `PostRunScreen` every read branch is `hasPaidAccess &&`, so a free runner logs a run, answers RPE and fatigue, and **the screen just ends.** Not a lock. Nothing. That breaks a standing design rule we wrote down ourselves — *gate richness, never access; a locked row stays visible and readable* — and it survived because **a truncation and restraint look identical in a screenshot.**
+
+Then the good bit: the number to fill it with was already in the free runner's own database row. `hr_in_zone_pct` and the four zone columns are written at ingest by the HealthKit adapter and the Strava webhook, with no tier check, because a ruling last month moved the gate down to the analysis. Measured: free and trial runners hold 146 activities, **122 of them carrying a full zone split**. We had been sitting on it.
+
+**Product/creator learning:** the governing number was in none of the three items. **24 of 37 trialists had no trainable plan week inside their trial at all**, and exactly **one run was read** across all of them. Items 6, 8 and 9 all quietly assume someone is training while their trial runs. The fix for that is a different item, built, behind an off switch, waiting on a human decision. So the honest framing of this whole release is: three real improvements, none of which touches the thing most likely to be killing conversion — and saying that out loud is more useful than shipping a prettier empty paywall, which is exactly what the board declined to do.
+
+**AI-building learning:** I wrote twelve mutation tests to prove the new gates could go red, and **two of my mutations never applied** — wrong indentation in one, wrong string in the other — and both suites stayed green. For about a minute I had "the gate passed under mutation" as a result, which is the most dangerous possible false signal: it looks like evidence and it is the absence of evidence. Printing `mutation APPLIED` from the mutation script before reading the test result is now how I do this. **A mutation you predict is not a mutation you ran.**
+
+**The honest bit:** three of my own new checks fired on my own comments. The price-literal check went red on prices quoted in the ruling comment I had just written above the row. The loading-state check went red on `width:32%` — a skeleton bar's CSS, not a number on screen. We have a repo doctrine for exactly this (*bound the region, never grep the file*), written up after it happened three times, and I did it twice more in one afternoon while implementing the thing the doctrine is about. Also: I designed a "neutral" rail for the card so it would not carry a verdict in colour, shipped it, looked at it at 375px, and it was **invisible** — grey line on a grey-bordered card. Removed it. Absence reads as "no verdict" far better than an unreadable rail does.
+
+**Hook material:** "Our free users' heart rate zones were already in the database. We'd been storing them for every single run and showing them to nobody — because the screen that should have displayed them just... stopped rendering."
+
+**Postable?:** yes
+
+
 ## 2026-11-11 — ACT-EMAIL-DAY14-01 + ACT-EMAIL-POSTTRIAL-01 · the quiet-hours fix that would have silenced people forever
 **Shipped:** Release 2 of the activation brief. The day-14 email never states a zero and offers the week back through a real one-time grant; day 17 and day 30 exist; internal accounts are excluded; the cron is hourly.
 **Dev learning:** the brief said "respect quiet hours" and I nearly implemented it as written. A quiet-hours guard on a ONCE-DAILY cron is not a deferral — the local hour is identical on every run, so a runner outside the window never gets the email again. The guard only becomes a wait if the sender runs more often than the window is wide, so the schedule and the guard are one decision in two files and there is now a test asserting the pairing. The measurement that made it worth doing at all: the cron fired at 08:00 UTC, which is 03:00 for the four runners in New York and Toronto, and every runner has a timezone set so this was always knowable.

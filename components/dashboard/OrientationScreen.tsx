@@ -15,6 +15,9 @@ import { MICRO_LABELS } from '@/components/shared/microLabels'
 import Button from '@/components/ui/Button'
 import { Wordmark } from '@/components/ui/Wordmark'
 import { BRAND } from '@/lib/brand'
+import { DEMO_FIRST_READ } from '@/lib/marketing/demoSurfaces'
+import { freeRunRead } from '@/lib/coaching/freeRunRead'
+import FreeRunReadCard from '@/components/shared/FreeRunRead'
 import { daysUntilRace, formatDate, formatRaceCountdown } from '@/lib/format'
 import { parseLocalDate } from '@/lib/plan'
 import { getSessionColor, getSessionLabel } from '@/lib/session-types'
@@ -242,6 +245,38 @@ export default function OrientationScreen({ plan, firstName, zone2Ceiling, resti
                 }}>
                   Easy when it&apos;s easy. Hard when it&apos;s hard. The grey middle is where amateurs go to stall, and where most of your improvement is hiding.
                 </div>
+              </div>
+
+              {/* ── ACT-FIRSTRUN-01 — THE SAMPLE READ ───────────────────────────────────
+                  Design Board 2026-11-12, SHIP with three amendments.
+
+                  📐 WHY IT IS HERE AND NOT EARLIER. `OrientationScreen` told a new runner their
+                  race, their block length, their first session and their zones, and never once
+                  showed them what the product SAYS. 🎓 Sierra: *"it shows the runner what the
+                  product will say ABOUT THEM, in a sentence, before they have done anything —
+                  that is the whole proposition in one card. But if they mistake it for their own
+                  data we have lied to them on screen one."*
+
+                  It sits directly under "The whole job", which has just promised that the grey
+                  middle is where improvement hides. The example is a 52%-Zone-3 run, so the
+                  sentence lands on the claim rather than beside it.
+
+                  ⚠️ The REAL component with the REAL owner (`freeRunRead`) on the shared demo
+                  runner, per the standing rule that marketing stills must be the real components
+                  — the last hand-copied app surface drifted and shipped wrong. The example is
+                  declared in the card's own eyebrow, never as small print beneath it. */}
+              <div style={{ marginBottom: 'var(--space-5)' }}>
+                <FreeRunReadCard
+                  read={freeRunRead({
+                    hr_pct_z1: DEMO_FIRST_READ.z1, hr_pct_z2: DEMO_FIRST_READ.z2,
+                    hr_pct_z3: DEMO_FIRST_READ.z3, hr_pct_z4_5: DEMO_FIRST_READ.z45,
+                  })}
+                  onUpgrade={() => {}}
+                  example={{
+                    eyebrow: 'An example, not your runs',
+                    next: `This is what ${BRAND.coachName} sends after a run. Yours starts with the first one you do.`,
+                  }}
+                />
               </div>
 
               {/* Zone-method disclosure — honest about how these were derived.

@@ -410,35 +410,18 @@ export default function UpgradeScreen({ onBack, trialExpired = false, grantExpir
           ))}
         </div>
 
-        {/* Pricing — metric pair pattern */}
+        {/* Pricing — metric pair pattern.
+            🔴 ANNUAL LEADS (ACT-PAYWALL-01, Design Board 2026-11-12). It was second, and the
+            only thing giving it precedence was the saving badge pinned above it.
+            📱 Wroblewski: *"two equal cards in a left-to-right row: the left one is read
+            first."* ✋ Silvanto: *"care should be visible in the thing, not applied on top of
+            it — put the recommended option first and let the badge confirm the choice rather
+            than announce it."* 💰 Fried, advisory on price presentation: no theatre, no
+            strike-through, no countdown; ordering the options so the honest one is first is a
+            recommendation, not a dark pattern — £1.15 a week against £1.84.
+            ⚠️ A REORDER OF TWO ELEMENTS. No copy change, no price change, no new string, and
+            the DOM order is what moved, so a screen reader and a thumb agree with the eye. */}
         <div style={{ display: 'flex', gap: 'var(--space-3)' }}>
-          <button
-            onClick={() => handleSubscribe(false)}
-            disabled={loading}
-            className="card-primary" style={{ flex: 1, textAlign: 'center', background: 'var(--card-bg)', borderRadius: '10px', padding: '16px 12px', cursor: loading ? 'default' : 'pointer' }}
-          >
-            <div style={{
-              fontFamily: 'var(--font-ui)', fontWeight: 700,
-              fontSize: '1.5rem', color: 'var(--text-primary)',
-            }}>{PRICING.monthly.display}</div>
-            <div style={{
-              fontFamily: 'var(--font-ui)', fontWeight: 400,
-              fontSize: '0.75rem', color: 'var(--text-muted)',
-              marginTop: '4px',
-            }}>per month</div>
-            {/* P-09 — the per-WEEK figure. A subscription to a running app is
-                bought against a weekly habit, and neither £7.99 nor £59.99 is
-                a number anyone feels. ⚠️ From `BRAND.PRICING`, never computed
-                here: a price derived at the render site is a second source of
-                truth for a number that has exactly one (ADR-015/INV-CFG-001),
-                and `pricing.test.ts` cannot see it in a component. */}
-            <div style={{
-              fontFamily: 'var(--font-ui)', fontWeight: 400,
-              fontSize: '0.6875rem', color: 'var(--text-muted)',
-              marginTop: '2px',
-            }}>{PRICING.monthly.perWeekDisplay}</div>
-          </button>
-
           <button
             onClick={() => handleSubscribe(true)}
             disabled={loading}
@@ -469,6 +452,33 @@ export default function UpgradeScreen({ onBack, trialExpired = false, grantExpir
               fontSize: '0.6875rem', color: 'var(--text-muted)',
               marginTop: '2px',
             }}>{PRICING.annual.perWeekDisplay}</div>
+          </button>
+
+          <button
+            onClick={() => handleSubscribe(false)}
+            disabled={loading}
+            className="card-primary" style={{ flex: 1, textAlign: 'center', background: 'var(--card-bg)', borderRadius: '10px', padding: '16px 12px', cursor: loading ? 'default' : 'pointer' }}
+          >
+            <div style={{
+              fontFamily: 'var(--font-ui)', fontWeight: 700,
+              fontSize: '1.5rem', color: 'var(--text-primary)',
+            }}>{PRICING.monthly.display}</div>
+            <div style={{
+              fontFamily: 'var(--font-ui)', fontWeight: 400,
+              fontSize: '0.75rem', color: 'var(--text-muted)',
+              marginTop: '4px',
+            }}>per month</div>
+            {/* P-09 — the per-WEEK figure. A subscription to a running app is
+                bought against a weekly habit, and neither £7.99 nor £59.99 is
+                a number anyone feels. ⚠️ From `BRAND.PRICING`, never computed
+                here: a price derived at the render site is a second source of
+                truth for a number that has exactly one (ADR-015/INV-CFG-001),
+                and `pricing.test.ts` cannot see it in a component. */}
+            <div style={{
+              fontFamily: 'var(--font-ui)', fontWeight: 400,
+              fontSize: '0.6875rem', color: 'var(--text-muted)',
+              marginTop: '2px',
+            }}>{PRICING.monthly.perWeekDisplay}</div>
           </button>
         </div>
 

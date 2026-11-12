@@ -27,6 +27,19 @@ interface Props {
 | `receipts` | `kitReceipts(...)`; shown under the headline when non-empty |
 | `inTrial` | Titles the receipts "In your trial, Kit caught" (also for `trial-ended`) |
 
+## Order of the two price cards (`ACT-PAYWALL-01`, Design Board 2026-11-12)
+
+**The annual option is FIRST in the DOM**, monthly second. It was the other way round, and the only
+thing giving annual precedence was the saving badge pinned above it — 📱 Wroblewski: *"two equal
+cards in a left-to-right row: the left one is read first"*; ✋ Silvanto: *"care should be visible in
+the thing, not applied on top of it."* The badge is kept and now confirms the choice rather than
+carrying it.
+
+⚠️ **The order is a DECISION and a reorder is invisible in a diff summary** — no new string, no new
+token. `lib/subscriptions/paywallOrder.test.ts` reads it, and also asserts the saving badge stays on
+the annual card and that **no price is typed into the component** (every figure from `BRAND.PRICING`,
+ADR-015 / INV-CFG-001).
+
 ## Consumers
 
 `app/dashboard/DashboardClient.tsx` · `app/coach-preview/full/page.tsx`.

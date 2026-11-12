@@ -6127,3 +6127,51 @@ The homepage device drew **`‹ WEEK 6 OF 16 ›` with two working chevrons** �
 **Rendered at 375px: 3.7 screens, no overflow.** Pattern: `ui-patterns.md` § *The staged block page*. Check: `stagedPagePromise.test.ts`, 8 arms. ⚠️ **One was HOLLOW on its first write and a mutation caught it:** it asserted the unit boundary was derived by matching the helper's NAME, which matches its **definition** — so hardcoding the call site left the definition unused and the arm green. ⚠️ **And the fix caught itself**: banning any numeral in a `weeks.slice` tripped on the helper's own `weeks.slice(0, i)`. Now scoped to a literal *boundary*.
 
 ⚠️ **What this does not settle:** the slug, whether a reader who has never run ever reaches `/plans` at all (a traffic question nobody at either table can answer), and the half-marathon finding returned to the Coaching Board as `STAGED-HM-DOOR-01` — a never-run runner is staged into a marathon and **refused** a half, at every runway from 12 to 30 weeks.
+
+## 🧭💼 2026-11-12 — Activation Release 3: `ACT-FREE-TEASE-01`, `ACT-FIRSTRUN-01`, `ACT-PAYWALL-01` · **3 SHIP, 1 DECLINED, 1 DON'T SHIP**
+
+Founder: *"do release 3"*. Sitting: `docs/decisions/activation-release-3-2026-11-12.md`. SLT ruled first on item 8's tier question, then the Design Board on three questions.
+
+🔴 **ALL THREE ITEMS' PREMISES HAD MOVED, AND THE GOVERNING NUMBER IS IN NONE OF THEM.** Measured 2026-11-12 against production, non-admin non-internal, **37 trialists**: **13 had a trainable plan week inside their trial, 24 did not, and 6 had one inside days 1–3.** Fifteen ran, **one was read.** Items 6, 8 and 9 all assume the runner is training inside their trial. **`ACT-TRIAL-AT-FIRST-READ-01` is the fix for that, is built behind an OFF flag, and is the founder's call** — every ruling below is bounded by that sentence.
+
+| Ruling | Outcome |
+|---|---|
+| **A free runner sees one true number about the run they just finished** | 💼 **SLT: BUILD, FREE**, Hutchinson's condition binding · 🧭 **SHIP**, 4 amendments |
+| **A sample read in onboarding, declared in the card** | 🧭 **SHIP**, 3 amendments |
+| **The annual price leads** | 🧭 **SHIP** |
+| **A push on the first planned run day** | ⛔ **DECLINED ON MEASUREMENT** |
+| **A card for the paywall's no-data cohort** | ⛔ **DON'T SHIP** |
+
+### 💼 The tier question, which the item routed correctly and I first read wrong
+
+The zone split of a runner's own run is **FREE**; the read, the verdict, the advice, the weekly score and the reshape stay **PAID**. 📐 `hr_in_zone_pct`, `hr_above_ceiling_pct` and `hr_pct_z1…z4_5` are written at **ingest** for every tier — free/trial runners hold **146 activities, 122 (83.6%) carrying the split** — so this costs no computation, no model call and nothing new. ⚠️ **It is still a tier decision, and `HK-FREE-INGEST-LINE-01` is NOT the precedent it looks like**: there the route contradicted a ruling forty lines above it, so the fix was a defect fix. Here the line was coherent — `ZoneWeekBlock`'s own locked copy states the consequence in as many words — so there was nothing to restore. 💰 Fried: *"**0 of 37 are paying.** We are not protecting revenue, we are protecting a hypothesis."* 🏃 **Hutchinson's condition, binding: the free surface states the MEASUREMENT and never a VERDICT.** No evaluative word, checked against a word list rather than a copy review.
+
+### 🧭 Q1 — the post-run moment
+
+🔴 **The breach was real and it was a truncation, not restraint.** Every read branch on `PostRunScreen` was `hasPaidAccess &&`, so a free runner logged a run, answered RPE and fatigue (both free, DS-06) and **the screen ended** — against the standing ruling *"gate richness, never access: a locked row stays visible and readable."* ⚠️ **`SessionScreen` was NOT in that state** — it already had `LockedCoachingPreview` — **but that card told a lie**: it renders only on a COMPLETED session and said *"He needs your runs first"*, which is false for every runner who completed by linking one. It now branches on `hasLinkedRun`.
+
+**Four amendments, all built.** (1) ✋ Silvanto: **a third state, not pattern 11's locked state** — the pattern's stated premise (*"the live percent is HR-derived from `run_analysis` — paid"*) is **false at ingest**, and dressing a real number in the withheld-number treatment *"teaches the runner the number is fake."* (2) 🎪 Collins: **one number, never four** — *"nobody feels a histogram; if we show all four zones on free we have built a dashboard, and we killed dashboards."* (3) 🏃 no evaluative word. (4) all five states in one commit.
+
+⚠️ **AND A FIFTH, FOUND BY LOOKING RATHER THAN BY REASONING: the card has NO RAIL.** P-01's pair would state the verdict in colour — the one channel a copy review never checks — so the first cut drew a *neutral* rail, and at 375px `var(--line)` on a card bordered in `var(--line)` **renders invisible.** A device carrying nothing is decoration. **The absence of a rail is what reads as "no verdict"**, against the cards above it that have one.
+
+### 🧭 Q2 — the sample read in onboarding
+
+`OrientationScreen` showed a new runner their race, their block, their first session and their zones and **never what the product SAYS**. 🎓 Sierra: *"it shows the runner what the product will say ABOUT THEM, in a sentence, before they have done anything — but if they mistake it for their own data we have lied to them on screen one."* **Three amendments:** ✋ the declaration **replaces the eyebrow**, never small print beneath (*"grey small print is what every app uses to disclaim something it hopes you read as real"*); 🎪 the **real component** on `DEMO_FIRST_READ`, by reference into the marketing demo runner, per the standing *marketing stills must be the REAL components* rule; 🧭 **one card**, in an existing screen, from existing data. ⚠️ Deliberately a **grey run, 52% in Zone 3** — a tidy 90%-easy example teaches a runner nothing about what they are buying. ⚠️ `orientation_seen` is **4 of 37**, so this reaches new runners from here, not the existing 33.
+
+### 🧭 Q3 — the paywall
+
+**(a) SHIP.** 📱 Wroblewski: *"two equal cards in a left-to-right row: the left one is read first"* — annual was on the right and **the only thing giving it precedence was the badge pinned above it.** ✋ Silvanto: *"care should be visible in the thing, not applied on top of it."* 💰 Fried, advisory: no theatre, no strike-through; ordering so the honest option is first is a recommendation, not a dark pattern. **A two-element reorder** — the DOM order moved, so a screen reader and a thumb agree with the eye. ⚠️ *"shown alongside its monthly equivalent"* was **already shipped** (`per year · £5 / month`, `£1.15 / week`), as was *"the runner's own data instead of a feature list"* (`COACH-KIT-CAUGHT-01`, under the headline, above the list).
+
+**(b) DON'T SHIP, recorded with its cause.** 📐 At the moment their trial ended, **20 of 33 runners past day 14 reached the paywall with nothing of their own to show.** 🎪 Collins: *"a card that says 'we never read a run of yours' on the BUY screen is us explaining our own failure at the moment we ask for money"* — and this board has already killed an illustration, a chart, a ceremony and a progress animation on that reasoning. 🎓 Sierra: the SLT settled the principle for this card in October — *one true sentence beats an empty card, and a padded one is worse than none.* 🧭 Zhuo: **"this is not a design problem"** — 61% reach the buy screen with nothing because the product never ran for them inside their trial, **and designing a nicer empty paywall would treat the symptom and make the cause harder to see.** 🔻 A later sitting must not re-propose this without first asking whether the cohort still exists.
+
+### ⛔ `ACT-FIRSTRUN-01` (a) — DECLINED ON MEASUREMENT
+
+*"A push on the first planned run day"* is **already satisfied by construction**: `/api/push/send-daily` sends on **every** day that resolves a session and has no skip-day-one branch, so the first planned day is included. A second sender would reach **nobody new**. 📐 What actually binds: **`daily_push_enabled` is 37 of 37** (the default), **but only 23 of 37 hold a push subscription at all**, **10 ever received a daily push**, **3 in trial days 1–3**, mean 4.4 days to the first one — and **only 6 of 37 have a planned session inside days 1–3.** The gap is not a missing sender.
+
+### ⚡ Recorded disagreement
+
+None unresolved. 🎪 **Collins got what he asked for twice** — one big number on Q1, nothing on Q3(b) — and it is recorded as agreement rather than a win, because the measurement carried it both times.
+
+⛰️ **Veto not exercised.** Silvanto's Q1 amendment is a **correction to a pattern's stated premise**, not a palette or type regression, and he said so: *"the pattern was right about the treatment and wrong about where the number comes from. That is debt, not a regression."*
+
+**Pattern:** `ui-patterns.md` § 40 *FreeRunReadCard — the measured, unadvised state*. **Constant:** `FREE_RUN_READ_BANDS`, plus `post_run` in `UPGRADE_SOURCES`. **Checks:** `freeRunRead.test.ts` (13) · `freeRunRead.markup.test.ts` (23) · `paywallOrder.test.ts` (5); **12 mutations red.** ⚠️ **Not seen on a device** — rendered and measured at 375px in `/post-run-preview`, and **`OrientationScreen` itself is not in any harness**, so the sample card's placement in that screen is verified by its own height and the screen's existing `overflowY: auto`, not by a render of the composition.
