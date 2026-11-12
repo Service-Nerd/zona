@@ -6,6 +6,25 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-11-12 — OPS-VERIFY-CI-LOCAL-DIVERGE-01 · CI was failing all day and my machine kept telling me it was fine
+
+**Shipped:** `backlog-verify` now decides from git instead of the local disk, so it gives the same answer in CI as it does here.
+
+**Dev learning:** the founder pasted a CI log saying every job had failed. I ran the same command locally: exit 0, clean. The whole difference was one `existsSync` call on a path that is **deliberately gitignored** — a 1.6 MB generated corpus output that exists on the machine that generated it and has never been committed. Locally it's there, so "fine". In a fresh checkout it isn't, so "dead file reference", exit 1.
+
+The sharp bit is what the fix had to be. My first attempt kept `existsSync` as a fallback after the git checks, which **left the identical bug open one case along** — a file present locally, untracked and un-ignored, would still pass here and fail there. A check whose answer depends on anything git doesn't carry is not a check, it's a local opinion. The verdict now comes from git alone and I diffed the output between my machine and a clean worktree to prove it.
+
+**Product/creator learning:** nothing user-facing, but it's the second time today that **local and CI disagreed about what files exist**. This morning two gates read `git ls-files`, so a brand-new file I hadn't staged was invisible to them and `verify:ci` passed on a tree the full suite rejected. This afternoon the mirror image: a gate read the filesystem, so a file git deliberately doesn't carry made it pass locally and fail everywhere else. Same family, opposite directions, both found by someone else noticing.
+
+**AI-building learning:** I had run that command a dozen times today and never seen it fail, because I piped it into `grep` every single time to pull out the counts — and a pipe throws away the exit code. There is a note in my own memory called *"do not pipe away your instrumentation"*. I wrote it. Then I did it all day. **Having the lesson written down does nothing if the habit that violates it is the convenient one.**
+
+**The honest bit:** three separate self-inflicted hits in one fix. Piping away the exit code. Keeping the `existsSync` fallback that reopened the bug. And then `tsc` caught two errors in the test I'd just written to prevent all this — one of them the `[...new Set()]` spread that CLAUDE.md documents **by name** as a gotcha in this project. vitest was green on both, because esbuild doesn't typecheck.
+
+**Hook material:** "Every CI job had failed for hours. The same command on my machine: exit 0, clean. The difference was a single file that git is configured never to carry."
+
+**Postable?:** yes
+
+
 ## 2026-11-12 — ACT-TRIAL-AT-FIRST-READ-01 · The flag went on, and the gate changed sides rather than going away
 
 **Shipped:** the 14-day trial now starts when we read a runner's first run, capped at 21 days from sign-up, live on the founder's sign-off.
