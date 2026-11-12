@@ -6,6 +6,25 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-11-12 — ACT-TRIAL-AT-FIRST-READ-01 · The only way to know a feature flag is wired is to turn it on
+
+**Shipped:** the four surfaces that still counted the trial from sign-up now read the one owner, so the first-read trial clock is a decision rather than a blocker.
+
+**Dev learning:** I thought I was done twice. Both sweeps were empty, the suite was green, tsc was clean. Then I flipped the flag and ran everything: **twelve failures.** Not one of them was visible from the diff. Two history readers were registered in one register and not the adjacent one. A test double's query builder stopped at `.eq()`, so nine arms of an unrelated route died on `.order is not a function` the moment a new query appeared. Three tests described the off policy while silently depending on it being current. Twelve, then eight, then two — and the two that remain are the founder's sign-off gate and one ops metric that genuinely moves. **A flag you have never set to true is a flag you have never tested.**
+
+The design bit worth keeping: the fix is not a branch. Every surface that says "day N of the trial" is actually asking about the **end** — three days left, ends today, three days after it ended. So the day number counts back from `endsAt` rather than forward from the stamp, and with the flag off `endsAt` IS `stamp + 14`, so the subtraction returns the stamp and nothing moves. One expression, no policy check, and a grid test proves the equality instead of a comment claiming it.
+
+**Product/creator learning:** the wiring turned up a sentence we have been showing for months. The day-3 trial nudge said *"Kit's read 11 days of your runs."* It derived that number from the calendar, not from any read. **33 of 37 trialists have never had a single run read.** So for almost everyone who saw it, it was a confident claim about something that never happened — the second one of those I have found this week, after a locked card telling runners we had no runs when we had their runs. **Both were written as true sentences by someone who had the happy path in their head.**
+
+**AI-building learning:** `tsc` caught something the entire 8,000-test suite could not. I added two register entries for files that were already registered — a duplicate key in an object literal. At runtime the later one wins, so every test passed against a register that had quietly stopped describing half of what it tracked. TypeScript said TS1117 and that was the only signal. **A type error is a test the suite cannot run**, and it is worth reading tsc output even when green tests make you feel finished.
+
+**The honest bit:** the gate corrected me twice in a row on the same twenty lines. First `'mixed'` was refused because one route's filtered read lives in a different file and a register keyed by file cannot inherit a sibling's filtering. Then the duplicate keys. Both times my instinct was right about the direction and wrong about the detail, and both times the check knew more about my code than I did.
+
+**Hook material:** "Both sweeps were empty. The suite was green. Then I set the flag to `true` and twelve tests failed — none of them in code I'd touched."
+
+**Postable?:** yes
+
+
 ## 2026-11-12 — ACT-FREE-TEASE-01 / ACT-FIRSTRUN-01 / ACT-PAYWALL-01 · All three items were partly already built, and the real defect was in none of them
 
 **Shipped:** a free runner now sees one true number about the run they just finished, onboarding shows a sample read before one is earned, and the annual price leads on the paywall.

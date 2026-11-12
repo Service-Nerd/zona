@@ -31,10 +31,24 @@ Empty body accepted (cron invocation).
 
 For each `push_subscriptions` row (grouped by `user_id` so multi-device users are evaluated once):
 
-1. Load `user_settings.{trial_started_at, trial_insight_push_sent_at}`.
+1. Load `user_settings.{trial_started_at, trial_extended_at, trial_insight_push_sent_at}`.
 2. **One-shot guard.** Skip if `trial_insight_push_sent_at` is non-null.
 3. Skip if `trial_started_at` is null.
-4. Compute trial day = `floor((now − trial_started_at) / 1 day) + 1`. Skip unless day is in `[3, 5]`.
+4. Compute the trial day with **`trialDayOfWindow(resolveTrialWindow(...), now)`** — the single
+   owner in `lib/trial.ts`. Skip unless the day is in `[3, 5]`, or is null (no window at all).
+
+   🔴 **This route held a PRIVATE COPY of `floor((now − trial_started_at) / 1 day) + 1`**, byte
+   identical to one in `lib/email/trialEmailWindow.ts` and agreeing with it only by accident.
+   Both counted from the **signup stamp**, which under `TRIAL_STARTS_AT_FIRST_READ` is no longer
+   the start of anything — so this push would have fired on calendar day 5 at a runner whose
+   trial had not begun. Removed in the item-7 wiring (2026-11-12).
+
+   ⚠️ **It now reads `run_analysis` TWICE, with opposite filters, and both are correct.** The
+   first-read query for the clock is **unfiltered** (a race change must not un-do the fact that a
+   runner was once shown a read); the query that sources the push **body** stays filtered,
+   because it renders a verdict the runner can still tap through to. Registered `'mixed'` in
+   `analysisSupersedeReaders.test.ts` and argued per table in `supersedeCoverage`'s allowlist.
+   ⚠️ The first-read query runs **only while the flag is on**, so it costs nothing today.
 5. Resolve tier via `getUserTier()`. Skip free tier.
 6. Load up to 5 most recent `run_analysis` rows with non-null `feedback_text`. Skip if fewer than 2 have non-empty `feedback_text`.
 7. Take the most recent row. Build the body from the first sentence of `feedback_text`, truncated to 100 chars on a word boundary with ellipsis if needed.

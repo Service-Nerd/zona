@@ -245,3 +245,26 @@ earlier could not be rated on the evening it was run, and `sat → mon` stayed h
 **Unchanged guards** — a fix here must not widen what prompts: `status === 'complete'`, `rpe == null`, a
 linked activity (`strava_activity_id` or `apple_health_uuid`), inside `NUDGE_WINDOW_DAYS` (7), capped at
 `NUDGE_MAX` (3), paid only.
+
+## The trial nudge (`TRIAL-NUDGE-01`), amended 2026-11-12
+
+Renders on `trialDaysLeft` 1–4, day-keyed: factual → attachment → loss preview → stark.
+
+🔴 **The day-3 line claimed a read count it derived from the CALENDAR, and it was false for most
+runners.** It read `TRIAL_DAYS - trialDaysLeft` and rendered *"Kit's read 11 days of your runs."*
+to anyone on day 11. 📐 Measured 2026-11-12: **33 of 37 trialists have never had a single run
+read**, so for almost all of them that sentence described something that never happened — the
+same class as `LockedCoachingPreview` telling a linked runner we had no runs. Under
+`TRIAL_STARTS_AT_FIRST_READ` it got worse rather than differently wrong: `trialDaysLeft` counts
+down from the CAP, so a runner 27 days in with zero reads would have been told Kit had read
+eleven days of them.
+
+**The count now comes from the reads.** `runAnalysisMap` is already a prop, so no new data:
+`readCount > 0` names the number, and zero makes no claim at all and says what is about to stop.
+
+⚠️ **It is PLAN-SCOPED** (§71 Am. 1): `runAnalysisMap` holds the live plan's reads, so a runner
+who regenerated mid-trial sees fewer than their lifetime total. **Understating is the safe
+direction for a nudge; overstating is what this replaced.**
+
+⚠️ `TRIAL_DAYS` is no longer imported here. The screen does no trial arithmetic — `trialDaysLeft`
+arrives already resolved from `resolveTrialWindow`, the single owner.
