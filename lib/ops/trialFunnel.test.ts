@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { judgeTrialFunnel, AT_RISK_NO_ACTIVITY_DAYS } from './trialFunnel'
-import { TRIAL_DAYS, isTrialActive } from '@/lib/trial'
+import { TRIAL_DAYS, TRIAL_MAX_DAYS_FROM_START, isTrialActive } from '@/lib/trial'
 
 // The BOUNDARIES, which the SQL mirror test cannot reach: the mirror proves the
 // two producers describe the same rule, not that the rule is right at its edges.
@@ -9,21 +9,34 @@ const NOW = new Date('2026-10-09T18:00:00Z')
 const daysAgo = (n: number) => new Date(NOW.getTime() - n * 86_400_000).toISOString()
 
 describe('judgeTrialFunnel — the two windows, at their edges', () => {
-  it('the trial window is exclusive at exactly TRIAL_DAYS, as isTrialActive is', () => {
-    // Pinned against the owner, so a change to `isTrialActive` moves both.
+  it('🔴 the trial window follows the OWNER, and the owner changed on 2026-11-12', () => {
+    // 🔴 THIS ARM ASSERTED A 14-DAY BOUNDARY FROM THE SIGNUP STAMP AND IT WENT RED WHEN THE
+    // FOUNDER TURNED `TRIAL_STARTS_AT_FIRST_READ` ON. **That is honest signal, not noise**, and
+    // the comment that stood here predicted it: a runner with no read is on trial for LONGER
+    // under the new policy, so the funnel's `onTrial` genuinely moves. Re-read rather than
+    // silenced, as that comment asked.
     //
-    // ⚠️ POLICY-DEPENDENT BY CONSTRUCTION, AND LEFT THAT WAY DELIBERATELY. `judgeTrialFunnel`
-    // takes rows and a clock, not a policy, so this arm reads whatever
-    // `TRIAL_STARTS_AT_FIRST_READ` currently is. **On a flip it goes red, and that is honest
-    // signal rather than noise:** a runner with no read is on trial for longer under the new
-    // policy, so the funnel's `onTrial` really does move. Re-read it on that day rather than
-    // silencing it. Every arm that merely DESCRIBES the off policy now passes it explicitly
-    // (`trialDayParity.test.ts`); this one is describing a behaviour that genuinely changes.
-    expect(isTrialActive(daysAgo(TRIAL_DAYS), NOW)).toBe(false)
-    expect(isTrialActive(daysAgo(TRIAL_DAYS - 0.5), NOW)).toBe(true)
+    // ⚠️ THE CONSEQUENCE IS AN OPS ONE AND IT IS WORTH STATING: a `TrialFunnelRow` that carries
+    // no `firstReadAt` resolves on the CAP path, so `onTrial` now counts runners up to
+    // `TRIAL_MAX_DAYS_FROM_START` days old rather than `TRIAL_DAYS`. **The digest's trial count
+    // will step up the day this ships, and that is the policy working, not a defect.** A
+    // producer that supplies `firstReadAt` gets the real per-runner window instead.
+    const noRead = (d: number) => judgeTrialFunnel([{ user_id: 'a', trialStartedAt: daysAgo(d) }], NOW).onTrial
 
-    expect(judgeTrialFunnel([{ user_id: 'a', trialStartedAt: daysAgo(TRIAL_DAYS) }], NOW).onTrial).toBe(0)
-    expect(judgeTrialFunnel([{ user_id: 'a', trialStartedAt: daysAgo(TRIAL_DAYS - 1) }], NOW).onTrial).toBe(1)
+    // Pinned against the owner, so a change to `isTrialActive` moves both.
+    expect(isTrialActive(daysAgo(TRIAL_MAX_DAYS_FROM_START), NOW)).toBe(false)
+    expect(isTrialActive(daysAgo(TRIAL_MAX_DAYS_FROM_START - 0.5), NOW)).toBe(true)
+    expect(noRead(TRIAL_MAX_DAYS_FROM_START)).toBe(0)
+    expect(noRead(TRIAL_MAX_DAYS_FROM_START - 1)).toBe(1)
+
+    // The old boundary is now INSIDE the window rather than the edge of it — the step that
+    // moves the metric, asserted so a future change to the cap is visible here too.
+    expect(noRead(TRIAL_DAYS)).toBe(1)
+
+    // And a row that DOES carry a first read gets that runner's own window, not the cap.
+    const withRead = judgeTrialFunnel(
+      [{ user_id: 'a', trialStartedAt: daysAgo(20), firstReadAt: daysAgo(19) }], NOW).onTrial
+    expect(withRead, 'read on day 1 of 20 ago: the 14 days ran out five days ago').toBe(0)
   })
 
   it('at-risk is INCLUSIVE at exactly AT_RISK_NO_ACTIVITY_DAYS', () => {

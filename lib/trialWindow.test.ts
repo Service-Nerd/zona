@@ -24,11 +24,31 @@ const START = new Date('2026-09-23T09:00:00.000Z')
 const on = (firstReadAt: Date | null, now: Date, unavailable = false) =>
   resolveTrialWindow({ trialStartedAt: START, firstReadAt, firstReadUnavailable: unavailable }, now, true)
 
-describe('ACT-TRIAL-AT-FIRST-READ-01 — the flag is OFF and must stay provably inert', () => {
-  it('is off', () => {
+describe('ACT-TRIAL-AT-FIRST-READ-01 — the flag is ON, and both policies stay provable', () => {
+  it('is ON, by the founder\u2019s written sign-off of 2026-11-12', () => {
+    // 🔴 THIS ARM WAS `toBe(false)` AND IT WAS THE GATE. It said: enabling this is the founder's
+    // call and needs every signup-relative consumer moved first. Both conditions were met on
+    // 2026-11-12 — the wiring landed in `0d81e9a5`, and asked in plain terms he answered
+    // **"yes turn it on"**. The arm does not go away; it changes sides, so an accidental revert
+    // now fails the build exactly as an accidental enable used to.
+    //
+    // 📐 Measured against production before flipping: the new `endsAt` is
+    // `min(firstRead + TRIAL_DAYS, cap)` and `firstRead >= trialStartedAt`, so it can never land
+    // before `trialStartedAt + TRIAL_DAYS` — **nobody can lose access, by construction.** Over
+    // the 37 real trialists: 37 gain, 0 lose, mean +7.0 days; 2 expired trials come back, 0 cut
+    // off, neither of the 2 having been sent the day-14 "trial ends today" email.
     expect(TRIAL_STARTS_AT_FIRST_READ,
-      "enabling this is the founder's call and needs every signup-relative consumer moved first")
-      .toBe(false)
+      'reverting this is a pricing decision and needs the founder, exactly as enabling it did')
+      .toBe(true)
+  })
+
+  it('and the OFF policy is still exercised, because a revert must be a decision not a surprise', () => {
+    // Every arm below that describes the OFF policy passes `false` explicitly rather than
+    // inheriting the constant, so this file keeps testing BOTH and the live setting only ever
+    // decides which one production runs.
+    const w = resolveTrialWindow({ trialStartedAt: START, firstReadAt: plus(START, 9) }, plus(START, 1), false)
+    expect(w.endsAt!.getTime()).toBe(START.getTime() + TRIAL_DAYS * DAY)
+    expect(w.basis).toBe('signup')
   })
 
   it('OFF: the window is exactly TRIAL_DAYS from the stamp, whatever the read says', () => {

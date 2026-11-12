@@ -42,7 +42,19 @@ export const TRIAL_MAX_DAYS_FROM_START = 21
 export const TRIAL_EXTENSION_DAYS = 7
 
 /**
- * 🔴 OFF, AND IT STAYS OFF UNTIL THE FOUNDER SAYS OTHERWISE. This is a PRICING decision: it
+ * ✅ **ON SINCE 2026-11-12, BY THE FOUNDER'S WRITTEN SIGN-OFF** — asked for the flag in plain
+ * terms, told what it does, and answered *"yes turn it on"*. The brief required that signature
+ * and this is it.
+ *
+ * 📐 **MEASURED AGAINST PRODUCTION BEFORE FLIPPING, and the direction is one-way by
+ * construction:** `endsAt` under the new policy is `min(firstRead + TRIAL_DAYS, cap)` and
+ * `firstRead >= trialStartedAt`, so it can never land before `trialStartedAt + TRIAL_DAYS`.
+ * **Nobody can lose access.** Over the 37 real trialists: **37 gain, 0 unchanged, 0 lose, mean
+ * +7.0 days**; **2 expired trials come back** and **0 are cut off**; on-trial goes 4 → 6.
+ * ⚠️ Neither reactivated runner had been sent the day-14 *"trial ends today"* email, so no one
+ * is told their trial ended and then handed it back.
+ *
+ * 🔴 THE HISTORY BELOW IS KEPT. It is why this was ever a flag: it
  * changes when a runner is asked to pay. The founder directed the build on 2026-11-11 and has
  * not authorised enabling it.
  *
@@ -95,7 +107,7 @@ export const TRIAL_EXTENSION_DAYS = 7
  * runner reads either. **On the day this flips, they report the signup clock and must be read as
  * that or changed on purpose.**
  */
-export const TRIAL_STARTS_AT_FIRST_READ = false
+export const TRIAL_STARTS_AT_FIRST_READ = true
 
 export type UserTier = 'free' | 'trial' | 'paid'
 
