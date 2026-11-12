@@ -1682,7 +1682,7 @@ export default function DashboardClient() {
         // Fetch overrides + user settings + completions in parallel
         bootStageRef.current = 'settings'
         const [settingsRes, overridesRes, completionsRes, subRes, charityGrantRes, guidanceRes, pendingReshapeRes] = await withTimeout(Promise.all([
-          supabase.from('user_settings').select('strava_refresh_token, gist_url, plan_json, has_onboarded, is_admin, preferred_units, preferred_metric, resting_hr, max_hr, max_hr_source, birth_year, date_of_birth, first_name, last_name, email, trial_started_at, dynamic_adjustments_enabled, orientation_seen, zone_drift_dismissed_at, benchmark_recal_dismissed_at, last_adjustment_check_at, last_adjustment_check_found_change, daily_push_enabled, timezone, connect_runs_seen, connect_runs_banner_dismissed_at, push_permission_seen, healthkit_connected_at, trial_extended_at').eq('id', user.id).single(),
+          supabase.from('user_settings').select('strava_refresh_token, gist_url, plan_json, has_onboarded, is_admin, preferred_units, preferred_metric, resting_hr, max_hr, max_hr_source, birth_year, date_of_birth, first_name, last_name, email, trial_started_at, dynamic_adjustments_enabled, orientation_seen, zone_drift_dismissed_at, benchmark_recal_dismissed_at, last_adjustment_check_at, last_adjustment_check_found_change, daily_push_enabled, timezone, connect_runs_seen, connect_runs_banner_dismissed_at, push_permission_seen, healthkit_connected_at').eq('id', user.id).single(),
           supabase.from('session_overrides').select(SESSION_OVERRIDE_COLUMNS).eq('user_id', user.id).is('superseded_at', null),
           supabase.from('session_completions').select('week_n, session_day, status, strava_activity_id, apple_health_uuid, strava_activity_name, strava_activity_km, rpe, fatigue_tag, skip_reason, avg_hr, coaching_flag').eq('user_id', user.id).is('superseded_at', null),
           supabase.from('subscriptions').select('status, current_period_end').eq('user_id', user.id).maybeSingle(),
@@ -1919,6 +1919,18 @@ export default function DashboardClient() {
         // race change supersedes every analysis, so a live-rows-only clock moves LATER and an
         // expired trial would come back. The error is carried rather than read as "no read",
         // because "no read" grants the 30-day cap.
+        // 🔴 A SEPARATE, FAILURE-TOLERANT READ, for the same reason the server splits it.
+        // `trial_extended_at` is created by `20261111e` and applied by hand. Naming it in the
+        // boot select above would mean that on any deploy before the apply, `.single()` fails,
+        // `data` is null, and units, zones, names, `has_onboarded` and `is_admin` all silently
+        // fall back to defaults — the whole dashboard, for a column that matters to one cohort.
+        let trialExtendedAt: string | null = null
+        try {
+          const { data: ext } = await supabase
+            .from('user_settings').select('trial_extended_at').eq('id', user.id).maybeSingle()
+          trialExtendedAt = (ext?.trial_extended_at as string | undefined) ?? null
+        } catch { /* column not live yet: nobody has an extension to honour */ }
+
         let firstReadAt: string | null = null
         let firstReadUnavailable = false
         if (TRIAL_STARTS_AT_FIRST_READ) {
@@ -1948,7 +1960,7 @@ export default function DashboardClient() {
           // ACT-EMAIL-DAY14-01 — the seven days they accepted at day 14. The client mirror has
           // to carry every input the server does or the two resolve differently, which is the
           // TIER-OWNER-01 drift this one owner exists to prevent.
-          trialExtendedAt: data?.trial_extended_at ?? null,
+          trialExtendedAt,
         }, now)
 
         setTierReason(reason)
@@ -1984,8 +1996,7 @@ export default function DashboardClient() {
           // and the number on the screen disagreeing, which is the worse half of that pair.
           // Found by code review of the first cut, which wired the tier and left the number.
           const win = resolveTrialWindow(
-            { trialStartedAt, firstReadAt, firstReadUnavailable,
-              trialExtendedAt: data?.trial_extended_at ?? null }, now)
+            { trialStartedAt, firstReadAt, firstReadUnavailable, trialExtendedAt }, now)
           const msLeft = (win.endsAt?.getTime() ?? 0) - now.getTime()
           setTrialDaysLeft(msLeft > 0 ? Math.ceil(msLeft / (24 * 60 * 60 * 1000)) : 0)
         } else if (trialIsWhatEnded) {

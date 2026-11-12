@@ -5,6 +5,15 @@
 Grants the seven extra days offered by the day-14 email. Returns a self-contained HTML page,
 never JSON: the reader is in a mail client, not the app.
 
+🔴 **GET CONFIRMS. POST GRANTS.** A GET that mutates is granted by every mail-gateway link
+scanner on delivery, so the offer would be spent before the runner read the sentence, the
+acceptance number would measure spam filters, and day 17's *"offer still open"* branch would be
+unreachable for anyone behind a corporate gateway. GET reads nothing, writes nothing and records
+nothing: it renders one button that posts back.
+
+⚠️ **`/api/email/unsubscribe` deliberately does the opposite** and answers GET, because a scanner
+unsubscribing someone is an annoyance where a scanner spending their one extension is a loss.
+
 ## Why it exists
 
 📐 `ops_events.email_sent`, by subject: **"Fourteen days, no runs read." went out 13 times of
@@ -27,6 +36,11 @@ ever. It cannot revoke access, cannot change tier, and cannot be replayed for mo
 | Param | Required | Meaning |
 |---|---|---|
 | `t` | yes | `user_settings.email_unsubscribe_token` |
+
+| Verb | Does |
+|---|---|
+| `GET` | renders the confirm page. No read, no write, no ops event |
+| `POST` | grants the extension, once |
 
 ## Behaviour
 
@@ -54,9 +68,20 @@ grant a fortnight. `already` is recorded as an outcome rather than ignored: "cli
 ## What it changes
 
 `user_settings.trial_extended_at`, once. Read by `resolveTrialWindow()` (`lib/trial.ts`), which
-adds `TRIAL_EXTENSION_DAYS` to whatever window the policy produced — **after** the cap, not inside
-it, so a runner who took the offer and then read on day 25 gets day 37 rather than being silently
-held at 30.
+adds `TRIAL_EXTENSION_DAYS` **after** the cap rather than inside it, so a runner who took the
+offer and then read on day 25 gets day 37 rather than being silently held at 30.
+
+🔴 **SEVEN DAYS FROM THE CLICK, NOT FROM THE ORIGINAL TRIAL END.** The first cut anchored the
+grant to `endsAt`, so accepting on day 15 gave 7 days, day 18 gave 4, day 21 gave 1 and **day 23
+gave nothing** — while this page said "7 more days." and the ops event recorded `granted`. The
+day-17 email carries the same link through day 29. It is `max(endsAt, clickedAt) + 7` now, so
+accepting early never shortens anything either.
+
+⚠️ **The column is read in a SEPARATE query** on both the server (`getUserTier`) and the client,
+not folded into the main `user_settings` select. `20261111e` is applied by hand, and naming the
+column in those selects would mean that on any deploy before the apply the whole read fails:
+**every trialist resolves `free`, every admin loses admin, and the dashboard boots with defaults
+for units, zones and names.** Split out, a missing column costs exactly what it should.
 
 ⚠️ **It does not touch `trial_started_at`.** Moving the start would re-open the day-11 and day-14
 email windows and re-send both.

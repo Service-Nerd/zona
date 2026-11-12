@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { readFileSync } from 'node:fs'
 import { buildDay14Email, buildDay17Email, buildDay30Email, extendTrialUrl } from './trialEmailTemplates'
-import { decideTrialEmails, DAY17, DAY30, EXPIRY_DAY } from './trialEmailWindow'
+import { decideTrialEmails, DAY17, DAY30, DAY30_UNTIL, EXPIRY_DAY } from './trialEmailWindow'
 import { TRIAL_EXTENSION_DAYS } from '@/lib/trial'
 
 /**
@@ -23,7 +23,7 @@ const STAMPS = {
   trial_email_day11_sent_at: null, trial_email_day14_sent_at: null,
   trial_email_day17_sent_at: null, trial_email_day30_sent_at: null,
 }
-const LAPSED = { tier: 'free' as const, hasCharityGrant: false, isInternal: false, localHour: 10 }
+const LAPSED = { tier: 'free' as const, hasCharityGrant: false, isInternal: false, hasEverSubscribed: false, localHour: 10 }
 
 describe('ACT-EMAIL-DAY14-01 — the day-14 email never states a zero', () => {
   it('with no reads it offers the week back instead of counting nothing', () => {
@@ -80,12 +80,24 @@ describe('ACT-EMAIL-POSTTRIAL-01 — day 30 asks one question and sells nothing'
     expect(e.html).not.toContain('/api/email/extend-trial')
   })
 
-  it('says it is the last one, and means it — day 30 is the final window', () => {
+  it('says it is the last one, and the window is BOUNDED so it cannot backfill', () => {
     expect(buildDay30Email('Russ', TOK).html).toMatch(/last one/i)
-    // Nothing fires after it: there is no stage beyond DAY30 in the decision.
-    expect(decideTrialEmails(400, STAMPS, LAPSED).needsDay30).toBe(true)
-    expect(decideTrialEmails(400, { ...STAMPS, trial_email_day30_sent_at: 'x' }, LAPSED))
+    expect(decideTrialEmails(DAY30, STAMPS, LAPSED).needsDay30).toBe(true)
+    expect(decideTrialEmails(DAY30 + 6, STAMPS, LAPSED).needsDay30).toBe(true)
+    // 🔴 Left open-ended, the first hourly run after this shipped would have asked EVERY
+    // trialist in the app's history what stopped them subscribing, months late.
+    expect(decideTrialEmails(400, STAMPS, LAPSED).needsDay30).toBe(false)
+    expect(decideTrialEmails(DAY30, { ...STAMPS, trial_email_day30_sent_at: 'x' }, LAPSED))
       .toMatchObject({ needsDay11: false, needsDay14: false, needsDay17: false, needsDay30: false })
+  })
+
+  it('never asks a LAPSED SUBSCRIBER what stopped them subscribing', () => {
+    // They resolve `free`, so tier alone does not cover it — the same gap `hasCharityGrant`
+    // already exists for, and the premise of the question is visibly false to them.
+    const lapsedSub = { ...LAPSED, hasEverSubscribed: true }
+    expect(decideTrialEmails(DAY30, STAMPS, lapsedSub).needsDay30).toBe(false)
+    // …but they still get the ordinary trial emails, which are true for them.
+    expect(decideTrialEmails(DAY17, STAMPS, lapsedSub).needsDay17).toBe(true)
   })
 })
 
@@ -93,13 +105,17 @@ describe('ACT-EMAIL-POSTTRIAL-01 — the windows do not overlap', () => {
   it('a runner quiet for a month gets ONE email, not three', () => {
     // 🔴 Day 14 used to be open-ended, which was right when it was the last email. With day 17
     // and day 30 added, leaving it so would deliver all three in the same hour.
-    const d = decideTrialEmails(40, STAMPS, LAPSED)
+    const d = decideTrialEmails(DAY30 + 1, STAMPS, LAPSED)
     const firing = Object.entries(d).filter(([, v]) => v).map(([k]) => k)
     expect(firing).toEqual(['needsDay30'])
   })
 
+  it('a runner quiet for a YEAR gets none at all', () => {
+    expect(Object.values(decideTrialEmails(400, STAMPS, LAPSED)).some(Boolean)).toBe(false)
+  })
+
   it('every boundary hands over cleanly, with no silent day', () => {
-    for (const day of [EXPIRY_DAY, EXPIRY_DAY + 1, DAY17, DAY17 + 1, DAY30, DAY30 + 1]) {
+    for (const day of [EXPIRY_DAY, EXPIRY_DAY + 1, DAY17, DAY17 + 1, DAY30, DAY30_UNTIL - 1]) {
       const d = decideTrialEmails(day, STAMPS, LAPSED)
       const firing = Object.values(d).filter(Boolean).length
       expect(firing, `day ${day} fires ${firing} emails`).toBe(1)
@@ -120,6 +136,21 @@ describe('ACT-EMAIL-DAY14-01 — the route that grants the extension', () => {
 
   it('grants it ONCE, conditionally on the column still being null', () => {
     expect(ROUTE).toMatch(/\.is\('trial_extended_at',\s*null\)/)
+  })
+
+  it('GET confirms and POST grants, so a link scanner cannot spend the offer', () => {
+    // 🔴 A GET that mutates is granted by every mail-gateway link scanner on delivery: the
+    // offer would be consumed before the runner read the sentence, the acceptance number would
+    // measure spam filters, and day 17's "offer still open" branch would be unreachable for
+    // anyone behind a corporate gateway.
+    const get = ROUTE.slice(ROUTE.indexOf('export async function GET'),
+                            ROUTE.indexOf('export async function POST'))
+    expect(get, 'GET still writes').not.toMatch(/\.update\(/)
+    expect(get, 'GET still reads the runner').not.toMatch(/\.from\('user_settings'\)/)
+    expect(get, 'GET records an outcome it has not produced').not.toMatch(/recordOpsEvent\('trial_extended'/)
+    expect(get).toMatch(/confirmPage\(/)
+    expect(ROUTE).toMatch(/export async function POST/)
+    expect(ROUTE, 'the confirm page must post back').toMatch(/method="post"/)
   })
 
   it('a second click reports the extension they have, rather than erroring or granting another', () => {

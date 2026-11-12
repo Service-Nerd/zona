@@ -13,7 +13,7 @@ const NO_STAMPS = {
 }
 /** ACT-EMAIL-POSTTRIAL-01 added two REQUIRED access facts; a default keeps these cases about
  *  the thing each one tests. `localHour: 10` is inside the send window. */
-const SENDABLE = { isInternal: false, localHour: 10 }
+const SENDABLE = { isInternal: false, hasEverSubscribed: false, localHour: 10 }
 
 /** The ordinary trial user these emails are actually written for. */
 const ON_TRIAL = { tier: 'trial' as const, hasCharityGrant: false, ...SENDABLE }

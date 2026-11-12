@@ -22,7 +22,7 @@ const NO_STAMPS = {
   trial_email_day17_sent_at: null, trial_email_day30_sent_at: null,
 }
 const ON_TRIAL = (localHour: number | null) =>
-  ({ tier: 'trial' as const, hasCharityGrant: false, isInternal: false, localHour })
+  ({ tier: 'trial' as const, hasCharityGrant: false, isInternal: false, hasEverSubscribed: false, localHour })
 
 describe('ACT-EMAIL-POSTTRIAL-01 — the send window', () => {
   it('sends inside waking hours and defers outside them', () => {
@@ -33,10 +33,13 @@ describe('ACT-EMAIL-POSTTRIAL-01 — the send window', () => {
     expect(withinSendHours(3), '03:00 is the hour this item exists for').toBe(false)
   })
 
-  it('an unreadable timezone SENDS rather than falling silent', () => {
-    // Refusing to send to someone whose zone we cannot read turns an unknown into a permanent
-    // silence. The stamp still guarantees exactly one send. Measured: 0 of 37 are in this state.
-    expect(withinSendHours(null)).toBe(true)
+  it('an unreadable timezone falls back to UTC, not to "any hour"', () => {
+    // 🔴 The first cut answered TRUE for null, which was harmless on a daily 08:00 cron and is
+    // not on an hourly one: the runner would be mailed at whatever hour the cron reached them,
+    // which is the 3am problem this change exists to fix. UTC is a guess, but a civil-hours
+    // guess, and 08:00-20:00 UTC comes round every day so nobody is silenced.
+    const utcHour = new Date().getUTCHours()
+    expect(withinSendHours(null)).toBe(utcHour >= SEND_HOUR_FROM && utcHour < SEND_HOUR_UNTIL)
     expect(localHourIn(null, new Date())).toBeNull()
     expect(localHourIn('Not/AZone', new Date()), 'a bad IANA name must not throw').toBeNull()
   })

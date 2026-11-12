@@ -133,6 +133,9 @@ export async function POST(req: NextRequest) {
         hasCharityGrant: !!grant,
         // INTERNAL-ACCOUNTS-01 — 18 of 56 accounts are internal, a third of this list.
         isInternal: !!settings.is_internal,
+        // A lapsed subscriber resolves `free`, so without this the day-30 email asks someone
+        // who DID subscribe what stopped them subscribing. Same class as `hasCharityGrant`.
+        hasEverSubscribed: !!sub,
         // ACT-EMAIL-POSTTRIAL-01 — a civil hour in THEIR day, not ours. The cron is hourly for
         // exactly this reason; on a daily run this would be permanent suppression, not a wait.
         localHour: localHourIn(settings.timezone, now),
@@ -147,7 +150,14 @@ export async function POST(req: NextRequest) {
       const email = user.email
       const firstName = (user.user_metadata?.full_name as string | undefined)?.split(' ')[0] ?? null
 
-      const run = await getRunSummary(supabase, settings.id, settings.trial_started_at)
+      // ⚠️ THE POST-TRIAL EMAILS COUNT A WIDER WINDOW THAN THE TRIAL ONES, and the first cut
+      // did not. `getRunSummary` scopes to the 14 days from the stamp, which is right for
+      // "Fourteen days, N runs read" and wrong three days later: a runner who took the
+      // extension and ran on day 15 would have been told "we still have not read a run".
+      // For day 17 and day 30 the honest window is the whole time we have known them.
+      const run = (needsDay17 || needsDay30)
+        ? await getRunSummary(supabase, settings.id, null)
+        : await getRunSummary(supabase, settings.id, settings.trial_started_at)
 
       if (needsDay11) {
         const { subject, html } = buildDay11Email(firstName, run, settings.email_unsubscribe_token)

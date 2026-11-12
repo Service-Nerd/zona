@@ -132,7 +132,14 @@ export const TABLE_COLUMNS: Record<string, string[]> = {
  *
  * It is here because ACT-EMAIL-POSTTRIAL-01's cron selects these three, and production DDL
  * cannot be applied from this sandbox. So the ordering is real: **apply `20261111e` before the
- * deploy that reads them.** Until then the hourly trial-email cron would fail its whole run.
+ * deploy that reads them.** Until then the hourly trial-email cron fails its whole run.
+ *
+ * ⚠️ THE FIRST VERSION OF THIS NOTE NAMED ONLY THE CRON AND UNDERSTATED IT BADLY.
+ * `trial_extended_at` was also in `getUserTier`'s select and the dashboard's boot select, where
+ * a missing column fails the WHOLE read: every trialist would resolve `free`, every admin would
+ * lose admin, and the dashboard would boot with defaults for units, zones, names and
+ * `has_onboarded`. Both are now separate, failure-tolerant queries, so the only thing a missing
+ * column costs is that an accepted extension is not honoured until the migration lands.
  *
  * ⚠️ AND THE ENTRY MUST NOT OUTLIVE THE APPLY. `pendingColumns.test.ts` fails once the migration
  * appears in `.claude/state/applied-migrations.txt` and the entry is still here, so "refresh the

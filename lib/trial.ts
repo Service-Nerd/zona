@@ -143,7 +143,15 @@ export function resolveTrialWindow(
   const extended = asDate(i.trialExtendedAt)
   const grant = (w: TrialWindow): TrialWindow => {
     if (!extended || !w.endsAt) return w
-    const endsAt = new Date(w.endsAt.getTime() + TRIAL_EXTENSION_DAYS * MS_PER_DAY)
+    // 🔴 SEVEN DAYS FROM THE CLICK, NOT FROM THE ORIGINAL END. The first cut added the days to
+    // `w.endsAt`, so accepting on day 15 gave 7, day 18 gave 4, day 21 gave 1 and day 23 gave
+    // **nothing** — while the landing page said "7 more days." and the ops event recorded
+    // `granted`. The day-17 email carries the same link right through day 29, so on the first
+    // deploy every lapsed trialist in that range could have clicked it and had nothing unlock.
+    // ⚠️ `max`, not a plain `extendedAt + 7`: a runner who accepts on day 10 keeps the longer of
+    // the two windows rather than having their trial shortened by taking an offer.
+    const from = w.endsAt > extended ? w.endsAt : extended
+    const endsAt = new Date(from.getTime() + TRIAL_EXTENSION_DAYS * MS_PER_DAY)
     return { ...w, endsAt, active: now < endsAt }
   }
 
@@ -310,7 +318,7 @@ export async function getUserTier(userId: string): Promise<UserTier> {
       .maybeSingle(),
     supabase
       .from('user_settings')
-      .select('trial_started_at, is_admin, trial_extended_at')
+      .select('trial_started_at, is_admin')
       .eq('id', userId)
       .maybeSingle(),
     supabase
@@ -334,7 +342,6 @@ export async function getUserTier(userId: string): Promise<UserTier> {
     subPeriodEnd: sub?.current_period_end,
     grantExpiresAt: grant?.expires_at,
     trialStartedAt: settings?.trial_started_at,
-    trialExtendedAt: settings?.trial_extended_at,
   }
   const first = resolveTier(base)
 
@@ -345,9 +352,27 @@ export async function getUserTier(userId: string): Promise<UserTier> {
   // looks at the trial. `getUserTier` runs on a lot of routes, so that was a serialised round
   // trip bought for nothing. Resolving first and asking only when the answer could still move
   // keeps the cost on the cohort the policy is about.
-  if (!TRIAL_STARTS_AT_FIRST_READ || (first.reason !== 'trial' && first.reason !== 'none')) {
-    return first.tier
-  }
+  // 🔴 THE TRIAL-ONLY READS ARE A SEPARATE, FAILURE-TOLERANT QUERY, AND THAT IS NOT TIDINESS.
+  // `trial_extended_at` is created by `20261111e`, which production DDL rules say is applied by
+  // hand. Naming it in the select above would mean that on any deploy before the apply, the
+  // whole `user_settings` read fails — so `settings` is null, **every trialist resolves `free`
+  // and every admin loses admin on every route that calls this.** An outage, bought for a
+  // column that matters to one cohort. Split out, a missing column costs exactly what it should:
+  // nobody's accepted extension is honoured until the migration lands, and nothing else moves.
+  //
+  // ⚠️ Only for the cohort it can change. An admin, subscriber or grant holder is answered
+  // before the trial is ever considered, so they never pay for this round trip.
+  if (first.reason !== 'trial' && first.reason !== 'none') return first.tier
+
+  const { data: ext, error: extErr } = await supabase
+    .from('user_settings')
+    .select('trial_extended_at')
+    .eq('id', userId)
+    .maybeSingle()
+  if (extErr) console.error('[lib/trial.ts] trial_extended_at read failed:', extErr.message)
+  const withExtension = { ...base, trialExtendedAt: extErr ? null : ext?.trial_extended_at }
+
+  if (!TRIAL_STARTS_AT_FIRST_READ) return resolveTier(withExtension).tier
 
   // 🔴 SUPERSEDED ROWS INCLUDED, THE OPPOSITE OF `lib/ops/runRead.ts`'S RULE, ON PURPOSE. A race
   // change supersedes every `run_analysis` row, so a clock keyed to live rows moves LATER and an
@@ -365,7 +390,7 @@ export async function getUserTier(userId: string): Promise<UserTier> {
   if (readErr) console.error('[lib/trial.ts] first-read query failed:', readErr.message)
 
   return resolveTier({
-    ...base,
+    ...withExtension,
     firstReadAt: readErr ? null : ((read?.[0]?.created_at as string | undefined) ?? null),
     firstReadUnavailable: !!readErr,
   }).tier

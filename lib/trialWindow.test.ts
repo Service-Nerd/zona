@@ -3,7 +3,7 @@ import { readFileSync, readdirSync, statSync } from 'node:fs'
 import { join } from 'node:path'
 import {
   resolveTrialWindow, isTrialActive, resolveTier,
-  TRIAL_DAYS, TRIAL_MAX_DAYS_FROM_START, TRIAL_STARTS_AT_FIRST_READ,
+  TRIAL_DAYS, TRIAL_MAX_DAYS_FROM_START, TRIAL_STARTS_AT_FIRST_READ, TRIAL_EXTENSION_DAYS,
 } from './trial'
 
 /**
@@ -106,6 +106,46 @@ describe('ACT-TRIAL-AT-FIRST-READ-01 — the ON arithmetic, through the shipped 
     // The direction that matters: an entitled runner keeps access through a failure.
     const entitled = on(plus(START, 2), plus(START, 15), true)
     expect(entitled.active, 'a failed read revoked a trial the runner had earned').toBe(true)
+  })
+})
+
+describe('ACT-EMAIL-DAY14-01 — the extension, which had NO test at all until code review', () => {
+  // 🔴 I shipped `trialExtendedAt` through the owner, the server, the client and the email, and
+  // never once called `resolveTrialWindow` with it set. The review ran it and found the grant
+  // anchored to the ORIGINAL trial end: accepting on day 15 gave 7 days, day 18 gave 4, day 21
+  // gave 1 and **day 23 gave nothing** — while the landing page said "7 more days." and the ops
+  // event recorded `granted`. The day-17 email carries that link through day 29.
+  const ext = (extendedAt: Date | null, now: Date) =>
+    resolveTrialWindow({ trialStartedAt: START, trialExtendedAt: extendedAt }, now, false)
+
+  it('gives seven days FROM THE CLICK, whenever the click happens', () => {
+    for (const d of [15, 18, 21, 23, 29]) {
+      const clicked = plus(START, d)
+      const w = ext(clicked, clicked)
+      expect(w.endsAt!.getTime(), `accepting on day ${d} did not give ${TRIAL_EXTENSION_DAYS} days`)
+        .toBe(plus(clicked, TRIAL_EXTENSION_DAYS).getTime())
+      expect(w.active, `accepting on day ${d} granted nothing`).toBe(true)
+    }
+  })
+
+  it('accepting EARLY never shortens the trial', () => {
+    // A runner who clicks on day 10 keeps the longer window, not `click + 7`.
+    const clicked = plus(START, 10)
+    expect(ext(clicked, clicked).endsAt!.getTime())
+      .toBe(plus(START, TRIAL_DAYS + TRIAL_EXTENSION_DAYS).getTime())
+  })
+
+  it('no extension leaves the window exactly where it was', () => {
+    expect(ext(null, plus(START, 5)).endsAt!.getTime()).toBe(plus(START, TRIAL_DAYS).getTime())
+  })
+
+  it('it reaches the TIER, not just the window', () => {
+    // The whole point: an extended runner resolves `trial`, not `free`.
+    const clicked = plus(START, 20)
+    expect(resolveTier({ trialStartedAt: START, trialExtendedAt: clicked }, plus(START, 25)))
+      .toMatchObject({ tier: 'trial', reason: 'trial' })
+    expect(resolveTier({ trialStartedAt: START }, plus(START, 25)))
+      .toMatchObject({ tier: 'free', reason: 'none' })
   })
 })
 

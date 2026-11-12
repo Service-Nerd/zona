@@ -26,8 +26,16 @@ export const EXPIRY_DAY = TRIAL_DAYS
 
 /** Three days after expiry: extend, or summarise what we saw. */
 export const DAY17 = EXPIRY_DAY + 3
-/** One question, no follow-up. Open-ended, so it always lands once. */
+/** One question, no follow-up. */
 export const DAY30 = 30
+/**
+ * 🔴 DAY 30 IS BOUNDED, AND THE BOUND IS WHAT STOPS A BACKFILL. Left open-ended, the first
+ * hourly run after this shipped would have asked **every trialist in the history of the app**
+ * what stopped them subscribing, months late. A week is long enough for the stamp to catch up
+ * through any missed run and short enough that nobody is asked about a decision they made in
+ * another season.
+ */
+export const DAY30_UNTIL = DAY30 + 7
 
 // ── QUIET HOURS ─────────────────────────────────────────────────────────────
 // 📐 MEASURED 2026-11-11, and this is a live defect rather than a formality. The trial email
@@ -49,13 +57,18 @@ export const SEND_HOUR_UNTIL = 20
 /**
  * Is it a civil hour to arrive in this runner's inbox?
  *
- * ⚠️ `null` means we could not work out their local hour, and it answers TRUE. Refusing to send
- * to someone whose timezone we cannot read would turn an unknown into a permanent silence, and
- * the stamp still guarantees exactly one send. Measured: 0 of 37 runners are in that state.
+ * ⚠️ `null` means we could not work out their local hour. It falls back to the UTC hour rather
+ * than to "send anyway": refusing outright would turn an unknown into a permanent silence, and
+ * answering TRUE would mail them at 3am on an hourly cron. Measured: 0 of 37 are in that state.
  */
 export function withinSendHours(localHour: number | null): boolean {
-  if (localHour == null) return true
-  return localHour >= SEND_HOUR_FROM && localHour < SEND_HOUR_UNTIL
+  // 🔴 UNKNOWN FALLS BACK TO UTC, NOT TO "ANY HOUR". The first cut answered TRUE for a null
+  // zone, which was harmless on a daily 08:00 cron and is not on an hourly one: a runner whose
+  // zone we cannot read would be mailed at whatever hour the cron happened to reach them, which
+  // is the 3am problem this whole change exists to fix. UTC is a guess, but it is a civil-hours
+  // guess, and it still never silences anyone — 08:00-20:00 UTC comes round every day.
+  const hour = localHour ?? new Date().getUTCHours()
+  return hour >= SEND_HOUR_FROM && hour < SEND_HOUR_UNTIL
 }
 
 /**
@@ -112,6 +125,15 @@ export interface TrialEmailAccess {
   isInternal: boolean
   /** The runner's local hour, from `localHourIn`. Null when the zone is unreadable. */
   localHour: number | null
+  /**
+   * Has EVER held a subscription, live or lapsed.
+   *
+   * 🔴 TIER ALONE DOES NOT COVER THIS, exactly as it does not for `hasCharityGrant`. A runner
+   * who subscribed and later lapsed resolves `free`, so the day-30 email would ask someone who
+   * DID subscribe "what stopped you subscribing?" — a question whose premise they can see is
+   * false. Same class, same remedy: an ever-held flag rather than a current tier.
+   */
+  hasEverSubscribed: boolean
 }
 
 /**
@@ -158,6 +180,8 @@ export function decideTrialEmails(
     // runner who had been quiet for a month received day 14 and day 17 and day 30 in one hour.
     needsDay14: day >= EXPIRY_DAY && day < DAY17 && !stamps.trial_email_day14_sent_at,
     needsDay17: day >= DAY17 && day < DAY30 && !stamps.trial_email_day17_sent_at,
-    needsDay30: day >= DAY30 && !stamps.trial_email_day30_sent_at,
+    // ⚠️ The one email whose premise can be false for a `free` runner: see hasEverSubscribed.
+    needsDay30: !access.hasEverSubscribed
+      && day >= DAY30 && day < DAY30_UNTIL && !stamps.trial_email_day30_sent_at,
   }
 }
