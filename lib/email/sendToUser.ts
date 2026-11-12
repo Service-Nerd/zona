@@ -47,6 +47,9 @@ export type EmailId =
   | 'pattern'
   | 'trial_day11'
   | 'trial_day14'
+  // ACT-EMAIL-POSTTRIAL-01 — the two post-trial sends. Nothing was sent after day 14 until now.
+  | 'trial_day17'
+  | 'trial_day30'
   | 'preview'
 
 export type SendOutcome = 'sent' | 'suppressed_unsubscribed' | 'no_address' | 'failed'

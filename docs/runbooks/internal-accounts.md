@@ -227,3 +227,39 @@ the list is ever extended, check both:
 select count(*) from public.subscriptions where is_comped and user_id = any($1);
 select count(*) from public.charity_codes  where claimed_by = any($1) and expires_at > now();
 ```
+
+---
+
+## 8. `20261111e_trial_lifecycle.sql` — APPLY THIS ONE BEFORE THE DEPLOY
+
+🔴 **ORDERING MATTERS HERE IN A WAY IT DID NOT FOR b, c AND d.** Those three create or replace
+VIEWS that nothing reads yet, so applying them late is harmless. **This one adds three COLUMNS
+that the hourly trial-email cron SELECTS.** Deploy the code first and the cron fails its whole
+run every hour until the migration lands — no runner sees anything, but no trial email is sent
+either.
+
+`lib/contracts/tableColumns.ts → PENDING_COLUMNS` declares the window, and
+`lib/contracts/pendingColumns.test.ts` fails the build once this migration is in
+`.claude/state/applied-migrations.txt` and the entry has not been removed.
+
+### Apply
+Paste `supabase/migrations/20261111e_trial_lifecycle.sql` into the SQL editor. It is
+`add column if not exists` three times plus comments, so it is safe to run twice.
+
+### Verify
+
+```sql
+-- MUST be 3.
+select count(*) from information_schema.columns
+ where table_schema = 'public' and table_name = 'user_settings'
+   and column_name in ('trial_extended_at','trial_email_day17_sent_at','trial_email_day30_sent_at');
+
+-- MUST be 0 on day one: nobody has been offered the extension yet.
+select count(*) from public.user_settings where trial_extended_at is not null;
+```
+
+### Then, in the repo
+1. Append `20261111e_trial_lifecycle.sql` to `.claude/state/applied-migrations.txt`.
+2. Delete the three entries from `PENDING_COLUMNS` in `lib/contracts/tableColumns.ts`. The test
+   above will fail until you do, which is the point.
+3. `npm run check:db` to confirm the live schema and the manifest agree.

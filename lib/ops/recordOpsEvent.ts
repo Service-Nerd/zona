@@ -499,6 +499,15 @@ export type OpsEventKind =
   // indistinguishable from the `no_plan` it was split out of. The DATE is recorded, never the
   // time.
   | 'run_unmatched'
+  // ACT-EMAIL-DAY14-01 (2026-11-11) — the day-14 offer of seven more days was accepted, or
+  // could not be. `detail`: `{ outcome: 'granted' | 'already', days }` and, on the failure
+  // kind, `{ stage, message? }`.
+  //
+  // ⚠️ `already` is recorded as an OUTCOME rather than ignored. Mail clients pre-fetch links,
+  // so a second call is ordinary; what matters is being able to tell "clicked twice" from
+  // "granted twice", and only one of those is a defect.
+  | 'trial_extended'
+  | 'trial_extend_failed'
 
 /**
  * Record an internal ops event. Fire-and-forget by nature but awaitable, so a

@@ -17,8 +17,61 @@ export const MS_PER_DAY = 24 * 60 * 60 * 1000
 
 /** Nudge fires from this day up to (but not including) EXPIRY_DAY. */
 export const NUDGE_DAY = TRIAL_DAYS - 3
-/** Expiry fires on/after this day (open-ended so it always lands once). */
+/** Expiry fires on/after this day. */
 export const EXPIRY_DAY = TRIAL_DAYS
+
+// ── ACT-EMAIL-POSTTRIAL-01 — the two post-trial sends ───────────────────────
+// 📐 Nothing at all was sent after day 14: `trial_email_day11_sent_at` and `day14` were the only
+// stamps on `user_settings`, and `ops_events.email_sent` holds no post-trial id.
+
+/** Three days after expiry: extend, or summarise what we saw. */
+export const DAY17 = EXPIRY_DAY + 3
+/** One question, no follow-up. Open-ended, so it always lands once. */
+export const DAY30 = 30
+
+// ── QUIET HOURS ─────────────────────────────────────────────────────────────
+// 📐 MEASURED 2026-11-11, and this is a live defect rather than a formality. The trial email
+// cron ran ONCE DAILY at 08:00 UTC, which is **03:00 for the 4 of 37 runners in New York and
+// Toronto**. Every runner in the metric population has a timezone set, so this is knowable.
+//
+// 🔴 AND THE OBVIOUS FIX IS A TRAP. Adding a quiet-hours guard to a ONCE-DAILY cron is not a
+// deferral, it is PERMANENT SUPPRESSION: the local hour is the same every run, so a runner whose
+// local hour falls outside the window never receives the email at all. The window only reopens
+// if the sender runs more often than the window is wide. **The cron moved to hourly in the same
+// commit** (`.github/workflows/email-cron-trial.yml`), which is what makes this a deferral.
+// `lib/email/quietHours.test.ts` asserts that pairing, because the guard and the schedule are
+// one decision in two files.
+
+/** Send only inside the runner's own waking hours, local time. */
+export const SEND_HOUR_FROM = 8
+export const SEND_HOUR_UNTIL = 20
+
+/**
+ * Is it a civil hour to arrive in this runner's inbox?
+ *
+ * ⚠️ `null` means we could not work out their local hour, and it answers TRUE. Refusing to send
+ * to someone whose timezone we cannot read would turn an unknown into a permanent silence, and
+ * the stamp still guarantees exactly one send. Measured: 0 of 37 runners are in that state.
+ */
+export function withinSendHours(localHour: number | null): boolean {
+  if (localHour == null) return true
+  return localHour >= SEND_HOUR_FROM && localHour < SEND_HOUR_UNTIL
+}
+
+/**
+ * The runner's local hour, or null if the zone is unusable.
+ * ⚠️ Wrapped: an invalid IANA name throws from `Intl`, and a bad string in one row must not
+ * stop the whole cron for everyone else.
+ */
+export function localHourIn(timezone: string | null | undefined, now: Date): number | null {
+  if (!timezone) return null
+  try {
+    const h = new Intl.DateTimeFormat('en-GB', { hour: 'numeric', hour12: false, timeZone: timezone })
+      .format(now)
+    const n = Number(h)
+    return Number.isFinite(n) ? n % 24 : null
+  } catch { return null }
+}
 
 /** 1-indexed trial day: the day the trial started is day 1. */
 export function trialDayNumber(trialStartedAt: string, now: Date): number {
@@ -29,6 +82,8 @@ export function trialDayNumber(trialStartedAt: string, now: Date): number {
 export interface TrialEmailStamps {
   trial_email_day11_sent_at: string | null
   trial_email_day14_sent_at: string | null
+  trial_email_day17_sent_at: string | null
+  trial_email_day30_sent_at: string | null
 }
 
 export interface TrialEmailDecision {
@@ -36,6 +91,10 @@ export interface TrialEmailDecision {
   needsDay11: boolean
   /** The expiry email (legacy "day 14"). */
   needsDay14: boolean
+  /** Three days after expiry: extend, or summarise. */
+  needsDay17: boolean
+  /** One question, no follow-up. */
+  needsDay30: boolean
 }
 
 /** Whose access story this actually is. Required, not optional: the dangerous
@@ -45,6 +104,14 @@ export interface TrialEmailAccess {
   tier: UserTier
   /** Has EVER claimed a charity code — live OR lapsed. See below. */
   hasCharityGrant: boolean
+  /**
+   * `user_settings.is_internal` (INTERNAL-ACCOUNTS-01). REQUIRED for the same reason the other
+   * two are: the dangerous default is SEND. The brief asks that internal accounts never receive
+   * these, and 18 of 56 accounts are internal — a third of the list.
+   */
+  isInternal: boolean
+  /** The runner's local hour, from `localHourIn`. Null when the zone is unreadable. */
+  localHour: number | null
 }
 
 /**
@@ -78,11 +145,19 @@ export function decideTrialEmails(
   stamps: TrialEmailStamps,
   access: TrialEmailAccess,
 ): TrialEmailDecision {
-  if (access.tier === 'paid' || access.hasCharityGrant) {
-    return { needsDay11: false, needsDay14: false }
-  }
+  const none = { needsDay11: false, needsDay14: false, needsDay17: false, needsDay30: false }
+  if (access.tier === 'paid' || access.hasCharityGrant || access.isInternal) return none
+  // Not an exclusion but a DEFERRAL: the hourly cron asks again next hour, and the stamps still
+  // guarantee exactly one send. See the note on SEND_HOUR_FROM.
+  if (!withinSendHours(access.localHour)) return none
+
   return {
     needsDay11: day >= NUDGE_DAY && day < EXPIRY_DAY && !stamps.trial_email_day11_sent_at,
-    needsDay14: day >= EXPIRY_DAY && !stamps.trial_email_day14_sent_at,
+    // ⚠️ Each window is CLOSED at the next one's start, except the last. Day 14 used to be
+    // open-ended, which was right when it was the final email; leaving it so would mean a
+    // runner who had been quiet for a month received day 14 and day 17 and day 30 in one hour.
+    needsDay14: day >= EXPIRY_DAY && day < DAY17 && !stamps.trial_email_day14_sent_at,
+    needsDay17: day >= DAY17 && day < DAY30 && !stamps.trial_email_day17_sent_at,
+    needsDay30: day >= DAY30 && !stamps.trial_email_day30_sent_at,
   }
 }

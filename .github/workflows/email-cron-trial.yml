@@ -13,9 +13,22 @@ name: email-cron-trial
 
 on:
   schedule:
-    # 08:00 UTC daily. Offset from push crons (:15 and :30) to avoid
-    # stampeding the Vercel function concurrency pool.
-    - cron: '0 8 * * *'
+    # HOURLY at :45, and the hour matters more than the minute (ACT-EMAIL-POSTTRIAL-01).
+    #
+    # 🔴 THIS WAS '0 8 * * *' — ONCE DAILY — AND THAT IS 03:00 FOR THE 4 OF 37 RUNNERS IN NEW
+    # YORK AND TORONTO. Every runner in the metric population has a timezone set, so this was
+    # knowable and fixable.
+    #
+    # ⚠️ The quiet-hours guard in `decideTrialEmails` ONLY WORKS ON AN HOURLY SENDER. On a daily
+    # run the local hour is identical every time, so "skip outside 08:00-20:00 local" is not a
+    # deferral, it is permanent suppression for whole timezones: the window never reopens. The
+    # schedule and the guard are one decision in two files, and `quietHours.test.ts` asserts the
+    # pairing so neither can be changed alone.
+    #
+    # ⚠️ Cost is unchanged in the way that matters: the per-user stamps make every send
+    # idempotent, so 24 runs a day still produce at most one email per runner per stage. Offset
+    # to :45 to stay clear of the push crons (:15 and :30) and the ops crons (07:30-08:20).
+    - cron: '45 * * * *'
   workflow_dispatch:
 
 jobs:

@@ -7,12 +7,18 @@ import {
 } from './trialEmailWindow'
 import { TRIAL_DAYS } from '@/lib/trial'
 
-const NO_STAMPS = { trial_email_day11_sent_at: null, trial_email_day14_sent_at: null }
+const NO_STAMPS = {
+  trial_email_day11_sent_at: null, trial_email_day14_sent_at: null,
+  trial_email_day17_sent_at: null, trial_email_day30_sent_at: null,
+}
+/** ACT-EMAIL-POSTTRIAL-01 added two REQUIRED access facts; a default keeps these cases about
+ *  the thing each one tests. `localHour: 10` is inside the send window. */
+const SENDABLE = { isInternal: false, localHour: 10 }
 
 /** The ordinary trial user these emails are actually written for. */
-const ON_TRIAL = { tier: 'trial' as const, hasCharityGrant: false }
+const ON_TRIAL = { tier: 'trial' as const, hasCharityGrant: false, ...SENDABLE }
 /** Past day 14 with no grant and no subscription: the expiry email IS for them. */
-const LAPSED   = { tier: 'free' as const,  hasCharityGrant: false }
+const LAPSED   = { tier: 'free' as const,  hasCharityGrant: false, ...SENDABLE }
 
 describe('trialEmailWindow constants', () => {
   it('derive from TRIAL_DAYS (single source, no re-typed literals)', () => {
@@ -32,7 +38,7 @@ describe('trialDayNumber', () => {
 
 describe('decideTrialEmails', () => {
   it('sends the nudge on the exact nudge day (regression: exact-day still works)', () => {
-    expect(decideTrialEmails(11, NO_STAMPS, ON_TRIAL)).toEqual({ needsDay11: true, needsDay14: false })
+    expect(decideTrialEmails(11, NO_STAMPS, ON_TRIAL)).toEqual({ needsDay11: true, needsDay14: false, needsDay17: false, needsDay30: false })
   })
 
   // The EMAIL-CRON-01 bug: with `day === 11` a cron skipped on day 11 lost the
@@ -47,21 +53,30 @@ describe('decideTrialEmails', () => {
   })
 
   it('sends the expiry email on the expiry day, not the nudge', () => {
-    expect(decideTrialEmails(14, NO_STAMPS, LAPSED)).toEqual({ needsDay11: false, needsDay14: true })
+    expect(decideTrialEmails(14, NO_STAMPS, LAPSED)).toEqual({ needsDay11: false, needsDay14: true, needsDay17: false, needsDay30: false })
   })
 
-  it('catches the expiry email up on any later day (open-ended window)', () => {
-    expect(decideTrialEmails(20, NO_STAMPS, LAPSED).needsDay14).toBe(true)
+  it('catches the expiry email up on days 15 and 16, and then STOPS', () => {
+    // 🔴 THE DAY-14 WINDOW IS NO LONGER OPEN-ENDED, and that is a deliberate change.
+    // ACT-EMAIL-POSTTRIAL-01 adds day 17 and day 30; leaving day 14 open-ended meant a runner
+    // who had been quiet for a month would receive all three in the same hour. Each window is
+    // now closed at the next one's start, and only the last stays open.
+    expect(decideTrialEmails(15, NO_STAMPS, LAPSED).needsDay14).toBe(true)
+    expect(decideTrialEmails(16, NO_STAMPS, LAPSED).needsDay14).toBe(true)
+    expect(decideTrialEmails(17, NO_STAMPS, LAPSED).needsDay14).toBe(false)
+    // …and the day they stop getting day 14 is the day day 17 takes over, so nobody falls
+    // through the gap.
+    expect(decideTrialEmails(17, NO_STAMPS, LAPSED).needsDay17).toBe(true)
   })
 
   it('windows are disjoint: at expiry only the expiry email fires, even if the nudge never sent', () => {
     // nudge missed entirely (no stamp) but user is already at day 14
-    expect(decideTrialEmails(14, NO_STAMPS, LAPSED)).toEqual({ needsDay11: false, needsDay14: true })
+    expect(decideTrialEmails(14, NO_STAMPS, LAPSED)).toEqual({ needsDay11: false, needsDay14: true, needsDay17: false, needsDay30: false })
   })
 
   it('is idempotent: a set stamp suppresses re-sends across daily runs', () => {
-    expect(decideTrialEmails(12, { trial_email_day11_sent_at: '2026-01-11T08:00:00Z', trial_email_day14_sent_at: null }, ON_TRIAL).needsDay11).toBe(false)
-    expect(decideTrialEmails(20, { trial_email_day11_sent_at: null, trial_email_day14_sent_at: '2026-01-14T08:00:00Z' }, LAPSED).needsDay14).toBe(false)
+    expect(decideTrialEmails(12, { ...NO_STAMPS, trial_email_day11_sent_at: '2026-01-11T08:00:00Z' }, ON_TRIAL).needsDay11).toBe(false)
+    expect(decideTrialEmails(16, { ...NO_STAMPS, trial_email_day14_sent_at: '2026-01-14T08:00:00Z' }, LAPSED).needsDay14).toBe(false)
   })
 })
 
@@ -70,9 +85,9 @@ describe('decideTrialEmails', () => {
 // This route had no tier check at all: it sent on `trial_started_at` alone.
 describe('decideTrialEmails — whose access story is it', () => {
   it('never tells a charity runner inside a live grant that their trial ends', () => {
-    const grant = { tier: 'paid' as const, hasCharityGrant: true }
-    expect(decideTrialEmails(11, NO_STAMPS, grant)).toEqual({ needsDay11: false, needsDay14: false })
-    expect(decideTrialEmails(14, NO_STAMPS, grant)).toEqual({ needsDay11: false, needsDay14: false })
+    const grant = { tier: 'paid' as const, hasCharityGrant: true, ...SENDABLE }
+    expect(decideTrialEmails(11, NO_STAMPS, grant)).toEqual({ needsDay11: false, needsDay14: false, needsDay17: false, needsDay30: false })
+    expect(decideTrialEmails(14, NO_STAMPS, grant)).toEqual({ needsDay11: false, needsDay14: false, needsDay17: false, needsDay30: false })
   })
 
   // Tier alone does NOT cover this. Once the grant lapses the runner is `free`
@@ -80,12 +95,12 @@ describe('decideTrialEmails — whose access story is it', () => {
   // fires months late and tells someone who was given the app that their
   // 14-day trial has ended.
   it('and still does not, months later, once the grant has lapsed', () => {
-    const lapsedGrant = { tier: 'free' as const, hasCharityGrant: true }
-    expect(decideTrialEmails(200, NO_STAMPS, lapsedGrant)).toEqual({ needsDay11: false, needsDay14: false })
+    const lapsedGrant = { tier: 'free' as const, hasCharityGrant: true, ...SENDABLE }
+    expect(decideTrialEmails(200, NO_STAMPS, lapsedGrant)).toEqual({ needsDay11: false, needsDay14: false, needsDay17: false, needsDay30: false })
   })
 
   it('does not tell someone who subscribed mid-trial that they have 3 days left', () => {
-    const subscriber = { tier: 'paid' as const, hasCharityGrant: false }
+    const subscriber = { tier: 'paid' as const, hasCharityGrant: false, ...SENDABLE }
     expect(decideTrialEmails(11, NO_STAMPS, subscriber).needsDay11).toBe(false)
   })
 

@@ -4569,7 +4569,7 @@ webhook and the sign-in link only; if a fix needs purchase-flow code, it stops a
 
 ---
 
-### 🔲 `ACT-EMAIL-DAY14-01` — 13 of 16 day-14 emails told the runner "no runs read" 👤 **FOUNDER** (voice)
+### ✅ `ACT-EMAIL-DAY14-01` — SHIPPED 2026-11-11. The zero branch offers the week back 👤 **FOUNDER** (voice)
 
 **Evidence.** `ops_events.email_sent`, by subject: **"Fourteen days, no runs read." × 13**, "…1 run
 read." × 1, "…3 runs read." × 1, "…4 runs read." × 1. The day-11 "3 days left." went out 14 times.
@@ -4577,29 +4577,68 @@ read." × 1, "…3 runs read." × 1, "…4 runs read." × 1. The day-11 "3 days 
 **User impact.** The last thing 13 of 16 trial runners heard from Zonna was a count of zero, in a
 mail asking them to pay for reads.
 
-**Acceptance criteria.** With no reads: never state the zero; offer 7 more days. With reads:
-summarise what Zonna saw. Copy in `brand.md` voice, no em dashes, locked strings untouched.
+**Acceptance criteria.** ✅ With no reads the subject is *"Didn't get a run in?"*, the body never
+states the count, and it offers seven days through `/api/email/extend-trial` — a real one-time
+grant, not a sentence. ✅ With reads it is unchanged: the count IS the message. ✅ The free path
+stays visible (*"Rather leave it? Do nothing."*), so the offer is not a trap, and the zero branch
+carries **no upgrade CTA** — we are not invoicing anyone for our own silence.
 
-**Gate.** Template arms on both branches asserting the zero-count string cannot be produced.
+👤 **COPY IS THE FOUNDER'S AND IS WRITTEN TO BE CHANGED.** Every string is in
+`lib/email/trialEmailTemplates.ts` and previewable at `/api/email/preview`; three new preview
+cases cover all three day-17 branches so a human reads them before a runner does.
 
-**Board.** Email copy is voice (`brand.md` → founder). No new visual pattern: the existing
-`wrapper`/`ctaButton` primitives are reused, so the Design Board is **not** convened — exemption
-stated.
+**Gate.** `lib/email/postTrialEmails.test.ts` (15 arms) + the rewritten `verdictLine` arm, which
+asserted the old *"Fourteen days, no runs read."* subject and now asserts the count cannot appear
+anywhere in that branch. Falsified by restoring the old subject: 2 arms fire.
+
+**Board.** Email copy is voice (`brand.md` → founder). No new visual pattern: `wrapper` and the
+button primitives are reused, so the Design Board is **not** convened — exemption stated.
+⚠️ **One invented CTA target was refused on the way:** the day-17 "already extended" branch wanted
+*"Open your plan"*, and `EMAIL_CTA_SCREENS` is `connect | upgrade | post-run`. `upgrade` is the
+wrong ask mid-extension and `post-run` needs a session that by definition does not exist, so
+adding a `today` target would have been a string the handler ignores — the decorative class
+`ctaTargets.ts`'s own header records. **That email has no CTA. The sentence is the action.**
 
 ---
 
-### 🔲 `ACT-EMAIL-POSTTRIAL-01` — nothing is sent after day 14 👤 **FOUNDER** (voice)
+### ✅ `ACT-EMAIL-POSTTRIAL-01` — SHIPPED 2026-11-11. Day 17 and day 30, on an hourly cron 👤 **FOUNDER** (voice)
 
 **Evidence.** `trial_email_day11_sent_at` and `trial_email_day14_sent_at` are the only trial email
 stamps on `user_settings`; `email_sent` holds no post-trial id. Confirmed: nothing after day 14.
 
-**Acceptance criteria.** Day 17 (extend or summarise) and day 30 (one honest question). Respect
-`email_unsubscribed_at` and quiet hours; **never** send to `is_internal`; stamped-range windows per
-`lib/email/trialEmailWindow.ts` (N-014), never exact-day equality.
+**Acceptance criteria.** ✅ Day 17 branches on what we actually know: reads → summarise and say it
+does not expire; no reads and the offer untaken → offer it again; no reads and **already taken** →
+say the true thing and stop, because offering a week to someone who accepted one three days ago
+reads as a system that is not paying attention. ✅ Day 30 asks one question with **no CTA at all**
+— a question with a Buy button under it is not a question — and says it is the last one.
+✅ `is_internal` is excluded, as a REQUIRED field on `TrialEmailAccess` for the same reason the
+other two are: the dangerous default is SEND, and **18 of 56 accounts are internal**.
 
-**Dependencies.** `ACT-READ-COUNT-01` for the summarise branch.
+🔴 **AND QUIET HOURS TURNED OUT TO BE A LIVE DEFECT RATHER THAN A FORMALITY.** The trial email
+cron ran **once daily at 08:00 UTC, which is 03:00 for the 4 of 37 runners in New York and
+Toronto.** Every runner in the metric population has a timezone set, so this was knowable.
 
-**Gate.** Window arms plus an internal-recipient arm that fails if an internal account is targeted.
+🔑 **AND THE OBVIOUS FIX WAS A TRAP.** A quiet-hours guard on a once-daily sender is **not a
+deferral, it is permanent suppression**: the local hour is identical on every run, so a runner
+outside the window never receives the email again. **The cron moved to hourly in the same commit**,
+and `lib/email/quietHours.test.ts` asserts the pairing — the guard and the schedule are one
+decision in two files, and neither can now be changed alone. The stamps keep 24 runs a day
+idempotent.
+
+⚠️ **The day-14 window stopped being open-ended, which is a deliberate behaviour change.** It was
+right when day 14 was the last email; with day 17 and day 30 added, a runner quiet for a month
+would have received all three in one hour. Each window now closes where the next opens, and an arm
+walks every boundary asserting **exactly one** email fires.
+
+**Gate.** `postTrialEmails.test.ts` + `quietHours.test.ts` (22 arms), falsified 6 ways: re-open the
+day-14 window · drop the internal exclusion · put the cron back to daily · offer the extension to
+someone who already has it · drop the once-only guard on the grant · restore the old zero subject.
+
+🔻 **ONE DEPLOY-ORDERING CONSTRAINT, DECLARED AND GATED.** The cron SELECTs three columns that
+`20261111e` creates, and production DDL cannot be applied from here. `PENDING_COLUMNS` in
+`tableColumns.ts` declares the window — **the unsafe direction for that file, stated rather than
+hidden** — and `pendingColumns.test.ts` fails the build once the migration is in the applied
+ledger and the entry is still there. Runbook § 8 carries the order.
 
 ---
 

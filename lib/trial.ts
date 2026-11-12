@@ -13,6 +13,20 @@ export const TRIAL_DAYS = 14
 export const TRIAL_MAX_DAYS_FROM_START = 30
 
 /**
+ * ACT-EMAIL-DAY14-01 — the extra days offered at day 14 to a runner we never managed to read a
+ * run for. One-time, and granted only when they click it.
+ *
+ * 📐 13 of 16 day-14 emails said "Fourteen days, no runs read." A trial in which the product
+ * never did its one trick is not a trial they can decide on, and the measured reason is usually
+ * ours: of 37 trialists, 24 had no trainable plan week inside the window at all.
+ *
+ * ⚠️ This DOES apply with `TRIAL_STARTS_AT_FIRST_READ` off, which is deliberate and is the
+ * whole point of item 4 — but it changes nothing for anyone until they accept it, because the
+ * stamp is null until `/api/email/extend-trial` writes it.
+ */
+export const TRIAL_EXTENSION_DAYS = 7
+
+/**
  * 🔴 OFF, AND IT STAYS OFF UNTIL THE FOUNDER SAYS OTHERWISE. This is a PRICING decision: it
  * changes when a runner is asked to pay. The founder directed the build on 2026-11-11 and has
  * not authorised enabling it.
@@ -64,6 +78,12 @@ export interface TrialWindowInputs {
    */
   firstReadAt?: string | Date | null
   /**
+   * ACT-EMAIL-DAY14-01 — `user_settings.trial_extended_at`, set once when the runner accepts
+   * the seven extra days offered at day 14. Null for everyone until they click, so this changes
+   * nothing retroactively.
+   */
+  trialExtendedAt?: string | Date | null
+  /**
    * True when the first-read query FAILED, as distinct from returning nothing.
    *
    * 🔴 ON A FAILURE THE WINDOW IS THE CAP, AND THE FIRST TWO ATTEMPTS AT THIS WERE BOTH WRONG.
@@ -111,21 +131,37 @@ export function resolveTrialWindow(
   const started = asDate(i.trialStartedAt)
   if (!started) return { clockStartedAt: null, endsAt: null, active: false, basis: 'none' }
 
+  /**
+   * The accepted extension, applied to whatever window the policy produces.
+   *
+   * ⚠️ ADDED AT THE END, NOT FOLDED INTO EACH BRANCH. Every branch below returns a window, and
+   * a seven-day grant that only some of them honoured would be the kind of difference nobody
+   * notices until a runner is cut off three branches down. It also means the extension stacks
+   * on the CAP rather than being swallowed by it: a runner who took the offer and then had a
+   * read on day 25 gets day 37, not day 30, which is what "another seven days" said.
+   */
+  const extended = asDate(i.trialExtendedAt)
+  const grant = (w: TrialWindow): TrialWindow => {
+    if (!extended || !w.endsAt) return w
+    const endsAt = new Date(w.endsAt.getTime() + TRIAL_EXTENSION_DAYS * MS_PER_DAY)
+    return { ...w, endsAt, active: now < endsAt }
+  }
+
   if (!startsAtFirstRead) {
     const endsAt = new Date(started.getTime() + TRIAL_DAYS * MS_PER_DAY)
-    return { clockStartedAt: started, endsAt, active: now < endsAt, basis: 'signup' }
+    return grant({ clockStartedAt: started, endsAt, active: now < endsAt, basis: 'signup' })
   }
 
   const cap = new Date(started.getTime() + TRIAL_MAX_DAYS_FROM_START * MS_PER_DAY)
   // See `firstReadUnavailable` above: the cap never revokes, and it is bounded.
   if (i.firstReadUnavailable) {
-    return { clockStartedAt: null, endsAt: cap, active: now < cap, basis: 'cap' }
+    return grant({ clockStartedAt: null, endsAt: cap, active: now < cap, basis: 'cap' })
   }
   const read = asDate(i.firstReadAt)
   if (!read) {
     // The clock has not started. Access runs to the cap, and `clockStartedAt` is null so a
     // caller cannot compute a "day N of 14" that does not exist yet.
-    return { clockStartedAt: null, endsAt: cap, active: now < cap, basis: 'cap' }
+    return grant({ clockStartedAt: null, endsAt: cap, active: now < cap, basis: 'cap' })
   }
 
   // ⚠️ A read can never precede the stamp in practice (a read needs a plan, which needs the
@@ -134,12 +170,12 @@ export function resolveTrialWindow(
   const clockStartedAt = read < started ? started : read
   const fromRead = new Date(clockStartedAt.getTime() + TRIAL_DAYS * MS_PER_DAY)
   const endsAt = fromRead < cap ? fromRead : cap
-  return {
+  return grant({
     clockStartedAt,
     endsAt,
     active: now < endsAt,
     basis: fromRead < cap ? 'first_read' : 'cap',
-  }
+  })
 }
 
 /**
@@ -156,8 +192,10 @@ export function isTrialActive(
   now: Date = new Date(),
   firstReadAt?: string | Date | null,
   firstReadUnavailable?: boolean,
+  trialExtendedAt?: string | Date | null,
 ): boolean {
-  return resolveTrialWindow({ trialStartedAt, firstReadAt, firstReadUnavailable }, now).active
+  return resolveTrialWindow(
+    { trialStartedAt, firstReadAt, firstReadUnavailable, trialExtendedAt }, now).active
 }
 
 /** WHY access resolved the way it did. The tier alone cannot answer "what do we
@@ -184,8 +222,10 @@ export interface TierInputs {
    * is still not passing it.
    */
   firstReadAt?: string | Date | null
-  /** True when that query FAILED. Falls back to the signup window; never extends access. */
+  /** True when that query FAILED. Resolves to the cap; never revokes. */
   firstReadUnavailable?: boolean
+  /** `user_settings.trial_extended_at` — set once, when the runner accepts the day-14 offer. */
+  trialExtendedAt?: string | Date | null
 }
 
 export interface TierResolution {
@@ -233,7 +273,8 @@ export function resolveTier(input: TierInputs, now: Date = new Date()): TierReso
     return { tier: 'paid', reason: 'grant' }
   }
 
-  if (isTrialActive(input.trialStartedAt, now, input.firstReadAt, input.firstReadUnavailable))
+  if (isTrialActive(input.trialStartedAt, now, input.firstReadAt, input.firstReadUnavailable,
+                    input.trialExtendedAt))
     return { tier: 'trial', reason: 'trial' }
 
   return { tier: 'free', reason: 'none' }
@@ -269,7 +310,7 @@ export async function getUserTier(userId: string): Promise<UserTier> {
       .maybeSingle(),
     supabase
       .from('user_settings')
-      .select('trial_started_at, is_admin')
+      .select('trial_started_at, is_admin, trial_extended_at')
       .eq('id', userId)
       .maybeSingle(),
     supabase
@@ -293,6 +334,7 @@ export async function getUserTier(userId: string): Promise<UserTier> {
     subPeriodEnd: sub?.current_period_end,
     grantExpiresAt: grant?.expires_at,
     trialStartedAt: settings?.trial_started_at,
+    trialExtendedAt: settings?.trial_extended_at,
   }
   const first = resolveTier(base)
 

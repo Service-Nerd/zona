@@ -1,4 +1,5 @@
 import { BRAND } from '@/lib/brand'
+import { TRIAL_EXTENSION_DAYS } from '@/lib/trial'
 import { EMAIL_COLORS as C, EMAIL_TYPE as T, emailWordmark } from './emailTheme'
 import { ZONE_HELD_MAX_ABOVE_CEILING_PCT, TRIAL_SUMMARY_MIN_RUNS } from '@/lib/coaching/constants'
 import { ctaHref, type EmailCtaScreen, type CtaParams } from './ctaTargets'
@@ -59,6 +60,20 @@ function verdictLine(
 // which is the state that made that wave tranche 0.
 export function unsubscribeUrl(token: string): string {
   return `${BASE_URL}/api/email/unsubscribe?t=${encodeURIComponent(token)}`
+}
+
+/**
+ * ACT-EMAIL-DAY14-01 — the link that grants the seven extra days.
+ * ⚠️ Reuses the runner's unsubscribe token rather than minting a second secret: one secret per
+ * runner is one thing to leak, and the power this grants is bounded and one-directional.
+ */
+export function extendTrialUrl(token: string): string {
+  return `${BASE_URL}/api/email/extend-trial?t=${encodeURIComponent(token)}`
+}
+
+/** A full-width link styled as the primary action, for the routes that are not app screens. */
+function linkButton(label: string, href: string): string {
+  return `<a href="${href}" style="display:inline-block;margin-top:28px;padding:14px 28px;background:${C.mossStrong};color:${C.card};border:1px solid ${C.mossDeep};text-decoration:none;border-radius:8px;font-size:${T.body}px;font-weight:600;">${label}</a>`
 }
 
 function wrapper(content: string, unsubToken: string): string {
@@ -274,9 +289,16 @@ export function buildDay14Email(firstName: string | null, run: RunSummary, unsub
   // EMAIL-WAVE-2 — ENDS ON WHAT THEY GAINED. This opened on what switches off.
   // The subject now counts what we read, because that is the thing they built and
   // it is true even when the number is zero.
+  // 🔴 ACT-EMAIL-DAY14-01 — THE ZERO BRANCH NEVER STATES THE ZERO.
+  // 📐 `ops_events.email_sent`, by subject: **"Fourteen days, no runs read." went out 13 times
+  // of 16.** The last thing most trial runners heard from us was a count of nothing, in a mail
+  // asking them to pay for reads — and the measured cause is usually ours, not theirs: of 37
+  // trialists, 24 had no trainable plan week inside the window at all. A trial where the product
+  // never did its one trick is not a trial anyone can decide on, so we offer the week back
+  // instead of invoicing them for the silence.
   const subject = run.analysedRunCount > 0
     ? `Fourteen days, ${run.analysedRunCount} ${run.analysedRunCount === 1 ? 'run' : 'runs'} read.`
-    : 'Fourteen days, no runs read.'
+    : 'Didn\u2019t get a run in?'
 
   let runPara = ''
   if (run.actualLoadKm && run.dayName) {
@@ -294,11 +316,11 @@ export function buildDay14Email(firstName: string | null, run: RunSummary, unsub
     </p>`
   }
 
-  const html = wrapper(`
+  // The two bodies are different messages, not one message with a conditional number in it.
+  const body = run.analysedRunCount > 0
+    ? `
     <h1 style="margin:20px 0 0 0;font-size:${T.heading}px;font-weight:700;color:${C.ink};line-height:1.25;letter-spacing:-0.01em;">
-      ${run.analysedRunCount > 0
-        ? `${run.analysedRunCount} ${run.analysedRunCount === 1 ? 'run' : 'runs'} read${name}.`
-        : `Trial ends today${name}.`}
+      ${run.analysedRunCount} ${run.analysedRunCount === 1 ? 'run' : 'runs'} read${name}.
     </h1>
     ${runPara}
     ${run.analysedRunCount >= TRIAL_SUMMARY_MIN_RUNS ? `
@@ -308,8 +330,117 @@ export function buildDay14Email(firstName: string | null, run: RunSummary, unsub
     <p style="margin:20px 0 0 0;font-size:${T.body}px;color:${C.ink2};line-height:1.6;">
       Daily analysis and the Coach tab pause from midnight. Your plan stays, and everything above stays true.
     </p>
-    ${ctaButton('Keep the coaching →', 'upgrade')}
-  `, unsubToken)
+    ${ctaButton('Keep the coaching →', 'upgrade')}`
+    : `
+    <h1 style="margin:20px 0 0 0;font-size:${T.heading}px;font-weight:700;color:${C.ink};line-height:1.25;letter-spacing:-0.01em;">
+      Another ${TRIAL_EXTENSION_DAYS} days${name}.
+    </h1>
+    <p style="margin:20px 0 0 0;font-size:${T.lead}px;color:${C.ink};line-height:1.6;">
+      Your fourteen days are up and we never got to read a run, so there is nothing here for you to judge us on.
+    </p>
+    <p style="margin:20px 0 0 0;font-size:${T.body}px;color:${C.ink2};line-height:1.6;">
+      Take the week back. Run once, and ${BRAND.coachName} will tell you what it saw.
+    </p>
+    ${linkButton(`Add ${TRIAL_EXTENSION_DAYS} days \u2192`, extendTrialUrl(unsubToken))}
+    <p style="margin:20px 0 0 0;font-size:${T.body}px;color:${C.ink2};line-height:1.6;">
+      Rather leave it? Do nothing. Your plan stays free either way.
+    </p>`
 
-  return { subject, html }
+  return { subject, html: wrapper(body, unsubToken) }
+}
+
+/**
+ * ACT-EMAIL-POSTTRIAL-01 — day 17. Extend, or summarise.
+ *
+ * 📐 Nothing at all was sent after day 14. This is the first of the two that changes.
+ * ⚠️ Branches on whether the runner has ALREADY taken the extension, not on the read count
+ * alone: offering a week to someone who accepted one three days ago reads as a system that is
+ * not paying attention, which is the opposite of what the product claims to be.
+ */
+export function buildDay17Email(
+  firstName: string | null,
+  run: RunSummary,
+  unsubToken: string,
+  alreadyExtended: boolean,
+): { subject: string; html: string } {
+  const name = firstName ? `, ${firstName}` : ''
+  const sawSomething = run.analysedRunCount > 0
+
+  if (sawSomething) {
+    return {
+      subject: `What ${BRAND.coachName} saw.`,
+      html: wrapper(`
+        <h1 style="margin:20px 0 0 0;font-size:${T.heading}px;font-weight:700;color:${C.ink};line-height:1.25;letter-spacing:-0.01em;">
+          ${run.analysedRunCount} ${run.analysedRunCount === 1 ? 'run' : 'runs'}${name}.
+        </h1>
+        <p style="margin:20px 0 0 0;font-size:${T.lead}px;color:${C.ink};line-height:1.6;">
+          That is still the clearest picture anyone has of how you actually run. It does not expire.
+        </p>
+        <p style="margin:20px 0 0 0;font-size:${T.body}px;color:${C.ink2};line-height:1.6;">
+          The reading stopped three days ago. The plan did not.
+        </p>
+        ${ctaButton('Start it again →', 'upgrade')}
+      `, unsubToken),
+    }
+  }
+
+  // No reads, and the offer already taken: say the true thing and stop.
+  if (alreadyExtended) {
+    return {
+      subject: 'Still here.',
+      html: wrapper(`
+        <h1 style="margin:20px 0 0 0;font-size:${T.heading}px;font-weight:700;color:${C.ink};line-height:1.25;letter-spacing:-0.01em;">
+          Still here${name}.
+        </h1>
+        <p style="margin:20px 0 0 0;font-size:${T.lead}px;color:${C.ink};line-height:1.6;">
+          You took the extra days and we still have not read a run. That is fine. The plan waits.
+        </p>
+        <p style="margin:20px 0 0 0;font-size:${T.body}px;color:${C.ink2};line-height:1.6;">
+          One run is all it takes to see what this does.
+        </p>
+      `, unsubToken),
+      // ⚠️ NO CTA, and not an omission. `EMAIL_CTA_SCREENS` is `connect | upgrade | post-run`:
+      // `upgrade` is the wrong ask of someone mid-extension, and `post-run` needs a session that
+      // by definition does not exist here. Adding a `today` target would have been a no-op
+      // string the handler ignores — which is the decorative class `ctaTargets.ts`'s own header
+      // records. The sentence is the action.
+    }
+  }
+
+  return {
+    subject: `${TRIAL_EXTENSION_DAYS} days, if you want them.`,
+    html: wrapper(`
+      <h1 style="margin:20px 0 0 0;font-size:${T.heading}px;font-weight:700;color:${C.ink};line-height:1.25;letter-spacing:-0.01em;">
+        The offer is still open${name}.
+      </h1>
+      <p style="margin:20px 0 0 0;font-size:${T.lead}px;color:${C.ink};line-height:1.6;">
+        We never read a run of yours, so you never saw the part worth paying for.
+      </p>
+      ${linkButton(`Add ${TRIAL_EXTENSION_DAYS} days \u2192`, extendTrialUrl(unsubToken))}
+    `, unsubToken),
+  }
+}
+
+/**
+ * ACT-EMAIL-POSTTRIAL-01 — day 30. One question, and no follow-up.
+ *
+ * ⚠️ NO CTA, DELIBERATELY. The brief asks for one honest question, and a question with a Buy
+ * button under it is not a question. This is the last email in the sequence and it says so.
+ */
+export function buildDay30Email(firstName: string | null, unsubToken: string): { subject: string; html: string } {
+  const name = firstName ? `, ${firstName}` : ''
+  return {
+    subject: 'What stopped you?',
+    html: wrapper(`
+      <h1 style="margin:20px 0 0 0;font-size:${T.heading}px;font-weight:700;color:${C.ink};line-height:1.25;letter-spacing:-0.01em;">
+        One question${name}.
+      </h1>
+      <p style="margin:20px 0 0 0;font-size:${T.lead}px;color:${C.ink};line-height:1.6;">
+        You tried ${BRAND.name} and did not subscribe. What stopped you?
+      </p>
+      <p style="margin:20px 0 0 0;font-size:${T.body}px;color:${C.ink2};line-height:1.6;">
+        Reply to this and a person reads it. No follow-up, and this is the last one either way.
+      </p>
+    `, unsubToken),
+  }
 }

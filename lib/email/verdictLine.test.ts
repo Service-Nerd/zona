@@ -79,10 +79,17 @@ describe('the trial summary needs enough runs to be a comparison', () => {
     expect(below.subject).toContain(`${TRIAL_SUMMARY_MIN_RUNS - 1} runs read`)
   })
 
-  it('degrades honestly at zero rather than padding', () => {
+  it('at zero it offers the week back and NEVER states the count', () => {
+    // 🔴 ACT-EMAIL-DAY14-01. This asserted the subject was "Fourteen days, no runs read." —
+    // honest, and sent **13 times of 16**. The last thing most trial runners heard from us was
+    // a count of nothing, in a mail asking them to pay for reads, and the measured cause is
+    // usually ours: of 37 trialists, 24 had no trainable plan week inside the window at all.
+    // The old line is still true; it is just not the one to send.
     const none = buildDay14Email('Russ', run({ analysedRunCount: 0, actualLoadKm: null, hrInZonePct: null, hrAboveCeilingPct: null, verdict: null, dayName: null }), TOK)
-    expect(none.subject).toBe('Fourteen days, no runs read.')
+    expect(none.subject).toBe('Didn\u2019t get a run in?')
     expect(none.html).not.toContain('sessions of evidence')
+    expect(none.html, 'the zero is stated again in the body').not.toMatch(/no runs read/i)
+    expect(none.html, 'the extension offer is the point of this branch').toContain('/api/email/extend-trial')
   })
 })
 

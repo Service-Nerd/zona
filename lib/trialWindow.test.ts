@@ -204,7 +204,10 @@ describe('ACT-TRIAL-AT-FIRST-READ-01 — the interlock is DERIVED, not a list', 
     const re = /resolveTier\(/g
     let unwired = false
     for (let m = re.exec(src); m !== null; m = re.exec(src)) {
-      if (!/firstReadAt/.test(src.slice(m.index, m.index + 700))) unwired = true
+      const call = src.slice(m.index, m.index + 900)
+      // Both inputs, not just the one I happened to add first: a caller that passes the read
+      // and not the extension resolves a runner who took the offer as `free`.
+      if (!/firstReadAt/.test(call) || !/trialExtendedAt/.test(call)) unwired = true
     }
     return unwired
   })
@@ -245,8 +248,11 @@ describe('ACT-TRIAL-AT-FIRST-READ-01 — the interlock is DERIVED, not a list', 
   it('the two callers that ARE wired hand over the same facts', () => {
     expect(TRIAL_TS, 'getUserTier no longer passes firstReadAt')
       .toMatch(/firstReadAt:[\s\S]{0,120}firstReadUnavailable:/)
+    expect(TRIAL_TS, 'getUserTier no longer passes trialExtendedAt').toMatch(/trialExtendedAt:/)
     expect(CLIENT_TSX, 'the client mirror no longer passes firstReadAt')
       .toMatch(/firstReadAt,\s*\n\s*firstReadUnavailable,/)
+    expect(CLIENT_TSX, 'the client mirror no longer passes trialExtendedAt')
+      .toMatch(/trialExtendedAt:/)
   })
 
   it('neither wired caller pays for the read while the flag is off', () => {
@@ -264,6 +270,6 @@ describe('ACT-TRIAL-AT-FIRST-READ-01 — the interlock is DERIVED, not a list', 
   it('the in-app countdown reads the owner, not its own arithmetic', () => {
     // On the cap path, `trial_started_at + TRIAL_DAYS` would show "0 days left" to a runner
     // with ten — the tier and the number on screen disagreeing.
-    expect(CLIENT_TSX).toMatch(/resolveTrialWindow\(\{\s*trialStartedAt,\s*firstReadAt,\s*firstReadUnavailable\s*\}/)
+    expect(CLIENT_TSX).toMatch(/resolveTrialWindow\([\s\S]{0,40}trialStartedAt,\s*firstReadAt,\s*firstReadUnavailable,/)
   })
 })

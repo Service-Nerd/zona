@@ -2,9 +2,9 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { secretMatches } from '@/lib/security/secrets'
 import { sendToUser } from '@/lib/email/sendToUser'
-import { buildDay11Email, buildDay14Email, type RunSummary } from '@/lib/email/trialEmailTemplates'
+import { buildDay11Email, buildDay14Email, buildDay17Email, buildDay30Email, type RunSummary } from '@/lib/email/trialEmailTemplates'
 import { countRunsRead, latestRunRead, trialWindow } from '@/lib/ops/runRead'
-import { trialDayNumber, decideTrialEmails } from '@/lib/email/trialEmailWindow'
+import { trialDayNumber, decideTrialEmails, localHourIn } from '@/lib/email/trialEmailWindow'
 import { resolveTier, TRIAL_DAYS } from '@/lib/trial'
 
 // POST /api/email/send-trial
@@ -78,7 +78,7 @@ export async function POST(req: NextRequest) {
 
   const { data: allSettings, error } = await supabase
     .from('user_settings')
-    .select('id, is_admin, trial_started_at, trial_email_day11_sent_at, trial_email_day14_sent_at, email_unsubscribed_at, email_unsubscribe_token')
+    .select('id, is_admin, is_internal, timezone, trial_extended_at, trial_started_at, trial_email_day11_sent_at, trial_email_day14_sent_at, trial_email_day17_sent_at, trial_email_day30_sent_at, email_unsubscribed_at, email_unsubscribe_token')
     .not('trial_started_at', 'is', null)
 
   if (error) {
@@ -109,6 +109,8 @@ export async function POST(req: NextRequest) {
   const now = new Date()
   let day11Sent = 0
   let day14Sent = 0
+  let day17Sent = 0
+  let day30Sent = 0
   let skipped = 0
   const errors: string[] = []
 
@@ -123,14 +125,20 @@ export async function POST(req: NextRequest) {
         subPeriodEnd: sub?.current_period_end,
         grantExpiresAt: grant?.expires_at,
         trialStartedAt: settings.trial_started_at,
+        trialExtendedAt: settings.trial_extended_at,
       }, now)
 
-      const { needsDay11, needsDay14 } = decideTrialEmails(day, settings, {
+      const { needsDay11, needsDay14, needsDay17, needsDay30 } = decideTrialEmails(day, settings, {
         tier,
         hasCharityGrant: !!grant,
+        // INTERNAL-ACCOUNTS-01 — 18 of 56 accounts are internal, a third of this list.
+        isInternal: !!settings.is_internal,
+        // ACT-EMAIL-POSTTRIAL-01 — a civil hour in THEIR day, not ours. The cron is hourly for
+        // exactly this reason; on a daily run this would be permanent suppression, not a wait.
+        localHour: localHourIn(settings.timezone, now),
       })
 
-      if (!needsDay11 && !needsDay14) { skipped++; continue }
+      if (!needsDay11 && !needsDay14 && !needsDay17 && !needsDay30) { skipped++; continue }
 
       // Get user email via admin API (service role only)
       const { data: { user }, error: userErr } = await supabase.auth.admin.getUserById(settings.id)
@@ -173,11 +181,44 @@ export async function POST(req: NextRequest) {
             .eq('id', settings.id)
         }
       }
+
+      // ACT-EMAIL-POSTTRIAL-01 — the two sends that did not exist. Same shape as the two above:
+      // `sendToUser` owns suppression and the record, and only a real send stamps the column.
+      if (needsDay17) {
+        const { subject, html } = buildDay17Email(
+          firstName, run, settings.email_unsubscribe_token, !!settings.trial_extended_at)
+        const outcome = await sendToUser({
+          userId: settings.id, to: email,
+          id: 'trial_day17', kind: 'transactional', subject, html,
+        })
+        if (outcome === 'sent') {
+          day17Sent++
+          await supabase
+            .from('user_settings')
+            .update({ trial_email_day17_sent_at: now.toISOString() })
+            .eq('id', settings.id)
+        }
+      }
+
+      if (needsDay30) {
+        const { subject, html } = buildDay30Email(firstName, settings.email_unsubscribe_token)
+        const outcome = await sendToUser({
+          userId: settings.id, to: email,
+          id: 'trial_day30', kind: 'transactional', subject, html,
+        })
+        if (outcome === 'sent') {
+          day30Sent++
+          await supabase
+            .from('user_settings')
+            .update({ trial_email_day30_sent_at: now.toISOString() })
+            .eq('id', settings.id)
+        }
+      }
     } catch (err: any) {
       errors.push(`${settings.id}: ${err.message}`)
     }
   }
 
-  console.log(`[email/send-trial] day11=${day11Sent}, day14=${day14Sent}, skipped=${skipped}, errors=${errors.length}`)
-  return NextResponse.json({ day11Sent, day14Sent, skipped, errors: errors.slice(0, 5) })
+  console.log(`[email/send-trial] day11=${day11Sent}, day14=${day14Sent}, day17=${day17Sent}, day30=${day30Sent}, skipped=${skipped}, errors=${errors.length}`)
+  return NextResponse.json({ day11Sent, day14Sent, day17Sent, day30Sent, skipped, errors: errors.slice(0, 5) })
 }

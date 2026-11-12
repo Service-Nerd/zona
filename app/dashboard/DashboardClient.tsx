@@ -1682,7 +1682,7 @@ export default function DashboardClient() {
         // Fetch overrides + user settings + completions in parallel
         bootStageRef.current = 'settings'
         const [settingsRes, overridesRes, completionsRes, subRes, charityGrantRes, guidanceRes, pendingReshapeRes] = await withTimeout(Promise.all([
-          supabase.from('user_settings').select('strava_refresh_token, gist_url, plan_json, has_onboarded, is_admin, preferred_units, preferred_metric, resting_hr, max_hr, max_hr_source, birth_year, date_of_birth, first_name, last_name, email, trial_started_at, dynamic_adjustments_enabled, orientation_seen, zone_drift_dismissed_at, benchmark_recal_dismissed_at, last_adjustment_check_at, last_adjustment_check_found_change, daily_push_enabled, timezone, connect_runs_seen, connect_runs_banner_dismissed_at, push_permission_seen, healthkit_connected_at').eq('id', user.id).single(),
+          supabase.from('user_settings').select('strava_refresh_token, gist_url, plan_json, has_onboarded, is_admin, preferred_units, preferred_metric, resting_hr, max_hr, max_hr_source, birth_year, date_of_birth, first_name, last_name, email, trial_started_at, dynamic_adjustments_enabled, orientation_seen, zone_drift_dismissed_at, benchmark_recal_dismissed_at, last_adjustment_check_at, last_adjustment_check_found_change, daily_push_enabled, timezone, connect_runs_seen, connect_runs_banner_dismissed_at, push_permission_seen, healthkit_connected_at, trial_extended_at').eq('id', user.id).single(),
           supabase.from('session_overrides').select(SESSION_OVERRIDE_COLUMNS).eq('user_id', user.id).is('superseded_at', null),
           supabase.from('session_completions').select('week_n, session_day, status, strava_activity_id, apple_health_uuid, strava_activity_name, strava_activity_km, rpe, fatigue_tag, skip_reason, avg_hr, coaching_flag').eq('user_id', user.id).is('superseded_at', null),
           supabase.from('subscriptions').select('status, current_period_end').eq('user_id', user.id).maybeSingle(),
@@ -1945,6 +1945,10 @@ export default function DashboardClient() {
           trialStartedAt,
           firstReadAt,
           firstReadUnavailable,
+          // ACT-EMAIL-DAY14-01 — the seven days they accepted at day 14. The client mirror has
+          // to carry every input the server does or the two resolve differently, which is the
+          // TIER-OWNER-01 drift this one owner exists to prevent.
+          trialExtendedAt: data?.trial_extended_at ?? null,
         }, now)
 
         setTierReason(reason)
@@ -1979,7 +1983,9 @@ export default function DashboardClient() {
           // with ten days left would have been shown "0 days left" and labelled Pro — the tier
           // and the number on the screen disagreeing, which is the worse half of that pair.
           // Found by code review of the first cut, which wired the tier and left the number.
-          const win = resolveTrialWindow({ trialStartedAt, firstReadAt, firstReadUnavailable }, now)
+          const win = resolveTrialWindow(
+            { trialStartedAt, firstReadAt, firstReadUnavailable,
+              trialExtendedAt: data?.trial_extended_at ?? null }, now)
           const msLeft = (win.endsAt?.getTime() ?? 0) - now.getTime()
           setTrialDaysLeft(msLeft > 0 ? Math.ceil(msLeft / (24 * 60 * 60 * 1000)) : 0)
         } else if (trialIsWhatEnded) {

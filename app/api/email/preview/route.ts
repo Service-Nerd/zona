@@ -31,6 +31,7 @@ import { secretMatches } from '@/lib/security/secrets'
 import { sendToUser } from '@/lib/email/sendToUser'
 import {
   buildConnectEmail, buildFirstReadEmail, buildDay11Email, buildDay14Email,
+  buildDay17Email, buildDay30Email,
 } from '@/lib/email/trialEmailTemplates'
 import {
   RUN_CLEAN, RUN_HOT, RUN_NO_HR, RUN_NONE, PREVIEW_SESSION,
@@ -129,6 +130,14 @@ async function preview(req: NextRequest): Promise<NextResponse> {
     ['4 · 3 days left — no runs',        buildDay11Email(name, RUN_NONE, tok)],
     ['5 · Trial ends today',             buildDay14Email(name, RUN_CLEAN, tok)],
     ['5 · Trial ends today — no runs',   buildDay14Email(name, RUN_NONE, tok)],
+    // ACT-EMAIL-POSTTRIAL-01 — all four day-17 shapes plus day 30. The preview is the only
+    // place a human reads these before a runner does, so every BRANCH is listed, not every
+    // builder: `previewCoverage.test.ts` checks the builders, and a branch nobody previewed is
+    // how copy ships unread.
+    ['6 · Day 17 — what Kit saw',        buildDay17Email(name, RUN_CLEAN, tok, false)],
+    ['6 · Day 17 — offer still open',    buildDay17Email(name, RUN_NONE, tok, false)],
+    ['6 · Day 17 — already extended',    buildDay17Email(name, RUN_NONE, tok, true)],
+    ['7 · Day 30 — one question',        buildDay30Email(name, tok)],
   ] as const
 
   const results: Array<{ email: string; subject: string; outcome: string }> = []

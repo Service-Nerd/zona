@@ -43,7 +43,10 @@ describe('the preview route covers the whole programme', () => {
     // never grep the file", recorded in this repo three times before today.
     //
     // Bound to the CALL: each trial email must be invoked with the empty fixture.
-    for (const builder of ['buildDay11Email', 'buildDay14Email']) {
+    // ⚠️ `buildDay30Email` is absent BY SIGNATURE, not by omission: it takes no `RunSummary`,
+    // because it asks one question and shows no data. An email with no data has no empty state,
+    // and listing it here would be a check that can only ever be satisfied by a fake argument.
+    for (const builder of ['buildDay11Email', 'buildDay14Email', 'buildDay17Email']) {
       const withNone = new RegExp(`${builder}\\([^)]*RUN_NONE`)
       expect(withNone.test(ROUTE), `${builder} is never previewed in its EMPTY state`).toBe(true)
     }
