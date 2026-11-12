@@ -15731,3 +15731,5 @@ The other thing worth saying: I only trusted the green because I broke it three 
 **Postable?:** yes — the AI-building angle (load-bearing instructions living outside the paste block) and the honest bit (I built a discipline tool with no enforcement, in a repo whose whole doctrine is that unenforced rules decay) are both real and both specific.
 
 ---
+
+<!-- deploy-path check 2026-11-12T15:25Z: does a push alone reach www.zonna.run? -->
