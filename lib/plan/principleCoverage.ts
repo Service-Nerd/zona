@@ -68,8 +68,10 @@ export interface PrincipleCoverage {
 // breaches everywhere. The entry exists so the gap is counted rather than
 // forgotten, which is the whole reason this manifest does.
 //
-// ⚠️ Lower it back to 0 in the commit that ships §120's numeric and invariant.
-export const UNVERIFIED_BASELINE = 1
+// ✅ LOWERED BACK TO 0 on 2026-11-12, and the condition above is the reason: §120's numeric shipped as
+// `RACE_PACE_ANCHOR_MAX_OVER_CV_PCT` under Am. 1 (which rejected the constant this comment names) and
+// both its invariants exist. The raise was argued for; so is the fall. `PRINCIPLE-REGISTER-CROSSCHECK-01`.
+export const UNVERIFIED_BASELINE = 0
 
 /**
  * Principles whose stated enforcer is an invariant that has NEVER BEEN PROVEN
@@ -310,15 +312,23 @@ export const PRINCIPLE_COVERAGE: readonly PrincipleCoverage[] = [
   // Board should confirm the classification; it is recorded rather than left
   // missing, because missing is the state that hid for three weeks.
   { n: 121, by: 'invariant', ref: 'INV-PLAN-RACE-NOT-VOLUME' },  // The race is the test, not the training
-  { n: 120, by: 'unverified',
-    why: 'RATIFIED, NOT SHIPPED (Coaching Board 2026-09-21, HM-ANCHOR-VS-GOAL-01). '
-       + 'On a time-target plan the HM anchor must resolve to GOAL pace, as T has since '
-       + '2026-09-03 and as the sibling mp_blocks row already does. The engine does not do '
-       + 'this yet, so there is nothing for an invariant to pass on. Blocked on ONE number: '
-       + 'RACE_PACE_ANCHOR_MAX_STRETCH_PCT, Willy\'s bound, which must be MEASURED rather '
-       + 'than chosen because a 15% bound costs 27% of these sessions their row and presses '
-       + 'on §22\'s own 50% floor. Both obvious gates were examined and rejected: '
-       + 'goalBeyondMeasuredFitness tests against INTERVAL pace, and difficulty_band is '
-       + 'forbidden by §44 point 3. Ships with INV-PLAN-RACE-ANCHOR-MATCHES-GOAL and '
-       + 'INV-PLAN-HEADER-PACE-MATCHES-WORK; lower UNVERIFIED_BASELINE to 0 in that commit.' },
+  // ✅ RECLASSIFIED `unverified` → `invariant` on 2026-11-12 (`PRINCIPLE-REGISTER-CROSSCHECK-01`),
+  // AND THE OLD ENTRY WAS FALSE IN EVERY PART. It read: *"The engine does not do this yet, so there
+  // is nothing for an invariant to pass on. Blocked on ONE number: `RACE_PACE_ANCHOR_MAX_STRETCH_PCT`,
+  // Willy's bound, which must be MEASURED rather than chosen. Ships with
+  // INV-PLAN-RACE-ANCHOR-MATCHES-GOAL and INV-PLAN-HEADER-PACE-MATCHES-WORK; lower
+  // UNVERIFIED_BASELINE to 0 in that commit."* Measured 2026-11-12:
+  //   · the engine DOES do it — `ruleEngine.ts` returns `goalPaceMinPerKm` for the `HM` anchor on a
+  //     time-target plan, under a comment quoting §120 verbatim.
+  //   · both named invariants EXIST (`INV-PLAN-RACE-ANCHOR-MATCHES-GOAL`, `:3703`;
+  //     `INV-PLAN-HEADER-PACE-MATCHES-WORK`, `:3485`).
+  //   · **the blocking constant was REJECTED BY THE BOARD'S OWN AMENDMENT.** §120 Am. 1 (2026-09-22)
+  //     says so in as many words — *"the board rejected its own name: right question, wrong unit"* —
+  //     and shipped `RACE_PACE_ANCHOR_MAX_OVER_CV_PCT` (0.5%) instead, which is live and consumed.
+  //     Am. 2 (2026-10-27) then added the benchmarked reachability line.
+  // 🔴 So the entry described a blocker that had been withdrawn seven weeks earlier, and the
+  // exemption was never re-examined — which is this item's whole subject: **an exemption's reason is
+  // a claim about the code and it rots like any other.** `UNVERIFIED_BASELINE` lowered 1 → 0 exactly
+  // as the old entry instructed.
+  { n: 120, by: 'invariant', ref: 'INV-PLAN-RACE-ANCHOR-MATCHES-GOAL' },  // HM anchor resolves to goal pace on a time-target plan
 ] as const

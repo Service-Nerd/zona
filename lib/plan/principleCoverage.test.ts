@@ -319,13 +319,27 @@ describe('principle coverage — every rule is enforced, tested, exempt, or open
   // a written reason is accounted for forever. **An exemption's reason is a
   // claim about the code and it rots like any other.**
   //
-  // The three baselined below are NOT mine and are deliberately not reclassified
-  // here: §120's `unverified` is a ratified-but-not-shipped state whose
-  // reclassification needs the board (it would move `UNVERIFIED_BASELINE`), and
-  // §11/§34 are display/meta exemptions whose citing invariants may be naming
-  // them for context rather than enforcement. Filed as `PRINCIPLE-REGISTER-
-  // CROSSCHECK-01`. The baseline may FALL, never rise.
-  const CROSS_CHECK_BASELINE: readonly number[] = [11, 34, 120]
+  // ✅ `PRINCIPLE-REGISTER-CROSSCHECK-01` ANSWERED, 2026-11-12. The register was three bare numbers
+  // and is now two entries that must each state WHY the citation is a cross-reference rather than a
+  // claim — because a bare number is exactly the shape of debt this arm exists to catch. **§120 left
+  // the register by being reclassified** (`unverified` → `invariant`): its manifest entry was false in
+  // every part, including a blocker its own Amendment 1 had rejected by name seven weeks earlier.
+  //
+  // ⚠️ THE REMAINING TWO ARE CONTEXT, AND EACH REASON IS A MEASURED FACT, NOT A JUDGEMENT:
+  //   · §11 — `INV-PLAN-PROGRESSION-TRANSITION-PACED` cannot be §11's enforcement, because it
+  //     `continue`s on `typeof st.zone !== 'string' || st.zone === ''`. A point pace on a step with no
+  //     zone — most of §11's surface — is not reachable by it. The rule it enforces is §8's Amendment;
+  //     §11 is named because a point value would breach that too.
+  //   · §34 — a meta-principle about the invariant registry ("every code in the registry is emitted,
+  //     and every emitted code is registered"). An invariant cannot enforce that from inside the
+  //     registry. Both citing codes name an operative rule FIRST (§47 Am.3/§52, §119 Am. 1/§40c) and
+  //     cite §34 for its declaration doctrine — the residual is STATED — which is a cross-reference.
+  //
+  // The register may FALL, never rise, and an entry with no reason now fails the arm below.
+  const CROSS_CHECK_BASELINE: ReadonlyArray<{ n: number; why: string }> = [
+    { n: 11, why: 'the citing invariant continues unless the step is zone-targeted, so it cannot reach most of §11' },
+    { n: 34, why: 'a meta-principle about the registry; the citations are to its declaration doctrine' },
+  ]
 
   it('🔴 no invariant names a principle the manifest calls exempt or unverified', () => {
     const src = readFileSync(join(process.cwd(), 'lib', 'plan', 'invariants.ts'), 'utf8')
@@ -340,7 +354,7 @@ describe('principle coverage — every rule is enforced, tested, exempt, or open
       const e = manifest.get(n)
       return e !== undefined && (e.by === 'exempt' || e.by === 'unverified')
     })
-    const fresh = conflicts.filter(n => !CROSS_CHECK_BASELINE.includes(n))
+    const fresh = conflicts.filter(n => !CROSS_CHECK_BASELINE.some(b => b.n === n))
     expect(
       fresh,
       'An invariant enforces these principles while the manifest says nothing can. ' +
@@ -350,6 +364,11 @@ describe('principle coverage — every rule is enforced, tested, exempt, or open
     // The register may only shrink.
     expect(conflicts.length, 'the cross-check baseline must FALL, never rise')
       .toBeLessThanOrEqual(CROSS_CHECK_BASELINE.length)
+    // 🔴 AND EVERY ENTRY MUST STATE WHY, because the register spent five weeks as three bare numbers
+    // and one of them was a records defect nobody re-read. A reason is what makes the next reader able
+    // to falsify it; a number is not.
+    for (const b of CROSS_CHECK_BASELINE)
+      expect(b.why.length, `§${b.n} is baselined with no stated reason`).toBeGreaterThan(30)
   })
 
   it('every principle an invariant names actually exists in the constitution', () => {

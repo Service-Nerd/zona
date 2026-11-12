@@ -16094,21 +16094,47 @@ runner who declared one kilometre). A declared zero was also **admitted** at HM 
 
 ---
 
-### 🔻 `PRINCIPLE-REGISTER-CROSSCHECK-01` — three principles an invariant enforces while the manifest says nothing can 🏃 **COACHING BOARD** *(classification, not doctrine)*
+### ✅ `PRINCIPLE-REGISTER-CROSSCHECK-01` — SHIPPED 2026-11-12 🏃 **COACHING BOARD** (exempt: records reconciliation)
 
-**Found 2026-10-09 by the new code→manifest arm in `principleCoverage.test.ts`**, written because the §10 Amendment gave §10 a plan property while its manifest entry still read *"there is no plan property to assert."* **An `exempt` entry is never re-examined** — the gate asks whether every principle is ACCOUNTED FOR, and an exemption with a written reason is accounted for forever. **An exemption's reason is a claim about the code and it rots like any other.**
+Board sitting 2026-11-12: *"a records reconciliation, not a prescription."* **Nothing in the engine
+changes.** Register **3 → 2**, `UNVERIFIED_BASELINE` **1 → 0**.
 
-| § | manifest says | but an invariant names it |
-|---|---|---|
-| **§11** | `exempt` — *"display convention, owned by `lib/format.ts`"* | `INV-PLAN-...` at `invariants.ts:4769` (`'§8 Amendment (2026-10-07), §11'`) |
-| **§34** | `exempt` — *"invariant registry, a meta-principle"* | `invariants.ts:8457` (`'§119 Am. 1, §34, §40c'`) |
-| **§120** | `unverified` — ratified by the board and **deliberately not shipped** | three sites: `:3187`, `:3365`, `:8415` |
+🔴 **§120's ENTRY WAS FALSE IN EVERY PART, AND THE BOARD'S OWN AMENDMENT IS WHAT MADE IT FALSE.**
+The item expected a classification judgement; it was a defect. The entry read *"the engine does not do
+this yet … blocked on ONE number, `RACE_PACE_ANCHOR_MAX_STRETCH_PCT`, Willy's bound, which must be
+MEASURED rather than chosen."* Measured 2026-11-12:
+- **the engine does it** — `ruleEngine.ts` returns `goalPaceMinPerKm` for the `HM` anchor on a
+  time-target plan, under a comment quoting §120 verbatim;
+- **both named invariants exist** (`INV-PLAN-RACE-ANCHOR-MATCHES-GOAL`, `INV-PLAN-HEADER-PACE-MATCHES-WORK`);
+- 🔴 **the blocking constant was REJECTED BY §120 AMENDMENT 1, one day later** — *"the board
+  rejected its own name: right question, wrong unit"* — which shipped
+  `RACE_PACE_ANCHOR_MAX_OVER_CV_PCT` (0.5%) instead, live and consumed.
 
-**Each needs one of two answers, and the board should give it:** either the manifest entry is reclassified (and for §120 that moves `UNVERIFIED_BASELINE`, which is why it is not being done unilaterally), or the `§N` is dropped from the `principle_ref` because it is **context rather than enforcement** — citing a neighbouring principle for the reader is legitimate and is probably what §11 and §34 are. Both answers are cheap; guessing between them is not.
+**So the manifest recorded a blocker the board had withdrawn seven weeks earlier**, and §120's own
+`### Status: ratified, not shipped` heading in `CoachingPrinciples.md` said the same thing. Both
+corrected; the §22 trade figures quoted under that heading (27% of sessions at a 15% bound) are
+**left in place as the record of the reasoning and explicitly not as live numbers** — they describe
+the percentage-of-HM-pace form the board rejected, a mechanism never built.
 
-⚠️ **Baselined at three in `CROSS_CHECK_BASELINE`, and the register may FALL, never rise** — so a fourth fails the build while these three stay visible. Declared debt, not a fix.
+✅ **§11 AND §34 STAY, AS CONTEXT, AND EACH NOW CARRIES A MEASURED REASON RATHER THAN BEING A BARE
+NUMBER** — which is the shape of debt this arm exists to catch:
+- **§11** — `INV-PLAN-PROGRESSION-TRANSITION-PACED` **cannot** be its enforcement: it
+  `continue`s on `typeof st.zone !== 'string' || st.zone === ''`, so a point pace on a step with no
+  zone, most of §11's surface, is unreachable by it. It enforces §8's Amendment.
+- **§34** — a meta-principle about the registry; an invariant cannot enforce *"every registered code
+  is emitted"* from inside the registry. Both citing codes name an operative rule first
+  (§47 Am.3/§52, §119 Am. 1/§40c) and cite §34 for its declaration doctrine.
 
----
+⚠️ **The item's site counts were stale** — it recorded §34 at 1 site and §120 at 3; re-measured,
+**§34 has 2 and §120 has 5**. Two of §120's five cite **Amendments 1 and 2**, which were always
+shipped, so part of the conflict was the matcher reading `§120 Am. 2` as `§120`.
+
+✅ **Gate: a baselined entry with no stated reason now fails the arm.** Falsified three ways — revert
+§120 to `unverified` (2 arms red), blank a reason (1 red), plant a fourth conflict (2 red).
+
+⚠️ **What this does not prove:** it reconciles two registers against the code. It does not re-derive
+whether §120's shipped behaviour is coaching-CORRECT — that was ratified 2026-09-21 and amended twice,
+and nothing here re-opens it.
 
 ### 🔻 `WIZARD-ZERO-LONGEST-VS-WEEKLY-01` — a zero longest run beside a real weekly volume is probably an untouched slider 🧭 **DESIGN BOARD**, then 🏃 **COACHING BOARD**
 

@@ -12328,17 +12328,31 @@ bound 27% of these sessions lose the row; at 20%, 19%. Losing the row means losi
 and pressing on §22's own 50% floor, so the bound trades one principle against another and cannot be
 set by preference.
 
-### Status: ratified, not shipped
+### Status: ✅ SHIPPED — and this heading read *"ratified, not shipped"* until 2026-11-12
 
-**Required before this ships**, in one commit:
+🔴 **IT HAD BEEN FALSE FOR SEVEN WEEKS, AND THE BOARD'S OWN AMENDMENT IS WHAT MADE IT FALSE.**
+Corrected under `PRINCIPLE-REGISTER-CROSSCHECK-01` (exempt: a records reconciliation, not a
+prescription — nothing in the engine changes). The four requirements below were discharged by
+**§120 Amendment 1**, written one day later, and nobody came back to this heading.
 
 1. **Principle** — this section. ✅ landed.
-2. **Numeric** — `GENERATION_CONFIG.RACE_PACE_ANCHOR_MAX_STRETCH_PCT`, **value measured**, with the
-   §22 trade stated at the chosen number.
-3. **Invariant** — `INV-PLAN-RACE-ANCHOR-MATCHES-GOAL` plus `INV-PLAN-HEADER-PACE-MATCHES-WORK`
-   (already written and falsified), both with `plan-invariants.md` rows.
-4. **`npm run measure:fitness` on the CHANGED engine.** The board's own procedure requires it before
-   any prescription change, and it has not been run, because the change has not been built.
+2. **Numeric** — ✅ **`GENERATION_CONFIG.RACE_PACE_ANCHOR_MAX_OVER_CV_PCT` (0.5%)**, not the
+   `RACE_PACE_ANCHOR_MAX_STRETCH_PCT` this list named. ⚠️ **Amendment 1 REJECTED that constant
+   by name** — *"the board rejected its own name: right question, wrong unit"* — so the blocker
+   recorded here was withdrawn by the board itself. Live and consumed in `ruleEngine.ts`.
+3. **Invariant** — ✅ both exist: `INV-PLAN-RACE-ANCHOR-MATCHES-GOAL` and
+   `INV-PLAN-HEADER-PACE-MATCHES-WORK`, each with a `plan-invariants.md` row.
+4. **`measure:fitness`** — ✅ runs in `review:coaching` step 7 and is gated by
+   `planFitness.test.ts` on every build.
+
+⚠️ **The engine does it:** `ruleEngine.ts` returns `goalPaceMinPerKm` for the `HM` anchor on a
+time-target plan, under a comment quoting this section. Am. 1's CV floor gates the unbenchmarked
+runner; Am. 2 (2026-10-27) carries the benchmarked one through `goalPaceReach`.
+
+⚠️ **What this correction does NOT claim.** It does not re-measure the §22 trade quoted above (27%
+of sessions at a 15% bound) — those figures belong to the percentage-of-HM-pace form the board
+rejected, and the shipped bound is against CV, so they describe a mechanism that was never built.
+**They are left in place as the record of the reasoning, not as live numbers.**
 
 ⚠️ **A dependency worth stating: this ruling is what unblocks the header.** 2,811 sweep sessions
 currently display a pace their own reps contradict, and the honest header cannot ship alone because

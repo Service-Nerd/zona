@@ -6,6 +6,24 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-11-12 — PRINCIPLE-REGISTER-CROSSCHECK-01 · the manifest was blocked on a number the board had already thrown out
+**Shipped:** §120 reclassified from `unverified` to `invariant`, `UNVERIFIED_BASELINE` 1 → 0, and the two remaining cross-check entries now have to state why they are cross-references rather than claims.
+
+**Dev learning:** the item framed this as a classification judgement the board should make — reclassify the entry, or drop the `§N` from the invariant's `principle_ref`. For §120 it was neither: the entry was simply false. It said the engine did not do this yet and named one blocking constant, `RACE_PACE_ANCHOR_MAX_STRETCH_PCT`. §120 Amendment 1, written the following day, rejected that constant by name — *"right question, wrong unit"* — and shipped a different one against CV pace. Both invariants the entry named as its ship condition exist. The engine returns goal pace for the HM anchor under a comment quoting the section.
+
+So the manifest recorded a blocker the board had withdrawn seven weeks earlier, and §120's own heading in `CoachingPrinciples.md` said the same. Two registers and a doctrine document, all three stale, all three stale in the same way: nobody re-read an entry whose reason had been superseded by the amendment one section below it.
+
+**Product/creator learning:** §11 and §34 I left alone, but a bare number in a baseline is the thing this arm was written to catch, so they are entries with reasons now and an entry with no reason fails the build. The reasons are mechanical rather than opinions — §11's citing invariant `continue`s unless the step is zone-targeted, so most of §11 is unreachable by it; §34 is a meta-principle about the registry and an invariant cannot enforce it from inside. That is the difference between an exemption a reader can falsify and one they have to trust.
+
+**AI-building learning:** the item's own measurements were stale in a direction that mattered. It recorded §34 at one citation site and §120 at three; today they are two and five. And two of §120's five name Amendments 1 and 2, which were always shipped — the cross-check matches `§120` by regex and cannot tell a section from its amendment, so part of the "conflict" was never one. I re-derived every number before planning against any of them, which cost ten minutes and changed what the work was.
+
+**The honest bit:** my first instinct on §120 was to take the board's exemption at face value and reclassify quickly, because the manifest entry said reclassification "needs the board". It did not: once the amendment was read, nothing was left to rule. The slow part was reading the amendment, and I nearly skipped it because the item told me the answer was a judgement call.
+
+**Hook material:** a build gate was blocked on measuring a constant the board had already rejected by name, one section further down in the same document, seven weeks earlier.
+
+**Postable?:** maybe
+
+
 ## 2026-11-12 — ULTRA-VOICE-REPURPOSED-01 · the note described a weekend the plan did not prescribe
 **Shipped:** a paced ultra catalogue row delivered into the midweek quality slot no longer keeps its own name or its own voice; §33's existing remedy now covers it, in one predicate term.
 
