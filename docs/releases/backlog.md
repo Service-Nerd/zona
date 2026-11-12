@@ -4408,6 +4408,71 @@ go first.
 
 ---
 
+### 🔲 `OPS-TRIAL-SQL-CLOCK-01` — two admin views still count the trial from sign-up, and one got WRONG the day the flag went on ⚙️ **NO BOARD**
+
+*(filed 2026-11-12, found by the item-7 wiring; P2 — admin and ops reporting only, no runner reads either)*
+
+📐 **Measured against production 2026-11-12.** Four views mention `trial_started_at`; **two compute
+a 14-day window from it**, and **neither knows about `trial_extended_at`**:
+
+| View | Column | Wrong about |
+|---|---|---|
+| `admin_user_tiers` | `trial_days_left` | the extension (since Release 2) **and** the first-read clock (since `a265e64d`) |
+| `v_activation_funnel` | `trial_ends_at` | the same two |
+
+🔴 **THE EXTENSION HALF WAS ALREADY WRONG BEFORE THE FLAG WENT ON** — `ACT-EMAIL-DAY14-01` shipped
+a seven-day grant on 2026-11-11 and the SQL never learned about it. **Latent: 0 runners have
+accepted one yet**, so nothing has been misreported in practice. The clock half started being wrong
+on 2026-11-12, when the founder turned `TRIAL_STARTS_AT_FIRST_READ` on.
+
+⚠️ **THE OBVIOUS FIX IS THE ONE TO AVOID, AND THAT IS WHY THIS IS AN ITEM RATHER THAN A PATCH.**
+The window is `min(firstRead + TRIAL_DAYS, cap)` with an extension stacked on the result — the cap,
+the extension and the first read together are **the exact rule item 7 existed to give ONE owner**.
+A PL/pgSQL twin is D-16 (no parallel semantics) one layer down, and this programme has already paid
+for `trialDayNumber` existing twice.
+
+**Three options, and the right one is a decision not a default:**
+1. **Drop the computed columns** and let the admin surface resolve the window in TypeScript from
+   the owner. Cheapest, and removes the duplication rather than moving it.
+2. **Mirror it in SQL with a test that proves the two agree**, as `digestTrialSqlMirror.test.ts`
+   already does for `judgeTrialFunnel`. Honest, but it is a second implementation.
+3. **Rename the columns to say what they are** — `signup_trial_days_left` — so nobody reads them
+   as the live clock. Cheapest of all, and it is the one that makes the lie impossible rather than
+   merely unlikely.
+
+⚠️ **No runner reads either view.** Both are admin tooling; `v_activation_funnel` is the
+programme's own measurement surface, which is the reason it matters at all — **the funnel that
+measures the trial change is itself describing the old clock.**
+
+---
+
+### 🔲 `BRAND-COACHNAME-HARDCODED-01` — the coach's name is typed into 7 runner-facing files ⚙️ **NO BOARD**
+
+*(filed 2026-11-12, found while fixing `LockedCoachingPreview`; P3)*
+
+📐 **Measured 2026-11-12, comments stripped, harnesses separated:** **13 occurrences across 7
+runner-facing files** (`MeScreen` 4, `TodayScreen` 3, `ReflectionInput` 2, `DashboardClient`,
+`NotificationRow`, `ZoneRings`, `StravaPanel` 1 each), plus **8 in 3 `-preview` design harnesses**,
+which 404 in production and are out of scope.
+
+**Why it is a defect and not a style note.** CLAUDE.md's parameterisation rule is explicit —
+*"never hardcode a brand name in any component, comment, or prompt"* — and the product has been
+renamed **twice** already (Zona → Vetra → Zonna). `BRAND.coachName` exists precisely so a third
+rename is one line. ⚠️ **Zero behaviour delta today**: the constant is `'Kit'`, so this is rename
+risk, not a live bug.
+
+⚠️ **DELIBERATELY NOT SWEPT WHEN FOUND.** It surfaced while editing one component during
+`ACT-FREE-TEASE-01`; that one site was converted because it was already being rewritten. Sweeping
+seven more files inside an activation item is the scope creep SLC forbids, and a 13-site rename
+with no behaviour change is churn until someone wants it. **The reason to do it is a rename, and
+the reason to file it is so that rename costs an hour rather than a search.**
+
+🔻 **A gate is the real deliverable**, not the sweep: nothing stops the fourteenth. The pre-commit
+hook already blocks hardcoded hex, fonts and retired palette values in `app/` and `components/` —
+a brand-name rule belongs beside them, with the harnesses and `lib/brand.ts` itself exempt.
+
+---
+
 ### ✅ `ACT-FUNNEL-01` — SHIPPED 2026-11-11. The activation half of the funnel is observable ⚙️ **NO BOARD**
 
 **Problem.** Every metric in the brief's table needs a measurement that does not exist. The brief
@@ -13689,7 +13754,7 @@ fails every morning for a reason nobody needs to read is a test everybody learns
 the next real failure in that file arrives pre-ignored. This repo has already recorded that a
 guard which cries wolf gets disabled, which is the same as having no guard.
 
-**State at END of 2026-11-12 — 👑 THE TRIAL CLOCK IS LIVE: it starts at the first run read (last ship `a265e64d`, before it `2edea4e4`. **786 files / 8,076 tests, ALL GREEN**; `tsc` 0; `backlog:verify` **91 open items · 31 COACHING · 28 DESIGN · 13 ⚙️ NO BOARD · 12 SLT · 7 FOUNDER**.)** ✅ **All nine items of the activation brief are resolved, and the dominant cause is fixed rather than worked around.** The founder was asked for the flag in plain terms, told what it does, and answered **“yes turn it on”**. 📐 **Measured before flipping, and one-way by construction** — `endsAt = min(firstRead + TRIAL_DAYS, cap)` and `firstRead >= trialStartedAt`, so it can never land before the old date: **37 of 37 trialists gain, 0 lose, mean +7.0 days; 2 expired trials come back, 0 cut off**, neither reactivated runner having been sent the day-14 *“trial ends today”* email. On-trial **4 → 6**. 🔑 **The gate changed SIDES rather than going away:** it pins `true` now, so an accidental revert fails the build exactly as an accidental enable used to, and every arm describing the OFF policy passes it explicitly so both stay provable. ⚠️ **One ops number genuinely moves** — the digest's `onTrial` counts to the cap for a runner with no read, so the trial count steps up on deploy; that is the policy working. 🔻 **Two SQL views stay signup-relative by decision**, recorded on the flag. 🔴 **A PUSH IS NOT A DEPLOY** — this is on `main`; it reaches runners when Vercel builds it.
+**State at END of 2026-11-12 — 👑 THE TRIAL CLOCK IS LIVE: it starts at the first run read (last ship `a265e64d`, before it `2edea4e4`. **786 files / 8,076 tests, ALL GREEN**; `tsc` 0; `backlog:verify` **91 open items · 31 COACHING · 28 DESIGN · 13 ⚙️ NO BOARD · 12 SLT · 7 FOUNDER**.)** ✅ **All nine items of the activation brief are resolved, and the dominant cause is fixed rather than worked around.** The founder was asked for the flag in plain terms, told what it does, and answered **“yes turn it on”**. 📐 **Measured before flipping, and one-way by construction** — `endsAt = min(firstRead + TRIAL_DAYS, cap)` and `firstRead >= trialStartedAt`, so it can never land before the old date: **37 of 37 trialists gain, 0 lose, mean +7.0 days; 2 expired trials come back, 0 cut off**, neither reactivated runner having been sent the day-14 *“trial ends today”* email. On-trial **4 → 6**. 🔑 **The gate changed SIDES rather than going away:** it pins `true` now, so an accidental revert fails the build exactly as an accidental enable used to, and every arm describing the OFF policy passes it explicitly so both stay provable. ⚠️ **One ops number genuinely moves** — the digest's `onTrial` counts to the cap for a runner with no read, so the trial count steps up on deploy; that is the policy working. 🔻 **Two SQL views stay signup-relative by decision**, recorded on the flag. 🔴 **A PUSH IS NOT A DEPLOY** — this is on `main`; it reaches runners when Vercel builds it. ✅ **PROGRAMME AUDITED AGAINST THE BRIEF, NOT FROM MEMORY: 9 items + 4 defects, all resolved** — 9 shipped, 1 defect withdrawn on a false premise, 1 recorded-not-fixed with 0 live instances, 2 shipped. `next build` run and green, which is the brief's third gate and the one the pre-push hook does not cover. 🔻 **The audit found TWO known defects I had declared in comments and never FILED** — `OPS-TRIAL-SQL-CLOCK-01` and `BRAND-COACHNAME-HARDCODED-01`, now items, against the brief's *“never leave a known defect unlogged”*. **A defect explained in a code comment is not a logged defect**, and both were written by me on the same day I was quoting that rule. Open items **91 → 93**.
 
 **Prior — state at END of 2026-11-12 — item 7's wiring is done and the flag is a YES/NO (last ship `0d81e9a5`, before it `b28b49fa`. **786 files / 8,075 tests, ALL GREEN**; `tsc` 0; `backlog:verify` **91 open items · 31 COACHING · 28 DESIGN · 13 ⚙️ NO BOARD · 12 SLT · 7 FOUNDER**.)** ✅ **All nine items of the activation brief are resolved.** Four surfaces still computed *"day N of the trial"* from `trial_started_at`; they read `resolveTrialWindow` now, and both withholding `resolveTier` callers hand over `firstReadAt`. 🔑 **Not a branch:** every one asks about the END, so `trialDayOfWindow` counts back from `endsAt`, which with the flag off IS the signup stamp — proven over a 64-day × 3-time grid. `trialDayNumber` had **two copies** and now has none. 🔴 **A LIVE defect came out of it:** the day-3 nudge told anyone on day 11 *"Kit's read 11 days of your runs"*, and **33 of 37 trialists have never had a run read.** 🔑 **PROVEN BY FLIPPING IT: 12 failures → 8 → 2** — two unregistered history readers (one register updated, the adjacent one not), a test double that stopped at `.eq()` and killed nine generate-plan arms, and three arms that DESCRIBED the off policy while depending on it. **On a flip today exactly two fail:** the founder's gate, and one genuine ops behaviour change. 🔴 **`tsc` CAUGHT WHAT 8,000 TESTS COULD NOT** — a duplicate key in the reader register, where the later one wins at runtime, so the suite went green against a register that had stopped describing half of what it tracked. 🔻 **Two SQL views stay signup-relative by decision** (`admin_user_tiers.trial_days_left`, `v_activation_funnel.trial_ends_at`) — neither knows about the extension, so both are already wrong about a Release 2 feature (latent, 0 affected); copying the window into SQL would be D-16 one layer down. **👑 The flag needs one signature and nothing else.**
 
