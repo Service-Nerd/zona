@@ -11,6 +11,14 @@ const daysAgo = (n: number) => new Date(NOW.getTime() - n * 86_400_000).toISOStr
 describe('judgeTrialFunnel — the two windows, at their edges', () => {
   it('the trial window is exclusive at exactly TRIAL_DAYS, as isTrialActive is', () => {
     // Pinned against the owner, so a change to `isTrialActive` moves both.
+    //
+    // ⚠️ POLICY-DEPENDENT BY CONSTRUCTION, AND LEFT THAT WAY DELIBERATELY. `judgeTrialFunnel`
+    // takes rows and a clock, not a policy, so this arm reads whatever
+    // `TRIAL_STARTS_AT_FIRST_READ` currently is. **On a flip it goes red, and that is honest
+    // signal rather than noise:** a runner with no read is on trial for longer under the new
+    // policy, so the funnel's `onTrial` really does move. Re-read it on that day rather than
+    // silencing it. Every arm that merely DESCRIBES the off policy now passes it explicitly
+    // (`trialDayParity.test.ts`); this one is describing a behaviour that genuinely changes.
     expect(isTrialActive(daysAgo(TRIAL_DAYS), NOW)).toBe(false)
     expect(isTrialActive(daysAgo(TRIAL_DAYS - 0.5), NOW)).toBe(true)
 

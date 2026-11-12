@@ -87,8 +87,15 @@ const S = vi.hoisted(() => ({
  * route's reads span six tables through four different modules.
  *
  * Honours exactly what the route's callers use: `select` (with `{ count, head }`),
- * `insert`, `update`, `eq` and `maybeSingle`, and is awaitable directly for the
- * callers that never narrow to one row.
+ * `insert`, `update`, `eq`, `order`, `limit` and `maybeSingle`, and is awaitable directly for
+ * the callers that never narrow to one row.
+ *
+ * 🔴 `order` AND `limit` WERE ADDED BECAUSE A STUB THAT CANNOT EXPRESS THE PRODUCTION CALL IS A
+ * GAP IN THE HARNESS, NOT A REASON THE CALL IS WRONG. With `TRIAL_STARTS_AT_FIRST_READ` on,
+ * `getUserTier` reads the runner's earliest `run_analysis` row — `.order().limit().maybeSingle()`
+ * — and this double stopped at `.eq()`, so **nine arms of this file failed with
+ * `.order is not a function` the moment the flag was flipped.** Found by flipping it and running
+ * the whole suite, which is the only way to tell a wired flag from a wired-looking one.
  */
 function fakeTable(name: string) {
   if (S.crashTable === name) throw new Error(`connection reset reading ${name}\nsecond line never stored`)
@@ -102,10 +109,18 @@ function fakeTable(name: string) {
   // treats an absent column as null, as PostgREST would for a nullable one.
   const ranges: [string, 'gte' | 'lt', string][] = []
   const nulls: string[] = []
-  const matching = () => rows().filter(r =>
-    filters.every(([c, v]) => r[c] === v)
-    && ranges.every(([c, op, v]) => op === 'gte' ? String(r[c]) >= v : String(r[c]) < v)
-    && nulls.every(c => r[c] == null))
+  const sorts: [string, boolean][] = []
+  let cap: number | null = null
+  const matching = () => {
+    const hit = rows().filter(r =>
+      filters.every(([c, v]) => r[c] === v)
+      && ranges.every(([c, op, v]) => op === 'gte' ? String(r[c]) >= v : String(r[c]) < v)
+      && nulls.every(c => r[c] == null))
+    for (const [c, asc] of [...sorts].reverse()) {
+      hit.sort((a, b) => (String(a[c]) < String(b[c]) ? -1 : String(a[c]) > String(b[c]) ? 1 : 0) * (asc ? 1 : -1))
+    }
+    return cap == null ? hit : hit.slice(0, cap)
+  }
   const result = () => {
     if (mode === 'insert') { rows().push(payload!); return { data: null, error: null, count: 1 } }
     if (mode === 'update') {
@@ -125,6 +140,11 @@ function fakeTable(name: string) {
     gte: (c: string, v: string) => { ranges.push([c, 'gte', v]); return api },
     lt: (c: string, v: string) => { ranges.push([c, 'lt', v]); return api },
     is: (c: string, v: unknown) => { if (v === null) nulls.push(c); return api },
+    // ⚠️ A REAL SORT, not a no-op that returns `api`. `getUserTier` takes the EARLIEST read, so
+    // a stub that ignored the direction would hand it whichever row the fixture happened to list
+    // first — green, and for the wrong reason, which is this file's own stated standard.
+    order: (c: string, opts?: { ascending?: boolean }) => { sorts.push([c, opts?.ascending !== false]); return api },
+    limit: (n: number) => { cap = n; return api },
     maybeSingle: () => {
       const r = result()
       const d = r.data as Record<string, unknown>[] | null

@@ -4,7 +4,7 @@ import { secretMatches } from '@/lib/security/secrets'
 import { BRAND } from '@/lib/brand'
 import { sendWebPush } from '@/lib/webpush'
 import { sendApnsPush } from '@/lib/apnpush'
-import { getUserTier } from '@/lib/trial'
+import { getUserTier, resolveTrialWindow, trialDayOfWindow, TRIAL_STARTS_AT_FIRST_READ } from '@/lib/trial'
 import { recordNotification } from '@/lib/notifications'
 
 // POST/GET /api/push/send-trial-insight
@@ -44,10 +44,12 @@ function firstSentence(text: string, max = BODY_MAX_CHARS): string {
   return (lastSpace > max - 20 ? hard.slice(0, lastSpace) : hard).replace(/[.,;:]\s*$/, '') + '…'
 }
 
-function trialDayNumber(trialStartedAt: string, now: Date): number {
-  const start = new Date(trialStartedAt).getTime()
-  return Math.floor((now.getTime() - start) / MS_PER_DAY) + 1
-}
+// 🔴 A PRIVATE SECOND COPY OF `trialDayNumber` LIVED HERE, and it was the duplication class
+// this repo keeps paying for: byte-identical to the one in `lib/email/trialEmailWindow.ts`,
+// agreeing with it only by accident. Both counted from the SIGNUP stamp, which under
+// `TRIAL_STARTS_AT_FIRST_READ` is no longer the start of anything — so this push would have
+// fired on calendar day 5 at a runner whose trial had not begun. The owner is
+// `lib/trial.ts → trialDayOfWindow`.
 
 export async function GET(req: NextRequest) { return POST(req) }
 
@@ -94,7 +96,7 @@ export async function POST(req: NextRequest) {
     try {
       const { data: settings } = await supabase
         .from('user_settings')
-        .select('trial_started_at, trial_insight_push_sent_at')
+        .select('trial_started_at, trial_extended_at, trial_insight_push_sent_at')
         .eq('id', userId)
         .maybeSingle()
 
@@ -103,8 +105,30 @@ export async function POST(req: NextRequest) {
       if (settings.trial_insight_push_sent_at) { skipped++; continue }
       if (!settings.trial_started_at) { skipped++; continue }
 
-      const day = trialDayNumber(settings.trial_started_at, now)
-      if (day < TRIAL_DAY_MIN || day > TRIAL_DAY_MAX) { skipped++; continue }
+      // 🔴 THE DAY COMES FROM THE WINDOW. ⚠️ The first read is fetched only while the flag is
+      // on — this loop already reads `run_analysis` further down for the insight body, but that
+      // read is FILTERED to live rows and is the wrong question here: the clock asks whether
+      // this runner has EVER been shown a read, which a race change must not un-do.
+      let firstReadAt: string | null = null
+      let firstReadUnavailable = false
+      if (TRIAL_STARTS_AT_FIRST_READ) {
+        const { data: fr, error: frErr } = await supabase
+          .from('run_analysis')
+          .select('created_at')
+          .eq('user_id', userId)
+          .order('created_at', { ascending: true })
+          .limit(1)
+          .maybeSingle()
+        if (frErr) firstReadUnavailable = true
+        else firstReadAt = fr?.created_at ?? null
+      }
+      const day = trialDayOfWindow(resolveTrialWindow({
+        trialStartedAt: settings.trial_started_at,
+        trialExtendedAt: settings.trial_extended_at,
+        firstReadAt,
+        firstReadUnavailable,
+      }, now), now)
+      if (day === null || day < TRIAL_DAY_MIN || day > TRIAL_DAY_MAX) { skipped++; continue }
 
       // Tier check — only paid/trial. A user whose trial expired (e.g. day 5
       // crosses midnight before this cron runs on day 6) will have already

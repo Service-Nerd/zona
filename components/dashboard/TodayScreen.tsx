@@ -40,7 +40,6 @@ import { DOW_FULL, DOW_LETTER, DOW_ORDER, computeSessionDate, displayZonesForSes
 import { MICRO_LABELS } from '@/components/shared/microLabels'
 import type { HandoverCopy } from '@/lib/ui/handoverCopy'
 import { NotificationBell } from '@/components/shared/NotificationBell'
-import { TRIAL_DAYS } from '@/lib/trial'
 import { Wordmark } from '@/components/ui/Wordmark'
 import { authedFetch } from '@/lib/supabase/authedFetch'
 import { classifyHrPending } from '@/lib/coaching/hrPending'
@@ -1456,12 +1455,35 @@ export default function TodayScreen({ plan, weekIndex, daysToRace, raceName, pre
             Day-keyed escalation: factual → attachment → loss preview → stark.
             Calm reminder, not a paywall. Plan stays either way; coaching pauses. */}
         {trialDaysLeft != null && trialDaysLeft > 0 && trialDaysLeft <= 4 && (() => {
-          const daysIn = TRIAL_DAYS - trialDaysLeft
+          // 🔴 THE DAY-3 LINE CLAIMED A READ COUNT IT DERIVED FROM THE CALENDAR, AND IT IS FALSE
+          // FOR MOST RUNNERS TODAY — not only under `TRIAL_STARTS_AT_FIRST_READ`. It read
+          // `TRIAL_DAYS - trialDaysLeft` and rendered *"Kit's read 11 days of your runs."* to
+          // anyone on day 11. 📐 Measured 2026-11-12: **33 of 37 trialists have never had a
+          // single run read**, so for almost all of them that sentence was a claim about
+          // something that never happened — the same class as `LockedCoachingPreview` telling a
+          // linked runner we had no runs.
+          //
+          // ⚠️ And under the flag it got worse rather than differently wrong: `trialDaysLeft`
+          // counts down from the CAP, so a runner 27 days in with zero reads would be told Kit
+          // had read eleven days of them.
+          //
+          // The count now comes from the reads themselves. ⚠️ It is PLAN-SCOPED (§71 Am. 1):
+          // `runAnalysisMap` holds the live plan's reads, so a runner who regenerated mid-trial
+          // sees fewer than their lifetime total. **Understating is the safe direction for a
+          // nudge; overstating is what this replaced.**
+          const readCount = Object.values(runAnalysisMap ?? {})
+            .reduce((n, week) => n + Object.values(week ?? {}).filter(Boolean).length, 0)
           const messages: Record<1 | 2 | 3 | 4, { headline: string; sub: string }> = {
             4: { headline: 'Four days of full access left.',                 sub: 'Plan is yours either way.' },
-            3: { headline: `Kit's read ${daysIn} days of your runs.`,        sub: 'Three days left to keep him.' },
+            3: readCount > 0
+              ? { headline: `${BRAND.coachName}'s read ${readCount} ${readCount === 1 ? 'run' : 'runs'} of yours.`,
+                  sub: 'Three days left to keep him.' }
+              // Nothing read, so nothing to be attached to. The honest beat is what is about to
+              // stop, and it is still true for a runner who has run and never been matched.
+              : { headline: 'Three days of full access left.',
+                  sub: `Run once and ${BRAND.coachName} will tell you what he saw.` },
             2: { headline: 'Two days. Then this becomes a static plan.',     sub: 'Plan still works. Coaching stops.' },
-            1: { headline: 'One day left.',                                  sub: 'Kit goes quiet at midnight.' },
+            1: { headline: 'One day left.',                                  sub: `${BRAND.coachName} goes quiet at midnight.` },
           }
           const msg = messages[trialDaysLeft as 1 | 2 | 3 | 4]
           return (

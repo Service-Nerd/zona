@@ -4,8 +4,8 @@ import { secretMatches } from '@/lib/security/secrets'
 import { sendToUser } from '@/lib/email/sendToUser'
 import { buildDay11Email, buildDay14Email, buildDay17Email, buildDay30Email, type RunSummary } from '@/lib/email/trialEmailTemplates'
 import { countRunsRead, latestRunRead, trialWindow } from '@/lib/ops/runRead'
-import { trialDayNumber, decideTrialEmails, localHourIn } from '@/lib/email/trialEmailWindow'
-import { resolveTier, TRIAL_DAYS } from '@/lib/trial'
+import { decideTrialEmails, localHourIn } from '@/lib/email/trialEmailWindow'
+import { resolveTier, resolveTrialWindow, trialDayOfWindow, TRIAL_STARTS_AT_FIRST_READ, TRIAL_DAYS } from '@/lib/trial'
 
 // POST /api/email/send-trial
 //
@@ -107,6 +107,48 @@ export async function POST(req: NextRequest) {
   const grantByUser = new Map((grantRows ?? []).map(r => [r.claimed_by, r]))
 
   const now = new Date()
+
+  /**
+   * ACT-TRIAL-AT-FIRST-READ-01 — each candidate's EARLIEST run read, superseded rows included.
+   *
+   * ⚠️ ONE QUERY FOR THE WHOLE BATCH, not one per runner inside the loop. This is a cron over
+   * every trialist, so a per-user read would be N serialised round trips for a value most of
+   * them share the absence of.
+   *
+   * ⚠️ AND ONLY WHILE THE FLAG IS ON. `resolveTrialWindow` ignores the read on the signup path,
+   * so fetching it today would be a query bought for a policy that discards it — the same rule
+   * `getUserTier` follows.
+   *
+   * ⚠️ UNFILTERED BY `superseded_at`, deliberately, and it is the opposite of what
+   * `lib/ops/runRead.ts` wants. The question is *"has this runner ever been shown what the
+   * product does"*, which cannot un-happen; filtering would lose a first read to a race change
+   * and bring an already-expired trial back. Argued into `supersedeCoverage`'s allowlist.
+   */
+  const firstReadByUser = new Map<string, string>()
+  let firstReadFailed = false
+  if (TRIAL_STARTS_AT_FIRST_READ) {
+    const ids = (allSettings ?? []).map(s => s.id)
+    if (ids.length > 0) {
+      const { data: reads, error: readErr } = await supabase
+        .from('run_analysis')
+        .select('user_id, created_at')
+        .in('user_id', ids)
+        .order('created_at', { ascending: true })
+      // 🔴 A FAILED READ IS NOT "NO READ". Treated as absence it would start every runner's
+      // clock at the cap and silence the day-11 and day-14 emails for all of them, on our
+      // outage. `firstReadUnavailable` is the honest input and the owner knows what to do
+      // with it.
+      if (readErr) {
+        console.error('[email/send-trial] first-read query failed', readErr.message)
+        firstReadFailed = true
+      } else {
+        for (const r of reads ?? []) {
+          if (!firstReadByUser.has(r.user_id)) firstReadByUser.set(r.user_id, r.created_at)
+        }
+      }
+    }
+  }
+
   let day11Sent = 0
   let day14Sent = 0
   let day17Sent = 0
@@ -116,16 +158,32 @@ export async function POST(req: NextRequest) {
 
   for (const settings of allSettings ?? []) {
     try {
-      const day = trialDayNumber(settings.trial_started_at, now)
       const sub = subByUser.get(settings.id)
       const grant = grantByUser.get(settings.id)
+      // The same facts every other `resolveTier` caller hands over (TIER-OWNER-01): one owner
+      // is only an owner if its callers agree on the inputs.
+      const trialInputs = {
+        trialStartedAt: settings.trial_started_at,
+        trialExtendedAt: settings.trial_extended_at,
+        firstReadAt: firstReadByUser.get(settings.id) ?? null,
+        firstReadUnavailable: firstReadFailed,
+      }
+      // 🔴 THE DAY COMES FROM THE WINDOW, NEVER FROM THE SIGNUP STAMP. See `trialDayOfWindow`:
+      // "3 days left" is a question about the END, and under the flag the stamp is no longer
+      // the start. Identical to the old arithmetic, to the millisecond, while the flag is off.
+      const day = trialDayOfWindow(resolveTrialWindow(trialInputs, now), now)
+      if (day === null) { skipped++; continue }
       const { tier } = resolveTier({
         isAdmin: settings.is_admin,
         subStatus: sub?.status,
         subPeriodEnd: sub?.current_period_end,
         grantExpiresAt: grant?.expires_at,
-        trialStartedAt: settings.trial_started_at,
-        trialExtendedAt: settings.trial_extended_at,
+        // Named, not spread: the interlock's sweep cannot see a spread, and more to the point
+        // neither can a reader deciding whether this caller agrees with the other three.
+        trialStartedAt: trialInputs.trialStartedAt,
+        trialExtendedAt: trialInputs.trialExtendedAt,
+        firstReadAt: trialInputs.firstReadAt,
+        firstReadUnavailable: trialInputs.firstReadUnavailable,
       }, now)
 
       const { needsDay11, needsDay14, needsDay17, needsDay30 } = decideTrialEmails(day, settings, {

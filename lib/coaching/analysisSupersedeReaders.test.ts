@@ -131,14 +131,14 @@ const EXPECT_FILTERS: Record<string, Expectation> = {
   'app/api/analyse-run/route.ts': true,
   'app/api/daily-coach-note/route.ts': true,
   'app/api/discipline-ledger/route.ts': true,            // plan-scoped BY DESIGN — correct
-  'app/api/email/send-trial/route.ts': true,
+  'app/api/email/send-trial/route.ts': false,     // see below
   'app/api/maintenance-block/route.ts': true,
   'app/api/og/session-complete-card/route.tsx': true,
   'app/api/og/weekly-zone-card/route.tsx': true,
   'app/api/ops/plan-audit/route.ts': true,
   'app/api/phase-summary/route.ts': true,
   'app/api/post-run-reframe/route.ts': true,             // 🔴 the reframe cohort — §71 Am. 1's genuine gap
-  'app/api/push/send-trial-insight/route.ts': true,
+  'app/api/push/send-trial-insight/route.ts': 'mixed',  // see below
   'app/api/race-readiness/route.ts': true,
   'app/api/recalibrate-hr/route.ts': true,
   'app/api/recalibrate-taper/route.ts': true,
@@ -200,6 +200,33 @@ const EXPECT_FILTERS: Record<string, Expectation> = {
    * filter being ADDED here on the day the flag is flipped.
    */
   'lib/trial.ts': false,
+
+  /*
+   * 🔴 BOTH TRIAL CRONS CHANGED SIDE (ACT-TRIAL-AT-FIRST-READ-01 wiring, 2026-11-12), and to
+   * DIFFERENT sides, which the gate had to tell me:
+   *   · `send-trial` → `true` becomes **`false`**. Its only inline `run_analysis` read is now the
+   *     trial clock's first read, which is unfiltered. Its read COUNT is filtered but lives in
+   *     `lib/ops/runRead.ts`, a different file, so there is nothing plan-scoped left HERE.
+   *     ⚠️ I registered it `'mixed'` and the gate refused: *"register says mixed, found NO
+   *     plan-scoped read"*. A register keyed by FILE cannot inherit a sibling's filtering.
+   *   · `send-trial-insight` → `true` becomes **`'mixed'`**: it genuinely holds both. The BODY
+   *     read is filtered, because it renders a verdict the runner can still tap through to.
+   *
+   * UNFILTERED in both cases means the trial clock's first read, mirroring `lib/trial.ts`: a race
+   * change supersedes every row, so filtering would lose their first read, jump them to the cap
+   * and **bring an already-expired trial back**. The question is "has this runner ever been shown
+   * what the product does", which cannot un-happen.
+   *
+   * ⚠️ FOUND BY FLIPPING THE FLAG AND RUNNING THE WHOLE SUITE, not by the change itself:
+   * `supersedeCoverage`'s allowlist was updated and these three arms were not. **Two registers
+   * track the same objects by different measures, and a human in between is how a green tick
+   * hides a hole** — the adjacent-register rule, paid again.
+   *
+   * ⚠️ AND MY FIRST ATTEMPT ADDED THEM AS NEW `false` ENTRIES WHILE BOTH FILES WERE ALREADY
+   * REGISTERED `true`. A duplicate key in an object literal: the later one wins at runtime, so
+   * **the suite went green against a register that had stopped describing the filtered reads.**
+   * `tsc` caught it (TS1117) and vitest could not. A type error is a test the suite cannot run.
+   */
 
   /**
    * ⚠️ DELIBERATELY UNFILTERED, AND THIS GATE IS WHAT MADE IT AN EXPLICIT

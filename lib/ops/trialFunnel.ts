@@ -80,7 +80,26 @@ export function judgeTrialFunnel(
   const trialling: TrialFunnelRow[] = []
 
   for (const r of rows) {
-    const { tier } = resolveTier(r, now)
+    // ACT-TRIAL-AT-FIRST-READ-01 — the clock inputs are NAMED rather than left to the spread.
+    //
+    // ⚠️ `resolveTier(r, now)` already forwarded them: `TrialFunnelRow extends TierInputs`, so a
+    // row that carries them passes them. This was therefore a FALSE POSITIVE of the interlock's
+    // sweep, which matches `firstReadAt` within 900 characters of the call and cannot see a
+    // spread — and the sweep says of itself that it is a checklist, not the guarantee. Named
+    // here anyway, because the next reader should not have to re-derive that, and because the
+    // consequence of a producer omitting them is invisible: with the flag on, every row without
+    // a `firstReadAt` resolves on the CAP path and `onTrial` silently over-counts.
+    //
+    // 🔻 NOT made REQUIRED on `TrialFunnelRow`, which was the other option and is what
+    // `decideTrialEmails` did for the same reason. The difference is that this function has **no
+    // production caller yet** — only tests — so tightening the type today would churn 19 test
+    // rows to protect a producer that does not exist. **Do it when one is written**, which is
+    // the moment the compiler can usefully ask.
+    const { tier } = resolveTier({
+      ...r,
+      firstReadAt: r.firstReadAt ?? null,
+      trialExtendedAt: r.trialExtendedAt ?? null,
+    }, now)
     if (tier === 'trial') trialling.push(r)
     else if (tier === 'paid') paid++
     else free++

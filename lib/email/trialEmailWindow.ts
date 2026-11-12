@@ -86,11 +86,15 @@ export function localHourIn(timezone: string | null | undefined, now: Date): num
   } catch { return null }
 }
 
-/** 1-indexed trial day: the day the trial started is day 1. */
-export function trialDayNumber(trialStartedAt: string, now: Date): number {
-  const start = new Date(trialStartedAt).getTime()
-  return Math.floor((now.getTime() - start) / MS_PER_DAY) + 1
-}
+// 🔴 `trialDayNumber` LIVED HERE AND IS GONE (ACT-TRIAL-AT-FIRST-READ-01 wiring, 2026-11-12).
+// It read `floor((now - trial_started_at) / day) + 1`, which is the signup stamp — and under
+// `TRIAL_STARTS_AT_FIRST_READ` that stamp stops being the start of anything, so this would have
+// sent **"3 days left." to a runner with nineteen**. The owner is
+// `lib/trial.ts → trialDayOfWindow(window, now)`, which counts back from `endsAt` and is
+// identical to this function, to the millisecond, while the flag is off.
+//
+// ⚠️ It is DELETED rather than re-exported. A thin wrapper here would be a second name for the
+// same question, and the whole reason this wiring exists is that the question had four answers.
 
 export interface TrialEmailStamps {
   trial_email_day11_sent_at: string | null

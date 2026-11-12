@@ -1,6 +1,5 @@
 import { describe, it, expect } from 'vitest'
 import {
-  trialDayNumber,
   decideTrialEmails,
   NUDGE_DAY,
   EXPIRY_DAY,
@@ -27,14 +26,10 @@ describe('trialEmailWindow constants', () => {
   })
 })
 
-describe('trialDayNumber', () => {
-  it('is 1-indexed: the start day is day 1', () => {
-    expect(trialDayNumber('2026-01-01T00:00:00Z', new Date('2026-01-01T12:00:00Z'))).toBe(1)
-  })
-  it('counts elapsed whole days + 1', () => {
-    expect(trialDayNumber('2026-01-01T00:00:00Z', new Date('2026-01-11T06:00:00Z'))).toBe(11)
-  })
-})
+// 🔴 `trialDayNumber` MOVED TO `lib/trial.ts → trialDayOfWindow` (2026-11-12). It counted from
+// the SIGNUP stamp, which under `TRIAL_STARTS_AT_FIRST_READ` is no longer the start of anything.
+// Its arms live in `lib/trialDayParity.test.ts`, which also proves the new owner is identical to
+// the old arithmetic while the flag is off — a claim the old two cases could not make.
 
 describe('decideTrialEmails', () => {
   it('sends the nudge on the exact nudge day (regression: exact-day still works)', () => {

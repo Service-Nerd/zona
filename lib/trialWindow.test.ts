@@ -40,8 +40,25 @@ describe('ACT-TRIAL-AT-FIRST-READ-01 — the flag is OFF and must stay provably 
   })
 
   it('OFF: the boundary is the one the old arithmetic had — exclusive at exactly TRIAL_DAYS', () => {
-    expect(isTrialActive(START, plus(START, TRIAL_DAYS))).toBe(false)
-    expect(isTrialActive(START, plus(START, TRIAL_DAYS - 0.5))).toBe(true)
+    // ⚠️ THE POLICY IS PASSED, NOT INHERITED FROM THE CONSTANT. This arm asserted
+    // `isTrialActive(...)`, which reads the flag internally — so it described the OFF boundary
+    // while silently depending on OFF being the current setting, and went red the moment the
+    // flag was flipped to see whether the wiring held. **An arm about one policy must name it**,
+    // or a future flip reads as this boundary breaking.
+    const activeOff = (now: Date) =>
+      resolveTrialWindow({ trialStartedAt: START.toISOString() }, now, false).active
+    expect(activeOff(plus(START, TRIAL_DAYS))).toBe(false)
+    expect(activeOff(plus(START, TRIAL_DAYS - 0.5))).toBe(true)
+  })
+
+  it('and `isTrialActive` agrees with the owner under whatever policy is live', () => {
+    // The production entry point, kept in the population: one owner is only an owner if the
+    // thing callers actually use returns what it returns.
+    for (const d of [TRIAL_DAYS - 0.5, TRIAL_DAYS, TRIAL_DAYS + 5]) {
+      const now = plus(START, d)
+      expect(isTrialActive(START, now))
+        .toBe(resolveTrialWindow({ trialStartedAt: START.toISOString() }, now).active)
+    }
   })
 
   it('no stamp means no trial, on either setting', () => {
@@ -257,14 +274,35 @@ describe('ACT-TRIAL-AT-FIRST-READ-01 — the interlock is DERIVED, not a list', 
    * constant fails the build whatever this sweep happens to recognise. What this produces is a
    * CHECKLIST for the day that changes, and it is honest about being incomplete.
    */
-  const signupRelative = FILES.filter(f => {
-    if (f === 'lib/trial.ts') return false            // the owner itself
-    const src = readFileSync(f, 'utf8').replace(/\/\/[^\n]*/g, ' ').replace(/\/\*[\s\S]*?\*\//g, ' ')
-    return /trialDayNumber\s*\(/.test(src)
-        || /new Date\((trialStartedAt|settings\.trial_started_at)\)[^\n]*TRIAL_DAYS/.test(src)
-        || /TRIAL_DAYS\s*-\s*trialDaysLeft/.test(src)
-        || /trialWindow\s*\(\s*trialStartedAt/.test(src)
-  })
+/**
+ * 🔴 THE PREDICATE MATCHES THE HAZARD, NOT A FUNCTION NAME, AND THAT CHANGE IS THE WHOLE POINT
+ * OF THE 2026-11-12 WIRING. The old version's first clause was `/trialDayNumber\s*\(/` — so
+ * **renaming that function would have emptied this sweep without fixing anything.** The wiring
+ * did rename it (to `trialDayOfWindow`, in `lib/trial.ts`), which is exactly the move this guard
+ * must not reward.
+ *
+ * The hazard is: computing a trial day, or a day count, from the SIGNUP STAMP rather than from
+ * the window the owner returns. Exported and string-shaped so the arms below can plant each
+ * shape and prove the predicate still fires — a sweep over an empty population cannot otherwise
+ * be told from a sweep that has stopped working.
+ */
+  function isSignupRelative(src: string): boolean {
+    const code = src.replace(/\/\/[^\n]*/g, ' ').replace(/\/\*[\s\S]*?\*\//g, ' ')
+    return (
+      // Day arithmetic on the signup stamp, in either order.
+      /(trialStartedAt|trial_started_at)[^\n]{0,90}(MS_PER_DAY|DAY_MS|86_?400_?000|24 \* 60 \* 60)/.test(code)
+      || /(MS_PER_DAY|DAY_MS|86_?400_?000)[^\n]{0,90}(trialStartedAt|trial_started_at)/.test(code)
+      // The signup stamp plus the trial length, which is the window's job.
+      || /new Date\((trialStartedAt|settings\.trial_started_at)\)[^\n]{0,90}TRIAL_DAYS/.test(code)
+      // A day number reconstructed from the countdown — `TodayScreen`'s shape, which review found.
+      || /TRIAL_DAYS\s*[-+]\s*trialDaysLeft/.test(code)
+      // Any locally-declared trial-day helper. One owner, or none.
+      || /function\s+\w*[Tt]rialDay\w*\s*\(/.test(code)
+    )
+  }
+
+  const signupRelative = FILES.filter(f =>
+    f !== 'lib/trial.ts' && isSignupRelative(readFileSync(f, 'utf8')))
 
   /** `resolveTier` callers that do not hand it the first read. */
   const unwiredCallers = FILES.filter(f => {
@@ -290,33 +328,56 @@ describe('ACT-TRIAL-AT-FIRST-READ-01 — the interlock is DERIVED, not a list', 
     expect(FILES.length).toBeGreaterThan(100)
   })
 
-  it('while ANY consumer still counts from the signup stamp, the flag must be off', () => {
-    // With the flag on and no read yet, a runner's trial runs to the CAP while
-    // `trialDayNumber` still reaches 11 on day 11 — so "3 days left." goes to someone with
-    // nineteen. That is a false statement to a customer about when they will be charged.
-    if (signupRelative.length > 0) {
-      expect(TRIAL_STARTS_AT_FIRST_READ,
-        `these still count the trial from trial_started_at: ${signupRelative.join(', ')} — move `
-        + 'them onto resolveTrialWindow() before enabling the flag').toBe(false)
-    }
+  // 🔴 THE WIRING IS DONE (2026-11-12), SO THESE TWO ARE NO LONGER INTERLOCKS — THEY ARE GATES.
+  // They were `if (population > 0) expect(flag).toBe(false)`, which is a guard that stands down
+  // the moment the work is finished. Both populations reached zero, which is what the old
+  // "not vacuous" arm was watching for, and its own comment said to **re-read these rather than
+  // delete them** when it happened. Re-read: the conditional is gone and the assertion is now
+  // unconditional, so a NEW signup-relative consumer fails the build whether the flag is on or
+  // off — which is the state this repo wants, because the next one will be written by someone
+  // who never read any of this.
+
+  it('🔴 NOTHING computes a trial day from the signup stamp', () => {
+    // With the flag on and no read yet, a runner's trial runs to the CAP while a signup-relative
+    // day number still reaches 11 on day 11 — so "3 days left." goes to someone with nineteen.
+    // That is a false statement to a customer about when they will be charged.
+    expect(signupRelative,
+      'move these onto resolveTrialWindow() + trialDayOfWindow(); lib/trial.ts is the only owner')
+      .toEqual([])
   })
 
-  it('while ANY resolveTier caller is unwired, the flag must be off', () => {
+  it('🔴 EVERY resolveTier caller hands over the same facts', () => {
     // One owner is only an owner if every caller supplies the same inputs (TIER-OWNER-01).
     // An unwired caller resolves every trialist on the cap path.
-    if (unwiredCallers.length > 0) {
-      expect(TRIAL_STARTS_AT_FIRST_READ,
-        `these call resolveTier without firstReadAt: ${unwiredCallers.join(', ')}`).toBe(false)
-    }
+    expect(unwiredCallers, 'these call resolveTier without firstReadAt / trialExtendedAt')
+      .toEqual([])
   })
 
-  it('the interlock is not vacuous — both populations are non-empty TODAY', () => {
-    // An `if` that never fires is not a guard. If either of these goes to zero the wiring is
-    // done and the arms above become live; re-read them rather than deleting them.
-    expect(signupRelative.length, 'no signup-relative consumer found; re-read the interlock')
-      .toBeGreaterThan(0)
-    expect(unwiredCallers.length, 'every resolveTier caller is wired; re-read the interlock')
-      .toBeGreaterThan(0)
+  it('🔑 the sweep still WORKS, which an empty population cannot show', () => {
+    // 🔴 THIS ARM REPLACES "both populations are non-empty TODAY", and it is the better
+    // question. That one proved the `if` could fire; it could not survive the wiring being
+    // finished, and a sweep over an empty population is indistinguishable from a sweep whose
+    // regex has stopped matching anything. **So the shapes are planted rather than counted.**
+    const hazards = [
+      ['raw day arithmetic',        'const d = Math.floor((now - new Date(trialStartedAt).getTime()) / MS_PER_DAY)'],
+      ['the other operand order',   'const d = MS_PER_DAY * 2 + new Date(trial_started_at).getTime()'],
+      ['stamp plus trial length',   'const end = new Date(trialStartedAt).getTime() + TRIAL_DAYS * 2'],
+      ['rebuilt from the countdown','const daysIn = TRIAL_DAYS - trialDaysLeft'],
+      ['a local day helper',        'function myTrialDayNumber(startedAt: string) { return 1 }'],
+    ] as const
+    for (const [name, src] of hazards) {
+      expect(isSignupRelative(src), `the sweep no longer recognises: ${name}`).toBe(true)
+    }
+
+    // And the other direction, which is what stops it becoming a blanket refusal: the owner's
+    // own shape and an ordinary window read must NOT fire.
+    for (const [name, src] of [
+      ['reading the owner',  'const day = trialDayOfWindow(resolveTrialWindow(inputs, now), now)'],
+      ['an unrelated stamp', 'const d = Math.floor((now - new Date(race_date).getTime()) / MS_PER_DAY)'],
+      ['a mention in prose', '// trialStartedAt used to be divided by MS_PER_DAY here'],
+    ] as const) {
+      expect(isSignupRelative(src), `the sweep now fires on: ${name}`).toBe(false)
+    }
   })
 
   it('the two callers that ARE wired hand over the same facts', () => {

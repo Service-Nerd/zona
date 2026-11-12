@@ -55,6 +55,28 @@ const ALLOWED: { file: string; table?: string; why: string }[] = [
        + 'read, jump the window to the CAP and bring an ALREADY-EXPIRED TRIAL BACK '
        + 'between day 15 and day 30. Only runs while TRIAL_STARTS_AT_FIRST_READ is on.',
   },
+  // ACT-TRIAL-AT-FIRST-READ-01 wiring (2026-11-12). The two crons that say what day of the
+  // trial it is now ask the owner, and the owner's question is a LIFETIME one. Same argument as
+  // `lib/trial.ts` above, at two more sites; ⚠️ both reads are inside
+  // `if (TRIAL_STARTS_AT_FIRST_READ)`, so neither runs today.
+  {
+    file: 'app/api/email/send-trial/route.ts',
+    table: 'run_analysis',
+    why: 'Takes each candidate\'s EARLIEST run_analysis row to decide when their trial clock '
+       + 'started. A race change supersedes every row, so filtering would lose a first read, '
+       + 'jump that runner to the 30-day cap and bring an ALREADY-EXPIRED TRIAL BACK — then mail '
+       + 'them about it. The emails COUNT reads with the filtered owner (lib/ops/runRead.ts); '
+       + 'this read asks a different question and must not share its definition.',
+  },
+  {
+    file: 'app/api/push/send-trial-insight/route.ts',
+    table: 'run_analysis',
+    why: 'The same first-read question, for the push that fires on a trial day number. ⚠️ Scoped '
+       + 'to that ONE read: the insight BODY further down the same file reads run_analysis '
+       + 'FILTERED, correctly, because it renders a verdict the runner can still open. Two reads '
+       + 'of one table in one file with opposite filters is the reason this allowlist is scoped '
+       + 'per TABLE and why that is still not tight enough on its own.',
+  },
   {
     file: 'app/dashboard/DashboardClient.tsx',
     table: 'run_analysis',

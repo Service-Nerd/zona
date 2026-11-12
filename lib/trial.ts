@@ -65,6 +65,35 @@ export const TRIAL_EXTENSION_DAYS = 7
  * and the commit message called it mechanical; code review found **three more signup-relative
  * consumers and two unwired callers**. A guard over a hand-written list is a guard over the part
  * you remembered. Items 4 and 5 of the activation brief are the email half of that wiring.
+ *
+ * ✅ **THE TYPESCRIPT WIRING IS DONE (2026-11-12).** Both sweeps are empty: no consumer computes
+ * a trial day from the signup stamp, and every `resolveTier` caller hands over `firstReadAt` and
+ * `trialExtendedAt`. The two arms that enforce it are now UNCONDITIONAL rather than interlocks,
+ * so a new signup-relative consumer fails the build whether this is on or off.
+ *
+ * 🔑 **PROVEN BY FLIPPING IT, WHICH IS THE ONLY WAY TO TELL A WIRED FLAG FROM A WIRED-LOOKING
+ * ONE.** Set to `true`, the full suite went from **12 failures to 2** over the course of the
+ * wiring. The two that remain on a flip are both expected and are the whole report:
+ *   1. `it('is off')` — this gate. The founder has not signed it off.
+ *   2. `trialFunnel.test.ts`'s window arm — a REAL behaviour change: a runner with no read is on
+ *      trial for longer, so the ops funnel's `onTrial` genuinely moves. Re-read it, do not
+ *      silence it.
+ * Everything else was a defect in the wiring and was fixed: two unregistered history readers
+ * (`supersedeCoverage` was updated and `analysisSupersedeReaders` was not — the adjacent-register
+ * miss), and a test double whose builder could not express `.order().limit()`, which failed nine
+ * arms of the generate-plan route the moment the query appeared.
+ *
+ * 🔻 **WHAT IS STILL SIGNUP-RELATIVE, AND IT IS SQL, WHICH NO TYPESCRIPT SWEEP CAN SEE.**
+ * Measured against production 2026-11-12 — **two views of four** that mention the stamp compute a
+ * 14-day window from it, and **neither knows about the extension**, so they are already wrong
+ * about a feature that shipped in Release 2 (latent: 0 runners have taken one yet):
+ *   · `admin_user_tiers.trial_days_left`
+ *   · `v_activation_funnel.trial_ends_at`
+ * ⚠️ **DELIBERATELY NOT FIXED BY COPYING THE WINDOW INTO SQL.** The cap, the extension and the
+ * first read together are the rule this item exists to give ONE owner, and a PL/pgSQL twin is the
+ * D-16 parallel-semantics violation one layer down. Both views are admin and ops reporting; no
+ * runner reads either. **On the day this flips, they report the signup clock and must be read as
+ * that or changed on purpose.**
  */
 export const TRIAL_STARTS_AT_FIRST_READ = false
 
@@ -124,6 +153,41 @@ export interface TrialWindow {
   endsAt: Date | null
   active: boolean
   basis: TrialBasis
+}
+
+/**
+ * THE SINGLE OWNER of "what day of the trial is it", for every surface that says so out loud.
+ *
+ * 🔴 WHY IT TAKES A WINDOW AND NOT THE SIGNUP STAMP. Four surfaces computed this as
+ * `floor((now - trial_started_at) / day) + 1`, and two of them wrote that expression out by
+ * hand — `lib/email/trialEmailWindow.ts` and a private copy inside
+ * `app/api/push/send-trial-insight/route.ts`. Under `TRIAL_STARTS_AT_FIRST_READ` the signup
+ * stamp stops being the start of anything, so every one of them would have gone on counting from
+ * a date the trial no longer begins at: **"3 days left." to a runner with nineteen**, which is a
+ * false statement to a customer about when they will be charged. That is the whole reason the
+ * flag has an interlock.
+ *
+ * 🔑 AND THE FIX IS NOT A BRANCH, BECAUSE EVERY ONE OF THESE SURFACES ASKS ABOUT THE **END**.
+ * "Three days left", "ends today", "three days after it ended", "four days remain" — none of
+ * them is a question about the start. So the day number is counted back from `endsAt`:
+ *
+ *     effectiveStart = endsAt - TRIAL_DAYS
+ *
+ * ⚠️ **With the flag OFF this is the signup stamp, exactly.** `endsAt` is
+ * `trial_started_at + TRIAL_DAYS`, so the subtraction returns the stamp and every caller's
+ * arithmetic is unchanged to the millisecond. `trialDayParity.test.ts` proves it over a grid
+ * rather than asserting it in prose.
+ *
+ * With the flag ON and no read yet, `endsAt` is the cap, so "3 days left" fires three days
+ * before the cap — still true. With a read on day 5, it fires three days before day 19.
+ *
+ * @returns the 1-indexed day, or **null** when there is no window at all. Null is an answer:
+ *          a runner with no trial has no day N, and a caller must not render one.
+ */
+export function trialDayOfWindow(w: TrialWindow, now: Date = new Date()): number | null {
+  if (!w.endsAt) return null
+  const effectiveStart = w.endsAt.getTime() - TRIAL_DAYS * MS_PER_DAY
+  return Math.floor((now.getTime() - effectiveStart) / MS_PER_DAY) + 1
 }
 
 /**
