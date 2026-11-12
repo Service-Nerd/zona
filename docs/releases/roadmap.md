@@ -493,6 +493,8 @@ one while they were paying attention. Full filing and evidence: `backlog.md` § 
 | `ACT-REPORTED-DISTANCE-DOOR-01` — latent, 0 live instances | LATER | ⚙️ none | 🔻 recorded not fixed · measured empty (0 of 87 land on a distance-primary day) |
 | `OPS-TRIAL-SQL-CLOCK-01` — two admin views still count the trial from sign-up | LATER | ⚙️ none | **filed 2026-11-12** by the item-7 wiring · admin reporting only; the fix must not duplicate the window in SQL |
 | `BRAND-COACHNAME-HARDCODED-01` — the coach's name is typed into 7 runner-facing files | LATER | ⚙️ none | **filed 2026-11-12** · 13 occurrences, zero behaviour delta; the deliverable is a hook rule, not the sweep |
+| `REG-BUILDLOG-BACKFILL-01` — 37 registry rows have no build-log entry | LATER | ⚙️ none | **filed 2026-11-12** · one of four standing debts `audit-docs.sh` prints and nothing owned; ratcheted, not shrinking |
+| `BOARD-REGISTER-BACKFILL-01` — 50 board-attributed doctrine sections have no register row | LATER | ⚙️ none | **filed 2026-11-12** · the register the Design Board's settled-ground scan READS; 43 of them carry no id at all |
 
 ---
 

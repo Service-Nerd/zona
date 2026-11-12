@@ -4481,6 +4481,54 @@ a brand-name rule belongs beside them, with the harnesses and `lib/brand.ts` its
 
 ---
 
+### 🔲 `REG-BUILDLOG-BACKFILL-01` — 37 shipped features have a registry row and no build-log entry ⚙️ **NO BOARD**
+
+*(filed 2026-11-12, P3 — the founder asked whether the four standing debts `audit-docs.sh` prints
+were captured anywhere. This one was not.)*
+
+📐 **Re-derived 2026-11-12, two ways, both 37** of **892** registry ids: the audit's own
+substring match, and a stricter whole-token match. ⚠️ **They agree exactly — 0 ids are covered
+only by a substring** — which matters, because `grep -F` is the shape `AUDIT-CONTRACT-MENTION-01`
+found producing FALSE coverage in the contracts arm. **Latent here, not realised.** 🔻 Worth
+hardening when this item is picked up; not worth a separate item for zero live instances.
+
+⚠️ **I FIRST MEASURED 140 AND WAS WRONG.** My own id regex required a trailing `-\d{2,}` and
+pulled 838 ids where the gate pulls 892. A different population gives a different answer and the
+gate's population is the one that governs — `feedback-measure-with-the-population-the-check-governs`,
+paid again within an hour of citing it.
+
+**Why it is debt and not a demand** (`REG-BUILDLOG-01`'s own reasoning, kept): many of the 37 are
+legitimate — an item that shipped inside a larger build, where the parent carries the entry and the
+row says so. **Demanding zero would fire 37 times on day one and get deleted**, which this repo has
+recorded twice as equivalent to having no check. The baseline may only fall.
+
+🔻 **What this item is actually for:** nothing schedules the 37 shrinking. The ratchet stops it
+growing and that is all it does. Picking it up means reading each of the 37 and either writing the
+entry or recording in the row why the parent carries it.
+
+---
+
+### 🔲 `BOARD-REGISTER-BACKFILL-01` — 50 board-attributed doctrine sections have no register row ⚙️ **NO BOARD**
+
+*(filed 2026-11-12, P3 — same question, same answer: not captured.)*
+
+📐 **`audit-docs.sh`'s own figures:** **240** board-attributed sections across the doctrine files;
+**50 unregistered** and **43 carrying no id at all**; **0 new**. ⚠️ **NOT independently re-derived**
+— these are the gate's numbers, cited as the gate's, and the one time today I re-derived a figure
+with my own method I got it wrong (see `REG-BUILDLOG-BACKFILL-01`).
+
+**Why it matters more than it looks.** `design-rulings.md` is the register the Design Board's
+**mandatory settled-ground scan reads before any seat speaks**. A ruling that edited a doctrine
+file but never earned a row is invisible to that scan — and this repo has measurably
+re-proposed dead design decisions, *twice in one day*, which is why the register exists.
+**43 with no id is the harder half:** a section attributing itself to a board without naming a
+ruling cannot be reconciled at all, only read.
+
+🔻 Ratcheted, not shrinking. Same standing warning as every debt register here: a declared reason
+is not a scheduled fix.
+
+---
+
 ### ✅ `ACT-FUNNEL-01` — SHIPPED 2026-11-11. The activation half of the funnel is observable ⚙️ **NO BOARD**
 
 **Problem.** Every metric in the brief's table needs a measurement that does not exist. The brief
@@ -16579,7 +16627,13 @@ both artifacts on disk. A predicate about **live data** has no local before/afte
 state what each outcome means **including what it returns if nothing happened**. *"No rows
 returned"* from an `UPDATE` is not *"zero rows matched"*, and that misread happened the same day.
 
-### 🅿️ `CONTRACT-BACKFILL-01` — write the **12** remaining API route contracts · **PARKED** *(count corrected 2026-10-11, 2026-11-08 ×2; `audit-docs.sh` reports **12** of 71 — `post-race-reshape` written 2026-11-08 under `OPS-FN-DURATION-01`, which changed that route and found it had no contract at all)*
+### 🅿️ `CONTRACT-BACKFILL-01` — write the **11** remaining API route contracts · **PARKED** *(count corrected 2026-10-11, 2026-11-08 ×2; `audit-docs.sh` reports **12** of 71 — `post-race-reshape` written 2026-11-08 under `OPS-FN-DURATION-01`, which changed that route and found it had no contract at all)*
+
+> 🔄 **RE-MEASURED 2026-11-12: 11 of 72.** The heading said **12**; `audit-docs.sh` reports
+> **11 of 72** (one more route exists than on 2026-11-08, and one contract has been written since).
+> Corrected when the founder asked whether the four standing debts were captured at all — **the
+> number in a heading is the thing a reader plans against, and this one had been wrong since the
+> last definition change.**
 
 > 🔄 **RE-MEASURED 2026-11-07: 13 of 62 → 11 of 71 API routes without a contract.** Two were
 > written and nine routes were added since the item was filed. Live count from `audit-docs.sh`.
