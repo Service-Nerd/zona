@@ -6,6 +6,25 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-11-12 — OPS-VERIFY-CI-IOS-SDK-01 · Fixing one red step just shows you the next one
+
+**Shipped:** the iOS Swift typecheck now skips when the Apple SDK is missing rather than failing, so CI gets past it.
+
+**Dev learning:** I fixed the thing failing CI this morning, the founder pasted the log again, and it failed somewhere completely different. That is not bad luck — **a `&&` chain stops at the first failure, so every red step hides everything after it.** CI had presumably been red on both for a while and I could only ever see the first. Worth saying out loud because it changes how you read a green local run: fixing one does not tell you the build is healthy, it tells you the build got further.
+
+The failure itself is a nice example of guarding the wrong thing. The script skipped when `swiftc` was absent, commented "macOS only". GitHub's ubuntu runner **has** `swiftc`. What it doesn't have is the Apple SDK, and `HealthKit` is an Apple framework. The script's own header says *"HealthKit and Security ARE in the macOS SDK that ships with Command Line Tools"* — the assumption was written down, and then guarded by a test for something else entirely. It now compiles `import HealthKit` and skips if that doesn't resolve: asking whether the toolchain can do the job, instead of whether a tool exists.
+
+**Product/creator learning:** the honest cost is that iOS Swift is now unchecked in CI — it runs on one Mac before a push and nowhere else. That isn't a regression, because it never ran successfully in CI, but it's a real gap and the skip prints it in its own output rather than passing quietly. A skip that doesn't say it skipped is just a pass with extra steps.
+
+**AI-building learning:** three times today a check gave a different answer locally than in CI, by three different mechanisms — two gates reading `git ls-files` couldn't see a file I hadn't staged, one reading the filesystem couldn't be read by CI at all, and this one asked whether a tool existed rather than whether it worked. The common question that would have caught all three: **what tree, or what machine, is this check actually reading, and is it the one CI gets?**
+
+**The honest bit:** after the second one I finally stopped fixing and went looking — grepped every script in the chain for BSD-only idioms, checked whether file-name casing was enforced. Both clean. That took four minutes and I should have done it after the first failure rather than the second.
+
+**Hook material:** "Fixed the failing CI step. The next build failed somewhere else entirely — because a `&&` chain only ever shows you the first thing that's broken."
+
+**Postable?:** yes
+
+
 ## 2026-11-12 — OPS-VERIFY-CI-LOCAL-DIVERGE-01 · CI was failing all day and my machine kept telling me it was fine
 
 **Shipped:** `backlog-verify` now decides from git instead of the local disk, so it gives the same answer in CI as it does here.
