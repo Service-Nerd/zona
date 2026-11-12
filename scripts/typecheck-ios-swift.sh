@@ -35,6 +35,30 @@ if ! command -v swiftc >/dev/null 2>&1; then
   exit 0
 fi
 
+# 🔴 "IS THERE A SWIFT COMPILER" WAS THE WRONG QUESTION, AND CI ANSWERED YES.
+# GitHub's ubuntu runner HAS `swiftc` — what it does not have is the APPLE SDK, and
+# `HealthKit` is an Apple framework. So the skip above passed, the typecheck ran, and
+# `no such module 'HealthKit'` failed every job. The header two lines up says it out loud
+# — *"HealthKit and Security ARE in the macOS SDK"* — a macOS assumption guarded by a
+# test for a compiler.
+#
+# ⚠️ PROBED, NOT INFERRED FROM `uname`. A Mac without Command Line Tools fails the same
+# way, and asking the toolchain whether it can see the framework covers both without
+# naming an operating system.
+PROBE="$(mktemp -d)"
+printf 'import HealthKit
+' > "$PROBE/probe.swift"
+if ! swiftc -typecheck "$PROBE/probe.swift" >/dev/null 2>&1; then
+  rm -rf "$PROBE"
+  echo "[typecheck-ios-swift] SKIPPED — swiftc is present but the Apple SDK is not"
+  echo "[typecheck-ios-swift] (\`import HealthKit\` does not resolve; this is Linux CI or a Mac"
+  echo "[typecheck-ios-swift]  without Command Line Tools)."
+  echo "[typecheck-ios-swift] This is a SKIP, not a pass: the Swift is UNCHECKED here, and it is"
+  echo "[typecheck-ios-swift] checked only by \`npm run verify\` on a Mac before a push."
+  exit 0
+fi
+rm -rf "$PROBE"
+
 WORK="$(mktemp -d)"
 trap 'rm -rf "$WORK"' EXIT
 cp "$STUBS" "$WORK/Stubs.swift"
