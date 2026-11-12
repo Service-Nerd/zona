@@ -6,6 +6,24 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-11-12 — WALKRUN-SCHEMA-VOLUME-01 · every walk-run plan failed its own canonical schema for 18 days
+**Shipped:** `weekly_km` and `long_run_hrs` are optional on a §116 walk-run week and required on every other phase, via a `WeekSchemaChecked` sibling.
+
+**Dev learning:** §116's walk-run weeks carry no distance by ratified doctrine — writing a number there would be inventing one — so they omit both fields, and `WeekSchema` required them. `PlanSchema.safeParse` was false for every sub-floor plan on both the staged path (live since 25 October) and §118's, logging `plan_schema_drift` on save for seven weeks of each. `schema.ts` already records this exact pair class twice in its own comments: a field fixed on `plan_kind` and not its sibling `phase`, and `phase` itself hidden because the audit truncates its code list.
+
+The fix is not `.optional()` on its own. Relaxing both fields for every week shape would let a race week ship with no volume — the field every load invariant reads. The refinement requires them unless the phase is `walk_run_start`, so the strictness stays exactly where the doctrine does not forbid it.
+
+**Product/creator learning:** it shipped inside another item's commit, which is the `PUSH-UNITS-01` class, and the docs audit is what noticed it had a registry row and no build-log entry. A defect found by a review of someone else's change still earns its own record.
+
+**AI-building learning:** my first attempt put a `.superRefine` on `WeekSchema` itself and took the app down at import. `EnrichedWeekSchema` is `WeekSchema.pick({ label, theme, n })`, and Zod v4 refuses `.pick()` on a refined object — thrown at module load, not at parse time. A schema change is a change to every consumer of that schema, including the ones that take three fields out of it.
+
+**The honest bit:** I did not cause this and I widened its reach, which is the only reason it was found. It had been failing silently on a shipped path for eighteen days with nobody reading the drift signal.
+
+**Hook material:** a plan failed its own canonical schema on seven of its weeks for eighteen days, and the audit that reports schema drift truncates its list of codes at six.
+
+**Postable?:** maybe
+
+
 ## 2026-11-12 — the SECOND /code-review round · the fix round had four of its own, and one was a claim I wrote without re-running it
 **Shipped:** a ramp too short to climb is now cut entirely (L4, reachable from §118 for the first time), two unfalsifiable test arms replaced, and a false claim about §111 corrected into an assertion of both its invariants.
 
