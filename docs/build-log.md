@@ -6,6 +6,25 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-11-12 — ACT-TRIAL-AT-FIRST-READ-01 · The flag went on, and the gate changed sides rather than going away
+
+**Shipped:** the 14-day trial now starts when we read a runner's first run, capped at 21 days from sign-up, live on the founder's sign-off.
+
+**Dev learning:** the arm that had been blocking this for two days was `expect(TRIAL_STARTS_AT_FIRST_READ).toBe(false)` with the message *"enabling this is the founder's call"*. The obvious move once he said yes is to delete it. **That is the wrong move.** Reverting a pricing decision is exactly as much his call as making it was, so the arm flips to `toBe(true)` and keeps the same job pointing the other way. A gate that only guards one direction is half a gate, and the half it drops is the one that fires when somebody is tidying up months later with no idea the value was ever discussed.
+
+The other half: every test that *described* the old policy now passes it explicitly instead of inheriting the live constant. So the file still tests both, and the flag only decides which one production runs. That took ten minutes and it is why flipping a two-day-old policy change produced exactly two red tests instead of a screenful.
+
+**Product/creator learning:** I measured the blast radius before touching it and the answer was better than I expected — **nobody can lose access, by construction.** The new end date is `min(first read + 14, cap)` and a read can't precede sign-up, so the new date is never earlier than the old one. Real numbers: 37 of 37 trialists gain, mean seven days, two expired trials come back, nobody gets cut off. The one thing I checked that could have been ugly — had either reactivated runner already been emailed *"trial ends today"*? — came back zero. **A one-way change is worth proving is one-way, because it turns a nervous deploy into a boring one.**
+
+**AI-building learning:** one test was red for an honest reason and I nearly treated it as breakage. The ops funnel counts "runners on trial", and under the new policy a runner with no read is on trial for longer, so the number genuinely moves. The comment left on that arm two days earlier said exactly this would happen and told me to re-read it rather than silence it. **I wrote that note to myself and it still saved me**, which is the whole argument for writing down why a test might fail in future rather than just what it asserts.
+
+**The honest bit:** I reported this wiring "done" twice before it was. Both sweeps were empty, types clean, 8,000 tests green — and setting the flag to true found twelve failures, none of them in code I had touched. The third time I called it done I had actually flipped it and watched. **Three minutes of running the thing in the state it will ship in beat two rounds of reasoning about whether it would work.**
+
+**Hook material:** "The test blocking the feature said `expect(flag).toBe(false)`. When the founder approved it, I didn't delete that test — I turned it around. Now reverting it fails the build too."
+
+**Postable?:** yes
+
+
 ## 2026-11-12 — ACT-TRIAL-AT-FIRST-READ-01 · The only way to know a feature flag is wired is to turn it on
 
 **Shipped:** the four surfaces that still counted the trial from sign-up now read the one owner, so the first-read trial clock is a decision rather than a blocker.
