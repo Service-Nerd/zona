@@ -15,7 +15,10 @@
 //   npx tsx scripts/render-emails.ts --out DIR
 import { writeFileSync, mkdirSync } from 'node:fs'
 import { join } from 'node:path'
-import { buildConnectEmail, buildFirstReadEmail, buildDay11Email, buildDay14Email, type RunSummary } from '../lib/email/trialEmailTemplates'
+import {
+  buildConnectEmail, buildFirstReadEmail, buildDay11Email, buildDay14Email,
+  buildDay17Email, buildDay30Email,
+} from '../lib/email/trialEmailTemplates'
 
 const arg = (n: string) => { const i = process.argv.indexOf(n); return i >= 0 ? process.argv[i + 1] : null }
 const out = arg('--out') ?? '/tmp/zonna-emails'
@@ -36,7 +39,13 @@ const cases = [
   ['04-3-days-left--HOT-above-ceiling', buildDay11Email('Russ', RUN_HOT, TOKEN)],
   ['04-3-days-left--NO-run', buildDay11Email('Russ', RUN_NONE, TOKEN)],
   ['05-trial-ends-today--with-run', buildDay14Email('Russ', RUN_CLEAN, TOKEN)],
-  ['05-trial-ends-today--NO-run', buildDay14Email('Russ', RUN_NONE, TOKEN)],
+  ['05-trial-ends-today--NO-run-OFFERS-THE-WEEK', buildDay14Email('Russ', RUN_NONE, TOKEN)],
+  // ACT-EMAIL-POSTTRIAL-01 — the two post-trial emails. Day 17 has THREE bodies
+  // and they are different messages, not one message with a number swapped in.
+  ['06-day-17--what-Kit-saw', buildDay17Email('Russ', RUN_CLEAN, TOKEN, false)],
+  ['06-day-17--NO-run-offer-still-open', buildDay17Email('Russ', RUN_NONE, TOKEN, false)],
+  ['06-day-17--NO-run-ALREADY-extended', buildDay17Email('Russ', RUN_NONE, TOKEN, true)],
+  ['07-day-30--one-question', buildDay30Email('Russ', TOKEN)],
 ] as const
 
 const index: string[] = []
@@ -89,10 +98,12 @@ writeFileSync(join(out, 'all-emails.html'), `<!DOCTYPE html>
 <body>
 <header>
   <h1>Every email Zonna sends</h1>
-  <p>Eight states across five emails, each at phone width. The <strong>empty</strong> variants are
-  not edge cases: 22 of 30 real recipients got one. <strong>Above ceiling</strong> is a runner who
-  stayed in the band but ran hot over the Z2 cap, and correctly loses the praise line.
-  Emails 1, 2, 4 and 5 are built; the Pattern email is not.</p>
+  <p>Thirteen states across six emails, each at phone width. The <strong>empty</strong> variants are
+  not edge cases: 22 of 30 real recipients got one, and <strong>&ldquo;no runs read&rdquo; went out 13 times
+  of 16</strong> &mdash; which is why day 14&rsquo;s empty branch now offers the week back instead of stating
+  the zero. <strong>Above ceiling</strong> is a runner who stayed in the band but ran hot over the Z2
+  cap, and correctly loses the praise line. Emails 1, 2, 4, 5, 6 and 7 are built; the Pattern email
+  (03) is not.</p>
 </header>
 <div class="grid">${frames.join('')}</div>
 </body></html>`)
