@@ -58,15 +58,29 @@ export type FreeRunReadBand = keyof typeof FREE_RUN_READ_BANDS
  *
  * The rule is derived from the classifier that already decided what kind of run it was, so there is
  * no new threshold and no new coaching numeric: **quote the share of the band the run spent itself
- * in.** The three structurally-hard kinds (`hard`, `split`, `planned`) quote the hard share,
- * because for a run that was MEANT to be hard the easy share is a true number about nothing.
+ * in.** `split` quotes the hard share, because a run with real easy AND real hard in it is
+ * described by the hard part.
+ *
+ * 🔴 `planned` IS GONE, AND SO IS THE PLANNED TYPE. The first cut mapped it to `hard` — "for a
+ * run that was MEANT to be hard the easy share is a true number about nothing" — and that was
+ * wrong for the only live member of the set. `isHardEffortType` is `quality | intervals | tempo |
+ * hard`, and `sessionRole.ts` measures that **`intervals` and `tempo` occur in no generated or
+ * stored plan (5,664 cohort plans, 36 production plans)**: the live case is `quality`, whose
+ * prescribed band is Z3, so a correctly-executed threshold session would have read *"10% of this
+ * run was in Zones 4–5"* — a true number about the wrong band, reading as though they barely
+ * worked. ⚠️ **And my only test case used `'intervals'`, a type the product never produces**,
+ * which is `fixtures must use the PRODUCT's values` exactly.
+ *
+ * The special case was unnecessary as well as wrong: an intervals run lands in Z4–5 and
+ * classifies `hard` on its own; a tempo lands in Z3 and classifies `grey`. **The natural band
+ * already answers correctly for both, so the band is a property of the RUN and the planned type is not
+ * consulted at all.**
  */
-const BAND_FOR_KIND: Record<Exclude<RunEffortKind, 'unknown'>, FreeRunReadBand> = {
+const BAND_FOR_KIND: Record<Exclude<RunEffortKind, 'unknown' | 'planned'>, FreeRunReadBand> = {
   easy:    'easy',
   grey:    'grey',
   hard:    'hard',
   split:   'hard',
-  planned: 'hard',
 }
 
 export type FreeRunRead =
@@ -91,13 +105,14 @@ const pct = (n: number) => Math.round(n)
  * What a free runner is told about this run.
  *
  * @param row the linked activity's stored zone columns, or null when no run is linked
- * @param plannedType the linked plan session's `type`, so a session that was MEANT to be hard is
- *        not described by its easy share. Pass null when the run completed nothing.
  */
-export function freeRunRead(row: RunEffortRow | null, plannedType: string | null = null): FreeRunRead {
+export function freeRunRead(row: RunEffortRow | null): FreeRunRead {
   if (!row) return { state: 'absent' }
 
-  const kind = runEffortKind(row, plannedType)
+  // ⚠️ `null` for the planned type, deliberately: see BAND_FOR_KIND. The band is what the run
+  // DID, and `runEffortKind`'s `planned` short-circuit answers a different question (the effort
+  // record's dots, where "this was a planned hard session" is the point).
+  const kind = runEffortKind(row, null)
   if (kind === 'unknown') {
     return {
       state: 'no_hr',
@@ -106,7 +121,12 @@ export function freeRunRead(row: RunEffortRow | null, plannedType: string | null
     }
   }
 
-  const band = BAND_FOR_KIND[kind]
+  // ⚠️ `planned` IS UNREACHABLE HERE BY CONSTRUCTION — `runEffortKind` only returns it for a
+  // non-null `plannedType` and we pass null — but it is NARROWED EXPLICITLY rather than cast
+  // away. An unreachable branch that is merely ASSUMED unreachable is how `if (!week) return`
+  // got into this codebase; if the classifier ever changes, this falls to the hard share rather
+  // than to `undefined`.
+  const band: FreeRunReadBand = kind === 'planned' ? 'hard' : BAND_FOR_KIND[kind]
   const share =
     band === 'easy' ? (row.hr_pct_z1 ?? 0) + (row.hr_pct_z2 ?? 0)
     : band === 'grey' ? (row.hr_pct_z3 ?? 0)

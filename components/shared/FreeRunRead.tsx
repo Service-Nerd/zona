@@ -1,9 +1,18 @@
 // ACT-FREE-TEASE-01 — what a FREE runner sees where the paid read sits.
 // SLT + Design Board 2026-11-12: `docs/decisions/activation-release-3-2026-11-12.md`.
 //
-// Two call sites, one component: `PostRunScreen` (a Strava/HealthKit-linked completion) and
-// `SessionScreen`'s reflect view. CLAUDE.md's standing warning on that pair applies — *"wired into
-// BOTH … if you change one, check the other"* — which is why the markup gate renders both.
+// 🔴 ONE RUNNER-FACING CALL SITE, NOT TWO, AND THIS HEADER CLAIMED TWO. It said `PostRunScreen`
+// AND `SessionScreen`'s reflect view, *"which is why the markup gate renders both"* — and
+// `SessionScreen` has no call site at all: it keeps `LockedCoachingPreview`, whose false sentence
+// was fixed instead. The gate renders one, because there is one. **A header describing the build
+// I intended rather than the one I shipped**, found by code review, and the more dangerous half is
+// that `freeRunRead.ts`'s defect statement names both screens as fixed.
+//
+// Live call sites: `PostRunScreen` (a Strava/HealthKit-linked completion), `OrientationScreen`
+// (the `example` mode), and `/post-run-preview` (every state, for looking at).
+//
+// ⚠️ CLAUDE.md's standing warning on the PostRun/Session pair still applies to anything that does
+// reach both — *"wired into BOTH … if you change one, check the other"*.
 //
 // 🔴 THIS CARD CARRIES NO RAIL, AND THAT IS THE BINDING CONDITION BITING THE DESIGN RATHER THAN
 // THE COPY. P-01's semantic pair draws moss for "held the zone" and amber for "cooked it", and

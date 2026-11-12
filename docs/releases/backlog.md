@@ -4412,13 +4412,21 @@ go first.
 
 *(filed 2026-11-12, found by the item-7 wiring; P2 — admin and ops reporting only, no runner reads either)*
 
-📐 **Measured against production 2026-11-12.** Four views mention `trial_started_at`; **two compute
-a 14-day window from it**, and **neither knows about `trial_extended_at`**:
+📐 **Measured 2026-11-12.** Four views mention `trial_started_at`; **two compute a 14-day window
+from it**, a third window lives in a runbook, and **none knows about `trial_extended_at`**:
 
 | View | Column | Wrong about |
 |---|---|---|
 | `admin_user_tiers` | `trial_days_left` | the extension (since Release 2) **and** the first-read clock (since `a265e64d`) |
 | `v_activation_funnel` | `trial_ends_at` | the same two |
+| `docs/runbooks/` ops digest | the Q2/Q2B `trial` CTE | the same two — **and it is not a view** |
+
+🔴 **MY FIRST COUNT SAID "TWO VIEWS" AND THE HAZARD IS NOT "A VIEW".** The third is a runbook
+query, pasted into the SQL editor by hand, and `digestTrialSqlMirror.test.ts` pinned it as
+matching `isTrialActive` — **a claim that became false the moment the flag went on.** Found by
+code review. I inventoried the thing I could enumerate (`pg_class`) rather than the thing that was
+wrong (SQL that computes a trial window). ⚠️ Consequence: **the ops digest under-counts on-trial
+runners by up to the cap's extra week.**
 
 🔴 **THE EXTENSION HALF WAS ALREADY WRONG BEFORE THE FLAG WENT ON** — `ACT-EMAIL-DAY14-01` shipped
 a seven-day grant on 2026-11-11 and the SQL never learned about it. **Latent: 0 runners have

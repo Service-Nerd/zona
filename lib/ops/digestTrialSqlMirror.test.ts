@@ -131,7 +131,18 @@ describe('the digest Q2 trial SQL mirrors trialFunnel.ts', () => {
     }
   })
 
-  it('uses TRIAL_DAYS for the window, strictly, as isTrialActive does', () => {
+  it('uses TRIAL_DAYS for the window, strictly \u2014 and NO LONGER matches isTrialActive', () => {
+    // 🔴 THIS ARM'S TITLE SAID "as isTrialActive does", AND THAT CLAIM DIED ON 2026-11-12 when
+    // the founder turned `TRIAL_STARTS_AT_FIRST_READ` on. `isTrialActive` now resolves the
+    // window from the first read, capped; this CTE still counts a fortnight from the signup
+    // stamp, so **the digest under-counts on-trial runners by up to the cap's extra week.**
+    //
+    // ⚠️ It is a RUNBOOK query — prose in `docs/runbooks/`, pasted into the SQL editor by hand —
+    // which is why my own inventory on the flag said "two VIEWS" and missed it. The hazard is
+    // "SQL that computes a trial window"; a runbook is that. Filed as `OPS-TRIAL-SQL-CLOCK-01`.
+    //
+    // The arm still pins the CTE's shape, because an unpinned runbook drifts faster than a
+    // pinned one — it just no longer claims a parity that does not hold.
     expect(trialCte()).toContain(`interval '${TRIAL_DAYS} days'`)
     // STRICT `>`: `isTrialActive` is `elapsed < TRIAL_DAYS`, so a trial exactly
     // 14 days old is over. `>=` would keep it alive for a day.

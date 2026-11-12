@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { readFileSync } from 'node:fs'
 import { countRunsRead, latestRunRead, trialWindow } from './runRead'
-import { TRIAL_DAYS } from '@/lib/trial'
+import { resolveTrialWindow, TRIAL_DAYS, TRIAL_MAX_DAYS_FROM_START } from '@/lib/trial'
 
 /**
  * ACT-READ-COUNT-01 — the owner of "run read", and the two defects it closes.
@@ -87,16 +87,48 @@ describe('ACT-READ-COUNT-01 — latestRunRead', () => {
   })
 })
 
-describe('ACT-READ-COUNT-01 — trialWindow', () => {
-  it('is TRIAL_DAYS wide and half-open', () => {
-    const w = trialWindow('2026-09-23T00:00:00.000Z', TRIAL_DAYS)!
+describe('ACT-READ-COUNT-01 — trialWindow, which now takes the OWNER\u2019s answer', () => {
+  // 🔴 IT USED TO TAKE `(trialStartedAt, trialDays)` AND BUILD `[stamp, stamp + 14)` ITSELF —
+  // right for exactly as long as the trial began at signup. Under
+  // `TRIAL_STARTS_AT_FIRST_READ` a runner whose first read lands on day 16 has a trial of
+  // `[16, 30)`, and the day-14 email counted `[0, 14)` and told them **0 runs read** in the mail
+  // asking them to pay for reads. These arms now pin the composition rather than the arithmetic.
+  const start = new Date('2026-09-23T00:00:00.000Z')
+  const plus = (d: number) => new Date(start.getTime() + d * 24 * 60 * 60 * 1000)
+
+  it('spans the window the owner resolved, not a fortnight from the stamp', () => {
+    const w = trialWindow(resolveTrialWindow({ trialStartedAt: start, firstReadAt: plus(5) }, plus(9), true))!
+    expect(w.from.getTime(), 'the count must start at the READ, not the signup stamp').toBe(plus(5).getTime())
+    expect(w.to.getTime()).toBe(plus(5 + TRIAL_DAYS).getTime())
+  })
+
+  it('🔑 and it is CLIPPED by the cap, which my first version of this arm got wrong', () => {
+    // A read on day 16 does not buy a window to day 30: `endsAt = min(read + TRIAL_DAYS, cap)`
+    // and the cap is `TRIAL_MAX_DAYS_FROM_START`. I asserted `16 + TRIAL_DAYS` and the gate
+    // refused — **the composition is the thing being tested, so the cap has to be in it.**
+    const w = trialWindow(resolveTrialWindow({ trialStartedAt: start, firstReadAt: plus(16) }, plus(18), true))!
+    expect(w.from.getTime()).toBe(plus(16).getTime())
+    expect(w.to.getTime()).toBe(plus(TRIAL_MAX_DAYS_FROM_START).getTime())
+  })
+
+  it('agrees with the old arithmetic under the OFF policy, to the millisecond', () => {
+    const w = trialWindow(resolveTrialWindow({ trialStartedAt: start }, plus(1), false))!
+    expect(w.from.getTime()).toBe(start.getTime())
     expect(w.to.getTime() - w.from.getTime()).toBe(TRIAL_DAYS * 24 * 60 * 60 * 1000)
   })
 
-  it('returns null for a missing or unparseable start, so a caller cannot invent a trial', () => {
-    expect(trialWindow(null, TRIAL_DAYS)).toBeNull()
-    expect(trialWindow(undefined, TRIAL_DAYS)).toBeNull()
-    expect(trialWindow('not a date', TRIAL_DAYS)).toBeNull()
+  it('🔑 a clock that has not started is NULL, never "all time"', () => {
+    // No read yet: there is no read to count and no window to count it in. A caller that read
+    // this as "no window" and counted the runner's whole history would be the exact defect
+    // ACT-READ-COUNT-01 was filed for, one policy later.
+    const w = resolveTrialWindow({ trialStartedAt: start, firstReadAt: null }, plus(5), true)
+    expect(w.clockStartedAt).toBeNull()
+    expect(trialWindow(w)).toBeNull()
+  })
+
+  it('returns null for no trial at all, so a caller cannot invent one', () => {
+    expect(trialWindow(resolveTrialWindow({ trialStartedAt: null }, start))).toBeNull()
+    expect(trialWindow({ clockStartedAt: null, endsAt: null })).toBeNull()
   })
 })
 
@@ -107,9 +139,34 @@ describe('ACT-READ-COUNT-01 — the trial email consumes the owner', () => {
   const route = readFileSync('app/api/email/send-trial/route.ts', 'utf8')
     .replace(/\/\*[\s\S]*?\*\//g, ' ').replace(/\/\/[^\n]*/g, ' ')
 
-  it('calls countRunsRead and passes a trial window', () => {
+  it('calls countRunsRead and passes a window built from the OWNER', () => {
     expect(route).toMatch(/countRunsRead\(/)
-    expect(route).toMatch(/trialWindow\(trialStartedAt,\s*TRIAL_DAYS\)/)
+    // 🔴 THIS PINNED `trialWindow(trialStartedAt, TRIAL_DAYS)` AND THAT SHAPE WAS THE DEFECT one
+    // policy later: it built a fortnight from the signup stamp, so with
+    // `TRIAL_STARTS_AT_FIRST_READ` on it counted the wrong fortnight and told a runner who first
+    // read on day 16 that we had read **0** of their runs. The arm pinned the shape precisely
+    // enough to keep it — **a source arm holds whatever it was written against, including a
+    // mistake.** It now pins the composition.
+    expect(route).toMatch(/trialWindow\(\s*trial\s*\)/)
+    expect(route, 'the window must come from resolveTrialWindow, not from the stamp')
+      .toMatch(/resolveTrialWindow\(/)
+    expect(route, 'the signup-stamp window is what this item closed')
+      .not.toMatch(/trialWindow\(\s*(trialStartedAt|settings\.trial_started_at)/)
+  })
+
+  it('🔴 the batch first-read query is BOUNDED, and hitting the bound is a failure', () => {
+    // Unbounded, a PostgREST max-rows truncation is indistinguishable from "these runners have
+    // no reads": the error is null, the tail of the batch silently lands on the cap path and
+    // nobody finds out. Found by code review of the item-7 wiring.
+    // 🔴 THE FIRST VERSION OF THIS ARM WAS HOLLOW AND A MUTATION CAUGHT IT. It asserted the
+    // constant EXISTED and that the `>=` check existed — so deleting the `.limit()` line itself
+    // left both in place and the arm stayed green over an unbounded query. **A ceiling that is
+    // declared and not applied is the decorative-config class, in a test I had just written to
+    // catch an unbounded read.** It now reads the limit ON THE CHAIN.
+    expect(route, 'the ceiling must be applied to the query, not merely declared')
+      .toMatch(/\.limit\(FIRST_READ_BATCH_MAX\)/)
+    expect(route, 'reaching the ceiling must set firstReadFailed, not be read as absence')
+      .toMatch(/>=\s*FIRST_READ_BATCH_MAX[\s\S]{0,400}firstReadFailed\s*=\s*true/)
   })
 
   it('no longer hand-rolls the capped query', () => {

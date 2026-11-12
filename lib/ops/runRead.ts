@@ -92,9 +92,21 @@ export async function latestRunRead(
  * The trial window for a runner, from the same `TRIAL_DAYS` the tier resolver uses.
  * Returns null when they never started a trial, so a caller cannot silently invent one.
  */
-export function trialWindow(trialStartedAt: string | Date | null | undefined, trialDays: number): RunReadWindow | null {
-  if (!trialStartedAt) return null
-  const from = new Date(trialStartedAt)
-  if (Number.isNaN(from.getTime())) return null
-  return { from, to: new Date(from.getTime() + trialDays * 24 * 60 * 60 * 1000) }
+export function trialWindow(w: { clockStartedAt: Date | null; endsAt: Date | null }): RunReadWindow | null {
+  // 🔴 THIS TOOK `(trialStartedAt, trialDays)` AND BUILT `[stamp, stamp + 14)` ITSELF, which was
+  // right for exactly as long as the trial began at signup. With
+  // `TRIAL_STARTS_AT_FIRST_READ` on, a runner whose first read lands on day 16 has a trial of
+  // `[16, 30)` — and the day-14 email counted `[0, 14)` and told them **0 runs read** in the mail
+  // that asks them to pay for reads. Found by code review of the wiring; the interlock's sweep
+  // had a clause for exactly this shape and a rewrite of mine had dropped it.
+  //
+  // It takes the OWNER's answer now. `resolveTrialWindow` knows about the first read, the cap and
+  // the extension; this knows about none of them and must not pretend to.
+  //
+  // ⚠️ `clockStartedAt` null means the clock has not started, so there is no read to count and no
+  // window to count it in — null, which `countRunsRead` reads as "no window" and the caller must
+  // not confuse with "all time". The day-14 zero branch is reached by the COUNT being zero, which
+  // it is in that state by definition.
+  if (!w.clockStartedAt || !w.endsAt) return null
+  return { from: w.clockStartedAt, to: w.endsAt }
 }

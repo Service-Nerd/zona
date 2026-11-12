@@ -100,17 +100,44 @@ describe('🔴 the branch exists on the screen that had nothing (source-shaped, 
   it('PostRunScreen renders it for a runner WITHOUT paid access', () => {
     // The defect was that every read branch on that screen was `hasPaidAccess &&`, so the screen
     // ended. This asserts the complement is present and reaches the card.
-    expect(CLIENT).toMatch(/\{!hasPaidAccess && \(\s*<FreeRunReadCard/)
+    // ⚠️ The comment between the guard and the element is the HR-pending note, added by code
+    // review; the arm reads the guard and the element, not the gap between them.
+    expect(CLIENT).toMatch(/\{!hasPaidAccess && \([\s\S]{0,900}?<FreeRunReadCard/)
   })
 
   it('it is fed the OWNER, never a second copy of the rule', () => {
-    expect(CLIENT).toMatch(/read=\{freeRunRead\(zoneRow \?\? null,/)
+    expect(CLIENT).toMatch(/read=\{hrPendingState \? freeRunRead\(null\) : freeRunRead\(zoneRow \?\? null\)\}/)
+    // 🔴 AND IT MUST GATE ON `hrPendingState` LIKE EVERY PAID BRANCH DOES. Without it an Apple
+    // Watch run whose HR has not landed yet tells the runner there is no heart rate on it, to
+    // someone wearing a watch, and never corrects itself.
+    expect(CLIENT).toMatch(/loading=\{zoneRow === undefined \|\| !!hrPendingState\}/)
     // No hand-written zone arithmetic at the call site.
     expect(CLIENT).not.toMatch(/hr_pct_z1 \?\? 0\) \+ \(\w*\.?hr_pct_z2/)
   })
 
   it('its paywall door is distinctly attributed (OPS-FUNNEL-02)', () => {
     expect(CLIENT).toContain("openUpgrade('post_run')")
+  })
+
+  it('🔴 hydration RE-RUNS once link-activity has written the row', () => {
+    // Without this the staged path leaves the card permanently empty for a FREE runner: the
+    // single-shot hydration effect runs before the link lands, resolves `zoneRow` to null, and
+    // none of its deps changes afterwards. The paid path hides it behind an analysis poll;
+    // nothing polls for a free runner. Found by code review.
+    expect(CLIENT).toMatch(/\bsetLinkSettledAt\(Date\.now\(\)\)/)
+    expect(CLIENT, 'the hydration effect must depend on it or the re-run never happens')
+      .toMatch(/\}, \[sessionDay, weekN, supabase, linkedActivity, linkSettledAt\]\)/)
+  })
+
+  it('🔑 the header does not claim a call site that does not exist', () => {
+    // It claimed `SessionScreen`'s reflect view *"which is why the markup gate renders both"* —
+    // and SessionScreen has no call site; it keeps `LockedCoachingPreview`. A header describing
+    // the build I intended rather than the one I shipped.
+    const SRC = readFileSync('components/shared/FreeRunRead.tsx', 'utf8')
+    const header = SRC.slice(0, SRC.indexOf('import '))
+    expect(header).toMatch(/ONE RUNNER-FACING CALL SITE, NOT TWO/)
+    const sites = (CLIENT.match(/<FreeRunReadCard/g) ?? []).length
+    expect(sites, 'DashboardClient should mount it exactly once').toBe(1)
   })
 
   it('and the zone columns ride the select that was ALREADY there — no extra round trip', () => {

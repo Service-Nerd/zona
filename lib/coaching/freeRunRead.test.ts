@@ -71,14 +71,26 @@ describe('freeRunRead — which number, and whose', () => {
     expect(r.pct).toBe(35)
   })
 
-  it('🔑 a run that completed a session MEANT to be hard quotes the hard share', () => {
-    // Same row, read twice: the only difference is the plan session it completed. Without the
-    // planned type an intervals session would be reported by how little of it was easy.
-    const bare    = freeRunRead(EASY, null)
-    const planned = freeRunRead(EASY, 'intervals')
-    if (bare.state !== 'measured' || planned.state !== 'measured') throw new Error('expected measured')
-    expect(bare.band).toBe('easy')
-    expect(planned.band).toBe('hard')
+  it('🔴 the band is what the run DID, and the planned type is not consulted at all', () => {
+    // 🔴 THIS ARM USED TO ASSERT THE OPPOSITE, AND IT WAS WRONG IN THE ONE WAY THAT REACHES A
+    // RUNNER. It passed `'intervals'` to prove a planned-hard session quoted its Z4–5 share —
+    // and `sessionRole.ts` measures that **`intervals` and `tempo` occur in no generated or
+    // stored plan** (5,664 cohort, 36 production). The live member of `isHardEffortType` is
+    // `quality`, whose prescribed band is Z3, so a correctly-executed threshold session read
+    // *"10% of this run was in Zones 4–5"* — a true number about the wrong band. **My fixture
+    // used a value the product never produces, which is the recorded rule it broke.**
+    //
+    // The special case was also unnecessary: an intervals run lands in Z4–5 and classifies
+    // `hard` unaided; a tempo lands in Z3 and classifies `grey`. Both already correct.
+    const tempoish = row(5, 20, 64, 11)     // a threshold session, run properly: Z3-dominant
+    const t = freeRunRead(tempoish)
+    if (t.state !== 'measured') throw new Error('expected measured')
+    expect(t.band, 'a quality/tempo session must not be described by its Z4–5 share').toBe('grey')
+    expect(t.pct).toBe(64)
+
+    const intervalish = freeRunRead(row(5, 10, 20, 65))
+    if (intervalish.state !== 'measured') throw new Error('expected measured')
+    expect(intervalish.band, 'an intervals run reaches the hard band on its own').toBe('hard')
   })
 
   it('rounds, and never reports more than it measured', () => {
@@ -106,7 +118,7 @@ describe('🔴 Hutchinson’s binding condition, mechanically', () => {
 
   const everySentence = (): string[] => {
     const out: string[] = []
-    for (const r of [freeRunRead(EASY), freeRunRead(GREY), freeRunRead(HARD), freeRunRead(SPLIT), freeRunRead(NO_HR), freeRunRead(EASY, 'intervals')]) {
+    for (const r of [freeRunRead(EASY), freeRunRead(GREY), freeRunRead(HARD), freeRunRead(SPLIT), freeRunRead(NO_HR), freeRunRead(EASY)]) {
       if (r.state === 'measured') out.push(r.sentence, r.locked, r.cta)
       if (r.state === 'no_hr') out.push(r.sentence, r.sub)
     }

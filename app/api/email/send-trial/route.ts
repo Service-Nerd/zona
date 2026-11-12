@@ -5,7 +5,7 @@ import { sendToUser } from '@/lib/email/sendToUser'
 import { buildDay11Email, buildDay14Email, buildDay17Email, buildDay30Email, type RunSummary } from '@/lib/email/trialEmailTemplates'
 import { countRunsRead, latestRunRead, trialWindow } from '@/lib/ops/runRead'
 import { decideTrialEmails, localHourIn } from '@/lib/email/trialEmailWindow'
-import { resolveTier, resolveTrialWindow, trialDayOfWindow, TRIAL_STARTS_AT_FIRST_READ, TRIAL_DAYS } from '@/lib/trial'
+import { resolveTier, resolveTrialWindow, trialDayOfWindow, TRIAL_STARTS_AT_FIRST_READ, TRIAL_DAYS, type TrialWindow } from '@/lib/trial'
 
 // POST /api/email/send-trial
 //
@@ -44,8 +44,12 @@ const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Frid
  * as "no runs read" — a sentence about the runner — where an error is a sentence about us.
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-async function getRunSummary(supabase: any, userId: string, trialStartedAt: string | null): Promise<RunSummary> {
-  const window = trialWindow(trialStartedAt, TRIAL_DAYS) ?? undefined
+async function getRunSummary(supabase: any, userId: string, trial: TrialWindow | null): Promise<RunSummary> {
+  // 🔴 TAKES THE RESOLVED WINDOW, NOT THE SIGNUP STAMP. It built `[stamp, stamp + 14)` itself,
+  // which stopped being the trial the day `TRIAL_STARTS_AT_FIRST_READ` went on: a runner whose
+  // first read lands on day 16 has a trial of `[16, 30)`, and this counted `[0, 14)` and told
+  // them **0 runs read** in the email asking them to pay for reads.
+  const window = (trial ? trialWindow(trial) : null) ?? undefined
   const [analysedRunCount, latest] = await Promise.all([
     countRunsRead(supabase, userId, window),
     latestRunRead(supabase, userId, window),
@@ -129,17 +133,28 @@ export async function POST(req: NextRequest) {
   if (TRIAL_STARTS_AT_FIRST_READ) {
     const ids = (allSettings ?? []).map(s => s.id)
     if (ids.length > 0) {
+      // ⚠️ AN EXPLICIT LIMIT, AND HITTING IT IS A FAILURE RATHER THAN AN ANSWER. Unbounded, a
+      // PostgREST max-rows truncation is INDISTINGUISHABLE from "these runners have no reads":
+      // `readErr` stays null, the tail of the batch silently lands on the cap path, and nobody
+      // finds out. Reaching the ceiling sets `firstReadUnavailable`, which resolves to the cap
+      // too — but bounded, logged, and never revoking.
+      const FIRST_READ_BATCH_MAX = 10_000
       const { data: reads, error: readErr } = await supabase
         .from('run_analysis')
         .select('user_id, created_at')
         .in('user_id', ids)
         .order('created_at', { ascending: true })
+        .limit(FIRST_READ_BATCH_MAX)
       // 🔴 A FAILED READ IS NOT "NO READ". Treated as absence it would start every runner's
       // clock at the cap and silence the day-11 and day-14 emails for all of them, on our
       // outage. `firstReadUnavailable` is the honest input and the owner knows what to do
       // with it.
       if (readErr) {
         console.error('[email/send-trial] first-read query failed', readErr.message)
+        firstReadFailed = true
+      } else if ((reads?.length ?? 0) >= FIRST_READ_BATCH_MAX) {
+        console.error('[email/send-trial] first-read batch hit its ceiling; treating as unavailable',
+          { rows: reads?.length, users: ids.length })
         firstReadFailed = true
       } else {
         for (const r of reads ?? []) {
@@ -171,7 +186,8 @@ export async function POST(req: NextRequest) {
       // 🔴 THE DAY COMES FROM THE WINDOW, NEVER FROM THE SIGNUP STAMP. See `trialDayOfWindow`:
       // "3 days left" is a question about the END, and under the flag the stamp is no longer
       // the start. Identical to the old arithmetic, to the millisecond, while the flag is off.
-      const day = trialDayOfWindow(resolveTrialWindow(trialInputs, now), now)
+      const win = resolveTrialWindow(trialInputs, now)
+      const day = trialDayOfWindow(win, now)
       if (day === null) { skipped++; continue }
       const { tier } = resolveTier({
         isAdmin: settings.is_admin,
@@ -215,7 +231,7 @@ export async function POST(req: NextRequest) {
       // For day 17 and day 30 the honest window is the whole time we have known them.
       const run = (needsDay17 || needsDay30)
         ? await getRunSummary(supabase, settings.id, null)
-        : await getRunSummary(supabase, settings.id, settings.trial_started_at)
+        : await getRunSummary(supabase, settings.id, win)
 
       if (needsDay11) {
         const { subject, html } = buildDay11Email(firstName, run, settings.email_unsubscribe_token)

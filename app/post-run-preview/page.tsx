@@ -196,7 +196,7 @@ const FREE_READ_CASES: {
   { title: 'Measured \u00b7 an easy run', note: 'Same card, the easy share. Still no evaluative word (Hutchinson, binding).',
     read: freeRunRead({ hr_pct_z1: 22, hr_pct_z2: 70, hr_pct_z3: 8, hr_pct_z4_5: 0 }) },
   { title: 'Measured \u00b7 a session meant to be hard', note: 'Completed an intervals session, so the HARD share is the fact; the easy share would be a true number about nothing.',
-    read: freeRunRead({ hr_pct_z1: 5, hr_pct_z2: 10, hr_pct_z3: 20, hr_pct_z4_5: 65 }, 'intervals') },
+    read: freeRunRead({ hr_pct_z1: 5, hr_pct_z2: 10, hr_pct_z3: 20, hr_pct_z4_5: 65 }) },
   { title: 'No heart rate', note: 'An iPhone-only runner (ADR-011 \u00a75). A missing sensor, never a lock \u2014 and NO buy link, because upgrading cannot give them heart rate.',
     read: freeRunRead({ hr_pct_z1: null, hr_pct_z2: null, hr_pct_z3: null, hr_pct_z4_5: null }) },
   { title: 'Loading', note: 'The hydration read has not resolved. Loading outranks absent, so the card cannot pop in after a blank beat.',

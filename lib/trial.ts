@@ -101,6 +101,11 @@ export const TRIAL_EXTENSION_DAYS = 7
  * about a feature that shipped in Release 2 (latent: 0 runners have taken one yet):
  *   · `admin_user_tiers.trial_days_left`
  *   · `v_activation_funnel.trial_ends_at`
+ * ⚠️ **AND A THIRD THAT IS NOT A VIEW, WHICH IS WHY MY FIRST COUNT SAID TWO:** the ops digest's
+ * Q2/Q2B `trial` CTE, written out in `docs/runbooks/` and pasted into the SQL editor by hand.
+ * `digestTrialSqlMirror.test.ts` pinned it as matching `isTrialActive` — **a claim that became
+ * false the moment this flag went on.** Found by code review. **I inventoried VIEWS and the
+ * hazard was "SQL that computes a trial window", which a runbook is.**
  * ⚠️ **DELIBERATELY NOT FIXED BY COPYING THE WINDOW INTO SQL.** The cap, the extension and the
  * first read together are the rule this item exists to give ONE owner, and a PL/pgSQL twin is the
  * D-16 parallel-semantics violation one layer down. Both views are admin and ops reporting; no

@@ -318,6 +318,15 @@ describe('ACT-TRIAL-AT-FIRST-READ-01 — the interlock is DERIVED, not a list', 
       || /TRIAL_DAYS\s*[-+]\s*trialDaysLeft/.test(code)
       // Any locally-declared trial-day helper. One owner, or none.
       || /function\s+\w*[Tt]rialDay\w*\s*\(/.test(code)
+      // 🔴 A WINDOW BUILT FROM THE STAMP, AND **MY REWRITE OF THIS PREDICATE DROPPED THIS
+      // CLAUSE**. The original had it; hardening the arm from a conditional interlock to
+      // `toEqual([])` lost it in the same change — so the gate got stricter and blinder at once,
+      // then certified a real defect as absent: `app/api/email/send-trial/route.ts` windowed its
+      // read COUNT with `trialWindow(trialStartedAt, TRIAL_DAYS)`, counting the wrong fortnight
+      // once the flag was on. Found by code review, not by this file.
+      // **A clause lost in a rewrite is invisible precisely because every clause that remains
+      // still passes.**
+      || /trialWindow\s*\(\s*(trialStartedAt|trial_started_at|settings\.trial_started_at)/.test(code)
     )
   }
 
@@ -384,6 +393,9 @@ describe('ACT-TRIAL-AT-FIRST-READ-01 — the interlock is DERIVED, not a list', 
       ['stamp plus trial length',   'const end = new Date(trialStartedAt).getTime() + TRIAL_DAYS * 2'],
       ['rebuilt from the countdown','const daysIn = TRIAL_DAYS - trialDaysLeft'],
       ['a local day helper',        'function myTrialDayNumber(startedAt: string) { return 1 }'],
+      // 🔴 THE CLAUSE A REWRITE OF THIS PREDICATE ALREADY DROPPED ONCE, planted so it cannot
+      // be dropped silently again. Its absence let a real defect through this gate.
+      ['a window built from the stamp', 'const w = trialWindow(trialStartedAt, TRIAL_DAYS)'],
     ] as const
     for (const [name, src] of hazards) {
       expect(isSignupRelative(src), `the sweep no longer recognises: ${name}`).toBe(true)

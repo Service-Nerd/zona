@@ -7696,6 +7696,19 @@ function PostRunScreen({
   const [savingRPE, setSavingRPE]           = useState(false)
   const [pollGaveUp, setPollGaveUp]         = useState(false)
   const [linkFired, setLinkFired]           = useState(false)
+  /**
+   * ACT-FREE-TEASE-01 (code review, 2026-11-12) — bumped when `link-activity` has written the
+   * row, so the hydration effect below re-runs and the free card gets its zone split.
+   *
+   * 🔴 WITHOUT IT THE STAGED PATH LEAVES THE CARD PERMANENTLY EMPTY. Hydration is single-shot on
+   * `[sessionDay, weekN, supabase, linkedActivity]`, and **none of those changes when the link
+   * lands** — `supabase` is a module singleton and `linkedActivity` is a prop set once. So on a
+   * freshly-staged run the read finds no `session_completions` row, `finally` resolves `zoneRow`
+   * to `null`, the card renders nothing and nothing ever asks again. ⚠️ The PAID path hides this:
+   * its analysis poll fills the gap. **Nothing polls for a free runner**, which is the whole
+   * cohort this card exists for.
+   */
+  const [linkSettledAt, setLinkSettledAt]   = useState(0)
   const [hydratedActivity, setHydratedActivity] = useState<PostRunData['linkedActivity']>(null)
   /** POSTRUN-PACE-NULL-01 — metres/second from the linked activity, so the Pace row
    *  can say what was actually run rather than only what was targeted. */
@@ -7825,7 +7838,8 @@ function PostRunScreen({
     // No session day: nothing will ever hydrate, so resolve rather than shimmer.
     else setZoneRow(null)
     return () => { cancelled = true }
-  }, [sessionDay, weekN, supabase, linkedActivity])
+    // `linkSettledAt` re-runs this once `link-activity` has written the row — see its note above.
+  }, [sessionDay, weekN, supabase, linkedActivity, linkSettledAt])
 
   // Display source for the linked-activity row — prop wins when present.
   const displayActivity = linkedActivity ?? hydratedActivity
@@ -7872,6 +7886,11 @@ function PostRunScreen({
         })
         if (!res.ok) {
           console.error('[post-run] link-activity failed', res.status, await res.text().catch(() => ''))
+        } else {
+          // The row exists now. Re-run hydration so the free card can read its zone split.
+          // ⚠️ Only on success: a failed link means there is genuinely nothing to hydrate, and
+          // the card's `absent` state is then the correct answer rather than a missed one.
+          setLinkSettledAt(Date.now())
         }
       } catch (e) {
         console.error('[post-run] link-activity threw', e)
@@ -8314,9 +8333,17 @@ function PostRunScreen({
             already wrote for every tier (SLT 2026-11-12: FREE). The read, the verdict and
             the advice stay PAID. */}
         {!hasPaidAccess && (
+          // 🔴 `!hrPendingState` MATTERS AND THE FIRST CUT OMITTED IT. Every paid branch above
+          // gates on it because HealthKit delivers heart rate LATE — the row lands first and the
+          // stream follows. Without it an Apple Watch run reads its empty zone columns and the
+          // free runner is told *"No heart rate on this one… a watch or chest strap is what gives
+          // Kit the zones"* — to someone wearing one — and it never corrects itself, because the
+          // hydration effect is single-shot. **Found by code review; the same class as the locked
+          // card telling a linked runner we had no runs, in the component built to fix that.**
+          // While HR is pending the card is `loading`, which is what it is.
           <FreeRunReadCard
-            read={freeRunRead(zoneRow ?? null, (session?.type ?? null) as string | null)}
-            loading={zoneRow === undefined}
+            read={hrPendingState ? freeRunRead(null) : freeRunRead(zoneRow ?? null)}
+            loading={zoneRow === undefined || !!hrPendingState}
             onUpgrade={() => onUpgrade?.()}
           />
         )}
