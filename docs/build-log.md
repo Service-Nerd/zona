@@ -6,6 +6,16 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-11-13 — TT-BEFORE-LONG-PATCH-01 · the item told me to re-measure, and that is the only reason I didn't hand over a no-op
+
+**Shipped:** nothing — the item closed on a false premise, because the live plan had already been fixed.
+**Dev learning:** the item carried its own instruction — *"Re-measure the plan first; it may have been edited or rebuilt since"* — and it was right. `plans.799c49e8` was `updated_at` 2026-10-28, **four days after the item was filed**. Both target Fridays are already `Easy run — Zone 2` at 63 and 72 minutes, which are the exact durations the item specified as the restore target, and `meta.recalibration_weeks` is null. Also worth keeping: `plans.plan_json->weeks[].sessions` is an **object keyed by `mon`/`wed`/`fri`/`sat`**, not an array — two of my queries returned empty before I checked the shape instead of guessing it.
+**Product/creator learning:** this was a patch against one named runner's live data. Had I built from the item's text, the deliverable would have been a dry-run script for the founder to execute against his own production plan — and it would have reported no changes, or worse, "fixed" two easy runs into easy runs. **The cost of not re-measuring here was not wasted effort; it was handing a no-op to a human and asking them to trust it.**
+**AI-building learning:** I derived "these six are buildable" from each item's **heading** board tag. Two of the six are gated by their **body**: `MODIFY-WEEKDAY-INERT-01` says the founder picks between two resolutions, and `OPS-TRIAL-SQL-CLOCK-01` says in as many words *"the right one is a decision not a default"* over three options. The glyph tally is a filing aid, not a statement about whether work can start. **Reading the tag is not reading the item.**
+**The honest bit:** in the same sweep I measured `ENGINE-BASEBUILD-UNVALIDATED-01` wrong twice before getting it right, both errors mine. `EngineOutcome` discriminates on `kind`, not `ok`, so testing `.ok` marked all 47,642 corpus rows as "refused" and made the population meaningless; and before that I forced the base-build generator over every row regardless of whether production routes there, which gave 163,006 violations instead of the real 10,084.
+**Hook material:** an item filed on 24 October to patch two sessions; the plan was fixed on 28 October; the item sat open for three weeks, and one SQL query closed it.
+**Postable?:** maybe — the "re-measure before you build" lesson is real but it is the third time I have written it.
+
 ## 2026-11-13 — BRAND-COACHNAME-HARDCODED-01 · the ungated wave, three closed, nothing filed
 **Shipped:** the coach's name parameterised behind a pre-commit guard, a two-regime AI timeout sized from the request, and a benchmark axis that was pinned at one value in every corpus.
 
