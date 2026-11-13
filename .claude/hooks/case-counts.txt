@@ -6,6 +6,7 @@ falsify-check=14
 fix-test-check=30
 guard-bash=35
 move-impact-check=14
+prose-ratio-check=17
 push-docs-check=27
 ship-record-check=33
 state-block-check=7
