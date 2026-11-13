@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest'
 import { readFileSync } from 'node:fs'
 import { TRIAL_DAYS } from '@/lib/trial'
 import { DERIVED_VIEWS } from '@/lib/supabase/userDataSurfaces'
+import { liveViewSql, liveViewStatement, stripSqlComments } from './liveViewSql'
 
 /**
  * ACT-FUNNEL-01 — the activation funnel view, and the three things that can silently rot in it.
@@ -10,10 +11,11 @@ import { DERIVED_VIEWS } from '@/lib/supabase/userDataSurfaces'
  * states: this has to run in CI with no credentials. It proves what we WROTE. `npm run check:db`
  * is the live check and the runbook carries the post-apply verification.
  */
-const MIGRATION = 'supabase/migrations/20261111c_activation_funnel.sql'
-const sql = readFileSync(MIGRATION, 'utf8')
-  .replace(/\/\*[\s\S]*?\*\//g, ' ')
-  .replace(/^\s*--[^\n]*$/gm, ' ')   // strip whole-line SQL comments, keep line structure
+// 🔴 RESOLVED, NOT PINNED. This read a hardcoded `20261111c_activation_funnel.sql`, so when
+// `20261113_trial_window_sql_owner.sql` redefined the view every arm below would have gone on
+// validating the SUPERSEDED file and stayed green. The sibling `adminViewTierParity.test.ts`
+// already scanned for the newest definition; the fix existed one file away and was not shared.
+const sql = stripSqlComments(liveViewStatement('v_activation_funnel'))
 
 describe('ACT-FUNNEL-01 — v_activation_funnel', () => {
   it('creates the view the brief asked for', () => {
@@ -42,13 +44,18 @@ describe('ACT-FUNNEL-01 — v_activation_funnel', () => {
     // ⚠️ A loop, not `[...matchAll()]`: the spread needs `--downlevelIteration` under this
     // tsconfig and `tsc --noEmit` rejects it while vitest's esbuild does not — so the SUITE goes
     // green with the TYPECHECK red. Second time this trap has been hit in this repo in one day.
+    // 🔴 THE ASSERTION INVERTED ON 2026-11-13, and the inversion is the point. This used to
+    // require every `interval 'N days'` in the view to equal TRIAL_DAYS — correct while the view
+    // computed the window itself, and the wrong question once `trial_started_at + 14 days`
+    // STOPPED BEING THE TRIAL. The view must now carry NO window arithmetic at all and read
+    // `public.trial_window_ends` instead, so what is gated is the absence.
     const intervals: number[] = []
     const ivRe = /interval\s+'(\d+)\s+days'/gi
     for (let m = ivRe.exec(sql); m !== null; m = ivRe.exec(sql)) intervals.push(Number(m[1]))
-    expect(intervals.length, 'the trial window is gone from the view').toBeGreaterThan(0)
-    for (const d of intervals) {
-      expect(d, `the view says ${d} days where lib/trial.ts says ${TRIAL_DAYS}`).toBe(TRIAL_DAYS)
-    }
+    expect(intervals, 'the view computes a trial window itself; it must call trial_window_ends')
+      .toEqual([])
+    expect(sql, 'the view no longer reads the window owner').toMatch(/public\.trial_window_ends\s*\(/i)
+    expect(TRIAL_DAYS, 'TRIAL_DAYS is the owner\u2019s constant and must still exist').toBeGreaterThan(0)
   })
 
   it('defines "run read" the same way lib/ops/runRead.ts does — EVERY read, not most of them', () => {
@@ -112,6 +119,8 @@ describe('ACT-FUNNEL-01 — v_activation_funnel', () => {
   })
 
   it('DROPS before creating — the column set changed, so a replace would apply NOTHING', () => {
+    // ⚠️ FILE-level, not statement-level: the drop and the create are two statements.
+    const sql = stripSqlComments(liveViewSql('v_activation_funnel'))
     // 🔴 `create or replace view` may only APPEND columns. This version renames
     // `plan_first_week` → `current_plan_first_week` and removes `plan_starts_after_trial`, so a
     // replace raises 42P16 and the whole file — grants and comment included — does nothing.
@@ -170,7 +179,7 @@ describe('ACT-FUNNEL-01 — v_activation_funnel', () => {
     // available: it searched for the false claim and the comment QUOTES the false claim in order
     // to correct it, so the guard fired on the fix. A detector whose pattern is the text it
     // forbids cannot tell an assertion from a quotation. Assert what must be PRESENT instead.
-    const raw = readFileSync(MIGRATION, 'utf8')
+    const raw = liveViewSql('v_activation_funnel')
     expect(raw, 'the incompleteness of the history must stay stated')
       .toMatch(/INCOMPLETE/i)
     expect(raw, 'the two conditions that actually trigger an archive must be named')
@@ -193,7 +202,7 @@ describe('ACT-FUNNEL-01 — v_activation_funnel', () => {
     // bound, and the last degrades to `live_from` alone for anyone without HealthKit, because
     // Postgres `greatest` ignores NULLs. Assert BOTH operands.
     expect(expr, 'the live_to bound is not intersected with the trial END')
-      .toMatch(/least\s*\(\s*v\.live_to\s*,\s*s\.trial_started_at\s*\+\s*interval\s*'14 days'\s*\)/i)
+      .toMatch(/least\s*\(\s*v\.live_to\s*,\s*tw\.ends_at\s*\)/i)
     expect(expr, 'the live_from bound is not intersected with the trial START')
       .toMatch(/greatest\s*\(\s*v\.live_from\s*,\s*s\.trial_started_at\s*\)/i)
   })
@@ -213,6 +222,8 @@ describe('ACT-FUNNEL-01 — v_activation_funnel', () => {
   })
 
   it('stays off the client — it exposes user ids', () => {
+    // ⚠️ FILE-level: the revoke is its own statement, outside the create.
+    const sql = stripSqlComments(liveViewSql('v_activation_funnel'))
     expect(sql).toMatch(/revoke\s+all\s+on\s+public\.v_activation_funnel\s+from\s+anon,\s*authenticated/i)
   })
 

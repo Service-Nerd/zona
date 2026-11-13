@@ -4761,7 +4761,78 @@ go first.
 
 ---
 
-### 🔲 `OPS-TRIAL-SQL-CLOCK-01` — two admin views still count the trial from sign-up, and one got WRONG the day the flag went on ⚙️ **NO BOARD**
+### ✅ `OPS-TRIAL-SQL-CLOCK-01` — **BUILT 2026-11-13, MIGRATION WRITTEN AND NOT APPLIED** — two admin views still count the trial from sign-up, and one got WRONG the day the flag went on ⚙️ **NO BOARD**
+
+✅ **BUILT 2026-11-13 — `supabase/migrations/20261113_trial_window_sql_owner.sql`, WRITTEN AND NOT
+APPLIED** (production DDL is refused from this machine; it needs the SQL editor).
+
+🏛️ **ARCHITECT RULING: option 2, mirrored in SQL with an agreement gate** — and the item's own
+objection is the reason it is defensible rather than despite it. The item called a SQL twin
+*"D-16 one layer down"*, which is right about the RISK. D-16's concern is drift **nobody sees**:
+this repo already mirrors `trialFunnel.ts` in the ops-digest SQL under `digestTrialSqlMirror.test.ts`,
+and `v_activation_funnel` already carried a hand-written 14 under `activationFunnel.test.ts`.
+Option 1 ("resolve in TypeScript") was measured and has nothing to resolve into — **neither view
+has a single code consumer; every reference outside the migrations is documentation.** Option 3
+(rename to `signup_*`) is cosmetic once the numbers are wrong. What changed is the COUNT:
+**eight hand-written windows (one in `admin_user_tiers`, seven in `v_activation_funnel`) became
+ONE function**, `public.trial_window_ends`, gated by `lib/ops/trialWindowSqlMirror.test.ts`.
+
+🔴 **MY FIRST MEASUREMENT WAS WRONG AND THE CORRECTION IS THE REAL JUSTIFICATION.** I wrote that
+the app had 6 non-internal users on trial against the view's 4, and that *"the two it loses show
+as free"*. False: that comparison excluded admins and internal accounts and skipped the premium
+and grant rungs, which sit **above** trial. Evaluated as the view evaluates it, those two are
+`premium`/`grant` — correctly — and **the tier output is IDENTICAL before and after: 0 changes
+today.** A `not (NULL and …)` in my probe had also silently dropped every user with no
+subscription row, which is how the same query first returned 0.
+
+📐 **What genuinely moves, measured:**
+
+| Surface | Before | After |
+|---|---|---|
+| `admin_user_tiers.tier` | admin 1 · premium 23 · grant 1 · trial 4 · free 27 | **identical** |
+| `admin_user_tiers.trial_days_left` | — | **6 users change**; 2 go from NO number to a number |
+| `v_activation_funnel.trainable_week_in_trial` | **13 of 37** | **15 of 37** |
+
+🔑 **That last row is why it is worth applying.** The funnel is the activation programme's own
+measurement surface, and it was measuring the window the product stopped using on 2026-11-12. The
+recorded finding **"24 of 37 trialists had no trainable plan week inside their trial" is 22 of 37.**
+A view reporting the wrong TIER would be loud; one quietly reporting the wrong DENOMINATOR is the
+class this repo keeps paying for.
+
+⚠️ **A fourth hazard the item did not name: `v_paying_users` depends on `admin_user_tiers`**, so a
+`DROP` cascades. The migration drops and recreates it verbatim (it reads only `tier = 'premium'`
+and `is_internal`, neither of which moves). And `CREATE OR REPLACE VIEW` could not have been used:
+the column set changes, which is 42P16 — recorded three times here, twice as a migration that
+would have applied **nothing**.
+
+⚠️ **A fifth, found while wiring the gate: `activationFunnel.test.ts` read a HARDCODED migration
+path**, so the moment a later migration redefined the view it would have gone on validating the
+superseded file and stayed green. `adminViewTierParity.test.ts` had already solved this by
+scanning; the fix existed one file away and was unshared. Both now use
+`lib/ops/liveViewSql.ts`, and its `liveViewStatement` scopes to the view's own statement —
+because the whole file is the wrong population once a migration holds three statements.
+
+👤 **HAND-OVER — apply in the Supabase SQL editor, then run both predicates.** Each returns a
+DIFFERENT answer applied vs not, and the third says what it returns if nothing happened:
+
+```sql
+-- 1. the owner exists?            not applied → 0        applied → 1
+select count(*) from pg_proc p join pg_namespace n on n.oid = p.pronamespace
+ where n.nspname = 'public' and p.proname = 'trial_window_ends';
+
+-- 2. the funnel's denominator     not applied → 13       applied → 15
+select count(*) filter (where trainable_week_in_trial) from v_activation_funnel
+ where trial_started_at is not null;
+
+-- 3. no hand-written window left  not applied → 8        applied → 0
+select count(*) from pg_views
+ where schemaname = 'public' and definition like '%trial_started_at + interval%';
+```
+
+Append the filename to `.claude/state/applied-migrations.txt` once it is applied, or every
+session will warn.
+
+
 
 *(filed 2026-11-12, found by the item-7 wiring; P2 — admin and ops reporting only, no runner reads either)*
 
