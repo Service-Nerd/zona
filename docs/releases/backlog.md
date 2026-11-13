@@ -4673,6 +4673,25 @@ intent. What to DO with the violations it then surfaces is not: if they are real
 a base-build runner is prescribed, and that is the Coaching Board's. Do not let the first half ship a
 silent prescription change as a "defect fix".
 
+📐 **RE-MEASURED 2026-11-13 ON THE PRODUCTION POPULATION, AND THE UNGATED HALF CANNOT SHIP ALONE.**
+The path fires only when the race plan is REFUSED and a base build applies, so the figure must be taken
+on that population — forcing the generator over every grid row gives 163,006 and measures runners
+production never sends here. On the real shape: **1,730 of 47,642 corpus rows reach it, and 1,730 of
+1,730 — 100% — carry an error**, 10,084 violations, **every one `INV-PLAN-ONRAMP-PER-RUN-STEP`**
+(§116 Am. 2, Willy). ⚠️ The 4,545 recorded on the day is superseded; the method differed and is not
+reconstructable, so treat 10,084 as the number and this as its method.
+
+🔴 **It is a real prescription defect, not a measurement artefact.** `WEEK1_PER_RUN_STEP_MAX_KM` is
+**1.5 km**; violating steps run **min 1.6 / median 3.4 / max 8.1 km** — the median is more than double
+the cap and the worst is **5.4×**. A runner at `current_weekly_km: 20`, `longest_recent_run_km: 8` is
+given a 15-week block whose longest run steps **20.9 → 23.0 → 25.3 km**.
+
+⚠️ **So wiring the call is not a defect fix on its own.** `enforceViolations` throws in
+`development`/`test` and only `console.error`s in production, so wiring it would: change nothing a
+runner sees, log every base-build generation, and **break 12 test files that generate these plans**.
+Suppressing that signal to get the call in would be worse than the gap. **The ramp is the Coaching
+Board's** — §116 Am. 2 is theirs and this is the plan kind built for people who cannot yet run.
+
 🔻 **Why this was filed late, and the lesson it carries.** I found it mid-wave, was told to stop and
 move on, reverted the diff — and then recorded it only in a state paragraph. **A defect in a state
 paragraph is not a logged defect**, which is the same trap that put `BRAND-COACHNAME-HARDCODED-01` on
@@ -7871,7 +7890,21 @@ the gap. **Next:** a screen recording from the founder, or instrument the measur
 at the iOS app itself before it is switched back on. Separately: the pill's icons vanishing is the ruled design
 (2026-10-02, option b); keeping them would be a Design Board reversal, not this defect.
 
-### 🔲 `TT-BEFORE-LONG-PATCH-01` — patch one live plan: two Friday time trials the day before the long run *(filed 2026-10-24, P2)* ⚙️ **NO BOARD** *(founder decided: patch)*
+### ✅ `TT-BEFORE-LONG-PATCH-01` — **CLOSED 2026-11-13, FALSE PREMISE: the plan no longer carries them** — patch one live plan: two Friday time trials the day before the long run *(filed 2026-10-24, P2)* ⚙️ **NO BOARD** *(founder decided: patch)*
+
+✅ **CLOSED 2026-11-13 — RE-MEASURED AGAINST THE LIVE PLAN, AS THE ITEM ITSELF INSTRUCTED, AND THERE IS
+NOTHING TO PATCH.** `799c49e8` still exists, 20 weeks, `updated_at` **2026-10-28** — four days AFTER
+this item was filed. Both target Fridays are already `Easy run — Zone 2` at **63 and 72 minutes**,
+which are the exact durations this item specified as the restore target; **0 sessions anywhere in the
+plan carry a time-trial label**; `meta.recalibration_weeks` is **null**, so there is nothing to drop
+from it; 2 `plan_archive` rows exist for the user.
+⚠️ **Whether it was patched by hand or the plan was rebuilt is not recoverable from here, and does not
+change the outcome** — every acceptance condition the item named is already true. No script was
+written and none is needed.
+🔑 **The item told me to re-measure first and it was right.** Had I built the patch script from the
+item's text I would have written a dry run against two Fridays that are already easy runs, and the
+founder would have been handed a no-op to run.
+
 
 Remediation for `TT-BEFORE-LONG-01`, which fixed new plans only. **cate.stacey@icloud.com**, London Marathon, plan
 `799c49e8`: weeks **7** (w/c 2027-01-18) and **11** (w/c 2027-02-15) carry the 5K time trial on **Friday**, the day
