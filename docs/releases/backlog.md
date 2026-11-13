@@ -1132,7 +1132,57 @@ is not load management, it is withholding training."*
 
 ---
 
-### 🔲 `GRID-NO-MENOPAUSAL-TENDON-01` — post-menopausal × achilles history is in NEITHER measurement grid *(filed 2026-11-04)* ⚕️ **COACHING BOARD** (Sims, recorded at the §94 Am.5 sitting)
+### ✅ `GRID-NO-MENOPAUSAL-TENDON-01` — post-menopausal × achilles history is in NEITHER measurement grid *(filed 2026-11-04)* ⚕️ **COACHING BOARD** (Sims, recorded at the §94 Am.5 sitting)
+
+> ✅ **SHIPPED 2026-11-13.** The cell exists and is reported. **Both grid premises re-derived and both hold exactly:**
+> `cohortGrid` 41,472 rows / **0** injured / 20,736 masters / **0** crossed; `targetedGridCore` 6,144 / 4,608 injured /
+> **0** masters / **0** crossed. `targetedGridExtra` 16 → **22**, carrying **6** masters × tendon rows.
+> 📐 **First reading: 6 plans, 5 fire `INV-PLAN-DELIVERED-RAMP`** — trimable 23/23/20/17/10, drivers **4 `both` + 1
+> `easy`, 0 pure `quality`**. ⚠️ **5 of 6 is not a rate and is not quoted as one** (§94 Am. 5 records achilles at 40 as
+> 24.1%); at n=6 it is a signal that the cell behaves differently, not a measurement that it behaves 3× worse. What
+> changed is that it is no longer invisible. Widening it is the board's call, because more rows move every baseline here.
+>
+> 🔴 **TWO OF THE ITEM'S PREMISES DID NOT SURVIVE RE-MEASUREMENT, AND BOTH CHANGED THE BUILD.**
+> **(1) `GeneratorInput` has `age` and NO sex or gender field**, so "post-menopausal" is unrepresentable and age is the
+> only proxy there is. The cell is **masters age × tendon history** and is named that; Sims's physiological argument
+> cannot be keyed on by any rule — the same wall the cycle work hit. *A corpus named for a cohort it cannot identify is
+> how a measurement comes to be trusted for more than it covers.*
+> **(2) The corpus was not the whole gap.** `deliveredRampTail.test.ts` segments into three **mutually exclusive**
+> buckets with injury tested first, so age-52 injured rows land in `injury` and the cross still would not exist. The
+> segmentation needed the fourth cell, not just rows.
+>
+> ⚠️ **AND A FOURTH `Segment` WAS THE WRONG FIX.** `TRIMABLE_BASELINE` is `Record<Segment, …>` and the no-numeric arm
+> holds it to **exactly three segments and two fields** on the stated grounds that *"a fourth field is how a threshold
+> sneaks in"* — widening the type would have broken a gate protecting something real, *"and the temptation would then
+> have been to loosen the gate."* So the cell is **orthogonal to `Segment`** with **its own fixture**, which is §94
+> Amendment 5's own precedent in that same file for that same problem.
+>
+> 🔴 **`cohortGrid` DELIBERATELY DID NOT GAIN AN INJURY AXIS.** That grid's own rule: these fields *"gate MECHANISMS,
+> not cohort CLASSIFICATION — so what they need is reach, not a full cross"*; crossing injury into 41,472 rows on a
+> check that runs every build is the thing that rule exists to refuse. **6 appended rows reach the cell.**
+>
+> 🔑 **ONE BASELINE MOVED, BY 1pp, AND IT IS ATTRIBUTABLE:** `unactionableSharePct` **71 → 72** (34/48 = 70.8% →
+> 38/53 = 71.7%), entirely the cell's four `both`-driven firings. **It is attributable only because the sample was held
+> still:** the corpus drew injured rows through `(k * STRIDE) % targetedGrid().length`, so appending *any* row
+> re-permuted all 600 — the measured 61.6% → 47.4% incident `cohortGrid.ts` records. It now samples the **cartesian**
+> and takes the focused block **in full**, so the prior 1,800 rows are byte-identical and the 1pp is a finding.
+> ⚠️ **Reported, not absorbed:** the cohort with the strongest tissue argument is the one whose firings the lever set
+> can do least about. That is evidence **for** `ACHILLES-QUALITY-ONSET-01`, which was blocked on this cell existing.
+>
+> 🔑 **COMPLEMENTARY TO `measure-plan-fitness.ts`'s HAND-BUILT COHORT, NOT A DUPLICATE** — noted in both files so
+> neither is deleted as redundant. That one is masters × **knee**, which is **lever-scoped** (ADR-022's levers and §12's
+> producer cap name knee and shin). So what it has always measured is the worst case among runners the engine can act
+> **for**; the cell with no corpus at all was the one where it **cannot**. Its "exists in NEITHER grid" comment corrected.
+>
+> **Falsified:** age 52 → 40 in the grid block reds the population *and* crossed arms; dropping the age half of
+> `isMastersTendon` reds all three. ⚠️ **Widening the tendon filter to match every history stays GREEN**, and that is
+> recorded in the code: `age >= MASTERS` alone already selects exactly these 6 rows, because `targetedGridCore` is age 40
+> throughout and `cohortGrid` carries no injured rows — the item's premise confirmed from the other side. **Falsify the
+> age half, not the tendon half.**
+>
+> **What this does not prove:** nothing about whether the cell's prescription is correct — that is the deferred ruling,
+> and `ACHILLES-QUALITY-ONSET-01` is still unruled. `cohort:shape` reads `cohortGrid` only and did not move, so the
+> population gate says nothing about this cell. And 6 rows is reach, not statistical power.
 
 `cohortGrid` varies no injury at all (0 of 41,472 rows); `targetedGrid` carries the injuries but is **age 40**. The
 delivered-ramp segmentation splits age and injury and **never crosses them**, so the cell Sims says she cares most

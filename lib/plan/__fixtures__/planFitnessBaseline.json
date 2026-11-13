@@ -1,6 +1,6 @@
 {
   "buckets": {
-    "INJURY  masters ": {
+    "CAPPED-INJURY masters ": {
       "n": 3,
       "medianBuildPct": 41.2,
       "neverBuildsPct": 0,
@@ -9,7 +9,7 @@
         "constructed": 3
       }
     },
-    "INJURY  standard": {
+    "CAPPED-INJURY standard": {
       "n": 3075,
       "medianBuildPct": 50,
       "neverBuildsPct": 0,
@@ -19,17 +19,18 @@
         "constructed": 3
       }
     },
-    "healthy masters ": {
-      "n": 6712,
+    "other masters ": {
+      "n": 6718,
       "medianBuildPct": 17.9,
       "neverBuildsPct": 14.2,
       "medianMarathonLrPctOfRace": 61.6,
       "grids": {
         "cohort": 6709,
+        "targeted": 6,
         "constructed": 3
       }
     },
-    "healthy standard": {
+    "other standard": {
       "n": 9792,
       "medianBuildPct": 40,
       "neverBuildsPct": 9.4,

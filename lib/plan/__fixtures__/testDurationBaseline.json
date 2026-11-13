@@ -184,6 +184,12 @@
       "title": "the population is real — an empty one would pass every arm below vacuously",
       "ms": 6333,
       "reason": "⚠️ CORPUS ARM, AND IT WAS SLOW BEFORE TODAY — `check:slow` could not see it because it was reading a two-day-stale report (`CHECK-SLOW-STALE-01` was fixed the same day this test landed, and the eight tests that had crossed the 1,000 ms line in those two days were exactly this class). It generates real plans to prove §52's lopsided-week residual is maintenance-only, which is the claim its own title makes about the POPULATION: an empty or synthetic corpus would pass every arm in the file vacuously, which is the failure shape this repo keeps paying for. The corpus is lazy and memoised across arms and already re-strided 7 → 23 to cut it from 29.4 s to the current figure. ALLOWED: the cost buys a real population, and a sampled version could not make the claim."
+    },
+    {
+      "file": "lib/plan/prosePreference.test.ts",
+      "title": "planRationaleNotes returns the same notes, in the same order, in both units",
+      "ms": 1469,
+      "reason": "⚠️ INCIDENTAL DRIFT, NOT CAUSED BY THE SHIP THAT RECORDED IT. Flagged NEW on 2026-11-13 by GRID-NO-MENOPAUSAL-TENDON-01's run, and that ship cannot have caused it: this test reads `cohortGrid`, which was untouched (41,472 rows, asserted by `cohortGridSize.test.ts` on the same run); the six new rows went into `targetedGridExtra`, which this file never imports. So it is one of the tests CHECK-SLOW-STALE-01 describes — crossing the 1,000 ms reporting line between report reads, unflagged until somebody ran the gate against a fresh report. 1,469 ms raw / 1,534 ms normalised at this run's 0.96x load, 4.9% of the 30,000 ms budget. ALLOWED: it generates plans across the grid in BOTH unit systems to prove the note set is identical, and a sampled version could not make that claim — the same reasoning the `targetedGrid.test.ts` entry carries. ⚠️ Recorded rather than optimised, and recorded as somebody else's drift so the next reader does not attribute it to the grid change in the same commit."
     }
   ]
 }

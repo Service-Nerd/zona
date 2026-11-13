@@ -463,5 +463,69 @@ export function targetedGridExtra(): GeneratorInput[] {
         acknowledged_days_warning: true, acknowledged_prep_warning: true,
       } as unknown as GeneratorInput)
 
+  // ── GRID-NO-MENOPAUSAL-TENDON-01 — MASTERS AGE x TENDON HISTORY, AT LAST ────
+  //
+  // 🔴 MEASURED: the cell exists in NEITHER cartesian. `cohortGrid` varies age over
+  // {35, 52} and carries `injury_history: []` on all 41,472 rows; `targetedGridCore`
+  // carries the injuries and is `age: 40` on all 6,144 — below `MASTERS_AGE_THRESHOLD`
+  // (45), so the worst achilles case ever measured was invisible to the masters segment
+  // as well as to any crossed one. Sims raised it at the §94 Am. 5 sitting: tendon and
+  // fascia stiffness are oestrogen-sensitive and adaptation is slower peri- and
+  // post-menopause, so this is the cohort with the strongest tissue argument and no
+  // corpus could reach it.
+  //
+  // 🔴 AND THE ENGINE CANNOT BE TOLD ABOUT MENOPAUSE AT ALL. `GeneratorInput` has `age`
+  // and NO sex or gender field, so "post-menopausal" is unrepresentable and age is the
+  // only proxy there is. These rows are therefore MASTERS AGE x TENDON HISTORY, which is
+  // the buildable half of what Sims asked for; the physiological half cannot be keyed on
+  // by any rule, the same wall the cycle work hit (`@capgo/capacitor-health` exposes no
+  // menstrual data type, which is why ENGINE-03a/CA-05 are blocked). Stating it here
+  // because a corpus named for a cohort it cannot actually identify is how a measurement
+  // comes to be trusted for more than it covers.
+  //
+  // ⚠️ APPENDED, NOT CROSSED. This grid's own rule: these fields "gate MECHANISMS, not
+  // cohort CLASSIFICATION — so what they need is reach, not a full cross". Crossing an
+  // injury axis into `cohortGrid` would be 41,472 x 3 on a check that runs every build,
+  // which is the thing that rule exists to refuse. 6 rows reach the cell.
+  //
+  // ⚠️ THE CORPUS ALONE DOES NOT CREATE THE CELL, and that was the item's real gap.
+  // `deliveredRampTail.test.ts` segments into three MUTUALLY EXCLUSIVE buckets with
+  // injury tested first, so these rows would land in `injury` and the cross would still
+  // not exist. The fourth segment ships with them.
+  //
+  // 🔑 COMPLEMENTARY TO `measure-plan-fitness.ts`'s HAND-BUILT COHORT, NOT A DUPLICATE OF
+  // IT. That script constructs age {40, 52} x injury {none, KNEE} by hand, calling it the
+  // worst case. Knee is LEVER-SCOPED — ADR-022's levers and §12's producer cap name knee and
+  // shin — so what it measures is the worst case among runners the engine can act for. This
+  // cell is TENDON, which no lever governs. The genuinely worse cell was the one with no
+  // corpus. Do not delete either as redundant.
+  //
+  // ⚠️ ONE AGE, NOT A RANGE. 52 matches `cohortGrid`'s own masters value so the two
+  // corpora agree, and 52 vs 58 differs only in Tanaka max-HR derivation — no rule
+  // branches between them, so a second age would add rows and no mechanism.
+  // Volume/longest run mirror the worst achilles case the sitting measured (HM,
+  // 30 km/week, longest 12) so the only moved variable against `targetedGridCore` is age.
+  for (const d of TARGETED_DISTANCES)
+    for (const injury of [['Achilles'], ['Plantar fasciitis']] as const)
+      out.push({
+        athlete_name: 'Athlete', age: 52, race_name: 'Test',
+        primary_metric: 'distance', plan_start: COHORT_PLAN_START,
+        race_distance_km: d.km, race_date: raceDateIn(d.weeks, 'sun'),
+        goal: 'finish', resting_hr: 55, max_hr: 184,
+        current_weekly_km: 30, longest_recent_run_km: 12,
+        recent_quality_training: 'occasional', hard_session_relationship: 'neutral',
+        training_age: '6-18mo', days_available: 4, days_cannot_train: [],
+        // The WIZARD's spellings (`GeneratePlanScreen.tsx` -> `INJURIES`), per the note on
+        // TARGETED_INJURIES: a fixture in a spelling the product cannot emit is how
+        // 'Shin splints' never matched 'shin_splints' for months with every test green.
+        // Both are in `HILL_RESTRICTING_INJURIES` and both are tendon/fascia, which is the
+        // tissue Sims's argument is about.
+        injury_history: [...injury],
+        // `user_declared_level` deliberately UNSET: no production caller sends
+        // `fitness_level`, and at 30 km/week with a 12 km longest run the engine assesses
+        // INTERMEDIATE (COHORT-GRID-UNSET-LEVEL-01).
+        acknowledged_days_warning: true, acknowledged_prep_warning: true,
+      } as unknown as GeneratorInput)
+
   return out
 }

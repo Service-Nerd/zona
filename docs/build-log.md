@@ -6,6 +6,25 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-11-13 — GRID-NO-MENOPAUSAL-TENDON-01 · the cohort with the strongest tissue argument, and no corpus could build it
+**Shipped:** six rows that cross masters age with a tendon injury history, plus the orthogonal classifier and fixture that make the cell reportable, because the rows alone could not.
+
+**Dev learning:** adding a row to a measurement corpus is not a safe operation. The corpus here drew its injured sample through `(k * STRIDE) % targetedGrid().length`, so appending *anything* changes the modulus and re-permutes all 600 rows. That exact mistake had already moved a marathon specificity figure 61.6% → 47.4% with no engine file in the diff. The fix is in the file's own notes: sample the **cartesian** and take the focused block **in full**. Doing that meant the one baseline that moved (71% → 72%) was attributable to six specific plans rather than to a reshuffle nobody could explain. **If a baseline moves and you cannot name which rows moved it, you have not measured anything — you have just re-rolled the dice.**
+
+The other one: the obvious fix was a fourth `Segment`, and it was wrong. `TRIMABLE_BASELINE` is `Record<Segment, …>` and an arm holds it to exactly three segments and two fields, on the written grounds that *"a fourth field is how a threshold sneaks in"*. Widening the type would have forced a fourth key and broken a gate that was protecting something real — and then the temptation is to loosen the gate. The file already had the answer, from a sitting nine days earlier facing the same problem: give the new measurement **its own fixture**, never a new field on that object.
+
+**Product/creator learning:** the item was called "post-menopausal × achilles history". `GeneratorInput` has `age` and **no sex or gender field**. So the cohort Sims actually cares about cannot be identified by any rule in the engine — age is the only proxy there is. I renamed the cell to what it measures. A corpus named for a cohort it cannot identify is how a measurement quietly comes to be trusted for more than it covers, and the honest version of this ship is "we can now see masters runners with tendon histories", not "we can now see post-menopausal women".
+
+**AI-building learning:** two of the items I filed the day before turned out to be artefacts of my own probe sweeping `current_weekly_km` as integers when the wizard's ruler has `step: 5` — so the defects only existed at 1 and 2 km/week, values no runner can send. I cited the exact lesson for that class (`COHORT-GRID-UNSET-LEVEL-01`) in the same wave. **Knowing the failure mode by name does not stop you walking into it; only deriving the production population does.** And the falsification is what caught it: the first mutation I ran against my own fix stayed green, which is the signal to suspect the check rather than celebrate.
+
+**The honest bit:** I was asked why the open-item count had gone *up* after a wave of work. It had: 95 → 97, because I closed three items and filed five. The instruction to stop filing and fix as I go was already in my notes from four days earlier. I had filed five residuals instead and reported it as diligence. Then, while measuring one of them, I found the thing nobody had filed: `engine.ts:329` returns a §118 base-build plan with **no validator call at all**, while the staged branch two hundred lines away runs the full set. The plan kind built for people who cannot yet run is the one kind that reaches a runner unvalidated — and that was sitting underneath five items that were mostly noise.
+
+**Hook material:** `measure-plan-fitness.ts` called 1,542 runners with an injury history "healthy" — 1,539 Achilles, 3 plantar fasciitis — because the predicate was a hand-rolled `/knee|shin/i`. That is ADR-022's *lever* scope wearing the word "healthy". The script's headline finding is "an injury-history runner built +6% against +91% for a healthy twin". That +91% denominator had tendon-history runners in it.
+
+**Postable?:** yes — the "a baseline you can't attribute is a dice roll" angle, and the 1,542-runners-called-healthy number.
+
+---
+
 ## 2026-11-12 — WALKRUN-SCHEMA-VOLUME-01 · every walk-run plan failed its own canonical schema for 18 days
 **Shipped:** `weekly_km` and `long_run_hrs` are optional on a §116 walk-run week and required on every other phase, via a `WeekSchemaChecked` sibling.
 

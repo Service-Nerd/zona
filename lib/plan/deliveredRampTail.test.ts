@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { generateRulePlan } from './ruleEngine'
 import { validatePlan } from './invariants'
-import { cohortGrid, targetedGrid, COHORT_PLAN_START } from './cohortGrid'
+import { cohortGrid, targetedGridCore, targetedGridExtra, COHORT_PLAN_START } from './cohortGrid'
 import { hasVolumeCappedInjuryHistory } from './injuryScope'
 import { sessionKmSelfPaced } from './sessionDistance'
 import { GENERATION_CONFIG } from './generationConfig'
@@ -68,6 +68,47 @@ function segmentOf(i: GeneratorInput): Segment {
   return ageOf(i) >= MASTERS ? 'healthy_masters' : 'healthy_standard'
 }
 
+// ── GRID-NO-MENOPAUSAL-TENDON-01 — THE CROSSED CELL, ORTHOGONAL TO `Segment` ──────────────
+//
+// 🔴 WHY NOT A FOURTH SEGMENT. `segmentOf` above is three MUTUALLY EXCLUSIVE buckets with
+// injury tested first, so an injured masters runner lands in `injury` and the cross cannot
+// exist — which is the gap Sims raised and `GRID-NO-MENOPAUSAL-TENDON-01` records. The
+// obvious fix is a fourth `Segment`, and it is the wrong one: `TRIMABLE_BASELINE` is
+// `Record<Segment, …>` and the no-numeric arm holds it to EXACTLY three segments and two
+// fields, on the stated grounds that *"a fourth field is how a threshold sneaks in"*.
+// Widening the type would have forced a fourth key and broken a gate that is protecting
+// something real — and the temptation would then have been to loosen the gate.
+//
+// ✅ So this follows §94 Amendment 5's own precedent, in this file, for this exact
+// problem: a new measurement gets ITS OWN FIXTURE beside that object, never a new field on
+// it. The three segments are untouched and keep their meaning.
+//
+// ⚠️ "MASTERS TENDON", NOT "POST-MENOPAUSAL". `GeneratorInput` has `age` and no sex or
+// gender field, so the cohort Sims named cannot be identified by any rule and age is the
+// only proxy there is. Naming it for what it measures rather than for what it stands in
+// for, because a corpus named for a cohort it cannot identify is how a measurement comes
+// to be trusted for more than it covers.
+//
+// ⚠️ THE TENDON SET IS NAMED HERE, NOT BORROWED. `HILL_RESTRICTING_INJURIES` also contains
+// knee, itb, shin and calf — a wider set for a different question (which sessions a history
+// excludes). This is the tissue Sims's argument is about: tendon and fascia, oestrogen-
+// sensitive, slower to adapt. Matched on a lowercased substring because the wizard sends
+// 'Achilles' and 'Plantar fasciitis' while stored inputs carry older separators.
+//
+// ⚠️ AND WITHIN THIS CORPUS THE TENDON FILTER CURRENTLY DISCRIMINATES NOTHING — measured by
+// falsification, which is the only reason it is known. Widening `TENDON_HISTORIES` to match
+// every history leaves all 16 arms green, because `age >= MASTERS` ALONE already selects
+// exactly these 6 rows: `targetedGridCore` is age 40 throughout and `cohortGrid` carries no
+// injured rows at all. That is the item's premise, confirmed from the other side. The filter
+// is kept because it states what the cell IS rather than what this corpus happens to contain,
+// and the day a masters row with a knee history arrives it starts discriminating. Falsify the
+// age half, not the tendon half, when checking these arms are alive.
+const TENDON_HISTORIES = ['achilles', 'plantar'] as const
+const isMastersTendon = (i: GeneratorInput): boolean =>
+  ageOf(i) >= MASTERS
+  && (injuriesOf(i) as unknown[]).some(x =>
+    TENDON_HISTORIES.some(t => String(x).toLowerCase().includes(t)))
+
 /**
  * ⚠️ TWO CORPORA, AND THE SECOND IS NOT OPTIONAL. `cohortGrid` carries **0
  * injury-history rows out of 41,472** — measured. The first version of the
@@ -80,10 +121,24 @@ function segmentOf(i: GeneratorInput): Segment {
  */
 const CORPUS: GeneratorInput[] = (() => {
   const healthy = cohortGrid()
-  const injured = targetedGrid().filter(i => injuriesOf(i).length > 0)
+  // 🔴 THE CARTESIAN IS SAMPLED; THE FOCUSED BLOCK IS TAKEN IN FULL
+  // (GRID-NO-MENOPAUSAL-TENDON-01, 2026-11-13). This read `targetedGrid()`, which is
+  // core + extra, through `(k * STRIDE) % injured.length` — so appending ANY row to
+  // `targetedGridExtra` changes the modulus and re-permutes all 600 injured samples.
+  // That is the measured failure `cohortGrid.ts` records above its focused blocks:
+  // appending 16 rows moved a marathon specificity figure 61.6% -> 47.4% with no engine
+  // file in the diff. Sampling the core keeps the modulus at 4,608 and leaves every
+  // previously-sampled row byte-identical, so the baselines below move only by what the
+  // new rows THEMSELVES do — which is a finding, where a re-permutation is just noise.
+  //
+  // ⚠️ AND IN FULL, NOT SAMPLED, for the reason that block states: rows that exist for
+  // REACH must never be sampled, or the only rows reaching a cohort get dropped.
+  const injured = targetedGridCore().filter(i => injuriesOf(i).length > 0)
+  const focused = targetedGridExtra().filter(i => injuriesOf(i).length > 0)
   return [
     ...Array.from({ length: N_HEALTHY }, (_, k) => healthy[(k * STRIDE) % healthy.length]),
     ...Array.from({ length: N_INJURY }, (_, k) => injured[(k * STRIDE) % injured.length]),
+    ...focused,
   ]
 })()
 
@@ -92,6 +147,10 @@ interface Fire {
   segment: Segment; week: number; trimable: number
   /** Does ADR-022's lever set govern this runner? §12/§90's producer cap is knee/shin BY NAME. */
   leverScoped: boolean
+  /** GRID-NO-MENOPAUSAL-TENDON-01 — the crossed cell, orthogonal to `segment` (which reads
+   *  `injury` for these rows). Carried on the Fire so the cell's tail can be read without
+   *  re-walking the corpus with a second instrument. */
+  mastersTendon: boolean
   /** WHAT ROSE. §94 Am.5: the governed arm is non-long-run, which contains the quality session
    *  ADR-022's lever order forbids touching ("a quality session is never touched"). So a firing
    *  driven by quality ONSET reports a load change the lever set may not act on. */
@@ -135,10 +194,12 @@ function driverOf(plan: Plan, week: number): Driver {
 const measured: {
   fires: Fire[]; plans: number; bySeg: Record<Segment, number>
   injuryPlansByScope: { leverScoped: number; notLeverScoped: number }
+  mastersTendonPlans: number
 } = (() => {
   const fires: Fire[] = []
   const bySeg = { healthy_standard: 0, healthy_masters: 0, injury: 0 } as Record<Segment, number>
   const injuryPlansByScope = { leverScoped: 0, notLeverScoped: 0 }
+  let mastersTendonPlans = 0
   let plans = 0
   for (const input of CORPUS) {
     let plan: Plan
@@ -150,6 +211,8 @@ const measured: {
     // "0 firings" means nothing until you say 0 of how many.
     const leverScoped = hasVolumeCappedInjuryHistory(injuriesOf(input) as string[])
     if (seg === 'injury') injuryPlansByScope[leverScoped ? 'leverScoped' : 'notLeverScoped']++
+    const mastersTendon = isMastersTendon(input)
+    if (mastersTendon) mastersTendonPlans++
     for (const v of validatePlan(plan, input)) {
       if (v.code !== 'INV-PLAN-DELIVERED-RAMP') continue
       // ⚠️ PARSED FROM THE INVARIANT'S OWN `actual`, NEVER RE-DERIVED. Three
@@ -164,10 +227,10 @@ const measured: {
       // difference matters the day somebody is skimming CI output.
       if (!m) { unparsed.push(String(v.actual)); continue }
       const week = v.week ?? 0
-      fires.push({ segment: seg, week, trimable: Number(m[2]), leverScoped, driver: driverOf(plan, week) })
+      fires.push({ segment: seg, week, trimable: Number(m[2]), leverScoped, mastersTendon, driver: driverOf(plan, week) })
     }
   }
-  return { fires, plans, bySeg, injuryPlansByScope }
+  return { fires, plans, bySeg, injuryPlansByScope, mastersTendonPlans }
 })()
 
 const q = (xs: number[], p: number) =>
@@ -400,6 +463,41 @@ describe('§94 Am.4 — the delivered-ramp TAIL is measured, segmented, and may 
 // named as reopening it (*"rises the engine may not trim, which would make them unactionable"*).
 // The worst case is quality ONSET: easy volume falls 12 → 8 km to fund a 9 km CV-interval session in W6.
 // **The mechanism is §89/ADR-021's onset timing, not §94.** Filed as `ACHILLES-QUALITY-ONSET-01` 🏃.
+// ── GRID-NO-MENOPAUSAL-TENDON-01 (2026-11-13) — THE CROSSED CELL, MEASURED AT LAST ────────
+//
+// Sims, at the §94 Am. 5 sitting: tendon and fascia stiffness are oestrogen-sensitive and
+// adaptation is slower peri- and post-menopause, so masters runners with a tendon history are
+// the cohort with the strongest tissue argument. The gap she named was that NO corpus could
+// build them: `cohortGrid` carries 0 injured rows of 41,472 and `targetedGridCore` is age 40
+// on all 6,144 — below MASTERS (45) — so the worst achilles case ever measured was invisible
+// to the masters segment and to any crossed one. 6 rows in `targetedGridExtra` now reach it.
+//
+// 📐 MEASURED, FIRST READING: 6 plans, **5 fire INV-PLAN-DELIVERED-RAMP**, trimable
+// 23 / 23 / 20 / 17 / 10, drivers **4 `both` + 1 `easy`, 0 pure `quality`**.
+//
+// ⚠️ 5 OF 6 IS NOT A RATE AND MUST NOT BE QUOTED AS ONE. §94 Am. 5 records achilles at
+// age 40 as 48/199 = 24.1% on this corpus and 400/1,536 = 26.0% on the full population.
+// At n=6 the comparison is a SIGNAL that the cell behaves differently, not a measurement
+// that it behaves 3x worse: six rows cannot carry a percentage, and this file has already
+// recorded once that a figure from one population was quoted against an arm measuring
+// another. What changed is that the cell is no longer INVISIBLE. Widening it is the board's
+// call, because more rows here move every baseline that reads this corpus.
+//
+// ⚠️ IT IS NOT A CEILING AND NO THRESHOLD IS BEING PROPOSED. §2 Am. 2 and §94 Am. 3 both
+// forbid an invented number, and the no-numeric arm below enumerates the names such a
+// number would arrive under. `maxTrimable` is this corpus's measured maximum, recorded so a
+// change has to be declared — exactly as `TRIMABLE_BASELINE` works, and in its own object
+// for the reason §94 Am. 5 gives: that object is held to three segments and two fields.
+const MASTERS_TENDON_BASELINE = {
+  /** EXACT, and the arm that matters most: if the grid stops building the cell this goes red
+   *  rather than silently passing. An empty population passes every percentile arm. */
+  plans: 6,
+  /** Firings on those plans. May FALL freely; a rise is a finding and is declared, not bumped. */
+  firings: 5,
+  /** The measured maximum of the governed (trimable, non-long-run) arm on the cell. */
+  maxTrimable: 23,
+}
+
 const LEVER_SCOPE_BASELINE = {
   /** EXACT. Not a ceiling, not a tolerance — the measured fact the vacated sentence should have been.
    *  The day a knee or shin plan breaches §2 at delivery, this goes red and the board hears about it. */
@@ -412,8 +510,26 @@ const LEVER_SCOPE_BASELINE = {
    *  1,800-input SAMPLE, which reads 70.9%. That is 5pp of slack nobody decided to grant, and §94
    *  Am.3's *"any non-zero tolerance is an invented number"* applies to a baseline exactly as it
    *  applies to a threshold. Sample: quality 29.2% + both 41.7% = 70.9%. Full population, for
-   *  context and not for this gate: quality 44.0% + both 32.0% = 76.0%. */
-  unactionableSharePct: 71,
+   *  context and not for this gate: quality 44.0% + both 32.0% = 76.0%.
+   *
+   *  🔴 RAISED 71 -> 72 ON 2026-11-13, AND THE REASON IS THE WHOLE POINT OF THE NUMBER
+   *  (GRID-NO-MENOPAUSAL-TENDON-01). The corpus gained 6 masters x tendon rows — the cell
+   *  Sims said no grid could build. 5 of the 6 fire, **4 of them driven by `both`**, which is
+   *  not load ADR-022's lever set may act on. So: 34/48 = 70.8% before, 38/53 = 71.7% after.
+   *  The move is 1pp and it is entirely those four firings.
+   *
+   *  ⚠️ IT IS ATTRIBUTABLE ONLY BECAUSE THE SAMPLE WAS HELD STILL. The corpus used to draw
+   *  the injured rows through `(k * STRIDE) % targetedGrid().length`, so appending ANY row
+   *  re-permuted all 600 and every figure here would have moved for no reason anyone could
+   *  name — the measured 61.6% -> 47.4% incident `cohortGrid.ts` records above its focused
+   *  blocks. The corpus now samples the CARTESIAN and takes the focused block IN FULL, so the
+   *  previously-sampled 1,800 rows are byte-identical and this 1pp is a FINDING, not noise.
+   *
+   *  ⚠️ A RISE IS STILL A FINDING AND THIS ONE IS REPORTED, NOT ABSORBED: the cohort with the
+   *  strongest tissue argument is the one whose firings the lever set can do least about. That
+   *  is evidence FOR `ACHILLES-QUALITY-ONSET-01`, which is blocked on this cell existing, and
+   *  it is the board's to rule on — not a reason to widen the tolerance. */
+  unactionableSharePct: 72,
 } as const
 
 describe('§94 Am.5 — the injury segment is TWO cohorts, and only one has levers', () => {
@@ -500,5 +616,39 @@ describe('§94 Am.5 — the injury segment is TWO cohorts, and only one has leve
         + (d === 'easy' ? '   <- the only one the lever set may act on' : ''))
     }
     console.log(`    max ${top}% x${cells.length}, all in W${cells[0].week} — a corpus week shape\n`)
+  })
+})
+
+describe('GRID-NO-MENOPAUSAL-TENDON-01 — masters age x tendon history is reachable and reported', () => {
+  it('🔴 the CELL IS POPULATED — the grid has not stopped building it', () => {
+    // The whole item was that this cell existed in no corpus. If a grid change ever drops it,
+    // every arm below would pass on an empty set, which is how `cohortGrid`'s 0 injured rows
+    // let a corpus look complete while reaching none of the cohort a ruling was about.
+    expect(measured.mastersTendonPlans,
+      'the masters x tendon cell is EMPTY — targetedGridExtra no longer reaches it, and the '
+      + 'arms below are vacuous. GRID-NO-MENOPAUSAL-TENDON-01 exists because this cell was '
+      + 'unreachable in both grids.').toBe(MASTERS_TENDON_BASELINE.plans)
+  })
+
+  it('the cell is CROSSED, not just injured — these rows are masters AND tendon', () => {
+    // `segmentOf` reports `injury` for every one of them, which is the defect the item names:
+    // three mutually exclusive buckets with injury first cannot express a cross. This asserts
+    // the orthogonal classifier actually crosses, rather than re-reading the injury bucket.
+    const cell = CORPUS.filter(isMastersTendon)
+    expect(cell.length).toBe(MASTERS_TENDON_BASELINE.plans)
+    expect(cell.every(i => ageOf(i) >= MASTERS)).toBe(true)
+    expect(cell.every(i => injuriesOf(i).length > 0)).toBe(true)
+    expect(new Set(cell.map(i => segmentOf(i)))).toEqual(new Set(['injury']))
+  })
+
+  it("the cell's delivered-ramp tail does not grow", () => {
+    const xs = measured.fires.filter(f => f.mastersTendon).map(f => f.trimable)
+    expect(xs.length,
+      'firings on the cell ROSE. Not a failure by itself: it is a finding, and §94 Am. 4 asks '
+      + 'for it to be declared with the reason in the same commit, never bumped to go green.')
+      .toBeLessThanOrEqual(MASTERS_TENDON_BASELINE.firings)
+    const max = xs.length ? Math.max(...xs) : 0
+    expect(max, 'the cell\'s trimable maximum grew')
+      .toBeLessThanOrEqual(MASTERS_TENDON_BASELINE.maxTrimable)
   })
 })

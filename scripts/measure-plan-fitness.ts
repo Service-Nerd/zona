@@ -27,6 +27,7 @@ import { generateRulePlan } from '../lib/plan/ruleEngine'
 import { GENERATION_CONFIG as G } from '../lib/plan/generationConfig'
 import { isLongRun } from '../lib/plan/sessionRole'
 import { sessionKmSelfPaced } from '../lib/plan/sessionDistance'
+import { hasVolumeCappedInjuryHistory } from '../lib/plan/injuryScope'
 import type { GeneratorInput, Plan, Week } from '../types/plan'
 
 const km = (s: unknown) => sessionKmSelfPaced(s as never) ?? 0
@@ -95,6 +96,17 @@ export function measure() {
   // ⚠️ The injury x masters cell exists in NEITHER grid (cohortGrid does not vary
   // injury; targetedGrid is all age 40) and the arithmetic says it is the WORST
   // case. Constructed explicitly so the worst case is never again unmeasured.
+  //
+  // 🔑 AMENDED 2026-11-13 (GRID-NO-MENOPAUSAL-TENDON-01): `targetedGridExtra` NOW CARRIES
+  // A MASTERS x INJURY CELL, so the sentence above is no longer the whole truth — and the
+  // two are COMPLEMENTARY, not duplicates, which is the thing to know before deleting
+  // either. This cohort is masters x **knee**, and knee is lever-scoped: ADR-022's levers
+  // and §12's producer cap name knee and shin. The grid's new cell is masters x **tendon**
+  // (achilles, plantar), which NO lever governs. So what this block has always measured is
+  // the worst case among runners the engine can actually act for; the cell that had no
+  // corpus at all was the one where it cannot. Keep both.
+  // ⚠️ These rows are taken IN FULL below, so they are safe to extend; the grid's focused
+  // block must be too, for the reason `cohortGrid.ts` records above it.
   const constructed: GeneratorInput[] = []
   for (const age of [40, 52])
     for (const injury_history of [[], ['knee']])
@@ -124,9 +136,28 @@ export function measure() {
     catch { continue }
     const ws = buildingWeeks(plan)
     if (ws.length < 4) continue
-    const injured = (input.injury_history ?? []).some(i => /knee|shin/i.test(i))
+    // 🔴 THE BUCKET USED TO BE CALLED `healthy` AND CONTAINED 1,542 RUNNERS WITH AN INJURY
+    // HISTORY (GRID-NO-MENOPAUSAL-TENDON-01, 2026-11-13). The predicate was a hand-rolled
+    // `/knee|shin/i` — which is ADR-022's LEVER scope, not the question "is this runner
+    // injured" — so every achilles and plantar history in `targetedGridCore` (1,536 rows)
+    // plus this grid's new tendon cell (6) was scored as healthy. Measured: 1,539 Achilles
+    // and 3 Plantar fasciitis. The headline this script exists to produce is "an injury
+    // runner built +6% against +91% for a healthy twin", and that denominator held
+    // tendon-history runners.
+    //
+    // ⚠️ THE LABEL IS CORRECTED; THE COHORT DEFINITION IS NOT CHANGED, DELIBERATELY. Moving
+    // 1,542 rows between buckets would move a figure the Coaching Board has cited, and that
+    // is a measurement redefinition for the board to rule on, not a rename to make a test
+    // pass. So the buckets now say what the predicate actually tests. The dilution is
+    // visible in the name instead of hidden behind the word "healthy".
+    //
+    // ⚠️ AND THE PREDICATE IS NOW THE SINGLE OWNER, not a third copy of it.
+    // `hasVolumeCappedInjuryHistory` is that owner (`injuryScope.ts`), `deliveredRampTail`
+    // already calls it, and this file hand-wrote the regex — the duplicate-that-drifts shape
+    // this repo has paid for in five named defects.
+    const injured = hasVolumeCappedInjuryHistory(input.injury_history ?? [])
     const masters = (input.age ?? 0) >= GENERATION_CONFIG_MASTERS
-    const key = `${injured ? 'INJURY ' : 'healthy'} ${masters ? 'masters ' : 'standard'}`
+    const key = `${injured ? 'CAPPED-INJURY' : 'other'} ${masters ? 'masters ' : 'standard'}`
     const row = buckets.get(key) ?? blank()
     const g = gridOf.get(input) ?? 'constructed'
     row.grids[g] = (row.grids[g] ?? 0) + 1
