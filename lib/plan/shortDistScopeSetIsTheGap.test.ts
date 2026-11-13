@@ -28,7 +28,7 @@ import type { GeneratorInput } from '../../types/plan'
  *  band could be added to `raceDistanceKey` and the loops here would never visit it, so a
  *  distance governed by NOBODY could ship.
  *  ⚠️ TWO THINGS CATCH THAT, NOT ONE — this comment claimed the compiler was "the only thing"
- *  and the arm added beside it two commits later says otherwise, which left one file asserting
+ *  and the arm added beside it in `2ec65bf5` says otherwise, which left one file asserting
  *  opposite things about the same detection path (code review). The TYPE makes a one-part edit
  *  a compile error; the LAST ARM compares this map's keys against `INTENSITY_DISTRIBUTION`'s at
  *  runtime, and is what remains if the type is ever loosened. */
@@ -123,7 +123,11 @@ describe('§117 Am. 8 — the counted band is the gap between three owners', () 
       + 'bands: ' + realBands.join(', ')).toEqual([])
   })
 
-  it('the representatives really span every band — the loop above is not short', () => {
+  it('BY_KEY still covers every band — the loop above is not short', () => {
+    // ⚠️ RENAMED: it read "the representatives really span every band", and after the subsumed
+    // assertion was deleted nothing in here reads `Object.values(BY_KEY)` or calls
+    // `raceDistanceKey` — mutating `HM: 11` makes that titled property false while this arm
+    // stays green (arm 1 is what reds). A name written for a deleted assertion is a false record.
     // ⚠️ The previous version of this arm was a TAUTOLOGY (`new Set(keys).size === keys.length`
     // over `Object.keys`), in the commit whose subject was shipping a gate that could not fail.
     // The property with detection power is that `BY_KEY` covers the SAME set the type is derived
@@ -150,7 +154,10 @@ describe('§117 Am. 8 — the counted band is the gap between three owners', () 
     // `new Set(values.map(raceDistanceKey)).size === keys.length` — was REMOVED: it is subsumed
     // by arm 1's per-entry `expect(raceDistanceKey(km)).toBe(key)` and can never red alone
     // (falsified with `HM: 11`, which reds arm 1 and this one together, 2 failed / 3 passed).
-    // The tautology deleted two commits ago had been replaced by one assertion that detects and
-    // one that still could not fire first; an arm earns its line by failing where others pass.
+    // The tautology deleted in `2ec65bf5` had been replaced by one assertion that detects and one
+    // that still could not fire first; an arm earns its line by failing where the others pass.
+    // ⚠️ SHAs, not "two commits ago": I wrote that twice and it was wrong both times, because a
+    // relative position changes every time the file is touched while a SHA does not. Same shape
+    // as the review-round total removed from the state blocks.
   })
 })
