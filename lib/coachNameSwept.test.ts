@@ -21,9 +21,17 @@ const ROOTS = ['lib', 'app', 'components', 'packages']
  *  exempt site commits cleanly and then turns `npm run verify` red. It is applied to
  *  `lineno:text`, which is the shape the hook greps. */
 const HOOK = readFileSync(join(ROOT, '.githooks/pre-commit'), 'utf8')
-const EXEMPT_SRC = /COACH_EXEMPT="(\^\[0-9\]\+:[^"]*)"/.exec(HOOK)?.[1]
-if (!EXEMPT_SRC) throw new Error('cannot read COACH_EXEMPT from .githooks/pre-commit — unverified is never a pass')
-const DEFINITION = new RegExp(EXEMPT_SRC)
+// `Array.from`, never a spread: a `matchAll` spread passes vitest and fails `tsc` (TS2802).
+const EXEMPT_SRCS = Array.from(HOOK.matchAll(/COACH_EXEMPT="(\^\[0-9\]\+:[^"]*)"/g), m => m[1]!)
+// ⚠️ The hook assigns it TWICE (the block arm and the report arm). Reading only the first
+// leaves the second free to drift, which is the defect this parse exists to stop.
+if (EXEMPT_SRCS.length < 2) throw new Error(`.githooks/pre-commit: expected both COACH_EXEMPT assignments, read ${EXEMPT_SRCS.length} — unverified is never a pass`)
+if (new Set(EXEMPT_SRCS).size !== 1) throw new Error(`.githooks/pre-commit: COACH_EXEMPT assignments disagree: ${JSON.stringify(EXEMPT_SRCS)}`)
+// ⚠️ It is a grep ERE being compiled as a JS RegExp. Most of the syntax coincides; a POSIX
+// class does NOT, and would compile silently to something else rather than throwing — so a
+// widened hook would reintroduce the commit-green / verify-red drift undetected.
+if (/\[\[:/.test(EXEMPT_SRCS[0]!)) throw new Error(`.githooks/pre-commit: COACH_EXEMPT uses a POSIX class, which does not mean the same thing to a JS RegExp: ${EXEMPT_SRCS[0]}`)
+const DEFINITION = new RegExp(EXEMPT_SRCS[0]!)
 
 /** 🔴 THE SHARED STRIPPER, NOT A SECOND ONE, AND IN `--stream` MODE (code review + a 30 s
  *  timeout). The first cut hand-rolled a scanner here, duplicating

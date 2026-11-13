@@ -220,9 +220,20 @@ for suite in .githooks/pre-commit.test.sh .githooks/pre-push.test.sh scripts/swe
   # whose prose puts ~80 characters between the filename and the number. Falsified by planting
   # the wrong number and watching the arm stay GREEN — an arm that cannot find its claim is an
   # arm that always passes, which is this repo'"'"'s most-recorded hollow shape.
-  claim="$(grep -F "$base" "$DOC" 2>/dev/null | grep -oE '[0-9]+ cases' | head -1 \
-           | grep -oE '[0-9]+')"
-  [ -n "$claim" ] || continue
+  # 🔴 AND IT TOOK THE FIRST `N cases` ON THE FIRST LINE MENTIONING THE NAME, WHICH IS NOT THE
+  # SAME THING AS THE COUNT FOR THIS SUITE (code review round 5). A sentence elsewhere in the
+  # doc naming `sweep-colours.test.sh` in passing, with a DIFFERENT suite's count after it,
+  # was read as this suite's claim and reported a drift against a number nobody had written
+  # about it. Every count is taken from the text AFTER the name on its own line, and two lines
+  # that disagree are a refusal, not a coin toss — the doc has to say one thing.
+  claims="$(grep -F "$base" "$DOC" 2>/dev/null \
+            | sed "s|.*$base||" | grep -oE '[0-9]+ cases' | grep -oE '[0-9]+' | sort -u)"
+  [ -n "$claims" ] || continue
+  if [ "$(printf '%s\n' "$claims" | wc -l | tr -d ' ')" != 1 ]; then
+    drifted+=("$base: CLAUDE.md quotes more than one case count for it ($(printf '%s' "$claims" | tr '\n' '/'))")
+    continue
+  fi
+  claim="$claims"
   real="$(bash "$ROOT/$suite" 2>&1 | grep -oE '[0-9]+ passed' | tail -1 | grep -oE '[0-9]+')"
   [ -n "$real" ] || { uncounted+=("$base"); continue; }
   checked=$((checked + 1))

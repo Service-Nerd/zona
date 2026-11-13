@@ -40,6 +40,13 @@ CASES = [
     ('an escape at end of line does not consume the newline',
      "const s = 'a\\\\'\n// %s" % HEX, ['const s'], [HEX]),
 
+    ('a closed string before an unterminated apostrophe is not reinterpreted',
+     "<a href='https://x.io' style={{ color: '%s' }}>Kit's page</a>" % HEX,
+     [HEX, 'https://x.io', "Kit's page"], []),
+    ('an unterminated apostrophe opens no block from an earlier string',
+     "const g = '/*'; const t = <p>Kit's pace</p>\nconst b = %r\nconst c = %r" % (HEX, HEX),
+     [HEX, 'const b', 'const c'], []),
+
     # ── what it must still do: blank comments ───────────────────────────────────────────
     ('a line comment is blanked', '// %s' % HEX, [], [HEX]),
     ('a block comment is blanked', '/* %s */' % HEX, [], [HEX]),

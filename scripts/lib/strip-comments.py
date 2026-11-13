@@ -46,9 +46,10 @@ def strip(src: str) -> str:
     at every newline. A desync is then bounded to one line and shows up as a loud false
     positive rather than a silent blind spot for the rest of the file.
 
-    ⚠️ Known and accepted: an odd apostrophe in JSX text (`<p>don't</p> // note`) leaves that
-    one line's trailing comment unblanked. The failure direction is a reported hit on a
-    comment — visible, one line, fixable — not an unseen colour.
+    ⚠️ An unterminated `'` or `"` is a syntax error, so it was never a string: the line is
+    re-scanned with THAT ONE OPENER ignored, by index. Not by character — disabling `'` for
+    the whole line reinterprets earlier, correctly-closed strings, which blanked live code
+    (code review round 5). Backticks are left alone: a template literal spans lines.
     """
     # 🔴 ONE PASS, IN SCAN ORDER — AND IT WAS TWO, WHICH BLANKED LIVE CODE (code review,
     # 2026-11-13). Block comments were found FILE-WIDE with `find('/*')` before line comments
@@ -69,21 +70,22 @@ def strip(src: str) -> str:
         # unterminated single- or double-quoted string is a syntax error, so when one is open
         # at end of line the scan re-runs with that character disabled. Backticks are left
         # alone: a template literal genuinely spans lines.
-        disabled: set[str] = set()
-        for _ in range(3):
-            text, nxt_block, open_quote = _scan_line(line, in_block, disabled)
-            if open_quote in ("'", '"') and open_quote not in disabled:
-                disabled.add(open_quote); continue
-            break
+        skip: set[int] = set()
+        for _ in range(4):
+            text, nxt_block, open_at = _scan_line(line, in_block, skip)
+            if open_at is None or line[open_at] == '`' or open_at in skip:
+                break
+            skip.add(open_at)
         out.append(text)
         in_block = nxt_block
     return '\n'.join(out)
 
 
-def _scan_line(line: str, in_block: bool, disabled: set[str]) -> tuple[str, bool, str | None]:
-    """One line → (blanked text, block state after it, quote left open at end)."""
+def _scan_line(line: str, in_block: bool, skip: set[int]) -> tuple[str, bool, int | None]:
+    """One line → (blanked text, block state after it, index of any quote left open)."""
     out: list[str] = []
     quote: str | None = None
+    quote_at: int | None = None
     i, n = 0, len(line)
     while i < n:
         c = line[i]
@@ -102,10 +104,10 @@ def _scan_line(line: str, in_block: bool, disabled: set[str]) -> tuple[str, bool
             out.append(' ' * (n - i)); i = n; continue
         if c == '/' and nxt == '*':
             in_block = True; out.append('  '); i += 2; continue
-        if c in '\'"`' and c not in disabled:
-            quote = c
+        if c in '\'"`' and i not in skip:
+            quote = c; quote_at = i
         out.append(c); i += 1
-    return ''.join(out), in_block, quote
+    return ''.join(out), in_block, (quote_at if quote else None)
 
 
 def main(argv: list[str]) -> int:
