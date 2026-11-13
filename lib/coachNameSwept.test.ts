@@ -25,7 +25,24 @@ const ROOTS = ['lib', 'app', 'components', 'packages']
 // and the pre-push gate red — `HOOK-RGBA-COMMENTS-01`, in the file that carries a comment
 // stripper precisely to avoid it. A shell comment starts at a `#` opening a word.
 const HOOK = readFileSync(join(ROOT, '.githooks/pre-commit'), 'utf8')
-  .split('\n').map(l => l.replace(/(^|\s)#.*$/, '$1')).join('\n')
+  .split('\n').map(stripShellComment).join('\n')
+
+/** A shell comment is a `#` that opens a word OUTSIDE quotes.
+ *  ⚠️ String-aware, because the regex version was not and truncated a real line of the hook
+ *  (`echo "   (--card is #FFFFFF: …"`). That is the class this file's own notes refuse: a
+ *  truncated line can let the `[^"]*` capture below run past a newline into a wrong pattern
+ *  that satisfies every guard here. */
+function stripShellComment(line: string): string {
+  let quote: string | null = null
+  for (let i = 0; i < line.length; i++) {
+    const c = line[i]!
+    if (c === '\\') { i++; continue }
+    if (quote) { if (c === quote) quote = null; continue }
+    if (c === "'" || c === '"') { quote = c; continue }
+    if (c === '#' && (i === 0 || /\s/.test(line[i - 1]!))) return line.slice(0, i)
+  }
+  return line
+}
 // `Array.from`, never a spread: a `matchAll` spread passes vitest and fails `tsc` (TS2802).
 // 🔴 EVERY ASSIGNMENT, IN EITHER QUOTE STYLE (code review round 7). Matching only double-quoted
 // values starting `^[0-9]+:` meant single-quoting the BLOCKING arm dropped it from the set

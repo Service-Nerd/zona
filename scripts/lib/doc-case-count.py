@@ -8,10 +8,13 @@ count after it; the third took the nearest name in either direction, which gets
 "`A` with 72 cases, `B` with 60 cases" wrong — 72 is closer to B's name than to A's.
 
 The doc writes the name then the count, so the name BEFORE a count owns it. A count with no
-name before it on that line ("16 cases in `X.test.sh`") binds forwards instead, which is the
-only other phrasing in use.
+name before it on that line ("16 cases in `X.test.sh`") binds forwards instead, across a
+join of at most six characters with no comma, dash or stop — tight, because unbounded it
+claimed the runner's own aggregate for whichever suite the line named next.
 
-Usage: doc-case-count.py DOC BASE OTHER_BASE...
+Usage:
+  doc-case-count.py DOC NAME[,ALIAS...] BASE...   → the counts stated for that suite
+  doc-case-count.py --unattributed DOC BASE...    → every count that binds to no suite
 """
 from __future__ import annotations
 
@@ -41,7 +44,13 @@ def _owner(line: str, m: re.Match, names: list[tuple[int, str]]) -> str | None:
     # 72" made 351 a second claim for design-guard. The only backward phrasing in use is
     # "16 cases in `X`", so the join must be short and unbroken.
     nearest = min(after, key=lambda n: n[0])
-    join = line[m.end():nearest[0]]
+    # ⚠️ Measured to where the PATH starts, not the basename: the doc writes
+    # "`scripts/lib/doc-case-count.test.py`", and " in `scripts/lib/" alone blows the limit,
+    # so the path-prefixed form the doc actually uses bound to nothing.
+    start = nearest[0]
+    while start > 0 and (line[start - 1].isalnum() or line[start - 1] in '._-/'):
+        start -= 1
+    join = line[m.end():start]
     if len(join) > 6 or re.search(r'[,.;:\u2014]', join):
         return None
     return nearest[1]

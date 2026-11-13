@@ -313,7 +313,12 @@ echo
 # and skipped in silence, which is how three documented counts went unchecked. ⚠️ Not a
 # failure: an AGGREGATE ("351 cases in all") legitimately belongs to no single suite, so a
 # gate here would fire on correct prose. It is listed so the number is visible.
-unattr="$(python3 "$ROOT/scripts/lib/doc-case-count.py" --unattributed "$DOC" "${all_bases[@]}")"
+if [ ! -f "$DOC" ]; then
+  echo "$DOC is missing — refusing to report clean on documented counts."
+  exit 1
+fi
+unattr="$(python3 "$ROOT/scripts/lib/doc-case-count.py" --unattributed "$DOC" "${all_bases[@]}")" \
+  || doc_claims_failed "--unattributed"
 unattr_n=0
 [ -z "$unattr" ] || unattr_n="$(printf '%s\n' "$unattr" | wc -l | tr -d ' ')"
 if [ "$unattr_n" -gt 0 ]; then
