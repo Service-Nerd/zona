@@ -6,7 +6,7 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
-## 2026-11-13 — the ungated wave · three closed, nothing filed
+## 2026-11-13 — BRAND-COACHNAME-HARDCODED-01 · the ungated wave, three closed, nothing filed
 **Shipped:** the coach's name parameterised behind a pre-commit guard, a two-regime AI timeout sized from the request, and a benchmark axis that was pinned at one value in every corpus.
 
 **Dev learning:** the timeout item had been parked for a good reason — four surfaces with five or fewer samples, one with none, and a per-surface number would have been a guess. The way out was to stop asking about surfaces. 807 calls say duration tracks **generation size**, and every call's `maxTokens` is right there on the request. The two zero-sample surfaces then land in the long regime because of a number in the code, not a guess about their latency. **When the measurement you want doesn't exist, check whether you're measuring the right noun.**
@@ -20,6 +20,32 @@ it specific, no polish. The content system adds the voice.
 **Hook material:** the parked item said a per-surface timeout would be "a guess wearing a measurement" — the fix was to measure a different thing entirely, and 807 calls settled it in one query.
 
 **Postable?:** yes — "when the measurement doesn't exist, check you're measuring the right noun".
+
+---
+
+## 2026-11-13 — AI-TIMEOUT-PER-SURFACE-01 · when the measurement doesn't exist, check the noun
+**Shipped:** two timeout regimes, chosen by the call's own `maxTokens` rather than by which surface made it.
+
+**Dev learning:** the item was parked for a good reason — four surfaces with ≤5 samples, one with none, and a per-surface number would have been "a guess wearing a measurement". That is true of the samples and irrelevant to the fix. 807 calls say duration tracks generation size, and the token ceilings in the code already separate 80–300 from 2048–14000. The two zero-sample surfaces land in the long regime because of a number in the source, not a guess about their latency.
+
+**The honest bit:** the gate arm I wrote to prove the boundary was "derived" hardcoded the two numbers it claimed to derive — a new surface at 900 tokens would have taken the short regime with every arm green. Caught by review. It reads the ceilings from source now and requires clear air on both sides.
+
+**Hook material:** a hung `daily-coach-note` used to hold a serverless function for four minutes. It is 60 seconds.
+
+**Postable?:** yes.
+
+---
+
+## 2026-11-13 — CORPUS-BENCHMARK-VARIETY-01 · a row that looked like coverage and was a constant
+**Shipped:** the benchmark axis widened 1 → 5 distinct values in a focused block.
+
+**Dev learning:** I added a fifth row to exercise §10's staleness ramp. Review said it sat exactly on the cap; I re-anchored it mid-ramp, then measured and found that impossible here — `applyVdotDiscount` compares the benchmark date to `new Date()` while this grid's start is pinned to April, so **every** date preceding its race is already past the cap. All rows returned the same 7%. A clock-pinned corpus cannot hold both "benchmark before the race" and "controlled age against today". The row is deleted and the limit is written down.
+
+**The honest bit:** widening the corpus broke a third consumer the same way the previous two broke — a sampler whose stride comes from total length. And my falsification of the fix matched `maxTokens: 300` against `maxTokens: 3000` as a substring, so the first mutation tested nothing.
+
+**Hook material:** a test row that cannot fail is worse than no row, because it reads as coverage.
+
+**Postable?:** yes.
 
 ---
 

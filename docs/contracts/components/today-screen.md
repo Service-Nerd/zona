@@ -268,3 +268,5 @@ direction for a nudge; overstating is what this replaced.**
 
 ⚠️ `TRIAL_DAYS` is no longer imported here. The screen does no trial arithmetic — `trialDaysLeft`
 arrives already resolved from `resolveTrialWindow`, the single owner.
+
+⚠️ **2026-11-13 (BRAND-COACHNAME-HARDCODED-01)** — the coach's name is read from `BRAND.coachName` rather than typed. **No interface change**: same props, same payload, same copy; `BRAND.coachName` is `'Kit'`. Recorded because the file changed and a contract that silently lags its file is the thing this register exists to prevent.

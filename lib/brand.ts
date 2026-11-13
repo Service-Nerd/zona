@@ -8,6 +8,15 @@
  * describes an approach; "You've got a day job." names a person. Runna would never say this.
  */
 
+/** 🔴 THE NAME ITSELF, ONCE. `BRAND.coachName` cannot be referenced from inside the object
+ *  literal that defines it, so four strings in this file kept the literal and survived the
+ *  2026-11-13 sweep — `connect.ask` and three push titles, all runner-facing. Rename the coach
+ *  and StravaPanel would have said the new name while every push notification said the old one.
+ *  ⚠️ And `.githooks/pre-commit`'s population was `^(app|components)/`, so the guard written to
+ *  stop exactly this could not see the file the remainder lived in. Both fixed together
+ *  (BRAND-COACHNAME-HARDCODED-01, code review). */
+const COACH_NAME = 'Kit'
+
 export const BRAND = {
   name: 'Zonna',
 
@@ -31,7 +40,7 @@ export const BRAND = {
    * and anywhere the AI coach is named in-product. Change here → changes everywhere.
    * Never hardcode 'Kit' in components — always reference BRAND.coachName.
    */
-  coachName: 'Kit',
+  coachName: COACH_NAME,
 
   /**
    * App Store subtitle (30 chars max). Discovery surfaces: App Store, landing page, paid ads.
@@ -210,7 +219,7 @@ export const BRAND = {
    * below HK — not a peer. Copy never frames Strava as required or primary.
    */
   connect: {
-    ask:     "Kit needs your runs to do anything useful.",
+    ask:     `${COACH_NAME} needs your runs to do anything useful.`,
     subline: "Without them, he's coaching blind.",
   },
 
@@ -226,13 +235,13 @@ export const BRAND = {
   /** Push notification titles — each is a coaching voice opportunity, not a label. */
   push: {
     weeklyReport: 'Your week, reviewed.',
-    runAnalysis:  "That's done. Kit's reading.",
+    runAnalysis:  `That's done. ${COACH_NAME}'s reading.`,
     /**
      * One-shot mid-trial reciprocity nudge (HOOK-02). Fires once between
      * trial day 3 and day 5 when the user has ≥2 analysed runs. Body is the
      * first sentence of the latest `run_analysis.feedback_text`.
      */
-    trialInsight: 'Kit noticed something.',
+    trialInsight: `${COACH_NAME} noticed something.`,
     /**
      * Engine auto-applied a plan adjustment (NOTIF-01). Title only — the body
      * carries the rule-engine summary of what changed. Voice opportunity, not
@@ -246,7 +255,7 @@ export const BRAND = {
      * the question "what?" — which is the mechanism that gets it opened.
      * Body carries the AI explanation. Deep-links to Me → "1 change pending".
      */
-    planNeedsReview: 'Kit noticed something.',
+    planNeedsReview: `${COACH_NAME} noticed something.`,
   },
 } as const
 

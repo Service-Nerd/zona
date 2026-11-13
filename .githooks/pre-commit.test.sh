@@ -156,8 +156,22 @@ run_case "a hardcoded coach name in a string BLOCKS" block "components/x.tsx" \
 run_case "a hardcoded coach name in an API route BLOCKS — notifications are runner-facing" block "app/api/push/x.ts" \
   'export const body = "Kit can reach you"
 '
-run_case "the name inside a COMMENT passes — prose, not code" pass "components/x.tsx" \
-  'export const X = () => <div>{BRAND.coachName}</div>
+run_case "the name inside a LINE comment passes — prose, not code" pass "components/x.tsx" \
+  '// Kit is the coach name; this sentence is about it, not using it.
+export const X = () => <div>{BRAND.coachName}</div>
+'
+run_case "the name inside a BLOCK comment passes" pass "components/x.tsx" \
+  '/** Why this card exists: Kit speaks first, then the facts. */
+export const X = () => <div>{BRAND.coachName}</div>
+'
+run_case "a hardcoded name in lib/ BLOCKS — push titles live there" block "lib/notifications.ts" \
+  'export const TITLE = "Kit noticed something."
+'
+run_case "lib/brand.ts is exempt — it is the definition site" pass "lib/brand.ts" \
+  "const COACH_NAME = 'Kit'
+"
+run_case "a PRODUCTION route with preview in its path is NOT exempt" block "app/api/email/preview/route.ts" \
+  'export const TITLE = "Kit noticed something."
 '
 run_case "a comment ABOUT the name passes" pass "components/x.tsx" \
   '// What Kit knows about you is the eyebrow on this card.

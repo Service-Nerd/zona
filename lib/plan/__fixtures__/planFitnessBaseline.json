@@ -31,13 +31,13 @@
       }
     },
     "other standard": {
-      "n": 9797,
+      "n": 9796,
       "medianBuildPct": 40,
       "neverBuildsPct": 9.4,
       "medianMarathonLrPctOfRace": 66.4,
       "grids": {
         "cohort": 6707,
-        "targeted": 3087,
+        "targeted": 3086,
         "constructed": 3
       }
     }

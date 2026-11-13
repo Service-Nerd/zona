@@ -81,6 +81,17 @@ const declared = (src: string): number | null => {
   return m ? Number(m[1]) : null
 }
 
+/** Every .ts/.tsx under a directory — the ceilings are read from source, not restated here. */
+function walkTs(dir: string): string[] {
+  const out: string[] = []
+  for (const name of readdirSync(dir)) {
+    const p = join(dir, name)
+    if (statSync(p).isDirectory()) { out.push(...walkTs(p)); continue }
+    if (/\.tsx?$/.test(name) && !/\.test\./.test(name)) out.push(p)
+  }
+  return out
+}
+
 describe('OPS-FN-DURATION-01 — the AI route ceiling', () => {
   it('the closure really was walked, and it is not a list', () => {
     // Non-vacuity for every arm below. 14 measured 2026-11-08; the owner plus the lib hops
@@ -152,7 +163,8 @@ describe('OPS-FN-DURATION-01 — the AI route ceiling', () => {
     // surface at all.
     const SLOWEST_SMALL_MS = 5_700
     expect(AI_LIMITS.CALL_TIMEOUT_SHORT_MS / SLOWEST_SMALL_MS,
-      'at least 5x the slowest small call ever recorded').toBeGreaterThanOrEqual(5)
+      'the short timeout must be at least 5x the slowest small call ever recorded, or it will '
+      + 'start cutting real work').toBeGreaterThanOrEqual(5)
     expect(AI_LIMITS.CALL_TIMEOUT_SHORT_MS,
       'the short regime must be shorter than the long one, or it is not a regime')
       .toBeLessThan(AI_LIMITS.CALL_TIMEOUT_MS)
@@ -160,16 +172,34 @@ describe('OPS-FN-DURATION-01 — the AI route ceiling', () => {
       .toBeGreaterThanOrEqual(30_000)
   })
 
-  it('🔴 the boundary sits in the GAP the code already has — derived, not chosen', () => {
-    // Every short surface asks for 80-300 tokens; the three large ones ask for 2048
-    // (post-race-reshape), 3000 (enrich-maintenance) and 6000-14000 (enrich-plan). The
-    // boundary has to sit between those two clusters or it is an invented number. This is
-    // what puts the two ZERO-SAMPLE surfaces in the long regime structurally.
-    const LARGEST_SHORT_CEILING = 300
-    const SMALLEST_LARGE_CEILING = 2_048
+  it('🔴 the boundary sits in a GAP the code actually has — read from the ceilings, not typed', () => {
+    // ▲ The first cut hardcoded 300 and 2048 while claiming to be "derived" (code review), so a
+    // new surface at, say, 900 tokens would take the 60 s regime with every arm green. The
+    // ceilings are read from source instead, and the property is that the boundary has CLEAR
+    // AIR on both sides — not merely that it falls between two numbers someone typed here.
+    const SRC = ['lib', 'app'].flatMap(d => walkTs(join(ROOT, d)))
+    // ⚠️ `Array.from`, not a spread — CLAUDE.md's TS2802 gotcha, and the spread version passed
+    // vitest while failing tsc, which is exactly the green-suite-red-build trap it warns about.
+    const ceilings = SRC.flatMap(f => Array.from(readFileSync(f, 'utf8').matchAll(/maxTokens:\s*(\d[\d_]*)/g))
+      .map(m => Number(m[1]!.replace(/_/g, ''))))
+    expect(ceilings.length, 'no maxTokens literals found — the scan is reading nothing')
+      .toBeGreaterThan(5)
+
     const b = AI_LIMITS.CALL_TIMEOUT_LARGE_MAX_TOKENS
-    expect(b, 'the boundary is at or below a real short ceiling').toBeGreaterThan(LARGEST_SHORT_CEILING)
-    expect(b, 'the boundary is at or above a real large ceiling').toBeLessThan(SMALLEST_LARGE_CEILING)
+    const small = ceilings.filter(c => c <= b)
+    const large = ceilings.filter(c => c > b)
+    expect(small.length, 'no call sits in the short regime').toBeGreaterThan(0)
+    expect(large.length, 'no call sits in the long regime').toBeGreaterThan(0)
+
+    // Clear air: nothing may sit near the boundary on either side, because a ceiling close to
+    // it is a call whose regime is decided by a rounding rather than by its size.
+    expect(b / Math.max(...small),
+      `a ceiling of ${Math.max(...small)} sits just under the ${b} boundary — its regime is an `
+      + 'accident of where the line was drawn, not a property of the call')
+      .toBeGreaterThanOrEqual(2)
+    expect(Math.min(...large) / b,
+      `a ceiling of ${Math.min(...large)} sits just over the ${b} boundary — same problem, other side`)
+      .toBeGreaterThanOrEqual(2)
   })
 
   it('🔴 the owner routes each ceiling to the regime its measurement puts it in', () => {

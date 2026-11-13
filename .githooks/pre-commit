@@ -188,7 +188,14 @@ fi
 # (HOOK-RGBA-COMMENTS-01) — and the sweep that preceded this guard proved why it matters: a
 # plain string replace hit a comment occurrence and left the code one untouched.
 # ⚠️ `-preview` harnesses 404 in production and are out of the population by selection.
-COACH_STAGED=$(git diff --cached --name-only --diff-filter=ACM | grep -E '\.(ts|tsx)$' | grep -E '^(app|components)/' | grep -v '\.test\.' | grep -v preview || true)
+# ⚠️ `lib/` IS IN THE POPULATION, AND IT WAS NOT (code review, 2026-11-13). The first cut read
+# `^(app|components)/` — so four live runner-facing strings in `lib/brand.ts` itself, including
+# three PUSH TITLES, were invisible to the guard written to stop exactly them.
+# ⚠️ `lib/brand.ts` IS EXEMPT BY NAME — it is the DEFINITION (`const COACH_NAME = 'Kit'`), and a
+# guard that blocks the one place a value is allowed to exist blocks the fix for everywhere else.
+# ⚠️ AND `-preview` IS ANCHORED NOW: a bare `grep -v preview` is an unanchored substring match
+# and also excluded `app/api/email/preview/route.ts`, a production route.
+COACH_STAGED=$(git diff --cached --name-only --diff-filter=ACM | grep -E '\.(ts|tsx)$' | grep -E '^(app|components|lib)/' | grep -v '\.test\.' | grep -vE '(^|/)[a-z-]*-preview/' | grep -v '^lib/brand\.ts$' || true)
 COACH_HITS=""
 for f in $COACH_STAGED; do
   [ -f "$f" ] || continue

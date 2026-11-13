@@ -541,19 +541,39 @@ export function targetedGridExtra(): GeneratorInput[] {
   // fixture that went red on a calendar rather than on a commit. The stale row subtracts from
   // that derived date so §10's ramp has something to measure, and stays stale forever.
   //
-  // ⚠️ FIVE ROWS, NOT A CROSS. This block exists for REACH; crossing a benchmark axis into
-  // the cartesian would multiply 6,144. Three 5K times span the VDOT bands, one 10K gives a
-  // second distance, one repeats the mid 5K at a STALE date so freshness is the only variable.
+  // ⚠️ FOUR ROWS, NOT A CROSS. This block exists for REACH; crossing a benchmark axis into
+  // the cartesian would multiply 6,144. Three 5K times span the VDOT bands and one 10K gives a
+  // second distance. It reaches VDOT BANDING; it does not reach §10's staleness ramp, for the
+  // reason written below.
   {
-    const { benchmarkDate } = slowGoalDates()
-    const staleDate = new Date(Date.parse(`${benchmarkDate}T00:00:00Z`) - 120 * 864e5)
-      .toISOString().slice(0, 10)
+    // 🔴 DATES RELATIVE TO THIS GRID'S OWN PINNED START, NOT TO THE WALL CLOCK (code review).
+    // The first cut took `slowGoalDates()`, which derives from `new Date()` — paired with this
+    // grid's pinned `COHORT_PLAN_START` and a `raceDateIn` race date that produced a benchmark
+    // dated AFTER the race, widening by a day every day, a shape the wizard cannot emit. It
+    // validated only because `assertPlausibleBenchmark` defaults to `new Date()` too.
+    // ⚠️ `GOALPACE-5K-CLOCK-01` says derive dates rather than pin them, and this obeys it — the
+    // anchor is just this corpus's own start instead of today, because the whole grid is
+    // clock-pinned by design. Relative to a pinned anchor cannot age; relative to today can.
+    const dayBefore = (days: number) =>
+      new Date(Date.parse(`${COHORT_PLAN_START}T00:00:00Z`) - days * 864e5).toISOString().slice(0, 10)
+    const benchmarkDate = dayBefore(14)        // fresh: inside §10's 4-week window
+    // 🔴 §10's STALENESS RAMP IS NOT REACHABLE FROM THIS CORPUS, AND THE ROW THAT CLAIMED TO
+    // REACH IT IS GONE. Code review caught the first cut sitting exactly on the 7% cap;
+    // re-anchoring it mid-ramp then turned out to be impossible here, measured rather than
+    // argued — `applyVdotDiscount` compares `benchmark_date` to `new Date()`, and this grid's
+    // `plan_start` is pinned at 2026-04-27, so EVERY date that precedes its race is already far
+    // past the cap. All five rows returned discountPct 7.
+    //
+    // The two requirements are incompatible in a clock-pinned corpus: a benchmark must precede
+    // the race (or it is a shape the wizard cannot emit) AND sit at a controlled age against
+    // today (or the ramp is not exercised). Only a corpus whose dates derive from today can do
+    // both — `slowGoalGrid`, via `slowGoalDates()`. **Stating it instead of shipping a row that
+    // looks like coverage and is a constant.**
     const BENCHES = [
       { distance_km: 5, time: '0:19:30', benchmark_date: benchmarkDate },   // fast
       { distance_km: 5, time: '0:24:00', benchmark_date: benchmarkDate },   // mid
       { distance_km: 5, time: '0:33:00', benchmark_date: benchmarkDate },   // slow
       { distance_km: 10, time: '0:58:00', benchmark_date: benchmarkDate },  // second distance
-      { distance_km: 5, time: '0:24:00', benchmark_date: staleDate },       // §10's ramp: same run, older
     ]
     for (const b of BENCHES)
       out.push({

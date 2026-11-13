@@ -95,3 +95,5 @@ The morning push's "key session" comes from `keySessionLabel` (`lib/coaching/voi
 (`lib/plan/sessionRole.ts`). **The long run now counts**: it is typed `easy` with `role: 'long_run'`, so the old local
 set's `'long'` never found it. Measured 2026-10-24: 348 future days across 28 of 36 live plans now name it. Request and
 response shapes are unchanged.
+
+⚠️ **2026-11-13 (BRAND-COACHNAME-HARDCODED-01)** — the coach's name is read from `BRAND.coachName` rather than typed. **No interface change**: same props, same payload, same copy; `BRAND.coachName` is `'Kit'`. Recorded because the file changed and a contract that silently lags its file is the thing this register exists to prevent.
