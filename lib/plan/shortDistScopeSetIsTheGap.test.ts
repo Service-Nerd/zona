@@ -18,13 +18,17 @@
 // population. **A named constant with no gate linking it to its reason is the thing code review
 // flagged; this is the link.**
 import { describe, it, expect } from 'vitest'
-import { GENERATION_CONFIG, raceDistanceKey } from './generationConfig'
+import { GENERATION_CONFIG, raceDistanceKey, type RaceDistanceKey } from './generationConfig'
 import { runWalkDistanceApplies, runWalkInstructionDistanceApplies, runWalkOutOfScopeUnready } from './runWalkPlan'
 import { derivedLevelsFor } from './ruleEngine'
 import type { GeneratorInput } from '../../types/plan'
 
-/** One representative distance per `raceDistanceKey` band, from the wizard's own list. */
-const BY_KEY: Record<string, number> = { '5K': 5, '10K': 10, HM: 21.1, MARATHON: 42.2, '50K': 50, '100K': 100 }
+/** One representative distance per `raceDistanceKey` band, from the wizard's own list.
+ *  🔴 `Record<RaceDistanceKey, number>`, NOT `Record<string, number>` (code review, 2026-11-13).
+ *  With `string` a seventh band could be added to `raceDistanceKey` and this loop would never
+ *  visit it: all four arms stay green while a distance governed by NOBODY ships. The compiler
+ *  is the only thing that can catch a band that does not exist yet, so it has to be asked. */
+const BY_KEY: Record<RaceDistanceKey, number> = { '5K': 5, '10K': 10, HM: 21.1, MARATHON: 42.2, '50K': 50, '100K': 100 }
 /** §24e's band — the ultras, excluded from §117 by their own machinery. */
 const ULTRA_KEYS = ['50K', '100K'] as const
 
@@ -37,23 +41,41 @@ const mk = (km: number): GeneratorInput => ({
 } as unknown as GeneratorInput)
 
 describe('§117 Am. 8 — the counted band is the gap between three owners', () => {
-  it('every raceDistanceKey is accounted for by exactly one owner', () => {
-    const scope = new Set(GENERATION_CONFIG.RUNWALK_INSTRUCTION_RACE_KEYS)
+  it('every raceDistanceKey has EXACTLY ONE owner — a partition, not a covering', () => {
+    // 🔴 THIS ARM COULD NOT FAIL FOR THE DRIFT ITS HEADER CLAIMS TO HOLD (code review,
+    // 2026-11-13). It tested `owned = scope.has(k) || ultras.has(k) || isCounted` — an OR —
+    // and `runWalkOutOfScopeUnready` has NO dependence on `RUNWALK_INSTRUCTION_RACE_KEYS`, so
+    // widening the scope only made `owned` MORE true. Falsified against the real tree both
+    // ways: adding 'HM' to the scope left 4/4 green with the half simultaneously in scope and
+    // counted as "the band nothing covers"; adding '50K' left 12/12 green with the 50K owned
+    // by §117 Am. 8 and §24e at once. Only NARROWING the scope could red it.
+    // ⚠️ A covering is not a partition. The claim is that each band has exactly ONE owner, so
+    // the arm has to test pairwise DISJOINTNESS as well as completeness — and I wrote this
+    // file while fixing a finding about a gate that guarded a copy of itself.
+    const scope = new Set<string>(GENERATION_CONFIG.RUNWALK_INSTRUCTION_RACE_KEYS)
     const ultras = new Set<string>(ULTRA_KEYS)
     const counted: string[] = []
     const unaccounted: string[] = []
+    const doubleOwned: string[] = []
     for (const [key, km] of Object.entries(BY_KEY)) {
       expect(raceDistanceKey(km), `${km}km no longer maps to ${key}`).toBe(key)
       const i = mk(km)
       const isCounted = runWalkOutOfScopeUnready(i, derivedLevelsFor(i).structural)
       if (isCounted) counted.push(key)
-      const owned = scope.has(key) || ultras.has(key) || isCounted
-      if (!owned) unaccounted.push(key)
+      const owners = [scope.has(key) && 'instruction scope', ultras.has(key) && '§24e ultras',
+        isCounted && 'counted residual'].filter(Boolean) as string[]
+      if (owners.length === 0) unaccounted.push(key)
+      if (owners.length > 1) doubleOwned.push(`${key}: ${owners.join(' AND ')}`)
     }
     expect(unaccounted,
       'a distance band is governed by nobody: not in §117 Am. 8s instruction scope, not an '
       + 'ultra under §24e, and not counted as the residual. Either it belongs in one of them '
       + 'or the invariant needs a ruling for it.').toEqual([])
+    expect(doubleOwned,
+      'a distance band has TWO owners, which means one of them is wrong about it. The three '
+      + 'sets partition the distances: §117 Am. 8 prescribes, §24e governs the ultras, and the '
+      + 'residual is what is left. Widening one without narrowing another is the drift this '
+      + 'arm exists to catch.').toEqual([])
     expect(counted,
       'the residual band moved. It must be the HALF alone: §117 names the marathon, Am. 8 added '
       + '5K and 10K, §24e governs the ultras, and nothing covers the half.').toEqual(['HM'])
@@ -77,8 +99,12 @@ describe('§117 Am. 8 — the counted band is the gap between three owners', () 
     expect(runWalkDistanceApplies(42.2)).toBe(true)
   })
 
-  it('the arms are not vacuous — the representatives really span every band', () => {
-    expect(Object.keys(BY_KEY).length).toBe(6)
-    expect(new Set(Object.values(BY_KEY).map(raceDistanceKey)).size).toBe(6)
+  it('the arms are not vacuous — one representative per band, and the TYPE enforces it', () => {
+    // ⚠️ The count is derived from the map, not typed as 6: `Record<RaceDistanceKey, number>`
+    // is what makes a new band a COMPILE error rather than a silently unvisited key, and this
+    // arm only has to prove the representatives are distinct and map where they claim.
+    const keys = Object.keys(BY_KEY)
+    expect(new Set(Object.values(BY_KEY).map(raceDistanceKey)).size).toBe(keys.length)
+    expect(new Set(keys).size).toBe(keys.length)
   })
 })
