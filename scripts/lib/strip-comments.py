@@ -26,6 +26,8 @@ Usage:
   strip-comments.py FILE               → the stripped file on stdout (line numbers preserved)
   strip-comments.py --stream FILE...   → `path:lineno:text` for every line of every file
 """
+from __future__ import annotations  # this Mac's python3 evaluates signature annotations
+
 import sys
 
 def strip(src: str) -> str:
@@ -53,44 +55,57 @@ def strip(src: str) -> str:
     # were removed, so a `/*` appearing inside a `//` comment opened a block that ran to the
     # next `*/`. Measured: 405 lines across 11 files blanked, including a 231-line contiguous
     # window in `app/api/generate-plan/route.ts` — a path like `lib/plan/*` written in a
-    # comment is all it takes. Every guard reading through this had that window as a blind
-    # spot, and a "0 hits" claim made through it is a claim about what the reader could see.
+    # comment is all it takes. A "0 hits" claim made through that is a claim about what the
+    # reader could see.
     #
-    # Scanning in order fixes it: `//` is recognised before the `/*` that follows it on the
-    # same line, and a `/*` inside a string is not a comment at all.
-    # ⚠️ Quote state still RESETS AT EACH NEWLINE, for the reason the docstring gives — a
-    # desync must stay bounded to one line. Block state does not reset, because a block
-    # comment genuinely spans lines.
+    # ⚠️ AND IT IS SCANNED LINE BY LINE, which is what keeps a desync bounded (docstring) and
+    # is also why an escape cannot eat a newline: there are none inside a line.
     out: list[str] = []
     in_block = False
+    for line in src.split('\n'):
+        # 🔴 AN UNTERMINATED `'` OR `"` MEANS IT WAS NEVER A STRING (code review round 4).
+        # `<p>Kit's pace</p> {/* #B5C0B4 */}` — the apostrophe opened a quote that never
+        # closed, so the `/*` after it was suppressed and the hex stayed live code. A real
+        # unterminated single- or double-quoted string is a syntax error, so when one is open
+        # at end of line the scan re-runs with that character disabled. Backticks are left
+        # alone: a template literal genuinely spans lines.
+        disabled: set[str] = set()
+        for _ in range(3):
+            text, nxt_block, open_quote = _scan_line(line, in_block, disabled)
+            if open_quote in ("'", '"') and open_quote not in disabled:
+                disabled.add(open_quote); continue
+            break
+        out.append(text)
+        in_block = nxt_block
+    return '\n'.join(out)
+
+
+def _scan_line(line: str, in_block: bool, disabled: set[str]) -> tuple[str, bool, str | None]:
+    """One line → (blanked text, block state after it, quote left open at end)."""
+    out: list[str] = []
     quote: str | None = None
-    i, n = 0, len(src)
+    i, n = 0, len(line)
     while i < n:
-        c = src[i]
-        nxt = src[i + 1] if i + 1 < n else ''
-        if c == '\n':
-            quote = None                      # line-scoped, per the docstring
-            out.append('\n'); i += 1; continue
+        c = line[i]
+        nxt = line[i + 1] if i + 1 < n else ''
         if in_block:
             if c == '*' and nxt == '/':
                 in_block = False; out.append('  '); i += 2; continue
             out.append(' '); i += 1; continue
         if quote:
             if c == '\\':
-                out.append(src[i:i + 2]); i += 2; continue
+                out.append(line[i:i + 2]); i += 2; continue
             if c == quote:
                 quote = None
             out.append(c); i += 1; continue
         if c == '/' and nxt == '/':
-            while i < n and src[i] != '\n':
-                out.append(' '); i += 1
-            continue
+            out.append(' ' * (n - i)); i = n; continue
         if c == '/' and nxt == '*':
             in_block = True; out.append('  '); i += 2; continue
-        if c in '\'"`':
+        if c in '\'"`' and c not in disabled:
             quote = c
         out.append(c); i += 1
-    return ''.join(out)
+    return ''.join(out), in_block, quote
 
 
 def main(argv: list[str]) -> int:

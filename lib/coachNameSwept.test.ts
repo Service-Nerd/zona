@@ -15,8 +15,15 @@ const ROOT = join(__dirname, '..')
 // ⚠️ `packages/` IS IN THE POPULATION — it holds runner-facing strength copy and was outside
 // both this sweep and the commit guard, while `aiRouteMaxDuration.test.ts` already walks it.
 const ROOTS = ['lib', 'app', 'components', 'packages']
-/** The one place the literal may exist. Everything else reads `BRAND.coachName`. */
-const DEFINITION = /^const COACH_NAME = 'Kit'$/
+/** 🔴 THE HOOK'S OWN EXEMPTION, PARSED, NOT A SECOND COPY (code review round 4). Two
+ *  checkers of one rule had drifted: the hook allows `export const COACH_NAME = 'Kit';`
+ *  and its suite asserts so, while this file's regex did not — so a legal edit to the one
+ *  exempt site commits cleanly and then turns `npm run verify` red. It is applied to
+ *  `lineno:text`, which is the shape the hook greps. */
+const HOOK = readFileSync(join(ROOT, '.githooks/pre-commit'), 'utf8')
+const EXEMPT_SRC = /COACH_EXEMPT="(\^\[0-9\]\+:[^"]*)"/.exec(HOOK)?.[1]
+if (!EXEMPT_SRC) throw new Error('cannot read COACH_EXEMPT from .githooks/pre-commit — unverified is never a pass')
+const DEFINITION = new RegExp(EXEMPT_SRC)
 
 /** 🔴 THE SHARED STRIPPER, NOT A SECOND ONE, AND IN `--stream` MODE (code review + a 30 s
  *  timeout). The first cut hand-rolled a scanner here, duplicating
@@ -60,6 +67,16 @@ describe('BRAND-COACHNAME-HARDCODED-01 — the coach name is defined once', () =
   // not have matched.
   const candidates = files.filter(f => /\bKit\b/.test(readFileSync(f, 'utf8')))
 
+  it('the exemption is the hook\'s, and it accepts the forms the hook accepts', () => {
+    // These four are the hook's own suite's cases. Before this they passed the hook and
+    // failed here — two checkers of one rule, disagreeing.
+    for (const form of ["const COACH_NAME = 'Kit'", "export const COACH_NAME = 'Kit'",
+                        "const COACH_NAME = 'Kit';", "export const COACH_NAME = 'Kit';"]) {
+      expect(DEFINITION.test(`12:${form}`), form).toBe(true)
+    }
+    expect(DEFINITION.test("12:const OTHER = 'Kit'")).toBe(false)
+  })
+
   it('the sweep reaches the tree it claims to', () => {
     // An empty population passes vacuously, which is how a sweep comes to mean nothing.
     expect(files.length, 'the walker found nothing — this whole file is vacuous').toBeGreaterThan(300)
@@ -80,7 +97,7 @@ describe('BRAND-COACHNAME-HARDCODED-01 — the coach name is defined once', () =
       // Matched on the line alone, a duplicate `const COACH_NAME = 'Kit'` in a second file
       // passed both this arm and the hook — the duplicate hardcode the item exists to stop,
       // admitted by the exemption written to stop it.
-      if (rel === 'lib/brand.ts' && DEFINITION.test(text!.trim())) continue
+      if (rel === 'lib/brand.ts' && DEFINITION.test(`${lineno}:${text}`)) continue
       hits.push(`${rel}:${lineno}`)
     }
     expect(hits,
