@@ -66,6 +66,20 @@ export function runWalkDistanceApplies(distanceKm: number): boolean {
  * rather than nothing.
  */
 /**
+ * The ONE distance band whose exclusion from §117's instruction is an OMISSION rather than a
+ * ruling, and therefore the only one `INV-PLAN-RUNWALK-SHORTDIST-SCOPE` may count.
+ *
+ * ⚠️ NAMED, NOT DERIVED FROM `RUNWALK_INSTRUCTION_RACE_KEYS`, AND THE REASON IS THAT THE
+ * COMPLEMENT IS WRONG (code review, 2026-11-13). "Everything outside the scope" was the first
+ * cut, and it swept in the 50K and 100K — 62% of all firings — which this file excludes from
+ * §117 thirty lines up for a different and ratified reason: *"the ultras have their own §24e
+ * machinery."* So the set is not the complement of the instruction scope; it is the gap between
+ * what §117 named (the marathon), what Am. 8 added (5K, 10K) and what §24e governs (the ultras).
+ * `shortDistScopeSetIsTheGap.test.ts` holds that arithmetic so the three cannot drift apart.
+ */
+const OUT_OF_SCOPE_OMITTED_KEY = 'HM'
+
+/**
  * Does this runner meet §117's readiness bar while their DISTANCE sits outside the
  * instruction's ruled scope? §117 Amendment 8's own residual, as one named predicate.
  *
@@ -98,7 +112,7 @@ export function runWalkOutOfScopeUnready(
   // predicate said otherwise.
   // ⚠️ The HM is the only band whose exclusion is an OMISSION: §117 names the marathon, Am. 8
   // added 5K and 10K, and nothing covers the half at all.
-  if (raceDistanceKey(input.race_distance_km) !== 'HM') return false
+  if (raceDistanceKey(input.race_distance_km) !== OUT_OF_SCOPE_OMITTED_KEY) return false
   if (input.goal !== 'finish') return false
   if (structuralLevel !== 'beginner') return false
   const longest = input.longest_recent_run_km

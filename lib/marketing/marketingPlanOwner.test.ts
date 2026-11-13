@@ -100,8 +100,21 @@ const FIXED_SLUG: Record<string, { why: string; resolve: (src: string) => string
   // there is no second copy of the slug to drift; `resolve` proves it still does that and
   // returns the real value for the non-staged check below.
   'lib/marketing/sameWeekZoneHrCoherent.test.ts': {
-    why: 'imports the component\'s own SOURCE_SLUG to reproduce its exact call',
-    resolve: src => (/SOURCE_SLUG/.test(src) && /SameWeekTwice/.test(src) ? SAME_WEEK_SLUG : null),
+    why: 'imports the component\'s own SOURCE_SLUG and reproduces its exact call',
+    // 🔴 BOTH HALVES OF THE `why`, AND THE FIRST CUT CHECKED NEITHER (code review, 2026-11-13).
+    // It tested `/SOURCE_SLUG/ && /SameWeekTwice/`, which a file re-declaring the slug LOCALLY
+    // still satisfies — falsified: `const SOURCE_SLUG = 'marathon-16-week'` inside the gate
+    // kept this arm green while the gate guarded a copy, which is the exact regression the
+    // commit adding this entry had just fixed. So: it must IMPORT the constant, must NOT
+    // shadow it, and must reproduce the component's own call (`planAnchor` + the 'free' tier).
+    resolve: src => (
+      /import\s*\{[^}]*\bSOURCE_SLUG\b[^}]*\}\s*from\s*'[^']*components\/marketing\/SameWeekTwice'/.test(src)
+      && !/\bconst\s+SOURCE_SLUG\s*=/.test(src)
+      && /\bplanAnchor\s*\(/.test(src)
+      // ⚠️ NOT `[^)]*` — that cannot cross the `)` in `entry.input(raceDate)`, and it is why
+      // the first tightened version failed against the very file it describes.
+      && /generateRulePlan\([\s\S]{0,160}?'free'/.test(src)
+        ? SAME_WEEK_SLUG : null),
   },
   'lib/marketing/whenItNotices.test.ts': {
     why: 'resolves one named slug from MARKETING_PLANS to reproduce the component\'s own call',

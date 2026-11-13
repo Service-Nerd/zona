@@ -11,7 +11,7 @@ import { cohortGrid, targetedGrid, targetedGridCore, targetedGridExtra, COHORT_P
 import { runWalkPrescriptionApplies, runWalkOutOfScopeUnready } from './runWalkPlan'
 import { resolveLevels } from './fitnessAssessment'
 import { isLongRun } from '@/lib/plan/sessionRole'
-import { GENERATION_CONFIG, raceDistanceKey } from '@/lib/plan/generationConfig'
+import { GENERATION_CONFIG } from '@/lib/plan/generationConfig'
 import type { GeneratorInput, Plan, Session, Week } from '@/types/plan'
 
 /**
@@ -1105,8 +1105,17 @@ export function probeLiveness(sampleSize = 64): LivenessReport {
   // per targeted SHAPE, same by-shape dedup as above so a few hundred near-
   // identical rows cannot crowd out the population sample.
   //
-  // 🔴 AND IT DEDUPS THE CARTESIAN ONLY, BECAUSE IT USED TO DEDUP THE FOCUSED BLOCK TOO
-  // AND THAT DISCARDED 19 OF ITS 22 ROWS (`SHORTDIST-RUNWALK-SCOPE-01`, 2026-11-13).
+  // 🔴 IT DEDUPS THE CARTESIAN ONLY — AND THAT CHANGED NOTHING ON ITS OWN, WHICH IS THE POINT
+  // WORTH KEEPING (`SHORTDIST-RUNWALK-SCOPE-01`, 2026-11-13, corrected by code review).
+  //
+  // ⚠️ READ THE NEXT PARAGRAPH BEFORE BELIEVING THIS ONE FIXED ANYTHING. The focused block was
+  // being discarded by this key, and splitting it out is the honest expression of "the
+  // cartesian is sampled, the block is not" — but measured, the core dedup removes **0** rows
+  // (6,144 -> 6,144), so the split is a NO-OP for the population and the rows still never
+  // reached the 64-plan budget. The fix that actually works is at the bottom of this function,
+  // where the block is probed IN FULL and additively. This split is kept because it states the
+  // invariant correctly for the next person to widen the block — not because it restored reach.
+  // **My first report said it restored reach. It did not.**
   //
   // `targetedGrid()` is `targetedGridCore()` + `targetedGridExtra()`, and this key omits
   // `current_weekly_km` AND `longest_recent_run_km` — so every focused row collapsed onto
