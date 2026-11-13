@@ -6,6 +6,16 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-11-13 — OPS-TRIAL-SQL-CLOCK-01 · the measurement that justified the work was my own mistake
+
+**Shipped:** `public.trial_window_ends`, the single SQL mirror of `resolveTrialWindow`, replacing eight hand-written trial windows across two admin views — migration written, not applied.
+**Dev learning:** `not (sub.status in ('trialing','active') and …)` is `NULL` when there is no subscription row, and `NULL` in a `WHERE` drops the row. That is how my probe first reported **0** users on trial when the answer was 6. The view itself was right all along because it uses a `CASE`, which falls through on NULL instead of filtering. **When a hand-written probe disagrees with the thing it is auditing, suspect the probe.** Also: `CREATE OR REPLACE VIEW` cannot change a column set (42P16), and `v_paying_users` depends on `admin_user_tiers`, so the drop cascades — neither was in the item.
+**Product/creator learning:** I justified this build on "two users are reported as free when they are on trial." That was false — they are `premium` and `grant`, correctly, because those rungs sit above trial in the ladder. The true justification was smaller and sharper and I only found it by re-deriving: the funnel's `trainable_week_in_trial` is 13 of 37 on the signup window and 15 on the real one, so the activation programme's recorded **"24 of 37 trialists had no trainable plan week"** is **22 of 37**. A wrong tier would have been loud; a wrong denominator in the programme's own measurement surface is the quiet kind.
+**AI-building learning:** I wrote the false premise into the migration header as fact before I had finished measuring it, and it would have shipped as the file's own explanation of why it exists. The header now quotes the wrong claim and marks it FALSE, which is more useful to the next reader than a clean one. ⚠️ And the repo's own `hollowTestShapes` gate caught my non-vacuity arm — `toContain('case')` also passes on `caseX` — so even the arm I wrote to prove the gate was not empty was itself the shape the repo forbids.
+**The honest bit:** three of my own SQL probes were wrong before one was right (the NULL filter, the excluded rungs, an off-by-one in my own substitution assertion where the comment I wrote contained the token I was counting). The migration was never the hard part.
+**Hook material:** eight hand-written copies of one rule across two views; the test that was supposed to catch them read a hardcoded file path and would have passed forever.
+**Postable?:** yes — "the probe was wrong, not the system" is a real lesson and the NULL-in-WHERE trap is concrete.
+
 ## 2026-11-13 — TT-BEFORE-LONG-PATCH-01 · the item told me to re-measure, and that is the only reason I didn't hand over a no-op
 
 **Shipped:** nothing — the item closed on a false premise, because the live plan had already been fixed.
