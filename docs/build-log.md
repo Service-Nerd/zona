@@ -6,6 +6,23 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-11-13 — PROSE-RATIO-01 · the code was fine; everything I wrote about it was not
+**Shipped:** a hook that flags a commit whose source diff is mostly comment, and a rule that a claim you have not run does not get written.
+
+**Dev learning:** asked why so many defects kept surfacing despite review and regression tests, I measured instead of answering. The engine change at the centre of the wave survived nine review rounds untouched. Rounds five through eight found **zero code defects** — only false statements I had written about my own work. 421 of 683 added source lines were comment, 62%, against a house practice of 48%.
+
+**Product/creator learning:** the founder's question was better than my model of it. I assumed "quality issues" meant the logic. It meant the records, and he was right: in this codebase a false comment is a defect, because the next person acts on it.
+
+**AI-building learning:** building the gate reproduced the exact fault it exists to catch. I derived the threshold with one definition of "comment line" and gated with another, so the hook fired on the very history it was supposed to call normal. **Derive the number with the function the gate will run, not with the one that was convenient at the terminal.**
+
+**The honest bit:** three consecutive commits were me correcting a review-round count that the next round invalidated. I was fixing the instance every time. The count is gone now — a paragraph that counts its own review rounds is stale in the commit that writes it, structurally, like a state block naming its own SHA.
+
+**Hook material:** four review rounds in a row found no bug at all — just things I'd written that weren't true.
+
+**Postable?:** yes.
+
+---
+
 ## 2026-11-13 — SEGMENTED-LR-HR-01 · the contradiction was real, intentional, and invisible
 **Shipped:** a measurement, a corrected number in the constitution, and one gate on the only surface that could expose a pair the board put there on purpose.
 
