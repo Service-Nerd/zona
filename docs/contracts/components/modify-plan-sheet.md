@@ -121,8 +121,18 @@ The row LABELS and consequence subtitles live in `lib/plan/modifyPlan.ts →
 MODIFIABLE_ROWS`, not here: *"copy in a component is copy no test can see."* Whether the
 engine honours an edit is the Coaching Board's.
 
+⚠️ **One subtitle is DYNAMIC and it is still not this component's**
+(`MODIFY-WEEKDAY-INERT-01`, Design Board 2026-11-13). The component calls
+`consequenceFor(row, base)`; it does not assemble the string. Where a runner has per-day
+weekday limits, the *Weekday time limit* row stops presenting a current value and states the
+days and values that pressing it will REPLACE — because a single-value control cannot
+truthfully display three limits, and on 3 of the 5 affected live plans it was displaying one
+the engine does not use. The clear itself is `applyEdits`, so the sentence cannot promise a
+replacement the engine does not perform.
+
 ## Gates
 
+`lib/plan/modifyWeekdayInert.test.ts` (7 arms, falsified 4 ways) ·
 `lib/plan/modifyPlan.test.ts` (25 arms — per-kind row set falsified 3 ways, including a
 typo'd key) · `lib/plan/modifySaveRace.test.ts` · `components/ui/buttonGeometry.test.ts`
 (`SegmentedControl` floors at 44px here) · `sheetPresentation.test.ts`.
