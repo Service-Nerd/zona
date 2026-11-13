@@ -36,7 +36,9 @@ function stripShellComment(line: string): string {
   let quote: string | null = null
   for (let i = 0; i < line.length; i++) {
     const c = line[i]!
-    if (c === '\\') { i++; continue }
+    // ⚠️ The escape is honoured only OUTSIDE single quotes — POSIX `'...'` has none, so
+    // skipping one there eats the closing quote and a real comment on that line survives.
+    if (c === '\\' && quote !== "'") { i++; continue }
     if (quote) { if (c === quote) quote = null; continue }
     if (c === "'" || c === '"') { quote = c; continue }
     if (c === '#' && (i === 0 || /\s/.test(line[i - 1]!))) return line.slice(0, i)

@@ -14,12 +14,18 @@ claimed the runner's own aggregate for whichever suite the line named next.
 
 Usage:
   doc-case-count.py DOC NAME[,ALIAS...] BASE...   → the counts stated for that suite
-  doc-case-count.py --unattributed DOC BASE...    → every count that binds to no suite
+  doc-case-count.py --unattributed DOC BASE...    → every claim that binds to no suite
 """
 from __future__ import annotations
 
 import re
 import sys
+
+# ⚠️ ONE PATTERN, and it allows ONE word between the number and "cases": the doc writes
+# "16 falsification cases in `X`", which the bare form could not match, so that claim was
+# neither attributed nor listed as unattributed. Measured on CLAUDE.md: 18 -> 19, and the one
+# addition is a real claim.
+CLAIM = r'(\d+) (?:\w+ )?cases'
 
 
 def _names_on(line: str, bases: list[str]) -> list[tuple[int, str]]:
@@ -44,9 +50,11 @@ def _owner(line: str, m: re.Match, names: list[tuple[int, str]]) -> str | None:
     # 72" made 351 a second claim for design-guard. The only backward phrasing in use is
     # "16 cases in `X`", so the join must be short and unbroken.
     nearest = min(after, key=lambda n: n[0])
-    # ⚠️ Measured to where the PATH starts, not the basename: the doc writes
-    # "`scripts/lib/doc-case-count.test.py`", and " in `scripts/lib/" alone blows the limit,
-    # so the path-prefixed form the doc actually uses bound to nothing.
+    # ⚠️ Measured to where the PATH starts, not the basename, so " in `scripts/lib/" does not
+    # by itself blow the limit. 🔴 The reason first written here — that the doc's own
+    # path-prefixed name was being lost — was NOT MEASURED AND IS FALSE: those names bind
+    # BACKWARD, and old vs new over every claim in the live doc differs in 0 places. It is a
+    # bound for the forward branch that the doc does not currently exercise.
     start = nearest[0]
     while start > 0 and (line[start - 1].isalnum() or line[start - 1] in '._-/'):
         start -= 1
@@ -62,7 +70,7 @@ def counts(doc: str, names: list[str], bases: list[str]) -> list[str]:
         on = _names_on(line, bases)
         if not on:
             continue
-        for m in re.finditer(r'(\d+) cases', line):
+        for m in re.finditer(CLAIM, line):
             if _owner(line, m, on) in names and m.group(1) not in seen:
                 seen.append(m.group(1))
     return seen
@@ -78,7 +86,7 @@ def unattributed(doc: str, bases: list[str]) -> list[str]:
     out: list[str] = []
     for line in doc.split('\n'):
         on = _names_on(line, bases)
-        for m in re.finditer(r'(\d+) cases', line):
+        for m in re.finditer(CLAIM, line):
             if _owner(line, m, on) is None:
                 out.append('%s cases  ...%s...' % (m.group(1), line[max(0, m.start() - 48):m.end() + 8].strip()))
     return out

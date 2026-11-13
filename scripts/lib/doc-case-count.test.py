@@ -46,6 +46,10 @@ CASES = [
     ('a count on another line of its own is still attributed',
      'intro\n`%s` — 7 cases' % A, A, ['7']),
     ('a name with no count yields nothing', '`%s` is wired into verify' % A, A, []),
+    ('one word between the number and "cases" still counts',
+     '16 falsification cases in `%s`' % A, A, ['16']),
+    ('…but two words do not — that is prose, not a claim',
+     'it has 16 quite thorough cases', A, []),
 ]
 
 

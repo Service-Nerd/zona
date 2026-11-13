@@ -171,6 +171,13 @@ fi
 # answer is not to delete them but to make them checkable.
 # A number in a doc drifts; a number a script checks does not.
 DOC="$ROOT/CLAUDE.md"
+# 🔴 BEFORE THE FIRST USE, not after it. The check was added below the arms, where it could
+# never fire — the first `doc_claims` call had already exited — while the real silent skip was
+# an `if [ -f "$DOC" ]` wrapper that let a missing doc pass as clean.
+if [ ! -f "$DOC" ]; then
+  echo "$DOC is missing — refusing to report clean on documented counts."
+  exit 1
+fi
 # ⚠️ ANCHORED TO $ROOT, not to the cwd: a cwd-relative glob in a $ROOT-anchored script either
 # aborts under `set -u` or, on bash >= 4.4, checks NOTHING and prints ALL CLEAN. And an empty
 # population is a refusal, because selecting nothing is this repo's most-recorded hollow pass.
@@ -217,8 +224,7 @@ doc_claims_failed() {
   exit 1
 }
 
-if [ -f "$DOC" ]; then
-  while IFS= read -r pair; do
+while IFS= read -r pair; do
     [ -n "$pair" ] || continue
     hook="${pair%%=*}"; real="${pair##*=}"
     # No backticks or asterisks in the pattern: the prose around the number uses
@@ -236,8 +242,7 @@ if [ -f "$DOC" ]; then
     if [ "$claims" != "$real" ]; then
       drifted+=("$hook: CLAUDE.md says $claims, the suite runs $real")
     fi
-  done <<< "$counts"
-fi
+done <<< "$counts"
 
 # ── the SHELL suites quote counts in CLAUDE.md too, and nothing read them ────
 #
@@ -313,10 +318,6 @@ echo
 # and skipped in silence, which is how three documented counts went unchecked. ⚠️ Not a
 # failure: an AGGREGATE ("351 cases in all") legitimately belongs to no single suite, so a
 # gate here would fire on correct prose. It is listed so the number is visible.
-if [ ! -f "$DOC" ]; then
-  echo "$DOC is missing — refusing to report clean on documented counts."
-  exit 1
-fi
 unattr="$(python3 "$ROOT/scripts/lib/doc-case-count.py" --unattributed "$DOC" "${all_bases[@]}")" \
   || doc_claims_failed "--unattributed"
 unattr_n=0
