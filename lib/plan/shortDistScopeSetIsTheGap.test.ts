@@ -99,12 +99,33 @@ describe('§117 Am. 8 — the counted band is the gap between three owners', () 
     expect(runWalkDistanceApplies(42.2)).toBe(true)
   })
 
-  it('the arms are not vacuous — one representative per band, and the TYPE enforces it', () => {
-    // ⚠️ The count is derived from the map, not typed as 6: `Record<RaceDistanceKey, number>`
-    // is what makes a new band a COMPILE error rather than a silently unvisited key, and this
-    // arm only has to prove the representatives are distinct and map where they claim.
-    const keys = Object.keys(BY_KEY)
-    expect(new Set(Object.values(BY_KEY).map(raceDistanceKey)).size).toBe(keys.length)
-    expect(new Set(keys).size).toBe(keys.length)
+  it('🔴 every name in the scope is a REAL band — a typo would land the ruling INERT', () => {
+    // 🔴 `RUNWALK_INSTRUCTION_RACE_KEYS` is `readonly string[]`, so a typo compiles. Verified:
+    // `['5K','10K','MARATHON','HALF']` gives tsc 0 errors and leaves every other arm here
+    // green, while `runWalkInstructionDistanceApplies` never matches 'HALF' — **a board-ruled
+    // WIDENING of this scope would land completely inert with the drift gate passing.** That is
+    // the decorative-config class, in the one constant a board ruling writes to.
+    //
+    // ⚠️ TYPING THE CONSTANT AS `readonly RaceDistanceKey[]` IS NOT AVAILABLE AND IT WAS TRIED:
+    // `RaceDistanceKey` is `keyof typeof GENERATION_CONFIG.INTENSITY_DISTRIBUTION`, so annotating
+    // a field INSIDE `GENERATION_CONFIG` with it makes the object's type depend on itself and
+    // tsc degrades the whole literal — six unrelated files start erroring. So the membership is
+    // asserted at runtime, against the same object the type is derived from.
+    const realBands = Object.keys(GENERATION_CONFIG.INTENSITY_DISTRIBUTION)
+    const unknown = GENERATION_CONFIG.RUNWALK_INSTRUCTION_RACE_KEYS.filter(k => !realBands.includes(k))
+    expect(unknown,
+      'a name in RUNWALK_INSTRUCTION_RACE_KEYS is not a raceDistanceKey band, so it matches '
+      + 'nothing and the scope it was added to is inert. Compare against `raceDistanceKey`s own '
+      + 'bands: ' + realBands.join(', ')).toEqual([])
+  })
+
+  it('the representatives really span every band — the loop above is not short', () => {
+    // ⚠️ The previous version of this arm was a TAUTOLOGY (`new Set(keys).size === keys.length`
+    // over `Object.keys`), in the commit whose subject was shipping a gate that could not fail.
+    // The property with detection power is that `BY_KEY` covers the SAME set the type is derived
+    // from — so a band dropped from the map (were the type ever loosened, as the arm above shows
+    // it can be) reds here instead of silently shrinking arm 1's population.
+    expect(new Set(Object.keys(BY_KEY))).toEqual(new Set(Object.keys(GENERATION_CONFIG.INTENSITY_DISTRIBUTION)))
+    expect(new Set(Object.values(BY_KEY).map(raceDistanceKey)).size).toBe(Object.keys(BY_KEY).length)
   })
 })
