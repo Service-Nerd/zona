@@ -212,33 +212,39 @@ fi
 # suite's number was ever compared against anything. **A number in a doc drifts; a number a
 # script checks does not** — the same sentence this file already carries, applied to the
 # population it had left out.
-for suite in .githooks/pre-commit.test.sh .githooks/pre-push.test.sh scripts/sweep-colours.test.sh; do
-  [ -f "$ROOT/$suite" ] || continue
+# 🔴 THE POPULATION IS GLOBBED, NEVER LISTED (code review round 6). It was a hand-typed list
+# of three against SEVEN such suites on disk, so `strip-comments.test.py` — added in the same
+# commit as its own documented count — was checked by nothing, which is the shape this file
+# exists to refuse.
+shell_suites=()
+while IFS= read -r f; do shell_suites+=("$f"); done < <(
+  ls .githooks/*.test.sh scripts/*.test.sh scripts/lib/*.test.py 2>/dev/null | sort -u)
+shell_bases=()
+for suite in "${shell_suites[@]}"; do shell_bases+=("$(basename "$suite")"); done
+
+skipped=()
+for suite in "${shell_suites[@]}"; do
   base="$(basename "$suite")"
-  # ⚠️ READ THE WHOLE LINE, NOT A 30-CHARACTER WINDOW. The first cut of this arm reused the
-  # python arm's `[^0-9]{0,24}` span and **silently matched nothing** for `pre-commit.test.sh`,
-  # whose prose puts ~80 characters between the filename and the number. Falsified by planting
-  # the wrong number and watching the arm stay GREEN — an arm that cannot find its claim is an
-  # arm that always passes, which is this repo'"'"'s most-recorded hollow shape.
-  # 🔴 AND IT TOOK THE FIRST `N cases` ON THE FIRST LINE MENTIONING THE NAME, WHICH IS NOT THE
-  # SAME THING AS THE COUNT FOR THIS SUITE (code review round 5). A sentence elsewhere in the
-  # doc naming `sweep-colours.test.sh` in passing, with a DIFFERENT suite's count after it,
-  # was read as this suite's claim and reported a drift against a number nobody had written
-  # about it. Every count is taken from the text AFTER the name on its own line, and two lines
-  # that disagree are a refusal, not a coin toss — the doc has to say one thing.
-  claims="$(grep -F "$base" "$DOC" 2>/dev/null \
-            | sed "s|.*$base||" | grep -oE '[0-9]+ cases' | grep -oE '[0-9]+' | sort -u)"
+  # The claim region is bounded by the neighbouring suite names — see doc-case-count.py.
+  claims="$(python3 "$ROOT/scripts/lib/doc-case-count.py" "$DOC" "$base" "${shell_bases[@]}")"
   [ -n "$claims" ] || continue
   if [ "$(printf '%s\n' "$claims" | wc -l | tr -d ' ')" != 1 ]; then
     drifted+=("$base: CLAUDE.md quotes more than one case count for it ($(printf '%s' "$claims" | tr '\n' '/'))")
     continue
   fi
   claim="$claims"
-  real="$(bash "$ROOT/$suite" 2>&1 | grep -oE '[0-9]+ passed' | tail -1 | grep -oE '[0-9]+')"
+  case "$suite" in *.py) out="$(python3 "$ROOT/$suite" 2>&1)";; *) out="$(bash "$ROOT/$suite" 2>&1)";; esac
+  real="$(printf '%s' "$out" | grep -oE '[0-9]+ (passed|cases)' | grep -oE '[0-9]+' | tail -1)"
+  # ⚠️ A suite that SKIPS here has not been measured — it is not a pass and not a drift.
+  if [ -z "$real" ] && printf '%s' "$out" | grep -q '^SKIP'; then skipped+=("$base"); continue; fi
   [ -n "$real" ] || { uncounted+=("$base"); continue; }
   checked=$((checked + 1))
   [ "$claim" = "$real" ] || drifted+=("$base: CLAUDE.md says $claim, the suite runs $real")
 done
+
+if [ ${#skipped[@]} -gt 0 ]; then
+  echo "DOC COUNT NOT MEASURED HERE (${#skipped[@]}): ${skipped[*]} — the suite skipped in this environment."
+fi
 
 if [ ${#drifted[@]} -gt 0 ]; then
   echo

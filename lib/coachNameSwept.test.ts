@@ -23,9 +23,10 @@ const ROOTS = ['lib', 'app', 'components', 'packages']
 const HOOK = readFileSync(join(ROOT, '.githooks/pre-commit'), 'utf8')
 // `Array.from`, never a spread: a `matchAll` spread passes vitest and fails `tsc` (TS2802).
 const EXEMPT_SRCS = Array.from(HOOK.matchAll(/COACH_EXEMPT="(\^\[0-9\]\+:[^"]*)"/g), m => m[1]!)
-// ⚠️ The hook assigns it TWICE (the block arm and the report arm). Reading only the first
-// leaves the second free to drift, which is the defect this parse exists to stop.
-if (EXEMPT_SRCS.length < 2) throw new Error(`.githooks/pre-commit: expected both COACH_EXEMPT assignments, read ${EXEMPT_SRCS.length} — unverified is never a pass`)
+// ⚠️ The hook assigns it more than once (the block arm and the report arm). EVERY assignment
+// is read and they must agree — reading only the first leaves the others free to drift. The
+// count is deliberately not pinned: de-duplicating the hook is the better fix, not a breakage.
+if (EXEMPT_SRCS.length < 1) throw new Error('cannot read COACH_EXEMPT from .githooks/pre-commit — unverified is never a pass')
 if (new Set(EXEMPT_SRCS).size !== 1) throw new Error(`.githooks/pre-commit: COACH_EXEMPT assignments disagree: ${JSON.stringify(EXEMPT_SRCS)}`)
 // ⚠️ It is a grep ERE being compiled as a JS RegExp. Most of the syntax coincides; a POSIX
 // class does NOT, and would compile silently to something else rather than throwing — so a

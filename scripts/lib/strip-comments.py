@@ -71,11 +71,19 @@ def strip(src: str) -> str:
         # at end of line the scan re-runs with that character disabled. Backticks are left
         # alone: a template literal genuinely spans lines.
         skip: set[int] = set()
-        for _ in range(4):
+        # Each pass adds one distinct index from the line's own `'`/`"` set, so that count is a
+        # provable bound. Capped anyway, and an exhausted loop keeps the FIRST pass's result
+        # rather than the last: a half-converged scan must not carry a block state onward.
+        first: tuple[str, bool, int | None] | None = None
+        for _ in range(min(line.count("'") + line.count('"'), 8) + 1):
             text, nxt_block, open_at = _scan_line(line, in_block, skip)
+            if first is None:
+                first = (text, nxt_block, open_at)
             if open_at is None or line[open_at] == '`' or open_at in skip:
                 break
             skip.add(open_at)
+        else:
+            text, nxt_block, _ = first                     # un-converged: conservative
         out.append(text)
         in_block = nxt_block
     return '\n'.join(out)
