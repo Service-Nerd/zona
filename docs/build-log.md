@@ -6,6 +6,23 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-11-13 — SEGMENTED-LR-HR-01 · the contradiction was real, intentional, and invisible
+**Shipped:** a measurement, a corrected number in the constitution, and one gate on the only surface that could expose a pair the board put there on purpose.
+
+**Dev learning:** the item said two session types carry an impossible heart-rate cap — an easy ceiling on a long run that prescribes marathon-pace segments. True in the data: **1,599 of 1,599**. But the board had already looked at exactly these sessions and written an out-of-scope paragraph explaining that the cap describes the *aerobic portion*, not the whole session. **The defect I was sent to fix was a decision I hadn't read.** Then the per-surface check said the rest: the app derives the shown band live from the zone string, so it renders a range and never the cap; the published plan pages print no HR at all. Zero live instances. **"Where is this value consumed" is a different question from "is this value right", and only the first one tells you whether anyone is harmed.**
+
+**Product/creator learning:** the constitution said 48 sessions. It is 1,599 — a corpus difference, not an engine change, but the number had been sitting in a ratified amendment for ten weeks. This codebase's own rule is that a record which is *false* is worse than one that is *stale*, and the audit script proves records exist and never that they are true. I corrected it in place with both figures and the reason, which is the only form that doesn't rot again.
+
+**AI-building learning:** the cheap instinct was to "fix" the engine — write the quality band onto those sessions and close the item. That would have reversed a board ruling to solve a problem no runner has, and every test would have gone green. The thing that stopped it was reading the adjacent amendment before touching the producer. **The most expensive edits are the ones that look like tidying.**
+
+**The honest bit:** I measured the homepage, found zero instances, and nearly left it there. Then I checked *why* zero — and it is because the homepage happens to draw a finish-goal plan, while these rows only appear on time-target ones. One constant away: `sub-2-hour-half-marathon-plan` weeks 9 and 11 render "Long run with HM-pace finish · Zone 2–3 · < 143 bpm" in one line. **"Zero today" and "cannot happen" are different claims, and only one of them deserves no gate.**
+
+**Hook material:** the constitution said 48, the engine said 1,599, and the number of runners who could see the problem was 0.
+
+**Postable?:** yes — "the bug was a decision I hadn't read", and the 48-vs-1,599 gap.
+
+---
+
 ## 2026-11-13 — SHORTDIST-RUNWALK-SCOPE-01 · the one-line fix that would have been a silent regression
 **Shipped:** §117 Amendment 8 — the run-walk *instruction* now reaches 5K and 10K runners, and a declared longest run of zero is served instead of excluded.
 

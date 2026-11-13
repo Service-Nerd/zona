@@ -3162,7 +3162,48 @@ the sharpener still stands where no fitting row exists, and `INV-PLAN-CATALOGUE-
 from the catalogue. Question for the board: a beginner taper race row for HM/MARATHON, or open the sharpener (or
 `beginner_goal_pace_blocks`) to beginners in the taper.
 
-### 🔲 `SEGMENTED-LR-HR-01` — a long run with race-pace segments carries the easy-run HR cap 🏃 **COACHING BOARD** *(filed 2026-10-23)*
+### ✅ `SEGMENTED-LR-HR-01` — a long run with race-pace segments carries the easy-run HR cap 🏃 **COACHING BOARD** *(filed 2026-10-23)*
+
+> ✅ **CLOSED 2026-11-13 — THE BOARD ALREADY RULED ON THESE SESSIONS, BY NAME, AND NO SURFACE SHOWS THE
+> CONTRADICTION.** No sitting needed; the item's premise rested on a reading the board had already declined.
+>
+> 🔑 **§84 Amendment 1 (2026-09-04) placed them out of scope deliberately**, in writing: *"the `Zone 2–3` long
+> run with a marathon/HM-pace finish. Its `hr_target` is a **CEILING describing the aerobic portion** while the
+> zone string describes the whole session including the faster finish — a different mechanism from the one ruled
+> on here. The invariant is scoped to **range** targets so it does not sweep this in under a ruling that did not
+> cover it."* So the easy ceiling beside a `Zone 2–3` label is **intentional**, and the item's framing — *"the HR
+> cap and the segments cannot both be met"* — reads the cap as governing the whole session, which is the reading
+> that paragraph refuses. **Read the adjacent ruling before filing the finding.**
+>
+> 📐 **The measurement the board asked for: 1,599 of 1,599** segmented long runs carry `hr_target` = the plan's
+> easy band, across **4,098 generated plans** — `hm_pace_long_run` **1,108**, `mp_long_run` **491**. None carries
+> the quality band; none carries no target. ⚠️ **§84 Am. 1 states 48.** Corrected in place, with the reason: a
+> narrower corpus, not an engine change. *A record that is false is worse than one that is stale.*
+>
+> 🔑 **AND THE SHARPER FACT: NO SURFACE RENDERS THE CAP ON THESE SESSIONS.** Measured per surface —
+> | surface | what it shows | verdict |
+> |---|---|---|
+> | app session detail (`SessionPopupInner`) | band derived **live** from `session.zone` via `hrBandForZoneString`; `Zone 2–3` renders a **range** | honest — the baked `hr_target` is a fallback only |
+> | published `/plans` pages (`PlanPage`) | `s.zone` only, **no HR** | honest |
+> | homepage (`SameWeekTwice`) | `zone` **and** raw `hr_target` side by side | *would* be dishonest — **0 instances in its week** |
+>
+> **So: 0 live instances anywhere.** The contradiction exists in the DATA, where the board put it on purpose, and
+> every surface either derives the honest band or omits the HR.
+>
+> ⚠️ **THE HOMEPAGE EXPOSURE IS ONE CONSTANT AWAY, SO IT HAS A GATE.** `SameWeekTwice` draws week 5 of
+> `half-marathon-12-week`, a **finish-goal** plan — and these rows need `goal: 'time_target'`, so that week can
+> never contain one. Point `SOURCE_WEEK`/`SOURCE_SLUG` at a time-target plan and it appears immediately:
+> `sub-2-hour-half-marathon-plan` weeks **9 and 11** carry *"Long run with HM-pace finish · Zone 2–3 · < 143
+> bpm"*. New gate `lib/marketing/sameWeekZoneHrCoherent.test.ts` fails if the homepage week ever pairs a **range**
+> zone with a **one-sided** cap, with a third arm proving the detector is not vacuous. **Falsified** against week 9
+> — it reds and names the session.
+>
+> ⚠️ **It gates the PAGE, not the engine, deliberately:** the session data stays exactly as §84 Am. 1 ruled it.
+> Had the fix gone into the engine it would have reversed a ruling to solve a problem no runner has.
+>
+> **What this does not prove:** nothing about whether the board's *reason* is conveyed anywhere a runner would
+> read it — the cap-is-for-the-aerobic-portion rationale appears in no copy. That is an **encoding** question and
+> therefore 🧭 the Design Board's under the seam rule, and with 0 live instances it is not urgent. Not filed.
 
 §24b (5K/10K MP + HM-pace finish) and §25 (marathon race-pace long run) both set `hr_target` to the easy cap while their
 notes prescribe marathon and HM-pace segments, so the HR cap and the segments cannot both be met (the GOALPACE-5K-01
