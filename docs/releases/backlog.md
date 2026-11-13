@@ -4645,6 +4645,41 @@ ungate one of three triggers · drop the weekly-report gate). ⚠️ Source-shap
 such: the route needs auth, a tier lookup and a service-role client, none of which stand up under
 `environment: 'node'`.
 
+## ⚖️ FILED 2026-11-13 — `ENGINE-BASEBUILD-UNVALIDATED-01`, found in Wave 1 and never recorded
+
+### 🔲 `ENGINE-BASEBUILD-UNVALIDATED-01` — the §118 base-build plan returns without a validator call ⚙️ **NO BOARD** (wire the call), then 🏃 **COACHING BOARD** if the violations it surfaces require a prescription change
+
+Found 2026-11-13 during Wave 1 of the coaching triage. `lib/plan/engine.ts` returns the get-running
+plan straight out:
+
+```ts
+if (req.acceptBaseBuild && getRunningApplies(input)) {
+  const { plan } = generateGetRunningPlan(input, planStart, weeksBetweenLocal(planStart, input.race_date))
+  return { kind: 'base_build', plan }     // ← no validatePlan
+}
+```
+
+The **staged** branch runs `validateBaseBuildBlock` + `validateStagedRace`. This one runs neither, so
+**the plan kind built for people who cannot yet run is the one kind reaching a runner unvalidated** —
+against ADR-020's `INV-PLAN-SINGLE-CONSTRUCTION` (*"every week that reaches a runner is built and
+validated in one place"*).
+
+⚠️ **The figure recorded on the day was 4,545 error-severity per-run-step violations hidden, and it
+has NOT been re-measured since.** Re-derive it before planning against it — this backlog's own
+standing rule is that an item is a snapshot of the code on the day it was written.
+
+⚠️ **Two halves, and only the first is ungated.** Wiring the call is a defect fix restoring documented
+intent. What to DO with the violations it then surfaces is not: if they are real, the fix changes what
+a base-build runner is prescribed, and that is the Coaching Board's. Do not let the first half ship a
+silent prescription change as a "defect fix".
+
+🔻 **Why this was filed late, and the lesson it carries.** I found it mid-wave, was told to stop and
+move on, reverted the diff — and then recorded it only in a state paragraph. **A defect in a state
+paragraph is not a logged defect**, which is the same trap that put `BRAND-COACHNAME-HARDCODED-01` on
+this list. Stopping work on something is not the same instruction as not recording it.
+
+---
+
 ## 🎯 FILED 2026-11-11 — ACTIVATION & CONVERSION PROGRAMME (founder brief, 9 items + 3 defects)
 
 **Input:** founder brief, pasted 2026-11-11, *"Zonna: Activation & Conversion Programme (backlog,

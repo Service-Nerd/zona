@@ -1467,6 +1467,7 @@ with the Coaching Board (the week-1 floor for someone who has never run, and
 | ~~**A §9 cut says nothing about the minutes it lost**~~ (S9-RESIDUAL-STATED-01) | ✅ | S | **RULED 2026-10-27: no note** (under §40c's 10% bar). |
 | ~~**§9 ratio unchecked on beginner plans**~~ (S9-RATIO-MINUTES-01) | ✅ | M | **SHIPPED 2026-10-27**, §9 Am. 2; beginners and ultras. |
 | ~~**Race day for a runner whose goal pace was withheld**~~ (RACE-DAY-PACE-WITHHELD-01) | ✅ | S | **SHIPPED 2026-10-27**, §80 Am. 2, founder's words. |
+| **§118 base-build plan returns unvalidated** (ENGINE-BASEBUILD-UNVALIDATED-01) | 🔲 | M | Wire the validator call (no board); the violations it surfaces go to the Coaching Board. |
 | **Race-week note shown nowhere** (RACE-NOTES-INERT-01) | 🔲 | S | Design Board (render) or retire. |
 | **Recalibration does not re-decide the withholding** (RECAL-GOAL-REACH-01) | 🔲 | S | Board. |
 | **Grids carry no benchmarked goal inside the line** (GRID-GOAL-INSIDE-LINE-01) | ✅ | S | ✅ **Shipped 2026-11-07** — a benchmarked goal **inside** §120's 5% line now exists in `targetedGrid` (10 km off 50:00 with a 49:30 target = **3.10%**, derived by sweeping). Measured before: **0 of 10,368** benchmarked time-target rows were inside, so the gate had only ever seen goals being withheld. Gated + falsified. Filed: No board. |
