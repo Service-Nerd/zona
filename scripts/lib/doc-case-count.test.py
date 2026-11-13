@@ -32,8 +32,10 @@ CASES = [
      '`%s` with 72 cases, `%s` with 60 cases' % (A, B), A, ['72']),
     ('…and the second keeps its own',
      '`%s` with 72 cases, `%s` with 60 cases' % (A, B), B, ['60']),
-    ('an aggregate before any name binds forwards, not to nothing',
-     'Twelve suites, 351 cases — `%s` with 72 cases' % A, A, ['351', '72']),
+    ('an aggregate does NOT bind forwards across a dash',
+     'Twelve suites, 351 cases in all — `%s` with 72 cases' % A, A, ['72']),
+    ('…nor across a comma', '351 cases, and `%s` with 72 cases' % A, A, ['72']),
+    ('…but a tight "N cases in `X`" still binds', '16 cases in `%s`' % A, A, ['16']),
     ('two conflicting counts are both reported',
      '`%s` — 38 cases\nlater, `%s` — 19 cases' % (A, A), A, ['38', '19']),
     ('a repeat of the same count is reported once',
@@ -48,7 +50,7 @@ CASES = [
 def main() -> int:
     failed = 0
     for name, doc, base, want in CASES:
-        got = counts(doc, base, BASES)
+        got = counts(doc, [base], BASES)
         if got != want:
             failed += 1
             print('  ✗ %s\n      want %r, got %r\n      doc: %r' % (name, want, got, doc))

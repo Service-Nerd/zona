@@ -20,7 +20,12 @@ const ROOTS = ['lib', 'app', 'components', 'packages']
  *  and its suite asserts so, while this file's regex did not — so a legal edit to the one
  *  exempt site commits cleanly and then turns `npm run verify` red. It is applied to
  *  `lineno:text`, which is the shape the hook greps. */
+// ⚠️ COMMENTS STRIPPED FIRST (code review round 9). Counting `COACH_EXEMPT=` across the raw
+// file means a line of PROSE mentioning it throws at module load and takes `npm run verify`
+// and the pre-push gate red — `HOOK-RGBA-COMMENTS-01`, in the file that carries a comment
+// stripper precisely to avoid it. A shell comment starts at a `#` opening a word.
 const HOOK = readFileSync(join(ROOT, '.githooks/pre-commit'), 'utf8')
+  .split('\n').map(l => l.replace(/(^|\s)#.*$/, '$1')).join('\n')
 // `Array.from`, never a spread: a `matchAll` spread passes vitest and fails `tsc` (TS2802).
 // 🔴 EVERY ASSIGNMENT, IN EITHER QUOTE STYLE (code review round 7). Matching only double-quoted
 // values starting `^[0-9]+:` meant single-quoting the BLOCKING arm dropped it from the set

@@ -19,38 +19,69 @@ import re
 import sys
 
 
-def counts(doc: str, base: str, bases: list[str]) -> list[str]:
-    out: list[str] = []
+def _names_on(line: str, bases: list[str]) -> list[tuple[int, str]]:
+    out: list[tuple[int, str]] = []
+    for b in bases:
+        at = line.find(b)
+        while at >= 0:
+            out.append((at, b)); at = line.find(b, at + 1)
+    return out
+
+
+def _owner(line: str, m: re.Match, names: list[tuple[int, str]]) -> str | None:
+    """Which suite does this `N cases` belong to? One rule, both consumers."""
+    before = [n for n in names if n[0] + len(n[1]) <= m.start()]
+    if before:
+        return max(before, key=lambda n: n[0] + len(n[1]))[1]
+    after = [n for n in names if n[0] >= m.end()]
+    if not after:
+        return None
+    # ⚠️ THE FORWARD FALLBACK IS TIGHT, and must be. Unbounded, it binds an aggregate to the
+    # next suite named anywhere on the line: "351 cases in all — `design-guard.test.py` with
+    # 72" made 351 a second claim for design-guard. The only backward phrasing in use is
+    # "16 cases in `X`", so the join must be short and unbroken.
+    nearest = min(after, key=lambda n: n[0])
+    join = line[m.end():nearest[0]]
+    if len(join) > 6 or re.search(r'[,.;:\u2014]', join):
+        return None
+    return nearest[1]
+
+
+def counts(doc: str, names: list[str], bases: list[str]) -> list[str]:
+    seen: list[str] = []
     for line in doc.split('\n'):
-        # every occurrence of every suite name on this line, as (index, base)
-        names: list[tuple[int, str]] = []
-        for b in bases:
-            at = line.find(b)
-            while at >= 0:
-                names.append((at, b)); at = line.find(b, at + 1)
-        if not names:
+        on = _names_on(line, bases)
+        if not on:
             continue
         for m in re.finditer(r'(\d+) cases', line):
-            before = [n for n in names if n[0] + len(n[1]) <= m.start()]
-            after = [n for n in names if n[0] >= m.end()]
-            if before:
-                nearest = max(before, key=lambda n: n[0] + len(n[1]))
-            elif after:
-                nearest = min(after, key=lambda n: n[0])
-            else:
-                continue
-            if nearest[1] == base:
-                out.append(m.group(1))
-    seen: list[str] = []
-    for c in out:
-        if c not in seen:
-            seen.append(c)
+            if _owner(line, m, on) in names and m.group(1) not in seen:
+                seen.append(m.group(1))
     return seen
 
 
+def unattributed(doc: str, bases: list[str]) -> list[str]:
+    """Every `N cases` that binds to no known suite — the arm's negative space.
+
+    🔴 AN UNATTRIBUTABLE CLAIM WAS READ AS "NO CLAIM" and silently skipped, under a comment
+    saying that is fine. It is fine for a suite the doc never counts; it is not fine for one
+    it counts in a phrasing this cannot resolve, which was true of three.
+    """
+    out: list[str] = []
+    for line in doc.split('\n'):
+        on = _names_on(line, bases)
+        for m in re.finditer(r'(\d+) cases', line):
+            if _owner(line, m, on) is None:
+                out.append('%s cases  ...%s...' % (m.group(1), line[max(0, m.start() - 48):m.end() + 8].strip()))
+    return out
+
+
 if __name__ == '__main__':
+    if len(sys.argv) >= 3 and sys.argv[1] == '--unattributed':
+        with open(sys.argv[2], encoding='utf-8') as fh:
+            print('\n'.join(unattributed(fh.read(), sys.argv[3:])))
+        sys.exit(0)
     if len(sys.argv) < 3:
-        print('doc-case-count.py: DOC BASE OTHER_BASE...', file=sys.stderr)
+        print('doc-case-count.py DOC NAME[,ALIAS...] BASE...', file=sys.stderr)
         sys.exit(2)
     with open(sys.argv[1], encoding='utf-8') as fh:
-        print('\n'.join(counts(fh.read(), sys.argv[2], sys.argv[3:])))
+        print('\n'.join(counts(fh.read(), sys.argv[2].split(','), sys.argv[3:])))

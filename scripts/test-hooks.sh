@@ -186,8 +186,16 @@ fi
 # attributed to whichever SHELL suite happens to be nearest.
 shell_bases=()
 for suite in "${shell_suites[@]}"; do shell_bases+=("$(basename "$suite")"); done
-all_bases=("${shell_bases[@]}")
-for h in "$ROOT"/.claude/hooks/*.test.py; do [ -f "$h" ] && all_bases+=("$(basename "$h")"); done
+# ⚠️ AND EVERY SUITE CARRIES ITS SUBJECT'S NAME AS AN ALIAS (code review round 9). Three
+# bullets count a suite as `Tests: N cases.` on a line that names only `<hook>.py`, so the
+# claim bound to nothing and the arm read "no claim" and skipped it — the comment said that
+# is fine, and for those three it was false. 17 claims in the doc, 12 checked.
+all_bases=()
+for b in "${shell_bases[@]}"; do all_bases+=("$b" "${b/.test./.}"); done
+for h in "$ROOT"/.claude/hooks/*.test.py; do
+  [ -f "$h" ] || continue
+  b="$(basename "$h")"; all_bases+=("$b" "${b/.test./.}")
+done
 
 
 # 🔴 ONE ATTRIBUTION OWNER FOR BOTH ARMS (code review round 8). The python arm kept its own
@@ -217,7 +225,7 @@ if [ -f "$DOC" ]; then
     # a mix of `code spans`, em dashes and **bold**, and matching them literally
     # is both fragile and a quoting minefield. Span whatever sits between the
     # filename and the number instead.
-    claims="$(doc_claims "${hook}.test.py")" || doc_claims_failed "${hook}.test.py"
+    claims="$(doc_claims "${hook}.test.py,${hook}.py")" || doc_claims_failed "${hook}.test.py"
     [ -n "$claims" ] || continue         # not every hook quotes a count, and that is fine
     [ "$real" = "-" ] && continue        # the suite states no total; nothing to compare
     if [ "$(printf '%s\n' "$claims" | wc -l | tr -d ' ')" != 1 ]; then
@@ -246,7 +254,7 @@ fi
 skipped=(); shell_failed=(); shell_uncounted=()
 for suite in "${shell_suites[@]}"; do
   base="$(basename "$suite")"
-  claims="$(doc_claims "$base")" || doc_claims_failed "$base"
+  claims="$(doc_claims "$base,${base/.test./.}")" || doc_claims_failed "$base"
   [ -n "$claims" ] || continue
   if [ "$(printf '%s\n' "$claims" | wc -l | tr -d ' ')" != 1 ]; then
     drifted+=("$base: CLAUDE.md quotes more than one case count for it ($(printf '%s' "$claims" | tr '\n' '/'))")
@@ -301,6 +309,19 @@ if [ ${#drifted[@]} -gt 0 ]; then
 fi
 
 echo
+# 🔴 WHAT BINDS TO NOTHING, PRINTED. An unattributable claim used to be read as "no claim"
+# and skipped in silence, which is how three documented counts went unchecked. ⚠️ Not a
+# failure: an AGGREGATE ("351 cases in all") legitimately belongs to no single suite, so a
+# gate here would fire on correct prose. It is listed so the number is visible.
+unattr="$(python3 "$ROOT/scripts/lib/doc-case-count.py" --unattributed "$DOC" "${all_bases[@]}")"
+unattr_n=0
+[ -z "$unattr" ] || unattr_n="$(printf '%s\n' "$unattr" | wc -l | tr -d ' ')"
+if [ "$unattr_n" -gt 0 ]; then
+  echo
+  echo "DOC COUNTS BINDING TO NO SUITE ($unattr_n) — not a failure, but not checked either:"
+  printf '%s\n' "$unattr" | sed 's/^/  · /'
+fi
+
 # ⚠️ THE WRITE HAPPENS HERE, after every arm has had its say.
 if [ "$WRITE" = 1 ]; then
   # 🔴 `--write` MUST REFUSE A RUN THAT IS NOT GREEN (code review, 2026-11-08). The first cut
@@ -324,7 +345,7 @@ if [ "$WRITE" = 1 ]; then
   exit 0
 fi
 
-echo "$hooks hooks · $suites suites · $cases_total cases · ${#missing[@]} untested · ${#failed[@]} failing · ${#uncounted[@]} uncounted · ${#dropped[@]} shrunk · $checked doc counts checked, ${#drifted[@]} drifted"
+echo "$hooks hooks · $suites suites · $cases_total cases · ${#missing[@]} untested · ${#failed[@]} failing · ${#uncounted[@]} uncounted · ${#dropped[@]} shrunk · $checked doc counts checked, ${#drifted[@]} drifted, $unattr_n unattributed"
 
 if [ ${#missing[@]} -gt 0 ] || [ ${#failed[@]} -gt 0 ] || [ ${#drifted[@]} -gt 0 ] \
    || [ ${#uncounted[@]} -gt 0 ] || [ ${#dropped[@]} -gt 0 ]; then
