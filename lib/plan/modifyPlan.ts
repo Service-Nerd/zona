@@ -1,10 +1,12 @@
 import type { GeneratorInput, Plan } from '@/types/plan'
 import { isRaceIdentityChange } from './supersede'
-import { DAY_ORDER, normaliseDays, type Day } from './days'
+import { DAY_ORDER, DAY_FULL_NAME, normaliseDays, type Day } from './days'
+import { formatDuration } from '@/lib/format'
 // ⚠️ THE KIND PREDICATE IS NOT RE-WRITTEN HERE. `isBaseBuildPlan` is its single
 // owner (`validateStoredPlan.ts`), which exists so two policies cannot disagree
 // about what a base-build plan IS — the `deloadCadence` / `TIER-OWNER-01` lesson.
 // Costs nothing: `lib/plan.ts` already pulls that module into the dashboard graph.
+import { perDayBudgetDays } from './weekdayOverrunNote'
 import { isBaseBuildPlan } from './validateStoredPlan'
 import { stagedRaceOf } from './stagedRacePlan'
 
@@ -110,6 +112,31 @@ export const MODIFIABLE_ROWS: readonly ModifiableRow[] = [
     consequence: 'Shifts the whole plan forward or back, and resets your logged weeks.',
   },
 ] as const
+
+/**
+ * The subtitle under a row — static for every row but one.
+ *
+ * 🧭 `MODIFY-WEEKDAY-INERT-01` (Design Board 2026-11-13). "Weekday time limit" governs nothing
+ * for a runner whose days carry their own limits, and the control stated a single number while
+ * three were in force. The ruling: the row may not present a value it does not govern, so where
+ * per-day limits exist it says what pressing it REPLACES, with the values named.
+ *
+ * ⚠️ 🎓 Sierra's condition, and the reason this is not a silent clear: *"if we drop Mon 60 /
+ * Wed 45 / Fri 30 without saying so, the runner finds out by reading a plan that changed for a
+ * reason they were never told."* 📱 Wroblewski's: print the actual values, because a runner
+ * cannot weigh a trade they cannot see.
+ * ⚠️ `formatDuration`, never `${n} min` — ADR-015 locks the >=60 rule to hours, and this row's
+ * own control was caught hand-writing the unit once already (PREF-SWEEP-01).
+ */
+export function consequenceFor(row: ModifiableRow, base: GeneratorInput | null): string {
+  if (row.key !== 'max_weekday_mins' || !base) return row.consequence
+  const days = perDayBudgetDays(base)
+  if (days.length === 0) return row.consequence
+  const named = days
+    .map(d => `${DAY_FULL_NAME[d as Day].slice(0, 3)} ${formatDuration(base.day_budgets?.[d] ?? 0) ?? ''}`)
+    .join(', ')
+  return `Replaces the limits you set for ${named} with one limit for every weekday.`
+}
 
 /** A sparse overlay onto the stored input. NOT a second copy of GeneratorInput (D-16). */
 export type PlanEdits = Partial<Pick<GeneratorInput, ModifiableKey>>
@@ -231,7 +258,26 @@ export function rebuildsBaseBuild(plan: Plan | null | undefined): boolean {
 
 /** Apply the overlay. Returns a new input; never mutates the stored one. */
 export function applyEdits(base: GeneratorInput, edits: PlanEdits): GeneratorInput {
-  return { ...base, ...edits }
+  const next = { ...base, ...edits }
+  /**
+   * 🔴 A NEW WEEKDAY LIMIT REPLACES THE PER-DAY ONES (`MODIFY-WEEKDAY-INERT-01`, Design Board
+   * 2026-11-13). The spread alone left `day_budgets` in place, and `weekdayBudgetFor` reads the
+   * day's own limit FIRST — so a runner who set Mon 60 / Wed 45 / Fri 30 in the wizard and then
+   * raised "Weekday time limit" got the same plan back, with no error and nothing to notice.
+   *
+   * 📐 Measured on production before the ruling: 5 of 43 live plans carry `day_budgets`, all 5
+   * also carrying `max_weekday_mins`, and on THREE of them the sheet stated a limit the engine
+   * does not use — one showing 45 minutes against a Friday the engine allows 90. The row was
+   * not merely inert; it misquoted the runner to themselves.
+   *
+   * ⚠️ The sheet SAYS so before it is pressed (`ModifyPlanSheet` prints the days being
+   * replaced). This clause is the mechanism; the disclosure is the ruling's other half, and a
+   * silent clear here would be exactly the capability loss Sierra dissented over.
+   */
+  if (edits.max_weekday_mins != null && perDayBudgetDays(base).length > 0) {
+    delete (next as { day_budgets?: unknown }).day_budgets
+  }
+  return next
 }
 
 /** Only the keys whose value actually differs from the stored plan. */

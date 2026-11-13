@@ -23,6 +23,38 @@
 ---
 
 
+## A control may not state a value it does not govern
+
+**Design Board, `MODIFY-WEEKDAY-INERT-01`, 2026-11-13 — SHIP WITH AMENDMENT.**
+
+An offered control carries two claims: that pressing it changes something, and that the value
+it displays is the one in force. The board had already ruled the first
+(`BASEBUILD-ADJUST-DOOR-01`: *"a control with a measured 0% success rate is not a capability"*).
+This adds the second, because it failed separately and more quietly.
+
+📐 Measured on production: 5 of 43 live plans carry per-day weekday limits. For all five the
+"Weekday time limit" row rendered, accepted an edit and changed nothing, because
+`weekdayBudgetFor` reads the day's own limit first. **On three of the five it also displayed a
+limit the engine does not use** — one showing `45 min` against a Friday the engine allows 90.
+
+**The rule.** Where a more specific setting overrides the one a row edits, the row does not
+present a current value. It presents the REPLACEMENT, and names what is being replaced with the
+real values. It is not withheld (that is a capability loss — 🎓 Sierra's recorded dissent from
+the door sitting, which binds), and it does not become a per-day grid
+(`SHEET-DAY-QUESTION-01` killed that for breaking one-row-per-setting).
+
+| | |
+|---|---|
+| **Where the precedence lives** | One owner. `weekdayBudgetFor` / `perDayBudgetDays` in `lib/plan/weekdayOverrunNote.ts` — a caller asking *"does this runner have per-day limits?"* is asking what the precedence rule already answers |
+| **Where the copy lives** | The rows' owner (`modifyPlan.ts → consequenceFor`), never the component. A subtitle assembled at the render site is how two surfaces start disagreeing |
+| **Units** | `formatDuration`, never `${n} min`. ADR-015 locks the ≥60 rule to hours, and this row's own control was caught hand-writing it once (PREF-SWEEP-01) |
+| **Check** | `lib/plan/modifyWeekdayInert.test.ts`, falsified four ways: the spread-only revert, clearing on every edit, dropping the disclosure, and hand-writing the unit |
+
+⚠️ **The replacement must be a real clear, not a cosmetic one.** `applyEdits` deletes
+`day_budgets` when the weekday limit is edited; without that the subtitle would promise a
+replacement the engine never performs, which is the original defect wearing an honest sentence.
+
+
 ## The semantic colour pair — moss = held the zone, amber = cooked it (P-01)
 
 **SLT-approved 2026-09-20, resolution A.** Owner: `lib/coaching/zoneVerdict.ts`.

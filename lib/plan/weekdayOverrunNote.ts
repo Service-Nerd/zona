@@ -13,7 +13,10 @@ import { sessionFloorsFor } from './sessionFloors'
 import { GENERATION_CONFIG } from './generationConfig'
 import type { Week } from '@/types/plan'
 
-type Weekday = 'mon' | 'tue' | 'wed' | 'thu' | 'fri'
+export type Weekday = 'mon' | 'tue' | 'wed' | 'thu' | 'fri'
+
+/** Monday-first, so a list of a runner's own limits reads in the order they train. */
+const WEEKDAY_ORDER: readonly Weekday[] = ['mon', 'tue', 'wed', 'thu', 'fri']
 
 /** The limit for this day, and whether the runner set it for the day itself or for every weekday. */
 export function weekdayBudgetFor(
@@ -26,6 +29,25 @@ export function weekdayBudgetFor(
   return null
 }
 
+
+/**
+ * The weekdays whose limit is their OWN, not the single weekday cap — sorted, never null.
+ *
+ * 🔴 ONE OWNER, BESIDE `weekdayBudgetFor`, BECAUSE THE PRECEDENCE IS THE SAME FACT
+ * (`MODIFY-WEEKDAY-INERT-01`, Design Board 2026-11-13). A caller that asks "does this runner
+ * have per-day limits?" is asking exactly what `weekdayBudgetFor` answers one day at a time,
+ * and a second hand-written `Object.keys(day_budgets).length > 0` would drift the first time
+ * an empty object or a null day appears — both of which exist in production today.
+ */
+export function perDayBudgetDays(
+  input: { day_budgets?: Partial<Record<Weekday, number>> | null },
+): Weekday[] {
+  const b = input.day_budgets
+  if (!b) return []
+  return (Object.keys(b) as Weekday[])
+    .filter(d => b[d] != null)
+    .sort((x, y) => WEEKDAY_ORDER.indexOf(x) - WEEKDAY_ORDER.indexOf(y))
+}
 
 /** "Wednesdays" when the limit is the day's own, "weekdays" when it is the single weekday limit.
  *  Exported for the PLAN-LEVEL §81 notes (STRUCTURAL-NOTE-DAY-BUDGET-01, 2026-11-08): they said

@@ -11,6 +11,7 @@ import { formatDuration } from '@/lib/format'
 import { TextField } from '@/components/shared/TextField'
 import {
   MODIFIABLE_ROWS, MODIFY_GROUP_LABELS, applyEdits, pendingRows, editsResetLoggedWeeks,
+  consequenceFor,
   modifiableRowsFor, runDaysOf, runDaysEdits, longRunDayEdits, RUN_DAYS_REFUSAL, type RunDaysRefusal,
   type ModifyGroup, type PlanEdits, type ModifiableKey,
 } from '@/lib/plan/modifyPlan'
@@ -209,7 +210,7 @@ export default function ModifyPlanSheet({
                         <div style={{
                           fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--mute)',
                           lineHeight: 1.5, marginTop: '2px', marginBottom: 'var(--space-3)',
-                        }}>{row.consequence}</div>
+                        }}>{consequenceFor(row, base)}</div>
                         {row.key === 'days_available' ? (
                           <DayGridSelector
                             ariaLabel={row.label}

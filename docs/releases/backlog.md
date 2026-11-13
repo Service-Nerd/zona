@@ -2743,7 +2743,36 @@ Raised by the 28 Oct digest on 94z2pg4cr6 (a1a1b638, London 4:00, peak 52 km/wee
 runner who asked for 4:00 that the plan is not built for a time. Present before the rebuild (same text in the 28 Oct
 archive). Measure how many time-goal plans carry this note, then decide whether it is honest or contradicts the goal.
 
-### 🔲 `MODIFY-WEEKDAY-INERT-01` — "Weekday time limit" in Adjust your plan does nothing for a runner with per-day limits ⚙️ **NO BOARD** for the defect; 👤 **FOUNDER** for which way it resolves
+### ✅ `MODIFY-WEEKDAY-INERT-01` — **SHIPPED 2026-11-13, Design Board SHIP WITH AMENDMENT** — "Weekday time limit" in Adjust your plan does nothing for a runner with per-day limits ⚙️ **NO BOARD** for the defect; 👤 **FOUNDER** for which way it resolves
+
+✅ **SHIPPED 2026-11-13.** 🧭 **Design Board ruled; the item's own "👤 FOUNDER for which way it
+resolves" is discharged, because neither filed option survived the measurement.**
+
+📐 **The population the item left unmeasured: 5 of 43 live plans carry `day_budgets`, all 5 also
+carrying `max_weekday_mins`** — so all five could press an inert control. 🔴 **And it was not
+merely inert. On THREE of the five the row STATED a limit the engine does not use**, one showing
+`45 min` against a Friday the engine allows 90. The item filed this as *"does nothing"*; it is a
+false statement about the runner's own configuration, which is a different and worse defect, and
+it is what decided the ruling.
+
+⚖️ **Neither filed resolution shipped.** (a) *"a new weekday limit replaces the per-day ones"*
+discards the runner's detail silently — 🎓 Sierra: *"the runner finds out by reading a plan that
+changed for a reason they were never told."* (b) *"Adjust shows the per-day limits and edits
+them"* is the day grid **`SHEET-DAY-QUESTION-01` killed on 2026-10-05** for breaking the sheet's
+one-row-per-setting architecture. **What shipped is (a) WITH disclosure:** the row stops
+presenting a current value, says what pressing it replaces with the real values named, and
+`applyEdits` performs the clear.
+
+📦 Artifacts: pattern *"A control may not state a value it does not govern"* in `ui-patterns.md`
+· `perDayBudgetDays` beside `weekdayBudgetFor` (one owner of the precedence) and
+`consequenceFor` in the rows' owner · `lib/plan/modifyWeekdayInert.test.ts`, **falsified four
+ways** (spread-only revert, clearing on every edit, dropping the disclosure, hand-writing the
+unit against ADR-015) · register row in `design-rulings.md`.
+
+⚠️ **What this does not prove:** nothing was seen on a device. The 38 of 43 plans without
+per-day limits are asserted unchanged by a key-set equality, not by a rendered screen.
+
+
 
 Found 2026-10-26 by the code review of OVERRUN-NOTE-ALL-01. `applyEdits` spreads the edit over the stored input (`{ ...base, ...edits }`), so `day_budgets` survives an edit to `max_weekday_mins`, and both the engine (`applyWeekdayMinsCap`) and the note read the day's own budget first. A runner who set Mon 60 / Wed 45 / Fri 30 in the wizard and later raises the weekday limit to 60 gets the same plan back. **No other control edits per-day limits after onboarding.** Two honest resolutions: (a) a new weekday limit replaces the per-day ones; (b) Adjust shows the per-day limits and edits them. **Population not yet measured** (live plans with `day_budgets`). Until fixed, the overrun note cannot offer this control as a lever to those runners.
 

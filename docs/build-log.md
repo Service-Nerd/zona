@@ -6,6 +6,16 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-11-13 — MODIFY-WEEKDAY-INERT-01 · the item asked which of two fixes; the measurement said neither
+
+**Shipped:** the "Weekday time limit" row in Adjust your plan now governs what it claims to, and names what it replaces.
+**Dev learning:** the precedence that caused this (`weekdayBudgetFor` reads the day's own limit before the weekday cap) already had an owner, so the new predicate went beside it rather than becoming a second `Object.keys(day_budgets).length > 0` somewhere else. Both the empty-object and null-day shapes exist in production, which is exactly what a hand-written check gets wrong. Also the green-suite/red-build trap again: `day_budgets: null` in a fixture passed vitest and failed `tsc`, because `GeneratorInput` declares `| undefined`.
+**Product/creator learning:** the item said the control "does nothing" and routed the direction to the founder. Measuring production turned it into a different defect: on three of the five affected plans the row **stated a weekday limit the engine does not use**, one showing 45 minutes against a Friday the engine allows 90. A dead control is an absence; a control displaying a number that is not in force is the product misquoting the runner to themselves. That changed the ruling — neither of the two options the item offered survived, because a single-value control cannot truthfully display three limits.
+**AI-building learning:** I nearly took this as a founder decision between (a) and (b), which is what the item's tag said. The settled-ground scan is what made it answerable without him: `BASEBUILD-ADJUST-DOOR-01` had already ruled on dead controls, Sierra's dissent in that same sitting ruled out withholding, and `SHEET-DAY-QUESTION-01` had already killed the day grid that option (b) amounts to. **Three existing rulings fully determined an "undecided" item.** Reading the register first was the whole job.
+**The honest bit:** I wrote the dynamic subtitle into the component first, then moved it, because `ModifyPlanSheet` has a comment at the top of the file saying the consequence copy does not live there. I had read that file twice already.
+**Hook material:** a control that let five runners set a time limit, accepted the change, and showed them a number that was wrong on three of the five.
+**Postable?:** yes — "the backlog item asked which of two fixes to build, and the right answer was neither" is a real shape.
+
 ## 2026-11-13 — OPS-TRIAL-SQL-CLOCK-01 · the measurement that justified the work was my own mistake
 
 **Shipped:** `public.trial_window_ends`, the single SQL mirror of `resolveTrialWindow`, replacing eight hand-written trial windows across two admin views — migration written, not applied.
