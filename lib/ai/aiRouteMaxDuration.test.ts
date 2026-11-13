@@ -195,8 +195,10 @@ describe('OPS-FN-DURATION-01 — the AI route ceiling', () => {
 
     const ceilings: number[] = []
     for (const row of stripped) {
-      const at = row.indexOf('maxTokens:')
-      if (at < 0) continue
+      // ⚠️ EVERY occurrence on the line. `indexOf` saw the first only, where the `matchAll` it
+      // replaced scanned to the end — a population regression in the arm built for population
+      // completeness: a second ceiling on the same line was invisible.
+      for (let at = row.indexOf('maxTokens:'); at >= 0; at = row.indexOf('maxTokens:', at + 1)) {
       const raw = valueExpr(row, at + 'maxTokens:'.length)
       // A TYPE position is not a ceiling: `maxTokens: number` in a signature carries none.
       if (/^\s*(number|string|boolean)\b/.test(raw)) continue
@@ -211,6 +213,7 @@ describe('OPS-FN-DURATION-01 — the AI route ceiling', () => {
       expect(found.length, `a maxTokens: expression yielded no ceiling — the scan cannot see it: ${raw}`)
         .toBeGreaterThan(0)
       ceilings.push(...found)
+      }
     }
     expect(ceilings.length, 'no maxTokens ceilings found — the scan is reading nothing')
       .toBeGreaterThan(5)

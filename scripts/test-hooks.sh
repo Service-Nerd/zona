@@ -140,6 +140,13 @@ if [ -n "${HOOK_CASE_BASELINE:-}" ]; then BASELINE="$HOOK_CASE_BASELINE"; fi
 # it. The one path that can delete a guard must see every arm.
 WRITE=0
 [ "${1:-}" = "--write" ] && WRITE=1
+# ⚠️ A MISSING BASELINE IS A REFUSAL, not a silent skip. It used to report `0 shrunk` and
+# ALL CLEAN with the ratchet disarmed entirely — the one state in which a gutted suite passes.
+if [ "$WRITE" = 0 ] && [ ! -f "$BASELINE" ]; then
+  echo "$BASELINE is missing — the case-count ratchet cannot run; refusing to report clean."
+  echo "  If this is deliberate: npm run test:hooks -- --write, and say why in the commit."
+  exit 1
+fi
 if [ "$WRITE" = 0 ] && [ -f "$BASELINE" ]; then
   while IFS= read -r pair; do
     [ -n "$pair" ] || continue

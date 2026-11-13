@@ -47,6 +47,20 @@ CASES = [
      "const g = '/*'; const t = <p>Kit's pace</p>\nconst b = %r\nconst c = %r" % (HEX, HEX),
      [HEX, 'const b', 'const c'], []),
 
+    ('a `/*` inside a MULTI-LINE template opens no block comment',
+     '''const P = `\n  see lib/plan/* for rules\n  mention Kit\n`\nconst bg = %r''' % HEX,
+     ['lib/plan/*', 'mention Kit', HEX], []),
+    # The real shape from `lib/plan/ruleEngine.ts:9018` — a nested template inside `${}`,
+    # apostrophes in the prose, and an empty string. Without `${}` on the stack the parity
+    # flips, an apostrophe opens a quote, and the file is "inside a template" from there on:
+    # 975 lines of that file had every comment left as code.
+    ('a nested template does not flip the parity and strand the rest of the file',
+     '''const n = cond\n  ? `plan's time ${a} weeks.${b != null ? ` You've capped ${c}, and` : ''}`\n  : null\n// %s''' % HEX,
+     [], [HEX]),
+    ('a `//` inside a regex literal is not a comment, and code after it survives',
+     'const RX = /^https?:\\/\\//; const n = "Kit"   // real comment',
+     ['https', 'Kit'], ['real comment']),
+
     # ── what it must still do: blank comments ───────────────────────────────────────────
     ('a line comment is blanked', '// %s' % HEX, [], [HEX]),
     ('a block comment is blanked', '/* %s */' % HEX, [], [HEX]),
