@@ -54,6 +54,13 @@ CASES = [
      '''const P = `\n  see lib/plan/* for rules\n  mention Kit\n`\nconst bg = %r''' % HEX,
      [], ['mention Kit', HEX]),
 
+    # 🔻 THE SECOND DECLARED LIMIT, and the claim that both were asserted was FALSE until now
+    # (code review round 18): the regex case was deleted with the feature and nothing replaced
+    # it. A regex ending in `//` reads as a line comment and the rest of the line is blanked —
+    # a silent false NEGATIVE. If this case ever fails, someone has fixed it deliberately.
+    ('🔻 KNOWN: a regex ending in `//` is read as a comment',
+     'const RX = /^https?:\\/\\//; const n = "Kit"', ['const RX'], ['Kit']),
+
     # The real shape from `lib/plan/ruleEngine.ts:9018` — a nested template inside `${}`,
     # apostrophes in the prose, an empty string. The comment after it must still be blanked.
     ('a nested template does not strand the line after it',

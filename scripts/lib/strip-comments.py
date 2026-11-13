@@ -24,6 +24,9 @@ So: one pass, tracking `'`, `"`, backtick and escape state.
 used to say the risk was a loud false POSITIVE; it is a silent false NEGATIVE, and there is a
 live instance: `lib/health/nativeCredential.ts:53` holds `/^https?:\/\//`, which ENDS IN `//`,
 so everything after it on that line is blanked and a hardcoded name there passes every guard.
+⚠️ Measured, because the first number written here was the non-test count and wrong: **184
+lines across 158 tracked files** are cut at a regex terminator, and **28 of them in 25 files**
+sit inside the colour sweep's own population, which does not exclude `.test.` files.
 ⚠️ Lexing regexes was tried and REVERTED (code review round 17). Deciding whether `/` opens a
 regex or divides needs a real parser: the heuristic missed a regex starting a line, read a TS
 non-null `x! / y` as a regex opener, and mis-handled one beginning `>` — 74 genuine comment
@@ -37,7 +40,6 @@ Usage:
 """
 from __future__ import annotations  # this Mac's python3 evaluates signature annotations
 
-import re
 import sys
 
 def strip(src: str) -> str:
@@ -107,11 +109,6 @@ def strip(src: str) -> str:
             text, nxt_block, _ = first                      # un-converged: conservative
         out.append(text)
         in_block = nxt_block
-    # 🔴 A CORRECT FILE ENDS WITH AN EMPTY STACK. If it does not, a backtick was mis-read —
-    # one inside a regex character class is the realistic source — and carrying template state
-    # from there makes every later comment string content, silently. That is the blind spot
-    # this carry was added to CLOSE, so it must not be able to open another one: the file is
-    # re-lexed with the carry off, which is exactly the behaviour before the carry existed.
     return '\n'.join(out)
 
 
