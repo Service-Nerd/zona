@@ -22,15 +22,19 @@ const ROOTS = ['lib', 'app', 'components', 'packages']
  *  `lineno:text`, which is the shape the hook greps. */
 const HOOK = readFileSync(join(ROOT, '.githooks/pre-commit'), 'utf8')
 // `Array.from`, never a spread: a `matchAll` spread passes vitest and fails `tsc` (TS2802).
-const EXEMPT_SRCS = Array.from(HOOK.matchAll(/COACH_EXEMPT="(\^\[0-9\]\+:[^"]*)"/g), m => m[1]!)
-// ⚠️ The hook assigns it more than once (the block arm and the report arm). EVERY assignment
-// is read and they must agree — reading only the first leaves the others free to drift. The
-// count is deliberately not pinned: de-duplicating the hook is the better fix, not a breakage.
-if (EXEMPT_SRCS.length < 1) throw new Error('cannot read COACH_EXEMPT from .githooks/pre-commit — unverified is never a pass')
+// 🔴 EVERY ASSIGNMENT, IN EITHER QUOTE STYLE (code review round 7). Matching only double-quoted
+// values starting `^[0-9]+:` meant single-quoting the BLOCKING arm dropped it from the set
+// silently, leaving this validating against the non-blocking report arm — the commit-green /
+// verify-red drift the parse exists to catch. The count is not pinned: de-duplicating the hook
+// is the better fix, not a breakage.
+const ASSIGNED = Array.from(HOOK.matchAll(/COACH_EXEMPT=(?:"([^"]*)"|'([^']*)')/g), m => m[1] ?? m[2]!)
+const NEUTRAL = '^$'   // the else-branch value, for every file that is not the exempt one
+const EXEMPT_SRCS = ASSIGNED.filter(v => v !== NEUTRAL)
+if (ASSIGNED.length === 0) throw new Error('cannot read COACH_EXEMPT from .githooks/pre-commit — unverified is never a pass')
+if (EXEMPT_SRCS.length === 0) throw new Error('.githooks/pre-commit assigns COACH_EXEMPT only the neutral value — the exempt site is unprotected')
 if (new Set(EXEMPT_SRCS).size !== 1) throw new Error(`.githooks/pre-commit: COACH_EXEMPT assignments disagree: ${JSON.stringify(EXEMPT_SRCS)}`)
 // ⚠️ It is a grep ERE being compiled as a JS RegExp. Most of the syntax coincides; a POSIX
-// class does NOT, and would compile silently to something else rather than throwing — so a
-// widened hook would reintroduce the commit-green / verify-red drift undetected.
+// class does NOT, and would compile silently to something else rather than throwing.
 if (/\[\[:/.test(EXEMPT_SRCS[0]!)) throw new Error(`.githooks/pre-commit: COACH_EXEMPT uses a POSIX class, which does not mean the same thing to a JS RegExp: ${EXEMPT_SRCS[0]}`)
 const DEFINITION = new RegExp(EXEMPT_SRCS[0]!)
 

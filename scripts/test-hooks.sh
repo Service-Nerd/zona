@@ -216,28 +216,47 @@ fi
 # of three against SEVEN such suites on disk, so `strip-comments.test.py` — added in the same
 # commit as its own documented count — was checked by nothing, which is the shape this file
 # exists to refuse.
+# ⚠️ ANCHORED TO $ROOT, not to the cwd: a cwd-relative glob in a $ROOT-anchored script either
+# aborts under `set -u` or, on bash >= 4.4, checks NOTHING and prints ALL CLEAN. And an empty
+# population is a refusal, because selecting nothing is this repo's most-recorded hollow pass.
 shell_suites=()
-while IFS= read -r f; do shell_suites+=("$f"); done < <(
-  ls .githooks/*.test.sh scripts/*.test.sh scripts/lib/*.test.py 2>/dev/null | sort -u)
+while IFS= read -r f; do shell_suites+=("${f#"$ROOT/"}"); done < <(
+  ls "$ROOT"/.githooks/*.test.sh "$ROOT"/scripts/*.test.sh "$ROOT"/scripts/lib/*.test.py 2>/dev/null | sort -u)
+if [ ${#shell_suites[@]} -eq 0 ]; then
+  echo "DOC COUNT ARM SELECTED NO SUITES — refusing to report clean."
+  exit 1
+fi
+# ⚠️ ATTRIBUTION NEEDS EVERY SUITE NAME, not only this arm's. The python hooks' suites are
+# named in the same prose, and without them a count beside `coaching-guard.test.py` is
+# attributed to whichever SHELL suite happens to be nearest.
 shell_bases=()
 for suite in "${shell_suites[@]}"; do shell_bases+=("$(basename "$suite")"); done
+all_bases=("${shell_bases[@]}")
+for h in "$ROOT"/.claude/hooks/*.test.py; do [ -f "$h" ] && all_bases+=("$(basename "$h")"); done
 
-skipped=()
+skipped=(); shell_failed=(); shell_uncounted=()
 for suite in "${shell_suites[@]}"; do
   base="$(basename "$suite")"
   # The claim region is bounded by the neighbouring suite names — see doc-case-count.py.
-  claims="$(python3 "$ROOT/scripts/lib/doc-case-count.py" "$DOC" "$base" "${shell_bases[@]}")"
+  claims="$(python3 "$ROOT/scripts/lib/doc-case-count.py" "$DOC" "$base" "${all_bases[@]}")"
   [ -n "$claims" ] || continue
   if [ "$(printf '%s\n' "$claims" | wc -l | tr -d ' ')" != 1 ]; then
     drifted+=("$base: CLAUDE.md quotes more than one case count for it ($(printf '%s' "$claims" | tr '\n' '/'))")
     continue
   fi
   claim="$claims"
-  case "$suite" in *.py) out="$(python3 "$ROOT/$suite" 2>&1)";; *) out="$(bash "$ROOT/$suite" 2>&1)";; esac
+  # 🔴 THE EXIT CODE IS NOT DISCARDED. It was: a suite printing `16 cases, 3 failed` still had
+  # its 16 read and `test-hooks.sh` reported ALL CLEAN over a failing suite.
+  rc=0
+  case "$suite" in
+    *.py) out="$(python3 "$ROOT/$suite" 2>&1)" || rc=$?;;
+    *)    out="$(bash "$ROOT/$suite" 2>&1)" || rc=$?;;
+  esac
+  [ "$rc" -eq 0 ] || shell_failed+=("$suite")
   real="$(printf '%s' "$out" | grep -oE '[0-9]+ (passed|cases)' | grep -oE '[0-9]+' | tail -1)"
   # ⚠️ A suite that SKIPS here has not been measured — it is not a pass and not a drift.
   if [ -z "$real" ] && printf '%s' "$out" | grep -q '^SKIP'; then skipped+=("$base"); continue; fi
-  [ -n "$real" ] || { uncounted+=("$base"); continue; }
+  [ -n "$real" ] || { shell_uncounted+=("$suite"); continue; }
   checked=$((checked + 1))
   [ "$claim" = "$real" ] || drifted+=("$base: CLAUDE.md says $claim, the suite runs $real")
 done
@@ -245,6 +264,26 @@ done
 if [ ${#skipped[@]} -gt 0 ]; then
   echo "DOC COUNT NOT MEASURED HERE (${#skipped[@]}): ${skipped[*]} — the suite skipped in this environment."
 fi
+
+# 🔴 THE SHELL ARM GETS ITS OWN REPORT, because the blocks above it have already run by the
+# time it adds an entry — so a suite landing in `uncounted` here used to fail the run with
+# NOTHING above naming the cause. They are folded into the global arrays after printing, so
+# the summary line and the exit code count them.
+if [ ${#shell_failed[@]} -gt 0 ]; then
+  echo
+  echo "SUITES THAT FAILED WHILE BEING COUNTED (${#shell_failed[@]}):"
+  for f in "${shell_failed[@]}"; do echo "  ✗ $f"; done
+  echo "  Its printed total is not a verdict. Run it directly."
+fi
+if [ ${#shell_uncounted[@]} -gt 0 ]; then
+  echo
+  echo "SUITES THAT STATE NO CASE TOTAL (${#shell_uncounted[@]}):"
+  for u in "${shell_uncounted[@]}"; do echo "  ✗ $u"; done
+  echo "  Print a total this runner can read: \"N cases, 0 failed\" or \"N passed\"."
+fi
+# ⚠️ Guarded: under `set -u`, bash 3.2 (this Mac) treats an EMPTY array expansion as unbound.
+[ ${#shell_failed[@]} -eq 0 ] || failed+=("${shell_failed[@]}")
+[ ${#shell_uncounted[@]} -eq 0 ] || uncounted+=("${shell_uncounted[@]}")
 
 if [ ${#drifted[@]} -gt 0 ]; then
   echo
