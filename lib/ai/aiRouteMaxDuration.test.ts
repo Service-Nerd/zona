@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { readFileSync, readdirSync, statSync } from 'node:fs'
+import { execFileSync } from 'node:child_process'
 import { join, dirname, resolve } from 'node:path'
 import { callTimeoutMsFor, AI_LIMITS } from './limits'
 
@@ -166,33 +167,51 @@ describe('OPS-FN-DURATION-01 — the AI route ceiling', () => {
     // new surface at, say, 900 tokens would take the 60 s regime with every arm green. The
     // ceilings are read from source instead, and the property is that the boundary has CLEAR
     // AIR on both sides — not merely that it falls between two numbers someone typed here.
-    const SRC = ['lib', 'app'].flatMap(d => walk(join(ROOT, d)))
-    // ⚠️ `Array.from`, not a spread — CLAUDE.md's TS2802 gotcha, and the spread version passed
-    // vitest while failing tsc, which is exactly the green-suite-red-build trap it warns about.
-    // 🔴 EXPRESSIONS, NOT LITERALS (code review). `maxTokens:\s*(\d+)` matches an assignment
-    // and nothing else, so `enrich.ts`'s ternary — `plan.weeks.length <= 12 ? 6000 : …` — was
-    // INVISIBLE to this arm: its three real ceilings (6000/10000/14000) could have been
-    // lowered into the short regime with every arm here still green, which is the exact case
-    // the comment above says it prevents.
-    const ceilingsIn = (src: string): number[] => {
-      const out: number[] = []
-      for (const m of Array.from(src.matchAll(/maxTokens:\s*([^\n]*)/g))) {
-        // Drop the trailing comment, then the operands of comparisons — `<= 12` is a branch
-        // condition, not a ceiling. What is left is the value positions.
-        const expr = m[1]!.replace(/\/\/.*$/, '')
-          .replace(/(?:<=|>=|<|>|={2,3}|!={1,2})\s*\d[\d_]*/g, ' ')
-        // A TYPE position is not a ceiling: `maxTokens: number` in a signature carries none.
-        if (/^\s*(number|string|boolean)\b/.test(expr)) continue
-        const found = Array.from(expr.matchAll(/\b(\d[\d_]*)\b/g)).map(x => Number(x[1]!.replace(/_/g, '')))
-        // ⚠️ A `maxTokens:` this cannot resolve is a ceiling outside the arm's population —
-        // the thing that made it hollow. Fail naming it rather than skipping it.
-        expect(found.length, `a maxTokens: expression yielded no ceiling — the scan cannot see it: ${m[0]}`)
-          .toBeGreaterThan(0)
-        out.push(...found)
+    // 🔴 THE POPULATION IS `srcOf`, not a second hand-typed list (code review): `srcOf`
+    // already walks `packages` too, where the strength engine's route logic lives, and this
+    // arm's own header forbids a listed population.
+    // 🔴 AND IT READS STRIPPED SOURCE. Scanning raw text makes a COMMENT code: a line reading
+    // `// historical: maxTokens: 900 before the trim` fails the clear-air arm on prose, which
+    // is `HOOK-RGBA-COMMENTS-01`. `scripts/lib/strip-comments.py` is the shared reader; the
+    // raw pre-filter is sound because stripping only ever removes text.
+    const withTokens = Array.from(srcOf.keys()).filter(f => srcOf.get(f)!.includes('maxTokens:'))
+    expect(withTokens.length, 'no file names maxTokens: — the scan is reading nothing')
+      .toBeGreaterThan(3)
+    const stripped = execFileSync('python3',
+      ['-I', join(ROOT, 'scripts/lib/strip-comments.py'), '--stream', ...withTokens],
+      { encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 }).split('\n')
+
+    /** The value expression: from `maxTokens:` to the first comma at depth 0. */
+    const valueExpr = (line: string, from: number): string => {
+      let depth = 0
+      for (let i = from; i < line.length; i++) {
+        const c = line[i]!
+        if ('([{'.includes(c)) depth++
+        else if (')]}'.includes(c)) { if (depth === 0) return line.slice(from, i); depth-- }
+        else if (c === ',' && depth === 0) return line.slice(from, i)
       }
-      return out
+      return line.slice(from)
     }
-    const ceilings = SRC.flatMap(f => ceilingsIn(readFileSync(f, 'utf8')))
+
+    const ceilings: number[] = []
+    for (const row of stripped) {
+      const at = row.indexOf('maxTokens:')
+      if (at < 0) continue
+      const raw = valueExpr(row, at + 'maxTokens:'.length)
+      // A TYPE position is not a ceiling: `maxTokens: number` in a signature carries none.
+      if (/^\s*(number|string|boolean)\b/.test(raw)) continue
+      // ⚠️ `=>` is neutralised BEFORE comparisons are stripped: a bare `>` matches the one in
+      // an arrow, which CLAUDE.md records as its own defect class, and `maxTokens: () => 6000`
+      // then yielded nothing and failed claiming the scan could not see a plain literal.
+      const expr = raw.replace(/=>/g, '\u0000')
+        .replace(/(?:<=|>=|<|>|={2,3}|!={1,2})\s*\d[\d_]*/g, ' ')
+      const found = Array.from(expr.matchAll(/\b(\d[\d_]*)\b/g)).map(x => Number(x[1]!.replace(/_/g, '')))
+      // ⚠️ A `maxTokens:` this cannot resolve is a ceiling outside the arm's population —
+      // the thing that made it hollow. Fail naming it rather than skipping it.
+      expect(found.length, `a maxTokens: expression yielded no ceiling — the scan cannot see it: ${raw}`)
+        .toBeGreaterThan(0)
+      ceilings.push(...found)
+    }
     expect(ceilings.length, 'no maxTokens ceilings found — the scan is reading nothing')
       .toBeGreaterThan(5)
     // The ternary's three must be among them, or the fix above is inert.
