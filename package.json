@@ -55,7 +55,8 @@
     "backlog:open": "bash scripts/backlog-open.sh",
     "backlog:verify": "node scripts/backlog-verify.mjs",
     "sweep:colours": "bash scripts/sweep-colours.sh",
-    "check:clock": "tsx scripts/check-clock-drift.ts"
+    "check:clock": "tsx scripts/check-clock-drift.ts",
+    "board:week1-bound": "tsx scripts/board-evidence-week1-bound.ts"
   },
   "dependencies": {
     "@capacitor/app": "^8.1.0",

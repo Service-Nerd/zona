@@ -336,6 +336,53 @@ before planning against any number below (an item is a snapshot of the code on t
   Baselined with a written reason, and the stale `prosePreference` entry dropped: **register 30 → 30.**
 
 - 🏃 **COACHING BOARD** `WEEK1-DELIVERED-CEILING-01` — **week 1 is composed from the runner's LONGEST RUN and never
+
+  > 📐 **THE BOARD'S NAMED EVIDENCE IS IN HAND — 2026-11-13 — AND IT OVERTURNS THE PROPOSED LEVER.**
+  > Reproducible: `npm run board:week1-bound`. **STILL OPEN: this is evidence for the re-sitting, not a ruling.**
+  >
+  > 🔴 **FIRST, THE TWO METRICS THE BOARD ASKED FOR CANNOT SHOW THE COST.** In `measure-plan-fitness.ts` both are
+  > denominated on **week 1**: `netBuildPct = peak/first − 1`, and `neverBuilds` is `peak <= first × 1.02`, where
+  > `first` is the opening week's volume. **Bounding week 1 lowers `first`, so net build RISES and neverBuilds
+  > FALLS — arithmetically, for every plan, whatever the bound does to the runner.** 📊 Seiler's own objection
+  > (*"the step ratios are arithmetic, not evidence"*) applies to the evidence he asked for: running the harness
+  > both ways would have produced two favourable numbers and no information.
+  >
+  > 🔴 **SECOND, NO STANDARD CORPUS REACHES THIS ITEM'S RUNNERS.** `cohortGrid`'s volume axis is [20, 35, 50, 70]
+  > and `targetedGridCore` is a constant 30 — the lowest declared volume in either is **20 km/week**, while the
+  > cohort is ⚕️ *"first-race, 4–8 km/week"*. Measured on the standard corpora: **3 of 5,071 plans over the
+  > ceiling (0.1%)** — the population missing, not the engine behaving. ⚠️ And the item's own 2,520-probe figures
+  > used a declared **6 and 8**, which **the wizard cannot send** (the weekly ruler steps by 5). The evidence
+  > builds a low-base cohort at ruler values only.
+  >
+  > 🔑 **THIRD, AND IT DECIDES THE RULING: THE LEVER THE BOARD NAMED CANNOT REACH THE GAP.** The sitting was
+  > explicit that the bound must act on the delivered week via ADR-022's machinery — *"easy runs trim while the
+  > §52 long run never does"*. Measured over 2,539 plans at reachable low volumes:
+  >
+  > | distance | n | over ceiling | median w1 | median ceiling | median gap | **easy trim reaches / partial / CANNOT** |
+  > |---|---|---|---|---|---|---|
+  > | 5K | 737 | 36 (4.9%) | 17.0 | 26.0 | 6.0 | **0 / 0 / 36** |
+  > | 10K | 749 | 37 (4.9%) | 18.0 | 26.0 | 3.0 | **0 / 0 / 37** |
+  > | HM | 574 | 38 (6.6%) | 22.0 | 32.5 | 1.0 | **0 / 0 / 38** |
+  > | marathon | 479 | 18 (3.8%) | 25.0 | 45.5 | 5.0 | 6 / 2 / **10** |
+  >
+  > **111 of 129 over-ceiling plans cannot be bounded by trimming easy runs at all**, and 0 of 111 at the three
+  > shorter distances. The reason is already ratified: §52's per-session floor
+  > (`MIN_SESSION_DISTANCE_KM.easy` = 4 km) exists so a week is not truncated to single-digit runs, and at a
+  > median week 1 of 17–22 km with ~58% easy across two or three sessions, **the easy runs are already at it.**
+  > There is no headroom to pay for the bound with.
+  >
+  > ⚠️ **So the question for the re-sitting has changed shape.** It is no longer *"what does bounding cost"* but
+  > *"which lever can bound a week whose easy runs are already on §52's floor"* — and the two candidates the
+  > sitting ruled out remain ruled out: the CURVE bound was tried, measured and reverted (refusals 782 → 664,
+  > `WEEK1-LEAP` 70 → 94), and 🩹 Willy's condition forbids trimming the long run. ⚠️ **Over-ceiling is 3.8–6.6%,
+  > not the generality the item's framing implies.**
+  >
+  > ⚠️ **What this does NOT prove.** The lever was **not wired**, deliberately — an unruled prescription change
+  > must not sit in the tree — so this models the trim's REACH (easy km above the floor, long run and quality
+  > excluded) rather than running `trimWeekEasyToTarget`, which needs a `PaceGuide` the plan does not carry. A
+  > reach of zero cannot become non-zero by running the real trim; a positive reach would still need the real
+  > lever to price. And the claim that a delivered bound cannot reopen §111 the way the curve bound did is
+  > **structural, not measured**: trimming week 1's sessions touches no curve value and no peak.
   consults the week they declared, and that is ADR-022's divergence with its levers scoped to injured runners only.**
   Filed at the `WEEK1-FROM-LONGEST-RUN-01` sitting, 2026-11-07, **deliberately not folded in**: bounding the delivered
   week is a prescription change at every distance and it needs its own sitting with these numbers in front of it.
