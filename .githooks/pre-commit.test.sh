@@ -175,6 +175,19 @@ run_case "a SECOND literal in lib/brand.ts still BLOCKS — the line is exempt, 
   "const COACH_NAME = 'Kit'
 export const BRAND = { coachName: COACH_NAME, greeting: 'Kit here' }
 "
+run_case "the definition with a TRAILING COMMENT is still exempt" pass "lib/brand.ts" \
+  "const COACH_NAME = 'Kit' // the one declaration
+"
+run_case "an EXPORTED definition is still exempt" pass "lib/brand.ts" \
+  "export const COACH_NAME = 'Kit';
+"
+run_case "the same definition line in ANOTHER file BLOCKS — scoped to lib/brand.ts" block "lib/copy.ts" \
+  "const COACH_NAME = 'Kit'
+export const TITLE = \`\${COACH_NAME} noticed\`
+"
+run_case "packages/ is in the population" block "packages/strength/copy.ts" \
+  'export const MSG = "Kit says lift."
+'
 run_case "a PRODUCTION route with preview in its path is NOT exempt" block "app/api/email/preview/route.ts" \
   'export const TITLE = "Kit noticed something."
 '

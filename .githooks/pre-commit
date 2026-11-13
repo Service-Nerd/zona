@@ -194,7 +194,7 @@ fi
 # ⚠️ THE DEFINITION LINE is exempt — `const COACH_NAME = 'Kit'` — and nothing else in that file.
 # ⚠️ AND `-preview` IS ANCHORED NOW: a bare `grep -v preview` is an unanchored substring match
 # and also excluded `app/api/email/preview/route.ts`, a production route.
-COACH_STAGED=$(git diff --cached --name-only --diff-filter=ACM | grep -E '\.(ts|tsx)$' | grep -E '^(app|components|lib)/' | grep -v '\.test\.' | grep -vE '(^|/)[a-z-]*-preview/' || true)
+COACH_STAGED=$(git diff --cached --name-only --diff-filter=ACM | grep -E '\.(ts|tsx)$' | grep -E '^(app|components|lib|packages)/' | grep -v '\.test\.' | grep -vE '(^|/)[a-z-]*-preview/' || true)
 COACH_HITS=""
 for f in $COACH_STAGED; do
   [ -f "$f" ] || continue
@@ -202,7 +202,16 @@ for f in $COACH_STAGED; do
   # declaration `const COACH_NAME = 'Kit'` and nothing else may. Exempting the FILE meant a
   # fifth literal added to BRAND tomorrow would be invisible — a byte-for-byte recurrence of
   # the defect this guard was written for, which is exactly how the four push titles survived.
-  if strip_comments "$f" | grep -nE '\bKit\b' | grep -vE "^[0-9]+:const COACH_NAME = 'Kit'$" | grep -q .; then
+  # ⚠️ THE EXEMPTION IS SCOPED TO `lib/brand.ts` AND IS NOT BYTE-EXACT (code review).
+  #  · scoped: matched on the LINE alone, a duplicate `const COACH_NAME = 'Kit'` in any other
+  #    file passed — the duplicate hardcode this guard exists to stop, admitted by its own
+  #    exemption.
+  #  · not byte-exact: `strip_comments` pads a blanked trailing comment with SPACES, so a
+  #    `$`-anchored literal match failed the moment the declaration gained a comment, a
+  #    semicolon or `export` — refusing every commit that touched the one legal site.
+  if [ "$f" = 'lib/brand.ts' ]; then COACH_EXEMPT="^[0-9]+: *(export )?const COACH_NAME = 'Kit';? *$"
+  else COACH_EXEMPT='^$'; fi
+  if strip_comments "$f" | grep -nE '\bKit\b' | grep -vE "$COACH_EXEMPT" | grep -q .; then
     COACH_HITS="$COACH_HITS$f
 "
   fi
@@ -213,7 +222,9 @@ if [ -n "$COACH_HITS" ]; then
   echo "   (A name inside a COMMENT is prose and is allowed.)"
   echo "$COACH_HITS" | while read -r f; do
     [ -n "$f" ] || continue
-    strip_comments "$f" | grep -nE '\bKit\b' | grep -vE "^[0-9]+:const COACH_NAME = 'Kit'$" | head -3 | sed "s|^|   $f:|"
+    if [ "$f" = 'lib/brand.ts' ]; then COACH_EXEMPT="^[0-9]+: *(export )?const COACH_NAME = 'Kit';? *$"
+    else COACH_EXEMPT='^$'; fi
+    strip_comments "$f" | grep -nE '\bKit\b' | grep -vE "$COACH_EXEMPT" | head -3 | sed "s|^|   $f:|"
   done
   FAIL=1
 fi

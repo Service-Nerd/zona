@@ -48,41 +48,49 @@ def strip(src: str) -> str:
     one line's trailing comment unblanked. The failure direction is a reported hit on a
     comment — visible, one line, fixable — not an unseen colour.
     """
-    # Block comments first: unambiguous enough, and this is the behaviour the guards have had
-    # since HOOK-RGBA-COMMENTS-01. Newlines are preserved so line numbers do not move.
-    out = []
+    # 🔴 ONE PASS, IN SCAN ORDER — AND IT WAS TWO, WHICH BLANKED LIVE CODE (code review,
+    # 2026-11-13). Block comments were found FILE-WIDE with `find('/*')` before line comments
+    # were removed, so a `/*` appearing inside a `//` comment opened a block that ran to the
+    # next `*/`. Measured: 405 lines across 11 files blanked, including a 231-line contiguous
+    # window in `app/api/generate-plan/route.ts` — a path like `lib/plan/*` written in a
+    # comment is all it takes. Every guard reading through this had that window as a blind
+    # spot, and a "0 hits" claim made through it is a claim about what the reader could see.
+    #
+    # Scanning in order fixes it: `//` is recognised before the `/*` that follows it on the
+    # same line, and a `/*` inside a string is not a comment at all.
+    # ⚠️ Quote state still RESETS AT EACH NEWLINE, for the reason the docstring gives — a
+    # desync must stay bounded to one line. Block state does not reset, because a block
+    # comment genuinely spans lines.
+    out: list[str] = []
+    in_block = False
+    quote: str | None = None
     i, n = 0, len(src)
     while i < n:
-        j = src.find('/*', i)
-        if j == -1:
-            out.append(src[i:]); break
-        out.append(src[i:j])
-        end = src.find('*/', j + 2)
-        end = n if end == -1 else end + 2
-        out.append(''.join('\n' if ch == '\n' else ' ' for ch in src[j:end]))
-        i = end
-    src = ''.join(out)
-
-    lines = []
-    for line in src.split('\n'):
-        quote = None
-        k, m = 0, len(line)
-        cut = None
-        while k < m:
-            c = line[k]
-            if quote:
-                if c == '\\':
-                    k += 2; continue
-                if c == quote:
-                    quote = None
-                k += 1; continue
-            if c in '\'"`':
-                quote = c; k += 1; continue
-            if c == '/' and k + 1 < m and line[k + 1] == '/':
-                cut = k; break
-            k += 1
-        lines.append(line if cut is None else line[:cut] + ' ' * (m - cut))
-    return '\n'.join(lines)
+        c = src[i]
+        nxt = src[i + 1] if i + 1 < n else ''
+        if c == '\n':
+            quote = None                      # line-scoped, per the docstring
+            out.append('\n'); i += 1; continue
+        if in_block:
+            if c == '*' and nxt == '/':
+                in_block = False; out.append('  '); i += 2; continue
+            out.append(' '); i += 1; continue
+        if quote:
+            if c == '\\':
+                out.append(src[i:i + 2]); i += 2; continue
+            if c == quote:
+                quote = None
+            out.append(c); i += 1; continue
+        if c == '/' and nxt == '/':
+            while i < n and src[i] != '\n':
+                out.append(' '); i += 1
+            continue
+        if c == '/' and nxt == '*':
+            in_block = True; out.append('  '); i += 2; continue
+        if c in '\'"`':
+            quote = c
+        out.append(c); i += 1
+    return ''.join(out)
 
 
 def main(argv: list[str]) -> int:
