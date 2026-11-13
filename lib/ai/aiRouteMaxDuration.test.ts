@@ -169,10 +169,36 @@ describe('OPS-FN-DURATION-01 — the AI route ceiling', () => {
     const SRC = ['lib', 'app'].flatMap(d => walk(join(ROOT, d)))
     // ⚠️ `Array.from`, not a spread — CLAUDE.md's TS2802 gotcha, and the spread version passed
     // vitest while failing tsc, which is exactly the green-suite-red-build trap it warns about.
-    const ceilings = SRC.flatMap(f => Array.from(readFileSync(f, 'utf8').matchAll(/maxTokens:\s*(\d[\d_]*)/g))
-      .map(m => Number(m[1]!.replace(/_/g, ''))))
-    expect(ceilings.length, 'no maxTokens literals found — the scan is reading nothing')
+    // 🔴 EXPRESSIONS, NOT LITERALS (code review). `maxTokens:\s*(\d+)` matches an assignment
+    // and nothing else, so `enrich.ts`'s ternary — `plan.weeks.length <= 12 ? 6000 : …` — was
+    // INVISIBLE to this arm: its three real ceilings (6000/10000/14000) could have been
+    // lowered into the short regime with every arm here still green, which is the exact case
+    // the comment above says it prevents.
+    const ceilingsIn = (src: string): number[] => {
+      const out: number[] = []
+      for (const m of Array.from(src.matchAll(/maxTokens:\s*([^\n]*)/g))) {
+        // Drop the trailing comment, then the operands of comparisons — `<= 12` is a branch
+        // condition, not a ceiling. What is left is the value positions.
+        const expr = m[1]!.replace(/\/\/.*$/, '')
+          .replace(/(?:<=|>=|<|>|={2,3}|!={1,2})\s*\d[\d_]*/g, ' ')
+        // A TYPE position is not a ceiling: `maxTokens: number` in a signature carries none.
+        if (/^\s*(number|string|boolean)\b/.test(expr)) continue
+        const found = Array.from(expr.matchAll(/\b(\d[\d_]*)\b/g)).map(x => Number(x[1]!.replace(/_/g, '')))
+        // ⚠️ A `maxTokens:` this cannot resolve is a ceiling outside the arm's population —
+        // the thing that made it hollow. Fail naming it rather than skipping it.
+        expect(found.length, `a maxTokens: expression yielded no ceiling — the scan cannot see it: ${m[0]}`)
+          .toBeGreaterThan(0)
+        out.push(...found)
+      }
+      return out
+    }
+    const ceilings = SRC.flatMap(f => ceilingsIn(readFileSync(f, 'utf8')))
+    expect(ceilings.length, 'no maxTokens ceilings found — the scan is reading nothing')
       .toBeGreaterThan(5)
+    // The ternary's three must be among them, or the fix above is inert.
+    for (const c of [6000, 10000, 14000]) {
+      expect(ceilings, `the enrich ternary's ${c} ceiling is not in the scan's population`).toContain(c)
+    }
 
     const b = AI_LIMITS.CALL_TIMEOUT_LARGE_MAX_TOKENS
     const small = ceilings.filter(c => c <= b)

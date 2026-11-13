@@ -62,7 +62,7 @@ def _owner(line: str, m: re.Match, names: list[tuple[int, str]]) -> str | None:
     while start > 0 and (line[start - 1].isalnum() or line[start - 1] in '._-/'):
         start -= 1
     join = line[m.end():start]
-    if len(join) > 6 or re.search(r'[,.;:\u2014]', join):
+    if len(join) > 6 or re.search(r'[,.;:\u2013\u2014-]', join):
         return None
     return nearest[1]
 

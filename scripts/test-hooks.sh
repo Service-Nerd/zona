@@ -280,8 +280,11 @@ for suite in "${shell_suites[@]}"; do
   real="$(printf '%s' "$out" | grep -oE '[0-9]+ (passed|cases)' | grep -oE '[0-9]+' | tail -1)"
   # ⚠️ A suite that SKIPS here has not been measured — it is not a pass and not a drift.
   if [ -z "$real" ] && printf '%s' "$out" | grep -q '^SKIP'; then skipped+=("$base"); continue; fi
-  [ -n "$claim" ] || continue                     # run, but the doc states no count for it
+  # ⚠️ UNCOUNTED IS CHECKED BEFORE THE CLAIM. It was after, so a suite printing no total was
+  # only caught when CLAUDE.md happened to quote a count for it — the arm's whole premise is
+  # that a suite the runner cannot count is one it cannot tell from an empty one.
   [ -n "$real" ] || { shell_uncounted+=("$suite"); continue; }
+  [ -n "$claim" ] || continue                     # counted, but the doc states no number
   checked=$((checked + 1))
   [ "$claim" = "$real" ] || drifted+=("$base: CLAUDE.md says $claim, the suite runs $real")
 done

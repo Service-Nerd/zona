@@ -37,6 +37,8 @@ CASES = [
     ('an aggregate does NOT bind forwards across a dash',
      'Twelve suites, 351 cases in all — `%s` with 72 cases' % A, A, ['72']),
     ('…nor across a comma', '351 cases, and `%s` with 72 cases' % A, A, ['72']),
+    ('…nor across a hyphen or an en dash, which this doc mixes with em dashes',
+     '351 cases - `%s` with 72 cases' % A, A, ['72']),
     ('…but a tight "N cases in `X`" still binds', '16 cases in `%s`' % A, A, ['16']),
     ('two conflicting counts are both reported',
      '`%s` — 38 cases\nlater, `%s` — 19 cases' % (A, A), A, ['38', '19']),
