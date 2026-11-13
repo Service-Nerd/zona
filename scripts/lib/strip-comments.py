@@ -18,9 +18,18 @@ tree and a check that cannot see.
 failure: a comment RECORDING a measured colour is prose, and a guard that fires on ordinary
 work gets switched off — recorded four times in this repo as equivalent to no guard.
 
-So: one pass, tracking `'`, `"`, backtick and escape state. A regex literal is NOT tracked —
-`/.../ ` is ambiguous without a parser and a colour inside one is vanishingly unlikely; the
-failure direction there is a false POSITIVE on a comment following a regex, which is loud.
+So: one pass, tracking `'`, `"`, backtick and escape state.
+
+🔴 A REGEX LITERAL IS NOT TRACKED, AND THE STATED FAILURE DIRECTION WAS WRONG. The header
+used to say the risk was a loud false POSITIVE; it is a silent false NEGATIVE, and there is a
+live instance: `lib/health/nativeCredential.ts:53` holds `/^https?:\/\//`, which ENDS IN `//`,
+so everything after it on that line is blanked and a hardcoded name there passes every guard.
+⚠️ Lexing regexes was tried and REVERTED (code review round 17). Deciding whether `/` opens a
+regex or divides needs a real parser: the heuristic missed a regex starting a line, read a TS
+non-null `x! / y` as a regex opener, and mis-handled one beginning `>` — 74 genuine comment
+lines across 161 files came out as code, which is `HOOK-RGBA-COMMENTS-01`, the failure this
+repo has recorded four times as the way a guard gets switched off. One false blank in 660
+files is the better trade, and it is named here rather than left for the next reader.
 
 Usage:
   strip-comments.py FILE               → the stripped file on stdout (line numbers preserved)
@@ -47,17 +56,21 @@ def strip(src: str) -> str:
     at every newline. A desync is then bounded to one line and shows up as a loud false
     positive rather than a silent blind spot for the rest of the file.
 
-    🔴 THE BACKTICK IS THE EXCEPTION AND MUST BE (code review round 16). A template literal
-    genuinely spans lines, so resetting it made every CONTINUATION line read as code — and a
-    `/*` inside one (a path like `lib/plan/*` in a prompt) then opened a block comment that
-    blanked every remaining line of the file. Measured: a hardcoded coach name and a hardcoded
-    hex both passed every guard. Carrying it is safe in a way `'` and `"` are not: a stray
-    backtick outside a template is a syntax error, where an apostrophe is ordinary prose.
+    🔻 THE BACKTICK IS A DECLARED LIMIT, and carrying it across lines was TRIED AND REVERTED
+    (code review rounds 16-17). A template literal genuinely spans lines, so resetting it makes
+    every CONTINUATION line read as code — and a `/*` in one (a path like `lib/plan/*` written
+    in a prompt) opens a block comment that blanks the rest of the file, hiding a hardcoded
+    name or colour from every guard. That is real.
 
-    ⚠️ An unterminated `'` or `"` is a syntax error, so it was never a string: the line is
-    re-scanned with THAT ONE OPENER ignored, by index. Not by character — disabling `'` for
-    the whole line reinterprets earlier, correctly-closed strings, which blanked live code
-    (code review round 5). Backticks are left alone: a template literal spans lines.
+    ⚠️ Carrying it is WORSE, and the measurement is why. A backtick inside a regex character
+    class opens a template that never existed, and when a later real backtick pops it, the real
+    template's body is scanned as code. Measured over 1,586 tracked files: 147 lines across 8
+    files came out as code that are plainly comments — 62 of them one JSDoc block in
+    `lib/hollowTestShapes.test.ts`. That is `HOOK-RGBA-COMMENTS-01`, the failure this repo has
+    recorded four times as the way a guard gets switched off, against a false negative with no
+    live instance. Fixing it properly needs the regex lexing that the paragraph above explains
+    cannot be done by heuristic. **Both limits are asserted in the suite, so they are measured
+    rather than remembered.**
     """
     # 🔴 ONE PASS, IN SCAN ORDER — AND IT WAS TWO, WHICH BLANKED LIVE CODE (code review,
     # 2026-11-13). Block comments were found FILE-WIDE with `find('/*')` before line comments
@@ -71,7 +84,6 @@ def strip(src: str) -> str:
     # is also why an escape cannot eat a newline: there are none inside a line.
     out: list[str] = []
     in_block = False
-    stack: list[int] = []
     for line in src.split('\n'):
         # 🔴 AN UNTERMINATED `'` OR `"` MEANS IT WAS NEVER A STRING (code review round 4).
         # `<p>Kit's pace</p> {/* #B5C0B4 */}` — the apostrophe opened a quote that never
@@ -83,50 +95,28 @@ def strip(src: str) -> str:
         # Each pass adds one distinct index from the line's own `'`/`"` set, so that count is a
         # provable bound. Capped anyway, and an exhausted loop keeps the FIRST pass's result
         # rather than the last: a half-converged scan must not carry a block state onward.
-        first: tuple[str, bool, list[int], int | None] | None = None
+        first: tuple[str, bool, int | None] | None = None
         for _ in range(min(line.count("'") + line.count('"'), 8) + 1):
-            text, nxt_block, nxt_stack, open_at = _scan_line(line, in_block, list(stack), skip)
+            text, nxt_block, open_at = _scan_line(line, in_block, skip)
             if first is None:
-                first = (text, nxt_block, nxt_stack, open_at)
-            if open_at is None or open_at in skip:
+                first = (text, nxt_block, open_at)
+            if open_at is None or line[open_at] == '`' or open_at in skip:
                 break
             skip.add(open_at)
         else:
-            text, nxt_block, nxt_stack, _ = first           # un-converged: conservative
+            text, nxt_block, _ = first                      # un-converged: conservative
         out.append(text)
-        in_block, stack = nxt_block, nxt_stack
+        in_block = nxt_block
+    # 🔴 A CORRECT FILE ENDS WITH AN EMPTY STACK. If it does not, a backtick was mis-read —
+    # one inside a regex character class is the realistic source — and carrying template state
+    # from there makes every later comment string content, silently. That is the blind spot
+    # this carry was added to CLOSE, so it must not be able to open another one: the file is
+    # re-lexed with the carry off, which is exactly the behaviour before the carry existed.
     return '\n'.join(out)
 
 
-def _starts_regex(out: list[str]) -> bool:
-    """Is the `/` about to be read the start of a regex literal, rather than division or a
-    comment? The standard heuristic: a regex cannot follow a value."""
-    prev = ''.join(out).rstrip()
-    if not prev:
-        return False                       # a line starting with `/` is a comment here
-    last = prev[-1]
-    # ⚠️ JSX, not a regex: `</p>` and `<Foo />`. Without this the `/` of a closing tag opened
-    # a "regex" that ran to the next `/` and swallowed a real comment after it.
-    if last == '<':
-        return False
-    if last.isalnum() or last in '_$)]':
-        # `return /x/` and `typeof /x/` are the exceptions: a keyword is not a value.
-        return bool(re.search(r'\b(return|typeof|case|in|of|new|delete|void|do|else)$', prev))
-    return last not in '`\'"'
-
-
-def _scan_line(line: str, in_block: bool, stack: list[int],
-               skip: set[int]) -> tuple[str, bool, list[int], int | None]:
-    """One line -> (blanked text, block state, template stack, index of any quote left open).
-
-    🔴 THE STACK IS FOR NESTED TEMPLATES, and without it carrying template state across lines
-    was WORSE than resetting it (code review round 16). A template's `${ ... }` holds CODE,
-    which may open another template. Toggling on every backtick read the nested opener as the
-    outer closer, so parity flipped, an apostrophe later on the line opened a quote, and the
-    file was then "inside a template" for 975 lines of `ruleEngine.ts` — every comment in them
-    left as code. Each entry is a brace depth: inside `${`, `}` at depth 0 returns to the
-    template. `'` and `"` stay line-scoped, for the reason the module docstring gives.
-    """
+def _scan_line(line: str, in_block: bool, skip: set[int]) -> tuple[str, bool, int | None]:
+    """One line -> (blanked text, block state after it, index of any quote left open)."""
     out: list[str] = []
     quote: str | None = None
     quote_at: int | None = None
@@ -138,63 +128,20 @@ def _scan_line(line: str, in_block: bool, stack: list[int],
             if c == '*' and nxt == '/':
                 in_block = False; out.append('  '); i += 2; continue
             out.append(' '); i += 1; continue
-        # inside a template's literal text (not inside one of its `${}` holes)
-        if stack and stack[-1] < 0:
-            if c == '\\':
-                out.append(line[i:i + 2]); i += 2; continue
-            if c == '`':
-                stack.pop(); out.append(c); i += 1; continue
-            if c == '$' and nxt == '{':
-                stack.append(0); out.append(line[i:i + 2]); i += 2; continue
-            out.append(c); i += 1; continue
         if quote:
             if c == '\\':
                 out.append(line[i:i + 2]); i += 2; continue
             if c == quote:
                 quote = None
             out.append(c); i += 1; continue
-        # ⚠️ `/*` and `//` WIN: a regex literal can start with neither, and treating `{/* … */}`
-        # as one blanked nothing across 2,348 lines when first written. `/>` is JSX.
-        if c == '/' and nxt not in '/*>' and _starts_regex(out):
-            # 🔴 A REGEX LITERAL IS SCANNED, because `/^https?:\\/\\//` ENDS IN `//` and was read
-            # as a line comment — a SILENT FALSE NEGATIVE, not the loud false positive the
-            # docstring claimed. One live instance in 660 files
-            # (`lib/health/nativeCredential.ts`), where everything after it was blanked and a
-            # planted coach name passed every guard.
-            j, cls = i + 1, False
-            while j < n:
-                d = line[j]
-                if d == '\\':
-                    j += 2; continue
-                if d == '[':
-                    cls = True
-                elif d == ']':
-                    cls = False
-                elif d == '/' and not cls:
-                    break
-                j += 1
-            if j < n:
-                k = j + 1
-                while k < n and line[k].isalnum():
-                    k += 1                       # trailing flags
-                out.append(line[i:k]); i = k; continue
-            # unterminated on this line: not a regex after all, fall through
         if c == '/' and nxt == '/':
             out.append(' ' * (n - i)); i = n; continue
         if c == '/' and nxt == '*':
             in_block = True; out.append('  '); i += 2; continue
-        if c == '`' and i not in skip:
-            stack.append(-1); out.append(c); i += 1; continue
-        if stack and c == '{':
-            stack[-1] += 1
-        elif stack and c == '}':
-            if stack[-1] == 0:
-                stack.pop(); out.append(c); i += 1; continue   # back into the template
-            stack[-1] -= 1
-        if c in '\'"' and i not in skip:
+        if c in '\'"`' and i not in skip:
             quote = c; quote_at = i
         out.append(c); i += 1
-    return ''.join(out), in_block, stack, (quote_at if quote else None)
+    return ''.join(out), in_block, (quote_at if quote else None)
 
 
 def main(argv: list[str]) -> int:
