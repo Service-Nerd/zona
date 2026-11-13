@@ -24,10 +24,14 @@ import { derivedLevelsFor } from './ruleEngine'
 import type { GeneratorInput } from '../../types/plan'
 
 /** One representative distance per `raceDistanceKey` band, from the wizard's own list.
- *  🔴 `Record<RaceDistanceKey, number>`, NOT `Record<string, number>` (code review, 2026-11-13).
- *  With `string` a seventh band could be added to `raceDistanceKey` and this loop would never
- *  visit it: all four arms stay green while a distance governed by NOBODY ships. The compiler
- *  is the only thing that can catch a band that does not exist yet, so it has to be asked. */
+ *  🔴 `Record<RaceDistanceKey, number>`, NOT `Record<string, number>`. With `string` a seventh
+ *  band could be added to `raceDistanceKey` and the loops here would never visit it, so a
+ *  distance governed by NOBODY could ship.
+ *  ⚠️ TWO THINGS CATCH THAT, NOT ONE — this comment claimed the compiler was "the only thing"
+ *  and the arm added beside it two commits later says otherwise, which left one file asserting
+ *  opposite things about the same detection path (code review). The TYPE makes a one-part edit
+ *  a compile error; the LAST ARM compares this map's keys against `INTENSITY_DISTRIBUTION`'s at
+ *  runtime, and is what remains if the type is ever loosened. */
 const BY_KEY: Record<RaceDistanceKey, number> = { '5K': 5, '10K': 10, HM: 21.1, MARATHON: 42.2, '50K': 50, '100K': 100 }
 /** §24e's band — the ultras, excluded from §117 by their own machinery. */
 const ULTRA_KEYS = ['50K', '100K'] as const
@@ -133,13 +137,20 @@ describe('§117 Am. 8 — the counted band is the gap between three owners', () 
     //
     // 🔴 AND THE REASON THE OTHERS STAY GREEN IS WORSE THAN "THEY DO NOT NOTICE" — corrected by
     // code review, which caught this comment stating the wrong mechanism. Arm 1 iterates
-    // `Object.entries(BY_KEY)`, so a dropped key is simply NEVER VISITED; it is arm 2, at the
-    // `mk(BY_KEY[key]!)` below, that receives `undefined`. And arm 2 then passes VACUOUSLY:
+    // `Object.entries(BY_KEY)`, so a dropped key is simply NEVER VISITED; it is ARM 2 ABOVE —
+    // the `mk(BY_KEY[key]!)` in the ultras arm — that receives `undefined`. (This read "below"
+    // and pointed the wrong way, which is the same misattribution the rest of this comment was
+    // rewritten to fix.) And arm 2 then passes VACUOUSLY:
     // `raceDistanceKey(undefined)` falls through every `<=` comparison to return '100K', and
     // `runWalkOutOfScopeUnready` short-circuits on its first line. So the loosening breaks TWO
     // things — it shrinks arm 1's population silently and it makes arm 2 assert nothing about
     // the band it names — and this arm is the only one that says so.
     expect(new Set(Object.keys(BY_KEY))).toEqual(new Set(Object.keys(GENERATION_CONFIG.INTENSITY_DISTRIBUTION)))
-    expect(new Set(Object.values(BY_KEY).map(raceDistanceKey)).size).toBe(Object.keys(BY_KEY).length)
+    // ⚠️ AND NOTHING ELSE. A second assertion here —
+    // `new Set(values.map(raceDistanceKey)).size === keys.length` — was REMOVED: it is subsumed
+    // by arm 1's per-entry `expect(raceDistanceKey(km)).toBe(key)` and can never red alone
+    // (falsified with `HM: 11`, which reds arm 1 and this one together, 2 failed / 3 passed).
+    // The tautology deleted two commits ago had been replaced by one assertion that detects and
+    // one that still could not fire first; an arm earns its line by failing where others pass.
   })
 })
