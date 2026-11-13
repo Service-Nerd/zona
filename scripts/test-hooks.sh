@@ -133,28 +133,14 @@ fi
 # you make on purpose, in a commit, with a reason.
 BASELINE="$ROOT/.claude/hooks/case-counts.txt"
 if [ -n "${HOOK_CASE_BASELINE:-}" ]; then BASELINE="$HOOK_CASE_BASELINE"; fi
-if [ "${1:-}" = "--write" ]; then
-  # 🔴 `--write` MUST REFUSE A RUN THAT IS NOT GREEN (code review, 2026-11-08). The first cut
-  # wrote the baseline unconditionally and exited 0, so `npm run test:hooks -- --write` on a
-  # run with a FAILING suite printed `✗ … FAILED`, returned success, and wrote a baseline with
-  # that suite's row MISSING — which permanently disarms the "suite is GONE" arm for it.
-  # **The escape hatch was the one path that could silently delete a guard.** Falsified with a
-  # planted failing suite.
-  if [ ${#failed[@]} -gt 0 ] || [ ${#missing[@]} -gt 0 ] || [ ${#uncounted[@]} -gt 0 ]; then
-    echo
-    echo "REFUSING TO RE-BASELINE: this run is not green."
-    echo "  ${#failed[@]} failing · ${#missing[@]} untested · ${#uncounted[@]} uncounted"
-    echo "  A baseline written from a broken run omits the broken suites, which disarms the"
-    echo "  ratchet for exactly the suites that need it. Fix the run, then --write."
-    exit 1
-  fi
-  printf '%s' "$counts" | grep . | sort > "$BASELINE"
-  echo
-  echo "case-counts.txt rewritten from this run ($(grep -c . "$BASELINE") suites)."
-  echo "Say in the commit which number moved and why. Never re-baseline to turn this green."
-  exit 0
-fi
-if [ -f "$BASELINE" ]; then
+# 🔴 `--write` IS DEFERRED TO THE END (code review round 8). It used to run HERE and exit,
+# which is before both documentation arms — so the "refusing to re-baseline: this run is not
+# green" gate could not see `drifted` or a suite that failed while being counted, and a run
+# that printed GAPS FOUND / exit 1 without it printed "rewritten from this run" / exit 0 with
+# it. The one path that can delete a guard must see every arm.
+WRITE=0
+[ "${1:-}" = "--write" ] && WRITE=1
+if [ "$WRITE" = 0 ] && [ -f "$BASELINE" ]; then
   while IFS= read -r pair; do
     [ -n "$pair" ] || continue
     hook="${pair%%=*}"; was="${pair##*=}"
@@ -185,37 +171,6 @@ fi
 # answer is not to delete them but to make them checkable.
 # A number in a doc drifts; a number a script checks does not.
 DOC="$ROOT/CLAUDE.md"
-if [ -f "$DOC" ]; then
-  while IFS= read -r pair; do
-    [ -n "$pair" ] || continue
-    hook="${pair%%=*}"; real="${pair##*=}"
-    # No backticks or asterisks in the pattern: the prose around the number uses
-    # a mix of `code spans`, em dashes and **bold**, and matching them literally
-    # is both fragile and a quoting minefield. Span whatever sits between the
-    # filename and the number instead.
-    claim="$(grep -oE "${hook}\.test\.py[^0-9]{0,24}[0-9]+ cases" "$DOC" \
-             | grep -oE '[0-9]+ cases' | grep -oE '[0-9]+' | head -1)"
-    [ -n "$claim" ] || continue          # not every hook quotes a count, and that is fine
-    [ "$real" = "-" ] && continue        # the suite states no total; nothing to compare
-    checked=$((checked + 1))
-    if [ "$claim" != "$real" ]; then
-      drifted+=("$hook: CLAUDE.md says $claim, the suite runs $real")
-    fi
-  done <<< "$counts"
-fi
-
-# ── the SHELL suites quote counts in CLAUDE.md too, and nothing read them ────
-#
-# 🔴 Measured by code review, 2026-11-08: CLAUDE.md said `.githooks/pre-commit.test.sh` runs
-# **11 cases** while the line directly below it (edited in the same commit) said 14, and the
-# suite runs 14. The doc-count arm above reads `.claude/hooks/*.test.py` ONLY, so neither shell
-# suite's number was ever compared against anything. **A number in a doc drifts; a number a
-# script checks does not** — the same sentence this file already carries, applied to the
-# population it had left out.
-# 🔴 THE POPULATION IS GLOBBED, NEVER LISTED (code review round 6). It was a hand-typed list
-# of three against SEVEN such suites on disk, so `strip-comments.test.py` — added in the same
-# commit as its own documented count — was checked by nothing, which is the shape this file
-# exists to refuse.
 # ⚠️ ANCHORED TO $ROOT, not to the cwd: a cwd-relative glob in a $ROOT-anchored script either
 # aborts under `set -u` or, on bash >= 4.4, checks NOTHING and prints ALL CLEAN. And an empty
 # population is a refusal, because selecting nothing is this repo's most-recorded hollow pass.
@@ -234,11 +189,64 @@ for suite in "${shell_suites[@]}"; do shell_bases+=("$(basename "$suite")"); don
 all_bases=("${shell_bases[@]}")
 for h in "$ROOT"/.claude/hooks/*.test.py; do [ -f "$h" ] && all_bases+=("$(basename "$h")"); done
 
+
+# 🔴 ONE ATTRIBUTION OWNER FOR BOTH ARMS (code review round 8). The python arm kept its own
+# `head -1` regex, so a SECOND count for the same suite elsewhere in the doc was never
+# compared — CLAUDE.md could state two and the runner reported clean. Both arms call this.
+# ⚠️ The helper's exit status is CHECKED: an empty result from a broken helper is
+# indistinguishable from "no claim", and a silent `continue` drops the suite from the arm.
+# 🔴 IT RETURNS THE STATUS; IT DOES NOT `exit`. The first cut exited here — inside a command
+# substitution, so it killed the SUBSHELL only: a helper broken to fail on every call printed
+# "refusing to report clean" twelve times and the runner still exited 0 with ALL CLEAN. An arm
+# that cannot stop the run is not an arm. Callers must use `claims="$(doc_claims X)" || ...`.
+doc_claims() {
+  python3 "$ROOT/scripts/lib/doc-case-count.py" "$DOC" "$1" "${all_bases[@]}"
+}
+doc_claims_failed() {
+  echo
+  echo "doc-case-count.py FAILED for $1 — refusing to report clean."
+  echo "  An attribution that cannot run leaves every documented count unchecked."
+  exit 1
+}
+
+if [ -f "$DOC" ]; then
+  while IFS= read -r pair; do
+    [ -n "$pair" ] || continue
+    hook="${pair%%=*}"; real="${pair##*=}"
+    # No backticks or asterisks in the pattern: the prose around the number uses
+    # a mix of `code spans`, em dashes and **bold**, and matching them literally
+    # is both fragile and a quoting minefield. Span whatever sits between the
+    # filename and the number instead.
+    claims="$(doc_claims "${hook}.test.py")" || doc_claims_failed "${hook}.test.py"
+    [ -n "$claims" ] || continue         # not every hook quotes a count, and that is fine
+    [ "$real" = "-" ] && continue        # the suite states no total; nothing to compare
+    if [ "$(printf '%s\n' "$claims" | wc -l | tr -d ' ')" != 1 ]; then
+      drifted+=("$hook: CLAUDE.md quotes more than one case count for it ($(printf '%s' "$claims" | tr '\n' '/'))")
+      continue
+    fi
+    checked=$((checked + 1))
+    if [ "$claims" != "$real" ]; then
+      drifted+=("$hook: CLAUDE.md says $claims, the suite runs $real")
+    fi
+  done <<< "$counts"
+fi
+
+# ── the SHELL suites quote counts in CLAUDE.md too, and nothing read them ────
+#
+# 🔴 Measured by code review, 2026-11-08: CLAUDE.md said `.githooks/pre-commit.test.sh` runs
+# **11 cases** while the line directly below it (edited in the same commit) said 14, and the
+# suite runs 14. The doc-count arm above reads `.claude/hooks/*.test.py` ONLY, so neither shell
+# suite's number was ever compared against anything. **A number in a doc drifts; a number a
+# script checks does not** — the same sentence this file already carries, applied to the
+# population it had left out.
+# 🔴 THE POPULATION IS GLOBBED, NEVER LISTED (code review round 6). It was a hand-typed list
+# of three against SEVEN such suites on disk, so `strip-comments.test.py` — added in the same
+# commit as its own documented count — was checked by nothing, which is the shape this file
+# exists to refuse.
 skipped=(); shell_failed=(); shell_uncounted=()
 for suite in "${shell_suites[@]}"; do
   base="$(basename "$suite")"
-  # The claim region is bounded by the neighbouring suite names — see doc-case-count.py.
-  claims="$(python3 "$ROOT/scripts/lib/doc-case-count.py" "$DOC" "$base" "${all_bases[@]}")"
+  claims="$(doc_claims "$base")" || doc_claims_failed "$base"
   [ -n "$claims" ] || continue
   if [ "$(printf '%s\n' "$claims" | wc -l | tr -d ' ')" != 1 ]; then
     drifted+=("$base: CLAUDE.md quotes more than one case count for it ($(printf '%s' "$claims" | tr '\n' '/'))")
@@ -293,6 +301,29 @@ if [ ${#drifted[@]} -gt 0 ]; then
 fi
 
 echo
+# ⚠️ THE WRITE HAPPENS HERE, after every arm has had its say.
+if [ "$WRITE" = 1 ]; then
+  # 🔴 `--write` MUST REFUSE A RUN THAT IS NOT GREEN (code review, 2026-11-08). The first cut
+  # wrote unconditionally and exited 0, so `--write` on a run with a FAILING suite printed
+  # `✗ … FAILED`, returned success, and wrote a baseline with that suite's row MISSING, which
+  # permanently disarms the "suite is GONE" arm for it. **The escape hatch was the one path
+  # that could silently delete a guard.** `drifted` is in the condition since round 8.
+  if [ ${#failed[@]} -gt 0 ] || [ ${#missing[@]} -gt 0 ] || [ ${#uncounted[@]} -gt 0 ] \
+     || [ ${#drifted[@]} -gt 0 ]; then
+    echo
+    echo "REFUSING TO RE-BASELINE: this run is not green."
+    echo "  ${#failed[@]} failing · ${#missing[@]} untested · ${#uncounted[@]} uncounted · ${#drifted[@]} drifted"
+    echo "  A baseline written from a broken run omits the broken suites, which disarms the"
+    echo "  ratchet for exactly the suites that need it. Fix the run, then --write."
+    exit 1
+  fi
+  printf '%s' "$counts" | grep . | sort > "$BASELINE"
+  echo
+  echo "case-counts.txt rewritten from this run ($(grep -c . "$BASELINE") suites)."
+  echo "Say in the commit which number moved and why. Never re-baseline to turn this green."
+  exit 0
+fi
+
 echo "$hooks hooks · $suites suites · $cases_total cases · ${#missing[@]} untested · ${#failed[@]} failing · ${#uncounted[@]} uncounted · ${#dropped[@]} shrunk · $checked doc counts checked, ${#drifted[@]} drifted"
 
 if [ ${#missing[@]} -gt 0 ] || [ ${#failed[@]} -gt 0 ] || [ ${#drifted[@]} -gt 0 ] \

@@ -28,6 +28,11 @@ const HOOK = readFileSync(join(ROOT, '.githooks/pre-commit'), 'utf8')
 // verify-red drift the parse exists to catch. The count is not pinned: de-duplicating the hook
 // is the better fix, not a breakage.
 const ASSIGNED = Array.from(HOOK.matchAll(/COACH_EXEMPT=(?:"([^"]*)"|'([^']*)')/g), m => m[1] ?? m[2]!)
+// ⚠️ AND THE PARSE MUST HAVE SEEN THEM ALL. Quote styles are not the only forms: an unquoted
+// value, or one hoisted into a variable, is invisible to the pattern above — and an assignment
+// this cannot read is one that can drift under it. Count the raw occurrences and compare.
+const OCCURRENCES = (HOOK.match(/COACH_EXEMPT=/g) ?? []).length
+if (ASSIGNED.length !== OCCURRENCES) throw new Error(`.githooks/pre-commit: ${OCCURRENCES} COACH_EXEMPT assignments, ${ASSIGNED.length} parsed — a form this cannot read is one that can drift`)
 const NEUTRAL = '^$'   // the else-branch value, for every file that is not the exempt one
 const EXEMPT_SRCS = ASSIGNED.filter(v => v !== NEUTRAL)
 if (ASSIGNED.length === 0) throw new Error('cannot read COACH_EXEMPT from .githooks/pre-commit — unverified is never a pass')
