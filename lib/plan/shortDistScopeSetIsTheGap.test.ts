@@ -125,12 +125,20 @@ describe('§117 Am. 8 — the counted band is the gap between three owners', () 
     // The property with detection power is that `BY_KEY` covers the SAME set the type is derived
     // from — so a band dropped from the map (were the type ever loosened, as the arm above shows
     // it can be) reds here instead of silently shrinking arm 1's population.
-    // ⚠️ FALSIFIED BY A TWO-PART EDIT, AND THAT IS THE ONLY WAY IT CAN RED (code review): while
-    // `BY_KEY` is `Record<RaceDistanceKey, number>`, adding or dropping a key alone is a COMPILE
-    // error, so this arm is unreachable with tsc green. Loosen the map to `Record<string, number>`
-    // and drop '100K' and it reds ALONE — arms 1 and 2 stay green, because arm 1 then silently
-    // passes `undefined` to `mk`. So its job is to be the detector for exactly the loosening the
-    // sibling arm above shows this codebase permits, not to duplicate the compiler.
+    // ⚠️ FALSIFIED BY A TWO-PART EDIT, AND THAT IS THE ONLY WAY IT CAN RED: while `BY_KEY` is
+    // `Record<RaceDistanceKey, number>`, adding or dropping a key alone is a COMPILE error, so
+    // this arm is unreachable with tsc green. Loosen the map to `Record<string, number>` and drop
+    // '100K' and it reds ALONE (1 failed / 4 passed) — which is its job: to be the detector for
+    // exactly the loosening the typo arm above proves this codebase permits.
+    //
+    // 🔴 AND THE REASON THE OTHERS STAY GREEN IS WORSE THAN "THEY DO NOT NOTICE" — corrected by
+    // code review, which caught this comment stating the wrong mechanism. Arm 1 iterates
+    // `Object.entries(BY_KEY)`, so a dropped key is simply NEVER VISITED; it is arm 2, at the
+    // `mk(BY_KEY[key]!)` below, that receives `undefined`. And arm 2 then passes VACUOUSLY:
+    // `raceDistanceKey(undefined)` falls through every `<=` comparison to return '100K', and
+    // `runWalkOutOfScopeUnready` short-circuits on its first line. So the loosening breaks TWO
+    // things — it shrinks arm 1's population silently and it makes arm 2 assert nothing about
+    // the band it names — and this arm is the only one that says so.
     expect(new Set(Object.keys(BY_KEY))).toEqual(new Set(Object.keys(GENERATION_CONFIG.INTENSITY_DISTRIBUTION)))
     expect(new Set(Object.values(BY_KEY).map(raceDistanceKey)).size).toBe(Object.keys(BY_KEY).length)
   })
