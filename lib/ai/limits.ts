@@ -77,6 +77,39 @@ export const AI_LIMITS = {
   CALL_TIMEOUT_MS: 240_000,
 
   /**
+   * AI-TIMEOUT-PER-SURFACE-01 — the SHORT regime, and the boundary that selects it.
+   *
+   * The item above says this is "one number for two latency regimes" and declined to size it
+   * per surface, because four surfaces had n <= 5 samples and `enrich-maintenance` had ZERO —
+   * "a guess wearing a measurement". That is still true of the samples. It is not true of the
+   * REQUEST: every call carries its own `maxTokens`, and the regime is a property of that.
+   *
+   * 📐 MEASURED 2026-11-13, 807 calls carrying both `ms` and `outputTokens`:
+   *     < 100 output tokens   n=680   0.5 - 4.4 s   across NINE surfaces
+   *     100-499              n= 20   1.6 - 5.7 s   across three
+   *     500-1999             n=  1   17.0 s        enrich-plan
+   *     2000+                n=106   21.1 - 64.4 s enrich-plan
+   * Duration tracks GENERATION SIZE, not surface identity. Every call under 500 output tokens
+   * finished within 5.7 s, on every surface that has ever run one.
+   *
+   * 🔑 AND THE CEILINGS ALREADY SEPARATE THEMSELVES, so the boundary is derived and not
+   * chosen: every short surface asks for 80-300 tokens, and the three large ones ask for 2048
+   * (`post-race-reshape`), 3000 (`enrich-maintenance`) and 6000-14000 (`enrich-plan`). A 7x
+   * gap with nothing in it. 1000 sits in that gap.
+   *
+   * ⚠️ THIS IS WHAT CLOSES THE ITEM'S OWN BLOCKER. `enrich-maintenance` and
+   * `post-race-reshape` have zero samples between them and still land in the LONG regime —
+   * by their token ceiling, which exists in the code, not by a guess about their latency.
+   *
+   * ⚠️ THE CEILING OVER-ESTIMATES, DELIBERATELY. `maxTokens` is what a call MAY emit, not what
+   * it does; a 14,000-token ceiling that emits 30 tokens still gets the long timeout. That
+   * errs toward not killing a live call, which is the safe direction for a timeout whose job
+   * is attributability rather than speed.
+   */
+  CALL_TIMEOUT_SHORT_MS: 60_000,
+  CALL_TIMEOUT_LARGE_MAX_TOKENS: 1_000,
+
+  /**
    * 🔴 AI-ROUTE-HTTP-HOP-CEILING-01 (2026-11-10) — THE TIMEOUT FOR AWAITING AN AI ROUTE OVER
    * HTTP, AND IT IS DERIVED FROM THE CALLER'S BUDGET, NOT THE CALLEE'S LATENCY.
    *
@@ -109,6 +142,17 @@ export const AI_LIMITS = {
   HOP_TIMEOUT_MS: 30_000,
 } as const
 
+
+/**
+ * The timeout for one model call, from the size of generation it is allowed to produce.
+ * Single owner — `callAnthropic` is the only caller and `aiRouteMaxDuration.test.ts` gates the
+ * arithmetic on both values. See `CALL_TIMEOUT_SHORT_MS` for the measurement.
+ */
+export function callTimeoutMsFor(maxTokens: number): number {
+  return maxTokens > AI_LIMITS.CALL_TIMEOUT_LARGE_MAX_TOKENS
+    ? AI_LIMITS.CALL_TIMEOUT_MS
+    : AI_LIMITS.CALL_TIMEOUT_SHORT_MS
+}
 /** Per-route overrides. Routes not listed use the DEFAULT_* values. */
 export const AI_ROUTE_LIMITS: Record<string, { limit: number; windowSeconds: number }> = {
   'generate-plan':     { limit: AI_LIMITS.HEAVY_LIMIT, windowSeconds: AI_LIMITS.HEAVY_WINDOW_SECONDS },

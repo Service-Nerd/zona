@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { readFileSync, readdirSync, statSync } from 'node:fs'
 import { join, dirname, resolve } from 'node:path'
-import { AI_LIMITS } from './limits'
+import { callTimeoutMsFor, AI_LIMITS } from './limits'
 
 /**
  * OPS-FN-DURATION-01 (2026-11-08) — EVERY ROUTE THAT CAN REACH THE MODEL STATES ITS CEILING.
@@ -144,11 +144,51 @@ describe('OPS-FN-DURATION-01 — the AI route ceiling', () => {
       .toBeGreaterThanOrEqual(3)
   })
 
+  it('🔴 the SHORT regime is above the slowest small call and still fires well before the platform', () => {
+    // AI-TIMEOUT-PER-SURFACE-01. Measured over 807 calls carrying `ms` and `outputTokens`:
+    // every call under 500 output tokens finished within 5.7 s, on all twelve surfaces that
+    // have ever run one. The short timeout is sized off that, not off a per-surface sample —
+    // four surfaces have n <= 5 and two have ZERO, which is why the item declined to go per
+    // surface at all.
+    const SLOWEST_SMALL_MS = 5_700
+    expect(AI_LIMITS.CALL_TIMEOUT_SHORT_MS / SLOWEST_SMALL_MS,
+      'at least 5x the slowest small call ever recorded').toBeGreaterThanOrEqual(5)
+    expect(AI_LIMITS.CALL_TIMEOUT_SHORT_MS,
+      'the short regime must be shorter than the long one, or it is not a regime')
+      .toBeLessThan(AI_LIMITS.CALL_TIMEOUT_MS)
+    expect(AI_LIMITS.ROUTE_MAX_DURATION_SECONDS * 1000 - AI_LIMITS.CALL_TIMEOUT_SHORT_MS)
+      .toBeGreaterThanOrEqual(30_000)
+  })
+
+  it('🔴 the boundary sits in the GAP the code already has — derived, not chosen', () => {
+    // Every short surface asks for 80-300 tokens; the three large ones ask for 2048
+    // (post-race-reshape), 3000 (enrich-maintenance) and 6000-14000 (enrich-plan). The
+    // boundary has to sit between those two clusters or it is an invented number. This is
+    // what puts the two ZERO-SAMPLE surfaces in the long regime structurally.
+    const LARGEST_SHORT_CEILING = 300
+    const SMALLEST_LARGE_CEILING = 2_048
+    const b = AI_LIMITS.CALL_TIMEOUT_LARGE_MAX_TOKENS
+    expect(b, 'the boundary is at or below a real short ceiling').toBeGreaterThan(LARGEST_SHORT_CEILING)
+    expect(b, 'the boundary is at or above a real large ceiling').toBeLessThan(SMALLEST_LARGE_CEILING)
+  })
+
+  it('🔴 the owner routes each ceiling to the regime its measurement puts it in', () => {
+    // Falsifiable by moving the boundary: at 100 the short surfaces take the LONG timeout.
+    for (const small of [80, 120, 150, 200, 220, 300]) {
+      expect(callTimeoutMsFor(small), `${small}-token call must take the short regime`)
+        .toBe(AI_LIMITS.CALL_TIMEOUT_SHORT_MS)
+    }
+    for (const large of [2_048, 3_000, 6_000, 10_000, 14_000]) {
+      expect(callTimeoutMsFor(large), `${large}-token call must take the long regime`)
+        .toBe(AI_LIMITS.CALL_TIMEOUT_MS)
+    }
+  })
+
   it('🔴 the owner actually passes the timeout to fetch, and names TimeoutError not a message', () => {
     const code = readFileSync(join(ROOT, OWNER), 'utf8')
       .replace(/\/\*[\s\S]*?\*\//g, '').replace(/^[ \t]*\/\/.*$/gm, '')
     expect(code, 'the signal must be on the fetch, not merely imported')
-      .toMatch(/signal:\s*AbortSignal\.timeout\(AI_LIMITS\.CALL_TIMEOUT_MS\)/)
+      .toMatch(/signal:\s*AbortSignal\.timeout\(callTimeoutMsFor\(maxTokens\)\)/)
     // Matched on the DOMException NAME. The message is runtime wording that differs between
     // Node versions — this repo's `never match a refusal by its MESSAGE` lesson.
     expect(code).toMatch(/\.name === 'TimeoutError'/)

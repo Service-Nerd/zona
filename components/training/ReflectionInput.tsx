@@ -28,6 +28,7 @@ import { REFRAME_TIER } from '@/lib/coaching/constants'
 import { messageForReframeRiskReason, type ReframeRiskReason } from '@/lib/coaching/reframeRiskGate'
 import Button from '@/components/ui/Button'
 import { MICRO_LABELS } from '@/components/shared/microLabels'
+import { BRAND } from '@/lib/brand'
 
 // REFRAME-NOTE-LOSS-01 — the view decision lives in `ReflectionInput.logic.ts`
 // so it can be tested. 'saved' is the state that was missing: the note was
@@ -134,7 +135,7 @@ export default function ReflectionInput({ weekN, sessionDay }: ReflectionInputPr
         }}>
           <AIMark size={10} color="var(--moss)" />
           <span style={{ ...MICRO_LABELS.eyebrow, fontFamily: 'var(--font-ui)', color: 'var(--mute)' }}>
-            Kit
+            {BRAND.coachName}
           </span>
         </div>
         <div style={{
@@ -250,7 +251,7 @@ export default function ReflectionInput({ weekN, sessionDay }: ReflectionInputPr
         <span style={{
           fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--text-muted)',
         }}>
-          Kit&rsquo;s reading…
+          {BRAND.coachName}&rsquo;s reading…
         </span>
       </div>
     )

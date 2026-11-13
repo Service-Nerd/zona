@@ -4437,7 +4437,7 @@ function NotificationsScreen({ onBack, onNavigate, onAllRead }: {
             </svg>
           </div>
           <div style={{ fontFamily: 'var(--font-ui)', fontSize: '16px', fontWeight: 600, color: 'var(--ink)', marginBottom: 'var(--space-2)' }}>
-            Nothing from Kit yet.
+            Nothing from {BRAND.coachName} yet.
           </div>
           <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--mute)', lineHeight: 1.5, maxWidth: '260px', margin: '0 auto' }}>
             Coaching notes, plan changes, and your weekly review land here.

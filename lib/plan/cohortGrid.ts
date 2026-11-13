@@ -19,6 +19,7 @@
 // again: a typo here throws rather than quietly measuring the wrong cohort.
 
 import type { GeneratorInput } from '@/types/plan'
+import { slowGoalDates } from './slowGoalGrid'
 
 export const COHORT_PLAN_START = '2026-04-27'
 
@@ -526,6 +527,49 @@ export function targetedGridExtra(): GeneratorInput[] {
         // INTERMEDIATE (COHORT-GRID-UNSET-LEVEL-01).
         acknowledged_days_warning: true, acknowledged_prep_warning: true,
       } as unknown as GeneratorInput)
+
+  // ── CORPUS-BENCHMARK-VARIETY-01 — THE BENCHMARK AXIS, HELD AT ONE VALUE EVERYWHERE ──
+  //
+  // 🔴 MEASURED: excluding "no benchmark", `cohortGrid` carries ONE distinct benchmark across
+  // 41,472 rows, `targetedGridCore` ZERO, `useCaseEnvelope` zero, and `verify-parity` one. So
+  // nothing that varies with the benchmark VALUE was measurable by any standing harness —
+  // VDOT banding, §10's staleness ramp, §19's anchors, §120's reachability. Same class as
+  // COHORT-GRID-UNSET-LEVEL-01 and PARITY-GRID-UNSET-LEVEL-01: the axis exists and is pinned.
+  //
+  // ⚠️ DATES DERIVED, NEVER PINNED. `slowGoalDates()` is the owner, and a literal
+  // `benchmark_date` AGES against the wall clock — GOALPACE-5K-CLOCK-01 is the record of a
+  // fixture that went red on a calendar rather than on a commit. The stale row subtracts from
+  // that derived date so §10's ramp has something to measure, and stays stale forever.
+  //
+  // ⚠️ FIVE ROWS, NOT A CROSS. This block exists for REACH; crossing a benchmark axis into
+  // the cartesian would multiply 6,144. Three 5K times span the VDOT bands, one 10K gives a
+  // second distance, one repeats the mid 5K at a STALE date so freshness is the only variable.
+  {
+    const { benchmarkDate } = slowGoalDates()
+    const staleDate = new Date(Date.parse(`${benchmarkDate}T00:00:00Z`) - 120 * 864e5)
+      .toISOString().slice(0, 10)
+    const BENCHES = [
+      { distance_km: 5, time: '0:19:30', benchmark_date: benchmarkDate },   // fast
+      { distance_km: 5, time: '0:24:00', benchmark_date: benchmarkDate },   // mid
+      { distance_km: 5, time: '0:33:00', benchmark_date: benchmarkDate },   // slow
+      { distance_km: 10, time: '0:58:00', benchmark_date: benchmarkDate },  // second distance
+      { distance_km: 5, time: '0:24:00', benchmark_date: staleDate },       // §10's ramp: same run, older
+    ]
+    for (const b of BENCHES)
+      out.push({
+        athlete_name: 'Athlete', age: 38, race_name: 'Test',
+        primary_metric: 'distance', plan_start: COHORT_PLAN_START,
+        race_distance_km: 10, race_date: raceDateIn(16, 'sun'),
+        goal: 'time_target', target_time: '0:52:00',
+        resting_hr: 55, max_hr: 184,
+        current_weekly_km: 30, longest_recent_run_km: 12,
+        recent_quality_training: 'occasional', hard_session_relationship: 'neutral',
+        training_age: '2-5yr', days_available: 4, days_cannot_train: [],
+        injury_history: [] as string[],
+        benchmark: { type: 'race', ...b },
+        acknowledged_days_warning: true, acknowledged_prep_warning: true,
+      } as unknown as GeneratorInput)
+  }
 
   return out
 }

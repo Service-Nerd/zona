@@ -4753,7 +4753,17 @@ measures the trial change is itself describing the old clock.**
 
 ---
 
-### 🔲 `BRAND-COACHNAME-HARDCODED-01` — the coach's name is typed into 7 runner-facing files ⚙️ **NO BOARD**
+### ✅ `BRAND-COACHNAME-HARDCODED-01` — the coach's name is typed into 7 runner-facing files ⚙️ **NO BOARD**
+
+> ✅ **SHIPPED 2026-11-13 — swept and GATED.** 📐 Re-derived with block comments stripped and line numbers
+> preserved: **14 occurrences across 8 files**, not the item's 13 across 7 — the extra is
+> `app/api/push/send-daily/route.ts`, a NOTIFICATION, which the component-only count missed and which is
+> runner-facing text. All 14 now read `BRAND.coachName`; 5 files gained the import.
+> 🔑 **The gate was the real deliverable and it is in `.githooks/pre-commit`** — 10 cases both directions,
+> including the traps: a name in a COMMENT passes (prose, per `HOOK-RGBA-COMMENTS-01`), code after a comment on
+> the same line still blocks, `HealthKit` passes, `-preview` harnesses and tests are out of the population.
+> ⚠️ **The sweep proved why the comment rule matters:** a plain string replace hit a comment occurrence and left
+> the code one untouched — caught by re-running the count, not by reading the diff.
 
 *(filed 2026-11-12, found while fixing `LockedCoachingPreview`; P3)*
 
@@ -5962,7 +5972,22 @@ on a file to undo a mutation and wiped every uncommitted change in it** — the 
 three different `route.ts` files collapsed onto one `/tmp/route.ts.bak`.** Redone from scratch;
 backups are path-mangled now.
 
-### 🔲 `AI-TIMEOUT-PER-SURFACE-01` — the AI call timeout is one number for two latency regimes *(filed 2026-11-08, P3)* ⚙️ **NO BOARD**
+### ✅ `AI-TIMEOUT-PER-SURFACE-01` — the AI call timeout is one number for two latency regimes *(filed 2026-11-08, P3)* ⚙️ **NO BOARD**
+
+> ✅ **SHIPPED 2026-11-13 — two regimes, sized from the REQUEST rather than the surface.**
+> The item declined to go per-surface because four surfaces have n ≤ 5 samples and `enrich-maintenance` has
+> **zero** — *"a guess wearing a measurement"*. That is still true of the samples, so the regime is taken from
+> something every call already carries: its own `maxTokens`.
+> 📐 **Measured 2026-11-13, 807 calls carrying `ms` and `outputTokens`:** < 100 output tokens **n=680, 0.5–4.4 s
+> across NINE surfaces**; 100–499 **n=20, 1.6–5.7 s**; 500–1999 **n=1, 17.0 s**; 2000+ **n=106, 21.1–64.4 s** —
+> all `enrich-plan`. **Duration tracks generation size, not surface identity.**
+> 🔑 **And the ceilings already separate, so the boundary is derived:** every short surface asks for **80–300**
+> tokens, the three large ones for **2048** (`post-race-reshape`), **3000** (`enrich-maintenance`) and
+> **6000–14000** (`enrich-plan`). A 7× gap with nothing in it; the boundary sits at 1,000.
+> ⚠️ **This is what dissolves the item's own blocker:** the two surfaces with zero samples land in the LONG
+> regime by their token ceiling — a fact in the code — rather than by a guess about their latency.
+> A hung `daily-coach-note` now holds a function for **60 s instead of 240**. Three gate arms in
+> `aiRouteMaxDuration.test.ts`, falsified by moving the boundary to 100 and by flattening the short value.
 
 Filed out of `OPS-FN-DURATION-01`, which set a single `AI_LIMITS.CALL_TIMEOUT_MS = 240_000`
 derived from the route ceiling. That number's job is to fire before the platform does so the
@@ -9127,7 +9152,24 @@ Anything that varies with the benchmark VALUE is unmeasurable, and the first gat
 ⚠️ **Stored plans keep their 1dp values and stay lossy, deliberately** — a recompute would rewrite the recorded inputs
 of plans already in runners' hands, and every consumer tolerates the second (the invariant compares numerically).
 
-### 🔲 `CORPUS-BENCHMARK-VARIETY-01` — no corpus carries more than five distinct benchmarks ⚙️ **NO BOARD**
+### ✅ `CORPUS-BENCHMARK-VARIETY-01` — no corpus carries more than five distinct benchmarks ⚙️ **NO BOARD**
+
+> ✅ **SHIPPED 2026-11-13.** `targetedGrid`'s distinct benchmarks **1 → 6** — three 5K times spanning the VDOT
+> bands, a second distance, and one deliberately STALE date so §10's ramp has something to measure. Five rows in
+> `targetedGridExtra`, taken in full; **`cohortGrid` stays pinned at one deliberately**, because crossing a
+> benchmark axis into 41,472 rows is what the focused-block pattern exists to avoid.
+> ⚠️ **Dates DERIVED from `slowGoalDates()`, never pinned** — a literal `benchmark_date` ages against the wall
+> clock, which is `GOALPACE-5K-CLOCK-01`.
+> 🔑 `vdotRoundTrip.test.ts`'s **CEILING arm is now a FLOOR**, which is what that arm's own comment said to do
+> the moment someone widened a corpus.
+> 🔴 **AND IT BROKE A THIRD CONSUMER THE SAME WAY THE LAST TWO BROKE.** `baseIsAllEasy.test.ts` ran
+> `coprimeSample([...cohortGrid(), ...targetedGrid()])`, whose stride comes from TOTAL LENGTH — five extra rows
+> re-permuted the sample, the early-onset cohort fell out of it, and the arm went red with nothing wrong in the
+> engine. Fixed the established way: sample the cartesian, take the focused block in full.
+> **That is three consumers now** (`deliveredRampTail`, `invariantLiveness`, this) — the pattern is written on
+> the block and the consumers keep not following it.
+> 📐 **One baseline moved, attributable:** `planFitnessBaseline` `other standard` **9,792 → 9,797**, grids
+> `targeted` +5. Every build, specificity and `neverBuildsPct` figure byte-identical.
 
 Found building `PLAN-VDOT-ROUNDTRIP-01`. Counted 2026-11-08: `cohortGrid` **1**, `targetedGrid` **1**, `slowGoalGrid`
 **5**, `useCaseEnvelope` **0**, `verify-parity`'s `BENCHMARK_EXTRA` **1** time (`10 km / 45:00`, dated and undated). So

@@ -14,6 +14,7 @@ import { normalizeDisplayPrefs } from '@/lib/userPrefs'
 import { loadSessionMetricOverrides } from '@/lib/sessionMetricOverrides'
 import { resolveSessionMetric } from '@/lib/format'
 import type { Plan, Session } from '@/types/plan'
+import { BRAND } from '@/lib/brand'
 
 // POST /api/push/send-daily
 // Vercel cron — runs hourly. For each push subscription, computes the user's
@@ -301,7 +302,7 @@ export async function POST(req: NextRequest) {
           }
         : {
             title: 'Test push',
-            body:  "Kit can reach you — notifications are working.",
+            body:  `${BRAND.coachName} can reach you — notifications are working.`,
             tag:   `daily-push-test-${clock.isoDate}`,
             data:  { url: '/dashboard?screen=today' },
           }

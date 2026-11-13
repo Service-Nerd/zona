@@ -29,6 +29,7 @@
 import type { ZoneSlice } from '@/lib/coaching/weeklyZoneAggregate'
 import Button from '@/components/ui/Button'
 import { MICRO_LABELS } from '@/components/shared/microLabels'
+import { BRAND } from '@/lib/brand'
 export type { ZoneSlice }
 
 /** Shared by every state. */
@@ -443,7 +444,7 @@ export default function ZoneRings(props: Props) {
             textAlign: 'center',
           }}
         >
-          Your zone map fills in as runs land. Kit&rsquo;s reading.
+          Your zone map fills in as runs land. {BRAND.coachName}&rsquo;s reading.
         </div>
       </Shell>
     )

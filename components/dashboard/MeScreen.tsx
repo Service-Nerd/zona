@@ -268,10 +268,10 @@ function PushNotificationsRow({ onStatusChange }: { onStatusChange?: (subscribed
   const subtitle = errMsg
     ? errMsg
     : status === 'checking' ? 'Checking…'
-    : status === 'subscribed' ? "Kit pings you when he's read your run."
+    : status === 'subscribed' ? `${BRAND.coachName} pings you when he's read your run.`
     : status === 'denied' ? 'Blocked in iOS Settings. Open to enable.'
     : loading ? 'Working…'
-    : "Off. Tap to let Kit ping you when he's read your run."
+    : `Off. Tap to let ${BRAND.coachName} ping you when he's read your run.`
 
   return (
     <div style={{ margin: '4px 0', background: 'var(--card)', boxShadow: 'var(--shadow-card)', border: '1px solid var(--line)', borderRadius: 'var(--radius-lg)', overflow: 'hidden' }}>
@@ -472,7 +472,7 @@ function StravaConnectionRow({ lastArrival }: {
       </div>
       {!isLoading && !connected && (
         <div style={{ padding: '0 16px 12px', fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--text-muted)', lineHeight: 1.55 }}>
-          Kit reads your Strava runs. Nothing else. We're not interested in your followers.
+          {BRAND.coachName} reads your Strava runs. Nothing else. We're not interested in your followers.
         </div>
       )}
       {/* The twin of the Apple Health stale line, same slot, same silence-when-fresh. */}
@@ -1107,7 +1107,7 @@ export default function MeScreen({ openSection, onOpenSectionConsumed, tierReaso
           return (
             <div style={{ background: 'var(--card)', borderRadius: 'var(--radius-lg)', boxShadow: 'var(--shadow-card)', border: '1px solid var(--line)', overflow: 'hidden' }}>
               <div style={{ ...MICRO_LABELS.eyebrow, padding: '14px 16px 4px', fontFamily: 'var(--font-ui)', color: 'var(--mute)' }}>
-                What Kit knows about you
+                What {BRAND.coachName} knows about you
               </div>
 
               {/* 🔴 THE ENTRY POINT FOR ZONES-SURFACE-01, AND THE FIRST CUT PUT IT IN THE

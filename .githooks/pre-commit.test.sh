@@ -146,5 +146,39 @@ run_msg "a banned-value block SAYS which family" "Banned palette value" "compone
   'export const C = "#5BC0BE"
 '
 
+# ── BRAND-COACHNAME-HARDCODED-01 — the coach's name is BRAND.coachName ──────────
+run_case "a hardcoded coach name in a component BLOCKS" block "components/x.tsx" \
+  'export const X = () => <div>Kit is reading</div>
+'
+run_case "a hardcoded coach name in a string BLOCKS" block "components/x.tsx" \
+  'export const MSG = "Kit noticed"
+'
+run_case "a hardcoded coach name in an API route BLOCKS — notifications are runner-facing" block "app/api/push/x.ts" \
+  'export const body = "Kit can reach you"
+'
+run_case "the name inside a COMMENT passes — prose, not code" pass "components/x.tsx" \
+  'export const X = () => <div>{BRAND.coachName}</div>
+'
+run_case "a comment ABOUT the name passes" pass "components/x.tsx" \
+  '// What Kit knows about you is the eyebrow on this card.
+export const X = () => <div>{BRAND.coachName}</div>
+'
+run_case "code AFTER a comment on the same line still blocks" block "components/x.tsx" \
+  'export const MSG = "Kit noticed" // renamed from the old copy
+'
+run_case "a -preview harness is out of the population" pass "components/copy-preview/x.tsx" \
+  'export const X = () => <div>Kit is reading</div>
+'
+run_case "a test file is out of the population" pass "components/x.test.tsx" \
+  'export const X = () => <div>Kit is reading</div>
+'
+run_case "an unrelated word containing the name passes" pass "components/x.tsx" \
+  'import { HealthKit } from "./hk"
+export const X = () => <div>{HealthKit.name}</div>
+'
+run_msg "a coach-name block SAYS to use BRAND.coachName" "BRAND.coachName" "components/x.tsx" \
+  'export const MSG = "Kit noticed"
+'
+
 echo "  $PASS passed, $FAIL failed"
 [ "$FAIL" -eq 0 ]

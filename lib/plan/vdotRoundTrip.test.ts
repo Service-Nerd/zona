@@ -162,11 +162,20 @@ describe('PLAN-VDOT-ROUNDTRIP-01 — the stamp reproduces the bands it was price
     ]
     for (const [name, rows] of corpora)
       counts[name] = new Set(rows.filter(i => i.benchmark).map(i => JSON.stringify(i.benchmark))).size
-    // Measured 2026-11-08. A CEILING assertion, deliberately: it documents the gap and will
-    // fail when someone widens a corpus, which is the moment to delete this arm and raise
-    // the floor instead. Not a reason to leave it unwidened — see the filed item.
+    // ▲ WAS A CEILING, NOW A FLOOR (CORPUS-BENCHMARK-VARIETY-01, 2026-11-13). The arm used to
+    // assert `<= 2` on purpose, documenting that the benchmark axis was pinned at one value
+    // everywhere, and it said the moment someone widened a corpus was the moment to raise a
+    // floor instead. `targetedGridExtra` now carries five benchmarks spanning three VDOT
+    // bands, two distances and one deliberately STALE date for §10's ramp — so targetedGrid
+    // reads 6 and the direction of this assertion flips.
+    //
+    // ⚠️ `cohortGrid` IS STILL PINNED AT ONE and that is not an oversight: crossing a
+    // benchmark axis into 41,472 rows is what the focused-block pattern exists to avoid. The
+    // variety lives in a block taken IN FULL, which is where reach belongs.
+    expect(counts.targetedGrid,
+      'the benchmark axis went back to being pinned — CORPUS-BENCHMARK-VARIETY-01')
+      .toBeGreaterThanOrEqual(5)
     expect(counts.cohortGrid).toBeLessThanOrEqual(2)
-    expect(counts.targetedGrid).toBeLessThanOrEqual(2)
     expect(counts.slowGoalGrid).toBeLessThanOrEqual(6)
   })
 

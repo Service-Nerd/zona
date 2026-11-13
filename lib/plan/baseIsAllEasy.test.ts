@@ -36,7 +36,7 @@
  * every region of the grid.
  */
 import { describe, it, expect } from 'vitest'
-import { cohortGrid, targetedGrid, COHORT_PLAN_START, isDesignedRefusal } from './cohortGrid'
+import { cohortGrid, targetedGridCore, targetedGridExtra, COHORT_PLAN_START, isDesignedRefusal } from './cohortGrid'
 import { generateRulePlan } from './ruleEngine'
 import type { Session } from '@/types/plan'
 
@@ -72,7 +72,17 @@ describe('§4/§5 — a base week prescribes no quality session', () => {
     const offenders: string[] = []
     const unexpectedHard = new Map<string, number>()
 
-    const corpus = coprimeSample([...cohortGrid(), ...targetedGrid()], SAMPLE)
+    // 🔴 SAMPLE THE CARTESIAN, TAKE THE FOCUSED BLOCK IN FULL (CORPUS-BENCHMARK-VARIETY-01).
+    // `coprimeSample` derives its stride from TOTAL LENGTH, so appending five rows to
+    // `targetedGridExtra` re-permuted the whole sample and the early-onset cohort fell out of
+    // it — this arm went red with nothing wrong in the engine. That is the third consumer
+    // with this fault (`deliveredRampTail`, `invariantLiveness`, here): a block that exists
+    // for REACH must never be inside a length-dependent sampler, which is written on the
+    // block itself in `cohortGrid.ts`.
+    const corpus = [
+      ...coprimeSample([...cohortGrid(), ...targetedGridCore()], SAMPLE),
+      ...targetedGridExtra(),
+    ]
     for (const input of corpus) {
       let plan
       try { plan = generateRulePlan(input, 'paid', COHORT_PLAN_START) }

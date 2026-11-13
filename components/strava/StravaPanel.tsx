@@ -10,6 +10,7 @@ import { formatDistance, formatPace } from '@/lib/format'
 import type { StravaActivity } from '@/types/plan'
 import { formatDate } from '@/lib/format'
 import Button from '@/components/ui/Button'
+import { BRAND } from '@/lib/brand'
 
 /** Seconds per km for a run — the rate `formatPace` converts for the reader. */
 const secPerKm = (r: { moving_time: number; distance: number }): number | null =>
@@ -132,7 +133,7 @@ Give 3-4 sentences of direct coaching feedback. Flag if HR was too high. Note on
           <div>
             <div style={{ fontSize: '15px', color: 'var(--text-primary)', fontWeight: 500, marginBottom: '6px' }}>Strava not connected</div>
             <div style={{ fontFamily: "var(--font-ui)", fontSize: '12px', color: 'var(--text-muted)', lineHeight: 1.6 }}>
-              Kit needs your runs to do anything useful. Connect Strava in the <span style={{ color: 'var(--teal)' }}>Me</span> screen.
+              {BRAND.coachName} needs your runs to do anything useful. Connect Strava in the <span style={{ color: 'var(--teal)' }}>Me</span> screen.
             </div>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>

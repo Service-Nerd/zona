@@ -1515,14 +1515,14 @@ export default function TodayScreen({ plan, weekIndex, daysToRace, raceName, pre
               onClick={onUpgrade} style={{ justifyContent: 'flex-start', width: '100%', textAlign: 'left', padding: '14px 16px', background: 'var(--card)', borderLeft: '3px solid var(--warn)', borderRadius: 'var(--radius-md)', gap: 'var(--space-3)' }}>
               <div>
                 <div style={{ fontFamily: 'var(--font-ui)', fontSize: '14px', fontWeight: 600, color: 'var(--ink)', marginBottom: '2px' }}>
-                  Kit&rsquo;s gone quiet.
+                  {BRAND.coachName}&rsquo;s gone quiet.
                 </div>
                 <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--mute)', lineHeight: 1.4 }}>
                   Plan still runs. Coaching needs a sub.
                 </div>
               </div>
               <span style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', fontWeight: 600, color: 'var(--warn-strong)', whiteSpace: 'nowrap' }}>
-                Bring Kit back →
+                Bring {BRAND.coachName} back →
               </span>
             </Button>
           </div>
@@ -2395,7 +2395,7 @@ export default function TodayScreen({ plan, weekIndex, daysToRace, raceName, pre
                   fontFamily: 'var(--font-ui)', fontSize: '14px', fontWeight: 600,
                   color: 'var(--ink-2)', lineHeight: 1.4,
                 }}>
-                  Tell Kit how {nudge.dayName}&apos;s {distLabel} felt
+                  Tell {BRAND.coachName} how {nudge.dayName}&apos;s {distLabel} felt
                 </span>
                 <span aria-hidden="true" style={{
                   fontFamily: 'var(--font-ui)', fontSize: '14px',

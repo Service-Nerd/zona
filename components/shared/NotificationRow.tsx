@@ -2,6 +2,7 @@
 
 import { hueText } from '@/lib/ui/hueText'
 import { MICRO_LABELS } from './microLabels'
+import { BRAND } from '@/lib/brand'
 
 // NOTIF-01 — one row in the notification inbox. Read-only delivery record.
 // Pattern: NotificationRow (ui-patterns.md).
@@ -27,7 +28,7 @@ export interface NotificationItem {
 const EYEBROW: Record<string, string> = {
   daily_training:  "Today's session",
   weekly_report:   'Your week',
-  trial_insight:   'Kit noticed',
+  trial_insight:   `${BRAND.coachName} noticed`,
   run_feedback:    'Run logged',
   plan_adjustment: 'Plan adjusted',
 }

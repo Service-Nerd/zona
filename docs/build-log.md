@@ -6,6 +6,23 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-11-13 — the ungated wave · three closed, nothing filed
+**Shipped:** the coach's name parameterised behind a pre-commit guard, a two-regime AI timeout sized from the request, and a benchmark axis that was pinned at one value in every corpus.
+
+**Dev learning:** the timeout item had been parked for a good reason — four surfaces with five or fewer samples, one with none, and a per-surface number would have been a guess. The way out was to stop asking about surfaces. 807 calls say duration tracks **generation size**, and every call's `maxTokens` is right there on the request. The two zero-sample surfaces then land in the long regime because of a number in the code, not a guess about their latency. **When the measurement you want doesn't exist, check whether you're measuring the right noun.**
+
+**Product/creator learning:** three items closed and nothing filed, which is the first wave that moved the backlog in the right direction without me adding to it. The honest limit: of 17 "no board" items, most are device-blocked, founder-gated, or 40-row backfills. Three or four is what this set actually yields.
+
+**AI-building learning:** widening a corpus broke a third consumer in the same way the previous two broke — a sampler whose stride comes from total length, so five appended rows re-permuted everything and an unrelated arm went red. The pattern is written on the block itself. **Writing the rule where the data lives does not make the consumers read it**; each one has to be found and fixed.
+
+**The honest bit:** sweeping 14 hardcoded names, my string replace hit an occurrence inside a comment and left the real one in the code. I only caught it by re-running the count. The guard I then wrote has a case for exactly that.
+
+**Hook material:** the parked item said a per-surface timeout would be "a guess wearing a measurement" — the fix was to measure a different thing entirely, and 807 calls settled it in one query.
+
+**Postable?:** yes — "when the measurement doesn't exist, check you're measuring the right noun".
+
+---
+
 ## 2026-11-13 — PROSE-RATIO-01 · the code was fine; everything I wrote about it was not
 **Shipped:** a hook that flags a commit whose source diff is mostly comment, and a rule that a claim you have not run does not get written.
 

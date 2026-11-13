@@ -1,5 +1,5 @@
 import { recordOpsEvent } from '@/lib/ops/recordOpsEvent'
-import { AI_LIMITS } from './limits'
+import { callTimeoutMsFor, AI_LIMITS } from './limits'
 import { usageCostUsd, ZERO_USAGE, type AiUsage } from './pricing'
 import type { AiSurface } from './surfaces'
 
@@ -118,7 +118,11 @@ export async function callAnthropic(call: AnthropicCall): Promise<AnthropicResul
     // because a timeout at or above it is not a timeout.
     res = await fetch(ANTHROPIC_API_URL, {
       method: 'POST', headers, body: JSON.stringify(body),
-      signal: AbortSignal.timeout(AI_LIMITS.CALL_TIMEOUT_MS),
+      // AI-TIMEOUT-PER-SURFACE-01 — sized from THIS call's token ceiling, not from the surface.
+      // Measured: duration tracks generation size, and the ceilings already separate (80-300
+      // for every short surface, 2048-14000 for the three large ones). A hung
+      // `daily-coach-note` now holds a function for 60 s rather than 240.
+      signal: AbortSignal.timeout(callTimeoutMsFor(maxTokens)),
     })
   } catch (e) {
     const detail = e instanceof Error ? e.message : String(e)
