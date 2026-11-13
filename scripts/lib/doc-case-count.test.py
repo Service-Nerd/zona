@@ -49,7 +49,7 @@ CASES = [
     ('🔴 a word between the number and "cases" is NOT a gated claim',
      '`%s` — 16 falsification cases' % A, A, []),
     ('…and ordinary prose beside a suite name is not one either',
-     '`%s` — found 3 more cases while reviewing', A, []),
+     '`%s` — found 3 more cases while reviewing' % A, A, []),
 ]
 
 
