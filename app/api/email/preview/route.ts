@@ -36,6 +36,7 @@ import {
 import {
   RUN_CLEAN, RUN_HOT, RUN_NO_HR, RUN_NONE, PREVIEW_SESSION,
 } from '@/lib/email/previewFixtures'
+import { BRAND } from '@/lib/brand'
 
 export const dynamic = 'force-dynamic'
 
@@ -134,7 +135,7 @@ async function preview(req: NextRequest): Promise<NextResponse> {
     // place a human reads these before a runner does, so every BRANCH is listed, not every
     // builder: `previewCoverage.test.ts` checks the builders, and a branch nobody previewed is
     // how copy ships unread.
-    ['6 · Day 17 — what Kit saw',        buildDay17Email(name, RUN_CLEAN, tok, false)],
+    [`6 · Day 17 — what ${BRAND.coachName} saw`,        buildDay17Email(name, RUN_CLEAN, tok, false)],
     ['6 · Day 17 — offer still open',    buildDay17Email(name, RUN_NONE, tok, false)],
     ['6 · Day 17 — already extended',    buildDay17Email(name, RUN_NONE, tok, true)],
     ['7 · Day 30 — one question',        buildDay30Email(name, tok)],

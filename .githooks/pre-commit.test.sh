@@ -167,8 +167,13 @@ export const X = () => <div>{BRAND.coachName}</div>
 run_case "a hardcoded name in lib/ BLOCKS — push titles live there" block "lib/notifications.ts" \
   'export const TITLE = "Kit noticed something."
 '
-run_case "lib/brand.ts is exempt — it is the definition site" pass "lib/brand.ts" \
+run_case "the DEFINITION LINE in lib/brand.ts is exempt" pass "lib/brand.ts" \
   "const COACH_NAME = 'Kit'
+export const BRAND = { coachName: COACH_NAME }
+"
+run_case "a SECOND literal in lib/brand.ts still BLOCKS — the line is exempt, not the file" block "lib/brand.ts" \
+  "const COACH_NAME = 'Kit'
+export const BRAND = { coachName: COACH_NAME, greeting: 'Kit here' }
 "
 run_case "a PRODUCTION route with preview in its path is NOT exempt" block "app/api/email/preview/route.ts" \
   'export const TITLE = "Kit noticed something."

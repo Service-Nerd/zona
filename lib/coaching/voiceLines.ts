@@ -173,10 +173,10 @@ export function buildLinkPushCopy(
 
   // Hard session — credit the effort, leave the HR read for inside.
   if (isHardEffortType(type)) {
-    return { title: "That's the hard one done.", body: "Kit's reading it. How did it feel?" }
+    return { title: "That's the hard one done.", body: `${BRAND.coachName}'s reading it. How did it feel?` }
   }
 
   // No HR, no parseable target, strength/cross/race/rest: neutral recognition,
   // the read is on its way.
-  return { title: "That one's in.", body: "Kit's reading it. How did it feel?" }
+  return { title: "That one's in.", body: `${BRAND.coachName}'s reading it. How did it feel?` }
 }

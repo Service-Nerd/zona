@@ -165,9 +165,12 @@ describe('PLAN-VDOT-ROUNDTRIP-01 — the stamp reproduces the bands it was price
     // ▲ WAS A CEILING, NOW A FLOOR (CORPUS-BENCHMARK-VARIETY-01, 2026-11-13). The arm used to
     // assert `<= 2` on purpose, documenting that the benchmark axis was pinned at one value
     // everywhere, and it said the moment someone widened a corpus was the moment to raise a
-    // floor instead. `targetedGridExtra` now carries five benchmarks spanning three VDOT
-    // bands, two distances and one deliberately STALE date for §10's ramp — so targetedGrid
-    // reads 6 and the direction of this assertion flips.
+    // floor instead. `targetedGridExtra` carries FOUR benchmark rows — three 5K times spanning
+    // the VDOT bands and one 10K — so targetedGrid reads 5 and the direction flips.
+    // ⚠️ A fifth row claiming to exercise §10's staleness ramp was removed: measured, a
+    // clock-pinned corpus cannot hold both "benchmark precedes the race" and "controlled age
+    // against today", so every row sits on the 7% cap. The floor is therefore AT the value
+    // with no margin, deliberately — one row removed should fail it.
     //
     // ⚠️ `cohortGrid` IS STILL PINNED AT ONE and that is not an oversight: crossing a
     // benchmark axis into 41,472 rows is what the focused-block pattern exists to avoid. The

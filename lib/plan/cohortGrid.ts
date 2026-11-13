@@ -19,7 +19,6 @@
 // again: a typo here throws rather than quietly measuring the wrong cohort.
 
 import type { GeneratorInput } from '@/types/plan'
-import { slowGoalDates } from './slowGoalGrid'
 
 export const COHORT_PLAN_START = '2026-04-27'
 
@@ -536,10 +535,9 @@ export function targetedGridExtra(): GeneratorInput[] {
   // VDOT banding, §10's staleness ramp, §19's anchors, §120's reachability. Same class as
   // COHORT-GRID-UNSET-LEVEL-01 and PARITY-GRID-UNSET-LEVEL-01: the axis exists and is pinned.
   //
-  // ⚠️ DATES DERIVED, NEVER PINNED. `slowGoalDates()` is the owner, and a literal
-  // `benchmark_date` AGES against the wall clock — GOALPACE-5K-CLOCK-01 is the record of a
-  // fixture that went red on a calendar rather than on a commit. The stale row subtracts from
-  // that derived date so §10's ramp has something to measure, and stays stale forever.
+  // ⚠️ DATES ARE RELATIVE TO THIS GRID'S OWN PINNED START, not to `slowGoalDates()` and not to
+  // a literal. The first cut used `slowGoalDates()` (today-anchored) against a pinned race date
+  // and produced a benchmark dated AFTER the race. See the derivation below.
   //
   // ⚠️ FOUR ROWS, NOT A CROSS. This block exists for REACH; crossing a benchmark axis into
   // the cartesian would multiply 6,144. Three 5K times span the VDOT bands and one 10K gives a
@@ -556,7 +554,11 @@ export function targetedGridExtra(): GeneratorInput[] {
     // clock-pinned by design. Relative to a pinned anchor cannot age; relative to today can.
     const dayBefore = (days: number) =>
       new Date(Date.parse(`${COHORT_PLAN_START}T00:00:00Z`) - days * 864e5).toISOString().slice(0, 10)
-    const benchmarkDate = dayBefore(14)        // fresh: inside §10's 4-week window
+    // ⚠️ NOT "fresh" — that is what this said and it was FALSE (code review). Measured, every
+    // row returns `discountPct: 7`, the cap, because §10 compares to `new Date()` while this
+    // grid is pinned to April. 14 days before the pinned start is simply a date that PRECEDES
+    // the race, which is the only property this block needs and can have.
+    const benchmarkDate = dayBefore(14)
     // 🔴 §10's STALENESS RAMP IS NOT REACHABLE FROM THIS CORPUS, AND THE ROW THAT CLAIMED TO
     // REACH IT IS GONE. Code review caught the first cut sitting exactly on the 7% cap;
     // re-anchoring it mid-ramp then turned out to be impossible here, measured rather than

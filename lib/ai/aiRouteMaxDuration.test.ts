@@ -81,17 +81,6 @@ const declared = (src: string): number | null => {
   return m ? Number(m[1]) : null
 }
 
-/** Every .ts/.tsx under a directory — the ceilings are read from source, not restated here. */
-function walkTs(dir: string): string[] {
-  const out: string[] = []
-  for (const name of readdirSync(dir)) {
-    const p = join(dir, name)
-    if (statSync(p).isDirectory()) { out.push(...walkTs(p)); continue }
-    if (/\.tsx?$/.test(name) && !/\.test\./.test(name)) out.push(p)
-  }
-  return out
-}
-
 describe('OPS-FN-DURATION-01 — the AI route ceiling', () => {
   it('the closure really was walked, and it is not a list', () => {
     // Non-vacuity for every arm below. 14 measured 2026-11-08; the owner plus the lib hops
@@ -177,7 +166,7 @@ describe('OPS-FN-DURATION-01 — the AI route ceiling', () => {
     // new surface at, say, 900 tokens would take the 60 s regime with every arm green. The
     // ceilings are read from source instead, and the property is that the boundary has CLEAR
     // AIR on both sides — not merely that it falls between two numbers someone typed here.
-    const SRC = ['lib', 'app'].flatMap(d => walkTs(join(ROOT, d)))
+    const SRC = ['lib', 'app'].flatMap(d => walk(join(ROOT, d)))
     // ⚠️ `Array.from`, not a spread — CLAUDE.md's TS2802 gotcha, and the spread version passed
     // vitest while failing tsc, which is exactly the green-suite-red-build trap it warns about.
     const ceilings = SRC.flatMap(f => Array.from(readFileSync(f, 'utf8').matchAll(/maxTokens:\s*(\d[\d_]*)/g))

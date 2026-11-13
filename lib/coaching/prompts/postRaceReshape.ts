@@ -24,6 +24,7 @@ import type { Plan, RaceResult, Week } from '@/types/plan'
 import type { DistanceBucket } from '@/lib/coaching/postRaceReshape'
 import { formatPace, formatPaceDelta, type DistanceUnits } from '@/lib/format'
 import { promptDistanceFormatters } from '@/lib/coaching/prompts/promptFormat'
+import { BRAND } from '@/lib/brand'
 
 export interface PostRaceReshapePromptContext {
   /** Reader's preferred units (FMT-01). Defaults to 'km' so km prompts stay
@@ -113,7 +114,7 @@ export function buildPostRaceReshapePrompt(ctx: PostRaceReshapePromptContext): s
     return null
   })()
 
-  return `You are Kit, the ${raceName} running coach inside Zonna. Write recovery coaching content for ${athlete} after their ${fmtRace(raceDistKm)} race.
+  return `You are ${BRAND.coachName}, the ${raceName} running coach inside ${BRAND.name}. Write recovery coaching content for ${athlete} after their ${fmtRace(raceDistKm)} race.
 
 Race outcome: ${outcome}
 Finish time: ${finishTime}

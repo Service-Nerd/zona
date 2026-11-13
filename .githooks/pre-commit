@@ -191,15 +191,18 @@ fi
 # ⚠️ `lib/` IS IN THE POPULATION, AND IT WAS NOT (code review, 2026-11-13). The first cut read
 # `^(app|components)/` — so four live runner-facing strings in `lib/brand.ts` itself, including
 # three PUSH TITLES, were invisible to the guard written to stop exactly them.
-# ⚠️ `lib/brand.ts` IS EXEMPT BY NAME — it is the DEFINITION (`const COACH_NAME = 'Kit'`), and a
-# guard that blocks the one place a value is allowed to exist blocks the fix for everywhere else.
+# ⚠️ THE DEFINITION LINE is exempt — `const COACH_NAME = 'Kit'` — and nothing else in that file.
 # ⚠️ AND `-preview` IS ANCHORED NOW: a bare `grep -v preview` is an unanchored substring match
 # and also excluded `app/api/email/preview/route.ts`, a production route.
-COACH_STAGED=$(git diff --cached --name-only --diff-filter=ACM | grep -E '\.(ts|tsx)$' | grep -E '^(app|components|lib)/' | grep -v '\.test\.' | grep -vE '(^|/)[a-z-]*-preview/' | grep -v '^lib/brand\.ts$' || true)
+COACH_STAGED=$(git diff --cached --name-only --diff-filter=ACM | grep -E '\.(ts|tsx)$' | grep -E '^(app|components|lib)/' | grep -v '\.test\.' | grep -vE '(^|/)[a-z-]*-preview/' || true)
 COACH_HITS=""
 for f in $COACH_STAGED; do
   [ -f "$f" ] || continue
-  if strip_comments "$f" | grep -nE '\bKit\b' | grep -q .; then
+  # ⚠️ ONE LINE IS EXEMPT, NOT THE WHOLE FILE (code review). `lib/brand.ts` holds the single
+  # declaration `const COACH_NAME = 'Kit'` and nothing else may. Exempting the FILE meant a
+  # fifth literal added to BRAND tomorrow would be invisible — a byte-for-byte recurrence of
+  # the defect this guard was written for, which is exactly how the four push titles survived.
+  if strip_comments "$f" | grep -nE '\bKit\b' | grep -vE "^[0-9]+:const COACH_NAME = 'Kit'$" | grep -q .; then
     COACH_HITS="$COACH_HITS$f
 "
   fi
@@ -210,7 +213,7 @@ if [ -n "$COACH_HITS" ]; then
   echo "   (A name inside a COMMENT is prose and is allowed.)"
   echo "$COACH_HITS" | while read -r f; do
     [ -n "$f" ] || continue
-    strip_comments "$f" | grep -nE '\bKit\b' | head -3 | sed "s|^|   $f:|"
+    strip_comments "$f" | grep -nE '\bKit\b' | grep -vE "^[0-9]+:const COACH_NAME = 'Kit'$" | head -3 | sed "s|^|   $f:|"
   done
   FAIL=1
 fi

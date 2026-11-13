@@ -13,6 +13,7 @@
 import { buildVoiceHeader } from './voiceRules'
 import { formatPace, formatPaceDelta, type DistanceUnits } from '@/lib/format'
 import { promptDistanceFormatters } from '@/lib/coaching/prompts/promptFormat'
+import { BRAND } from '@/lib/brand'
 
 export interface FreeInsightInput {
   /** Reader's preferred units (FMT-01). Defaults to 'km' so km prompts stay
@@ -51,7 +52,7 @@ Output: {"headline": "Quality hit hard.", "body": "RPE 9 and Wrecked after the q
 
 Example 4 — first time logging:
 Input: 2 sessions logged, both at RPE 6, Fine and Fine
-Output: {"headline": "Two on the board.", "body": "RPE 6 both times, Fine both times. Solid baseline. Keep logging — Kit needs the data to read you properly."}
+Output: {"headline": "Two on the board.", "body": "RPE 6 both times, Fine both times. Solid baseline. Keep logging — ${BRAND.coachName} needs the data to read you properly."}
 `
 
 export function buildFreeInsightPrompt(input: FreeInsightInput): string {
@@ -76,13 +77,13 @@ export function buildFreeInsightPrompt(input: FreeInsightInput): string {
 
   return `${voiceHeader}
 
-Your job: write ONE short Kit insight covering the runner's last week of training, anchored in their RPE + fatigue logs. This is the only thing they'll see from Kit this week — make it count.
+Your job: write ONE short ${BRAND.coachName} insight covering the runner's last week of training, anchored in their RPE + fatigue logs. This is the only thing they'll see from ${BRAND.coachName} this week — make it count.
 
 Critical rules:
 - This runner is on the free tier. They have no Strava connected — no HR, no pace, no zone analysis. Only manual RPE + fatigue tags + planned session types.
 - Never claim to know HR, pace, zone-discipline, or anything from "the data" beyond what's in the facts below.
 - Never suggest they upgrade. The upsell is elsewhere.
-- The insight is reciprocal — Kit is giving them something useful, not asking. No prompts, no questions, no "let me know if".
+- The insight is reciprocal — ${BRAND.coachName} is giving them something useful, not asking. No prompts, no questions, no "let me know if".
 - One observation, one consequence. No motivational closers.
 
 ${FEW_SHOT_EXAMPLES}

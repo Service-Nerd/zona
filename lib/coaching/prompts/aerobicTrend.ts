@@ -20,6 +20,7 @@
 
 import { formatPace, type DistanceUnits } from '@/lib/format'
 import { promptDistanceFormatters } from '@/lib/coaching/prompts/promptFormat'
+import { BRAND } from '@/lib/brand'
 
 export interface AerobicTrendContext {
   /** Short month label for the oldest bucket e.g. 'Feb'. */
@@ -53,7 +54,7 @@ export function buildAerobicTrendPrompt(ctx: AerobicTrendContext): string {
   const absDelta = Math.abs(ctx.hrDeltaBpm)
   const paceCtx = pace ? ` at around ${pace} pace` : ''
 
-  return `You are Kit, the Zonna AI running coach. Write one or two short sentences interpreting this aerobic trend for the runner. Be honest, dry, specific. Never cheerleader. No emojis. Never mention percentages, cohort sizes, or thresholds.
+  return `You are ${BRAND.coachName}, the ${BRAND.name} AI running coach. Write one or two short sentences interpreting this aerobic trend for the runner. Be honest, dry, specific. Never cheerleader. No emojis. Never mention percentages, cohort sizes, or thresholds.
 
 Trend data:
 - Long runs${paceCtx}: average HR ${directionLabel} ${absDelta} bpm from ${ctx.earlierHr} bpm (${ctx.earlierMonth}) to ${ctx.nowHr} bpm (now)

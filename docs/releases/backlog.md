@@ -4759,7 +4759,7 @@ measures the trial change is itself describing the old clock.**
 > preserved: **14 occurrences across 8 files**, not the item's 13 across 7 — the extra is
 > `app/api/push/send-daily/route.ts`, a NOTIFICATION, which the component-only count missed and which is
 > runner-facing text. All 14 now read `BRAND.coachName`; 5 files gained the import.
-> 🔑 **The gate was the real deliverable and it is in `.githooks/pre-commit`** — 14 cases both directions,
+> 🔑 **The gate was the real deliverable** — `.githooks/pre-commit` (34 cases both directions) across `lib/`, `app/` and `components/`, plus `lib/coachNameSwept.test.ts` for the tree the commit guard cannot see. 🔴 **The first sweep missed EIGHT more** — four in `lib/brand.ts` itself including three PUSH TITLES, two live push bodies, three AI prompts. **22 sites in total.** Cases cover
 > including the traps: a name in a COMMENT passes (prose, per `HOOK-RGBA-COMMENTS-01`), code after a comment on
 > the same line still blocks, `HealthKit` passes, `-preview` harnesses and tests are out of the population.
 > ⚠️ **The sweep proved why the comment rule matters:** a plain string replace hit a comment occurrence and left
