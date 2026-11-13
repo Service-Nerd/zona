@@ -46,10 +46,10 @@ CASES = [
     ('a count on another line of its own is still attributed',
      'intro\n`%s` — 7 cases' % A, A, ['7']),
     ('a name with no count yields nothing', '`%s` is wired into verify' % A, A, []),
-    ('one word between the number and "cases" still counts',
-     '16 falsification cases in `%s`' % A, A, ['16']),
-    ('…but two words do not — that is prose, not a claim',
-     'it has 16 quite thorough cases', A, []),
+    ('🔴 a word between the number and "cases" is NOT a gated claim',
+     '`%s` — 16 falsification cases' % A, A, []),
+    ('…and ordinary prose beside a suite name is not one either',
+     '`%s` — found 3 more cases while reviewing', A, []),
 ]
 
 
@@ -68,6 +68,8 @@ UNATTRIBUTED_CASES = [
     ('an aggregate across suites', 'Twelve suites, 351 cases in all — `%s` with 72 cases' % A, ['351']),
     ('a count owned by a suite is not listed', '`%s` — 23 cases' % A, []),
     ('a count on a line naming no suite is unchecked by definition', 'the runner ran 99 cases', ['99']),
+    ('the REPORT is wider than the gate: a qualified count is listed, not enforced',
+     '`%s` — 16 falsification cases' % A, ['16']),
 ]
 
 
@@ -88,7 +90,7 @@ def main() -> int:
         else:
             print('  \u2713 %s' % name)
     for name, doc, want in UNATTRIBUTED_CASES:
-        got = [u.split(' cases')[0] for u in unattributed(doc, BASES)]
+        got = [u.split(' ')[0] for u in unattributed(doc, BASES)]
         if got != want:
             failed += 1
             print('  \u2717 unattributed: %s\n      want %r, got %r' % (name, want, got))

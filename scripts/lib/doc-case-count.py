@@ -21,11 +21,14 @@ from __future__ import annotations
 import re
 import sys
 
-# ⚠️ ONE PATTERN, and it allows ONE word between the number and "cases": the doc writes
-# "16 falsification cases in `X`", which the bare form could not match, so that claim was
-# neither attributed nor listed as unattributed. Measured on CLAUDE.md: 18 -> 19, and the one
-# addition is a real claim.
-CLAIM = r'(\d+) (?:\w+ )?cases'
+# ⚠️ TWO PATTERNS, AND THE GATE GETS THE TIGHT ONE. Allowing a word between the number and
+# "cases" catches the doc's real `16 falsification cases`, but it also makes ordinary prose
+# ("found 3 more cases") a claim that binds backwards and fails the build on correct writing —
+# the noise class this repo has recorded four times as equivalent to having no guard. So the
+# ATTRIBUTION that gates stays strict, and the wide form is used only by the REPORT, where a
+# phrasing nothing checks is listed rather than enforced.
+CLAIM = r'(\d+) cases'
+CLAIM_WIDE = r'(\d+) (?:\w+ )?cases' 
 
 
 def _names_on(line: str, bases: list[str]) -> list[tuple[int, str]]:
@@ -77,18 +80,21 @@ def counts(doc: str, names: list[str], bases: list[str]) -> list[str]:
 
 
 def unattributed(doc: str, bases: list[str]) -> list[str]:
-    """Every `N cases` that binds to no known suite — the arm's negative space.
+    """Every count the GATE will not check — the arm's negative space.
 
-    🔴 AN UNATTRIBUTABLE CLAIM WAS READ AS "NO CLAIM" and silently skipped, under a comment
+    🔴 AN UNCHECKED CLAIM WAS READ AS "NO CLAIM" and skipped in silence, under a comment
     saying that is fine. It is fine for a suite the doc never counts; it is not fine for one
-    it counts in a phrasing this cannot resolve, which was true of three.
+    it counts in a phrasing the gate cannot see. Two ways that happens, and both are listed:
+    the count binds to no suite (an aggregate), or it is written in the qualified form the
+    strict pattern deliberately does not match.
     """
     out: list[str] = []
     for line in doc.split('\n'):
         on = _names_on(line, bases)
-        for m in re.finditer(CLAIM, line):
-            if _owner(line, m, on) is None:
-                out.append('%s cases  ...%s...' % (m.group(1), line[max(0, m.start() - 48):m.end() + 8].strip()))
+        for m in re.finditer(CLAIM_WIDE, line):
+            gated = re.fullmatch(CLAIM, m.group(0)) and _owner(line, m, on) is not None
+            if not gated:
+                out.append('%s  ...%s...' % (m.group(0), line[max(0, m.start() - 48):m.end() + 8].strip()))
     return out
 
 

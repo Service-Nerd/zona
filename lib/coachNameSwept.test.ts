@@ -109,6 +109,23 @@ describe('BRAND-COACHNAME-HARDCODED-01 — the coach name is defined once', () =
   // not have matched.
   const candidates = files.filter(f => /\bKit\b/.test(readFileSync(f, 'utf8')))
 
+  it('the comment stripper is string-aware, in both directions', () => {
+    // 🔴 UNEXERCISED UNTIL NOW (code review round 12): reverting the single-quote fix left
+    // this file 3/3 green, because the live hook holds no value ending in a backslash. A
+    // guard whose failure mode the tree cannot produce needs its own cases.
+    const cases: Array<[string, string]> = [
+      ['echo "   (--card is #FFFFFF: named)"', 'echo "   (--card is #FFFFFF: named)"'],  // quoted # is not a comment
+      ['X=1   # a real comment', 'X=1   '],
+      ['# whole line', ''],
+      ["X='a#b'", "X='a#b'"],                        // # inside single quotes
+      ["X='a\\'   # POSIX has no escape inside '...'", "X='a\\'   "],
+      ['X="a\\"b"   # …but double quotes DO escape', 'X="a\\"b"   '],
+      ['X="a\\"   # an unclosed quote swallows the #', 'X="a\\"   # an unclosed quote swallows the #'],
+      ['X=a#b   # not a comment opener mid-word', 'X=a#b   '],
+    ]
+    for (const [input, want] of cases) expect(stripShellComment(input), input).toBe(want)
+  })
+
   it('the exemption is the hook\'s, and it accepts the forms the hook accepts', () => {
     // These four are the hook's own suite's cases. Before this they passed the hook and
     // failed here — two checkers of one rule, disagreeing.

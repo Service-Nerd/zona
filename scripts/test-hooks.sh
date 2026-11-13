@@ -259,24 +259,28 @@ done <<< "$counts"
 skipped=(); shell_failed=(); shell_uncounted=()
 for suite in "${shell_suites[@]}"; do
   base="$(basename "$suite")"
-  claims="$(doc_claims "$base,${base/.test./.}")" || doc_claims_failed "$base"
-  [ -n "$claims" ] || continue
-  if [ "$(printf '%s\n' "$claims" | wc -l | tr -d ' ')" != 1 ]; then
-    drifted+=("$base: CLAUDE.md quotes more than one case count for it ($(printf '%s' "$claims" | tr '\n' '/'))")
-    continue
-  fi
-  claim="$claims"
-  # 🔴 THE EXIT CODE IS NOT DISCARDED. It was: a suite printing `16 cases, 3 failed` still had
-  # its 16 read and `test-hooks.sh` reported ALL CLEAN over a failing suite.
+  # 🔴 EVERY GLOBBED SUITE IS RUN, CLAIM OR NO CLAIM (code review round 12). The claim check
+  # used to come first and `continue` past the execution, so a suite the doc does not count
+  # was never executed by anything — `scripts/vercel-should-build.test.sh` ran NOWHERE, while
+  # sitting in the population of the arm written because hand-typed lists miss suites.
+  # ⚠️ THE EXIT CODE IS NOT DISCARDED either: a suite printing `16 cases, 3 failed` had its 16
+  # read and the runner reported ALL CLEAN over it.
   rc=0
   case "$suite" in
     *.py) out="$(python3 "$ROOT/$suite" 2>&1)" || rc=$?;;
     *)    out="$(bash "$ROOT/$suite" 2>&1)" || rc=$?;;
   esac
   [ "$rc" -eq 0 ] || shell_failed+=("$suite")
+  claims="$(doc_claims "$base,${base/.test./.}")" || doc_claims_failed "$base"
+  if [ -n "$claims" ] && [ "$(printf '%s\n' "$claims" | wc -l | tr -d ' ')" != 1 ]; then
+    drifted+=("$base: CLAUDE.md quotes more than one case count for it ($(printf '%s' "$claims" | tr '\n' '/'))")
+    continue
+  fi
+  claim="$claims"
   real="$(printf '%s' "$out" | grep -oE '[0-9]+ (passed|cases)' | grep -oE '[0-9]+' | tail -1)"
   # ⚠️ A suite that SKIPS here has not been measured — it is not a pass and not a drift.
   if [ -z "$real" ] && printf '%s' "$out" | grep -q '^SKIP'; then skipped+=("$base"); continue; fi
+  [ -n "$claim" ] || continue                     # run, but the doc states no count for it
   [ -n "$real" ] || { shell_uncounted+=("$suite"); continue; }
   checked=$((checked + 1))
   [ "$claim" = "$real" ] || drifted+=("$base: CLAUDE.md says $claim, the suite runs $real")
@@ -292,7 +296,7 @@ fi
 # the summary line and the exit code count them.
 if [ ${#shell_failed[@]} -gt 0 ]; then
   echo
-  echo "SUITES THAT FAILED WHILE BEING COUNTED (${#shell_failed[@]}):"
+  echo "SHELL SUITES THAT FAILED (${#shell_failed[@]}):"
   for f in "${shell_failed[@]}"; do echo "  ✗ $f"; done
   echo "  Its printed total is not a verdict. Run it directly."
 fi
@@ -314,17 +318,18 @@ if [ ${#drifted[@]} -gt 0 ]; then
 fi
 
 echo
-# 🔴 WHAT BINDS TO NOTHING, PRINTED. An unattributable claim used to be read as "no claim"
-# and skipped in silence, which is how three documented counts went unchecked. ⚠️ Not a
-# failure: an AGGREGATE ("351 cases in all") legitimately belongs to no single suite, so a
-# gate here would fire on correct prose. It is listed so the number is visible.
+# 🔴 WHAT THE GATE WILL NOT CHECK, PRINTED. An unchecked claim used to be read as "no claim"
+# and skipped in silence, which is how three documented counts went unchecked. Two ways a
+# count escapes: it binds to no suite, or it is written in the qualified form the strict
+# pattern deliberately does not match. ⚠️ Not a failure — an AGGREGATE across all twelve
+# suites legitimately belongs to no single one, so a gate here would fire on correct prose.
 unattr="$(python3 "$ROOT/scripts/lib/doc-case-count.py" --unattributed "$DOC" "${all_bases[@]}")" \
   || doc_claims_failed "--unattributed"
 unattr_n=0
 [ -z "$unattr" ] || unattr_n="$(printf '%s\n' "$unattr" | wc -l | tr -d ' ')"
 if [ "$unattr_n" -gt 0 ]; then
   echo
-  echo "DOC COUNTS BINDING TO NO SUITE ($unattr_n) — not a failure, but not checked either:"
+  echo "DOC COUNTS THE GATE DOES NOT CHECK ($unattr_n) — not a failure, but not checked either:"
   printf '%s\n' "$unattr" | sed 's/^/  · /'
 fi
 
