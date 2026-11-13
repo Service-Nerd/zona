@@ -110,8 +110,15 @@ interface Agg {
   n: number; over: number; gap: number[]; w1: number[]; ceil: number[]
   reachable: number; partial: number; unreachable: number
   easyShare: number[]
+  // 🔴 THE OVER-CEILING SUBSET KEEPS ITS OWN w1/ceiling SERIES (code review, 2026-11-13).
+  // The first cut pushed `w1` and `ceil` for EVERY row and `gap`/`easyShare` only for the
+  // over-ceiling ones, then printed all four in one line — so `5K | w1 17.0 | ceiling 26.0 |
+  // gap 6.0` read as nine kilometres UNDER the ceiling and six kilometres OVER it, in the
+  // same row. Two populations in one row is not a rounding problem, it is a false statement,
+  // and this is a table a board would rule from.
+  overW1: number[]; overCeil: number[]
 }
-const blank = (): Agg => ({ n: 0, over: 0, gap: [], w1: [], ceil: [], reachable: 0, partial: 0, unreachable: 0, easyShare: [] })
+const blank = (): Agg => ({ n: 0, over: 0, gap: [], w1: [], ceil: [], reachable: 0, partial: 0, unreachable: 0, easyShare: [], overW1: [], overCeil: [] })
 const byDist = new Map<string, Agg>()
 const med = (xs: number[]) => xs.length ? xs.slice().sort((a, b) => a - b)[Math.floor(xs.length / 2)]! : NaN
 
@@ -132,6 +139,7 @@ for (const input of rows) {
   if (delivered <= ceiling + 0.01) continue
   a.over++
   a.gap.push(delivered - ceiling)
+  a.overW1.push(delivered); a.overCeil.push(ceiling)
 
   // CAN the ADR-022 lever reach it? "Easy runs trim while the §52 long run never does."
   // Trimmable headroom = easy km above the per-session floor, long run and quality excluded.
@@ -151,12 +159,15 @@ for (const input of rows) {
 }
 
 console.log(`OUT plans ${plans}  (easy per-session floor ${G.MIN_SESSION_DISTANCE_KM.easy} km; ceiling = max(base x ${G.WEEK1_STEP_MAX_RATIO}, base + ${G.WEEK1_STEP_MIN_ABS_KM}))`)
-console.log('OUT dist     n   over-ceiling      median w1   median ceiling   median gap | lever: reaches / partial / cannot | median easy share of w1')
+// ⚠️ EVERY COLUMN NAMES ITS POPULATION. `all:` is all generated plans at that distance;
+// `over:` is the over-ceiling subset only. The lever counts and the gap are the subset's.
+console.log('OUT dist          n   over-ceiling | all: med w1  med ceil | over: med w1  med ceil  med gap  easy%  | lever(over): reach/partial/CANNOT')
 for (const k of ['5K', '10K', 'HM', 'MARATHON', '50K', '100K']) {
   const a = byDist.get(k); if (!a) continue
   const pct = a.n ? (a.over / a.n * 100) : 0
-  console.log(`OUT ${k.padEnd(9)}${String(a.n).padStart(5)}  ${(a.over + ' (' + pct.toFixed(1) + '%)').padStart(14)}`
-    + `${med(a.w1).toFixed(1).padStart(15)}${med(a.ceil).toFixed(1).padStart(17)}${med(a.gap).toFixed(1).padStart(13)}`
-    + ` | ${String(a.reachable).padStart(5)} /${String(a.partial).padStart(5)} /${String(a.unreachable).padStart(6)}`
-    + ` | ${med(a.easyShare).toFixed(0).padStart(4)}%`)
+  const f = (xs: number[], d = 1) => (xs.length ? med(xs).toFixed(d) : '  -')
+  console.log(`OUT ${k.padEnd(9)}${String(a.n).padStart(5)}  ${(a.over + ' (' + pct.toFixed(1) + '%)').padStart(13)}`
+    + ` |${f(a.w1).padStart(11)}${f(a.ceil).padStart(10)}`
+    + ` |${f(a.overW1).padStart(12)}${f(a.overCeil).padStart(10)}${f(a.gap).padStart(9)}${(a.easyShare.length ? med(a.easyShare).toFixed(0) + '%' : '  -').padStart(7)}`
+    + ` |${String(a.reachable).padStart(7)} /${String(a.partial).padStart(4)} /${String(a.unreachable).padStart(7)}`)
 }

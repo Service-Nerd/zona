@@ -17,7 +17,7 @@ its Achilles twin at identical age, volume and longest run does not fire. Re-bas
 attribution recorded in `scripts/audit-plan-quality.ts`.
 
 **For the NEXT sitting, with a number attached.** The new `INV-PLAN-RUNWALK-SHORTDIST-SCOPE` (`warn`)
-counts the bands the ruling left out: **134 firings on the probe grid — HM 84, 50K 26, 100K 24** — and
+counts the band the ruling left out: **84 firings on the probe grid, half-marathon only** (the first cut swept in the ultras, 62% of firings; corrected by code review) — and
 **2 firings in this round on a real charity persona**, `H1 first-timer HM, very low base`, whose
 longest run is 5 km against §117's 5.3 km bar. That is not a grid artefact: it is the cohort the
 amendment's own reasoning describes, at a distance the amendment did not name. **Nothing is filed as a

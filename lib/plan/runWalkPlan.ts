@@ -88,7 +88,17 @@ export function runWalkDistanceApplies(distanceKm: number): boolean {
 export function runWalkOutOfScopeUnready(
   input: GeneratorInput, structuralLevel: FitnessLevel | undefined,
 ): boolean {
-  if (runWalkInstructionDistanceApplies(input.race_distance_km)) return false
+  // 🔴 THE HALF ONLY, AND NOT "EVERY DISTANCE OUTSIDE THE SCOPE" (code review, 2026-11-13).
+  // The first cut tested `!runWalkInstructionDistanceApplies(...)`, which swept in the ultras —
+  // measured 62% of all firings. That is wrong, and the reason is thirty lines up in this
+  // file: *"the ultras have their own §24e machinery."* Their exclusion from §117 is a
+  // RULING with its own mechanism, not the omission this invariant exists to count, so
+  // reporting them as "§117 Am. 8's residual" attributes them to the wrong cause — and the
+  // registry row, the config comment and the invariant message all said "the half" while the
+  // predicate said otherwise.
+  // ⚠️ The HM is the only band whose exclusion is an OMISSION: §117 names the marathon, Am. 8
+  // added 5K and 10K, and nothing covers the half at all.
+  if (raceDistanceKey(input.race_distance_km) !== 'HM') return false
   if (input.goal !== 'finish') return false
   if (structuralLevel !== 'beginner') return false
   const longest = input.longest_recent_run_km

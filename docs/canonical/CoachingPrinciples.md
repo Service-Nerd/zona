@@ -12817,7 +12817,7 @@ never indiscipline.
 ### 🔴 Why. A correctly-executed progressive tempo could not score above about 33.
 
 `zoneForSessionType` returns ONE zone per session type. `quality` → Z3. But the catalogue
-row prescribes three bands, and its own `derived_set` step targets say so — measured
+row prescribes the half-marathon band, and its own `derived_set` step targets say so — measured
 across all 30 live plans:
 
 ```

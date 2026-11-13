@@ -20,6 +20,7 @@ import { readdirSync, readFileSync, statSync } from 'node:fs'
 import { join } from 'node:path'
 import { MARKETING_PLANS } from './plans'
 import { DEMO_BLOCK } from './demoSurfaces'
+import { SOURCE_SLUG as SAME_WEEK_SLUG } from '../../components/marketing/SameWeekTwice'
 
 const ROOT = process.cwd()
 const SKIP = new Set(['node_modules', '.next', '.git', 'dist', 'coverage', '.claude'])
@@ -92,6 +93,16 @@ const FIXED_SLUG: Record<string, { why: string; resolve: (src: string) => string
   // checks below. **An exemption's reason has to describe the file, not the file
   // next to it.** Its slug IS non-staged, so nothing was ever at risk; the
   // misfiling was.
+  // Its sibling gate, added 2026-11-13 (`SEGMENTED-LR-HR-01`). It reproduces the component's
+  // call EXACTLY — same `planAnchor`, same `'free'` tier, same `generateRulePlan` — because a
+  // gate that generates through a different path than the page can go green while the page
+  // ships the thing it guards (code review). It imports the component's own `SOURCE_SLUG`, so
+  // there is no second copy of the slug to drift; `resolve` proves it still does that and
+  // returns the real value for the non-staged check below.
+  'lib/marketing/sameWeekZoneHrCoherent.test.ts': {
+    why: 'imports the component\'s own SOURCE_SLUG to reproduce its exact call',
+    resolve: src => (/SOURCE_SLUG/.test(src) && /SameWeekTwice/.test(src) ? SAME_WEEK_SLUG : null),
+  },
   'lib/marketing/whenItNotices.test.ts': {
     why: 'resolves one named slug from MARKETING_PLANS to reproduce the component\'s own call',
     resolve: src => src.match(/p\.slug === '([^']+)'/)?.[1] ?? null,

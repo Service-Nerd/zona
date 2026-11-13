@@ -7963,7 +7963,7 @@ export function validatePlan(plan: Plan, rawInput: GeneratorInput): Violation[] 
         principle_ref: 'CoachingPrinciples §117 Am. 8',
         severity: 'warn',
         week: 0,
-        message: `Beginner finish-goal ${input.race_distance_km}km runner whose longest recent run is ${String(lr)}km (under ${bar.toFixed(1)}km, §117's ${GENERATION_CONFIG.RUNWALK_PRESCRIBE_LONGEST_RUN_PCT_OF_RACE}% bar) carries no run-walk prescription. §117 Am. 8 widened the instruction to ${GENERATION_CONFIG.RUNWALK_INSTRUCTION_RACE_KEYS.join(', ')} and this distance was NOT in the ruled scope — so this is the amendment's own residual, counted rather than fixed. Open: SHORTDIST-RUNWALK-SCOPE-01, out-of-scope band.`,
+        message: `Beginner finish-goal ${input.race_distance_km}km runner whose longest recent run is ${String(lr)}km (under ${bar.toFixed(1)}km, §117's ${GENERATION_CONFIG.RUNWALK_PRESCRIBE_LONGEST_RUN_PCT_OF_RACE}% bar) carries no run-walk prescription. §117 names the marathon and Am. 8 added ${GENERATION_CONFIG.RUNWALK_INSTRUCTION_RACE_KEYS.join(', ')}; NOTHING covers the half, so this is the amendment's own residual, counted rather than fixed. Open: SHORTDIST-RUNWALK-SCOPE-01, half-marathon band.`,
         actual: 'no run_walk_prescribed',
         expected: 'a ruling on whether the half is in the instruction scope',
       })

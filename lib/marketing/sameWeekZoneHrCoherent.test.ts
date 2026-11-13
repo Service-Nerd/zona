@@ -24,14 +24,18 @@
 // This asserts the PAGE, not the engine: the data stays as the board ruled it, and the one
 // surface that would render it dishonestly cannot start doing so silently.
 import { describe, it, expect } from 'vitest'
-import { MARKETING_PLANS } from './plans'
-import { generateMarketingPlan } from './marketingPlan'
+import { MARKETING_PLANS, planAnchor } from './plans'
+import { generateRulePlan } from '../plan/ruleEngine'
+import { SOURCE_SLUG, SOURCE_WEEK } from '../../components/marketing/SameWeekTwice'
 import type { Session } from '../../types/plan'
 
-// The component's own constants. Imported-by-value rather than re-typed would be better, but
-// they are module-private; a drift here is caught by the arm that asserts they still resolve.
-const SOURCE_SLUG = 'half-marathon-12-week'
-const SOURCE_WEEK = 5
+// 🔴 THE COMPONENT'S OWN CONSTANTS AND THE COMPONENT'S OWN CONSTRUCTION, not a copy of
+// either (code review, 2026-11-13). The first cut re-declared `SOURCE_SLUG`/`SOURCE_WEEK` and
+// generated through `generateMarketingPlan`, while the page calls
+// `generateRulePlan(plan.input(raceDate), 'free', planStart)` via `planAnchor` — so editing
+// the component to a peak-phase week, the exact trigger this file names, would have shipped
+// the contradiction with the test green. A gate that guards a copy of the thing guards
+// nothing: `DELOAD-OWNER-01`, on a marketing surface.
 
 /** A one-sided cap ("< 145 bpm") rather than a band ("145–158 bpm"). */
 const isCeiling = (hr: string | null | undefined) => !!hr && /^\s*</.test(hr)
@@ -42,7 +46,9 @@ describe('SEGMENTED-LR-HR-01 — the homepage week never pairs a range zone with
   const plan = (() => {
     const entry = MARKETING_PLANS.find(p => p.slug === SOURCE_SLUG)
     expect(entry, `the homepage's source plan \`${SOURCE_SLUG}\` no longer exists`).toBeTruthy()
-    return generateMarketingPlan(entry!).plan
+    // Byte-for-byte the component's path, including the 'free' tier and `planAnchor` dates.
+    const { planStart, raceDate } = planAnchor(entry!.dayOffset)
+    return generateRulePlan(entry!.input(raceDate), 'free', planStart)
   })()
 
   const week = plan.weeks.find(w => (w.n ?? 0) === SOURCE_WEEK)

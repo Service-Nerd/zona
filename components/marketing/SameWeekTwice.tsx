@@ -42,8 +42,12 @@ import { zoneWeekStatement, classifyRun } from '@/lib/coaching/zoneWeekStatement
 import { formatDistance } from '@/lib/format'
 import type { Session } from '@/types/plan'
 
-const SOURCE_SLUG = 'half-marathon-12-week'
-const SOURCE_WEEK = 5
+/** ⚠️ EXPORTED so `sameWeekZoneHrCoherent.test.ts` guards THIS week rather than a copy of
+ *  these two values. The gate's first cut re-declared them and generated through
+ *  `generateMarketingPlan`, so editing either constant here shipped the contradiction the
+ *  gate exists to catch, with the test green (code review, 2026-11-13). */
+export const SOURCE_SLUG = 'half-marathon-12-week'
+export const SOURCE_WEEK = 5
 
 const DAY_ORDER = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'] as const
 const DAY_LABEL: Record<string, string> = { mon: 'Mon', tue: 'Tue', wed: 'Wed', thu: 'Thu', fri: 'Fri', sat: 'Sat', sun: 'Sun' }
