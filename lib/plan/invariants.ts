@@ -12,7 +12,7 @@
 import { BENCHMARK_VDOT_MAX } from './benchmarkCheck'
 import type { Plan, GeneratorInput, Session, Week } from '@/types/plan'
 import { storedPlanInput } from './storedPlanInput'
-import { runWalkPrescriptionApplies } from './runWalkPlan'
+import { runWalkPrescriptionApplies, runWalkOutOfScopeUnready } from './runWalkPlan'
 import { strideCarrierDay, isDayAfterLongRun, hasHillRestrictingInjury } from './neuromuscular'
 import { normaliseDays, dayGap, canHoldSpacedQuality, DAY_ORDER as DAY_ORDER_OWNED } from './days'
 import { volumePairProblem } from './volumeConsistency'
@@ -192,6 +192,7 @@ export const INVARIANT_CODES = [
   'INV-PLAN-RUNWALK-PRESCRIBED',
   'INV-PLAN-RUNWALK-CAP-NOT-REDUCED',
   'INV-PLAN-RUNWALK-PRESCRIBED-WHEN-UNREADY',
+  'INV-PLAN-RUNWALK-SHORTDIST-SCOPE',
   'INV-PLAN-PEAK-RACE-SPECIFIC-REACHED',
   'INV-PLAN-RUNWALK-ADEQUATE',
   'INV-PLAN-GET-RUNNING-BUILD-RATIO',
@@ -7922,6 +7923,49 @@ export function validatePlan(plan: Plan, rawInput: GeneratorInput): Violation[] 
         message: `Beginner finish-goal ${input.race_distance_km}km runner whose longest recent run is ${input.longest_recent_run_km}km (${((input.longest_recent_run_km ?? 0) / input.race_distance_km * 100).toFixed(0)}% of the race) carries no run-walk prescription. §117 Am.5 — readiness to RUN is answered by the longest run, not by weekly volume. They are going to walk; a plan that does not say so is lying.`,
         actual: 'no run_walk_prescribed',
         expected: 'run_walk_prescribed, with the peak unchanged',
+      })
+    }
+  }
+
+  // INV-PLAN-RUNWALK-SHORTDIST-SCOPE — §117 Amendment 8's OWN RESIDUAL, made visible
+  // (Coaching Board 2026-11-12, `SHORTDIST-RUNWALK-SCOPE-01`).
+  //
+  // The amendment widened the instruction to 5K and 10K. 🔴 Measured the same week at
+  // wizard-reachable inputs, the HALF has the identical defect: at `cw >= 10` with a
+  // declared longest run of 1-2 km it generates a 16-MINUTE CONTINUOUS long run with §117
+  // silent — the same session, the same cohort, the same silence. The ruling names 5K and
+  // 10K, so this does NOT change what the HM runner is prescribed; it refuses to let the
+  // gap be invisible.
+  //
+  // ⚠️ `warn`, AND THE SEVERITY IS THE RULING BOUNDARY, NOT A TOLERANCE. Below the ruled
+  // scope the prescription is ratified and its absence is an `error`
+  // (INV-PLAN-RUNWALK-PRESCRIBED-WHEN-UNREADY, above). Here the prescription is UNRULED, so
+  // throwing a build for it would be enforcing a decision nobody made — the same split
+  // `baseBuildValidate.ts` uses for §117 Am. 7's two halves.
+  //
+  // ⚠️ IT IS DELIBERATELY NOT `runWalkPrescriptionApplies` WITH A WIDER DISTANCE SET. That
+  // function is the PRESCRIPTION's owner and a second caller reading it with different
+  // scope is how two predicates come to disagree. This asks its own question: "would the
+  // instruction rule reach this runner if the half were in scope?"
+  {
+    const lr = input.longest_recent_run_km
+    const bar = input.race_distance_km
+      * (GENERATION_CONFIG.RUNWALK_PRESCRIBE_LONGEST_RUN_PCT_OF_RACE / 100)
+    // ⚠️ CALLS THE OWNER (`runWalkOutOfScopeUnready`), NEVER A RESTATEMENT. The threshold has
+    // to move when §117 moves, and `invariant:liveness` reads the SAME predicate in its
+    // dedup key — a second copy here is how the key would silently stop distinguishing the
+    // shape it was added for, which is `INJURY-GUARD-PREDICATE-01` and is also exactly how
+    // this arm came to read as unwakeable in the first place.
+    const wouldReach = runWalkOutOfScopeUnready(input, structuralFitness)
+    if (wouldReach && !plan.meta.run_walk_prescribed) {
+      violations.push({
+        code: 'INV-PLAN-RUNWALK-SHORTDIST-SCOPE',
+        principle_ref: 'CoachingPrinciples §117 Am. 8',
+        severity: 'warn',
+        week: 0,
+        message: `Beginner finish-goal ${input.race_distance_km}km runner whose longest recent run is ${String(lr)}km (under ${bar.toFixed(1)}km, §117's ${GENERATION_CONFIG.RUNWALK_PRESCRIBE_LONGEST_RUN_PCT_OF_RACE}% bar) carries no run-walk prescription. §117 Am. 8 widened the instruction to ${GENERATION_CONFIG.RUNWALK_INSTRUCTION_RACE_KEYS.join(', ')} and this distance was NOT in the ruled scope — so this is the amendment's own residual, counted rather than fixed. Open: SHORTDIST-RUNWALK-SCOPE-01, out-of-scope band.`,
+        actual: 'no run_walk_prescribed',
+        expected: 'a ruling on whether the half is in the instruction scope',
       })
     }
   }

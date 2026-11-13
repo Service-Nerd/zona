@@ -43,6 +43,65 @@ export function runWalkDistanceApplies(distanceKm: number): boolean {
 }
 
 /**
+ * The distance scope of §117's INSTRUCTION — which is not the scope of its PEAK REDUCTION.
+ *
+ * 🔴 WHY THIS EXISTS AS A SECOND PREDICATE (§117 Am. 8, Coaching Board 2026-11-12,
+ * `SHORTDIST-RUNWALK-SCOPE-01`). `runWalkDistanceApplies` above is read by BOTH
+ * `runWalkPrescriptionApplies` (the instruction) AND `runWalkApplies` (the peak reduction) —
+ * this file's own note says so. The board ruled that the instruction must reach 5K/10K, so the
+ * obvious fix was to widen that predicate, and it would have been a SILENT REGRESSION: it
+ * would have moved peak volume for every 5K/10K beginner finish-goal runner, which §117
+ * Amendment 4 separates from the instruction BY RULING, and which is the open
+ * `RUNWALK-ASSESSED-LEVEL-01` peak half — a question this board already VACATED once on a
+ * measured 7 runners going SERVED -> REFUSED.
+ *
+ * So: the instruction's scope is named in config and read here; the peak's scope stays
+ * marathon-only, in the predicate above, unchanged. Two questions, two predicates.
+ *
+ * ⚠️ THE HALF IS OUT OF SCOPE BY RULING, NOT BY ACCIDENT, and it is NOT clean. Measured
+ * 2026-11-13 at wizard-reachable inputs: at `cw >= 10` with a longest run of 1-2 km the HM
+ * generates the same 16-minute continuous long run with §117 silent — the identical defect.
+ * The amendment names 5K and 10K, so the HM's prescription does not change here and
+ * `INV-PLAN-RUNWALK-SHORTDIST-SCOPE` raises it as a `warn` so the next sitting sees a number
+ * rather than nothing.
+ */
+/**
+ * Does this runner meet §117's readiness bar while their DISTANCE sits outside the
+ * instruction's ruled scope? §117 Amendment 8's own residual, as one named predicate.
+ *
+ * 🔴 IT IS AN OWNER, NOT AN INLINE CONDITION, FOR A MEASURED REASON. The arm that uses it
+ * (`INV-PLAN-RUNWALK-SHORTDIST-SCOPE`) read as UNWAKEABLE to `invariant:liveness` while the
+ * corpus demonstrably contained a qualifying row — because the liveness sample's dedup key
+ * carries an `unready` bit built from `runWalkPrescriptionApplies`, and that function
+ * EXCLUDES the out-of-scope distances by definition. So the key could not tell a qualifying
+ * half-marathon row from any other, and whichever came first won. The file's own remedy for
+ * the identical problem on Amendment 5 was to put the rule's OWNER in the key rather than a
+ * restatement of its threshold; this is that owner, and both the invariant and the liveness
+ * key call it.
+ *
+ * ⚠️ Deliberately NOT `runWalkPrescriptionApplies` with a wider distance set: that function
+ * is the PRESCRIPTION's owner, and a second caller reading it at a different scope is how two
+ * predicates come to disagree (`INJURY-GUARD-PREDICATE-01`). This answers a different
+ * question — *"would the instruction rule reach this runner if their distance were in
+ * scope?"* — and it shares the readiness half rather than copying it.
+ */
+export function runWalkOutOfScopeUnready(
+  input: GeneratorInput, structuralLevel: FitnessLevel | undefined,
+): boolean {
+  if (runWalkInstructionDistanceApplies(input.race_distance_km)) return false
+  if (input.goal !== 'finish') return false
+  if (structuralLevel !== 'beginner') return false
+  const longest = input.longest_recent_run_km
+  if (typeof longest !== 'number' || longest < 0) return false
+  return longest < input.race_distance_km
+    * (GENERATION_CONFIG.RUNWALK_PRESCRIBE_LONGEST_RUN_PCT_OF_RACE / 100)
+}
+
+export function runWalkInstructionDistanceApplies(distanceKm: number): boolean {
+  return GENERATION_CONFIG.RUNWALK_INSTRUCTION_RACE_KEYS.includes(raceDistanceKey(distanceKm))
+}
+
+/**
  * Should this runner get the finish-goal run-walk shape?
  *
  * ⚠️ DERIVED, NEVER ASKED. There is no new wizard input and there must not be:
@@ -126,11 +185,21 @@ export function runWalkPrescriptionApplies(
 ): boolean {
   // R5 (2026-10-25): after a walk-run start the instruction carries, whatever the distance. Instruction only, never peak.
   if (input.after_walk_run_start === true) return true
-  if (!runWalkDistanceApplies(input.race_distance_km)) return false
+  // §117 Am. 8 — the INSTRUCTION's scope, never the peak's. See `runWalkInstructionDistanceApplies`.
+  if (!runWalkInstructionDistanceApplies(input.race_distance_km)) return false
   if (input.goal !== 'finish') return false
   if (structuralLevel !== 'beginner') return false
   const longest = input.longest_recent_run_km
-  if (typeof longest !== 'number' || longest <= 0) return false
+  // 🔴 A DECLARED ZERO IS THE STRONGEST CASE FOR THIS PRESCRIPTION, AND IT USED TO BE THE
+  // ONE VALUE EXCLUDED (§117 Am. 8). The guard read `longest <= 0`, which treated "I have
+  // never run" exactly like "we were not told" — and 0 is a real wizard value: the
+  // longest-run ruler runs from 0 in 1 km steps, and `ENVELOPE-LRR-BLIND-01` exists because
+  // no corpus could reach the runner who declares it. Am. 5's rule is that readiness to RUN
+  // is answered by the longest run; a longest run of zero answers it most clearly of all.
+  // ⚠️ ABSENCE IS STILL ABSENCE. `typeof` keeps its job: a missing field is no data and
+  // prescribes nothing, because inferring a prescription from a question nobody answered is
+  // a different decision and not this one.
+  if (typeof longest !== 'number' || longest < 0) return false
   const bar = input.race_distance_km
     * (GENERATION_CONFIG.RUNWALK_PRESCRIBE_LONGEST_RUN_PCT_OF_RACE / 100)
   return longest < bar

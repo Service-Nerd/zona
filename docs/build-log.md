@@ -6,6 +6,25 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-11-13 — SHORTDIST-RUNWALK-SCOPE-01 · the one-line fix that would have been a silent regression
+**Shipped:** §117 Amendment 8 — the run-walk *instruction* now reaches 5K and 10K runners, and a declared longest run of zero is served instead of excluded.
+
+**Dev learning:** the obvious fix was one line — widen `runWalkDistanceApplies` to cover the short distances. **That predicate was read by two gates**: the prescription, and the *peak reduction*. The board separates those two by ruling, and the peak question had already been vacated once on a measured 7 runners going served → refused. So the one-liner would have quietly lowered peak volume for every 5K/10K beginner, in a file whose own comment says the predicate is shared. **Before widening a predicate, list its callers** — the second caller is where the regression lives.
+
+The other half was `longest <= 0`. The gate's own comment justified excluding an *absent* longest run ("an ABSENT one is not evidence of anything") and then lumped a declared **0** in with it. Zero is a real value the wizard can send, and under the board's own readiness rule it is the *strongest* case for a run-walk. **The comment was right; the condition over-applied it.** A test asserted the over-application, so the behaviour had a green gate holding the defect in place.
+
+**Product/creator learning:** the item said this bites at 6 km/week. The wizard's ruler steps by **5**, so nobody can send 6. The defect was entirely real — at 0, 5, 10, 15 and 20 — but the headline example was a number no runner can produce. Second wave in a row where re-deriving an item's own figure changed what got built. **An item is a snapshot of whoever measured it, including me.**
+
+**AI-building learning:** the liveness gate rejected my new invariant as unwakeable, and I nearly recorded it as `corpus` debt — "the harness never builds that shape". It does build it. Chasing that found the real cause: the harness deduped its **focused** corpus blocks with a key that omits weekly volume and longest run, so **19 of 22 rows were discarded**, including all twelve rows added specifically because *no other corpus carries a longest run of 0*. Two blocks written to reach cohorts nothing else reaches, sampled away by the harness that most needs them. **A gate rejecting your work is worth one round of "why" before you write the exemption** — the exemption would have been a false record, which this codebase treats as worse than a missing one.
+
+**The honest bit:** my first falsification passed. I reverted the fix and the invariant counts came back byte-identical, which read like the fix doing nothing. It was the *check* being blind: `INV-PLAN-RUNWALK-PRESCRIBED-WHEN-UNREADY` fires on the same predicate the producer uses, so narrowing the gate silences the checker along with it. It can see "the gate said yes and the plan ignored it" and can never see "the gate should have said yes" — which was this entire ruling. I had to write a behavioural suite to have a gate at all.
+
+**Hook material:** 756 plans gained a walk break; peak volume moved **0 times** across 10,080 inputs; and the invariant I thought was guarding it couldn't tell the fix from the bug.
+
+**Postable?:** yes — "the one-line fix had a second caller", and the falsification that passed.
+
+---
+
 ## 2026-11-13 — GRID-NO-MENOPAUSAL-TENDON-01 · the cohort with the strongest tissue argument, and no corpus could build it
 **Shipped:** six rows that cross masters age with a tendon injury history, plus the orthogonal classifier and fixture that make the cell reportable, because the rows alone could not.
 

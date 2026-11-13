@@ -432,7 +432,54 @@ before planning against any number below (an item is a snapshot of the code on t
   cannot both hold below ~1.4 km/week, the same shape as the §2 / §116 Am. 2 conflict §118's tests already pin.
   ⚠️ **Reachability unmeasured** — these rows came from a grid, and whether any runner declares 1 km/week and
   reaches a foundation block is a production question nothing here answers.
-- 🏃 **COACHING BOARD** `SHORTDIST-RUNWALK-SCOPE-01` — **a 5K or 10K runner whose longest run is 0 is prescribed a
+- ✅ **SHIPPED 2026-11-13 as §117 Amendment 8** — 🏃 **COACHING BOARD** `SHORTDIST-RUNWALK-SCOPE-01` — **a 5K or 10K runner whose longest run is 0 is prescribed a
+
+  > ✅ **SHIPPED 2026-11-13 — §117 Amendment 8.** The instruction's distance scope is
+  > `RUNWALK_INSTRUCTION_RACE_KEYS = ['5K','10K','MARATHON']`; a **declared** longest run of 0 is served and an
+  > ABSENT field still prescribes nothing. 📐 **10,080 wizard-reachable inputs, before/after: generated 7,117 and
+  > refused 2,963 IDENTICAL · served↔refused 0 · PEAK MOVED 0 · `finish_goal_run_walk` 0 changes.** 🩹 Willy's
+  > standing *"no peak may fall"* satisfied by measurement. Run-walk plans **528 → 1,284**; the 756 gained are
+  > **5K 306 · 10K 450**, finish-goal 756/756, by declared longest run **0 km → 324**, 1 → 288, 2 → 144.
+  >
+  > 🔴 **THE ONE-LINE FIX WOULD HAVE BEEN A SILENT REGRESSION, and that is the finding.** `runWalkDistanceApplies`
+  > is read by the prescription gate **AND by `runWalkApplies`, the PEAK reduction** — the file says so in its own
+  > note. Widening it would have lowered peak volume for every 5K/10K beginner finish-goal runner: the half §117
+  > **Am. 4 separates by ruling**, and the open `RUNWALK-ASSESSED-LEVEL-01` question this board **already vacated
+  > once** on a measured **7 runners going served → refused**. Two questions, two predicates.
+  >
+  > 🔑 **The readiness gate read `longest <= 0`**, which treated *"I have never run"* exactly like *"we were not
+  > told"* — and 0 is a real wizard value whose own corpus gap (`ENVELOPE-LRR-BLIND-01`) exists because nothing
+  > could reach it. Under Am. 5 a longest run of zero answers the readiness question most clearly of all.
+  >
+  > ⚠️ **The item's central example `cw 6` is UNREACHABLE** — the weekly ruler steps by 5 — and re-measuring found
+  > the defect fully real at 0/5/10/15/20, so the premise was wrong about the input and right about the defect.
+  >
+  > ⚠️ **THE RULED SCOPE LEAVES THREE BANDS OPEN AND THEY ARE COUNTED, NOT SILENT.** Measured the same day, the
+  > **HM, 50K and 100K** generate the identical 16-minute continuous long run with §117 silent. The ruling names 5K
+  > and 10K only, so their prescription is unchanged and **new `INV-PLAN-RUNWALK-SHORTDIST-SCOPE` (`warn`) fires
+  > 134 times — HM 84, 50K 26, 100K 24.** Severity is the ruling boundary, not a tolerance. **Not filed as a new
+  > item: it is this item's own residual and it now has a number attached for the next sitting.**
+  >
+  > 🔴 **The existing invariant is NOT this ruling's gate, and proving that is what found the rest.**
+  > `INV-PLAN-RUNWALK-PRESCRIBED-WHEN-UNREADY` fires on `runWalkPrescriptionApplies(…) && !prescribed`, so it
+  > **shares the producer's predicate** — narrowing the gate leaves its counts byte-identical, verified by
+  > mutation. It can see *"the gate said yes and the plan ignored it"* and never *"the gate should have said yes"*.
+  > The gate is `lib/plan/runWalkShortDistance.test.ts`: **5 of 8 arms red** on reverting the config.
+  >
+  > 🔑 **AND CHASING THE LIVENESS FAILURE FOUND A HARNESS DEFECT.** `invariant:liveness` ran its by-shape dedup over
+  > `targetedGrid()` = core + extra, with a key omitting `current_weekly_km` AND `longest_recent_run_km` — so
+  > **3 of 22 focused-block rows survived**, and the three were only the Wave-2 masters×tendon rows, which happen to
+  > carry a distinct `injury_history`. Discarded: **all twelve `ENVELOPE-LRR-BLIND-01` never-run rows** (the block
+  > added because *"0 of cohortGrid's 41,472 rows carry `longest_recent_run_km: 0`"*) and all four
+  > `GRID-GOAL-INSIDE-LINE-01` rows. **Two blocks written to reach cohorts nothing else reaches, sampled away by the
+  > harness that most needs them.** Fixed per the block's own instruction: sample the cartesian, take the focused
+  > block in full. **Fifth instance of the omitted-key-field class that comment already names.**
+  > ⚠️ **And it still needed a dedicated probe**, because the 64-plan budget cannot afford the row even unduped —
+  > recorded as a probe, **not** as `corpus` debt, because `corpus` means *"the harness never builds that shape"*
+  > and it does. That mis-stated reason is the `MAINT-LIVENESS-01` mistake.
+  >
+  > **What this does not prove:** nothing about the peak half (`RUNWALK-ASSESSED-LEVEL-01`, still open and still
+  > vacated), nothing about the three out-of-scope bands beyond their count, and nothing on a device.
   16-MINUTE CONTINUOUS long run, and §117's run-walk prescription cannot reach them by construction.**
   Filed at the `WEEK1-FROM-LONGEST-RUN-01` sitting, 2026-11-07. Measured: at `cw 6 / lr 0` the 5K and 10K **generate
   normally** — week 1 is a **16-minute long run plus two 12-minute easy runs, continuous, no walk interval** — while

@@ -7,11 +7,11 @@ import { generateStagedRacePlan, stagedRaceOf } from '@/lib/plan/stagedRacePlan'
 import { assessOnRamp, generateBaseBuildPlan } from '@/lib/plan/baseBuildOnRamp'
 import { generateGetRunningPlan } from '@/lib/plan/getRunningPlan'
 import { generateMaintenanceBlock } from '@/lib/plan/maintenance'
-import { cohortGrid, targetedGrid, COHORT_PLAN_START } from '@/lib/plan/cohortGrid'
-import { runWalkPrescriptionApplies } from './runWalkPlan'
+import { cohortGrid, targetedGrid, targetedGridCore, targetedGridExtra, COHORT_PLAN_START } from '@/lib/plan/cohortGrid'
+import { runWalkPrescriptionApplies, runWalkOutOfScopeUnready } from './runWalkPlan'
 import { resolveLevels } from './fitnessAssessment'
 import { isLongRun } from '@/lib/plan/sessionRole'
-import { GENERATION_CONFIG } from '@/lib/plan/generationConfig'
+import { GENERATION_CONFIG, raceDistanceKey } from '@/lib/plan/generationConfig'
 import type { GeneratorInput, Plan, Session, Week } from '@/types/plan'
 
 /**
@@ -1080,6 +1080,18 @@ export function probeLiveness(sampleSize = 64): LivenessReport {
       // of that fix and is the reason COHORT-GRID-UNSET-LEVEL-01 had to touch it: the
       // identity held only while the grid forced `fitness_level`.
       + `|${runWalkPrescriptionApplies(i, lv.structural) ? 'unready' : 'ready'}`
+      // §117 Am. 8 — A FIFTH TIME THE KEY WAS THE REASON A RULE READ AS DEAD.
+      // `INV-PLAN-RUNWALK-SHORTDIST-SCOPE` counts runners who meet §117's readiness bar at a
+      // distance OUTSIDE the instruction's ruled scope. The `unready` bit above cannot
+      // separate them, by construction: it calls `runWalkPrescriptionApplies`, which excludes
+      // those distances, so every qualifying half-marathon row collapsed onto an ordinary one
+      // and whichever came first decided whether the family contained a qualifying runner at
+      // all. Measured: the corpus held one (`targetedGridExtra`, HM cw 20 / lr 2) and the
+      // sample reached none, so the invariant read as unwakeable with a live row in the grid.
+      // ⚠️ It calls the OWNER (`runWalkOutOfScopeUnready`), like the bit above — a second copy
+      // of `< race * 0.25` here is how this key would stop distinguishing the thing it exists
+      // for the next time §117's bar moves.
+      + `|${runWalkOutOfScopeUnready(i, lv.structural) ? 'oos-unready' : 'oos-n/a'}`
     if (seen.has(k)) return false
     seen.add(k)
     return true
@@ -1092,8 +1104,32 @@ export function probeLiveness(sampleSize = 64): LivenessReport {
   // this shape") when the truth is the harness cannot. One representative input
   // per targeted SHAPE, same by-shape dedup as above so a few hundred near-
   // identical rows cannot crowd out the population sample.
+  //
+  // 🔴 AND IT DEDUPS THE CARTESIAN ONLY, BECAUSE IT USED TO DEDUP THE FOCUSED BLOCK TOO
+  // AND THAT DISCARDED 19 OF ITS 22 ROWS (`SHORTDIST-RUNWALK-SCOPE-01`, 2026-11-13).
+  //
+  // `targetedGrid()` is `targetedGridCore()` + `targetedGridExtra()`, and this key omits
+  // `current_weekly_km` AND `longest_recent_run_km` — so every focused row collapsed onto
+  // whichever core row claimed its key first. Measured: **3 of 22 survived**, and the three
+  // were only the masters x tendon rows, which carry a distinct `injury_history` and so
+  // happened to be in the key. Discarded were **all twelve `ENVELOPE-LRR-BLIND-01` rows** —
+  // the block added because *"0 of cohortGrid's 41,472 rows carry `longest_recent_run_km:
+  // 0`"* — and all four `GRID-GOAL-INSIDE-LINE-01` rows, added because *"ZERO of 10,368
+  // benchmarked time-target rows"* reach §120's admitted side.
+  //
+  // ⚠️ SO TWO BLOCKS WRITTEN TO REACH COHORTS NO OTHER CORPUS REACHES WERE BEING SAMPLED
+  // AWAY BY THE HARNESS THAT MOST NEEDS THEM, and the remedy is written on the block itself:
+  // *"a block that exists for REACH must be taken IN FULL, or a 1-in-4 sample would drop the
+  // only rows that reach the cohort. So consumers sample the CARTESIAN and concatenate this
+  // wholesale."* This was a consumer that did not. Same fix as `deliveredRampTail.test.ts`.
+  //
+  // ⚠️ FOURTH INSTANCE OF THE CLASS THE COMMENT BELOW ALREADY NAMES — a field the key omits
+  // collapses back to whichever value comes first (§107 2026-09-12, PEAK-LR-EARNED-TIER
+  // 2026-09-15, OVERDO-BRAKE 2026-09-17, this). The previous three were fixed by ADDING a
+  // field to the key; this one is fixed by taking the block out of the key's population,
+  // because the block's entire purpose is to be the rows nothing else has.
   const targetedSeen = new Set<string>()
-  const byTargetedShape = targetedGrid().filter(i => {
+  const byTargetedShape = [...targetedGridCore().filter(i => {
     const r = i as unknown as Record<string, unknown>
     // `hard_session_relationship` is IN THE KEY, and leaving it out is not a
     // detail: the key is what the dedup calls a distinct shape, so a field the
@@ -1108,7 +1144,7 @@ export function probeLiveness(sampleSize = 64): LivenessReport {
     if (targetedSeen.has(k)) return false
     targetedSeen.add(k)
     return true
-  })
+  }), ...targetedGridExtra()]
   // ROUND-ROBIN, not concat. The sample is a fixed budget shared by three
   // corpora, and concatenating lets whichever sits in the middle consume the
   // remainder: appending the targeted grid de-proved three invariants
@@ -1175,6 +1211,49 @@ export function probeLiveness(sampleSize = 64): LivenessReport {
       for (const v of vs) if (!woken.has(v.code)) woken.set(v.code, m.name)
     }
   }
+  // ── §117 Am. 8 — THE OUT-OF-SCOPE BAND GETS ITS OWN PROBE (SHORTDIST-RUNWALK-SCOPE-01) ──
+  //
+  // `INV-PLAN-RUNWALK-SHORTDIST-SCOPE` counts a runner who meets §117's readiness bar at a
+  // distance OUTSIDE the instruction's ruled scope. The corpus DOES hold a qualifying row
+  // (`targetedGridExtra`, HM at cw 20 / lr 2) — verified — but the 64-plan budget never
+  // reaches it, so the rule read as unwakeable with a live row in the grid.
+  //
+  // ⚠️ SO THIS IS NOT `corpus` DEBT AND MUST NOT BE BASELINED AS IT. The baseline's reasons
+  // mean something: `corpus` is *"the harness never builds that SHAPE"*, and it does. The
+  // honest statement is that the SAMPLE cannot afford it, and the file's own remedy for that
+  // is a dedicated probe — exactly what §116's and the maintenance block's invariants have.
+  // Recording it as corpus debt would have been the `MAINT-LIVENESS-01` mistake again: a
+  // stated reason that is wrong hides the real cause for months.
+  //
+  // ⚠️ A FIXTURE, NOT A MUTATION, AND THE HEADER SAYS "add a mutation, not a fixture" —
+  // deliberately against it, for the reason the maintenance probe is also a fixture: there is
+  // nothing to mutate. The rule fires on a VALID plan whose INPUT is out of scope, so no
+  // poke to the plan can create it; the input is the whole condition.
+  {
+    for (const km of [21.1, 50]) {
+      const input = {
+        athlete_name: 'Athlete', age: 38, race_name: 'Test', primary_metric: 'distance',
+        plan_start: COHORT_PLAN_START, race_distance_km: km,
+        // Derived from `COHORT_PLAN_START`, never a literal: a pinned race date ages against
+        // the wall clock and `PINNED-CLOCK-01` is this repo's record of what that costs.
+        race_date: new Date(Date.parse(`${COHORT_PLAN_START}T00:00:00Z`) + (km > 22 ? 24 : 20) * 7 * 864e5)
+          .toISOString().slice(0, 10),
+        goal: 'finish', resting_hr: 55, max_hr: 184,
+        current_weekly_km: 20, longest_recent_run_km: 2,
+        training_age: '<6mo', recent_quality_training: 'none',
+        hard_session_relationship: 'neutral', days_available: 4, days_cannot_train: [],
+        injury_history: [] as string[],
+        acknowledged_days_warning: true, acknowledged_prep_warning: true,
+      } as unknown as GeneratorInput
+      let pl: Plan
+      try { pl = generateRulePlan(input, 'trial', COHORT_PLAN_START, undefined, COHORT_PLAN_START) } catch { continue }
+      // The distance KEY, not an interpolated unit: `hardcodedUnits.test.ts` forbids welding a
+      // unit glyph to a value, and the key reads better here anyway.
+      const why = `out-of-scope readiness band at ${raceDistanceKey(km)} (§117 Am. 8)`
+      for (const v of validatePlan(pl, input)) if (!woken.has(v.code)) woken.set(v.code, why)
+    }
+  }
+
   // ── MAINT-LIVENESS-01 — the maintenance block gets probed too ──────────────
   //
   // 🔴 THE BASELINE'S STATED REASON WAS WRONG, AND IT HID THE ACTUAL CAUSE.

@@ -11937,6 +11937,72 @@ better signal and was already available at that call site.
 **below §116's floor** and still get continuous `Easy run: 2`, against this floor note's own text. Filed as
 `GETRUNNING-WALKRUN-FLOOR-01` — not introduced by Am. 7 and not fixed by it.
 
+### §117 Amendment 8 — THE INSTRUCTION REACHES THE 5K AND 10K; THE PEAK REDUCTION DOES NOT *(Coaching Board 2026-11-12, `SHORTDIST-RUNWALK-SCOPE-01`)*
+
+**Principle.** §117's run-walk **instruction** is prescribed at the distances named in
+`GENERATION_CONFIG.RUNWALK_INSTRUCTION_RACE_KEYS` — **5K, 10K and the marathon** — to a finish-goal
+runner who reads **structurally beginner** and whose **declared** longest run is below
+`RUNWALK_PRESCRIBE_LONGEST_RUN_PCT_OF_RACE` (25%) of the race. **A declared longest run of ZERO is
+served, and is the strongest case for the prescription, not an excluded one.** §117's **peak
+reduction** keeps its own, narrower scope: the marathon alone.
+
+**What was wrong.** A 5K or 10K runner whose longest run is 0 was prescribed a **16-minute CONTINUOUS
+long run** in week 1, while the half and marathon **refused the identical runner**. 🔴 **Type the
+harder race, get the safer answer** — the third appearance of that inversion in three days
+(`STAGED-HM-DOOR-01`, `HM-BASE-RATIO-SCOPE-01`, this). The runner was excluded **twice over**: the
+distance gate was marathon-only, and the readiness gate read `longest <= 0`, which treated *"I have
+never run"* exactly like *"we were not told"*.
+
+🩹 **Willy:** *"A sixteen-minute continuous run is not dangerous in itself, and that is the trap. It is
+the wrong PRESCRIPTION for someone whose longest run is zero, and we refuse the identical runner at
+21.1 km. We are not inconsistent about risk, we are inconsistent about which form asked."*
+🎯 **McMillan:** *"Short-distance runners are the beginners. This is the cohort, not an edge."*
+**Amendment: the run-walk must reach 5K/10K, and NOT by extending the refusal** — a 5K is the right
+first race, and refusing it would be worse than the defect.
+
+🔴 **TWO PREDICATES, BECAUSE ONE WAS SHARED AND WIDENING IT WOULD HAVE BEEN A SILENT REGRESSION.**
+`runWalkDistanceApplies` was read by the prescription gate **and by `runWalkApplies`, the peak
+reduction**. The one-line fix would therefore have lowered peak volume for every 5K/10K beginner
+finish-goal runner — the half **Amendment 4 separates by ruling**, and the open
+`RUNWALK-ASSESSED-LEVEL-01` question this board **already vacated once** on a measured **7 runners
+going SERVED to REFUSED**. So the instruction's scope is named in config and read by
+`runWalkInstructionDistanceApplies`; the peak's scope is unchanged.
+
+| 10,080 wizard-reachable inputs | before | after |
+|---|---|---|
+| generated / refused | 7,117 / 2,963 | **7,117 / 2,963 — identical** |
+| served vs refused changes | — | **0** |
+| **peak week moved** | — | **0** |
+| `finish_goal_run_walk` (the peak flag) | — | **0 changes** |
+| plans carrying a run-walk strategy | 528 | **1,284** |
+
+The 756 plans that gained it are **5K 306 · 10K 450**, nothing else; by declared longest run
+**0 km gains 324**, 1 km 288, 2 km 144; **finish-goal 756 of 756**, time-goal untouched. 🩹 **Willy's
+standing "no peak may fall" condition is satisfied by measurement, not by argument.**
+
+⚠️ **THE HALF IS OUT OF SCOPE BY RULING AND IS NOT CLEAN.** Measured the same day: at `cw >= 10` with a
+declared longest run of 1-2 km the HM generates the **same 16-minute continuous long run with §117
+silent** — the identical defect. The amendment names 5K and 10K, so the HM's prescription is
+**unchanged**, and `INV-PLAN-RUNWALK-SHORTDIST-SCOPE` raises it as a **`warn` (84 firings on the probe
+grid)** so the next sitting sees a number rather than nothing. **Severity is the ruling boundary, not
+a tolerance.**
+
+⚠️ **AND THE RULING'S CHECK IS A BEHAVIOURAL TEST, NOT THE INVARIANT.**
+`INV-PLAN-RUNWALK-PRESCRIBED-WHEN-UNREADY` fires on `runWalkPrescriptionApplies(…) && !prescribed`, so
+it **shares the producer's predicate**: narrowing the gate leaves its counts **byte-identical** —
+verified. It can see *"the gate said yes and the plan ignored it"* and can never see *"the gate should
+have said yes"*, which is this amendment's whole subject. The gate is
+`lib/plan/runWalkShortDistance.test.ts`, falsified by reverting the config: **5 of 8 arms go red.**
+
+**Config.** `GENERATION_CONFIG.RUNWALK_INSTRUCTION_RACE_KEYS = ['5K', '10K', 'MARATHON']`. No new
+numeric: the 25% bar and the 6/1 run-walk minutes are Amendment 5's and Amendment 6's, unchanged.
+`runWalkSet` already draws a short session correctly — a 16-minute main set becomes
+**2 x (6 run / 1 walk) + 2 run**.
+
+**Invariants.** `INV-PLAN-RUNWALK-PRESCRIBED-WHEN-UNREADY` widens with the gate; **new**
+`INV-PLAN-RUNWALK-SHORTDIST-SCOPE` (`warn`) counts the unruled half-marathon band.
+
+
 ## 118. The get-running plan — what we offer the runner no race plan can serve
 
 *(Coaching Board 2026-09-20, CORRECT WITH AMENDMENT, three amendments. Founder directive after the board twice ruled zero rejection unreachable by coaching.)*

@@ -81,6 +81,19 @@ const cohorts: Cohort[] = [
   // (generated 1500 -> 1498, LONG-RUN-SHORT +19, NEVER-BUILDS +5). ⚠️ And a stable stride
   // alone would not do: a 1-in-4 sample would drop the only rows that REACH the never-run
   // cohort, which is the entire reason the block exists.
+  // 🔑 BASELINE MOVED 2026-11-13 AND THE CAUSE IS THE PREVIOUS WAVE, NOT THIS ONE.
+  // `generated` 1,510 -> 1,516 (+6) and `targetedGrid/LONG-RUN-SHORT` 105 -> 106 (+1).
+  // The +6 is exactly `GRID-NO-MENOPAUSAL-TENDON-01`'s masters x tendon block, appended to
+  // `targetedGridExtra` and taken IN FULL here by design. The +1 is ONE of those six, named:
+  // the **plantar-fasciitis masters marathoner, peak long run 17.0 km = 40% of the race**
+  // against the 55% bar. Its Achilles twin — identical age, volume and longest run — does
+  // NOT fire, which is an observed asymmetry with a number on it and nothing more.
+  //
+  // ⚠️ IT WENT UNDECLARED FOR A COMMIT BECAUSE `review:coaching` WAS NOT RUN ON A CORPUS
+  // CHANGE. The full suite and `audit-docs.sh` were both clean, and neither reads this
+  // baseline. CLAUDE.md says to run the review after every coaching-engine change and
+  // periodically regardless; a change to the POPULATION this script samples is one, because
+  // the population is half of every rate it prints. Found on the next wave's run.
   { name: 'targetedGrid', inputs: [...stride(targetedGridCore(), 1500), ...targetedGridExtra()], planStart: COHORT_PLAN_START },
   { name: 'charity personas', planStart: CHARITY_PLAN_START,
     inputs: CHARITY_PERSONAS.map(p => ({ ...p.input, race_date: charityRaceDate(p.weeks, CHARITY_PLAN_START, p.raceDay ?? 'sun') } as GeneratorInput)) },

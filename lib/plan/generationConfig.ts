@@ -1550,6 +1550,33 @@ export const GENERATION_CONFIG = {
   // long run is 17.0 km, so about half stay scored. **That is the bound working.**
   RUNWALK_PRESCRIBE_LONGEST_RUN_PCT_OF_RACE: 25,
 
+  // §117 Amendment 8 — THE DISTANCE SCOPE OF THE *INSTRUCTION*, WHICH IS NOT THE
+  // SCOPE OF THE PEAK REDUCTION (Coaching Board 2026-11-12, SHORTDIST-RUNWALK-SCOPE-01).
+  //
+  // 🩹 Willy at the sitting: *"A sixteen-minute continuous run is not dangerous in
+  // itself, and that is the trap. It is the wrong PRESCRIPTION for someone whose
+  // longest run is zero, and we refuse the identical runner at 21.1 km. We are not
+  // inconsistent about risk, we are inconsistent about which form asked."*
+  // 🎯 McMillan: *"Short-distance runners are the beginners. This is the cohort, not
+  // an edge."* The amendment is explicit that the fix is NOT to extend the refusal —
+  // a 5K is the right first race and refusing it would be worse than the defect.
+  //
+  // 🔴 A SEPARATE KEY FROM `runWalkDistanceApplies` BECAUSE THAT PREDICATE IS SHARED
+  // WITH THE PEAK GATE, AND WIDENING IT WOULD HAVE BEEN A SILENT REGRESSION.
+  // `runWalkPlan.ts` uses it at BOTH `runWalkPrescriptionApplies` (the instruction)
+  // and `runWalkApplies` (the peak reduction), and §117 Amendment 4 separates those
+  // two by ruling. The peak half is `RUNWALK-ASSESSED-LEVEL-01`, which this board
+  // already VACATED once on a measured 7 runners going served -> refused. So the
+  // instruction's scope is named here and the peak's scope stays marathon-only.
+  //
+  // ⚠️ THE HALF IS NOT IN THIS LIST AND THAT IS A SCOPE, NOT AN OVERSIGHT. Measured
+  // 2026-11-13: at `cw >= 10` with a longest run of 1-2 km the HM generates the same
+  // 16-minute continuous long run with §117 silent. The ruling names 5K and 10K only,
+  // so the HM keeps its prescription unchanged and `INV-PLAN-RUNWALK-SHORTDIST-SCOPE`
+  // raises it as a `warn` instead — visible and counted, never silently excluded, and
+  // not a prescription nobody has ruled on.
+  RUNWALK_INSTRUCTION_RACE_KEYS: ['5K', '10K', 'MARATHON'] as readonly string[],
+
   FINISH_GOAL_RUNWALK_RUN_MINS: 6,
   FINISH_GOAL_RUNWALK_WALK_MINS: 1,
   // §117 Am.6 addendum (RUNWALK-WARMUP-01, Coaching Board 2026-10-22): on a run-walk session the warm-up is a brisk

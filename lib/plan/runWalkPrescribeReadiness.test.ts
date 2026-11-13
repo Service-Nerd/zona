@@ -90,22 +90,47 @@ describe('§117 Am.5 — run-walk prescribed on readiness to run', () => {
     }
   })
 
-  it('only beginners with a finish goal at marathon+ reach it', () => {
+  it('only beginners with a finish goal, at a distance in the RULED scope, reach it', () => {
+    // ▲ §117 Amendment 8 (2026-11-12, SHORTDIST-RUNWALK-SCOPE-01) — this arm read
+    // "at marathon+" and the scope is now 5K, 10K and the marathon. The HM stays OUT by
+    // ruling, which is why it is still the negative case here; `INV-PLAN-RUNWALK-SHORTDIST-
+    // SCOPE` counts it rather than serving it.
     const notBeginner = { ...UNREADY, fitness_level: 'intermediate' } as GeneratorInput
     const notFinish = { ...UNREADY, goal: 'time_target', target_time: '4:15:00' } as unknown as GeneratorInput
     const halfMarathon = { ...UNREADY, race_distance_km: 21.1 } as GeneratorInput
     expect(runWalkPrescriptionApplies(notBeginner, levelOf(notBeginner))).toBe(false)
     expect(runWalkPrescriptionApplies(notFinish, levelOf(notFinish))).toBe(false)
-    expect(runWalkPrescriptionApplies(halfMarathon, levelOf(halfMarathon))).toBe(false)
+    expect(runWalkPrescriptionApplies(halfMarathon, levelOf(halfMarathon)),
+      'the HM entered the instruction scope without a ruling').toBe(false)
+    // And the two the amendment ADDED, with a longest run under each race's own 25% bar.
+    for (const km of [5, 10]) {
+      const short = { ...UNREADY, race_distance_km: km, current_weekly_km: 10,
+        longest_recent_run_km: 0 } as unknown as GeneratorInput
+      expect(runWalkPrescriptionApplies(short, levelOf(short)),
+        `§117 Am. 8 requires the ${km}km to reach the instruction`).toBe(true)
+    }
   })
 
-  it('a missing or zero longest run does not reach it', () => {
+  it('a MISSING longest run does not reach it — but a DECLARED ZERO does', () => {
     // §18's INV-INPUT-LONGEST-LE-WEEKLY means a stated longest is trustworthy;
     // an ABSENT one is not evidence of anything, and must not buy a prescription.
-    for (const longest of [undefined, 0]) {
-      const i = { ...UNREADY, longest_recent_run_km: longest } as unknown as GeneratorInput
-      expect(runWalkPrescriptionApplies(i, levelOf(i))).toBe(false)
-    }
+    //
+    // ▲ §117 Amendment 8 (2026-11-12, SHORTDIST-RUNWALK-SCOPE-01) — this arm asserted that
+    // BOTH `undefined` and `0` were excluded, and the reason above only ever justified the
+    // first. The gate read `longest <= 0`, so it treated "I have never run" exactly like "we
+    // were not told". 0 is a real wizard value (the longest-run ruler starts at 0, step 1),
+    // `ENVELOPE-LRR-BLIND-01` exists because no corpus could reach the runner who declares
+    // it, and under Amendment 5 a longest run of zero answers the readiness question most
+    // clearly of all. **The comment was right and the assertion over-applied it.**
+    const absent = { ...UNREADY } as unknown as Record<string, unknown>
+    delete absent.longest_recent_run_km
+    const a = absent as unknown as GeneratorInput
+    expect(runWalkPrescriptionApplies(a, levelOf(a)),
+      'an ABSENT longest run must not buy a prescription — absence is not a value').toBe(false)
+
+    const zero = { ...UNREADY, longest_recent_run_km: 0 } as unknown as GeneratorInput
+    expect(runWalkPrescriptionApplies(zero, levelOf(zero)),
+      'a DECLARED zero is the strongest case for the prescription, not an excluded one').toBe(true)
   })
 
   it('the unready runner GETS the prescription, and the plan validates', () => {
