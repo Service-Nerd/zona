@@ -8613,12 +8613,18 @@ function buildRulePlanOnce(
         // §18 Am.2: a long run forced onto a weekday is exempt from the cap (§81), not a pinned easy run.
         if (!sn || sn.type !== 'easy' || isLongRun(sn) || d === 'sat' || d === 'sun') continue
         weekdayEasy++
-        if ((sn.duration_mins ?? 0) >= input.max_weekday_mins - 1) pinned++
+        // §40c Am. 1 — THAT DAY'S ceiling, not the tightest day's. `max_weekday_mins` is the
+        // MINIMUM across running weekdays, so a Tuesday at 85 min against a 90-min Tuesday
+        // budget used to count as pinned at 35 (`SHORTFALL-PINNED-DAY-BUDGET-01`).
+        // `weekdayBudgetFor` is the owner `OVERRUN-NOTE-ALL-01` built; the sibling §81 note has
+        // read it since `STRUCTURAL-NOTE-DAY-BUDGET-01`, and this producer had not caught up.
+        const dayCap = weekdayBudgetFor(input, d)?.cap ?? input.max_weekday_mins
+        if ((sn.duration_mins ?? 0) >= dayCap - 1) pinned++
       }
     }
     // Not materially binding → the cap is not what shaped this plan, and naming
     // the wrong lever is worse than saying nothing.
-    if (weekdayEasy === 0 || pinned / weekdayEasy < 0.25) return null
+    if (weekdayEasy === 0 || pinned / weekdayEasy < GENERATION_CONFIG.VOLUME_SHORTFALL_PINNED_SHARE) return null
 
     return Math.max(0, ((peakIntent - peakActual) / peakIntent) * 100)
   })()

@@ -184,6 +184,25 @@ export const GENERATION_CONFIG = {
   // pattern this product exists to prevent).
   VOLUME_SHORTFALL_NOTE_THRESHOLD_PCT: 10,
 
+  // §40c Amendment 1 (Coaching Board 2026-11-14, `SHORTFALL-PINNED-DAY-BUDGET-01`) — the share of
+  // weekday easy runs that must sit at their day's ceiling before the cap counts as having
+  // MATERIALLY shaped the plan.
+  //
+  // 🔴 IT WAS A BARE `0.25` IN `ruleEngine.ts` AND IN `invariants.ts`: §40c's own materiality
+  // test, a literal in the engine it governs, in the one file the Configuration Singularity
+  // exists to keep numbers out of. Named here with the principle beside it.
+  //
+  // ⚠️ MEASURED AGAINST **THAT DAY'S** BUDGET, NEVER `max_weekday_mins`. The latter is the
+  // MINIMUM across running weekdays, so a Tuesday run of 85 min against a 90-min Tuesday budget
+  // counted as pinned at 35.
+  //
+  // 📐 Before/after on the engine: 765 plans, **336 -> 333 notes — three plans**, all marathon /
+  // 20 km a week / 3 days / finish-goal / roomy-majority budgets. 🔴 Two earlier figures were
+  // wrong and both were mine: the item's 39-of-2,055, and my own 456, which recomputed the pinned
+  // share in a probe rather than reading the producer. `day_budgets` also changes the plan the
+  // engine BUILDS, so most of those had no shortfall left to declare.
+  VOLUME_SHORTFALL_PINNED_SHARE: 0.25,
+
   // VOL-STRUCTURE-01 (§23/§52) — how far the peak phase may fall below the
   // plan's maximum before the plan is declared unable to progress.
   //

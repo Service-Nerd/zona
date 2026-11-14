@@ -4191,6 +4191,45 @@ Measured by counterfactual (identical profile, cap vs no cap):
 
 ---
 
+
+### Amendment 1 — pinned means THAT DAY's ceiling, not the tightest day's (`SHORTFALL-PINNED-DAY-BUDGET-01`) — added 2026-11-14 (Coaching Board)
+
+**Principle.** The materiality test counts a weekday easy run as *pinned* when it sits at **its own
+day's** budget. `max_weekday_mins` is the MINIMUM across the runner's running weekdays, so measuring
+every day against it counted a Tuesday run of 85 minutes, against a 90-minute Tuesday budget the
+runner gave us, as pinned at 35.
+
+**Why this is an amendment and not a defect fix.** This section was added 2026-08-20 and **its entire
+evidence table is single-cap shapes, because `day_budgets` did not exist when it was written.** It
+never decided the question. The board is legislating, not interpreting, and says so.
+
+**McMillan, whose reading carried:** *"They gave us five numbers; measuring all five against the
+smallest one tells them their roomy day is as constrained as their tightest, which is not what they
+said and not what they experience."*
+
+📐 **MEASURED ON THE ENGINE, before and after the producer change: 765 plans, 336 → 333 notes.
+Three plans, all marathon / 20 km a week / 3 days / finish-goal / roomy-majority budgets.**
+
+🔴 **TWO EARLIER FIGURES FOR THIS WERE WRONG AND BOTH WERE MINE, in the same way twice.** The
+filing item said 39 of 2,055 flip with 34 silences. I then measured 1,536 flips and 456 silences —
+**by recomputing the pinned share in my own probe**, which is a different quantity: `day_budgets`
+also changes the plan the engine BUILDS, so most of those plans no longer had a shortfall to
+declare at all. **Only a before/after run of the real producer answers it, and the answer is 3.**
+⚠️ **What this does NOT prove:** not that each of the three had no real shortfall — only that **the
+CAP was not what shaped it**. A `peakIntent > peakActual` gap from any other cause sits outside
+this gate either way, and did before.
+
+**Config.** `GENERATION_CONFIG.VOLUME_SHORTFALL_PINNED_SHARE` (0.25). 🔴 **It was a bare `0.25` in
+`ruleEngine.ts` and again in `invariants.ts`** — this section's own materiality test, a literal in
+the engine it governs, which is a Configuration Singularity breach inside the principle enforcing it.
+
+**Enforcement.** `INV-PLAN-VOLUME-SHORTFALL-DECLARED` moves in the same commit. ⚠️ It **derives its
+own copy** of the day-budget read rather than importing the producer's, exactly as the sibling
+overrun check does: a checker sharing the producer's expression cannot catch the producer being
+wrong (`DELOAD-OWNER-01`).
+
+Sitting: `docs/decisions/coaching-2026-11-14-wave2-notes.md`.
+
 ## 52b. A training day must be able to carry a real session
 
 *Added 2026-08-20 — Coaching Board (INPUT-FLOOR-01), unanimous.*

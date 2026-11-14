@@ -5206,7 +5206,12 @@ export function validatePlan(plan: Plan, rawInput: GeneratorInput): Violation[] 
       for (const [d, sn] of Object.entries(w.sessions)) {
         if (!sn || sn.type !== 'easy' || d === 'sat' || d === 'sun') continue
         weekdayEasy++
-        if ((sn.duration_mins ?? 0) >= input.max_weekday_mins - 1) pinned++
+        // §40c Am. 1 — that day's ceiling. ⚠️ THE CHECKER DERIVES ITS OWN COPY, deliberately:
+        // it shares the producer's QUESTION, not the producer's expression, as the sibling
+        // overrun check does. A checker that imports the producer's predicate cannot catch the
+        // producer being wrong (`DELOAD-OWNER-01`).
+        const dayCap = input.day_budgets?.[d as keyof typeof input.day_budgets] ?? input.max_weekday_mins
+        if ((sn.duration_mins ?? 0) >= dayCap - 1) pinned++
       }
     }
     // TWO conditions, matching the engine exactly. Checking pinned-ness alone
@@ -5214,7 +5219,8 @@ export function validatePlan(plan: Plan, rawInput: GeneratorInput): Violation[] 
     // but the week's volume still landed, so no note was due and the invariant
     // fired anyway. Pinned-ness says the cap is ACTIVE; the stamped percentage
     // says whether it COST anything.
-    const materiallyBinding = weekdayEasy > 0 && pinned / weekdayEasy >= 0.25
+    const materiallyBinding = weekdayEasy > 0
+      && pinned / weekdayEasy >= GENERATION_CONFIG.VOLUME_SHORTFALL_PINNED_SHARE
     const costEnough = (plan.meta.volume_shortfall_pct ?? 0)
       >= GENERATION_CONFIG.VOLUME_SHORTFALL_NOTE_THRESHOLD_PCT
     if (materiallyBinding && costEnough && !plan.meta.volume_shortfall_note) {

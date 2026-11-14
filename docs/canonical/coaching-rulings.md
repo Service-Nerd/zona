@@ -3144,3 +3144,52 @@ backlog."*
 ⚠️ **What this sitting does not prove: no ruling was made with `measure:fitness` in front of it**,
 which is why one item was ruled outright and the rest carry named conditions — the precedent being
 a sitting that ruled on classification alone and sent a low-base beginner 7.3 → 18.5 km in a week.
+
+---
+
+## 2026-11-14 — Wave 2. Two notes that state the wrong thing
+
+Sitting: `docs/decisions/coaching-2026-11-14-wave2-notes.md`.
+
+### ⚖️ `SHORTFALL-PINNED-DAY-BUDGET-01` — CORRECT. §40c Amendment 1
+
+**Pinned is measured against THAT DAY's budget, not `max_weekday_mins`** (the minimum across the
+runner's running weekdays). A Tuesday run of 85 minutes against a 90-minute Tuesday budget the
+runner gave us counted as pinned at 35.
+
+🔑 **§40c never decided this.** Added 2026-08-20, and **its whole evidence table is single-cap
+shapes because `day_budgets` did not exist.** The board legislated and said so. **McMillan's
+reading carried.**
+
+📐 **Measured on the engine, before and after: 765 plans, 336 → 333 notes. Three plans** — all
+marathon / 20 km a week / 3 days / finish-goal / roomy-majority budgets.
+🔴 **Two earlier figures were wrong and both were mine:** the item's 39-of-2,055, and **my own 456,
+which I gave Seiler during the sitting** — it recomputed the pinned share in a probe rather than
+reading the producer, and `day_budgets` also changes the plan the engine BUILDS.
+⚠️ **Does not prove** the three had no real shortfall — only that the CAP was not what shaped it.
+
+**Artifacts:** §40c Am. 1 · `GENERATION_CONFIG.VOLUME_SHORTFALL_PINNED_SHARE` (§40c's own 0.25 was
+a literal in `ruleEngine.ts` and again in `invariants.ts`) · `INV-PLAN-VOLUME-SHORTFALL-DECLARED`
+moved in the same commit, deriving its own copy of the day read.
+🔴 **The first gate was hollow and two mutations proved it** — it asserted its own recomputation, so
+reverting the producer and silencing it entirely both stayed green.
+
+### ⚖️ `ROUND-NOTE-TIME-GOAL-01` — PREMISE NOT SUPPORTED. Closed, nothing shipped
+
+§114's *"built to get you round, not to chase a time"* on a time-goal plan. 📐 **944 of 1,396
+time-goal plans carry it, 208 of them runners on 60 km a week** — but attributed properly,
+**280 of 296 come from `peakOverloadResult`, which has had `CB-PLAN-REVIEW-01`'s carve-out since
+2026-09-19.** `atCeiling` is false there, so `volumeFails` or `lrFails` is genuinely true and **the
+sentence is correct by this board's own prior ruling.** §114 is a founder decision and is not
+re-opened.
+
+🔴 **I built the carve-out for the second producer (`lopsidedNote`, 16 of 296), measured it firing
+on 0 plans, and reverted it** along with the `atCeiling` export it needed. **Trace the producer,
+not the consumers.**
+
+🔻 **Not closed:** the prompting case (28 Oct digest, London 4:00, peak 52 km/week) is one runner
+and a grid cannot settle it.
+
+### ⇗ SLT escalation
+
+None. Neither changes tier, cost, or what the engine prescribes — both change what the plan SAYS.

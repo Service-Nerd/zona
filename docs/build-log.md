@@ -6,6 +6,26 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-11-14 — SHORTFALL-PINNED-DAY-BUDGET-01 · the item said 39 plans, my probe said 456, the engine said 3
+
+**Shipped:** §40c Amendment 1 — a weekday easy run is "pinned" against that day's budget, not the tightest day's.
+**Dev learning:** every wrong number here came from one move: measuring with a probe that **recomputed the engine's logic** instead of reading the engine's output. The item said 39 of 2,055 plans flip. My probe said 1,536 flips and 456 silences. The engine, run before and after the change, said **336 → 333: three plans.** The gap is that `day_budgets` also changes the plan the engine *builds*, so most of what my arithmetic flagged no longer had a shortfall to declare. A probe that re-implements the producer measures the probe.
+**Product/creator learning:** §40c was added in August and its entire evidence table is single-cap shapes, because per-day budgets did not exist yet. So the board was not interpreting a principle, it was legislating — and saying so in the amendment is the difference between a ruling the next sitting can read and one it re-litigates. Also: the 0.25 materiality gate was a bare literal in the engine the principle governs, which is a Configuration Singularity breach inside the section enforcing it.
+**AI-building learning:** my first gate recomputed the pinned share and asserted on its own arithmetic, so reverting the producer to the old reading **and** making it return null for everybody both left all four arms green. That is `DELOAD-OWNER-01`, written by someone who had just read `DELOAD-OWNER-01`. Then two of my replacement arms asserted a note on inputs that carry none in either reading — absent before, absent after, nothing to bound. The arms read `plan.meta` now, on the three inputs the diff named.
+**The honest bit:** I gave Seiler the 456 figure inside the sitting and he reasoned from it. His argument survives; the number under it did not, and I had to go back and correct a board member's recorded reasoning. That is the worst place for a wrong number, and it got there because I wrote the sitting up before measuring the engine.
+**Hook material:** three measurements of the same change: 39, 456, and 3. Only the one that ran the real producer counted.
+**Postable?:** yes.
+
+## 2026-11-14 — ROUND-NOTE-TIME-GOAL-01 · I had the right measurement and still fixed the wrong producer
+
+**Shipped:** nothing. The item is closed with its premise unsupported, and the fix I built was reverted.
+**Dev learning:** 944 of 1,396 time-goal plans carried §114's *"built to get you round, not to chase a time"*, 208 of them runners on 60 km a week. I found `lopsidedNote` writing that sentence with no goal test and no ceiling test while its sibling in `classifyPeakOverload` has had exactly that carve-out since September, built the carve-out, exported `atCeiling` out of the closure so it would not be defined twice — and it fired on **0 plans**. One line attributing the note to its producer would have saved the entire build: **280 of 296 come from the sibling that already has the carve-out.**
+**Product/creator learning:** where the carve-out does not apply, `volumeFails` or `lrFails` is genuinely true — those runners cannot be built far enough for the time they asked for, and saying so is what §114 is for. The sentence is a founder decision and it is correct in the measured cohort. An item can be right that a sentence looks wrong and wrong about why.
+**AI-building learning:** shipping the inert branch would have closed the item, passed every gate, and changed nothing for any runner. That is the decorative-config failure this repo has paid for more than any other, and the only thing that caught it was running the measurement again **after** building rather than before.
+**The honest bit:** I reverted a carve-out I had just written, plus the type change it needed. The revert is the deliverable.
+**Hook material:** built a fix, measured it firing on zero plans out of 2,948, deleted it.
+**Postable?:** yes — "trace the producer, not the consumers" is the lesson and the title.
+
 ## 2026-11-14 — REDEEM-SCREEN-UNREACHABLE-01 · the SLT question had been answered four times, and the runbook was the real defect
 
 **Shipped:** the unreachable Supabase code path is deleted and the runbook tells the truth about how to comp a runner.

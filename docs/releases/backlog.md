@@ -1987,7 +1987,38 @@ Tanaka estimate**. So the population at risk today is 3, and grows as device max
 input, not `editedMax`** — re-typing the same number leaves `mhrNum === maxHR` and reads as
 untouched, so the obvious fix does not work.
 
-### 🔲 `SHORTFALL-PINNED-DAY-BUDGET-01` — `volumeShortfallNote` tests "pinned at the limit" against the minimum cap 🏃 **COACHING BOARD** (§40c materiality)
+### ✅ `SHORTFALL-PINNED-DAY-BUDGET-01` — SHIPPED 2026-11-14 as **§40c Amendment 1** 🏃 **COACHING BOARD, CORRECT**
+
+🧭 **Sitting:** `docs/decisions/coaching-2026-11-14-wave2-notes.md`.
+🔑 **§40c NEVER DECIDED THIS.** It was added 2026-08-20 and **its entire evidence table is single-cap shapes, because
+`day_budgets` did not exist.** The board was legislating, not interpreting, and says so. McMillan's reading carried:
+*"they gave us five numbers; measuring all five against the smallest one tells them their roomy day is as constrained
+as their tightest, which is not what they said and not what they experience."*
+
+📐 **MEASURED ON THE ENGINE, before and after: 765 plans, 336 → 333 notes. THREE plans** — all marathon / 20 km a week /
+3 days / finish-goal / roomy-majority budgets.
+
+🔴 **TWO EARLIER FIGURES WERE WRONG AND BOTH WERE MINE, IN THE SAME WAY TWICE.** The item said 39 of 2,055 flip with 34
+silences. I then measured **1,536 flips and 456 silences — by recomputing the pinned share in my own probe**, which is a
+different quantity: `day_budgets` also changes the plan the engine BUILDS, so most of those had no shortfall left to
+declare. **Only a before/after run of the real producer answers it.** ⚠️ I had already given Seiler the 456 at the
+sitting; his reasoning stands and the number under it is corrected in the record.
+
+🔴 **AND MY FIRST GATE WAS HOLLOW — TWO MUTATIONS PROVED IT.** It recomputed the pinned share and asserted on its own
+arithmetic, so reverting the producer to the tightest cap **and** making it return null for everybody both left all four
+arms green. **A test that asserts its own copy of the producer cannot catch the producer** (`DELOAD-OWNER-01`). Every
+arm reads `plan.meta` now, on the three inputs the diff named. ⚠️ **Two of my replacement arms then asserted a note on
+inputs that carry none in EITHER reading** — absent before, absent after, nothing to bound; the bounding input is taken
+from the measured key list instead of from my idea of a plausible one.
+
+🔑 **AND §40c's OWN MATERIALITY GATE WAS A BARE `0.25`** in `ruleEngine.ts` and again in `invariants.ts` — a literal in
+the engine the principle governs, a Configuration Singularity breach inside the section enforcing it. Now
+`GENERATION_CONFIG.VOLUME_SHORTFALL_PINNED_SHARE`.
+
+**Artifacts:** §40c Am. 1 · `VOLUME_SHORTFALL_PINNED_SHARE` · `INV-PLAN-VOLUME-SHORTFALL-DECLARED` moved in the same
+commit, **deriving its own copy** of the day read as the sibling overrun check does. Gate:
+`lib/plan/volumeShortfallDayBudget.test.ts`, 4 arms, falsified twice against the engine.
+⚠️ **What this does not prove:** not that the three had no real shortfall — only that the CAP was not what shaped it.
 
 Found building `STRUCTURAL-NOTE-DAY-BUDGET-01`. `volumeShortfallPct` counts a weekday easy run as pinned when
 `duration_mins >= max_weekday_mins - 1`, so a Tuesday run at 85 minutes against a **90-minute** Tuesday budget counts as
@@ -2877,7 +2908,28 @@ through `sessionKmSelfPaced`, race included, and ignores `weekly_km`; Today neve
 data only. Present in every archived version since 3 Oct, so not caused by the
 rebuild. Measure which surfaces render `weekly_km` for a race week before deciding anything.
 
-### 🔲 `ROUND-NOTE-TIME-GOAL-01` — "built to get you round, not to chase a time" on a time-goal plan 🏃 **COACHING BOARD** (an outcome claim), 👤 **FOUNDER** (words)
+### 🔴 `ROUND-NOTE-TIME-GOAL-01` — **CLOSED 2026-11-14, PREMISE NOT SUPPORTED. I BUILT A FIX, MEASURED IT INERT, AND REVERTED IT** 🏃 **COACHING BOARD**
+
+🧭 **Sitting:** `docs/decisions/coaching-2026-11-14-wave2-notes.md`. The item asked for a measurement first and nobody
+had taken one. Taken: **944 of 1,396 time-goal plans carried the sentence, 208 of them runners on 60 km a week.**
+
+🔴 **THEN I ATTRIBUTED IT TO THE WRONG PRODUCER.** I found `lopsidedNote` writing §114's *"built to get you round, not
+to chase a time"* with no goal test and no ceiling test, while its sibling in `classifyPeakOverload` has had exactly
+that carve-out since `CB-PLAN-REVIEW-01` (2026-09-19). I built the carve-out, exported `atCeiling` from the classifier
+so it would not be defined twice — and it fired on **0 plans**.
+
+📐 **Attributed properly: 280 of 296 come from `peakOverloadResult`, 16 from `lopsidedNote`.** The dominant producer is
+the one that ALREADY has the carve-out, which means `atCeiling` is false there — `volumeFails` or `lrFails` is genuinely
+true — and **by the board's own prior ruling the sentence is CORRECT.** Those runners cannot be built far enough for the
+time they asked for, and §114 is a founder decision: *"Give them a get you round plan."*
+
+✅ **Reverted: the carve-out and the exported verdict.** Shipping an inert branch and calling the item fixed is the
+decorative-config failure this repo has paid for most. 🔑 **Trace the producer, not the consumers** — I had the
+measurement and still assumed which code emitted it.
+
+🔻 **What is NOT closed:** the item's own prompting case (28 Oct digest, London 4:00, peak 52 km/week) is one runner and
+a grid cannot settle it. If it recurs, the question is whether that plan's `volumeFails` was genuine — not whether the
+sentence has a carve-out, which it does. (words)
 
 Raised by the 28 Oct digest on 94z2pg4cr6 (a1a1b638, London 4:00, peak 52 km/week): `meta.volume_constraint_note` tells a
 runner who asked for 4:00 that the plan is not built for a time. Present before the rebuild (same text in the 28 Oct
