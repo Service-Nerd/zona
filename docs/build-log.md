@@ -6,6 +6,16 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-11-14 — A11Y-REDUCED-MOTION-01 · the premise was wrong in the useful direction: three components honoured it and the owner was missing
+
+**Shipped:** one owner for the JS half of `prefers-reduced-motion`, and the Coach trend count-up honours it.
+**Dev learning:** the item said *"animations ignore `prefers-reduced-motion`"*. Measured, that was true of **exactly one** animation. `globals.css` has collapsed the six motion tokens in a single block since DESIGN-V3, and `Sheet`, `PullToRefresh` and `HeroTrace` each honoured the query — **with their own hand-written copy of the check**. So the defect was not three oversights plus one; it was a missing owner, which is the condition under which a fourth animation gets written without a check at all. One function, three adopters, one fix.
+**Product/creator learning:** the pattern doc says the count-up *"makes the data feel earned, not loaded"*, and under reduced motion we give that up and keep the number. I did not have to decide that — `globals.css`'s own reduced-motion comment already describes the JS shape: *"the hero never starts its loop and sets `drawn` immediately."* Reading the comment beside the code I was changing told me what the house already does, which also made the Design Board exemption honest rather than convenient.
+**AI-building learning:** the subtle part was `done`. Setting the final value is obvious; flipping `done` is not, until you notice the pattern fades a gloss in *after the count-up completes*. Set the value and forget `done`, and a reduced-motion user gets the number with the gloss permanently missing — a second, quieter defect created by fixing the first. It is mutation 2 in the gate and it goes red.
+**The honest bit:** `git checkout` on a tracked file reverted my actual change along with the mutation I was testing, and I only noticed because I had the probe print whether the restore was correct. Second time today that command has cost me work, and I have a note about it.
+**Hook material:** an accessibility item that read as four broken animations was one broken animation and three copies of the same four-line check.
+**Postable?:** yes.
+
 ## 2026-11-14 — SHORTFALL-PINNED-DAY-BUDGET-01 · the item said 39 plans, my probe said 456, the engine said 3
 
 **Shipped:** §40c Amendment 1 — a weekday easy run is "pinned" against that day's budget, not the tightest day's.

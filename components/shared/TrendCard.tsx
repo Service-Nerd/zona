@@ -22,6 +22,7 @@ import EarnedLine from '@/components/shared/EarnedLine'
 import { formatPace } from '@/lib/format'
 import Button from '@/components/ui/Button'
 import { MICRO_LABELS } from '@/components/shared/microLabels'
+import { prefersReducedMotion } from '@/lib/ui/reducedMotion'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -115,6 +116,22 @@ function useCountUp(target: number, duration = 600): { value: number; done: bool
   const rafRef   = useRef<number | null>(null)
 
   useEffect(() => {
+    // 🧭 A11Y-REDUCED-MOTION-01 — the one animation in the app that honoured nothing.
+    //
+    // The number arrives at its final value and `done` flips immediately, so the gloss that
+    // `ui-patterns.md` fades in *"after count-up completes"* still arrives rather than waiting
+    // on a loop that never runs. **This is the documented house shape, not an invention:**
+    // `globals.css`'s own reduced-motion block describes the JS half as *"the hero never starts
+    // its loop and sets `drawn` immediately"*, which is exactly `HeroTrace`.
+    //
+    // ⚠️ The pattern's stated intent is that the count-up *"makes the data feel earned, not
+    // loaded"*. Under reduced motion we give up the earning and keep the number — the runner
+    // asked for that trade at the OS level, and this card is a health figure, not a flourish.
+    if (prefersReducedMotion()) {
+      setValue(target)
+      setDone(true)
+      return
+    }
     startRef.current = null
     function tick(ts: number) {
       if (startRef.current === null) startRef.current = ts

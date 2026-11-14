@@ -87,3 +87,10 @@ full Xcode; Safari Apple-Events JavaScript and screen capture both unavailable).
 `/sticky-probe` answers it in five seconds on a device.
 
 **Guarded by** `lib/ui/stickyTransform.test.ts`.
+
+## The reduced-motion check is the owner's (A11Y-REDUCED-MOTION-01, 2026-11-14)
+
+`reduceMotion` was a hand-written `window.matchMedia?.(…)` read; it calls
+`lib/ui/reducedMotion.ts → prefersReducedMotion()` now. **No behavioural change** — the owner
+keeps the same default (animate when the query cannot be answered) and the same read-at-use
+timing.

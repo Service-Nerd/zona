@@ -86,3 +86,12 @@ type change.**
 🔻 **What this does not cover:** nothing in this repo asserts an accessible name on any OTHER
 dialog-shaped surface — the `ScreenGuide` coach-mark panel is a hand-rolled slide-up and is not a
 `Sheet`. "The sheets" is the scope only because this contract happened to name it.
+
+## The reduced-motion check is the owner's (A11Y-REDUCED-MOTION-01, 2026-11-14)
+
+`Sheet` held its own `prefersReducedMotion()` — one of three hand-written copies of the same four
+lines. It imports `lib/ui/reducedMotion.ts` now. **No behavioural change:** the guards were
+equivalent, and the owner keeps the same default (animate when the query cannot be answered).
+
+⚠️ The query is read at the moment of use rather than cached at module scope, because the
+preference changes while the app is open (iOS Settings → Accessibility → Motion).

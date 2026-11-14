@@ -17,6 +17,7 @@
 // reads the same element (scroll-to-top on screen change) keeps working.
 
 import React, { useCallback, useEffect, useRef, useState } from 'react'
+import { prefersReducedMotion } from '@/lib/ui/reducedMotion'
 
 /** Finger travel (px, after resistance) required to arm a refresh. */
 const THRESHOLD = 72
@@ -149,9 +150,7 @@ export default function PullToRefresh({
   const active = status === 'pulling' || status === 'armed'
   const progress = Math.min(pull / THRESHOLD, 1)
   const working = status === 'refreshing'
-  const reduceMotion =
-    typeof window !== 'undefined' &&
-    window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
+  const reduceMotion = prefersReducedMotion()
 
   const showStatus = status === 'done' || status === 'error'
 

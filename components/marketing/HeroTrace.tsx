@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { HrTrace } from '@/components/marketing/HrTrace'
 import { HERO_TRACE, LOOP_SECONDS, DRAW_DELAY_MS, type TracePhase } from '@/lib/marketing/heroTrace'
+import { prefersReducedMotion } from '@/lib/ui/reducedMotion'
 
 /**
  * DESIGN-V3 — the hero's evidence card. The homepage's proof, above the fold.
@@ -30,8 +31,7 @@ export function HeroTrace() {
   const [drawn, setDrawn] = useState(false)
 
   useEffect(() => {
-    const reduce = typeof window !== 'undefined'
-      && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
+    const reduce = prefersReducedMotion()
     if (reduce) { setDrawn(true); return }
 
     const t = setTimeout(() => setDrawn(true), DRAW_DELAY_MS)

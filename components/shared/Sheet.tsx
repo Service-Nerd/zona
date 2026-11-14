@@ -51,6 +51,7 @@ import { createPortal } from 'react-dom'
 import { Z_LAYERS } from '@/lib/ui/zLayers'
 import { releaseOnNextFrame } from '@/lib/ui/rafRelease'
 import { claimSheetFoot, getNavNode } from '@/lib/ui/sheetFoot'
+import { prefersReducedMotion } from '@/lib/ui/reducedMotion'
 
 // ── Nav height ─────────────────────────────────────────────────────────────
 // The bottom nav measures itself (ResizeObserver in DashboardClient) and
@@ -106,11 +107,6 @@ export function SheetPresentationProvider({ value, children }: { value: SheetPre
   return <SheetPresentationContext.Provider value={value}>{children}</SheetPresentationContext.Provider>
 }
 
-
-const prefersReducedMotion = () =>
-  typeof window !== 'undefined' &&
-  typeof window.matchMedia === 'function' &&
-  window.matchMedia('(prefers-reduced-motion: reduce)').matches
 
 interface SheetProps {
   /** Called once the exit animation has finished — unmount the sheet here. */
