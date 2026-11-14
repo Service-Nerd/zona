@@ -2,7 +2,7 @@
 
 **Route:** `/api/charity/redeem` — **deleted.** This file is the record, not a contract.
 
-`REDEEM-SCREEN-UNREACHABLE-01`. The route's only caller was `app/dashboard/RedeemCodeScreen.tsx`,
+`REDEEM-SCREEN-UNREACHABLE-01`. The route's only caller was the `RedeemCodeScreen` component (deleted with it),
 which nothing could open: no code set `screen = 'redeem'`.
 
 ## Why it went, and why that is not a loss
