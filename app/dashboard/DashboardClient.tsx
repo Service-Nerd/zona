@@ -164,7 +164,6 @@ import PullToRefresh from '@/components/shared/PullToRefresh'
 import { syncOnAppOpen } from '@/lib/health/clientSync'
 const GeneratePlanScreen = dynamic(() => import('./GeneratePlanScreen'), { ssr: false })
 const UpgradeScreen = dynamic(() => import('./UpgradeScreen'), { ssr: false })
-const RedeemCodeScreen = dynamic(() => import('./RedeemCodeScreen'), { ssr: false })
 const BenchmarkUpdateScreen = dynamic(() => import('./BenchmarkUpdateScreen'), { ssr: false })
 const FounderNoteScreen = dynamic(() => import('./FounderNoteScreen'), { ssr: false })
 import { RecalibrationReadyTile, BenchmarkAbsentTile, RecalibrationEntryScreen } from './RecalibrationTile'
@@ -225,7 +224,7 @@ import { STRENGTH_SCREEN_SUB, STRENGTH_TITLE, strengthSubtitle } from '@/compone
 import type { StrengthPlan, StrengthProfile, StrengthSession } from '@/packages/strength'
 import SessionPopupInner from '@/components/dashboard/SessionPopupInner'
 
-type Screen = 'zones' | 'today' | 'plan' | 'coach' | 'strava' | 'me' | 'calendar' | 'session' | 'generate' | 'upgrade' | 'benchmark' | 'reshape' | 'post-run' | 'founder' | 'redeem' | 'notifications' | 'recalibration' | 'strength-session' | 'strength-setup' | 'strength-guided'
+type Screen = 'zones' | 'today' | 'plan' | 'coach' | 'strava' | 'me' | 'calendar' | 'session' | 'generate' | 'upgrade' | 'benchmark' | 'reshape' | 'post-run' | 'founder' | 'notifications' | 'recalibration' | 'strength-session' | 'strength-setup' | 'strength-guided'
 
 
 
@@ -754,10 +753,6 @@ export default function DashboardClient() {
   /** This runner was comped at some point, live grant or lapsed. Decides which
    *  words the Upgrade screen uses when access ends. */
   const [hadCharityGrant, setHadCharityGrant] = useState(false)
-  /** Where to return when the redeem screen closes. There are three doors into
-   *  it (Me, Upgrade, and the onboarding wizard) and `onBack` used to be hard
-   *  wired to Me, so redeeming from the wizard dropped a half-finished plan. */
-  const [redeemReturnTo, setRedeemReturnTo] = useState<Screen>('me')
   /** ME-DOORS-01 — the zones screen now has TWO entry points with two different correct
    *  backs: the `Zones` row on the Me index, and the `heart-rate` door. Same shape as
    *  `redeemReturnTo` above. Null means "back to the index", which is the index row's case. */
@@ -3822,7 +3817,6 @@ export default function DashboardClient() {
           )
         })()}
         {/* GTM-CHARITY-04 — full screen, never a modal (no-popups rule). */}
-        {screen === 'redeem'    && <RedeemCodeScreen onBack={() => setScreen(redeemReturnTo)} onRedeemed={(expiresAt: string | null) => { setHasPaidAccess(true); setTrialExpired(false); setTrialDaysLeft(null); setHadCharityGrant(true); setCharityGrantEndsAt(expiresAt) }} />}
         {screen === 'notifications' && <NotificationsScreen onBack={() => setScreen('today')} onNavigate={navigateFromNotificationUrl} onAllRead={() => setUnreadNotifications(0)} />}
       </PullToRefresh>
 
@@ -3915,19 +3909,6 @@ export default function DashboardClient() {
         const isOnboarding = screen === 'generate' && (!plan || plan === EMPTY_PLAN)
         if (isOnboarding) return null
 
-        // UX-REDEEM-01 — the redeem screen is a FULL SCREEN, so it replaces the
-        // tab bar rather than floating above it.
-        //
-        // Reported from a real device: "Got a code page (it has the nav bar at
-        // the bottom)". `RedeemCodeScreen` has its own back arrow and owns the
-        // whole viewport, but the tab bar stayed mounted underneath — so a
-        // runner mid-redemption could tap away to Today/Plan/Coach and lose the
-        // flow, on the one screen standing between them and free access.
-        //
-        // `ui-patterns.md` is explicit and this was neither of its two shapes:
-        // a full screen replaces the tab bar; a slide-up sheet keeps a MIRRORED
-        // nav at the bottom. It has a back arrow, so it is the former.
-        if (screen === 'redeem') return null
         // STRENGTH-GUIDED-SESSION-01 — the guided session is a full screen too: End session and Back are its exits.
         if (screen === 'strength-guided') return null
 

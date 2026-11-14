@@ -1642,7 +1642,54 @@ option this repo has previously ruled against.
 
 ---
 
-### 🔲 `REDEEM-SCREEN-UNREACHABLE-01` — the charity-code mechanism is live code behind a door nobody can open 💼 **SLT** (retire or re-wire) → ⚙️ **NO BOARD** to execute
+### ✅ `REDEEM-SCREEN-UNREACHABLE-01` — SHIPPED 2026-11-14. **NOT AN SLT QUESTION: THE FOUNDER HAD RULED IT FOUR TIMES** ⚙️ **NO BOARD**
+
+🔑 **The item routed this to the SLT as "retire or re-wire". It was already retired, deliberately, six weeks earlier.**
+`CHARITY-CODE-CONTROL-01` (Design Board 2026-09-28, on a founder instruction) replaced three hand-rolled Supabase code
+fields with ONE control calling Apple's `presentCodeRedemptionSheet()`. It retired the Apple 3.1.1 exposure, and the
+measurement was stark: **the Supabase field was redeemed ONCE, ever, against two Apple offer-code redemptions in a
+single afternoon.** The founder then said it four times, the last *"the only code input is through Apple code redeem"*
+and *"we are not using the charity_codes table for this. **i keep saying this.**"*
+
+🔴 **AND THE THING NOBODY WROTE DOWN: APPLE'S SHEET CANNOT REDEEM A `charity_codes` ROW.** It redeems an Apple offer
+code. So from 2026-09-28 the Supabase mechanism had **no entry point at all** — which is why the goodwill batch issued
+2026-10-07 was revoked the same day with *"no redeem path available"*. **That note was correct, nine days after the
+control shipped**, and nobody connected the two.
+
+📐 **Re-measured 2026-11-14:** 24 subscriptions, **all active, all `is_comped`, all RevenueCat** — every paid account
+came through App Store Connect, and there are **zero organic subscribers**. `charity_codes`: 4 codes, 2 batches, 1
+claimed. 1 admin.
+
+✅ **Deleted:** `RedeemCodeScreen.tsx`, `/api/charity/redeem`, the `'redeem'` member of the `Screen` union, its render
+branch, the nav-hide branch and its `UX-REDEEM-01` comment, `redeemReturnTo` state and the *"three doors"* comment that
+named doors removed six weeks earlier, and `redeemClaimSemantics.test.ts` (its subject went with the route).
+✅ **KEPT, because they are live:** `grantWindow.ts` (read by `lib/trial.ts` and the charity page), `reanchor.ts` (read
+by `lib/plan.ts`), `resolveTier`'s `grant` branch, and both tables — **one runner holds a claimed grant.**
+
+🔴 **THE RUNBOOK WAS THE MOST EXPENSIVE FALSE RECORD IN THE SET** and it is corrected. `docs/runbooks/charity-codes.md`
+named **three in-app doors by name** — *"Me screen → Have a charity code?"*, under the distance tiles, under Restore on
+Upgrade — six weeks after all three were replaced, and step 2 still told the founder to mint codes nobody can redeem.
+**It is the document he would follow when a partner calls.**
+
+📐 **Blast radius: 37 test files, 66 tests, and only 7 were real.** The other 30 were scanners reading `git ls-files`
+and hitting `ENOENT` on a deleted-but-unstaged file — **`git add` fixed them**, which is this repo's own
+*stage-before-you-verify* lesson arriving on schedule. The 7 real ones were ratchets doing their job: three baselines
+lowered to measured values (micro-label debt 20 → 18, undeclared type uses 207 → 203, 13px sites 136 → 134), two
+"five screens" registers that are now four, the inline-override register entry, and two geometry fixture rows.
+
+**Gate:** `lib/charity/supabaseRedeemRetired.test.ts` — **7 cases in BOTH directions**: the dead path stays dead, **and
+the LIVE path still has its three declared placements**, because retiring the broken mechanism must not take the working
+one. Falsified four ways. 🔴 **Two of my own arms were wrong first:** one read comments that deliberately RECORD the
+deleted screen (`HOOK-RGBA-COMMENTS-01`, third time today), and `toContain('RedeemCodeLink')` **passed a mutation that
+renamed it `RedeemCodeLinkX`** — substring bias, anchored now.
+
+🔻 **Declared, not discovered later:** `GTM-CHARITY-07` ruled a seat is spent when CLAIMED, and its enforcement lived in
+the deleted route's claim gate. The ruling still holds (`claimed_at` survives account deletion by founder decision) but
+**nothing enforces it while nothing can redeem.** If the door is ever rebuilt, that gate comes back with it. The mint
+and check scripts and `lib/charity/code.ts` are **kept** — minting is inert, not harmful, and the runbook now says so.
+
+<details><summary>Original item, as filed</summary>
+**As filed —`REDEEM-SCREEN-UNREACHABLE-01` — the charity-code mechanism is live code behind a door nobody can open 💼 **SLT** (retire or re-wire) → ⚙️ **NO BO
 
 📐 **Found 2026-11-02**, when the founder asked to comp a runner and corrected the answer: *"the only code input
 is through Apple code redeem."* He was right, and the code says so.
@@ -1686,6 +1733,8 @@ consumer into an invisible one.
 live to 2026-12-22, and the branch is what stops a lapsed grant being told "14 days done" (`TIER-OWNER-01`).
 
 ---
+
+</details>
 
 ### 🔲 `COMP-NO-IN-PRODUCT-PATH-01` — there is no way to give a runner paid access without App Store Connect and the runner's own action 💼 **SLT**
 

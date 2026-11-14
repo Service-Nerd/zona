@@ -132,7 +132,6 @@ const BASELINE: Record<string, number> = {
   // and its replacement is `RedeemCodeLink`, which carries its own treatment, so one
   // hand-styled inline Button left this file for good.
   'app/dashboard/GeneratePlanScreen.tsx': 3,
-  'app/dashboard/RedeemCodeScreen.tsx': 2,
   'components/shared/NotificationBell.tsx': 1,
   'components/shared/PendingAdjustmentBanner.tsx': 1,
   'components/training/PostRaceReshapeCard.tsx': 1,

@@ -158,7 +158,7 @@ describe('TYPESCALE-APP-GATE-01 — the app type scale is a closed set', () => {
     // sites that were always there became visible: 3 decimal px (9.5, 11.5, 13.5) and 9
     // hardcoded rem (6 × 0.8125rem in UpgradeScreen, EmptyState 1rem, PullToRefresh
     // 0.8125rem, PlanChart 0.46rem = 7.36px).
-    const UNDECLARED_USES_BASELINE = 207  // 195 → 207 DEFINITION CHANGE, see above; 196 → 195 A DELETION, NOT A PAYMENT (SELECT-DEAD-01, 2026-11-08): `components/shared/Select.tsx` had zero importers and went, taking its one `fontSize: '11px'` chevron with it. **No size was converted**, so this buys nothing — same distinction the two uncontracted registers were built to make visible last week, and the ratchet must never move without saying which it was; 201 → 196 measured STAGED: COACH-KIT-CAUGHT-01 retired the stale free teaser (locked report, two upsell buttons, locked race list, example card), 2026-10-31; 202 → 201 RUNKED-LOAD-VIEW-01: the Coach Sessions tile's 28px numeral went when Sessions became a 17px row (2026-10-30); 209 → 202 TYPE-18PX-CONVERGE-01: seven 18px headline/title sites converged (2026-10-24); 210 → 209 measured STAGED: ME-HISTORY-ERROR-DEADEND-01 moved Plan history's 13px error line onto EmptyState
+    const UNDECLARED_USES_BASELINE = 203  // 207 → 203 REDEEM-SCREEN-UNREACHABLE-01: `RedeemCodeScreen` deleted (unreachable since CHARITY-CODE-CONTROL-01, 2026-09-28). // 195 → 207 DEFINITION CHANGE, see above; 196 → 195 A DELETION, NOT A PAYMENT (SELECT-DEAD-01, 2026-11-08): `components/shared/Select.tsx` had zero importers and went, taking its one `fontSize: '11px'` chevron with it. **No size was converted**, so this buys nothing — same distinction the two uncontracted registers were built to make visible last week, and the ratchet must never move without saying which it was; 201 → 196 measured STAGED: COACH-KIT-CAUGHT-01 retired the stale free teaser (locked report, two upsell buttons, locked race list, example card), 2026-10-31; 202 → 201 RUNKED-LOAD-VIEW-01: the Coach Sessions tile's 28px numeral went when Sessions became a 17px row (2026-10-30); 209 → 202 TYPE-18PX-CONVERGE-01: seven 18px headline/title sites converged (2026-10-24); 210 → 209 measured STAGED: ME-HISTORY-ERROR-DEADEND-01 moved Plan history's 13px error line onto EmptyState
     let n = 0
     for (const [size, count] of Array.from(sizes())) if (!DECLARED.has(size)) n += count
     expect(n,
@@ -235,7 +235,7 @@ describe('TYPESCALE-APP-GATE-01 — the app type scale is a closed set', () => {
     // `PullToRefresh.tsx`. ⚠️ **So the convergence this arm tracks was five sites further
     // from done than it reported, for as long as the arm has existed.** The ratchet still
     // only falls from here.
-    const THIRTEEN_BASELINE = 136  // 131 → 136 DEFINITION CHANGE, see above; 134 → 131 measured STAGED: COACH-KIT-CAUGHT-01 retired three 13px teaser lines; 135 → 134 measured STAGED: Plan history's 13px error line became EmptyState (ME-HISTORY-ERROR-DEADEND-01)
+    const THIRTEEN_BASELINE = 134  // 136 → 134 REDEEM-SCREEN-UNREACHABLE-01: `RedeemCodeScreen` deleted (unreachable since CHARITY-CODE-CONTROL-01, 2026-09-28). // 131 → 136 DEFINITION CHANGE, see above; 134 → 131 measured STAGED: COACH-KIT-CAUGHT-01 retired three 13px teaser lines; 135 → 134 measured STAGED: Plan history's 13px error line became EmptyState (ME-HISTORY-ERROR-DEADEND-01)
     const n = sizes().get('13') ?? 0
     expect(n,
       n > THIRTEEN_BASELINE

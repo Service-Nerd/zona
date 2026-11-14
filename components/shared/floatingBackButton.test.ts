@@ -149,12 +149,14 @@ describe('BACK-ARROW-FLOAT-01 — one owner for where the arrow sits', () => {
     // 🔴 THIS LIST HAS GROWN TWICE AS THE RULING COMPLETED. Every pushed screen now pins
     // rather than floats: the five hand-rolled ones through `PinnedBackHeader`, and the
     // `ScreenHeader` family through its own `onBack`. The arm follows the decision.
+    // ⚠️ FOUR, NOT FIVE: `RedeemCodeScreen.tsx` was the fifth and was DELETED 2026-11-14
+      // (REDEEM-SCREEN-UNREACHABLE-01 — unreachable since CHARITY-CODE-CONTROL-01 retired the
+      // Supabase code field for Apple's redemption sheet). The ruling it encodes is unchanged.
     const PINNED_INSTEAD: string[] = [
       'app/dashboard/BenchmarkUpdateScreen.tsx',
       'components/shared/FaqScreen.tsx',
       'app/dashboard/UpgradeScreen.tsx',
       'app/dashboard/FounderNoteScreen.tsx',
-      'app/dashboard/RedeemCodeScreen.tsx',
     ]
     for (const f of PINNED_INSTEAD) {
       const src = readFileSync(f, 'utf8')

@@ -343,22 +343,6 @@
     "height": 47,
     "width": "full"
   },
-  "app/dashboard/RedeemCodeScreen.tsx#Button1": {
-    "floor": 44,
-    "padY": 16,
-    "font": 15,
-    "radius": "var(--radius-md)",
-    "height": 50,
-    "width": "full"
-  },
-  "app/dashboard/RedeemCodeScreen.tsx#Button2": {
-    "floor": 44,
-    "padY": 16,
-    "font": 15,
-    "radius": "var(--radius-md)",
-    "height": 50,
-    "width": "full"
-  },
   "app/dashboard/UpgradeScreen.tsx#Button1": {
     "floor": 44,
     "padY": null,

@@ -87,10 +87,12 @@ describe('BACK-ARROW-TITLE-COLLIDE-01 — pushed screens pin their header', () =
     // could not be reached by the `ScreenHeader` default because their title is hand-rolled
     // inside the scrolling content block. Doing them as five bespoke edits would have made
     // five copies of one pattern — this repo's single most-recorded defect.
+    // ⚠️ FOUR, NOT FIVE: `RedeemCodeScreen.tsx` was the fifth and was DELETED 2026-11-14
+      // (REDEEM-SCREEN-UNREACHABLE-01 — unreachable since CHARITY-CODE-CONTROL-01 retired the
+      // Supabase code field for Apple's redemption sheet). The ruling it encodes is unchanged.
     const HAND_ROLLED = [
       'app/dashboard/UpgradeScreen.tsx',
       'app/dashboard/FounderNoteScreen.tsx',
-      'app/dashboard/RedeemCodeScreen.tsx',
       'app/dashboard/BenchmarkUpdateScreen.tsx',
       'components/shared/FaqScreen.tsx',
     ]

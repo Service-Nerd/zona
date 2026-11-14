@@ -183,7 +183,7 @@ const EXEMPT = /components\/marketing\//
 // and THREE different trackings (0.12em / 0.08em / 0.04em), plus three on
 // `PlanAdjustmentsScreen` at 11px/0.06em, all collapsed onto MICRO_LABELS.eyebrow.
 // This is the 41-combination drift this file was written for, paid down in situ.
-const NON_CONFORMING_BASELINE = 20  // 21 → 20 BENCHMARK-INPUT-01: two duplicated FieldLabels became ONE in FieldText. First recorded as 19, measured while FieldText.tsx was UNSTAGED: `tracked()` reads `git ls-files`, so the new file was invisible
+const NON_CONFORMING_BASELINE = 18  // 20 → 18 REDEEM-SCREEN-UNREACHABLE-01: `RedeemCodeScreen` deleted (unreachable since CHARITY-CODE-CONTROL-01, 2026-09-28). // 21 → 20 BENCHMARK-INPUT-01: two duplicated FieldLabels became ONE in FieldText. First recorded as 19, measured while FieldText.tsx was UNSTAGED: `tracked()` reads `git ls-files`, so the new file was invisible
 
 const countNonConforming = () => {
   let n = 0

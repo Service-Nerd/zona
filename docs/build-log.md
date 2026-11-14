@@ -6,6 +6,16 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-11-14 — REDEEM-SCREEN-UNREACHABLE-01 · the SLT question had been answered four times, and the runbook was the real defect
+
+**Shipped:** the unreachable Supabase code path is deleted and the runbook tells the truth about how to comp a runner.
+**Dev learning:** `git add` before you verify. Deleting one screen failed **37 test files and 66 tests**, and only 7 were real — the other 30 were scanners reading `git ls-files`, finding the file still tracked, and hitting `ENOENT` on disk. That lesson is already in my notes and I still had to rediscover it by reading a stack trace. The 7 real failures were ratchets behaving exactly as designed: three baselines to lower to their measured values, two "the five screens" registers that are now four, a register entry, and two rows in a geometry fixture.
+**Product/creator learning:** the item routed this to the SLT as "retire or re-wire". It had been retired on purpose six weeks earlier, and the founder had said so four times — the last one *"i keep saying this."* The thing nobody had written down is the technical join: **Apple's redemption sheet redeems an Apple offer code, not a row in our table.** That single fact explains the whole mess, including a goodwill code issued to a runner we had let down and revoked the same day because there was nowhere to type it.
+**AI-building learning:** the most expensive artefact here was not code. `docs/runbooks/charity-codes.md` named three in-app doors by name, six weeks after all three were replaced, and step 2 still said to mint a batch. It is the document the founder would follow when a partner calls, and it would have produced codes nobody could redeem. **A false runbook is worse than missing code, because someone acts on it.**
+**The honest bit:** two of my own gate arms were wrong before they were right. One read comments that deliberately RECORD the deleted screen and flagged them as survivals — the third time today I wrote a guard that reads prose as code. The other used `toContain('RedeemCodeLink')`, which happily passed a mutation renaming it to `RedeemCodeLinkX`. And one of my four falsification mutations reported "no tests" rather than a failure, which means it broke the module instead of the behaviour and tested nothing until I redid it.
+**Hook material:** deleting one unreachable screen broke 37 test files, and 30 of them were fixed by `git add`.
+**Postable?:** yes.
+
 ## 2026-11-14 — TT-SKIPPED-VISIBILITY-01 · the silent skip was one correct line in the wrong function
 
 **Shipped:** when a plan promised a benchmark week and holds no benchmark, the tile's slot says so.

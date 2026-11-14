@@ -98,21 +98,37 @@ ongoing coaching, reshaping and run analysis.
 
 ---
 
-## Where a runner enters their code
+## 🔴 A RUNNER CANNOT ENTER A `charity_codes` CODE. READ THIS BEFORE MINTING A BATCH.
 
-Three doors, all reaching the same screen. If a partner asks "where do they put
-it?", the answer is any of these:
+**The Supabase code path is retired** (`REDEEM-SCREEN-UNREACHABLE-01`, 2026-11-14). There is no
+in-app field, and Apple's redemption sheet — the one control the app now offers — redeems **Apple
+offer codes**, not a row in `charity_codes`. A code minted by step 2 above has nowhere to be typed.
 
-| Door | When they hit it |
-|---|---|
-| **Me screen** → "Have a charity code?" | Any time, from day one. |
-| **Setting up a plan** → under the distance tiles | During onboarding, and again at the paywall. |
-| **Upgrade screen** → under Restore | When they hit a paid gate. |
+**How it happened, so nobody re-derives it:** `CHARITY-CODE-CONTROL-01` (2026-09-28) replaced the
+three hand-rolled code fields with one control calling `presentCodeRedemptionSheet()`. That was the
+right call — it retired the Apple 3.1.1 exposure, and the field it removed had been redeemed
+**once, ever**, against two Apple offer-code redemptions in a single afternoon. What nobody wrote
+down is that the new control cannot redeem the old codes. **The goodwill batch issued on 2026-10-07
+was revoked the same day for exactly this reason**, and this runbook went on naming three doors for
+six more weeks.
 
-**Tell them to redeem when they install, not when they get blocked.** It costs
-them nothing: the grant re-anchors to race date + 7 days as soon as they build a
-plan, so redeeming early does not shorten it. Waiting means their access quietly
-depends on remembering before day 15.
+### What to do instead, today
+
+**App Store Connect → Offer Codes.** Generate, send the code to the runner, they redeem it in the
+App Store, the RevenueCat webhook writes `subscriptions` and `resolveTier` returns
+`reason: 'subscription'`. Every one of the 24 live paid accounts came this way, all of them
+`is_comped`. It is the only mechanism that has ever worked.
+
+⚠️ **It needs the runner to act.** There is no founder-only grant: the admin flag would hand them
+admin powers, and a hand-written `subscriptions` row is overwritten by RevenueCat and misreports
+revenue. For a runner who has stopped responding there is currently **no answer**, and that is a
+founder decision rather than a defect (`COMP-NO-IN-PRODUCT-PATH-01`).
+
+### The parts of this runbook that still work
+
+Steps 1–2 (minting) and the revoke path still run, and `charity_batches` / `charity_codes` still
+hold a claimed seat whose grant `resolveTier` honours. **Keep them only if the door is coming
+back.** Minting today produces codes nobody can redeem.
 
 ## What a comped runner will NOT receive
 
