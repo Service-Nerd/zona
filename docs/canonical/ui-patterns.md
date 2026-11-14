@@ -23,7 +23,7 @@
 ---
 
 
-## A control may not state a value it does not govern
+## A surface may not state a value it does not govern
 
 **Design Board, `MODIFY-WEEKDAY-INERT-01`, 2026-11-13 — SHIP WITH AMENDMENT.**
 
@@ -49,6 +49,33 @@ the door sitting, which binds), and it does not become a per-day grid
 | **Where the copy lives** | The rows' owner (`modifyPlan.ts → consequenceFor`), never the component. A subtitle assembled at the render site is how two surfaces start disagreeing |
 | **Units** | `formatDuration`, never `${n} min`. ADR-015 locks the ≥60 rule to hours, and this row's own control was caught hand-writing it once (PREF-SWEEP-01) |
 | **Check** | `lib/plan/modifyWeekdayInert.test.ts`, falsified four ways: the spread-only revert, clearing on every edit, dropping the disclosure, and hand-writing the unit |
+
+### Extended from controls to DISPLAYS — Design Board 2026-11-14
+
+The rule above was written for a control. The same sitting's follow-up cluster found it holds for
+anything a screen asserts, and three instances of it in one pass:
+
+| Instance | What the surface claimed | Measured |
+|---|---|---|
+| `HERO-WALKRUN-TOTAL-01` | *"N weeks · X km in total"* where X omitted seven weeks | A §116 walk-run week carries **no** `weekly_km` by doctrine; the hero summed `weekly_km ?? 0`. **Latent, 0 runners** |
+| `CALENDAR-DONE-DOT-SOURCE-01` | A Strava-orange ● on runs that did not come from Strava | **~98% of logged runs are Apple Health**, and the line renders for every one |
+| `EFFORT-GOVERNED-HR-DISPLAY-01` | One HR band on a session prescribed in three | 9 files derive a band from `session.type`; `zoneForSessionType` collapses every quality session to a flat Z3 |
+
+**Two corollaries, both bought with a measurement:**
+
+🔴 **Withhold, never estimate.** Where a value cannot be stated truthfully the surface omits it
+(*"empty means calm, not broken"*). The hero prints two metrics rather than a total that is
+wrong — inventing a distance for a walk-run week is the one thing §116 forbids.
+
+🔴 **Key on the ABSENCE OF THE VALUE, not on the plan kind that usually lacks it.** This is how the
+2026-10-25 (S2) ruling came to be narrower than its own intent: it keyed on `stagedRaceOf(plan)`,
+so a §118 walk-run plan — no `staged_race` — fell straight through to the hero the ruling existed
+to prevent. A third kind with unstated weeks would have fallen through too.
+
+⚠️ **The seam, because this cluster sat on it.** Design owns the ENCODING: that the display agrees
+with whatever computes the prescription, and that it states nothing it cannot. **Coaching owns the
+MEANING** — a header reading *"Zone 2–4 · 120–175 bpm"* is a prescription, not a label, so which
+band a multi-band session shows is §84's and was routed down, not ruled here.
 
 ⚠️ **The replacement must be a real clear, not a cosmetic one.** `applyEdits` deletes
 `day_budgets` when the weekday limit is edited; without that the subtitle would promise a

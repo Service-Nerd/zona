@@ -1058,9 +1058,22 @@ function DayRow({ dayKey, session, date, isToday, isPast, isFuture, completion, 
                   the name alone would have silently dropped the distance from ~98% of
                   logged runs — the confirmation this line exists to give. The name is
                   now an optional prefix to the fact, which is the right way round. */}
+              {/* 🧭 CALENDAR-DONE-DOT-SOURCE-01 (Design Board 2026-11-14) — THE ● IS A DONE MARK,
+                  NOT A SOURCE MARK, so it takes the completion colour and not `--strava`.
+                  ⚠️ `--moss-STRONG`, not `--moss`: `ACCENT-TEXT-CONTRAST-01` (6t-g) rules that a hue is
+                  never small text and takes its ratified `-strong` shade, and this line is 10px. The
+                  first cut used `--moss` and `accentText.test.ts` caught it — the gate the board's own
+                  earlier ruling left behind, firing on this one.
+                  📐 ~98% of logged runs are Apple Health (ACTIVITY-NAME-WRITER-01), and this line
+                  renders for EVERY logged run, so the orange claimed a provenance the run did not
+                  have — before and after 6t-j, which read the line as Strava attribution.
+                  ⚠️ `SessionCard` is the surface that attributes, and it is already correct:
+                  `isDone && completion?.viaStrava && completion?.activityName`. Two surfaces
+                  disagreed and this was the wrong one. The LINE stays for every source: the
+                  name-and-distance is a confirmation, and only the colour made a claim. */}
               {isComplete && (completion?.strava_activity_name || completion?.strava_activity_km) && (
                 <span style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', color: 'var(--mute)' }}>
-                  <span aria-hidden="true" style={{ color: 'var(--strava)' }}>●</span> {completion.strava_activity_name ? `${completion.strava_activity_name}${completion.strava_activity_km ? ' · ' : ''}` : ''}{completion.strava_activity_km ? formatDistance(completion.strava_activity_km, units, { exact: true }) : ''}
+                  <span aria-hidden="true" style={{ color: 'var(--moss-strong)' }}>●</span> {completion.strava_activity_name ? `${completion.strava_activity_name}${completion.strava_activity_km ? ' · ' : ''}` : ''}{completion.strava_activity_km ? formatDistance(completion.strava_activity_km, units, { exact: true }) : ''}
                 </span>
               )}
               {isSkipped && <span style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', color: 'var(--mute)' }}>skipped</span>}

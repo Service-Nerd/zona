@@ -1,6 +1,7 @@
 'use client'
 
 import { stagedRaceOf, stagedDisplay } from '@/lib/plan/stagedRacePlan'
+import { weeksWithoutStatedDistance } from '@/lib/plan/sessionDistance'
 import { STAGED_HERO_TARGET_LABEL, STAGED_HERO_CHECKPOINT_LABEL } from '@/lib/plan/checkpointCopy'
 import type { Plan } from '@/types/plan'
 import { formatDistance, formatDate } from '@/lib/format'
@@ -56,6 +57,10 @@ export default function PlanHeroMetrics({
   // Design Board 2026-10-25 (S2): a STAGED plan's built weeks are not the plan. Its hero states the weeks to the race
   // (the arc's own denominator: two week counts on one scroll is a ruled defect), the checkpoint target, and the
   // checkpoint's date, never "33 km in total" for a marathon.
+  // 🧭 HERO-WALKRUN-TOTAL-01 — a total that silently omits weeks is not a total. Keyed on the
+  // ABSENCE OF A DISTANCE, not on a plan kind, because keying on `staged_race` is exactly how the
+  // 2026-10-25 ruling's mechanism came to be narrower than its intent.
+  const unstatedWeeks = weeksWithoutStatedDistance(plan)
   const staged = stagedRaceOf(plan)
   const view = stagedDisplay(plan)
 
@@ -85,7 +90,12 @@ export default function PlanHeroMetrics({
         </>) : (<>
           {metric(String(plan.weeks.length), 'weeks')}
           {metric(formatDistance(peakKm, units) ?? '—', 'biggest week')}
-          {metric(formatDistance(totalKm, units) ?? '—', 'in total')}
+          {/* The total is withheld, not estimated, when any week has no stated distance.
+              "Empty means calm, not broken" (ux-principles) — and an invented number for a
+              walk-run week is the one thing §116 forbids. */}
+          {unstatedWeeks === 0
+            ? metric(formatDistance(totalKm, units) ?? '—', 'in total')
+            : null}
         </>)}
       </div>
 

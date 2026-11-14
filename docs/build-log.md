@@ -6,6 +6,16 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-11-14 — Design Board, the "a screen states something untrue" cluster · five items, two builds, and the board's own old gate caught me
+
+**Shipped:** the plan hero withholds a total it cannot state; the calendar's completion ● stops claiming Strava. Three more ruled without building.
+**Dev learning:** the display-side owner I needed for the HR item was `displayZonesForSession` — **directly above** `getSessionHRDisplay` in the same file, already reading `session.zone` and already yielding `Zone 3–4`. The zone label was right and the HR number wrong, two adjacent functions. I nearly proposed building what existed. Separately: `getSessionHRDisplay` takes a type STRING, not the session, which is why it cannot consult either owner without a signature change — the "a caller with no X" shape again.
+**Product/creator learning:** of 29 open design items, the settled-ground scan alone disqualified seven from needing a sitting at all — three blocked on a device with the artefact already named, one already ruled and awaiting a build, one a record rather than a question, one parked. **Reading the register is cheaper than ruling.** And `HERO-WALKRUN-TOTAL-01` turned out not to be the board's at all: the principle was ruled three weeks ago and the code keyed on `stagedRaceOf`, so the ruling's mechanism was narrower than its intent. That is the third item this week whose board tag overstated what was needed.
+**AI-building learning:** 🔴 I ruled the calendar dot should take `--moss`, implemented it, and **the board's own earlier gate refused it** — `ACCENT-TEXT-CONTRAST-01` (6t-g) rules a hue is never small text and takes its ratified `-strong` shade, and that line is 10px. Silvanto's veto scope was live and a test held it without a seat having to. The design-guard hook had told me twice to check the token layer and the pattern layer in the same pass; I checked that `--moss` existed and not what the rules said about using it at that size. **A token existing is not a token being permitted there.**
+**The honest bit:** I also keyed the hero fix on the plan kind in my head first, which is the exact mistake the 2026-10-25 ruling made — I only caught it because I was writing the falsification case for it.
+**Hook material:** a design board overruled by a test it had itself demanded three weeks earlier.
+**Postable?:** yes — "the gate the board left behind caught the board" is a good shape, and so is "reading the register disqualified seven of 29 items from needing a meeting."
+
 ## 2026-11-13 — MODIFY-WEEKDAY-INERT-01 · the item asked which of two fixes; the measurement said neither
 
 **Shipped:** the "Weekday time limit" row in Adjust your plan now governs what it claims to, and names what it replaces.

@@ -185,3 +185,28 @@ export function roundDistance(distKm: number): number {
   const p = GENERATION_CONFIG.DISTANCE_ROUNDING_PRECISION_KM
   return Math.round(distKm / p) * p
 }
+
+/**
+ * Weeks whose distance the plan does not state — the reason a hero may not print a total.
+ *
+ * 🧭 `HERO-WALKRUN-TOTAL-01` (Design Board 2026-11-14): the hero summed `weekly_km ?? 0`, and a
+ * §116 walk-run week carries NO `weekly_km` by ratified doctrine — it is time on feet, and a
+ * distance would be a number we invented. So a plan whose first seven weeks are walk-run rendered
+ * *"N weeks · X km in total"* where X covered only the ramp.
+ *
+ * 🔴 THIS IS CONFORMANCE, NOT A NEW RULING. The board ruled the principle on 2026-10-25 (S2) —
+ * *"a staged plan's built weeks are not the plan … never '33 km in total' for a marathon"* — and
+ * the code keyed on `stagedRaceOf(plan)`, so a §118 walk-run plan, which has no `staged_race`,
+ * fell straight through to the generic hero the ruling was written to avoid. **The ruling's
+ * mechanism was narrower than its intent**, which is why this keys on the ABSENCE OF A DISTANCE
+ * rather than on a plan kind: a third kind with unstated weeks would otherwise fall through too.
+ *
+ * ⚠️ Latent when written: 0 runners reach the §118 sub-floor branch (a sub-floor runner is
+ * staged, so never refused, so never sets `acceptBaseBuild`), and a staged walk-run plan already
+ * renders the staged hero correctly.
+ */
+export function weeksWithoutStatedDistance(
+  plan: { weeks?: ReadonlyArray<{ weekly_km?: number | null }> | null },
+): number {
+  return (plan.weeks ?? []).filter(w => w.weekly_km == null).length
+}

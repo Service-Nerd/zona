@@ -406,7 +406,12 @@ before planning against any number below (an item is a snapshot of the code on t
   ⚠️ **`week1CeilingKm` was written for this and DELETED** — a helper with no consumer is the decorative-config class.
   Re-derive it where the lever lands.
 
-- 🧭 **DESIGN BOARD** `HERO-WALKRUN-TOTAL-01` — **the hero states a plan total that silently omits
+- ✅ **SHIPPED 2026-11-14** `HERO-WALKRUN-TOTAL-01` ⚙️ **NO BOARD — tag removed, it was never the board’s**
+  🔴 **The principle was ruled 2026-10-25 (S2) and the implementation keyed on `stagedRaceOf(plan)`**, so a §118
+  walk-run plan with no `staged_race` fell through to the hero the ruling existed to prevent. Conformance, not a
+  decision. 🔑 Now keyed on the ABSENCE OF A DISTANCE (`weeksWithoutStatedDistance`), so a third kind with unstated
+  weeks cannot fall through the same way. The hero prints two metrics rather than a wrong third. ⚠️ Latent: 0
+  runners. Gate: `lib/ui/screenStatesTruth.test.ts`, falsified 2 ways incl. re-keying on the plan kind.
   seven of its weeks.** `PlanHeroMetrics.tsx` computes `totalKm = sum(weekly_km ?? 0)`, and a §116
   walk-run week carries **no** `weekly_km` by ratified doctrine (it is time on feet; a distance would be
   a number we invented). So a plan whose first seven weeks are walk-run renders *"N weeks · X km in
@@ -676,7 +681,11 @@ before planning against any number below (an item is a snapshot of the code on t
   post-hoc HealthKit HR-vs-pace for runners whose benchmark is 1, 3, 6 and 12 months old — **collectable, and nobody
   has looked.** ⚠️ The ramp reading the wall clock is CORRECT for the prescription and is not the question here.
 
-- 🧭 **DESIGN BOARD** `GOALPACE-GAP-LEVER-COPY-01` — **the gap sentence names the loss and not the lever (§40c).**
+- 👤 **FOUNDER (words)** `GOALPACE-GAP-LEVER-COPY-01` — **surface and condition RULED 2026-11-14**
+  🧭 Design Board SHIP WITH AMENDMENT: the sentence must name the LEVER, not only the loss, and **the copy
+  BRANCHES on the benchmark’s AGE** — on a fresh benchmark the lever is "run the race you trained for", not
+  "test again", so one sentence cannot carry it. The board ruled that a lever must be named and that the branch
+  exists; **the words are yours and were not ratified at the coaching sitting either.**
   🎯 McMillan's granted arm from the `GOALPACE-REACH-COMPARATOR-01` sitting: a runner targeting 46:00 off a 49:00 10K is
   told *"Your target is about 7% quicker than your recent run suggests, so sessions are set to what you can run now."*
   — true in the plan's currency, and **the runner does not hold a currency.** The lever exists and is FREE: a fresh
@@ -1766,7 +1775,19 @@ it is SC-02's fallback label behaving exactly as ratified** (every 5K/10K build 
 since 2026-08-20), it is pre-existing rather than introduced here, and with 0 ultra runners it reaches
 nobody. Recorded here so the next reader of an ultra plan knows it was seen and not missed.
 
-### 🔲 `EFFORT-GOVERNED-HR-DISPLAY-01` — the screen can still show a type-derived HR band on an effort-governed session 🧭 **DESIGN BOARD** (§84 family) · P3
+### 🔲 `EFFORT-GOVERNED-HR-DISPLAY-01` — encoding RULED 2026-11-14; the BAND routes to 🏃 **COACHING BOARD**
+
+🧭 **Design Board 2026-11-14 — SHIP WITH AMENDMENT on the ENCODING, band routed not ruled.** A header reading
+*"Zone 2–4 · 120–175 bpm"* **is a prescription, not a label**, so which band a multi-band session shows is §84’s.
+Design owns only that the display AGREES with whatever computes the prescription and states nothing it cannot.
+
+📐 **The measurement the item demanded:** 9 files derive a band from `session.type`, 2 read `session.zone`;
+`zoneForSessionType` collapses every quality session to a flat Z3. 🔑 **The scorer was fixed and the display was
+not** — `prescribedZoneFigures` (§123) owns the prescription and is read by **2 API routes only**. 🔑 **And the
+display-side owner is ONE FUNCTION AWAY:** `displayZonesForSession`, directly above `getSessionHRDisplay` in the
+same file, already reads `session.zone` and already yields `Zone 3–4` — **the zone LABEL is correct and the HR
+NUMBER is not.** ⚠️ `getSessionHRDisplay` takes a TYPE STRING, not the session, so it cannot consult either owner
+without a signature change across ~4 call sites in 3 files.
 
 Found during §40b Am.4 (2026-11-02), filed not fixed. The plan is now honest — `vert_hike_repeats` carries no `hr_target` —
 but `getSessionHRDisplay` (`components/dashboard/dashboardHelpers.ts`) computes its band from `sessionHRBand(session.type)`,
@@ -3291,7 +3312,13 @@ notes prescribe marathon and HM-pace segments, so the HR cap and the segments ca
 brief's W7). Beginners no longer reach §24b; intermediates and marathon runners still do. Needs a ruling on how a
 segmented session states its HR, and a measurement of how many sessions it moves.
 
-### 🔲 `CALENDAR-DONE-DOT-SOURCE-01` — the Plan calendar's completion ● is Strava orange for Apple Health runs too 🧭 **DESIGN BOARD** *(filed 2026-10-22)*
+### ✅ `CALENDAR-DONE-DOT-SOURCE-01` — **SHIPPED 2026-11-14, Design Board: the ● is a DONE mark** 🧭
+
+✅ The ● takes `--moss-strong`; the confirmation LINE stays for every source, because gating it on `viaStrava`
+would drop the distance from ~98% of logged runs. `SessionCard` was already correct, so two surfaces disagreed and
+this was the wrong one. 🔴 **My first cut used `--moss` and the board’s own earlier gate refused it** —
+`ACCENT-TEXT-CONTRAST-01` (6t-g): a hue is never small text and takes its ratified `-strong` shade, and this line
+is 10px. The veto scope was live and a test held it without a seat having to.
 
 Found building `A11Y-APP-TEXT-SWEEP-01`. 6t-j ruled "the orange stays on the ● mark" reading the line as Strava
 attribution, but `PlanCalendar`'s confirmation line (`● <name?> · <distance>`) renders for EVERY logged run, gated on
@@ -6790,7 +6817,11 @@ naming the hero's distance on a double day) is a **separate `###` item** with it
 tag, filed the same day. They are adjacent under the 2026-10-17 inventory heading, which is what reads
 as one item from a list of ids. **Nothing to do; recorded so the next sitting does not re-propose it.**
 
-### `TODAY-DOUBLE-HEADLINE-01` — Today's headline names the hero's distance on a double day *(filed 2026-10-17, OPEN)*
+### ✅ `TODAY-DOUBLE-HEADLINE-01` — **CLOSED 2026-11-14, DON’T SHIP (not permanent)** 🧭
+
+📐 **0 of 2,433 live day slots hold more than one session; 0 plans have a double day.** `getSessionsForDate`
+returns a list since ADR-025 Phase 1, so the shape is supported and the engine produces none. Wording a headline
+for an unreachable state is a preference. **Reopens the moment the engine produces a double day.**
 
 On a double day the Today headline reads the hero session (*"10km, slowly."*) while the day holds two 10 km runs.
 Ruled hero-first by the Design Board; the headline was not part of the sitting. Whether it should name the day's

@@ -294,3 +294,21 @@ the stored label restates the session's own TYPE (`"Quality"`, `"Quality session
 "looks generic" test would silently re-title thousands of correct sessions, which is a bigger change than
 the defect. Gate: `lib/plan/sessionDisplayLabel.test.ts`, whose bounding arms assert the non-replacement
 cases and that no catalogue row is itself named after a bare type word.
+
+## The completion ● is a DONE mark (`CALENDAR-DONE-DOT-SOURCE-01`, 2026-11-14)
+
+The ● takes **`--moss-strong`**, not `--strava`. ~98% of logged runs are Apple Health
+(`ACTIVITY-NAME-WRITER-01`) and this line renders for every logged run, so the orange claimed a
+provenance the run did not have.
+
+⚠️ **`--moss-strong`, not `--moss`:** `ACCENT-TEXT-CONTRAST-01` (6t-g) rules a hue is never small
+text and takes its ratified `-strong` shade. This line is 10px, and `accentText.test.ts` refuses
+`--moss` here.
+
+⚠️ **The LINE is not re-gated on `viaStrava`.** It stays gated on
+`strava_activity_name || strava_activity_km`, because `viaStrava` would drop the distance from
+~98% of logged runs — the confirmation the line exists to give. **Only the colour made a claim.**
+Attribution lives on `SessionCard`, gated on `isDone && viaStrava && activityName`, and was
+already correct.
+
+Gate: `lib/ui/screenStatesTruth.test.ts` + `lib/ui/accentText.test.ts`.

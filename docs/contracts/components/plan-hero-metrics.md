@@ -32,3 +32,15 @@ type Props = {
 
 `GeneratePlanScreen` (the plan preview) and the local harness `/staged-preview` (404 in production).
 Tested by `components/shared/planHeroMetrics.test.ts` and `components/shared/stagedRaceScreens.markup.test.ts`.
+
+## The total is withheld, never estimated (`HERO-WALKRUN-TOTAL-01`, 2026-11-14)
+
+The generic branch prints **two** metrics, not three, when any week has no stated distance:
+`weeksWithoutStatedDistance(plan) > 0` suppresses *"in total"*.
+
+⚠️ **Keyed on the ABSENCE OF A DISTANCE, not on a plan kind.** The 2026-10-25 (S2) ruling behind
+this keyed on `stagedRaceOf(plan)`, so a §118 walk-run plan — no `staged_race` — fell straight
+through to the hero that ruling existed to prevent. A §116 walk-run week carries no `weekly_km`
+by doctrine (time on feet; a distance would be invented), and `weekly_km ?? 0` summed past it.
+
+Gate: `lib/ui/screenStatesTruth.test.ts`, which fails if the suppression is re-keyed on a plan kind.
