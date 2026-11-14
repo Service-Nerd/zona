@@ -25,6 +25,23 @@ so a **free** runner gets the name and the mark, not the line. Words founder-app
 with strength that week (Coaching Board). Check: `components/dashboard/phaseOnToday.markup.test.ts` (12 arms, five
 mutations falsified). Note: `docs/decisions/design-2026-10-26-phase-on-today.md`. Not felt on a device.
 
+## 2026-11-14 — `PLAN-NOTE-HEAVIER-WEEK-PLACEMENT-01`: measured, ruled NOT YET, and the sequence fixed
+
+Sitting: `docs/decisions/design-2026-11-14-heavier-week-placement.md`. Filed by §6ak, which deferred
+the rank question to a measurement. **The measurement was taken and the ruling is not to act on it
+yet.**
+
+| Ruling | Verdict | Why |
+|---|---|---|
+| **The plan-level tile drops behind `Long run`** | 🔴 **NOT YET — blocked on the placement** | 🔑 **§6ak's words are *"WHEN IT SHIPS, decide on a measurement"*** — conditional on the week-N surface existing. I read it as a request for the measurement now, ruled SHIP, built it, and **two existing arms stopped it.** 🔴 **`loadResidualNote.test.ts`: 104 warned plans stop showing the note**, and §6ak's own row records *"Coaching Board 2026-10-28 binds: a warned plan tells the runner"* — **not overrulable on presentation grounds.** 🔴 And dead last lets `Your peak`/`Your days` displace it, which `NOTE-SURFACE-INERT-01` forbade five days earlier on the explicit basis that those two displace nothing. **Reverted; engine files untouched** |
+| **The warning's home is week N** | 🟡 **RULED (§6ak), NOT BUILT** | 📐 `load_residual_week` is set on **322 of 322 carriers**, so it is reachable on every plan that would use it. 🔻 But it is **two new visible surfaces**: `PlanCalendar` renders **no week-level prose at all** and `planRationaleNotes` has exactly **one** render site, on the Plan screen. 📱 Wroblewski blocked a same-day build — two open items here are surfaces that looked right in a browser and were wrong on a phone, and nothing has run on a device today |
+| **The measurement, kept for the next sitting** | 🟢 **RECORDED** | 322 carriers. Shown/displacing: ahead of `Long run` **322 / 182 (56.5%)**, last-among-constraints **176 / 40**, dead last **136 / 0**. 🔑 **`Long run` is 24 of 322 — the dominant cost is `Coming back` 55 and `Your level` 47.** §6ak accepted a `Long run` loss and that is not mainly what it bought: **second occurrence of `NOTE-SURFACE-INERT-01`'s finding that the tile a board accepts losing is rarely the tile it actually loses** |
+
+**The sequence is fixed: the week-N surface first, the rank second.** Pattern — none authored (nothing
+shipped) · Constants — none · Check — the two arms that refused it are the record.
+
+---
+
 ## 2026-11-14 — four filed items, one sitting. Two ship, one was already settled, one DON'T SHIP
 
 Convened because the founder delegated the wording on all four, which left the design question as
