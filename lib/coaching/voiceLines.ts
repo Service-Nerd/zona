@@ -16,8 +16,13 @@ export function getSessionVoiceLine(sessionType: string | null | undefined): str
     case 'long':      return "Hours, not effort. Slower than you think you should."
     case 'quality':
     case 'tempo':     return "Comfortably hard. Not all-out. Hold the line."
-    case 'intervals':
-    case 'hard':      return "Hard on the reps. Easy on the rests. Don't blur it."
+    // The reps line is RIGHT for intervals and was shared with 'hard', which has none.
+    case 'intervals': return "Hard on the reps. Easy on the rests. Don't blur it."
+    // 🔴 IT DESCRIBED A SESSION THE RUNNER IS NOT DOING — §33's failure mode, the same
+    // class as ULTRA-VOICE-REPURPOSED-01. There are no reps and no rests in a time trial;
+    // the prescription is `{distance} km as hard as you can hold`, so the copy names the
+    // real failure mode instead, which is starting faster than you can sustain.
+    case 'hard':      return "As hard as you can hold, all the way. Not as hard as you can start."
     case 'race':      return "This is the day. Trust the work."
     case 'recovery':  return "Slower than easy. Yes, that slow."
     case 'strength':  return "Build the body that holds the zones."
@@ -57,8 +62,15 @@ export function keySessionLabel(s: Pick<Session, 'type' | 'role'> & { key_sessio
 // Short noun for an upcoming key session — the "why" tag on an easy/recovery day.
 function keySessionNoun(type: string): string {
   switch (type) {
-    case 'intervals':
-    case 'hard':     return 'Intervals'
+    case 'intervals': return 'Intervals'
+    // PUSH-TT-NOUN-01 — `type: 'hard'` IS the time trial and nothing else
+    // (`isTimeTrial` in sessionRole.ts is exactly `type === 'hard'`), so sharing the
+    // 'intervals' word told every runner their benchmark was a rep session. It is a
+    // continuous maximal effort: `{distance} km as hard as you can hold`, RPE 9, no pace
+    // target (SESSION-COLOUR-TT-01, §78/CD-8).
+    // ⚠️ NOT "5K time trial": the distance is `cfg.distance_km` and `NextKeySession`
+    // carries only a type and a day name, so naming 5 here would invent a number.
+    case 'hard':     return 'Time trial'
     case 'quality':
     case 'tempo':    return 'Tempo'
     case 'long':     return 'Long run'
@@ -100,8 +112,14 @@ export function buildDailyPushTitle(
     case 'tempo':
       return metric ? `The hard one's today. ${metric}.` : "The hard one's today."
     case 'intervals':
-    case 'hard':
       return metric ? `Intervals today. ${metric}.` : 'Intervals today.'
+    case 'hard':
+      // The same wrong noun, on the day's own title, which the item did not name:
+      // a runner opening their phone on benchmark morning read "Intervals today".
+      // ⚠️ 'intervals' and 'hard' SHARED this branch, so the first cut of the fix handed
+      // interval sessions the time-trial title — the defect mirrored. A pre-existing arm
+      // caught it, which is the argument for running the whole file rather than the new arms.
+      return metric ? `Time trial today. ${metric}.` : 'Time trial today.'
     case 'race':
       return 'Race day.'
     case 'strength':

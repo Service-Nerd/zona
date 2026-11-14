@@ -8139,10 +8139,35 @@ paces from day one and nothing on any surface saying why. Measured 2026-10-24: 1
 lose every benchmark. **Design rules first** (whether, and where, e.g. a plan note or the Today benchmark tile);
 **the words are the founder's.** Not a coaching question: the board has ruled the skip.
 
-### 🔲 `PUSH-TT-NOUN-01` — the morning push calls the 5K time trial "Intervals" *(filed 2026-10-24, P3)* 👤 **FOUNDER**
+### ✅ `PUSH-TT-NOUN-01` — SHIPPED 2026-11-14. **THREE strings, not one, and the worst was not the one filed** ⚙️ **NO BOARD** *(founder delegated the words, 2026-11-14)*
 
-`keySessionNoun('hard')` in `lib/coaching/voiceLines.ts` returns `'Intervals'`. The time trial is a continuous maximal
-effort, not reps (`SESSION-COLOUR-TT-01`). The word is copy, so it is the founder's.
+`keySessionNoun('hard')` returned `'Intervals'`. `isTimeTrial` (`sessionRole.ts`) is exactly `type === 'hard'`, so **every
+`hard` session is the time trial** and the word was wrong for all of them.
+
+📐 **The item named the smallest of three sites in `voiceLines.ts`:**
+1. the key-session noun — *"Easy 45m today. **Intervals** Thursday."* (filed)
+2. 🔴 **the day's own push title** — a runner opening their phone on benchmark morning read *"**Intervals** today. 5km."*
+3. 🔴 **the body copy** — *"Hard on the reps. Easy on the rests. Don't blur it."* **on a session with no reps and no rests.**
+   That is §33's failure mode (voice must match the prescription), the same class as `ULTRA-VOICE-REPURPOSED-01`, and it
+   was telling the runner to execute a structure the session does not have.
+
+**The prescription it now matches** (`ruleEngine.ts`, §78/CD-8): `{distance} km as hard as you can hold`, RPE 9, **no pace
+target** (one would defeat the point), HR recorded not targeted. So the copy names the real failure mode — starting faster
+than you can sustain: *"As hard as you can hold, all the way. Not as hard as you can start."*
+
+⚠️ **NOT "5K time trial".** The distance is `cfg.distance_km` and `NextKeySession` carries only `{ type, dayName }`, so
+naming 5 would invent a number. **"Time trial"** on both surfaces.
+
+🔴 **`'intervals'` AND `'hard'` SHARED ALL THREE BRANCHES, SO THE FIRST CUT MIRRORED THE DEFECT** — interval sessions got
+the time-trial title and copy. **A pre-existing arm caught it** (`'gives the long and hard days their own register'`),
+which is the argument for running the whole file rather than only the new arms. Each case has its own return now, and the
+reps line — correct for intervals all along — is intact.
+
+**Gate:** 4 arms in `lib/coaching/voiceLines.test.ts` (23 total in the file), including one asserting intervals keeps its
+own words. Falsified twice: reverting the noun and reverting the body copy each fail a named arm.
+
+⚠️ **Swept and deliberately left: `SESSION_LABELS.hard = 'Hard session'`** — generic, but a time trial *is* a hard session,
+so it is not false, and a display-label map is the Design Board's surface.
 
 ### ⚫ ~~`BACKTEST-SECOND-ASSEMBLY-01` — the backtest harness builds the engine's input its own way~~ *(filed 2026-10-15, P3)* — **SUPERSEDED: this is the ORIGINAL FILING, left open beside its own ship record**
 

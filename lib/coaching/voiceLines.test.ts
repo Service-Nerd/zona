@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { buildLinkPushCopy, buildDailyPushTitle } from './voiceLines'
+import { buildLinkPushCopy, buildDailyPushTitle, buildDailyPushBody } from './voiceLines'
 
 /**
  * POST-RUN-02 link-push copy. The lock-screen line must prove Kit looked
@@ -141,5 +141,42 @@ describe('buildDailyPushTitle', () => {
       { type: 'intervals', dayName: 'Thursday' },
     )
     expect(title).toBe('The long one today. 2h.')
+  })
+})
+
+// PUSH-TT-NOUN-01 — `type: 'hard'` IS the time trial, so three strings described a rep
+// session the runner is not doing. `isTimeTrial` (sessionRole.ts) is exactly
+// `type === 'hard'`, and the prescription is `{distance} km as hard as you can hold`,
+// RPE 9, no pace target (§78/CD-8).
+describe('PUSH-TT-NOUN-01 — the time trial is not a rep session', () => {
+  const NO_REPS = /\b(interval|intervals|rep|reps|rest|rests)\b/i
+
+  it('the key-session noun names the time trial, and never the word intervals', () => {
+    expect(buildDailyPushTitle(
+      { type: 'easy', duration_mins: 45 } as never,
+      { type: 'hard', dayName: 'Thursday' },
+    )).toContain('Time trial Thursday.')
+  })
+
+  it('the day’s own title names it too — the site the item did not name', () => {
+    const title = buildDailyPushTitle({ type: 'hard', distance_km: 5, primary_metric: 'distance' } as never)
+    expect(title).toContain('Time trial today.')
+    expect(title).not.toMatch(NO_REPS)
+  })
+
+  it('the body copy describes a continuous effort, with no reps and no rests in it', () => {
+    const body = buildDailyPushBody('hard')
+    expect(body).not.toMatch(NO_REPS)
+    expect(body).toBe('As hard as you can hold, all the way. Not as hard as you can start.')
+  })
+
+  it('and INTERVALS keeps the reps line, which was right for it all along', () => {
+    // The two cases shared one string. Fixing 'hard' by widening the fall-through would
+    // have handed interval sessions the time-trial copy instead — the same defect mirrored.
+    expect(buildDailyPushBody('intervals')).toBe("Hard on the reps. Easy on the rests. Don't blur it.")
+    expect(buildDailyPushTitle(
+      { type: 'easy', duration_mins: 45 } as never,
+      { type: 'intervals', dayName: 'Thursday' },
+    )).toContain('Intervals Thursday.')
   })
 })

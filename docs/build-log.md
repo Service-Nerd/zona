@@ -6,6 +6,16 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-11-14 — PUSH-TT-NOUN-01 · the one-word fix was three strings, and the worst one gave instructions for a session that does not exist
+
+**Shipped:** the morning push calls the time trial a time trial, on all three surfaces that named it.
+**Dev learning:** the item said one word in one function. `isTimeTrial` is literally `type === 'hard'`, so I grepped every branch keyed on `'hard'` and found three: the key-session noun, the day's own push title, and the body copy — which read *"Hard on the reps. Easy on the rests. Don't blur it."* on a session the engine prescribes as `{distance} km as hard as you can hold` with no pace target and no reps at all. The filed one was the least harmful of the three.
+**Product/creator learning:** the failure mode worth naming in copy is not the one the session shares with other hard days, it is the one specific to it. For a time trial that is starting faster than you can sustain, which is why the line is *"As hard as you can hold, all the way. Not as hard as you can start."* I also refused to write "5K": the distance is `cfg.distance_km` and the push's own data structure carries only a type and a day name, so putting 5 in the string would invent a number I cannot see.
+**AI-building learning:** `'intervals'` and `'hard'` shared all three switch branches, so my first cut fixed the time trial by handing every interval session the time-trial copy — the identical defect, mirrored. **A pre-existing test arm caught it**, not one of mine. The new arms all passed while the regression sat there, which is the whole argument for running the file rather than the diff.
+**The honest bit:** I did the same thing twice in ten minutes — once on the body copy, once on the title — because I edited the `case 'hard'` return without looking at what fell through into it. Reading three lines up would have been quicker than either fix.
+**Hook material:** a one-word copy ticket turned out to be three strings, and the one nobody filed was telling runners to do interval reps in a continuous time trial.
+**Postable?:** yes.
+
 ## 2026-11-14 — EFFORT-GOVERNED-HR-DISPLAY-01 · the board routed me a question its own constitution had already answered
 
 **Shipped:** every surface that shows a session's heart-rate number now reads the prescription (`session.zone`) instead of the coarse session type, including the two AI prompt builders.
