@@ -6,15 +6,35 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
-## 2026-11-14 — Design Board, the "a screen states something untrue" cluster · five items, two builds, and the board's own old gate caught me
+## 2026-11-14 — HERO-WALKRUN-TOTAL-01 · the ruling was three weeks old and its mechanism was narrower than its intent
 
-**Shipped:** the plan hero withholds a total it cannot state; the calendar's completion ● stops claiming Strava. Three more ruled without building.
-**Dev learning:** the display-side owner I needed for the HR item was `displayZonesForSession` — **directly above** `getSessionHRDisplay` in the same file, already reading `session.zone` and already yielding `Zone 3–4`. The zone label was right and the HR number wrong, two adjacent functions. I nearly proposed building what existed. Separately: `getSessionHRDisplay` takes a type STRING, not the session, which is why it cannot consult either owner without a signature change — the "a caller with no X" shape again.
-**Product/creator learning:** of 29 open design items, the settled-ground scan alone disqualified seven from needing a sitting at all — three blocked on a device with the artefact already named, one already ruled and awaiting a build, one a record rather than a question, one parked. **Reading the register is cheaper than ruling.** And `HERO-WALKRUN-TOTAL-01` turned out not to be the board's at all: the principle was ruled three weeks ago and the code keyed on `stagedRaceOf`, so the ruling's mechanism was narrower than its intent. That is the third item this week whose board tag overstated what was needed.
-**AI-building learning:** 🔴 I ruled the calendar dot should take `--moss`, implemented it, and **the board's own earlier gate refused it** — `ACCENT-TEXT-CONTRAST-01` (6t-g) rules a hue is never small text and takes its ratified `-strong` shade, and that line is 10px. Silvanto's veto scope was live and a test held it without a seat having to. The design-guard hook had told me twice to check the token layer and the pattern layer in the same pass; I checked that `--moss` existed and not what the rules said about using it at that size. **A token existing is not a token being permitted there.**
-**The honest bit:** I also keyed the hero fix on the plan kind in my head first, which is the exact mistake the 2026-10-25 ruling made — I only caught it because I was writing the falsification case for it.
-**Hook material:** a design board overruled by a test it had itself demanded three weeks earlier.
-**Postable?:** yes — "the gate the board left behind caught the board" is a good shape, and so is "reading the register disqualified seven of 29 items from needing a meeting."
+**Shipped:** the plan hero withholds the total where any week has no stated distance, instead of summing past the gap.
+**Dev learning:** the 2026-10-25 (S2) ruling already said a hero must never print *"33 km in total"* for a plan whose built weeks are not the plan. The code keyed on `stagedRaceOf(plan)` — so a §118 walk-run plan, which has **no `staged_race`**, fell straight through to the hero the ruling existed to prevent. `weekly_km ?? 0` then summed past seven weeks that carry no distance by doctrine. The fix keys on the **absence of the value**, not on the plan kind that usually lacks it, because a third such kind would have fallen through identically.
+**Product/creator learning:** this was tagged 🧭 DESIGN BOARD and was never the board's — conformance to a ruling already made. Third item this week whose board tag overstated what was needed.
+**AI-building learning:** I keyed the fix on the plan kind in my own head first, which is the exact mistake the original ruling made. I caught it only while writing the falsification case *for* it — the mutation I was inventing to prove the gate works was the bug I had nearly shipped.
+**The honest bit:** latent. 0 runners reach the §118 sub-floor branch, because a sub-floor runner is staged, so never refused, so never sets `acceptBaseBuild`.
+**Hook material:** a ruling that was right for three weeks and wrong in code the whole time, because it named a plan kind instead of the thing it cared about.
+**Postable?:** yes — "the rule was correct and the `if` was narrower than the rule" is a real and common shape.
+
+## 2026-11-14 — CALENDAR-DONE-DOT-SOURCE-01 · the board was overruled by a gate it demanded three weeks earlier
+
+**Shipped:** the Plan calendar's completion ● is a done mark in `--moss-strong`, not Strava orange.
+**Dev learning:** `PlanCalendar`'s confirmation line renders for **every** logged run, gated on `strava_activity_name || strava_activity_km`, and ~98% of logged runs are Apple Health — so the orange claimed a provenance the run did not have. `SessionCard` was already correct, gating attribution on `isDone && viaStrava && activityName`. **Two surfaces disagreed and the calendar was the wrong one.** Critically the LINE is not re-gated on `viaStrava`: that would drop the distance from ~98% of logged runs, which is the confirmation it exists to give. Only the colour made a claim.
+**Product/creator learning:** the question the item posed was the right one and it was binary — is the ● a source mark or a done mark? Once asked that way the measurement answered it; nobody needed an opinion about orange.
+**AI-building learning:** 🔴 I ruled it should take `--moss`, implemented it, and **`accentText.test.ts` refused it** — `ACCENT-TEXT-CONTRAST-01` (6t-g) rules a hue is never small text and takes its ratified `-strong` shade, and this line is 10px. The design-guard hook had told me *twice*, in the same session, to check the token layer and the pattern layer in the same pass. I checked that `--moss` existed. I did not check what the rules said about using it at that size. **A token existing is not a token being permitted there** — and Silvanto's veto scope was live, held by a test without a seat having to speak.
+**The honest bit:** the gate that caught me was created by this same board three weeks ago, for this exact class, and I still walked into it.
+**Hook material:** the design board overruled by a test it had itself demanded.
+**Postable?:** yes — the governance eating its own output correctly is a better story than the fix.
+
+## 2026-11-14 — TODAY-DOUBLE-HEADLINE-01 · DON'T SHIP, because the state cannot occur
+
+**Shipped:** nothing. Ruled DON'T SHIP, not permanent, and closed.
+**Dev learning:** `getSessionsForDate` has returned a LIST since ADR-025 Phase 1, so a day holding two sessions is a supported shape. The engine produces none: **0 of 2,433 live day slots**. Supported and unreachable are different facts and the item conflated them.
+**Product/creator learning:** the question *"should the headline name the day's total or the hero's distance?"* is answerable, interesting, and worth nothing today. Ruling it would have been wording a screen no runner can reach.
+**AI-building learning:** one SQL query over `plan_json` closed an item that had been open since 2026-10-17. The cheap measurement first is the whole discipline — the alternative was a five-seat sitting about a hypothetical.
+**The honest bit:** reopens the moment the engine produces a double day, and nothing currently tells us if that changes.
+**Hook material:** an item open for four weeks, closed by one query returning zero.
+**Postable?:** maybe — "measure whether the state can even happen" is right but I have written it before.
 
 ## 2026-11-13 — MODIFY-WEEKDAY-INERT-01 · the item asked which of two fixes; the measurement said neither
 
