@@ -783,7 +783,10 @@ export default function DashboardClient() {
    * that called it. Extracted rather than copied, because two writers of the same state is
    * the shape of this codebase's most expensive defects.
    */
-  const handleHrSave = async (rhr: number, mhr: number) => {
+  // USER-SETTINGS-TELL-THE-RUNNER-01 — returns false when the HR row did not land, so the
+  // sheet can hold itself open and say so. EVERY exit returns a verdict: a handler that falls
+  // off the end resolves `undefined`, which the consumer must not read as a failure.
+  const handleHrSave = async (rhr: number, mhr: number): Promise<boolean> => {
   // ── PLAN-META-HR-DIVERGENCE-01 (2026-11-08) — §50's UPPER BOUND REACHES THE PLAN ──────
   //
   // 🔴 This re-zoned the plan from the RAW typed max while `effectiveMaxHR` guarded the same
@@ -807,16 +810,19 @@ export default function DashboardClient() {
   // was private to `ruleEngine.ts`. `applyHrToPlan` owns it now.
   try {
     const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return
+    if (!user) return false
     // 1. user_settings is the single source of truth for live HR values
-    await writeUserSettings(supabase, user.id,
+    const hrWritten = await writeUserSettings(supabase, user.id,
       { resting_hr: rhr, max_hr: mhr, max_hr_source: effectiveSource, updated_at: new Date().toISOString() },
       // 🔴 The runner TYPED these and tapped Save, and every SERVER surface — daily push,
       // trial emails, coach prompts — can only read the table while this screen reads React
       // state. A lost write here is `PROFILE-NAME-WRITE-01` exactly: correct on screen,
-      // empty in the row, for months. ⚠️ `tell_the_runner` is the right severity and there is
-      // NO ERROR CHANNEL IN SCOPE on this screen — filed as USER-SETTINGS-TELL-THE-RUNNER-01.
-      { what: 'heart rate', severity: 'log' })
+      // empty in the row, for months.
+      // ✅ USER-SETTINGS-TELL-THE-RUNNER-01 (Design Board 2026-11-14): there IS a channel now —
+      // `HRZonesSection` holds the sheet open and renders the sentence under the Save button —
+      // so this is `tell_the_runner`, and the boolean is returned to it.
+      { what: 'heart rate', severity: 'tell_the_runner' })
+    if (!hrWritten) return false
     // 2. P1 — sync plan.meta so the zone2_ceiling fallback path never drifts
     //    from user_settings. Uses savePlanForUser (not savePlanForUser archives
     //    the plan — that's only done in the generate flow). Plain upsert here.
@@ -856,7 +862,8 @@ export default function DashboardClient() {
     //    zone columns for all recent sessions. Failure is silent — stale data
     //    is better than blocking the HR save.
     void authedFetch('/api/recalibrate-hr', { method: 'POST' })
-  } catch {}
+    return true
+  } catch { return false }
 }
 
 
@@ -3609,7 +3616,11 @@ export default function DashboardClient() {
         {screen === 'me'       && <MeScreen onOpenModify={plan && canModifyPlan(plan) ? () => { setPlanReadback(null); setModifyOrigin('me'); setModifyOpen(true); setScreen('plan') } : undefined} strengthAvailable={strengthDoorAvailable} strength={strength.status === 'off' || strength.status === 'loading' ? null : {
           subtitle: strengthSubtitle(strength.profile),
           onOpen: () => openStrengthSetup('me'),
-        }} openSection={meOpenSection} onOpenSectionConsumed={() => setMeOpenSection(null)} tierReason={tierReason} healthkitConnectedAt={healthkitConnectedAt} lastAppleHealthArrival={lastArrivalBySource.apple_health} lastStravaArrival={lastArrivalBySource.strava} stravaConnected={stravaConnected} plan={plan} initials={initials} athlete={plan?.meta?.athlete ?? ''} theme={theme} onThemeChange={() => { /* theme system retired — ADR-008 */ }} preferredUnits={preferredUnits} onUnitsChange={async (u: 'km' | 'mi') => { setPreferredUnits(u); const uid = await currentUserId(supabase); if (uid) await writeUserSettings(supabase, uid, { preferred_units: u, updated_at: new Date().toISOString() }, { what: 'unit preference', severity: 'log' }) }} preferredMetric={preferredMetric} onMetricChange={async (m: 'distance' | 'duration') => { setPreferredMetric(m); const uid = await currentUserId(supabase); if (uid) await writeUserSettings(supabase, uid, { preferred_metric: m, updated_at: new Date().toISOString() }, { what: 'metric preference', severity: 'log' }) }} restingHR={restingHR} maxHR={maxHR} maxHrSource={maxHRSource} birthYear={birthYear} onDeviceHRFound={async (rhr: number | null, mhr: number | null) => {
+        }} openSection={meOpenSection} onOpenSectionConsumed={() => setMeOpenSection(null)} tierReason={tierReason} healthkitConnectedAt={healthkitConnectedAt} lastAppleHealthArrival={lastArrivalBySource.apple_health} lastStravaArrival={lastArrivalBySource.strava} stravaConnected={stravaConnected} plan={plan} initials={initials} athlete={plan?.meta?.athlete ?? ''} theme={theme} onThemeChange={() => { /* theme system retired — ADR-008 */ }} preferredUnits={preferredUnits} onUnitsChange={async (u: 'km' | 'mi') => { setPreferredUnits(u); const uid = await currentUserId(supabase); if (!uid) return false
+          const ok = await writeUserSettings(supabase, uid, { preferred_units: u, updated_at: new Date().toISOString() }, { what: 'unit preference', severity: 'tell_the_runner' })
+          return ok }} preferredMetric={preferredMetric} onMetricChange={async (m: 'distance' | 'duration') => { setPreferredMetric(m); const uid = await currentUserId(supabase); if (!uid) return false
+          const ok = await writeUserSettings(supabase, uid, { preferred_metric: m, updated_at: new Date().toISOString() }, { what: 'session display', severity: 'tell_the_runner' })
+          return ok }} restingHR={restingHR} maxHR={maxHR} maxHrSource={maxHRSource} birthYear={birthYear} onDeviceHRFound={async (rhr: number | null, mhr: number | null) => {
   // §50 (HR-MAX-01) — device reconnect from Settings. Fill only missing values;
   // tag a fresh device max 'observed' (a floor) so the guard rejects it below the
   // age estimate. Never clobber a user_confirmed value. Display refreshes via
@@ -3696,7 +3707,7 @@ export default function DashboardClient() {
           if (wN == null) return
           setRunAnalysisMap(prev => ({ ...prev, [wN]: { ...(prev[wN] ?? {}), [sessionDay]: row } }))
         }} preferredUnits={preferredUnits} zone2Ceiling={effectiveZone2Ceiling} hasPaidAccess={hasPaidAccess} onOpenCoach={() => setScreen('coach')} runAnalysis={(activePostRunData.weekN != null ? runAnalysisMap[activePostRunData.weekN]?.[activePostRunData.session?.key ?? ''] : null) ?? null} aerobicPace={aerobicPace} goalPace={(plan?.meta as any)?.goal_pace_per_km ?? null} />}
-        {screen === 'generate' && <GeneratePlanScreen preferredUnits={preferredUnits} charityCohort={charityCohort} onBack={() => setScreen(plan && plan !== EMPTY_PLAN ? 'me' : 'today')} firstName={firstName} lastName={lastName} restingHR={restingHR} maxHR={maxHR} maxHrSource={maxHRSource} birthYear={birthYear} onBirthYearSave={async (y) => { setBirthYear(y); if (userId) await updateUserSettings(supabase, userId, { birth_year: y, date_of_birth: null }, { what: 'year of birth', severity: 'log' }) }} onPlanSaved={handlePlanSaved} onPlanEnriched={handlePlanEnriched} isOnboarding={!plan || plan === EMPTY_PLAN} hasExistingPlan={!!(plan && plan !== EMPTY_PLAN)} hasPaidAccess={hasPaidAccess} onUpgrade={() => openUpgrade('wizard')} onRecheckEntitlement={runEntitlementRecheck}
+        {screen === 'generate' && <GeneratePlanScreen preferredUnits={preferredUnits} charityCohort={charityCohort} onBack={() => setScreen(plan && plan !== EMPTY_PLAN ? 'me' : 'today')} firstName={firstName} lastName={lastName} restingHR={restingHR} maxHR={maxHR} maxHrSource={maxHRSource} birthYear={birthYear} onBirthYearSave={async (y) => { setBirthYear(y); if (!userId) return false; /* 🔻 USER-SETTINGS-TELL-THE-RUNNER-01 — STAYS `log`, DECLARED NOT OVERLOOKED. The wizard's birth-year write is fire-and-forget by SAVE-LATENCY-01: awaiting it put four sequential round-trips in front of the plan save and produced the "Saving..." hang. By the time it resolves the wizard has moved on, so there is no control left to sit a message under — and a `tell_the_runner` call with no `onError` degrades silently to `log`, which is the hazard `userSettingsWrite` documents. The cost is an estimated max-HR fallback (§50), recoverable from Profile. The boolean is still returned so a future channel needs no producer change. */ return await updateUserSettings(supabase, userId, { birth_year: y, date_of_birth: null }, { what: 'year of birth', severity: 'log' }) }} onPlanSaved={handlePlanSaved} onPlanEnriched={handlePlanEnriched} isOnboarding={!plan || plan === EMPTY_PLAN} hasExistingPlan={!!(plan && plan !== EMPTY_PLAN)} hasPaidAccess={hasPaidAccess} onUpgrade={() => openUpgrade('wizard')} onRecheckEntitlement={runEntitlementRecheck}
           // STRENGTH-ENTRY-01 — asked only of a runner who can have strength and has none yet.
           // The save runs after the run plan's and is not awaited; the route records its own
           // failures, and the doors on Me and Plan stay open to try again.

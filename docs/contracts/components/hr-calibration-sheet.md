@@ -67,3 +67,14 @@ interface HrCalibrationSheetProps {
 
 Nothing has run on a device. Whether the panel covers the zone rows it changes, and whether
 Save is reachable with the keyboard raised, are both open (Design Board amendment 4).
+
+## `onSave` carries a verdict and the sheet holds on a failure (USER-SETTINGS-TELL-THE-RUNNER-01, 2026-11-14)
+
+`onSave: (rhr, mhr) => void | Promise<boolean>`.
+
+🔴 **It used to be `=> void`, and `close()` ran synchronously beside it** — so the sheet was gone
+before the write resolved, which is why a failed HR save had nowhere to report. The inner handler
+awaits the verdict and calls `close()` only when it is not `false`.
+
+⚠️ **Only an explicit `false` closes nothing.** A `void`-returning caller resolves `undefined` and
+still closes, exactly as it always did, so no existing consumer changes behaviour.

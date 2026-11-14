@@ -25,6 +25,22 @@ so a **free** runner gets the name and the mark, not the line. Words founder-app
 with strength that week (Coaching Board). Check: `components/dashboard/phaseOnToday.markup.test.ts` (12 arms, five
 mutations falsified). Note: `docs/decisions/design-2026-10-26-phase-on-today.md`. Not felt on a device.
 
+## 2026-11-14 — four filed items, one sitting. Two ship, one was already settled, one DON'T SHIP
+
+Convened because the founder delegated the wording on all four, which left the design question as
+the only blocker. Sitting: `docs/decisions/design-2026-11-14-four-filed-items.md`.
+
+🔑 **The settled-ground scan ended one item before any seat spoke.**
+
+| Ruling | Verdict | Why |
+|---|---|---|
+| **A failed SAVE renders under the control that failed, value kept, no retry** | 🟢 **SHIP WITH AMENDMENT** (`USER-SETTINGS-TELL-THE-RUNNER-01`) | 🩹 **The inversion:** the two `user_settings` writes that COULD report a failure were the two the runner never asked for, where a lost write only makes a card reappear; **the four they typed had no channel at all** while every server surface reads the table the screen failed to write. ⚠️ Not the failed-LOAD pattern: an `EmptyState` would destroy the value they just typed. **Amendment:** the message clears on the next successful write to the same field. 🔴 `HrCalibrationSheet` called `close()` synchronously beside `onSave`, so the sheet was gone before the verdict arrived — it awaits and holds now. 🔻 **Birth year stays `log`, declared:** `SAVE-LATENCY-01` made it fire-and-forget and the wizard has moved on by the time it resolves |
+| **"Log a run" stays withheld on the no-runs checkpoint state** | 🔴 **NO RULING REQUIRED — SETTLED** (`NO-RUNNER-CHECKPOINT-LOG-DATE-01`) | `BASEBUILD-ADJUST-DOOR-01` (2026-10-10) already ruled that **an affordance is withheld when the ACTION cannot succeed, not when the DATA is missing.** The off-plan log is dated *now* and the checkpoint reads weeks that are already over, so the action cannot succeed and the withholding was correct when it shipped. A date picker is a separate additive proposal with **no measured demand**. 🎪 Collins: *"the answer was already written down four weeks earlier"* |
+| **The benchmark tile gains its ABSENT state; one sentence, one surface** | 🟢 **SHIP WITH AMENDMENT** (`TT-SKIPPED-VISIBILITY-01`) | 📐 **The item's premise moved: it said *"1 of 27 rebuildable plans"*; measured today, 6 of 14 live plans that DECLARE recalibration weeks hold NO benchmark session** (`INV-PLAN-RECALIBRATION-HAS-SESSION`, error — and `audit:stored` already reports all six). ✋ Silvanto: the honest place is **where they will look for it**, not a plan note elsewhere. 📱 Wroblewski: not a new surface — the tile exists and has never had its empty state. ⚠️ **Scoped to a plan that declares a week and holds none**, never to the 29 of 43 that were never going to have one. The data defect itself is ⚙️ no board and already in the stored-plan debt register |
+| **Renaming foundation weeks to "Base building"** | 🔴 **DON'T SHIP** (`FOUNDATION-NAME-COLLAPSE-01`) | 📐 **Different jobs, measured in the code:** `phase: 'foundation'` weeks carry **negative `n`** and fill a runway before a race plan that already exists; `phase: 'base_build'` **is** the whole plan until a checkpoint passes on observed volume. One name would make "Base building" mean both, hardest for the staged runner who cannot yet run. 🎪 **Collins loses and it is recorded as a loss** — he withdrew the live half himself: `foundationBlock.ts:751` can emit `Base N` on a foundation week when `curve === 'ramp'`, but **all 21 live foundation weeks across 7 plans read "Foundation N"**, so the ramp branch reaches nobody. ⚠️ **Recorded as a live risk:** if that branch ever ships, two names in one block returns as a defect |
+
+---
+
 ## 2026-10-24 — NO-RUNNER-TURNED-AWAY-01 · SHIP WITH AMENDMENT (10). The race plan, staged; never the refusal view
 
 Coaching ruled the meaning; this rules the encoding. A base-volume refusal lands on the **race plan's preview**, with

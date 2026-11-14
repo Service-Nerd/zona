@@ -238,7 +238,7 @@ export default function CopyPreview() {
         >
           <HRZonesSection
             restingHR={48} maxHR={170} maxHrSource="observed" birthYear={1985}
-            onSave={async () => {}} hrZoneMethod="karvonen" hrAssumptionNote={null}
+            onSave={async () => true} hrZoneMethod="karvonen" hrAssumptionNote={null}
           />
         </Case>
 

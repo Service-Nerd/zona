@@ -6796,3 +6796,32 @@ runner on the same day (standing rule: *marketing stills must be the REAL compon
 `/post-run-preview`. **Checks:** `lib/coaching/freeRunRead.test.ts` (13 arms) ·
 `components/shared/freeRunRead.markup.test.ts` (23 arms); 12 mutations red across both.
 ⚠️ **Not seen on a device.** Rendered and measured at 375px in `/post-run-preview`.
+
+## A failed SAVE says so under the control, and keeps the value
+
+🧭 `USER-SETTINGS-TELL-THE-RUNNER-01` — Design Board 2026-11-14, SHIP WITH AMENDMENT.
+
+A write the runner **made** — typed a number, moved a toggle — that does not reach their account
+renders `<SettingsWriteError message={…} />` **directly beneath the control that failed**, in
+`--danger-strong`, at 12px. The value stays exactly where they put it.
+
+| | |
+|---|---|
+| **Words** | `settingsWriteFailureMessage(what)` owns them. The component never writes copy |
+| **Retry** | **None.** The retry is using the control again (Sierra) |
+| **Clearing** | The next write to the same field resets it, so a transient failure does not leave a red line on a row that is now correct |
+| **Token** | **`--danger-strong`, never `--danger`** — `DANGER-TEXT-CONTRAST-01`: the base token fails AA on `--bg-soft`, and this component is the error message that ruling named as the worst place to carry no margin |
+| **Failure test** | **`=== false` only.** A `void`-returning handler resolves `undefined`; truthiness would show an error on a write that succeeded |
+
+⚠️ **This is NOT the failed-LOAD pattern.** `ME-HISTORY-ERROR-DEADEND-01` gives a failed load an
+`EmptyState` with a **Try again**. Using it here would replace the screen and destroy the value the
+runner just typed. ✋ Silvanto: *"a row that failed to save must not look like a row that did."*
+
+⚠️ **A control that unmounts before the write resolves has nowhere to put this**, and that is a
+design constraint, not a detail. `HrCalibrationSheet` used to call `close()` synchronously beside
+`onSave`, which is why there was no channel; it awaits the verdict now and holds itself open on a
+failure. Where holding is not possible — the wizard's birth-year write is fire-and-forget by
+`SAVE-LATENCY-01` — the severity stays `log` **and the reason is written at the call site**, because
+a `tell_the_runner` with no `onError` degrades silently to `log`.
+
+Check: `components/shared/settingsWriteError.markup.test.ts` (7 cases, falsified three ways).

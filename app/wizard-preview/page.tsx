@@ -85,7 +85,7 @@ export default function WizardPreview() {
           maxHR={185}
           maxHrSource="observed"
           birthYear={null}
-          onBirthYearSave={async () => {}}
+          onBirthYearSave={async () => true}
           onPlanSaved={async () => {}}
           onPlanEnriched={async () => {}}
           onUpgrade={() => {}}

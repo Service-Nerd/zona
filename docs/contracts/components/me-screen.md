@@ -190,3 +190,12 @@ which re-runs the load effect. No prop change.
 **Your training doors (PLAN-DOORS-01, 6t-k, 2026-10-22).** Adds `onOpenModify?` and `strengthAvailable?` props. *Adjust your plan* (`AdjustPlanDoor`, `run` glyph) sits above *Start a new plan* when `onOpenModify` is given (same `canModifyPlan` condition as Plan) and opens the Adjust screen, which closes back to Me. The Strength door is the shared `StrengthDoor`. *Plan adjustments* is now titled **Plan checks** (`PLAN_ADJUSTMENTS_TITLE`), subtitle *What the engine watches*; its toggle keeps the label *Auto-adjust*.
 
 ⚠️ **2026-11-13 (BRAND-COACHNAME-HARDCODED-01)** — the coach's name is read from `BRAND.coachName` rather than typed. **No interface change**: same props, same payload, same copy; `BRAND.coachName` is `'Kit'`. Recorded because the file changed and a contract that silently lags its file is the thing this register exists to prevent.
+
+## The write verdict survives the whole chain (USER-SETTINGS-TELL-THE-RUNNER-01, 2026-11-14)
+
+`onUnitsChange` and `onMetricChange` are declared `void | Promise<boolean>` here, not `=> void`.
+
+⚠️ **The widening is the point.** Declared `=> void` in the middle, a producer that stopped
+returning its verdict would still compile and `PreferencesScreen` would silently never show an
+error again — the same class as the type signature behind `EFFORT-GOVERNED-HR-DISPLAY-01`.
+`onSaveName: (name) => Promise<boolean>` was already the precedent in this component.

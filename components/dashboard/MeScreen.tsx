@@ -786,8 +786,12 @@ export default function MeScreen({ openSection, onOpenSectionConsumed, tierReaso
   stravaConnected?: boolean
   plan: Plan; initials: string; athlete: string
   theme: 'dark' | 'light' | 'auto'; onThemeChange: (t: 'dark' | 'light' | 'auto') => void
-  preferredUnits: 'km' | 'mi'; onUnitsChange: (u: 'km' | 'mi') => void
-  preferredMetric: 'distance' | 'duration'; onMetricChange: (m: 'distance' | 'duration') => void
+  // USER-SETTINGS-TELL-THE-RUNNER-01 — the verdict must survive the whole chain. Declared
+  // `=> void` here, a producer that stopped returning it would compile and `PreferencesScreen`
+  // would silently never show an error again: the same class as the signature that caused
+  // EFFORT-GOVERNED-HR-DISPLAY-01.
+  preferredUnits: 'km' | 'mi'; onUnitsChange: (u: 'km' | 'mi') => void | Promise<boolean>
+  preferredMetric: 'distance' | 'duration'; onMetricChange: (m: 'distance' | 'duration') => void | Promise<boolean>
   restingHR: number | null; maxHR: number | null; maxHrSource?: 'observed' | 'user_confirmed' | null; birthYear?: number | null; /* ⚠️ `onHRChange` WAS HERE AND IS GONE (ZONES-HR-SHEET-01). It fed the `Heart rate`
    door's form; with the door removed this screen declared a required prop that nothing
    inside it called. Its owner is now `handleHrSave` on `DashboardClient`, with one

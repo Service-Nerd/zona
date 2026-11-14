@@ -68,3 +68,14 @@ nothing there.** No heading over an absent card. *Empty means calm, not broken.*
 `components/shared/preferencesScreen.markup.test.ts` — 5 arms, all falsified 2026-09-28:
 the empty-notifications state, the passed node, a hand-rolled control appearing in a screen
 whose only job was relocation, and the label reached from both surfaces rather than typed twice.
+
+## Both toggles report a failed write (USER-SETTINGS-TELL-THE-RUNNER-01, 2026-11-14)
+
+`onUnitsChange: (u) => void | Promise<boolean>` · `onMetricChange: (m) => void | Promise<boolean>`.
+
+Each row owns its own message state and renders `<SettingsWriteError />` beneath its
+`SegmentedControl`. The message is reset before the next write, which is the board's amendment: a
+transient failure must not leave a red line on a row that is now correct.
+
+⚠️ **`=== false`, never truthiness.** A `void`-returning handler resolves `undefined`; testing
+truthiness would show an error on a write that succeeded.

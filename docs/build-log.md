@@ -6,6 +6,26 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-11-14 — USER-SETTINGS-TELL-THE-RUNNER-01 · the sheet closed before the write answered, which is why there was nowhere to put the error
+
+**Shipped:** a setting the runner typed that did not reach their account now says so, under the control that failed.
+**Dev learning:** the item read as "add an error state to three screens". The actual blocker was that `HrCalibrationSheet` called `close()` **synchronously beside** `onSave` — so by the time the write resolved, the sheet and its Save button were gone. There was no channel because there was no control left to attach one to. Awaiting the verdict and holding the sheet open on a failure is the whole fix; the red line is the easy part. Second time today a defect turned out to be a signature rather than a branch.
+**Product/creator learning:** the inversion in the item's own table is the thing worth remembering. The two writes that *could* report a failure were the two the runner never asked for, where a lost write just makes a card reappear. The four they typed with their thumbs had nothing — while every server surface, the daily push and the trial emails included, reads the table the screen failed to write.
+**AI-building learning:** I reached for `var(--danger)` and the design-guard hook's standing line — *check the token layer and the pattern layer in the same pass* — is what made me look. `DANGER-TEXT-CONTRAST-01` had already ruled the base token fails AA on `--bg-soft`, and its own note says the first text it governs is an error message, "the worst place in the product to carry no margin". **That is the second time in one day the same hook caught the same mistake of mine**, and this time before it shipped rather than after.
+**The honest bit:** three self-inflicted ones. My first `report` helper was a generic with two casts through `never` that did not compile; two typed handlers were shorter and clearer. I archived the closed item by copying its original `###` heading inside a `<details>`, which made the backlog gate count it as a second open item — the gate caught it. And I described a fix in the state block using the 🔺 glyph that *marks* an open residual, which re-filed the thing I had just closed.
+**Hook material:** `git checkout` on a brand-new file is a no-op, so one of my three falsification mutations was still sitting in the component when I declared it reverted. I only noticed because I went looking for it.
+**Postable?:** yes — "there was nowhere to put the error because the sheet had already closed" is the shape.
+
+## 2026-11-14 — NO-RUNNER-CHECKPOINT-LOG-DATE-01 · the answer was written down four weeks before the question
+
+**Shipped:** nothing. Closed on settled ground.
+**Dev learning:** the item asked whether "Log a run" needs a date picker or whether the no-runs state should offer more base building. `BASEBUILD-ADJUST-DOOR-01`, ruled 2026-10-10, says an affordance is withheld when the **action** cannot succeed, not when the data is missing. The off-plan log is dated *now*; the checkpoint reads weeks that are already over. So the action cannot succeed and the current state was the standing rule being honoured all along.
+**Product/creator learning:** a question filed against settled ground reads exactly like an open question — it has a premise, two options and a board tag. The only way to tell them apart is to read the register first, and that is cheaper than a sitting.
+**AI-building learning:** I had this item queued for a board sitting and the settled-ground scan removed it before any seat spoke. Yesterday the same scan disqualified 7 of 29 design items. The scan is not a formality in front of the sitting; some days it **is** the sitting.
+**The honest bit:** I told the founder earlier the same day that this item needed the Design Board. It needed four minutes with a document I had not opened.
+**Hook material:** one of four items in a board sitting turned out to have been answered four weeks earlier, by the same board.
+**Postable?:** maybe — it is a governance lesson more than a product one.
+
 ## 2026-11-14 — PUSH-TT-NOUN-01 · the one-word fix was three strings, and the worst one gave instructions for a session that does not exist
 
 **Shipped:** the morning push calls the time trial a time trial, on all three surfaces that named it.

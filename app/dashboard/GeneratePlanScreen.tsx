@@ -535,7 +535,8 @@ export default function GeneratePlanScreen({
    *  survives regeneration instead of being floored as unattributed. */
   maxHrSource?: 'observed' | 'user_confirmed' | null
   birthYear?: number | null
-  onBirthYearSave?: (year: number) => Promise<void>
+  /** USER-SETTINGS-TELL-THE-RUNNER-01 — resolves false when the write did not land. */
+  onBirthYearSave?: (year: number) => Promise<boolean>
   onPlanSaved?: (plan: Plan) => Promise<void>
   /** ENRICH-SAVE-01 — persist the AI-enriched copy that lands ~30s AFTER the
    *  runner has already committed to the plan. Never blocks them. */

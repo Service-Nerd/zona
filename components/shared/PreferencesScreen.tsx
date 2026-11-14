@@ -22,7 +22,10 @@
 // becomes un-reviewable.
 
 import type React from 'react'
+import { useState } from 'react'
 import { SegmentedControl } from '@/components/shared/SegmentedControl'
+import SettingsWriteError from '@/components/shared/SettingsWriteError'
+import { settingsWriteFailureMessage } from '@/lib/supabase/userSettingsWrite'
 
 /** Named once. The row label and the screen title cannot drift apart. */
 export const PREFERENCES_TITLE = 'Preferences'
@@ -46,10 +49,12 @@ const cardStyle: React.CSSProperties = {
 export interface PreferencesScreenProps {
   /** Global distance unit (ADR-015). */
   preferredUnits: 'km' | 'mi'
-  onUnitsChange: (u: 'km' | 'mi') => void
+  /** USER-SETTINGS-TELL-THE-RUNNER-01 — resolves false when the write did not land, so the
+   *  row can say so. `PROFILE-IDENTITY-01`'s `onSaveName` is the precedent, in this screen's parent. */
+  onUnitsChange: (u: 'km' | 'mi') => void | Promise<boolean>
   /** Default metric on session cards. */
   preferredMetric: 'distance' | 'duration'
-  onMetricChange: (m: 'distance' | 'duration') => void
+  onMetricChange: (m: 'distance' | 'duration') => void | Promise<boolean>
   /** The push rows, passed in rather than imported. See below. */
   notifications?: React.ReactNode
 }
@@ -59,6 +64,25 @@ export function PreferencesScreen({
   preferredMetric, onMetricChange,
   notifications,
 }: PreferencesScreenProps) {
+  // 🧭 Design Board 2026-11-14: inline, beneath the control that failed, value untouched.
+  // The amendment is the clearing: a failure that later succeeds must not leave a red line on
+  // a row that is now correct, so each handler resets its own message before awaiting.
+  const [unitsError, setUnitsError] = useState<string | null>(null)
+  const [metricError, setMetricError] = useState<string | null>(null)
+
+  // ⚠️ ONLY AN EXPLICIT `false` IS A FAILURE. A `void`-returning handler resolves to
+  // `undefined`, so testing truthiness would make every legacy caller start showing an error
+  // on a write that succeeded — the opposite defect, and the louder one.
+  async function handleUnits(u: 'km' | 'mi') {
+    setUnitsError(null)
+    const ok = await onUnitsChange(u)
+    if (ok === false) setUnitsError(settingsWriteFailureMessage('unit preference'))
+  }
+  async function handleMetric(m: 'distance' | 'duration') {
+    setMetricError(null)
+    const ok = await onMetricChange(m)
+    if (ok === false) setMetricError(settingsWriteFailureMessage('session display'))
+  }
   return (
     <div style={{ padding: '0 16px', display: 'flex', flexDirection: 'column', gap: 'var(--space-3)', paddingBottom: 'var(--space-7)' }}>
 
@@ -72,9 +96,10 @@ export function PreferencesScreen({
             <SegmentedControl
               ariaLabel="Distance units"
               value={preferredUnits}
-              onChange={onUnitsChange}
+              onChange={handleUnits}
               options={[{ value: 'km', label: 'KM' }, { value: 'mi', label: 'MI' }]}
             />
+            <SettingsWriteError message={unitsError} />
           </div>
         </div>
 
@@ -87,9 +112,10 @@ export function PreferencesScreen({
             <SegmentedControl
               ariaLabel="Session display metric"
               value={preferredMetric}
-              onChange={onMetricChange}
+              onChange={handleMetric}
               options={[{ value: 'distance', label: 'Distance' }, { value: 'duration', label: 'Duration' }]}
             />
+            <SettingsWriteError message={metricError} />
           </div>
         </div>
       </div>

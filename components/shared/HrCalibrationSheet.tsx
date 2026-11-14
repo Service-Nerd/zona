@@ -59,7 +59,8 @@ export default function HrCalibrationSheet({
   maxHR: number | null
   maxHrSource?: 'observed' | 'user_confirmed' | null
   birthYear?: number | null
-  onSave: (rhr: number, mhr: number) => void
+  /** USER-SETTINGS-TELL-THE-RUNNER-01 — resolves false when the write did not land. */
+  onSave: (rhr: number, mhr: number) => void | Promise<boolean>
   hrZoneMethod?: string | null
   hrAssumptionNote?: string | null
 }) {
@@ -86,7 +87,12 @@ export default function HrCalibrationSheet({
             birthYear={birthYear}
             hrZoneMethod={hrZoneMethod}
             hrAssumptionNote={hrAssumptionNote}
-            onSave={(rhr, mhr) => { onSave(rhr, mhr); close() }}
+            // 🔴 IT CLOSED BEFORE THE WRITE RESOLVED, which is why there was nowhere to put an
+            // error: the sheet was gone by the time the answer came back. It awaits now, and a
+            // failure holds the sheet open with the sentence under the Save button
+            // (USER-SETTINGS-TELL-THE-RUNNER-01). ⚠️ Only an explicit `false` holds it — a
+            // void-returning caller resolves `undefined` and still closes, as it always did.
+            onSave={async (rhr, mhr) => { const ok = await onSave(rhr, mhr); if (ok === false) return false; close(); return true }}
           />
         </div>
       )}

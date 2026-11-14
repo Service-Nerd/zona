@@ -8,6 +8,8 @@
 //
 // ⚠️ The body is UNCHANGED. Edit it in a separate commit so the move stays a move.
 
+import SettingsWriteError from '@/components/shared/SettingsWriteError'
+import { settingsWriteFailureMessage } from '@/lib/supabase/userSettingsWrite'
 import { calculateZones } from '@/components/dashboard/dashboardHelpers'
 import { TextField } from '@/components/shared/TextField'
 import { HEART_RATE_SUB } from '@/components/shared/meDoors'
@@ -103,7 +105,9 @@ export default function HRZonesSection({ restingHR, maxHR, maxHrSource, birthYea
    *  unedited sub-estimate value is a device floor (guard) or user-confirmed. */
   maxHrSource?: 'observed' | 'user_confirmed' | null
   birthYear?: number | null
-  onSave: (rhr: number, mhr: number) => void
+  /** USER-SETTINGS-TELL-THE-RUNNER-01 — resolves false when the write did not land.
+   *  ⚠️ The sheet must not close on a failure, so this is awaited before `saved` is set. */
+  onSave: (rhr: number, mhr: number) => void | Promise<boolean>
   /** From plan.meta.hr_zone_method — which fallback level was used when the plan was generated. */
   hrZoneMethod?: string | null
   /** From plan.meta.hr_assumption_note — human-readable explanation of the fallback. */
@@ -136,6 +140,7 @@ export default function HRZonesSection({ restingHR, maxHR, maxHrSource, birthYea
   // holds the estimate (user hasn't typed their own tested value over it).
   const showEstHint = !maxHR && estMaxHr != null && parseInt(mhr) === estMaxHr
   const [saved, setSaved] = useState(false)
+  const [saveError, setSaveError] = useState<string | null>(null)
   /* ⚠️ `openZone` WAS HERE AND WAS DEAD (ZONES-ZONE-SHEET-GONE-01). It was the handle for
      a sheet `ZONES-SURFACE-01` deleted without re-creating: state whose only job was to
      open something that no longer existed. Clearest of the three residues showing the rows
@@ -170,9 +175,16 @@ export default function HRZonesSection({ restingHR, maxHR, maxHrSource, birthYea
   const maxIsFloored = valid && guardedMax !== mhrNum
   const zones = valid ? calculateZones(rhrNum, guardedMax) : []
 
-  function handleSave() {
+  async function handleSave() {
     if (!valid) return
-    onSave(rhrNum, mhrNum)
+    // 🔴 THE HIGHEST-COST LOST WRITE IN THE TABLE. The runner typed these and tapped Save, and
+    // every SERVER surface — daily push, trial emails, coach prompts — reads `user_settings`
+    // while this screen reads React state. Before this it was `severity: 'log'`: correct on
+    // screen, absent from the row, with nothing able to say so (USER-SETTINGS-TELL-THE-RUNNER-01).
+    setSaveError(null)
+    const ok = await onSave(rhrNum, mhrNum)
+    // ⚠️ `undefined` from a void handler is NOT a failure; only an explicit false is.
+    if (ok === false) { setSaveError(settingsWriteFailureMessage('heart rate')); return }
     setSaved(true)
     setTimeout(() => setSaved(false), 2000)
   }
@@ -220,6 +232,7 @@ export default function HRZonesSection({ restingHR, maxHR, maxHrSource, birthYea
         <Button variant="secondary" fullWidth  onClick={handleSave} disabled={!valid} style={{ padding: '11px', background: saved ? 'var(--teal-dim)' : valid ? 'var(--accent-soft)' : 'var(--bg)', border: `0.5px solid ${saved ? 'var(--moss-mid)' : valid ? 'var(--accent-mid)' : 'var(--border-col)'}`, borderRadius: '8px', cursor: valid ? 'pointer' : 'not-allowed', fontSize: '12px', letterSpacing: '0.08em', textTransform: 'uppercase', color: saved ? 'var(--moss-strong)' : valid ? 'var(--moss-strong)' : 'var(--text-muted)' }}>
           {saved ? 'Saved' : 'Save HR data'}
         </Button>
+        <SettingsWriteError message={saveError} />
       </div>
 
       {/* 🔴 THIS COMMENT CLAIMED SOMETHING THAT DID NOT HAPPEN, AND THE CLAIM IS WHY IT
