@@ -167,8 +167,8 @@ const UpgradeScreen = dynamic(() => import('./UpgradeScreen'), { ssr: false })
 const RedeemCodeScreen = dynamic(() => import('./RedeemCodeScreen'), { ssr: false })
 const BenchmarkUpdateScreen = dynamic(() => import('./BenchmarkUpdateScreen'), { ssr: false })
 const FounderNoteScreen = dynamic(() => import('./FounderNoteScreen'), { ssr: false })
-import { RecalibrationReadyTile, RecalibrationEntryScreen } from './RecalibrationTile'
-import { nextRecalibrationDue } from '@/lib/coaching/recalibrationPrompt'
+import { RecalibrationReadyTile, BenchmarkAbsentTile, RecalibrationEntryScreen } from './RecalibrationTile'
+import { nextRecalibrationDue, benchmarkAbsentWeeks } from '@/lib/coaching/recalibrationPrompt'
 import BackButton from '@/components/shared/BackButton'
 import PinnedBackHeader from '@/components/shared/PinnedBackHeader'
 import HrCalibrationSheet from '@/components/shared/HrCalibrationSheet'
@@ -3211,6 +3211,21 @@ export default function DashboardClient() {
     return nextRecalibrationDue(plan, flat, plan.meta?.recalibrations_applied ?? [])
   })()
 
+  // TT-SKIPPED-VISIBILITY-01 — the absence, for the runner who will never see a benchmark.
+  // ⚠️ `nextRecalibrationDue` cannot answer this: `if (!ttEntry) continue` is correct for its own
+  // question and silent for this one, so the predicate is its own (`benchmarkAbsentWeeks`).
+  // ⚠️ It speaks from the earliest declared week onward, never from week 1 — the tile has always
+  // been something that appears AT its week.
+  const benchmarkAbsentWeek = (() => {
+    if (!plan?.weeks?.length) return null
+    const absent = benchmarkAbsentWeeks(plan)
+    if (absent.length === 0) return null
+    const earliest = absent[0]
+    const currentWeekN = plan.weeks[currentWeekIndex]?.n
+    if (currentWeekN == null || currentWeekN < earliest) return null
+    return earliest
+  })()
+
   const recalDistanceKm = GENERATION_CONFIG.RECALIBRATION_TIME_TRIAL.distance_km
   const secondsToTime = (s: number) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`
   const handleRecalConfirm = async (timeSeconds: number) => {
@@ -3259,7 +3274,7 @@ export default function DashboardClient() {
             ? <AttributionRow supabase={supabase} userId={userId}
                 onResolved={() => setAttributionResolved(true)} />
             : null
-        } recalTile={recalDue ? <RecalibrationReadyTile weekN={recalDue.week_n} sessionDay={recalDue.session_day} distanceKm={recalDistanceKm} tier={hasPaidAccess ? 'paid' : 'free'} onEnter={() => { setRecalStatus('idle'); hasPaidAccess ? setScreen('recalibration') : openUpgrade('recal_tile') }} /> : null} dailyCoachNote={dailyCoachNote} coachNoteSettled={coachNoteSettled} checkpointLine={todayCheckpointLine(plan, now, preferredUnits)} runAnalysisMap={runAnalysisMap} runAnalysisReady={runAnalysisReady} onOpenCoach={() => setScreen('coach')} onOpenPostRun={(data) => { setPostRunOrigin('today'); setActivePostRunData(data); setScreen('post-run') }} unreadNotifications={unreadNotifications} onOpenNotifications={() => { setUnreadNotifications(0); setScreen('notifications') }} showRacePrompt={showRacePrompt} pendingReshape={pendingReshape} nextGoalData={nextGoalData} onPickNextGoal={handlePickNextGoal} onDismissNextGoal={handleDismissNextGoal} showMaintCard={showMaintCard} onDismissMaintCard={handleDismissMaintCard} showMaintTransition={showMaintTransition} handover={handoverCopyData} onBuildRacePlan={() => void handleBuildRacePlan()} checkpointConsent={handoverCopyData ? checkpointConsentData : null} onCheckpointOption={handleCheckpointOption} onDismissHandover={handleDismissHandover} handoverBusy={handoverBusy} handoverError={modifyError} handoverAckLabel={ackKind ? ACK_LABEL[ackKind] : null} onHandoverAcknowledge={ackKind ? () => void acknowledgeModify() : undefined} maintReengagement={inReengagementWindow} maintThemeLine={plan.weeks[currentWeekIndex]?.theme} onSeeMaintPlan={handleSeeMaintenancePlan} onAckMaintTransition={handleAckMaintenanceTransition} onLogRaceResult={() => setShowRaceResultSheet(true)} onReshapeAccepted={(updatedPlan) => { setPlan(updatedPlan); setPendingReshape(null) }} onReshapeDismissed={async () => {
+        } recalTile={recalDue ? <RecalibrationReadyTile weekN={recalDue.week_n} sessionDay={recalDue.session_day} distanceKm={recalDistanceKm} tier={hasPaidAccess ? 'paid' : 'free'} onEnter={() => { setRecalStatus('idle'); hasPaidAccess ? setScreen('recalibration') : openUpgrade('recal_tile') }} /> : benchmarkAbsentWeek != null ? <BenchmarkAbsentTile weekN={benchmarkAbsentWeek} /> : null} dailyCoachNote={dailyCoachNote} coachNoteSettled={coachNoteSettled} checkpointLine={todayCheckpointLine(plan, now, preferredUnits)} runAnalysisMap={runAnalysisMap} runAnalysisReady={runAnalysisReady} onOpenCoach={() => setScreen('coach')} onOpenPostRun={(data) => { setPostRunOrigin('today'); setActivePostRunData(data); setScreen('post-run') }} unreadNotifications={unreadNotifications} onOpenNotifications={() => { setUnreadNotifications(0); setScreen('notifications') }} showRacePrompt={showRacePrompt} pendingReshape={pendingReshape} nextGoalData={nextGoalData} onPickNextGoal={handlePickNextGoal} onDismissNextGoal={handleDismissNextGoal} showMaintCard={showMaintCard} onDismissMaintCard={handleDismissMaintCard} showMaintTransition={showMaintTransition} handover={handoverCopyData} onBuildRacePlan={() => void handleBuildRacePlan()} checkpointConsent={handoverCopyData ? checkpointConsentData : null} onCheckpointOption={handleCheckpointOption} onDismissHandover={handleDismissHandover} handoverBusy={handoverBusy} handoverError={modifyError} handoverAckLabel={ackKind ? ACK_LABEL[ackKind] : null} onHandoverAcknowledge={ackKind ? () => void acknowledgeModify() : undefined} maintReengagement={inReengagementWindow} maintThemeLine={plan.weeks[currentWeekIndex]?.theme} onSeeMaintPlan={handleSeeMaintenancePlan} onAckMaintTransition={handleAckMaintenanceTransition} onLogRaceResult={() => setShowRaceResultSheet(true)} onReshapeAccepted={(updatedPlan) => { setPlan(updatedPlan); setPendingReshape(null) }} onReshapeDismissed={async () => {
                   // Stamp DB so the dismiss survives a page reload. Dismiss every
                   // pending row for this user, not just pendingReshape.reshapeId:
                   // historical pending rows from repeated test runs (the POST route

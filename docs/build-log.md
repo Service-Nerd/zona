@@ -6,6 +6,16 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-11-14 — TT-SKIPPED-VISIBILITY-01 · the silent skip was one correct line in the wrong function
+
+**Shipped:** when a plan promised a benchmark week and holds no benchmark, the tile's slot says so.
+**Dev learning:** `nextRecalibrationDue` has `if (!ttEntry) continue`, and that line is **right**. Its question is *"is a completed time trial waiting to be applied?"*, and a week with no time trial genuinely has nothing waiting. So every declared week falls through, it returns null, and nobody is wrong — the runner just never hears anything. The fix was not to change that function; it was to notice that a second question needed a second predicate in the same module.
+**Product/creator learning:** the item said *"1 of 27 rebuildable plans would lose every benchmark"*. Measured on stored plans instead of hypothetical rebuilds: **6 of the 14 that declare recalibration weeks hold none**, and all six render the new tile today. The item understated itself by filing against a rebuild that had not happened.
+**AI-building learning:** I wrote a timing guard so the sentence appears from the week it was due rather than from week 1, then measured and found **all six live plans are already past their declared week** — so the guard changes nothing today. I recorded that as a declared limit instead of implying the measurement proved it. A guard with no live instance is the dangerous kind, and this repo has the scar for it.
+**The honest bit:** the two scope edges took longer than the component. "Say nothing when the plan declared nothing" is obvious; "say nothing on a PARTIAL absence" is not, and I only reached it by asking what the sentence is actually about. If one of two declared weeks has its benchmark, the runner gets one, so they have not lost the thing the sentence names. Dropping that guard was mutation one and it goes red.
+**Hook material:** six runners have a plan whose own metadata promises a timed 5K that does not exist in it, and the function that would have noticed was behaving correctly.
+**Postable?:** yes — "the silent failure was a correct line in the wrong function" is the angle.
+
 ## 2026-11-14 — USER-SETTINGS-TELL-THE-RUNNER-01 · the sheet closed before the write answered, which is why there was nowhere to put the error
 
 **Shipped:** a setting the runner typed that did not reach their account now says so, under the control that failed.

@@ -6825,3 +6825,25 @@ failure. Where holding is not possible — the wizard's birth-year write is fire
 a `tell_the_runner` with no `onError` degrades silently to `log`.
 
 Check: `components/shared/settingsWriteError.markup.test.ts` (7 cases, falsified three ways).
+
+## A tile that never arrived says so in its own slot
+
+🧭 `TT-SKIPPED-VISIBILITY-01` — Design Board 2026-11-14, SHIP WITH AMENDMENT.
+
+When a thing the plan **promised** does not exist, the honest place to say so is **the slot where
+the runner will look for it**, not a note elsewhere on the screen. ✋ Silvanto: *"a plan note is
+where we put things the runner may read; the tile is where they go to look for the thing."*
+
+| | |
+|---|---|
+| **Surface** | The same slot as the present state. `BenchmarkAbsentTile` renders in Today's `recalTile`, sharing the ternary with `RecalibrationReadyTile` — 📱 Wroblewski: **not a new surface; it is the empty state the tile never had** |
+| **Content** | **One sentence**, and it states what the absence COSTS the runner, never that a producer failed. 🎓 Sierra: the fact is *"you will finish the block on the paces you started with"* |
+| **Affordance** | **None**, by `BASEBUILD-ADJUST-DOOR-01`: the action (entering a result) cannot succeed without the session, so a CTA would be a button that cannot work |
+| **No heading** | A title plus a sentence says the same thing twice |
+| **When** | From the week the thing was due, **never earlier** — the tile has always been something that appears AT its week, and an early absence is presence the thing never had |
+| **Scope** | Only when the plan DECLARED it and holds none. A plan that promised nothing says nothing, and a PARTIAL absence says nothing either: the runner still gets one |
+
+🎪 Collins: *"say it once, in the one place."* No plan note, no second eyebrow.
+
+Check: `lib/coaching/benchmarkAbsent.test.ts` (13 cases, falsified three ways: dropping the
+partial-absence guard, speaking from week 1, and blaming the producer in the copy).

@@ -62,6 +62,50 @@ export function RecalibrationReadyTile({
   )
 }
 
+/**
+ * The benchmark tile's ABSENT state.
+ *
+ * 🧭 `TT-SKIPPED-VISIBILITY-01` — Design Board 2026-11-14, SHIP WITH AMENDMENT.
+ * Sitting: `docs/decisions/design-2026-11-14-four-filed-items.md`.
+ *
+ * ✋ Silvanto ruled the surface: *"If the benchmark is gone, the honest place to say so is the
+ * place they will look for it"* — this tile's own slot, not a plan note somewhere else.
+ * 📱 Wroblewski: **not a new surface.** The tile exists; this is the empty state it never had,
+ * rendered in the same `recalTile` slot on Today.
+ * 🎓 Sierra's binding condition: it says what it COSTS the runner — they finish the block on the
+ * paces they started with — never that a scheduler failed.
+ * 🎪 Collins: *"say it once, in the one place."* No plan note, no Today eyebrow, no second surface.
+ *
+ * ⚠️ NO AFFORDANCE, AND THAT IS A RULING, NOT AN OMISSION. `BASEBUILD-ADJUST-DOOR-01`
+ * (2026-10-10): an affordance is withheld when the ACTION cannot succeed. Entering a time-trial
+ * result needs a due benchmark session, and there is none — so a CTA here would be a button that
+ * cannot work. One sentence, nothing to tap.
+ *
+ * ⚠️ WHEN IT SPEAKS. From the earliest declared week onward, never from week 1: the tile has
+ * always been a thing that appears AT its week, and announcing an absence weeks early would be
+ * presence the session never had.
+ */
+export function BenchmarkAbsentTile({ weekN }: { weekN: number }) {
+  const card: CSSProperties = {
+    boxSizing: 'border-box', width: '100%', background: 'var(--card)',
+    border: '1px solid var(--line)', borderRadius: 'var(--radius-lg)', padding: '20px',
+    display: 'flex', flexDirection: 'column', gap: 'var(--space-2)', fontFamily: 'var(--font-ui)',
+  }
+  return (
+    <section style={card} aria-label="Benchmark missing from this block">
+      <div style={{ font: '500 12px/1 var(--font-ui)', letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--mute)' }}>
+        {`Week ${weekN} · no benchmark`}
+      </div>
+      {/* One sentence, in two clipped halves: the fact, then what it costs. No heading above it
+          — a title plus a sentence would say the same thing twice, and the board asked for one
+          sentence. */}
+      <p style={{ margin: 0, font: '400 15px/1.5 var(--font-ui)', color: 'var(--ink-2)' }}>
+        No benchmark landed in this block. Your paces stay as they started.
+      </p>
+    </section>
+  )
+}
+
 interface RecalibrationEntryScreenProps {
   distanceKm: number
   status: 'idle' | 'confirming' | 'applied' | 'error'

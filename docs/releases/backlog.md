@@ -8189,7 +8189,44 @@ read-back after; validate with `validateReshapedPlan` (it must now pass `INV-PLA
 `INV-PLAN-RECALIBRATION-HAS-SESSION`). **Deadline:** before week 7 (w/c 2027-01-18). Re-measure the plan first; it
 may have been edited or rebuilt since.
 
-### 🔲 `TT-SKIPPED-VISIBILITY-01` — a runner whose block loses every benchmark is never told *(filed 2026-10-24, P3)* 🧭 **DESIGN BOARD** → 👤 **FOUNDER**
+### ✅ `TT-SKIPPED-VISIBILITY-01` — SHIPPED 2026-11-14 🧭 **DESIGN BOARD, SHIP WITH AMENDMENT**
+
+🧭 **Sitting:** `docs/decisions/design-2026-11-14-four-filed-items.md`. Founder delegated the words.
+
+📐 **THE PREMISE MOVED, AND IT GOT BIGGER.** The item said *"1 of 27 rebuildable live plans would lose every
+benchmark"* — a statement about a hypothetical rebuild. **Measured: 6 of the 14 live plans that DECLARE recalibration
+weeks hold no benchmark session at all**, and `benchmarkAbsentWeeks` says all **6 render the tile today**.
+`INV-PLAN-RECALIBRATION-HAS-SESSION` is error-severity and `npm run audit:stored` has been reporting every one of
+them, so the data half was already tracked debt; the runner-facing half was all that was left.
+
+🔴 **THE SILENT SKIP IS ONE LINE AND IT IS NOT A DEFECT.** `nextRecalibrationDue` does `if (!ttEntry) continue` —
+exactly right for its own question (*"is a completed time trial waiting to be applied?"*) and silent for this one.
+Every declared week falls through, it returns null, and the runner finishes the block on the paces they started with.
+**`benchmarkAbsentWeeks` is its own predicate for its own question**, beside it in the same module.
+
+✅ **Built:** `BenchmarkAbsentTile` in **the existing `recalTile` slot**, sharing the ternary with the ready state.
+✋ Silvanto ruled the surface: *"the honest place is where they will look for it"*, not a plan note. 📱 Wroblewski:
+**not a new surface — it is the empty state the tile never had.** 🎪 Collins: said once, in the one place.
+
+**The words** (mine): *"No benchmark landed in this block. Your paces stay as they started."* 🎓 Sierra's binding
+condition is the second half — it states what the absence COSTS, never that a producer failed. A gate asserts the
+copy carries no *schedul/could not/unable/error/failed*.
+
+⚠️ **NO AFFORDANCE, BY RULING RATHER THAN OMISSION.** `BASEBUILD-ADJUST-DOOR-01`: an affordance is withheld when the
+ACTION cannot succeed. Entering a time-trial result needs a due session and there is none, so a CTA would be a button
+that cannot work — the same rule that closed `NO-RUNNER-CHECKPOINT-LOG-DATE-01` in this sitting.
+
+⚠️ **Two scope edges, both gated.** A plan that declares nothing says nothing (**29 of 43** live plans — a sentence
+about a benchmark it was never promised), and a **PARTIAL** absence says nothing either: the runner still gets one, so
+they have not lost the thing the sentence is about.
+
+🔻 **The timing guard has NO live effect today, and that is stated rather than implied.** It speaks from the earliest
+declared week onward, never week 1 — but all 6 live plans are already past their declared week (current weeks 8–12
+against declared 3–8), so **0 of 6 are held back by it**. It is right for the next plan, unproven on this one.
+
+**Artifacts:** pattern in `ui-patterns.md` § *A tile that never arrived says so in its own slot*; `BenchmarkAbsentTile`
++ `benchmarkAbsentWeeks`; `lib/coaching/benchmarkAbsent.test.ts` — **13 cases, falsified three ways** (dropping the
+partial-absence guard, speaking from week 1, blaming the producer in the copy).
 
 From the `TT-BEFORE-LONG-01` ruling (McMillan's condition). §78's fallback drops a recalibration week silently when no
 slot fits, and since §78 Am.2 a slot beside the long run does not fit either. A runner can then finish a block with
