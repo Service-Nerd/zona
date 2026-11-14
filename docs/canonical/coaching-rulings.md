@@ -3193,3 +3193,49 @@ and a grid cannot settle it.
 ### ⇗ SLT escalation
 
 None. Neither changes tier, cost, or what the engine prescribes — both change what the plan SAYS.
+
+---
+
+## 2026-11-14 — Wave 3. What the wizard asks about injuries
+
+Sitting: `docs/decisions/coaching-2026-11-14-wave3-wizard-inputs.md`. `WIZARD-PAID-INPUTS-TIER-01`
+was **⏸️ parked by the founder** and not brought.
+
+### ⚖️ `INJURY-RECENCY-01` — CORRECT. Collect recency, for FOUR chips. Routed to Design.
+
+The SLT's 2026-10-28 gate was *state what each answer changes, per injury, with a measurement; if
+nothing changes, it is not collected*. **The measurement was the deliverable.**
+
+📐 Counterfactual on the engine, marathon / 20 km a week — **Achilles: nothing (intermediate) but
+all 6 hill weeks removed (beginner)** · **Hip: nothing, anywhere** · Knee and Shin: peak 53→32,
+LR 25.5→19 · Back and Plantar: LR 25.5→14.5, and at 40 km/week both flip the plan
+**build → maintenance**.
+
+**Ruled:** three buckets (current / within a year / longer ago) for the four chips that move a
+number. 🩹 **Willy, binding: absent or skipped defaults to CURRENT** — treating a current injury as
+historic is an injury, the reverse is a smaller plan.
+⚠️ **The item's premise was wrong in one respect:** the wizard asks in prose twice (*"Old injuries
+that still show up"*, *"Select any that are still an issue"*). What is missing is a structured field.
+🔴 **And my first table said "Achilles: nothing changes" — false. It had no hill column**, and the
+swap is beginner-only. **A before/after table covers only the column it prints.**
+🔻 **Not built: the SLT's order routes the control to the Design Board**, which has not sat.
+
+### ⚖️ `INJURY-HIP-INERT-01` — CORRECT, filed. Give the chip an effect or remove it.
+
+📐 `Hip` moves no number in any measured case, and **four live runners have ticked it.** The SLT's
+own rule applies as written: *if nothing changes, it is not collected.* 🩹 Willy: a hip history is
+usually glute or mobility, and the honest remedies are strength and cadence, not volume. 🎯 McMillan
+would rather it earned an effect, **but this board does not invent caps without evidence.**
+**Default on 2026-12-12 is removal**, unless the strength engine claims it (Blagrove's seat).
+
+### ⚖️ `WIZARD-ZERO-LONGEST-VS-WEEKLY-01` — CLOSED. No live instance.
+
+📐 Of 36 live plans carrying `generator_input`, **one** has `longest_recent_run_km` 0 — with
+`current_weekly_km` 0 as well, a coherent non-runner. **The pair the item describes has never
+occurred.** 🎯 McMillan withdrew it as a live defect and kept it as a thing to watch.
+⚠️ **Does not prove** that runners who leave the slider at zero mean it. That telemetry is still
+uncollected.
+
+### ⇗ SLT escalation
+
+None. Ruling 1 returns to the Design Board for the control, as the SLT's order requires.
