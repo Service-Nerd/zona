@@ -270,3 +270,16 @@ direction for a nudge; overstating is what this replaced.**
 arrives already resolved from `resolveTrialWindow`, the single owner.
 
 ⚠️ **2026-11-13 (BRAND-COACHNAME-HARDCODED-01)** — the coach's name is read from `BRAND.coachName` rather than typed. **No interface change**: same props, same payload, same copy; `BRAND.coachName` is `'Kit'`. Recorded because the file changed and a contract that silently lags its file is the thing this register exists to prevent.
+
+## The session detail line reads the PRESCRIBED HR band (EFFORT-GOVERNED-HR-DISPLAY-01, 2026-11-14)
+
+The detail line prints `selectedSession.zone` beside the HR string, and the HR string came from
+`getSessionHRDisplay(selectedSession.type, …)` — so the label was the prescription and the number
+was the type's band, rendering `Zone 4–5 · 151–163 bpm` for a VO2max session on the app's primary
+screen. §84 has required the number to derive from `session.zone` since 2026-09-04.
+
+The whole session is handed to `getSessionHRDisplay` now; `lib/coaching/zoneRules.ts →
+prescribedHrBand` owns the precedence. No prop interface changed.
+
+Guarded by `components/dashboard/sessionHrDisplay.test.ts`, whose call-site arm fails if any
+caller here narrows the session back down to its type.

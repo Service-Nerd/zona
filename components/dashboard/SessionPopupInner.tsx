@@ -53,7 +53,7 @@ import { getCoachingFlag } from '@/lib/coaching/coachingFlag'
 import { getCompletionCopy } from '@/lib/coaching/completionCopy'
 import { getSessionVoiceLine } from '@/lib/coaching/voiceLines'
 import { guidanceContextFromSession, renderGuidance } from '@/lib/plan/renderGuidance'
-import { hrBandForZoneString, sessionHRBand, zoneForSessionType, zoneKeyForZoneString } from '@/lib/coaching/zoneRules'
+import { prescribedHrBand, sessionHRBand, zoneForSessionType, zoneKeyForZoneString } from '@/lib/coaching/zoneRules'
 import { sessionNotesAreAiAuthored } from '@/lib/plan/notesProvenance'
 import { syncOnAppOpen } from '@/lib/health/clientSync'
 import { upsertCompletion } from '@/lib/plan/completions'
@@ -1019,11 +1019,11 @@ export default function SessionPopupInner({ session, weekN, aiNotes, preloadedRu
           const dz = displayZonesForSession(session)
           if (!dz) return null
           const { zones, hi, rangeLabel, peakName } = dz
-          // Live band from the prescribed zone string; fall back to baked hr_target.
-          const band = hrBandForZoneString(session.zone, restingHR ?? null, maxHR ?? null)
-          const hrDisplay = band
-            ? (hi <= 2 ? `< ${band.hi}` : `${band.lo}–${band.hi}`)
-            : getSessionHRDisplay(session.type, session.hr_target, restingHR ?? null, maxHR ?? null, zone2Ceiling ?? undefined)
+          // EFFORT-GOVERNED-HR-DISPLAY-01: this expression used to live HERE, and the two
+          // surfaces that did not have it showed a type-derived number beside this one's
+          // honest label. It is `getSessionHRDisplay`'s job now, so the four surfaces cannot
+          // drift again — the owner applies the same §84 precedence and the same ceiling rule.
+          const hrDisplay = getSessionHRDisplay(session, restingHR ?? null, maxHR ?? null, zone2Ceiling ?? undefined)
           const isInteractive = !!zoneForSessionType(session.type)
           return (
             <button
@@ -1306,10 +1306,12 @@ export default function SessionPopupInner({ session, weekN, aiNotes, preloadedRu
                         </span>
                       )}
                       {(() => {
-                        // Single source of truth: live Karvonen via getSessionHRDisplay,
-                        // matching the session-card hero. Falls back to baked hr_target
-                        // when restingHR/maxHR are missing. CoachingPrinciples §14, ADR-009.
-                        const hrVal = getSessionHRDisplay(session.type, session.hr_target, restingHR ?? null, maxHR ?? null, zone2Ceiling ?? undefined)
+                        // Single source of truth: `getSessionHRDisplay`, matching the hero.
+                        // 🔴 It said that before EFFORT-GOVERNED-HR-DISPLAY-01 and it was not
+                        // true: it passed `session.type`, so this row printed `plannedZone`
+                        // (which reads `session.zone`) beside a type-derived number — the label
+                        // and the figure a band apart on 93 live sessions. §84, §14, ADR-009.
+                        const hrVal = getSessionHRDisplay(session, restingHR ?? null, maxHR ?? null, zone2Ceiling ?? undefined)
                         const hrStr = hrVal ? `${hrVal} bpm` : null
                         const line  = [plannedZone, hrStr].filter(Boolean).join(' · ')
                         if (!line) return null
@@ -2011,9 +2013,10 @@ export default function SessionPopupInner({ session, weekN, aiNotes, preloadedRu
         const fallback = keyFromZone ? null : zoneForSessionType(session.type)
         const zoneKey = keyFromZone ?? fallback?.zone ?? null
         if (!zoneKey) return null
-        const band = keyFromZone
-          ? hrBandForZoneString(session.zone, restingHR ?? null, maxHR ?? null)
-          : sessionHRBand(session.type, restingHR ?? null, maxHR ?? null)
+        // The precedence above was written out here a THIRD time. It is
+        // `prescribedHrBand`'s now, and the behaviour is identical: the prescribed band where
+        // a zone string exists, the type band where one does not (EFFORT-GOVERNED-HR-DISPLAY-01).
+        const band = prescribedHrBand(session, restingHR ?? null, maxHR ?? null)
         return <ZoneInfoSheet zoneKey={zoneKey} hrBand={band ? { lo: band.lo, hi: band.hi } : null} onClose={() => setZoneSheetOpen(false)} />
       })()}
     </>

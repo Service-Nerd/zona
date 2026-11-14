@@ -2128,11 +2128,13 @@ export default function TodayScreen({ plan, weekIndex, daysToRace, raceName, pre
                 ?? (expectsAerobicPace && stravaLoading ? '—' : null)
               // CD-11 / §12 — an easy run's pace is a ceiling, not a window.
               const paceForDetail = easyPaceAsCeiling(rawPaceForDetail, selectedSession.type)
-              // P2 fix: route HR through getSessionHRDisplay (live Karvonen) instead of
-              // reading the baked plan string directly. Mirrors what the expanded card does.
+              // Route HR through `getSessionHRDisplay`, which §84 requires to read the
+              // PRESCRIPTION. ⚠️ The detail line below prints `selectedSession.zone` beside
+              // this string, so passing the type here printed `Zone 4–5 · 151–163 bpm` on the
+              // app's primary screen (EFFORT-GOVERNED-HR-DISPLAY-01) — the same contradiction
+              // `sameWeekZoneHrCoherent.test.ts` guards on the marketing site.
               const liveHrStr = getSessionHRDisplay(
-                selectedSession.type,
-                selectedSession.hr_target,
+                selectedSession,
                 restingHR ?? null,
                 maxHR ?? null,
                 zone2Ceiling ?? undefined,

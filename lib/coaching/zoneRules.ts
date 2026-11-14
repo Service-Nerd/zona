@@ -182,6 +182,43 @@ export function hrBandForZoneString(
   }
 }
 
+/**
+ * The HR band a session PRESCRIBES, and whether it reads as a cap or a span.
+ *
+ * §84: the number derives from `session.zone` — the prescribed work — never from the coarse
+ * `session.type` slot. This is the single owner of that precedence; `getSessionHRDisplay`
+ * formats it for the four display surfaces and the two AI prompt builders read it directly,
+ * so a coach note can no longer state a bpm the header contradicts.
+ *
+ * 🔴 EFFORT-GOVERNED-HR-DISPLAY-01 (2026-11-14) — four independent copies of this precedence
+ * existed and only two were right. The two that were not printed the zone LABEL beside a
+ * type-derived NUMBER, so a VO2max session read `Zone 4–5 · 151–163 bpm`.
+ *
+ * `ceilingForm` is true when the prescription tops out at Z2, because an easy-family
+ * prescription is a cap (§12) and reads `< hi`. ⚠️ It is decided by the PRESCRIPTION's top
+ * zone, not by the session type: that is the only rule that gives a `Zone 1` shakeout a lower
+ * ceiling AND lets a `Zone 2–3` segmented long run render a span (`SEGMENTED-LR-HR-01`).
+ *
+ * Falls back to the type-derived band when the session stored no zone string — §84's own
+ * graceful-degradation rule for legacy plans, not a violation.
+ */
+export function prescribedHrBand(
+  session: { type?: string; zone?: string | null } | null | undefined,
+  restingHR: number | null | undefined,
+  maxHR: number | null | undefined,
+): { lo: number; hi: number; ceilingForm: boolean; label: string } | null {
+  if (!session) return null
+  const prescribed = zonesFromZoneString(session.zone)
+  if (prescribed.length) {
+    const band = hrBandForZoneString(session.zone, restingHR, maxHR)
+    if (band) return { ...band, ceilingForm: Math.max(...prescribed) <= 2, label: session.zone as string }
+    return null
+  }
+  const byType = sessionHRBand(session.type, restingHR, maxHR)
+  if (!byType) return null
+  return { lo: byType.lo, hi: byType.hi, ceilingForm: byType.zone.zone === 'Z2', label: byType.zone.label }
+}
+
 /** Did the completed session land in its prescribed zone?
  *
  *  For easy/long/recovery (Z2): avg_hr must be ≤ Z2 ceiling. Drift above

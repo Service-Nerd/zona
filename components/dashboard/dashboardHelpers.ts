@@ -20,7 +20,7 @@ import type { Session } from '@/types/plan'
 import type { Zone } from '@/components/shared/ZoneBar'
 import { catalogueRowFor } from '@/lib/plan/catalogueLink'
 import { isLongRun, isHardEffortType } from '@/lib/plan/sessionRole'
-import { sessionHRBand, zonesFromZoneString } from '@/lib/coaching/zoneRules'
+import { prescribedHrBand, sessionHRBand, zonesFromZoneString } from '@/lib/coaching/zoneRules'
 import { zoneNumberForType, zoneShortName } from '@/components/shared/ZoneBar'
 
 export const ZONE_DEFS = [
@@ -160,24 +160,56 @@ export function displayZonesForSession(
   }
 }
 
-/** Returns the HR string to display for a session, using zoneRules so every
- *  session type gets the same shape ("Zone X · A–B bpm" or "< X bpm" for Z2).
- *  Live Karvonen takes precedence over baked plan strings — stale hr_target
- *  on a regenerated user is the bug, not a feature. */
+/**
+ * The HR string to display for a session — the SINGLE owner, for every surface.
+ *
+ * §84: the number derives from the session's PRESCRIBED work (`session.zone`), never from the
+ * coarse `session.type` slot, and §84's own Config names `hrBandForZoneString` as the owner of
+ * turning that string into the live band.
+ *
+ * 🔴 EFFORT-GOVERNED-HR-DISPLAY-01 (2026-11-14) — this function took a TYPE STRING, so two of
+ * the four display surfaces could not obey §84 and did not. `SessionPopupInner`'s hero eyebrow
+ * and its `ZoneInfoSheet` read `session.zone`; the **Planned** row on the same screen and the
+ * Today card read the type. Both of those print the zone LABEL beside the number, so a VO2max
+ * session rendered `Zone 4–5 · 151–163 bpm` — the label from the prescription and the number a
+ * whole band below it, which is §84's named harm (disguising hard work as moderate) with the
+ * honest label sitting next to it.
+ *
+ * 📐 Measured on 43 live plans / 2,433 sessions: **93 displayed strings across 30 runners** were
+ * wrong — 14 VO2max sessions a band too low, 33 Zone 1 shakeouts given the Zone 2 ceiling, 34
+ * segmented long runs given a ceiling where the app's own ruled behaviour is a range
+ * (`SEGMENTED-LR-HR-01`), and 12 showing NOTHING to runners who have a max HR but no resting HR.
+ * ⚠️ The baked `hr_target` already held the prescribed figure on 30 of 32 shakeouts and 12 of 15
+ * VO2max sessions: **the engine was right and the display discarded its answer.**
+ *
+ * ⚠️ THE CEILING FORM IS NOT A STYLE CHOICE. An easy-family prescription is a cap (§12), so a
+ * session topping out at Z2 renders `< hi`; anything reaching Z3 or above renders the span. The
+ * test is the PRESCRIPTION's top zone, not the session type — which is what lets a `Zone 2–3`
+ * long run render a range while a `Zone 1` shakeout renders a lower ceiling than it used to.
+ *
+ * Precedence, in order:
+ *   1. `session.zone` — the prescription (§84). `hrBandForZoneString` also carries §14's
+ *      %MaxHR fallback, so a runner with a max HR and no resting HR gets a band here where
+ *      `sessionHRBand` gave them nothing.
+ *   2. the type-derived band — §84's own graceful degradation, for legacy plans that stored no
+ *      `session.zone`. Not a violation; it is the documented fallback.
+ *   3. the baked `hr_target` — no live HR data at all.
+ *   4. the plan's Z2 ceiling, easy family only.
+ */
 export function getSessionHRDisplay(
-  sessionType: string,
-  hr_target: string | undefined,
+  session: { type?: string; zone?: string | null; hr_target?: string | null },
   restingHR: number | null,
   maxHR: number | null,
   zone2Ceiling: number | undefined,
 ): string | null {
-  const band = sessionHRBand(sessionType, restingHR, maxHR)
-  if (band) {
-    return band.zone.zone === 'Z2' ? `< ${band.hi}` : `${band.lo}–${band.hi}`
-  }
+  const sessionType = session.type ?? ''
+  // The precedence and the cap rule belong to `prescribedHrBand` (§84's single owner); this
+  // function only FORMATS. Holding a second copy here is how two surfaces drifted from two.
+  const band = prescribedHrBand(session, restingHR, maxHR)
+  if (band) return band.ceilingForm ? `< ${band.hi}` : `${band.lo}–${band.hi}`
   // No HR data — fall back to the baked plan string. Strip "bpm" so callers
   // can append it themselves (every render site adds its own bpm suffix).
-  if (hr_target) return hr_target.replace(/\s*bpm\s*$/i, '')
+  if (session.hr_target) return session.hr_target.replace(/\s*bpm\s*$/i, '')
   if ((sessionType === 'easy' || sessionType === 'long' || sessionType === 'recovery' || sessionType === 'run') && zone2Ceiling) {
     return `< ${zone2Ceiling}`
   }

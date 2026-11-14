@@ -18,7 +18,7 @@ import { buildAthleteContext } from '@/lib/coaching/prompts/athleteContext'
 import { computeHrStreamSummary } from '@/lib/coaching/streamAnalysis'
 import { computePaceFadeSummary, type StravaSplitMetric } from '@/lib/coaching/paceAnalysis'
 import { fetchRunHistory, findSimilarRuns, summariseCohort, pickWindowDays } from '@/lib/coaching/runHistory'
-import { zoneForSessionType, sessionHRBand } from '@/lib/coaching/zoneRules'
+import { prescribedHrBand } from '@/lib/coaching/zoneRules'
 import { prescribedZoneFigures } from '@/lib/coaching/prescribedZoneFigures'
 import { inferLimiter } from '@/lib/coaching/limiter'
 import { coachingSessionType } from '@/lib/plan/sessionRole'
@@ -346,13 +346,17 @@ export async function POST(req: NextRequest) {
   // arithmetic over stored columns; the narrative is the thing that goes stale.
   let feedbackText: string | null = null
   if (!scores_only) try {
-    const prescribedZone = zoneForSessionType((session as any).type)
+    // §84 — the zone and bpm a coach note states derive from the PRESCRIBED work, and
+    // ADR-015's amendment makes the AI layer a display surface: a number handed to the model
+    // becomes user-facing the moment the model repeats it. This read `zoneForSessionType`,
+    // which collapses every quality session to a flat Z3, so the prompt told the model a
+    // VO2max session was prescribed at Zone 3 (EFFORT-GOVERNED-HR-DISPLAY-01).
     // Live Karvonen band from user_settings — single source of truth shared
     // with the UI. Falls back to plan.meta.zone2_ceiling inside the prompt
     // when restingHR/maxHR are missing.
     const restingHR = settingsRes.data?.resting_hr ?? null
     const maxHR     = settingsRes.data?.max_hr     ?? null
-    const liveBand  = sessionHRBand((session as any).type, restingHR, maxHR)
+    const liveBand  = prescribedHrBand(session as { type?: string; zone?: string | null }, restingHR, maxHR)
     // Pace: avg_speed is in m/s → convert to sec/km for the prompt
     const avgSpeedMs = activity.avg_speed ?? 0
     const actualPaceSecPerKm = avgSpeedMs > 0 ? Math.round(1000 / avgSpeedMs) : null
@@ -429,7 +433,7 @@ const { units: displayUnits } = await getUserDisplayPrefs(serviceSupabase, userI
       rpe:                 completionRes.data?.rpe ?? null,
       fatigueTag:          completionRes.data?.fatigue_tag ?? null,
       weekPhase:           (week as any).phase ?? null,
-      prescribedZoneLabel: prescribedZone?.label ?? null,
+      prescribedZoneLabel: liveBand?.label ?? null,
       prescribedHrBand:    liveBand ? { lo: liveBand.lo, hi: liveBand.hi } : null,
       cohortContext:       cohortSummary,
       isFirstAnalysis,

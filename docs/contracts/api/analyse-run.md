@@ -222,3 +222,20 @@ rather than inheriting a platform default that has changed twice. The reasoning,
 durations and the client-side `AbortSignal` timeout are owned by
 **`docs/contracts/api/ai-route-duration.md`** and are referenced, never restated here: fourteen
 copies of one number is how the number drifts (`OPS-FN-DURATION-01`, 2026-11-08).
+
+## The prescribed HR band comes from the PRESCRIPTION (EFFORT-GOVERNED-HR-DISPLAY-01, 2026-11-14)
+
+`/api/analyse-run` read its HR band from `sessionHRBand(session.type, …)`, and `zoneForSessionType`
+collapses every quality session to a flat Z3. §84 has required since 2026-09-04 that the zone
+and bpm a coach note states derive from the session's **prescribed work** (`session.zone`), and
+ADR-015's amendment makes the AI layer a display surface: a number handed to the model is
+user-facing the moment the model repeats it.
+
+`lib/coaching/zoneRules.ts → prescribedHrBand(session, restingHR, maxHR)` is the single owner of
+that precedence now — the prescribed band where a zone string exists, the type-derived band where
+one does not (§84's own graceful degradation for legacy plans). `prescribedZoneLabel` in the prompt now carries `session.zone` verbatim rather than the type's label, so the prompt no longer tells the model a VO2max session was prescribed at Zone 3.
+
+📐 **Latent on this route: 0 live instances.** Of 104 live non-superseded analyses, 2 are on a quality session and **0** have an activity carrying a temperature, which is the only input `prescribedHrCeiling` reaches.
+
+Guarded by `components/dashboard/sessionHrDisplay.test.ts`, which also fails if any file here
+feeds `sessionHRBand` a session's type again.

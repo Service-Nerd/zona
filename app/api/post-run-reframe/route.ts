@@ -102,7 +102,7 @@ async function persistReflection(
   // on screen and a 500 here would lose them a second time.
   if (!written.ok) console.warn('[post-run-reframe] persist failed', written.reason, written.message)
 }
-import { sessionHRBand } from '@/lib/coaching/zoneRules'
+import { prescribedHrBand } from '@/lib/coaching/zoneRules'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { createUserScopedClient } from '@/lib/supabase/userScopedClient'
 import { writeLiveRow } from '@/lib/supabase/liveRowWrite'
@@ -495,8 +495,13 @@ export async function POST(req: NextRequest) {
   const recentHighFatigueCount = recentFatigueTags
     .filter((t) => (FATIGUE_HIGH_TAGS as readonly string[]).includes(t))
     .length
-  const liveBand = sessionHRBand(
-    session.type,
+  // §84 — the prescription, not the type. `prescribedHrCeiling` reaches exactly one branch of
+  // `inferLimiter` (heat), whose `reasoning` is fed verbatim into the AI prompt; reading the
+  // type gave a VO2max session the Zone 3 ceiling, so a runner holding their prescribed Z4–5
+  // band in warm weather could be told their HR was "above the ceiling" when it was exactly
+  // where the plan put it (EFFORT-GOVERNED-HR-DISPLAY-01).
+  const liveBand = prescribedHrBand(
+    session as { type?: string; zone?: string | null },
     settingsRes.data?.resting_hr ?? null,
     settingsRes.data?.max_hr ?? null,
   )

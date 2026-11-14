@@ -6,6 +6,16 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-11-14 — EFFORT-GOVERNED-HR-DISPLAY-01 · the board routed me a question its own constitution had already answered
+
+**Shipped:** every surface that shows a session's heart-rate number now reads the prescription (`session.zone`) instead of the coarse session type, including the two AI prompt builders.
+**Dev learning:** the defect was a **signature**. `getSessionHRDisplay` took a type STRING, so a caller physically could not give it the prescription, and that is how two of four display surfaces drifted from the other two for fourteen months while everyone agreed about the rule. The two correct ones were the hero eyebrow and the zone sheet; the two wrong ones were the Planned row **on the same screen** and the Today card — and both of those print the zone label beside the number, so a VO2max session rendered `Zone 4–5 · 151–163 bpm`. An honest label makes a wrong number worse, not better. The fix is one owner (`prescribedHrBand`) and a formatter, which collapsed **four** copies of the same precedence into one.
+**Product/creator learning:** the Design Board routed the band question to the Coaching Board in good faith, and §84 had ruled it on 2026-09-04 in its principle text, naming the exact function to use. Measuring the premise before convening turned a sitting into a one-line exemption. The settled-ground scan keeps paying for itself: yesterday it disqualified 7 of 29 design items, today it disqualified a whole board.
+**AI-building learning:** I nearly built the wrong thing off a correct reading. §84 Amendment 1 excludes the `Zone 2–3` long run *"deliberately"*, which I read as "keep the Z2 ceiling on screen". `SEGMENTED-LR-HR-01`'s own gate says the exclusion scopes the **invariant**, and that the app rendering a range is the ruled behaviour. One paragraph in an adjacent test file changed what got built. Read the gate, not just the principle.
+**The honest bit:** my first probe reported **93** changed sessions and twelve going from nothing to a number. Both were artefacts: a `sed` I thought had repointed the Z2-ceiling input silently did not match, and I never checked. The real figure is **81 and zero**, confirmed by running the shipped function over live plans instead of my reconstruction of it. I also hit the repo's own documented trap — a supabase-js `select` on a column that does not exist returns an error OBJECT, and my probe read `data ?? []`, so it printed `0 runners with HR data` and looked like a finding.
+**Hook material:** 81 of 2,433 live sessions showed a heart-rate number the plan contradicts, and the engine had already baked the right one on 30 of 32 of them. The display threw the correct answer away.
+**Postable?:** yes — "the honest label made the wrong number worse" is the line.
+
 ## 2026-11-14 — GOALPACE-GAP-LEVER-COPY-01 · the words were delegated, and the matcher would have broken for half the runners
 
 **Shipped:** the gap sentence now names a lever, and which lever depends on how old the runner's benchmark is.
