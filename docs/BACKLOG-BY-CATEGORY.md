@@ -106,7 +106,7 @@ New: `TT-PROJECTION-PROVENANCE-01` (P1), `PRICING-ROW-TRUTH-01`.
 
 ### 🔧 Infrastructure & ops
 **The two code items shipped today.** What remains is external and yours:
-`OPS-VERCEL-PLAN-01` 🔴 **P0 — Hobby is non-commercial and we sell a subscription** ·
+~~`OPS-VERCEL-PLAN-01`~~ ✅ **CLOSED 2026-10-14, plan is `pro`, re-verified live 2026-11-14** ·
 `OPS-SUPABASE-PLAN-01` 🔴 **P0 — breaks at ~250–320 runners, no backups at all** ·
 `OPS-ANTHROPIC-CREDIT-01` · `DEPLOY-QUOTA-01`. `COHERENCE-SELECT-01` remains ⛔ *stop attempting*.
 

@@ -4,6 +4,12 @@
 #
 # Exit 0 = SKIP the build. Exit 1 = BUILD.
 #
+# ⚠️ THE CAP THAT CAUSED THIS IS GONE AND THE FILTER IS KEPT ON PURPOSE (2026-11-14).
+# The account moved to Pro on 2026-10-14 (verified `npx vercel teams ls` -> `pro`), so the
+# 100/day Hobby cap below is HISTORY, not a live constraint. The filter stays because a
+# byte-identical site does not need rebuilding: it saves build minutes and keeps the
+# deployment list readable. Do not re-derive urgency from the paragraph that follows.
+#
 # ⚠️ WHY THIS EXISTS. On 2026-09-21 this project hit Vercel's Hobby cap of 100
 # deployments per day and stopped deploying for 24 hours, mid-session, with
 # work already pushed. Counted afterwards: of 53 commits that day, THIRTY

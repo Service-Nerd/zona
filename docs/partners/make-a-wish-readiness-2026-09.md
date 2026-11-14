@@ -1,5 +1,11 @@
 # Make-A-Wish UK: readiness and product brief
 
+> ⚠️ **CORRECTION, 2026-11-14 — this is a POINT-IN-TIME assessment dated 2026-09 and one of its two blockers is gone.**
+> **Vercel moved to Pro on 2026-10-14** (`OPS-VERCEL-PLAN-01`, re-verified live 2026-11-14: `npx vercel teams ls` → plan `pro`), so
+> every row below reading *"Hobby"*, *"Violation"* on plan terms, or naming the move as action #1 describes the position **as it
+> was**, not as it is. The Supabase Free → Pro blocker (`OPS-SUPABASE-PLAN-01`) is still open. The rest of the assessment stands.
+
+
 **Prepared:** 2026-09-18 · **Repo state:** `main` @ `2dcfa44` · **Assessment only, nothing was changed.**
 
 **Scope of the proposal:** ~500 Make-A-Wish UK runners for the 2027 London Marathon get full paid-tier

@@ -22588,7 +22588,7 @@ across the seven months combined.
 > is already recorded as set at item 5 of the Make-A-Wish critical path. None of those are re-filed below;
 > `OPS-VERCEL-PLAN-01` is a **different argument** for the same decision and says so.
 
-> 🔻 **OPS-VERCEL-PLAN-01 — Vercel Hobby is contractually non-commercial, and Zonna sells a subscription.** *(P0 BLOCKER, founder, filed 2026-09-18.)*
+> ✅ **OPS-VERCEL-PLAN-01 — CLOSED 2026-10-14; the account is on `pro`, re-verified live 2026-11-14 (`npx vercel teams ls`). Everything below is the ORIGINAL filing, kept as the record of why it mattered.** ~~Vercel Hobby is contractually non-commercial, and Zonna sells a subscription.~~ *(P0 BLOCKER, founder, filed 2026-09-18.)*
 >
 > Live check: `list_teams` returns `service-nerd's projects`, **`plan: "hobby"`**.
 >
