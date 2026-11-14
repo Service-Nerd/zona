@@ -44,17 +44,58 @@ export function goalPaceReach(args: {
   return { gapPct, withheld: gapPct > GENERATION_CONFIG.GOAL_PACE_MAX_STRETCH_PCT }
 }
 
-/** The runner-facing sentence, founder's words (2026-10-27). One owner, so the engine's note and any check that looks
- *  for it cannot drift apart. `gapPct` is rounded to a whole percent: "about 12%". */
-export function goalGapSentence(gapPct: number): string {
+/**
+ * Which lever the gap sentence may name.
+ *
+ * 🧭 `GOALPACE-GAP-LEVER-COPY-01` (Design Board 2026-11-14): the sentence named the loss and not
+ * the lever, and *"the runner does not hold a currency"* (McMillan). The board ruled that a lever
+ * must be named and that the copy BRANCHES on the benchmark's age; the founder delegated the words.
+ *
+ * ⚠️ READ FROM THE RAMP'S OWN VERDICT, NOT FROM A SECOND AGE CALCULATION. `applyVdotDiscount`
+ * already decides staleness (`VDOT_STALENESS_FRESH_WEEKS`, 4), so this takes its `discountPct` and
+ * compares against the base. Recomputing weeks here would be two answers to one question.
+ *
+ * 🔴 AN UNDATED BENCHMARK IS NOT FRESH. The ramp leaves `discountPct` at the base when there is no
+ * `benchmark_date`, so a discount test alone reads "fresh" for a benchmark whose age is UNKNOWN —
+ * and telling that runner there is nothing to retest is a claim we cannot make. Unknown takes the
+ * lever, which is the harmless direction: a time trial they did not need costs them one session.
+ */
+export type BenchmarkFreshness = 'fresh' | 'stale_or_unknown'
+
+export function benchmarkFreshness(args: { hasDate: boolean; discountPct: number }): BenchmarkFreshness {
+  if (!args.hasDate) return 'stale_or_unknown'
+  return args.discountPct > GENERATION_CONFIG.VDOT_CONSERVATIVE_DISCOUNT_PCT ? 'stale_or_unknown' : 'fresh'
+}
+
+/** The gap clause. Founder's words (2026-10-27), UNCHANGED: the board required a lever, not a
+ *  rewrite, so his sentence survives verbatim and the lever is appended. */
+export function goalGapClause(gapPct: number): string {
   return `Your target is about ${Math.round(gapPct)}% quicker than your recent run suggests, so sessions are set to what you can run now.`
+}
+
+/**
+ * The runner-facing sentence: the gap, then the lever.
+ *
+ * ⚠️ On a FRESH benchmark the lever is not "test again" — a new trial inside
+ * `VDOT_STALENESS_FRESH_WEEKS` moves the ramp by nothing, so it would be advice that cannot work.
+ * The lever there is the race itself.
+ */
+export function goalGapSentence(gapPct: number, freshness: BenchmarkFreshness): string {
+  const lever = freshness === 'fresh'
+    ? 'Nothing to retest: run the race you trained for.'
+    : 'A fresh 5K time trial resets them.'
+  return `${goalGapClause(gapPct)} ${lever}`
 }
 
 /** Does this text carry the gap sentence? Derived from `goalGapSentence` itself, so a rewording of the sentence moves
  *  every check with it (the checker and the tests match through this, never through a copied regex). */
 export function hasGoalGapSentence(text: string | null | undefined): boolean {
   if (!text) return false
-  const [head, tail] = goalGapSentence(0).split('0%')
+  // ⚠️ THE GAP CLAUSE ONLY, not the whole sentence. The lever branches, so matching the full
+  // string would make this answer FALSE for one of the two branches — and the invariant at
+  // `invariants.ts:9365` requires the sentence on every withheld plan, so it would have failed
+  // for exactly the runners whose benchmark is fresh.
+  const [head, tail] = goalGapClause(0).split('0%')
   return new RegExp(`${escapeRe(head)}\\d+%${escapeRe(tail)}`).test(text)
 }
 const escapeRe = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')

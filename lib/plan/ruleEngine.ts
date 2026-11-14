@@ -91,7 +91,7 @@ import {
 } from './paceBands'
 import type { PaceGuide } from './paceBands'
 import { racePaceMinPerKm } from './aerobicEstimate'
-import { goalPaceReach, goalGapSentence, hasGoalGapSentence, RACE_OPENING_PREFIX } from './goalPaceReach'
+import { goalPaceReach, goalGapSentence, benchmarkFreshness, hasGoalGapSentence, RACE_OPENING_PREFIX } from './goalPaceReach'
 import { qualityHeaderPace } from './qualityHeaderPace'
 import { fitnessAnchorMap } from './fitnessAnchorMap'
 import { alignDerivedToStructure } from './derivedSetAnchors'
@@ -9692,6 +9692,14 @@ function buildRulePlanOnce(
   // volume_constraint_note). 'comfortable' needs no explanation. Voice: honest,
   // dry, names the constraint and the lever — never motivational, never a verdict
   // on the runner (§44 amendment: the demand is on the timeline, not the athlete).
+  // 🧭 GOALPACE-GAP-LEVER-COPY-01 — which lever the gap sentence may name, read from the RAMP'S
+  // OWN verdict rather than a second age calculation. `vdotFor` is the single producer of the
+  // discount and is handed `new Date()` deliberately (§10 measures how long ago the runner RAN).
+  const goalLeverFreshness = benchmarkFreshness({
+    hasDate: !!input.benchmark?.benchmark_date,
+    discountPct: vdotFor(input).discountPct,
+  })
+
   const difficultyNoteBase: string | undefined =
     difficultyBand === 'comfortable' ? undefined
     : prepTime.status === 'warn'
@@ -9701,7 +9709,7 @@ function buildRulePlanOnce(
     // §120 Amendment 2 — founder's words, 2026-10-27. In the interval arm's place, because that arm's sentence ("race-pace
     // sessions will bite harder") describes sessions a withheld plan no longer contains (McMillan's 10-06 condition).
     : goalReach?.withheld
-      ? goalGapSentence(goalReach.gapPct)
+      ? goalGapSentence(goalReach.gapPct, goalLeverFreshness)
     : goalBeyondMeasuredFitness
       // §44 voice: the demand is on the target, not the athlete. Says the thing
       // the runner would otherwise discover mid-plan — that their race-pace
@@ -9738,7 +9746,7 @@ function buildRulePlanOnce(
   // warning, inputs that cap the build, a shortfall) it keeps its own sentence and lever (§38/§40c), and the gap
   // sentence follows it.
   const difficultyNote: string | undefined = goalReach?.withheld && !hasGoalGapSentence(difficultyNoteBase)
-    ? `${difficultyNoteBase ? `${difficultyNoteBase} ` : ''}${goalGapSentence(goalReach.gapPct)}`
+    ? `${difficultyNoteBase ? `${difficultyNoteBase} ` : ''}${goalGapSentence(goalReach.gapPct, goalLeverFreshness)}`
     : difficultyNoteBase
 
   // §18 Amendment (FREQ-SILENCE-01, 2026-09-19) — WHEN VOLUME, NOT LIFE, SETS

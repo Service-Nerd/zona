@@ -6,6 +6,16 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-11-14 — GOALPACE-GAP-LEVER-COPY-01 · the words were delegated, and the matcher would have broken for half the runners
+
+**Shipped:** the gap sentence now names a lever, and which lever depends on how old the runner's benchmark is.
+**Dev learning:** two things nearly went wrong and neither was the copy. `hasGoalGapSentence` built its matcher by splitting the WHOLE sentence on the percentage — and `invariants.ts:9365` requires that sentence on every withheld plan, so branching the tail would have made the invariant fail **for exactly the runners whose benchmark is fresh**. It keys on the gap clause now. And an **undated** benchmark reads as fresh if you test the discount alone, because `applyVdotDiscount` leaves it at base when there is no date — so "nothing to retest" would have been a claim we cannot make. Unknown takes the lever; a time trial they did not need costs one session, which is the harmless direction.
+**Product/creator learning:** the lever had to branch because on a fresh benchmark a new time trial moves the ramp by **nothing** — `VDOT_STALENESS_FRESH_WEEKS` is 4. Telling that runner to test again is advice that cannot work, which is worse than naming no lever at all. The board had already worked this out; I only had to not flatten it into one sentence.
+**AI-building learning:** the founder delegated the wording with one constraint ("on brand"), and the right move was to change as little as possible: his sentence survives **verbatim** in `goalGapClause` and the lever is appended. The ruling asked for a lever, not a rewrite. I also read the three rendered sentences out of a real generated plan rather than trusting the unit test — which is where I'd have noticed if the clause had drifted.
+**The honest bit:** my verification script failed twice on my own fixture before it ran: `terrain: 'flat'` is not a product value (road/trail/mixed), and `generateRulePlan` returns a Plan, not `{ plan }`. Both are things I could have read.
+**Hook material:** branching one sentence would have silently broken a plan invariant for every runner with a recent benchmark.
+**Postable?:** yes — "the copy change that was really a matcher change" is a good shape.
+
 ## 2026-11-14 — HERO-WALKRUN-TOTAL-01 · the ruling was three weeks old and its mechanism was narrower than its intent
 
 **Shipped:** the plan hero withholds the total where any week has no stated distance, instead of summing past the gap.

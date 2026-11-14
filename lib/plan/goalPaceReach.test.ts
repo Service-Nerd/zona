@@ -3,7 +3,7 @@
 // plan trains the fitness the runner has and says so. Measured before: at 15% past fitness, 100% of goal-paced sessions
 // at every distance were faster than the runner's own threshold.
 import { describe, it, expect } from 'vitest'
-import { goalPaceReach, goalGapSentence, hasGoalGapSentence } from './goalPaceReach'
+import { goalPaceReach, goalGapSentence, goalGapClause, benchmarkFreshness, hasGoalGapSentence } from './goalPaceReach'
 import { runEngine } from './engine'
 import { applyRecalibration } from './ruleEngine'
 import { validatePlan } from './invariants'
@@ -39,9 +39,46 @@ describe('the owner', () => {
     expect(at(4).withheld).toBe(false)
     expect(at(6).withheld).toBe(true)
   })
-  it('the sentence is the founder\'s, with the gap rounded', () => {
-    expect(goalGapSentence(12.4)).toBe('Your target is about 12% quicker than your recent run suggests, so sessions are set to what you can run now.')
-    expect(goalGapSentence(12.4)).not.toMatch(/—/)
+  it('the GAP CLAUSE is still the founder\'s, verbatim, with the gap rounded', () => {
+    // 🧭 GOALPACE-GAP-LEVER-COPY-01 required a LEVER, not a rewrite. His sentence survives word
+    // for word and the lever is appended, so this arm pins the clause rather than the whole string.
+    expect(goalGapClause(12.4)).toBe('Your target is about 12% quicker than your recent run suggests, so sessions are set to what you can run now.')
+    for (const f of ['fresh', 'stale_or_unknown'] as const) {
+      expect(goalGapSentence(12.4, f)).toContain(goalGapClause(12.4))
+      expect(goalGapSentence(12.4, f), 'no em dash in a sentence the runner reads').not.toMatch(/—/)
+    }
+  })
+
+  it('🔴 names a lever, and a DIFFERENT one depending on the benchmark\'s age', () => {
+    // A trial inside VDOT_STALENESS_FRESH_WEEKS moves the ramp by nothing, so "test again" there
+    // would be advice that cannot work. The lever is the race instead.
+    expect(goalGapSentence(7, 'stale_or_unknown')).toContain('A fresh 5K time trial resets them.')
+    expect(goalGapSentence(7, 'fresh')).toContain('run the race you trained for')
+    expect(goalGapSentence(7, 'fresh'), 'a fresh benchmark must not be told to retest')
+      .not.toMatch(/time trial/)
+    // Both are one added sentence, not a paragraph: brand voice is one sentence where it can be.
+    for (const f of ['fresh', 'stale_or_unknown'] as const) {
+      const lever = goalGapSentence(7, f).replace(goalGapClause(7), '').trim()
+      expect(lever.split('. ').length, `the lever is more than one sentence: ${lever}`).toBe(1)
+    }
+  })
+
+  it('an UNDATED benchmark takes the lever, because unknown is not fresh', () => {
+    const base = GENERATION_CONFIG.VDOT_CONSERVATIVE_DISCOUNT_PCT
+    // 🔴 The ramp leaves the discount at base when there is no date, so a discount test ALONE
+    // reads "fresh" for a benchmark whose age we do not know — and "nothing to retest" is then a
+    // claim we cannot make.
+    expect(benchmarkFreshness({ hasDate: false, discountPct: base })).toBe('stale_or_unknown')
+    expect(benchmarkFreshness({ hasDate: true,  discountPct: base })).toBe('fresh')
+    expect(benchmarkFreshness({ hasDate: true,  discountPct: base + 1 })).toBe('stale_or_unknown')
+  })
+
+  it('the matcher accepts BOTH branches, or the invariant fails for fresh benchmarks', () => {
+    // `invariants.ts` requires the sentence on every withheld plan. A matcher keyed on the whole
+    // string would answer false for one branch, i.e. for exactly the runners with a fresh benchmark.
+    expect(hasGoalGapSentence(goalGapSentence(9, 'fresh'))).toBe(true)
+    expect(hasGoalGapSentence(goalGapSentence(9, 'stale_or_unknown'))).toBe(true)
+    expect(hasGoalGapSentence('Demanding: something else entirely.')).toBe(false)
   })
 })
 
