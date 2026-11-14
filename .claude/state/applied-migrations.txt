@@ -92,3 +92,4 @@
 20261111c_activation_funnel.sql
 20261111d_paying_users_excludes_comped.sql
 20261111e_trial_lifecycle.sql
+20261113_trial_window_sql_owner.sql

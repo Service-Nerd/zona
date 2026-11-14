@@ -4792,8 +4792,22 @@ go first.
 
 ### ✅ `OPS-TRIAL-SQL-CLOCK-01` — **BUILT 2026-11-13, MIGRATION WRITTEN AND NOT APPLIED** — two admin views still count the trial from sign-up, and one got WRONG the day the flag went on ⚙️ **NO BOARD**
 
-✅ **BUILT 2026-11-13 — `supabase/migrations/20261113_trial_window_sql_owner.sql`, WRITTEN AND NOT
-APPLIED** (production DDL is refused from this machine; it needs the SQL editor).
+✅ **APPLIED AND VERIFIED 2026-11-14.** Founder ran it in the SQL editor; all three hand-over
+predicates returned their predicted post-apply values, and the two cascade risks were checked
+rather than assumed:
+
+| Check | Predicted | Live |
+|---|---|---|
+| `trial_window_ends` exists | 0 → 1 | **1** |
+| `trainable_week_in_trial` | 13 → 15 of 37 | **15** |
+| views still carrying a hand-written window | 8 → 0 | **0** |
+| the three views survived the cascade | 3 | **3** |
+| `v_paying_users` (dropped and recreated) | 0 paying · 23 comped | **0 · 23** |
+| `admin_user_tiers.tier` where `trial` | unchanged at 4 | **4** |
+| `trial_days_left` non-null | 4 → 6 (the 2 who gain a number) | **6** |
+
+🔑 **So the programme's recorded "24 of 37 trialists had no trainable plan week inside their
+trial" now reads 22 of 37 at its source**, and nothing else moved.
 
 🏛️ **ARCHITECT RULING: option 2, mirrored in SQL with an agreement gate** — and the item's own
 objection is the reason it is defensible rather than despite it. The item called a SQL twin
