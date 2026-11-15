@@ -5,6 +5,7 @@ import { computeZones } from './zones'
 import { V1_SESSION_CATALOGUE } from './sessionCatalogueData'
 import { GENERATION_CONFIG } from './generationConfig'
 import { sessionFloorsFor } from './sessionFloors'
+import { isSecondaryQuality } from './sessionRole'
 import type { GeneratorPhase } from '@/types/plan'
 import type { FitnessLevel } from './fitnessAssessment'
 
@@ -120,7 +121,7 @@ describe('S9-SECONDARY-FLOOR-PRECEDENCE-01 — the secondary slot keeps its own 
    * there is no behavioural alternative — and "not mechanically checkable" would be false,
    * because this much IS checkable.
    */
-  it('the primary slot passes .quality and the secondary slot passes .secondary_quality', () => {
+  it('each call site passes the floor its slot is entitled to', () => {
     const src = readFileSync(new URL('./ruleEngine.ts', import.meta.url), 'utf8')
     // ⚠️ COMMENT LINES AND TYPE DECLARATIONS ARE STRIPPED FIRST, and the first cut of this
     // arm did neither: it matched `qualityFloorKm: number` in the two signatures AND a
@@ -129,18 +130,66 @@ describe('S9-SECONDARY-FLOOR-PRECEDENCE-01 — the secondary slot keeps its own 
     const code = src.split('\n')
       .filter(l => { const t = l.trim(); return !t.startsWith('//') && !t.startsWith('*') && !t.startsWith('/*') })
       .join('\n')
-    const floors = Array.from(code.matchAll(/qualityFloorKm:\s*([^\n,]+)/g))
-      .map(m => m[1].trim())
+    // ⚠️ TO END OF LINE, NOT TO THE FIRST COMMA. `/code-review` made the V2 seam recover
+    // its slot, and `isSecondaryQuality(session, …)` contains a comma — a comma-terminated
+    // capture silently truncated to `isSecondaryQuality(session` and still passed.
+    const floors = Array.from(code.matchAll(/qualityFloorKm:\s*([^\n]+)/g))
+      .map(m => m[1].trim().replace(/,$/, ''))
       .filter(v => v !== 'number')
-    // Three call sites: primary, secondary, and the V2 resize seam.
     expect(floors).toEqual([
       'minDist.quality',
       'minDist.secondary_quality',
-      'sessionFloorsFor(input.longest_recent_run_km).quality',
+      'isSecondaryQuality(session, Object.values(week.sessions))',
     ])
 
-    // And nothing inside the two sizers reads the primary floor directly any more.
-    const sizerRegion = src.slice(src.indexOf('function pacedRepPlan('), src.indexOf('function buildWeekSessions('))
+    // 🔴 READ FROM `code`, NOT `src` — this assertion used `src` on its first cut, so a
+    // future comment quoting the old expression (a shape this file writes constantly)
+    // would have failed the build on a correct tree. Same defect as above, one arm over.
+    const sizerRegion = code.slice(code.indexOf('function pacedRepPlan('), code.indexOf('function buildWeekSessions('))
     expect(sizerRegion).not.toMatch(/minKm\s*[:=]\s*GENERATION_CONFIG\.MIN_SESSION_DISTANCE_KM\.quality/)
+  })
+
+  /**
+   * `isSecondaryQuality` is the ONE owner of "is this the week's second quality session",
+   * shared by `INV-PLAN-MIN-SESSION-SIZE` and the V2 resize seam. It was inline in the
+   * validator; the seam needed the same answer, and a second hand-written copy of a
+   * classifier is the shape `DELOAD-OWNER-01` and `TIER-OWNER-01` are named after.
+   */
+  describe('isSecondaryQuality — the slot, recovered structurally', () => {
+    const q = (km: number | null) => ({ type: 'quality' as const, distance_km: km })
+
+    it('the larger of two quality sessions is primary, the smaller secondary', () => {
+      const big = q(9), small = q(7)
+      const week = [big, small, { type: 'easy' as const, distance_km: 12 }]
+      expect(isSecondaryQuality(small, week)).toBe(true)
+      expect(isSecondaryQuality(big, week)).toBe(false)
+    })
+
+    it('a lone quality session is never secondary', () => {
+      const only = q(7)
+      expect(isSecondaryQuality(only, [only, { type: 'easy' as const, distance_km: 12 }])).toBe(false)
+    })
+
+    it('a non-quality session is never secondary, however small', () => {
+      const easy = { type: 'easy' as const, distance_km: 4 }
+      expect(isSecondaryQuality(easy, [easy, q(9), q(7)])).toBe(false)
+    })
+
+    it('a DURATION-ANCHORED quality session reads as primary, which is the safe direction', () => {
+      // `distance_km` is null on §79/§80 beginners. `?? 0` would make every one of them the
+      // smallest and therefore secondary — the wrong direction, since the secondary floor is
+      // the LOWER and a misread would shrink the session. It reads primary instead.
+      const durationAnchored = { type: 'quality' as const, distance_km: null }
+      // ⚠️ THREE QUALITY SESSIONS, NOT TWO, AND THAT IS THE WHOLE CASE. With only one
+      // SIZED sibling the `length < 2` guard returns before the null is ever compared, so
+      // an earlier version of this case stayed GREEN against a mutation that restored the
+      // `?? 0` bug. A case that cannot reach the line it is about is not a case.
+      const week = [durationAnchored, q(9), q(7)]
+      expect(isSecondaryQuality(durationAnchored, week)).toBe(false)
+      // And it does not drag a sized session's ranking with it: 7 is still the smaller of
+      // the two REAL distances, so it is still the secondary.
+      expect(isSecondaryQuality(q(7), week)).toBe(true)
+      expect(isSecondaryQuality(q(9), week)).toBe(false)
+    })
   })
 })

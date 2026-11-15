@@ -48,7 +48,7 @@ import { enforcePrepTime, enforceDaysAvailable, validateInputFields, coherentGoa
 import { normaliseDays, longRunDayFor, dayGap, canHoldSpacedQuality } from './days'
 import { sessionKmOrZero, sessionKmSelfPaced } from '@/lib/plan/sessionDistance'
 import { zoneStringFromZoneKeys } from '@/lib/coaching/zoneRules'
-import { isLongRun, isShakeout, classifyStimulus, STIMULUS_OF_CATEGORY, isStructuredSession, isVo2maxSession, isQualitySession } from './sessionRole'
+import { isLongRun, isShakeout, classifyStimulus, STIMULUS_OF_CATEGORY, isStructuredSession, isVo2maxSession, isQualitySession, isSecondaryQuality } from './sessionRole'
 import { PLAN_SIGNATURES } from './planSignatures'
 import { isV2Structure, StructureV2Schema, goalPaceShapeWord, PACE_ANCHORS, type PaceAnchor } from './sessionStructureV2'
 import { durationForMainSet, segmentPricedDistance, meetsQualityFloor } from './sessionFormat'
@@ -7894,12 +7894,17 @@ function buildRulePlanOnce(
       const resized = makeQualitySession({
         weekN: week.n, day,
         distKm: session.distance_km ?? 0,
-        // The relocated session's SLOT is not recoverable: this seam swaps Session objects
-        // between weeks and the plan carries no primary/secondary stamp. Held at the primary
-        // floor — the larger of the two, so a relocation can never shrink a session below
-        // what sized it. Stated, not defaulted: an unknown slot is not a primary one.
-        // 📐 Fires on 0 of 45,908 served plans (measured 2026-11-15, not inherited).
-        qualityFloorKm: sessionFloorsFor(input.longest_recent_run_km).quality,
+        // 🔴 THE SLOT **IS** RECOVERABLE HERE, AND THIS COMMENT USED TO SAY IT WAS NOT
+        // (S9-SECONDARY-FLOOR-PRECEDENCE-01, found by `/code-review`). `isSecondaryQuality`
+        // derives it from the week the callback already receives — the same ratified
+        // derivation `INV-PLAN-MIN-SESSION-SIZE` uses — so holding this at the primary
+        // floor would have re-grown a relocated SECONDARY session 4 -> 5 km at a site no
+        // arm of the new gate covers. 📐 This seam fires on 0 of 45,908 served plans
+        // (measured 2026-11-15, not inherited), so it is latent either way; "unobservable"
+        // is not a reason to encode the wrong answer.
+        qualityFloorKm: isSecondaryQuality(session, Object.values(week.sessions))
+          ? sessionFloorsFor(input.longest_recent_run_km).secondary_quality
+          : sessionFloorsFor(input.longest_recent_run_km).quality,
         metric: session.primary_metric === 'duration' ? 'duration' : 'distance',
         zones, pace,
         catalogueRow: row,

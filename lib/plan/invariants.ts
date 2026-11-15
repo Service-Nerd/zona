@@ -17,6 +17,7 @@ import { strideCarrierDay, isDayAfterLongRun, hasHillRestrictingInjury } from '.
 import { normaliseDays, dayGap, canHoldSpacedQuality, DAY_ORDER as DAY_ORDER_OWNED } from './days'
 import { volumePairProblem } from './volumeConsistency'
 import { sessionFloorsFor } from './sessionFloors'
+import { isSecondaryQuality } from './sessionRole'
 import { easyPaceFromPlan } from './easyPace'
 import { fitnessAnchorMap } from './fitnessAnchorMap'
 import { alignDerivedToStructure } from './derivedSetAnchors'
@@ -2123,20 +2124,15 @@ export function validatePlan(plan: Plan, rawInput: GeneratorInput): Violation[] 
       // quality session against the primary floor, so a correctly-sized 4.5km
       // second session was reported as a defect.
       //
-      // Identified STRUCTURALLY: in a week carrying more than one quality
-      // session, the largest is the primary and the rest are secondary. That is
-      // the same relationship the engine creates by construction
-      // (SECONDARY_QUALITY_PCT_OF_PRIMARY = 80), so the two cannot disagree.
-      const qualityKmsThisWeek = sessions
-        .map(([, sn]) => sn)
-        .filter((sn): sn is NonNullable<typeof sn> => !!sn && sn.type === 'quality')
-        .map(sn => sn.distance_km ?? 0)
-      const isSecondaryQuality = session.type === 'quality'
-        && qualityKmsThisWeek.length > 1
-        && (session.distance_km ?? 0) < Math.max(...qualityKmsThisWeek)
+      // Identified STRUCTURALLY, by the one owner in `sessionRole.ts` — this derivation
+      // was inline here and the V2 resize seam needs the same answer
+      // (S9-SECONDARY-FLOOR-PRECEDENCE-01, `/code-review`). A duration-anchored session
+      // reads as primary there; it cannot change this verdict, because the `dist > 0`
+      // guard below skips those before `expected` is read.
+      const isSecondarySlot = isSecondaryQuality(session, sessions.map(([, sn]) => sn))
 
       const expected = isLong ? minDist.long
-        : isSecondaryQuality ? minDist.secondary_quality
+        : isSecondarySlot ? minDist.secondary_quality
         : session.type === 'quality' ? minDist.quality
         : minDist.easy
       // ⚠️ SKIPS DURATION-ANCHORED SESSIONS, AND THAT IS NOW A KNOWN GAP

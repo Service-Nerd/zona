@@ -85,6 +85,40 @@ export function isQualityType(t: string | null | undefined): boolean { return t 
 export function isHardEffortType(t: string | null | undefined): boolean { return t != null && HARD_EFFORT_TYPE_SET.has(t) }
 
 export function isQualitySession(s: ClassifiableSession | null | undefined): boolean { return !!s && isQualityType(s.type) }
+
+/**
+ * Is this the week's SECOND, softer quality session rather than its primary?
+ *
+ * Recovered STRUCTURALLY: in a week carrying more than one quality session the largest is
+ * the primary and the rest are secondary. That is the relationship the engine creates by
+ * construction (`SECONDARY_QUALITY_PCT_OF_PRIMARY = 80`), so producer and reader cannot
+ * disagree — and never the label, which the enricher may rewrite (D-17).
+ *
+ * ⚠️ OWNED HERE BECAUSE IT HAD TWO CONSUMERS AND ONE INLINE COPY.
+ * `INV-PLAN-MIN-SESSION-SIZE` has derived it inline since 2026-09; the V2 resize seam
+ * needs the same answer, and a second hand-written copy of a classifier is the shape
+ * `DELOAD-OWNER-01` and `TIER-OWNER-01` are both named after. The V2 seam's comment used
+ * to claim the slot was "not recoverable" there, which `/code-review` found to be false.
+ *
+ * ⚠️ A DURATION-ANCHORED QUALITY SESSION CANNOT BE RANKED and reads as primary.
+ * `distance_km` is null on those (§79/§80 beginners), so `?? 0` would make every one of
+ * them the smallest and therefore secondary — the wrong direction, since the primary
+ * floor is the larger and a misread would SHRINK a session. The known gap is the same one
+ * `INV-PLAN-MIN-SESSION-SIZE` records at its own km-floor site.
+ */
+export function isSecondaryQuality(
+  session: ClassifiableSession & { distance_km?: number | null },
+  weekSessions: ReadonlyArray<(ClassifiableSession & { distance_km?: number | null }) | null | undefined>,
+): boolean {
+  if (!isQualitySession(session)) return false
+  if (session.distance_km == null) return false
+  const qualityKms = weekSessions
+    .filter((sn): sn is ClassifiableSession & { distance_km?: number | null } => !!sn && isQualitySession(sn))
+    .map(sn => sn.distance_km)
+    .filter((km): km is number => km != null)
+  if (qualityKms.length < 2) return false
+  return session.distance_km < Math.max(...qualityKms)
+}
 export function isHardEffort(s: ClassifiableSession | null | undefined): boolean { return !!s && isHardEffortType(s.type) }
 export function isHardDay(s: ClassifiableSession | null | undefined): boolean { return !!s && (isHardEffort(s) || isLongRun(s)) }
 /** `isHardDay` for a caller holding a `coachingSessionType` label ('long' for the long run) rather than the session. */
