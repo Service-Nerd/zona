@@ -13960,7 +13960,86 @@ will RAISE the reported debt** — unknown by how much until it is run, and that
 finding, not a regression. 🔻 **Do not fix this while the number is being quoted elsewhere** without
 saying in the same breath that the definition changed, or the jump reads as decay.
 
-#### 🟡 `CONTRACT-COVERAGE-03` — **42** components still have no contract *(P3, filed 2026-10-02, falling register; paid down 2026-11-08 and 2026-11-10)* ⚙️ **NO BOARD**
+#### 🟡 `CONTRACT-COVERAGE-03` — **35** components still have no contract *(P3, filed 2026-10-02, falling register; paid down 2026-11-08, 2026-11-10 and 2026-11-15)* ⚙️ **NO BOARD**
+
+> 🔄 **PAID DOWN 2026-11-15 (W8): 42 → 35, and `missing_any` 63 → 56.** Seven contracts, which is
+> **the entire 4-importer tier** — the live top of the queue: **`TrendCard` · `SignOutLink` ·
+> `RedeemCodeLink` · `RaceTimesCard` · `ExternalLink` · `SessionPopupInner` · `ManualRunModal`**.
+> 🔑 **BOTH FIGURES MOVED BY SEVEN**, the signature of a payment at ≥ 2 importers. Remaining top
+> tier is **3 importers (14 components)**.
+>
+> ⚠️ **The denominator moved again and was re-derived, not inherited: population is 141, not the
+> 139 this item recorded on 2026-11-10.** The ranked list was re-derived by running the arm, per
+> this item's own standing instruction — and this time it was CORRECT, the first time in four
+> payments.
+>
+> 🥇 **THE GATE'S PROP PARSER NEEDED WIDENING FOR THE FOURTH TIME, WHICH ITS OWN COMMENT
+> PREDICTED IN AS MANY WORDS** (*"a parser widened by hand three times is a parser with a fourth
+> shape in it"*). `TrendCard(props: TrendCardProps)` is a **non-destructured default export over
+> a five-member discriminated union**, so every matcher missed it, `componentProps` returned
+> `null`, and **the contract could not be written at all without turning the gate red** — a
+> component staying uncontracted for a reason that has nothing to do with the component.
+> 📐 Measured: `components/` holds **exactly one** union prop type. ⚠️ **The escape hatch was
+> available and declined:** a `**Components:**` list contract skips the prop arm, and the gate's
+> own comment says that form exists because a device is *"one object"*, not as a way past the
+> check.
+>
+> 🔴 **AND WIDENING IT SURFACED FOUR DEFECTS IN THE PARSER, THREE OF THEM MINE, EACH CAUGHT BY
+> SOMETHING DIFFERENT.**
+> **(1)** A one-line interface read as **`null`** — `ifaceRe` required `\n}` to close, so
+> `interface Props { a: string; b: number }` was unreadable for no reason. Three of TrendCard's
+> five union members are written that way.
+> **(2)** 🔴 **My `;` split descended into a NESTED inline object type**, so
+> `StrengthGuidedSessionProps`'s `lifts?: { … }` contributed `today`, `units`, `onLog` and
+> `ended_at` as top-level props and turned **two EXISTING contracts red within one run.** The
+> corpus caught it immediately — depth tracking is the fix, the semicolon alone is a regression.
+> **(3)** 🔴 **Counting `<`/`>` as brackets is wrong because of `=>`:** the arrow's `>`
+> decremented with no matching `<`, so depth sat at **-1** for the rest of the interface and a
+> LATER nested `;` split at *"depth 0"*. ⚠️ **My own probe of the splitter passed, because it
+> listed the two members in the other order** — the defect needs the arrow FIRST.
+> **(4)** 🔴 **My `extends` allowance read `button.md` and `icon-button.md` as claiming FICTIONAL
+> props.** The old regex required exactly one space before `{`, so `interface ButtonProps extends
+> React.ButtonHTMLAttributes<…>` never matched and the parser fell through to the **destructure**
+> — which is the right answer for a component that spreads HTML attributes, because its prop set
+> is unbounded and the destructure is what it names. **The accident was correct; it is now a
+> decision** (`allowExtends` is false on the top-level lookup, true on the union path). And both
+> interface lookups now **balance braces** rather than matching lazily: the union path's
+> `\n?\}` stopped at the first NESTED `}` and produced the right names **by luck**.
+>
+> ✅ **5 new unit arms** (union resolution with `extends`, a union resolving to nothing stays
+> `null`, one-line interfaces, nested objects not leaking, the arrow-before-object order) —
+> **11 in the parser table now, up from 6.** 📐 **5 falsifications, each firing the arms
+> predicted**: union off → 2 red incl. the TrendCard corpus arm; newline-only split → 2; no depth → 5;
+> `<`/`>` tracked again → the arrow arm; `extends` at top level → `button.md` + `icon-button.md`.
+> ⚠️ **One falsification did not apply on its first attempt and reported a green run** — the
+> anchor string had template-literal backticks that did not survive the shell. Re-run with an
+> asserted anchor. **A mutation that silently does not apply is a green tick with nothing behind
+> it**, which is this repo's most-recorded failure.
+>
+> 🥇 **FOUR FINDINGS CAME OUT OF THE WRITING, WHICH IS THE ARGUMENT FOR CONTRACTS.**
+> **(1)** 🔴 **`ManualRunModal` IS NOT A MODAL** — its whole body is `<Sheet maxHeightVh={90}>`.
+> CLAUDE.md § UI Principles says *"No popups — modals only for destructive confirmations"*, so a
+> grep of `components/` for `Modal` finds a name that contradicts the rule and an implementation
+> that honours it. Name kept (its consumers carry the same word and a rename is its own commit),
+> **recorded in the contract rather than left as a trap.**
+> **(2)** ✅ **Two stale cross-references left behind by `REDEEM-SCREEN-UNREACHABLE-01`, fixed
+> here:** `DashboardClient.tsx` said *"same shape as `redeemReturnTo` above"* — that state was
+> deleted on 2026-11-14 — and `login/page.tsx` cited RedeemCodeScreen.tsx, a file that no
+> longer exists, as a live parallel. The `ActionRow` orphaned-docblock class, twice.
+> **(3)** ✅ **`SessionPopupInner` imported `Plan` and `Week` and used neither** (their only
+> other occurrences in 2,024 lines were inside prose comments) — removed. Its four `any` props
+> are recorded as debt rather than left looking like a seam.
+> **(4)** ⚠️ **`'aria-label'` on `ExternalLink` is invisible to BOTH parsers**, symmetrically —
+> each extracts names with `^([A-Za-z_$][\w$]*)\s*\??\s*:`, which a quoted key does not
+> match. Harmless today because it is invisible on both sides; stated so nobody relies on this
+> gate to catch an undocumented hyphenated prop.
+>
+> 🔻 **What this does not prove.** 35 components at ≥ 2 importers and 56 at any count still have
+> no contract. The two registers still cannot tell a contract WRITTEN from a component DELETED at
+> the same tier — only the drop-out move — so the commit has to say which, and this one does.
+> `WaitlistForm.tsx` is still the one component at **zero** importers
+> (`WAITLIST-UNREACHABLE-01`, 💼 SLT).
+
 
 > 🔄 **PAID DOWN 2026-11-10 (W5): 49 → 42, and `missing_any` 70 → 63.** Seven contracts written,
 > highest reach first — **`SegmentedControl` (6 importers) · `DurationPicker` (6) · `ActionRow` (6)
@@ -14967,7 +15046,9 @@ fails every morning for a reason nobody needs to read is a test everybody learns
 the next real failure in that file arrives pre-ignored. This repo has already recorded that a
 guard which cries wolf gets disabled, which is the same as having no guard.
 
-**State at END of 2026-11-15 — W7: THE ITEM'S NUMBER WAS RIGHT AND ITS REASON WAS WRONG** (last ship `9fdaac6f` — `S9-SECONDARY-FLOOR-PRECEDENCE-01`, with `ca69dea6` — after `0e273227`. **804 files / 8,247 tests, ALL GREEN** (`VITEST EXIT: 0`, unpiped); `tsc` 0; `verify:parity` **IDENTICAL, 6,210 cases**; `backlog:verify` **73 open · 24 COACHING · 19 DESIGN · 10 ⚙️ NO BOARD · 13 SLT · 7 FOUNDER**.) ✅ **The week's second quality session keeps its own ratified 4 km floor.** Both growth loops inside `makeQualitySession` read `MIN_SESSION_DISTANCE_KM.quality` while the sizing BUDGET at the same call site already read `secondary_quality` — **two readings of one number, in one function.** ⚠️ **The item named one site of two:** `pacedRepPlan` had it as well, and in the sizer is the wider of the two. 🔴 **AND ITS STATED REASON FOR THE LATENCY WAS WRONG WHILE ITS NUMBER WAS RIGHT** — it argued from the sizing budget, and for a structured session `distKm` is **DISCARDED**; the delivered distance is the segment-priced structure, so the budget cannot gate the band at all. The real reason is doctrine: a second quality session needs `qualityCountInPeak > 1`, and that cohort's threshold dose is already 8.33 km at its smallest. 📐 **Re-measured: 179,582 sizing calls over 45,908 plans · 21,624 (12.0%) in the divergence band · 1,556 are the secondary slot · 0 of those 1,556 in the band.** A hand-built **slow-experienced** cell — 768 plans, the cell no grid covers — generated under both precedences came back byte-for-byte identical. 🔑 **The gate is the deliverable and four of its five arms are not the gate:** reverting the secondary CALL SITE leaves all four behavioural arms green, because they test the sizer with a floor handed to it. The fifth, bounded source arm catches it — and its own first cut matched `qualityFloorKm: number` in two signatures plus a sentence of its own comment, `HOOK-RGBA-COMMENTS-01` from the other side. 🔴 **I also wrote "re-measured here" into a code comment about a number I had read in a memory file**; caught on my own diff review, instrumented, **0 of 45,908**, comment rewritten to name the run. ⚠️ **And I declared "only beginner/build diverges" from a sweep over ONE catalogue row** — widening to all rows found `tempo_over_under` diverging at **experienced**, which is what sent me to build the slow-experienced cell. 🔴 **AND THE REVIEW ROUND FOUND MY COMMENT "THE SLOT IS NOT RECOVERABLE" WAS FALSE** — the validator has recovered it structurally since 2026-09, from the same week the V2 callback receives, so the seam would have re-grown a relocated secondary 4 → 5 km. That derivation is now `isSecondaryQuality` in `sessionRole.ts`, called by both. 🔴 **And my own falsification of it was HOLLOW and stayed green:** the duration-anchored case had one sized sibling, so the `length < 2` guard returned before the null was compared. Gate **5 → 9 cases**. **804 files / 8,251 tests.**
+**State at END of 2026-11-15 — W8: THE CONTRACT YOU CANNOT WRITE TELLS YOU ABOUT THE GATE** (last ship `CONTRACT-COVERAGE-03` W8, after `6ca4cee7`. **804 files / 8,277 tests, ALL GREEN** (`VITEST EXIT: 0`, unpiped); `tsc` 0; `verify:parity` **IDENTICAL, 6,210 cases**; colour sweep CLEAN 379 files; `audit-docs.sh` ALL CLEAN; `backlog:verify` 0 with **73 open · 24 COACHING · 19 DESIGN · 10 ⚙️ NO BOARD · 13 SLT · 7 FOUNDER**.) ✅ **`UNCONTRACTED_BASELINE` 42 → 35 and `UNCONTRACTED_ANY_BASELINE` 63 → 56** — seven contracts, the whole 4-importer tier: `TrendCard`, `SignOutLink`, `RedeemCodeLink`, `RaceTimesCard`, `ExternalLink`, `SessionPopupInner`, `ManualRunModal`. 🔑 **BOTH figures moved by seven**, the signature of a payment. ⚠️ **Population re-derived at 141, not 139** — and the ranked list was right the FIRST TIME in four payments, because it came from running the arm. 🥇 **THE PROP PARSER NEEDED WIDENING A FOURTH TIME, EXACTLY AS ITS OWN COMMENT PREDICTED:** `TrendCard(props: TrendCardProps)` is a non-destructured default export over a five-member union, so `componentProps` returned `null` and **the contract could not be written without turning the gate red** — a component uncontracted for a reason that has nothing to do with the component. ⚠️ **The `**Components:**` escape hatch was available and declined.** 🔴 **AND WIDENING IT SURFACED FOUR PARSER DEFECTS, THREE OF THEM MINE, ALL INTRODUCED WHILE FIXING THE FIRST.** A one-line interface read as `null`; my `;` split descended into a nested object and **turned two existing contracts red in one run**; counting `<`/`>` broke on `=>` so depth sat at **-1** — ⚠️ **my own probe passed because I wrote the members in the other order**; and my `extends` allowance made `button.md` claim fictional props, because the old regex had been failing to match and falling through to the destructure, **which was the right answer all along.** ✅ **5 new unit arms, 11 in the table.** 🔴 **One falsification silently did not apply and reported green** — backticks in the anchor did not survive the shell; **a mutation is a measurement and an unasserted one reads as evidence.** 🥇 **Four findings from the writing:** `ManualRunModal` **is not a modal** (its body is a `Sheet`, so a grep for `Modal` finds a name contradicting *"No popups"*); two stale cross-references from `REDEEM-SCREEN-UNREACHABLE-01`; `Plan` and `Week` imported and unused in a 2,024-line file; and `'aria-label'` invisible to **both** parsers symmetrically.
+
+**Prior — state at END of 2026-11-15 — W7: THE ITEM'S NUMBER WAS RIGHT AND ITS REASON WAS WRONG** (last ship `9fdaac6f` — `S9-SECONDARY-FLOOR-PRECEDENCE-01`, with `ca69dea6` — after `0e273227`. **804 files / 8,247 tests, ALL GREEN** (`VITEST EXIT: 0`, unpiped); `tsc` 0; `verify:parity` **IDENTICAL, 6,210 cases**; `backlog:verify` **73 open · 24 COACHING · 19 DESIGN · 10 ⚙️ NO BOARD · 13 SLT · 7 FOUNDER**.) ✅ **The week's second quality session keeps its own ratified 4 km floor.** Both growth loops inside `makeQualitySession` read `MIN_SESSION_DISTANCE_KM.quality` while the sizing BUDGET at the same call site already read `secondary_quality` — **two readings of one number, in one function.** ⚠️ **The item named one site of two:** `pacedRepPlan` had it as well, and in the sizer is the wider of the two. 🔴 **AND ITS STATED REASON FOR THE LATENCY WAS WRONG WHILE ITS NUMBER WAS RIGHT** — it argued from the sizing budget, and for a structured session `distKm` is **DISCARDED**; the delivered distance is the segment-priced structure, so the budget cannot gate the band at all. The real reason is doctrine: a second quality session needs `qualityCountInPeak > 1`, and that cohort's threshold dose is already 8.33 km at its smallest. 📐 **Re-measured: 179,582 sizing calls over 45,908 plans · 21,624 (12.0%) in the divergence band · 1,556 are the secondary slot · 0 of those 1,556 in the band.** A hand-built **slow-experienced** cell — 768 plans, the cell no grid covers — generated under both precedences came back byte-for-byte identical. 🔑 **The gate is the deliverable and four of its five arms are not the gate:** reverting the secondary CALL SITE leaves all four behavioural arms green, because they test the sizer with a floor handed to it. The fifth, bounded source arm catches it — and its own first cut matched `qualityFloorKm: number` in two signatures plus a sentence of its own comment, `HOOK-RGBA-COMMENTS-01` from the other side. 🔴 **I also wrote "re-measured here" into a code comment about a number I had read in a memory file**; caught on my own diff review, instrumented, **0 of 45,908**, comment rewritten to name the run. ⚠️ **And I declared "only beginner/build diverges" from a sweep over ONE catalogue row** — widening to all rows found `tempo_over_under` diverging at **experienced**, which is what sent me to build the slow-experienced cell. 🔴 **AND THE REVIEW ROUND FOUND MY COMMENT "THE SLOT IS NOT RECOVERABLE" WAS FALSE** — the validator has recovered it structurally since 2026-09, from the same week the V2 callback receives, so the seam would have re-grown a relocated secondary 4 → 5 km. That derivation is now `isSecondaryQuality` in `sessionRole.ts`, called by both. 🔴 **And my own falsification of it was HOLLOW and stayed green:** the duration-anchored case had one sized sibling, so the `length < 2` guard returned before the null was compared. Gate **5 → 9 cases**. **804 files / 8,251 tests.**
 
 **Prior — state at END of 2026-11-15 — W6: ONE ITEM, FIFTEEN SITES, AND THE SET WAS CALLED COMPLETE THREE TIMES** (last ship `d9fd33e1`, before it `26668e7f` and `8840ca5a` — `PLAN-COUNTDOWN-SOURCE-01`. **803 files / 8,242 tests, ALL GREEN** (`VITEST EXIT: 0`, unpiped); `tsc` 0; `audit-docs.sh` ALL CLEAN; `backlog:verify` **74 open · 24 COACHING · 19 DESIGN · 11 ⚙️ NO BOARD · 13 SLT · 7 FOUNDER**.) 🔴 **THE ITEM WAS BLOCKED FOR FIVE WEEKS ON A SCREENSHOT OF A NUMBER FROM OUR OWN DOCUMENTATION.** Its three figures are the **S5 ruling's BEFORE-state**, written verbatim into `design-rulings.md`, `feature-registry.md`, `ui-patterns.md` and the header comment of the very file the fix touches. Four state blocks recorded it among the items *"nobody here can move"*. 🔑 **Re-reading your own doctrine is cheaper than waiting for a human.** 🔴 **AND BEHIND IT A LIVE DEFECT IN THE OWNER S5 CREATED:** `daysUntilRace` parsed a bare `YYYY-MM-DD` with `new Date()`, i.e. as **UTC midnight** — **7 of 20 zone × hour probes wrong, both directions.** LA read **"Race day" from 16:00 the day before**; Sydney read **"1 day" at 08:00 ON race day**. ⚠️ **`lib/dates.ts` is the declared owner (D-08) of exactly that arithmetic, was written the DAY BEFORE, and its header names this parsing trap in as many words.** 🔴 **And `formatDate` had it too, which makes it EVERY DATE A RUNNER READS:** `formatDate('2026-12-12')` rendered **"11 Dec 2026"** in New York and Los Angeles, in the file ADR-015 names as their sole owner, with no cross-zone test. 📐 **Fifteen hand-rolled sites: six by reading, two by the tree sweep on its first run, five by `/code-review`, six more by reviewing THAT round.** 🔴 **The worst was that my fix did not work** — three callers pre-parsed the date, so the headline defect stayed live on Today and the Plan screen while my new test file's header said it was fixed; **my gate only exercised the string form**, which is S5's fixture mistake committed again. 🔴 **Two of the six were regressions my own consolidation OPENED:** `new Date(2026, 12, 1)` rolls over to January rather than failing, so a malformed date started **defeating every `isFinite` guard instead of tripping it**; and delegating `parseLocalDate` removed a `throw` that `TodayScreen`'s render guard depends on by name. **Consolidating onto one owner is right and it is not free: the owner's edges become everyone's edges.** 🔴 **The clamp defect appeared THREE times** — ending with `isRaceWindow >= 0` never going false, so the race window never closed and Coach POSTed an AI route on every mount for ever. 🔑 **And the prompts moved with the clock:** four builders computed weeks-to-race from `Date.now()` and `planWeeklyNote` branches on `=== 0` to say *"Race week."*, so a race 4 days out read *"1 week to race."* at 08:00 and **"Race week."** at 19:00 — **34 of 605 day × hour combinations**, verified by printing the prompt line. ⚠️ **I REPORTED THIS SUITE GREEN TWICE FROM A COMMAND PIPED INTO `tail`, so the exit code shown was `tail`'s — and one of those runs was RED.** **A pipe launders a red run into a green notification.** Third instance. 🔻 **One fact measured and left undecided on purpose:** `round(days / 7)` reaches *"Race week."* only in the final **3** days, so days 4–7 of race week read *"1 week to race."* That is MEANING, not arithmetic — the founder's or the Coaching Board's call, and one line now instead of fifteen.
 

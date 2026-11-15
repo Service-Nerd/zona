@@ -971,7 +971,16 @@ say "── CONTRACTS: a SHARED component with no contract at all ──"
 # This asks the inverse: a component under `components/shared/` that EXPORTS a prop
 # interface and is imported by more than one file should have a contract. Existing
 # debt is declared below so it is visible and cannot grow.
-UNCONTRACTED_BASELINE=42   # 49 -> 42, 2026-11-10 (CONTRACT-COVERAGE-03, W5): SEVEN CONTRACTS WRITTEN,
+UNCONTRACTED_BASELINE=35   # 42 -> 35, 2026-11-15 (CONTRACT-COVERAGE-03, W8): SEVEN CONTRACTS WRITTEN,
+                           # not seven components deleted — the whole 4-importer tier, which was the top of the
+                           # queue: `TrendCard`, `SignOutLink`, `RedeemCodeLink`, `RaceTimesCard`, `ExternalLink`,
+                           # `SessionPopupInner`, `ManualRunModal`. Both figures moved by seven.
+                           # ⚠️ The remaining top tier is 3 importers (14 components).
+                           # 🔴 `TrendCard` needed the gate's prop parser WIDENED FOR THE FOURTH TIME: a
+                           # non-destructured default export over a UNION type (`props: TrendCardProps`) read as
+                           # `null`, so the contract could not be written without turning the gate red. Exactly
+                           # what `componentProps`'s own comment predicted.
+                           # Previously: 49 -> 42, 2026-11-10 (W5): SEVEN CONTRACTS WRITTEN,
                            # not seven components deleted — `SegmentedControl` (6 importers), `DurationPicker` (6),
                            # `ActionRow` (6), `ZoneRings` (5), `CoachNoteBlock` (5), `Chip` (5), `Chevron` (5).
                            # ⚠️ The pair below only distinguishes the DROP-OUT move, so saying which happened is the
@@ -1085,7 +1094,9 @@ UNCONTRACTED_BASELINE=42   # 49 -> 42, 2026-11-10 (CONTRACT-COVERAGE-03, W5): SE
 # register held at 49 through the change, which is exactly the signature this pair exists to
 # show: a component at zero importers was never inside the `>= 2` population, so a real
 # payment there is still owed.
-UNCONTRACTED_ANY_BASELINE=63  # 70 -> 63, 2026-11-10 (CONTRACT-COVERAGE-03, W5): the SAME seven contracts.
+UNCONTRACTED_ANY_BASELINE=56  # 63 -> 56, 2026-11-15 (CONTRACT-COVERAGE-03, W8): the SAME seven contracts,
+                              # all at 4 importers, so both registers moved by seven.
+                              # Previously: 70 -> 63, 2026-11-10 (W5): the SAME seven contracts.
                               # 🔑 BOTH FIGURES MOVED BY SEVEN, which is what a payment at >= 2 importers looks
                               # like; a component DROPPING below the line would have moved the first and left this
                               # one FLAT. That is the one move the pair exists to separate.

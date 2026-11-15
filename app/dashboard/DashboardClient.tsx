@@ -754,8 +754,10 @@ export default function DashboardClient() {
    *  words the Upgrade screen uses when access ends. */
   const [hadCharityGrant, setHadCharityGrant] = useState(false)
   /** ME-DOORS-01 — the zones screen now has TWO entry points with two different correct
-   *  backs: the `Zones` row on the Me index, and the `heart-rate` door. Same shape as
-   *  `redeemReturnTo` above. Null means "back to the index", which is the index row's case. */
+   *  backs: the `Zones` row on the Me index, and the `heart-rate` door. Null means
+   *  "back to the index", which is the index row's case.
+   *  ⚠️ This used to say "same shape as `redeemReturnTo` above" — that state was deleted by
+   *  `REDEEM-SCREEN-UNREACHABLE-01` (2026-11-14) and the comparison pointed at nothing. */
   const [zonesReturnSection, setZonesReturnSection] = useState<string | null>(null)
   // ZONES-TAB-PIN-01 — the tab state lives HERE because the pinned header group
   // lives here, and the Design Board ruled the control pins with the group. The

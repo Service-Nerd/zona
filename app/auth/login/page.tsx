@@ -344,9 +344,10 @@ export default function LoginPage() {
               so the border is not a definition edge, it is the ONLY thing that
               says a control is there. At 8% alpha and half a pixel it was not
               saying it: reported from a device as "lost its outline and blends
-              into the background". Same rule, same token as the redeem-code
-              input (`RedeemCodeScreen.tsx`), which is white on white for the
-              same reason. Google's own light-theme branding wants exactly this
+              into the background". The same rule applied to the redeem-code input in
+              `RedeemCodeScreen.tsx`, white on white for the same reason — that screen was
+              retired by `REDEEM-SCREEN-UNREACHABLE-01` (2026-11-14), so this is now the
+              only live instance. Google's own light-theme branding wants exactly this
               shape too — white surface, visible stroke. */}
           <Button variant="secondary" fullWidth 
             onClick={signInWithGoogle}

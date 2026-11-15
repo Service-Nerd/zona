@@ -50,14 +50,118 @@ function componentProps(raw: string): string[] | null {
   // NAMED AFTER the default export (`SheetProps`), then the default export's
   // own destructure, then the first named export.
   const defaultName = src.match(/export default function (\w+)/)?.[1] ?? null
-  const ifaceRe = (name: string) => new RegExp('interface ' + name + ' \\{([\\s\\S]*?)\\n\\}')
+  // 🔴 THE INTERFACE BODY IS FOUND BY BALANCING BRACES, NOT BY A LAZY REGEX.
+  // This was `interface <name> \{([\s\S]*?)\n\}`, which is two defects at once:
+  //   · it REQUIRES `\n}` to close, so a ONE-LINE `interface Props { a: string; b: number }`
+  //     read as `null` — "could not read props" for a shape that is perfectly readable;
+  //   · and the `extends` resolution added for the union path used `\n?\}`, which is LAZY, so
+  //     it stopped at the first NESTED `}` instead of the interface's own. That one happened to
+  //     still produce the right names, because the depth-aware member split kept the truncated
+  //     fragment together — **it was correct by luck, which is not a property to keep.**
+  // Balancing is deterministic for both, and `null` when there is no body stays `null`.
+  /** @param allowExtends follow an `extends` clause. See the two callers' comments — the
+   *  top-level `Props` lookup must NOT, the union-member lookup must. */
+  const ifaceBody = (name: string, allowExtends: boolean): string | null => {
+    const head = src.match(new RegExp('interface ' + name + (allowExtends ? '\\s*(?:extends ([^{]+?))?\\s*' : '\\s*') + '\\{'))
+    if (!head || head.index === undefined) return null
+    let i = head.index + head[0].length
+    let depth = 1
+    const from = i
+    for (; i < src.length && depth > 0; i++) {
+      if (src[i] === '{') depth++
+      else if (src[i] === '}') depth--
+    }
+    return depth === 0 ? src.slice(from, i - 1) : null
+  }
+  /** The `extends` clause of an interface, or []. */
+  const ifaceParents = (name: string): string[] => {
+    const head = src.match(new RegExp('interface ' + name + '\\s*(?:extends ([^{]+?))?\\s*\\{'))
+    return (head?.[1] ?? '').split(',').map(t => t.trim()).filter(Boolean)
+  }
+  // ⚠️ MEMBERS ARE SPLIT ON A TOP-LEVEL `;` AS WELL AS A NEWLINE, because a one-line
+  // interface is one line: `interface TrendCardLabels { label?: string; sessionLabel?: string }`
+  // yielded only `label`, and three of TrendCard's five union members are written that way —
+  // so the union resolution below would have dropped `sessionLabel` and `onUpgrade` silently
+  // and then reported them as props the CONTRACT invented.
+  //
+  // 🔴 A PLAIN `;` SPLIT IS WRONG, MEASURED: it descends into a nested inline object type, so
+  // `StrengthGuidedSessionProps`'s `session: { … ended_at?: string }` contributed `today`,
+  // `units`, `onLog` and `ended_at` as top-level props and turned two EXISTING contracts red
+  // within one run. **The depth tracking is the fix; the semicolon alone is a regression.**
+  // 🔴 `<` AND `>` ARE NOT TRACKED, AND THE REASON IS A MEASURED, ORDER-DEPENDENT FAILURE.
+  // Counting them looks right for `Record<string, X>` and is wrong for `=> `: the arrow's `>`
+  // decrements with no matching `<`, so after one `onSetStatus: (…) => Promise<boolean>` the
+  // depth sat at -1 for the rest of the interface and a LATER nested `;` split at "depth 0".
+  // That is how `StrengthSessionScreenProps` leaked `today`, `units`, `onLog` out of its
+  // `lifts?: { … }`. ⚠️ **My own probe of this splitter passed, because it listed the two
+  // members in the other order** — the defect needs the arrow to come FIRST. Depth is also
+  // clamped at 0, so no other unbalanced closer can reopen the same hole. A generic carries
+  // no `;` or newline, so ignoring it costs nothing.
+  const splitMembers = (body: string): string[] => {
+    const out: string[] = []
+    let depth = 0
+    let cur = ''
+    for (const ch of body) {
+      if (ch === '{' || ch === '(' || ch === '[') depth++
+      else if (ch === '}' || ch === ')' || ch === ']') depth = Math.max(0, depth - 1)
+      if ((ch === '\n' || ch === ';') && depth === 0) { out.push(cur); cur = '' } else cur += ch
+    }
+    out.push(cur)
+    return out
+  }
   const readIface = (body: string): string[] =>
-    body.split('\n').map(l => l.trim()).filter(Boolean)
+    splitMembers(body).map(l => l.trim()).filter(Boolean)
       .map(l => (l.match(/^([A-Za-z_$][\w$]*)\s*\??\s*:/) || [])[1]).filter(Boolean) as string[]
 
-  const named = src.match(ifaceRe('Props'))
-    ?? (defaultName ? src.match(ifaceRe(`${defaultName}Props`)) : null)
-  if (named) return readIface(named[1])
+  // ⚠️ `allowExtends: false` HERE, AND IT IS LOAD-BEARING (measured 2026-11-15).
+  // The regex this replaced required exactly one space before `{`, so `interface ButtonProps
+  // extends React.ButtonHTMLAttributes<HTMLButtonElement>` did not match and the parser fell
+  // through to the DESTRUCTURE — which is the right answer for a component that spreads HTML
+  // attributes, because its real prop set is unbounded and the destructure is what it names.
+  // Allowing `extends` here read `button.md` and `icon-button.md` as claiming three and one
+  // FICTIONAL props respectively. The accident was correct; it is now a decision.
+  const namedBody = ifaceBody('Props', false)
+    ?? (defaultName ? ifaceBody(`${defaultName}Props`, false) : null)
+  if (namedBody != null) return readIface(namedBody)
+
+  // ⚠️ A UNION PROP TYPE — THE FOURTH SHAPE, AND THIS FUNCTION'S OWN COMMENT PREDICTED IT
+  // (`CONTRACT-COVERAGE-03`, 2026-11-15: *"a parser widened by hand three times is a parser
+  // with a fourth shape in it"*). `TrendCard(props: TrendCardProps)` is a NON-destructured
+  // default export over `type TrendCardProps = A | B | C | D | E`, so every matcher above and
+  // below missed it and this returned `null` — the contract could not be written at all
+  // without turning the gate red, which is how a component stays uncontracted for a reason
+  // that has nothing to do with the component.
+  //
+  // 📐 Measured: `components/` holds exactly ONE union prop type and it is this one. Two other
+  // uncontracted components are non-destructured over a plain `interface`, which the matcher
+  // above already reads. A real shape with one instance, not a class.
+  //
+  // What a union "takes" is the UNION OF ITS MEMBERS' props — that is what a caller may legally
+  // pass — so members are resolved and `extends` parents followed transitively. Which props are
+  // REQUIRED per `state` is the contract's prose to state; this gate is prop-name parity.
+  const unionMembers = (alias: string): string[] | null => {
+    const m = src.match(new RegExp('type ' + alias + '\\s*=([^;]*?)\\n\\n'))
+    if (!m) return null
+    const members = m[1].split('|').map(t => t.trim()).filter(t => /^[A-Za-z_$][\w$]*$/.test(t))
+    return members.length > 1 ? members : null
+  }
+  /** An interface's own props plus every `extends` parent's, transitively. */
+  const ifaceWithParents = (name: string, seen: Set<string>): string[] => {
+    if (seen.has(name)) return []
+    seen.add(name)
+    // `allowExtends: true` — following parents is the whole point on this path.
+    const body = ifaceBody(name, true)
+    if (body == null) return []
+    return [...ifaceParents(name).flatMap(pn => ifaceWithParents(pn, seen)), ...readIface(body)]
+  }
+  for (const alias of [defaultName ? defaultName + 'Props' : null, 'Props'].filter(Boolean) as string[]) {
+    const members = unionMembers(alias)
+    if (!members) continue
+    const props = Array.from(new Set(members.flatMap(mn => ifaceWithParents(mn, new Set<string>()))))
+    // An alias resolving to NOTHING is unreadable, not propless — the empty-vs-unparseable
+    // distinction this function already records for `SiteFooter`.
+    if (props.length) return props
+  }
 
   // The DEFAULT export's destructure, before any named one.
   if (defaultName) {
@@ -295,6 +399,82 @@ describe('COMPONENT-CONTRACT-GATE-01 — the prop parsers, both directions', () 
     expect(componentProps(
       "export default function X({ a, b = 'x,y', c }: { a: 1; b?: string; c: 2 }) {}",
     ), 'a comma inside a default value is not a separator').toEqual(['a', 'b', 'c'])
+  })
+
+  /**
+   * 🔴 THE FOURTH SHAPE — A UNION PROP TYPE (`CONTRACT-COVERAGE-03`, 2026-11-15).
+   *
+   * `TrendCard(props: TrendCardProps)` is a non-destructured default export over
+   * `type TrendCardProps = A | B | C | D | E`, so every matcher missed it and `componentProps`
+   * returned `null` — the contract could not be written without turning the corpus arm red.
+   * ⚠️ These arms exist because the previous three widenings had none, which is this file's own
+   * recorded reason the parser kept being widened by hand.
+   */
+  it('resolves a UNION prop type to the union of its members, following `extends`', () => {
+    const src = [
+      'interface Labels { label?: string }',
+      'interface Live extends Labels { state: \'live\'; hr: number }',
+      'interface Locked extends Labels { state: \'locked\'; onUpgrade?: () => void }',
+      '',
+      'export type XProps =',
+      '  | Live',
+      '  | Locked',
+      '',
+      'export default function X(props: XProps) {}',
+    ].join('\n')
+    // Order is members-in-declaration-order with parents first; the gate compares SETS.
+    expect(componentProps(src)!.sort()).toEqual(['hr', 'label', 'onUpgrade', 'state'])
+  })
+
+  it('a union whose members resolve to NOTHING stays null, not propless', () => {
+    // The empty-vs-unparseable distinction this file records for `SiteFooter`, applied to the
+    // union path: a member we cannot find is not a component that takes no props.
+    const src = [
+      'export type XProps =',
+      '  | Missing',
+      '  | AlsoMissing',
+      '',
+      'export default function X(props: XProps) {}',
+    ].join('\n')
+    expect(componentProps(src)).toBeNull()
+  })
+
+  it('a ONE-LINE interface yields every member, not just the first', () => {
+    // Three of TrendCard's five union members are written on one line, so a newline-only split
+    // dropped `sessionLabel` and `onUpgrade` SILENTLY and then reported them as props the
+    // contract had invented.
+    expect(componentProps(
+      'interface Props { a: string; b?: number; c: boolean }\nexport default function X(p: Props) {}',
+    )).toEqual(['a', 'b', 'c'])
+  })
+
+  it('🔴 a NESTED inline object type does not leak its fields as top-level props', () => {
+    // A plain `;` split descended into `lifts?: { … }` and contributed `today`, `units`, `onLog`
+    // and `ended_at` to `StrengthGuidedSessionProps` — two EXISTING contracts went red within
+    // one run. Depth tracking is the fix; the semicolon alone is a regression.
+    expect(componentProps([
+      'interface Props {',
+      '  outer: string',
+      "  lifts?: { suggestions: Record<string, S>; today: Record<string, L>; units: 'km' | 'mi' }",
+      '  after: number',
+      '}',
+      'export default function X(p: Props) {}',
+    ].join('\n'))).toEqual(['outer', 'lifts', 'after'])
+  })
+
+  it('🔴 an ARROW TYPE BEFORE a nested object does not reopen the leak', () => {
+    // ⚠️ ORDER-DEPENDENT, AND MY OWN PROBE OF THE SPLITTER PASSED BECAUSE IT HAD THE TWO MEMBERS
+    // THE OTHER WAY ROUND. Counting `<`/`>` as brackets looks right for `Record<string, X>` and
+    // is wrong for `=>`: the arrow's `>` decremented with no matching `<`, so depth sat at -1
+    // for the rest of the interface and a LATER nested `;` split at "depth 0". `<`/`>` are not
+    // tracked at all now, and depth is clamped at 0.
+    expect(componentProps([
+      'interface Props {',
+      '  onSet: (v: string | null) => Promise<boolean>',
+      "  lifts?: { today: Record<string, L>; units: 'km' | 'mi' }",
+      '}',
+      'export default function X(p: Props) {}',
+    ].join('\n')), 'the arrow must come FIRST for this to fire').toEqual(['onSet', 'lifts'])
   })
 
   it('contractProps reads both block shapes, and a GENERIC name', () => {
