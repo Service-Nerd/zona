@@ -44,8 +44,12 @@ interface Props {
    **required, not optional** — a caller that cannot re-check must not render this control.
 5. ⚠️ **WEB RENDERS NOTHING, AND THAT IS THE DOCUMENTED READING.** No StoreKit receipt means no
    sheet to present, and rendering a control that cannot work is worse than rendering nothing —
-   *"empty means calm, not broken"* (CLAUDE.md § UI Principles). The `Capacitor.isNativePlatform()`
-   check returns `null` **before** any hook, so the hook count is unconditional.
+   *"empty means calm, not broken"* (CLAUDE.md § UI Principles). 🔴 **`useState` IS CALLED BEFORE
+   THE `Capacitor.isNativePlatform()` RETURN, AND THAT ORDER IS THE INVARIANT** — it is what
+   makes the hook count the same on both platforms. ⚠️ This contract first said the return came
+   *before* any hook, which is both false and the opposite of the rule: implementing it as
+   written makes the count conditional and trips React error 300 the moment the platform check
+   flips. `TrendCard`'s `HOOKS-ORDER-01` is the same rule, paid for once already.
 6. ⚠️ **THE CATCH IS SILENT ON PURPOSE, AND IT IS A DESIGNED STATE RATHER THAN AN INHERITED ONE.**
    The failure modes are *"the runner cancelled"* and *"there was nothing to find"* — the common
    cases, and not problems. A toast here would fire mostly at people who changed their mind. A

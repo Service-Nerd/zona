@@ -132,9 +132,13 @@ function componentProps(raw: string): string[] | null {
   // without turning the gate red, which is how a component stays uncontracted for a reason
   // that has nothing to do with the component.
   //
-  // 📐 Measured: `components/` holds exactly ONE union prop type and it is this one. Two other
-  // uncontracted components are non-destructured over a plain `interface`, which the matcher
-  // above already reads. A real shape with one instance, not a class.
+  // 📐 MEASURED, AND MY FIRST COUNT WAS WRONG: `components/` holds **FOUR** union prop types, not
+  // one — `TrendCard`, `PostRaceReshapeCard` (both fully resolved here), and `ZoneRings` and
+  // `PreRunBandCard`, whose members are `type X = Parent & { … }` intersections rather than
+  // interfaces and so still return `null`. My grep required `^export type …Props =$`, which
+  // needs the `export` keyword and the `Props` suffix, and three of the four have neither.
+  // ⚠️ **So this is a CLASS, not a single instance** — which makes the widening more justified
+  // and the partial-resolution guard below necessary rather than theoretical.
   //
   // What a union "takes" is the UNION OF ITS MEMBERS' props — that is what a caller may legally
   // pass — so members are resolved and `extends` parents followed transitively. Which props are
@@ -142,8 +146,19 @@ function componentProps(raw: string): string[] | null {
   const unionMembers = (alias: string): string[] | null => {
     const m = src.match(new RegExp('type ' + alias + '\\s*=([^;]*?)\\n\\n'))
     if (!m) return null
-    const members = m[1].split('|').map(t => t.trim()).filter(t => /^[A-Za-z_$][\w$]*$/.test(t))
-    return members.length > 1 ? members : null
+    // 🔴 EVERY PART MUST BE A BARE NAME, OR THIS IS NOT A UNION THIS RESOLVER UNDERSTANDS
+    // (`/code-review`, 2026-11-15). Two shapes reach here and neither is a discriminated union:
+    //   · an OBJECT alias, `type Props = { … x: A | null … }` — `PendingAdjustmentBanner`'s,
+    //     whose property types carry `|`;
+    //   · a NULLABLE alias, `type XProps = SomeProps | null`, where dropping `null` would leave
+    //     one real member and silently hand back that interface's props as the whole answer.
+    // ⚠️ I first wrote a separate `if (/\{/.test(…)) return null` for the object case and it
+    // **could not be made to fail** — the equality check below already covers it, because an
+    // object body's `|`-fragments are never bare names. A guard that cannot go red is
+    // decoration, so it is gone and the reason is here instead.
+    const parts = m[1].split('|').map(t => t.trim()).filter(Boolean)
+    const members = parts.filter(t => /^[A-Za-z_$][\w$]*$/.test(t) && t !== 'null' && t !== 'undefined')
+    return parts.length === members.length && members.length > 1 ? members : null
   }
   /** An interface's own props plus every `extends` parent's, transitively. */
   const ifaceWithParents = (name: string, seen: Set<string>): string[] => {
@@ -157,10 +172,16 @@ function componentProps(raw: string): string[] | null {
   for (const alias of [defaultName ? defaultName + 'Props' : null, 'Props'].filter(Boolean) as string[]) {
     const members = unionMembers(alias)
     if (!members) continue
-    const props = Array.from(new Set(members.flatMap(mn => ifaceWithParents(mn, new Set<string>()))))
-    // An alias resolving to NOTHING is unreadable, not propless — the empty-vs-unparseable
-    // distinction this function already records for `SiteFooter`.
-    if (props.length) return props
+    // 🔴 EVERY MEMBER MUST RESOLVE, OR THE WHOLE UNION IS UNREADABLE (`/code-review`, 2026-11-15).
+    // The first cut only required the COMBINED set to be non-empty, so a union mixing an
+    // `interface` member with a `type X = Parent & { … }` one returned a SUBSET of the real
+    // props — and a contract omitting the rest would have passed. `ZoneRings.tsx` is one
+    // `type`→`interface` edit away from exactly that. ⚠️ A partial answer is worse than `null`
+    // here: `null` is loud, a subset is a confident wrong comparison, which is this function's
+    // own recorded failure mode.
+    const resolved = members.map(mn => ifaceWithParents(mn, new Set<string>()))
+    if (resolved.some(r => r.length === 0)) return null
+    return Array.from(new Set(resolved.flat()))
   }
 
   // The DEFAULT export's destructure, before any named one.
@@ -437,6 +458,83 @@ describe('COMPONENT-CONTRACT-GATE-01 — the prop parsers, both directions', () 
       'export default function X(props: XProps) {}',
     ].join('\n')
     expect(componentProps(src)).toBeNull()
+  })
+
+  it('🔴 a PARTIALLY resolvable union is null, never a subset', () => {
+    // `/code-review`, 2026-11-15: requiring only the COMBINED set to be non-empty let a union
+    // mixing an `interface` member with an intersection-`type` one return a SUBSET of the real
+    // props, so a contract omitting the rest would PASS. `ZoneRings.tsx` is one `type`->
+    // `interface` edit from this shape.
+    const src = [
+      'interface Readable { a: string }',
+      'type Unreadable = Chrome & { b: number }',
+      '',
+      'export type XProps =',
+      '  | Readable',
+      '  | Unreadable',
+      '',
+      'export default function X(props: XProps) {}',
+    ].join('\n')
+    expect(componentProps(src), 'a subset is a confident wrong comparison').toBeNull()
+  })
+
+  it('🔴 an OBJECT type alias is not a union, however many `|` its properties carry', () => {
+    // `/code-review`, 2026-11-15: `PendingAdjustmentBanner`'s `type Props = { … }` was read as a
+    // two-member union whose members were both named `null`, harvested out of `A | null`
+    // property types. It was inert — no `interface null` exists, so the members resolved to
+    // nothing and the DESTRUCTURE matcher below still won — but it was inert by coincidence,
+    // and the partial-resolution guard added in the same commit would have turned that
+    // coincidence into a `null`. The `{`-rejection makes it structural.
+    //
+    // 📐 This is the REAL shape, measured: of 195 component files, ZERO are non-destructured
+    // over a `type X = { … }` alias, so the arm asserts the destructured form that exists
+    // rather than a hypothetical one. 🔻 **The gap is therefore declared, not closed:**
+    // `componentProps` reads an `interface` body and not a `type X = { … }` body, where
+    // `contractProps` accepts both. The first component to pair that alias with a
+    // non-destructured export gets `null` — loud, and this comment is the reason why.
+    expect(componentProps([
+      'type Props = {',
+      '  onApply: () => void',
+      '  diff: Diff | null',
+      '  state: Loaded | null',
+      '}',
+      'export default function X({ onApply, diff, state }: Props) {}',
+    ].join('\n')), 'the destructure wins; the union path must not claim this').toEqual(['onApply', 'diff', 'state'])
+    // And the non-destructured pairing is `null`, never a union of `null`s.
+    expect(componentProps([
+      'type Props = {',
+      '  diff: Diff | null',
+      '}',
+      'export default function X(props: Props) {}',
+    ].join('\n')), 'declared gap: an object-type alias body is not read').toBeNull()
+    // A NULLABLE alias is null too — one real member is not a union.
+    expect(componentProps([
+      'interface Inner { a: string; b: number }',
+      '',
+      'type XProps =',
+      '  | Inner',
+      '  | null',
+      '',
+      'export default function X(props: XProps) {}',
+    ].join('\n')), 'a nullable alias is not a two-member union').toBeNull()
+    // 🔴 THE CASE THAT MAKES THE PART-EQUALITY CHECK FALSIFIABLE, and it took three tries to
+    // find: TWO resolvable members PLUS one part that is not a bare name. Without the equality
+    // check the two resolve, `members.length > 1` passes, and the resolver returns a SUBSET —
+    // silently dropping whatever the third member contributes. ⚠️ **This is `ZoneRings.tsx`'s
+    // real shape with one member converted to an `interface`**, so it is one edit from live.
+    // My first two attempts at this arm (an object alias, then a nullable one) both stayed
+    // GREEN against the mutation, because each left fewer than two resolvable members.
+    expect(componentProps([
+      'interface A { a: string }',
+      'interface B { b: string }',
+      '',
+      'type XProps =',
+      '  | A',
+      '  | B',
+      '  | (Chrome & { c: number })',
+      '',
+      'export default function X(props: XProps) {}',
+    ].join('\n')), 'a subset is worse than null').toBeNull()
   })
 
   it('a ONE-LINE interface yields every member, not just the first', () => {

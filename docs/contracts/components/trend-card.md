@@ -52,7 +52,10 @@ times is a parser with a fourth shape in it"*). It could read `interface Props`,
 `<Name>Props` interface, a destructured default export, a propless one, a named export and a
 generic — but not a **non-destructured default export over a union type**, so it returned `null`
 and this contract could not exist without turning the gate red. 📐 Measured: `components/` holds
-**exactly one** union prop type and it is this one.
+**FOUR** union prop types, not the one this contract first claimed — `TrendCard` and
+`PostRaceReshapeCard` resolve; `ZoneRings` and `PreRunBandCard` use intersection `type` members and
+still return `null`. The grep behind the original figure required `^export type …Props =$` and three
+of the four have neither the `export` keyword nor the `Props` suffix (`/code-review`, 2026-11-15).
 
 ## States
 

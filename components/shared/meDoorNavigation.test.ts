@@ -80,8 +80,10 @@ describe('ME-DOORS-01 — navigation survives the move', () => {
     expect(src.slice(i, i + 300)).toContain("setMeOpenSection('plan-adjustments')")
   })
 
-  // ⚠️ TWO ENTRY POINTS, TWO CORRECT ANSWERS. Modelled on `redeemReturnTo`, which already
-  // existed in this file for exactly this problem — reuse, not a second mechanism.
+  // ⚠️ TWO ENTRY POINTS, TWO CORRECT ANSWERS. Modelled on `redeemReturnTo`, which existed in
+  // this file for exactly this problem — reuse, not a second mechanism. ⚠️ That state was
+  // DELETED by `REDEEM-SCREEN-UNREACHABLE-01` (2026-11-14), so the pattern's origin is history
+  // rather than something to read; `zonesReturnSection` is now the only instance.
   it('the zones screen remembers which entry it was opened from', () => {
     const src = SRC()
     expect(src, 'the return-to state is missing').toContain('zonesReturnSection')
