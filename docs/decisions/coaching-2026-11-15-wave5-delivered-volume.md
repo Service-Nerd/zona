@@ -458,3 +458,43 @@ and one names a plan we would not hand over, and that one was already filed.** T
   grows with a raised long run; back and plantar fasciitis are still treated **identically** (both
   long run 25.5 → 14.5 km on yesterday's `INJURY-RECENCY-01` counterfactual); injury recency is
   RULED but not BUILT, with the Design Board owning the control. Stays ratified.
+
+---
+
+## 🔍 Code review of the ship — four findings, all genuine, one a real guard gap
+
+Run once, on `1bbe197a~1..dfb7c755`. Per the standing rule from 2026-11-14, a review round is worth
+running only if its last finding changed what a runner sees. **This one did.**
+
+1. 🔴 **`engine.ts` — the new gate ran `validateBaseBuildBlock` ALONE, and I wrote a false reason
+   for it.** My comment said *"`validateStagedRace` is deliberately NOT run: a standalone base build
+   has no race block."* The first clause is true and **the conclusion does not follow**: since
+   `GETRUNNING-WALKRUN-FLOOR-01` (2026-11-12) that function returns `validateWalkRunStart(plan)`
+   when there is no `staged_race`, and **a plan with no `staged_race` is every plan this producer
+   makes.** So wiring the validator *dropped the walk-run ladder gate wired for this exact producer
+   three days earlier* — the function's own header says so in as many words, and **every other
+   caller in the repo pairs the two.** Fixed; gated behaviourally through `runEngine` and falsified
+   by dropping the arm again. ⚠️ **This is the failure class I wrote a memory about in the same
+   session: a confident comment stating the wrong mechanism, where the right mechanism was written
+   down in the function I chose not to call.**
+2. 🔻 **The 20% cap is NOT clear of the producer, and my first answer to this finding was wrong
+   because I measured the other producer.** The review named pairs at exactly 20.00% — `2.5→3.0`,
+   `4.5→5.4`. I probed §118's `generateGetRunningPlan`, found **0 at or over 20%** (worst +19.23%
+   over 335,708 pairs) and wrote that the counts *"do not reproduce"*. **They do.** There are two
+   producers of a base-build ramp and the review measured §116's `generateBaseBuildPlan`: **90 of
+   2,400 pairs (3.75%) land at or over the cap**, worst **+20.0000%**, exactly the shapes named.
+   `floor1dp` quantisation means a lawful 10% WEEKLY step is not a 10% PER-RUN step. **The `+ 0.5`
+   pp tolerance is therefore load-bearing**, which is now a declared limit with a case rather than
+   an accident.
+3. **`plan-invariants.md` — the row's normative FIRST sentence still stated the removed absolute**,
+   with the correction ~2,000 words later, after the now-superseded *"do not resolve by raising the
+   cap"* paragraph. Rewritten so the rule as it stands is the opening sentence and the history is
+   marked as history.
+4. **`baseBuildValidate.test.ts` — a test named *"the per-run cap is §2 Am.2's existing number"***
+   asserts only the constant's value, so it passes whatever the code does with that constant. The
+   name claimed the relationship this amendment removed. Renamed.
+
+📐 **After the fixes: 801 files / 8,219 tests green; `tsc` 0; and the paired gate throws on 0 of
+47,666 base-build plans across the whole corpus**, so pairing the arms is quiet on every live-shaped
+input rather than only on the four the offer path reaches.
+

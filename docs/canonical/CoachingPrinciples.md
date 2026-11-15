@@ -11379,6 +11379,22 @@ wrong reason.
 `MAX_WEEKLY_VOLUME_INCREASE_PCT` (§2) both already exist; `WEEK1_PER_RUN_STEP_MAX_KM` is unchanged
 at 1.5 and still §2 Am. 2's.
 
+🔻 **DECLARED LIMIT: the 20% is not clear of the producer, and the tolerance is load-bearing.**
+`onRampCurve` quantises with `floor1dp` and the week is split across the runner's days, so a lawful
+10% WEEKLY step is not a 10% PER-RUN step. Measured on §116's `generateBaseBuildPlan`: **90 of
+2,400 adjacent non-deload pairs (3.75%) land AT or over 20%** — `2.5→3.0`, `3.0→3.6`, `4.5→5.4`,
+`5.0→6.0` — passing only because the comparison carries a `+ 0.5` pp tolerance. On §118's
+`generateGetRunningPlan` the worst is **+19.23%** over 335,708 pairs. **A nudge to the ramp rate,
+the flooring or the deload cadence turns those 90 into errors that now throw in development and
+test.** Pinned as a case rather than remembered.
+
+⚠️ **AND THE BRANCH RUNS BOTH ARMS.** The first cut ran `validateBaseBuildBlock` alone on the
+reasoning that a standalone base build has no race block — true, and beside the point: since
+`GETRUNNING-WALKRUN-FLOOR-01` `validateStagedRace` returns `validateWalkRunStart(plan)` when there
+is no `staged_race`, which is **every plan this producer makes**. Skipping it dropped the walk-run
+ladder gate wired for this producer three days earlier. Every other caller pairs the two; so does
+this one now. The paired gate throws on **0 of 47,666** base-build plans across the corpus.
+
 **Enforced by** `INV-PLAN-ONRAMP-PER-RUN-STEP` (build-week arm; the deload arm R2 is unchanged) and
 by `enforceViolations` in `runEngine`'s `base_build` branch.
 

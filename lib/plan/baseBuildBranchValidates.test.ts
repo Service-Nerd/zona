@@ -9,6 +9,7 @@
 // error severity under NODE_ENV=test, so a wired branch throws and an unwired one returns.
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import type { GeneratorInput, Plan, Week } from '@/types/plan'
+import { validateBaseBuildBlock, validateStagedRace } from './baseBuildValidate'
 
 // ⚠️ The real implementation is exposed BY THE FACTORY, not by a top-level `vi.importActual`.
 // `vi.mock` is hoisted above a top-level await, so an `importActual` up there resolves to the
@@ -79,5 +80,60 @@ describe('runEngine base_build branch — validated, not returned raw', () => {
     vi.mocked(generateGetRunningPlan).mockReturnValue(planWithADoubling() as never)
     try { runEngine({ input, tier: 'paid', displayUnits: 'km', planStart: PLAN_START, today: PLAN_START, acceptBaseBuild: true }) } catch { /* expected */ }
     expect(vi.mocked(generateGetRunningPlan)).toHaveBeenCalled()
+  })
+})
+
+// 🔴 AND THE WALK-RUN ARM, WHICH THE FIRST CUT OF THIS BRANCH DROPPED (code review, 2026-11-15).
+//
+// I ran `validateBaseBuildBlock` alone and wrote *"`validateStagedRace` is deliberately NOT run:
+// a standalone base build has no race block"*. True, and the conclusion does not follow: since
+// `GETRUNNING-WALKRUN-FLOOR-01` that function returns `validateWalkRunStart(plan)` when there is
+// no `staged_race`, and **a plan with no `staged_race` is every plan this producer makes** — so
+// the walk-run ladder gate wired for THIS producer three days earlier was skipped. Its own header
+// says so. Every other caller in the repo pairs the two.
+describe('runEngine base_build branch — the walk-run arm is paired, not skipped', () => {
+  beforeEach(() => { vi.mocked(generateGetRunningPlan).mockReset(); vi.mocked(generateGetRunningPlan).mockImplementation(realGenerate) })
+
+  /** A below-floor runner gets a walk-run start; corrupt its ladder so `validateWalkRunStart` fires. */
+  function planWithABrokenLadder(): { plan: Plan; endsAtKm: number; weeks: number } {
+    const belowFloor = { ...input, current_weekly_km: 2, longest_recent_run_km: 0 } as GeneratorInput
+    const built = realGenerate(belowFloor, PLAN_START, 15)
+    const plan = JSON.parse(JSON.stringify(built.plan)) as Plan
+    const wr = plan.weeks.filter(w => (Object.values(w.sessions ?? {}) as any[])
+      .some(s => s && typeof s.label === 'string' && /walk/i.test(s.label)))
+    expect(wr.length, 'fixture carries no walk-run weeks, so it cannot pin the arm').toBeGreaterThan(0)
+    // Invert the ladder: give the FIRST walk-run week the last week's run minutes.
+    for (const s of Object.values(wr[0].sessions ?? {}) as any[]) {
+      if (s && typeof s.label === 'string' && /walk/i.test(s.label)) s.label = s.label.replace(/\d+/, '99')
+      if (s && typeof s.duration_mins === 'number') s.duration_mins = 99
+    }
+    return { ...built, plan }
+  }
+
+  it('a below-floor runner really does get walk-run weeks', () => {
+    const belowFloor = { ...input, current_weekly_km: 2, longest_recent_run_km: 0 } as GeneratorInput
+    const { plan } = realGenerate(belowFloor, PLAN_START, 15)
+    const wr = plan.weeks.filter(w => (Object.values(w.sessions ?? {}) as any[])
+      .some(s => s && typeof s.label === 'string' && /walk/i.test(s.label)))
+    expect(wr.length).toBeGreaterThan(0)
+  })
+
+  it('🔴 the BRANCH throws on it, which only happens if validateStagedRace is paired', () => {
+    // ⚠️ BEHAVIOURAL, and the first cut of this case was not: it compared the two validators
+    // directly, which asserts nothing about `engine.ts` and stays green if the branch drops the
+    // arm again. Driving it through `runEngine` is what makes it a gate on the WIRING.
+    vi.mocked(generateGetRunningPlan).mockReturnValue(planWithABrokenLadder() as never)
+    expect(() => runEngine({
+      input, tier: 'paid', displayUnits: 'km', planStart: PLAN_START, today: PLAN_START, acceptBaseBuild: true,
+    })).toThrow(/WALKRUN-START-PROGRESSION/)
+  })
+
+  it('and the block arm alone does NOT see it, so the case is about the pairing', () => {
+    const { plan } = planWithABrokenLadder()
+    const startKm = Number((plan.meta as never as Record<string, unknown>).base_build_start_km ?? 0)
+    const blockOnly = validateBaseBuildBlock(plan.weeks, startKm).filter(v => v.severity === 'error')
+    expect(blockOnly.map(v => v.code)).not.toContain('INV-PLAN-WALKRUN-START-PROGRESSION')
+    expect(validateStagedRace(plan).filter(v => v.severity === 'error').map(v => v.code))
+      .toContain('INV-PLAN-WALKRUN-START-PROGRESSION')
   })
 })

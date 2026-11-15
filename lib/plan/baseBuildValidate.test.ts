@@ -87,7 +87,14 @@ describe('§116 — each board amendment, falsified', () => {
       .toContain('INV-PLAN-ONRAMP-PER-RUN-STEP')
   })
 
-  it('the per-run cap is §2 Am.2s existing number, not a new one', () => {
+  // 🔴 RENAMED, §116 Am. 12 — the name claimed a relationship that no longer exists, and the
+  // assertion never tested it. This read *"the per-run cap is §2 Am.2's existing number"*; since
+  // 2026-11-15 the build-week arm reads §45's `LONG_RUN_PROGRESSION_CAP_PCT` and §2 Am. 2's
+  // constant governs only its own week-1 screen. **A test asserting a constant's VALUE passes
+  // whatever the code around it does with that constant** — which is why the rename matters and
+  // the duplicate in `baseBuildPerRunStep.test.ts` is the one that carries the real claim.
+  it('§2 Am.2s week-1 constant is unchanged at 1.5, and no longer governs this arm', () => {
     expect(C.WEEK1_PER_RUN_STEP_MAX_KM).toBe(1.5)
+    expect(C.LONG_RUN_PROGRESSION_CAP_PCT).toBe(20)
   })
 })

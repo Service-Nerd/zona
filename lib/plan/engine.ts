@@ -339,11 +339,19 @@ export function runEngine(req: EngineRequest): EngineOutcome {
     // unvalidated — against ADR-020's `INV-PLAN-SINGLE-CONSTRUCTION`. It could not be wired
     // before that amendment, because the per-run-step arm was firing on §2's own ramp and the
     // noise would have been fatal in development and test.
-    // ⚠️ `validateStagedRace` is deliberately NOT run: a standalone base build has no race block
-    // (§118 builds for the runway and refuses a target). The staged branch runs both; it has both.
-    enforceViolations(validateBaseBuildBlock(plan.weeks, Number(
-      (plan.meta as unknown as Record<string, unknown>).base_build_start_km ?? 0,
-    ), spacingOpts(plan, input)))
+    // 🔴 BOTH ARMS, AND MY FIRST CUT RAN ONLY ONE ON A FALSE PREMISE — found by code review.
+    // I wrote *"`validateStagedRace` is deliberately NOT run: a standalone base build has no race
+    // block"*. The first clause is true and the conclusion does not follow: since
+    // `GETRUNNING-WALKRUN-FLOOR-01` (2026-11-12) that function returns `validateWalkRunStart(plan)`
+    // when there is no `staged_race`, and **a plan with no `staged_race` is every plan this producer
+    // makes** — so skipping it dropped the walk-run ladder gate wired for THIS producer three days
+    // earlier. Its own header says so in as many words. **Every other caller pairs the two.**
+    enforceViolations([
+      ...validateBaseBuildBlock(plan.weeks, Number(
+        (plan.meta as unknown as Record<string, unknown>).base_build_start_km ?? 0,
+      ), spacingOpts(plan, input)),
+      ...validateStagedRace(plan),
+    ])
     return { kind: 'base_build', plan }
   }
 
