@@ -39,7 +39,15 @@ export function parseCalendarDate(v: DateLike): Date {
   if (v instanceof Date) return v
   if (DATE_ONLY.test(v)) {
     const [y, m, d] = v.split('-').map(Number)
-    return new Date(y, m - 1, d)
+    const out = new Date(y, m - 1, d)
+    // ⚠️ `new Date(2026, 12, 1)` ROLLS OVER to 2027-01-01 rather than failing,
+    // so `'2026-13-01'` came back as a real date where `new Date(string)`
+    // returned Invalid. Every caller guards on `isFinite`/`isNaN`, so a
+    // fabricated date defeats the guard instead of tripping it.
+    if (out.getFullYear() !== y || out.getMonth() !== m - 1 || out.getDate() !== d) {
+      return new Date(NaN)
+    }
+    return out
   }
   return new Date(v)
 }

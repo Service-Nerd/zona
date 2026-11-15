@@ -41,7 +41,10 @@ import { readFileSync } from 'node:fs'
 
 /** Tracked source under app, components, lib and packages. Never the whole repo. */
 function sources(): string[] {
-  return execFileSync('git', ['ls-files', 'app', 'components', 'lib', 'packages'], { encoding: 'utf8' })
+  // ⚠️ `scripts/` IS IN THE POPULATION, because leaving it out is how
+  // `backfill-generator-input.ts` kept a copy of the engine's expression under a
+  // comment saying it was verbatim, while the engine's changed underneath it.
+  return execFileSync('git', ['ls-files', 'app', 'components', 'lib', 'packages', 'scripts'], { encoding: 'utf8' })
     .split('\n')
     .filter(f => /\.(ts|tsx)$/.test(f) && !/\.test\.(ts|tsx)$/.test(f))
 }
@@ -59,14 +62,23 @@ const OWNER_FILE = 'lib/format.ts'
 // week and `MS_PER_WEEK` is a named local. A pattern that lists only the
 // arithmetic misses both, which is how four sites passed arm A and arm B.
 const DAY_OR_WEEK = String.raw`86_?400_?000|6048e5|24 \* 60 \* 60 \* 1000|60 \* 60 \* 24|MS_PER_WEEK|MS_PER_DAY|DAY_MS|WEEK_MS`
-const ARM_A = new RegExp(String.raw`(?:race_date|raceDate|raceDay)[^\n]*(?:getTime\(\)|Date\.parse)[^\n]*(?:${DAY_OR_WEEK})`)
+// ⚠️ A `/` IS REQUIRED, and three false positives are why. A QUOTIENT is the
+// defect; ADDING a duration to an instant is not, and
+// `measure-ramp-producer.ts` / `measure-weekday-cap.ts` legitimately build a
+// fixture race date as `planStart + weeks * 7 * 86_400_000`. A guard that fires
+// on correct work gets switched off — recorded here four times.
+const ARM_A = new RegExp(String.raw`(?:race_date|raceDate|raceDay)[^\n]*(?:getTime\(\)|Date\.parse)[^\n]*/[^\n]*(?:${DAY_OR_WEEK})`)
 // ⚠️ NOT `\b…ToRace\b`: `signedWeeksToRace` has no word boundary before "weeks",
 // and that is exactly the site arm B could not see.
-const ARM_B = new RegExp(String.raw`(?:days|Days|weeks|Weeks)ToRace[^\n]*(?:Math\.(?:round|ceil|floor)|getTime\(\)|Date\.parse)`)
+// ⚠️ AN ASSIGNMENT, not a call: `weeksToRace(RACE_DATE, Date.parse(e.created_at))`
+// is a CALLER of the owner and matched the loose version.
+const ARM_B = new RegExp(String.raw`(?:days|Days|weeks|Weeks)ToRace\s*[:=][^=][^\n]*(?:Math\.(?:round|ceil|floor)|getTime\(\)|Date\.parse)`)
 // Arm C: a race date read straight into `new Date(...)`, which loses the
 // calendar day before any owner sees it. This is the one that found the
 // headline defect still live.
-const ARM_C = /new Date\((?:[A-Za-z_$][\w$.?]*\.)?(?:race_date|raceDate)\b/
+// ⚠️ NO TRAILING `\b`: `new Date(raceDateStr)` continues the identifier, and a
+// boundary there is the `/Sheet\.tsx$/` mistake this repo has recorded.
+const ARM_C = /new Date\((?:[A-Za-z_$][\w$.?]*\.)?(?:race_date|raceDate)/
 // Arm D: `Date.parse` on a race date. Its divisor often sits on the NEXT line,
 // so arm A's same-line divisor requirement cannot see it — which is exactly how
 // `baseBuildHandover` passed a sweep written to catch it.
@@ -75,20 +87,23 @@ const ARM_D = /Date\.parse\([^\n]*(?:race_date|raceDate)/
 // ⚠️ TWO EXEMPTIONS, EACH NAMED WITH ITS REASON rather than remembered — the
 // pattern the colour guards and the em-dash guards already use here.
 const EXEMPT: Record<string, string> = {
-  // An instant plus a DURATION, not a difference between two calendar dates:
-  // the grant expiry is `race + grace`, clamped by `grantedAt + ceiling`. Its
-  // caller (`reanchor.ts`) is what had to be fixed, and was.
-  'lib/charity/grantWindow.ts': 'instant + duration, not a calendar difference',
   // Correct AND frame-consistent: BOTH endpoints are parsed as UTC, so the
   // quotient is exact. It cannot read the owner — `packages/strength` imports
   // nothing from `@/lib` by design, and `boundary.test.ts` enforces that.
   'packages/strength/validate.ts': 'package isolation; both endpoints UTC-parsed, so exact',
 }
 
+// 🔴 THE EXCLUDER USED TO INCLUDE `parseCalendarDate(` AND THAT WAS A HOLE THE
+// WIDTH OF THE RULE: parsing is not arithmetic, so
+// `Math.round((parseCalendarDate(race_date).getTime() - Date.now()) / 86_400_000)`
+// — DST-unsafe, a millisecond quotient, exactly what this sweep exists to stop —
+// passed all four arms by MENTIONING the parser. Only the arithmetic owners
+// exempt a line now.
+const OWNER_CALL = /daysUntilRace(?:Signed)?\(|weeksUntilRace(?:Signed)?\(|calendar(?:Days|Weeks)Between\(/
+
 const offenders = (src: string) =>
   src.split('\n').some(l =>
-    !/UntilRace\(|calendar(?:Days|Weeks)Between\(|parseCalendarDate\(/.test(l)
-    && (ARM_A.test(l) || ARM_B.test(l) || ARM_C.test(l) || ARM_D.test(l)))
+    !OWNER_CALL.test(l) && (ARM_A.test(l) || ARM_B.test(l) || ARM_C.test(l) || ARM_D.test(l)))
 
 describe('one owner for time-to-race, over the whole tree', () => {
   const files = sources()
@@ -115,7 +130,7 @@ describe('one owner for time-to-race, over the whole tree', () => {
     }
   })
 
-  it('🔴 and the sweep REACHES all FOURTEEN replaced lines, each the real one', () => {
+  it('🔴 and the sweep REACHES all SIXTEEN replaced lines, each the real one', () => {
     // The mutations are the sites' actual previous source, not inventions.
     const previously: [string, string][] = [
       ['app/api/race-readiness/route.ts',
@@ -147,6 +162,11 @@ describe('one owner for time-to-race, over the whole tree', () => {
        'const raceDate = (stagedView?.raceDate || plan?.meta?.race_date) ? new Date(stagedView?.raceDate || plan!.meta.race_date) : null'],
       ['components/dashboard/MeScreen.tsx',
        'const raceInPast = p.race_date ? new Date(p.race_date).getTime() < Date.now() : false'],
+      // And the two the SECOND review round found, once `scripts/` was in scope.
+      ['scripts/backfill-generator-input.ts',
+       'const weeksToRace = (raceDate: string, atMs: number) => Math.round((new Date(raceDate).getTime() - atMs) / 6048e5)'],
+      ['scripts/board-evidence-basebuild-handover.ts',
+       'const weeksToRace = race ? Math.floor((Date.parse(race) - end.getTime()) / 6048e5) : null'],
     ]
     const missed = previously.filter(([, line]) => !offenders(line)).map(([f]) => f)
     expect(missed, 'the sweep cannot see these, so it would not have caught them').toEqual([])
@@ -162,6 +182,7 @@ describe('one owner for time-to-race, over the whole tree', () => {
       'lib/plan/baseBuildHandover.ts',
       'lib/plan/weekResolution.ts',
       'lib/widget/widgetState.ts',
+      'scripts/board-evidence-basebuild-handover.ts',
     ])
     const needsCorD = previously.filter(([, l]) => !ARM_A.test(l) && !ARM_B.test(l)).map(([f]) => f).sort()
     expect(needsCorD).toEqual([
@@ -170,6 +191,18 @@ describe('one owner for time-to-race, over the whole tree', () => {
     ])
     const onlyD = previously.filter(([, l]) => ARM_D.test(l) && !ARM_A.test(l) && !ARM_B.test(l) && !ARM_C.test(l)).map(([f]) => f)
     expect(onlyD).toEqual(['lib/plan/baseBuildHandover.ts'])
+  })
+
+  // 🔴 A LIMIT FOUND BY FALSIFYING THIS FILE, STATED AS A CASE RATHER THAN
+  // REMEMBERED. Re-clamping the race window
+  // (`(daysUntilRaceSigned(...) ?? -1) < 0 ? 0 : ...`) left all five arms GREEN,
+  // because they check which owner is NAMED and not what is done to its result.
+  // This arm catches the generalisable shape; an arbitrary re-clamp expression
+  // is not detectable from source text, and the SEMANTICS are covered by
+  // `raceCountdownFrame.test.ts`'s "the race window has to be able to CLOSE".
+  it('🔑 and no file re-clamps a SIGNED owner, which would undo the point of it', () => {
+    const bad = sources().filter(f => /Math\.max\(\s*0\s*,\s*(?:days|weeks)UntilRaceSigned\(/.test(readFileSync(f, 'utf8')))
+    expect(bad, 'a signed owner clamped back to 0 is the defect it exists to fix').toEqual([])
   })
 
   it('every site names an owner, and only ever an owner', () => {
@@ -186,7 +219,7 @@ describe('one owner for time-to-race, over the whole tree', () => {
       'lib/coaching/prompts/sessionFeedback.ts': 'weeksUntilRaceSigned(',
       'lib/plan/engine.ts': 'weeksUntilRaceSigned(',
       'lib/widget/widgetState.ts': 'daysUntilRace(',
-      'app/dashboard/DashboardClient.tsx': 'daysUntilRace(',
+      'app/dashboard/DashboardClient.tsx': 'daysUntilRaceSigned(',
       'components/dashboard/OrientationScreen.tsx': 'daysUntilRace(',
       'app/api/plan-weekly-note/route.ts': 'weeksUntilRace(',
       'app/api/daily-coach-note/route.ts': 'weeksUntilRace(',
@@ -194,8 +227,11 @@ describe('one owner for time-to-race, over the whole tree', () => {
       'lib/coaching/prompts/weeklyReport.ts': 'weeksUntilRace(',
       'lib/coaching/weekVoice.ts': 'weeksUntilRace(',
       'components/strava/StravaPanel.tsx': 'weeksUntilRace(',
+      // Found only once `scripts/` entered the population.
+      'scripts/backfill-generator-input.ts': 'weeksUntilRaceSigned(',
+      'scripts/board-evidence-basebuild-handover.ts': 'calendarWeeksBetween(',
     }
-    expect(Object.keys(expected).length, 'thirteen sites plus the two callers that pre-parsed').toBe(15)
+    expect(Object.keys(expected).length, 'fifteen hand-rolled sites plus the two callers that pre-parsed').toBe(17)
     for (const [f, call] of Object.entries(expected)) {
       const src = readFileSync(f, 'utf8')
       expect(src, `${f} must call ${call}`).toContain(call)

@@ -714,6 +714,12 @@ export function daysUntilRace(raceDate: string | Date | null | undefined, now: D
  * `Math.max` per call site: `sessionFeedback.ts`'s own comment says a clamp
  * *"made a finished race look imminent (the §73 in-flight-vs-done bug class)"*.
  */
+export function daysUntilRaceSigned(raceDate: string | Date | null | undefined, now: Date = new Date()): number | null {
+  if (!raceDate) return null
+  if (!Number.isFinite(parseCalendarDate(raceDate).getTime())) return null
+  return calendarDaysBetween(now, raceDate)
+}
+
 export function weeksUntilRaceSigned(raceDate: string | Date | null | undefined, now: Date = new Date()): number | null {
   if (!raceDate) return null
   if (!Number.isFinite(parseCalendarDate(raceDate).getTime())) return null

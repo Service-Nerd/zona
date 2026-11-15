@@ -40,7 +40,12 @@ describe('S5 — one time-to-race vocabulary, one owner', () => {
       SHELL.matchAll(/(?:raceDate|race_date)[^\n]*getTime\(\)[^\n]*86_?400_?000/g),
     ).map(m => m[0])
     expect(handRolled, 'days-to-race arithmetic outside lib/format.ts').toEqual([])
-    expect(SHELL).toContain('daysUntilRace(')
+    // ⚠️ EITHER OWNER. This asserted the literal `daysUntilRace(` and went RED
+    // when the shell moved to the SIGNED owner — a correct change failing a gate
+    // because the gate pinned a NAME where it meant "calls the owner".
+    // `PLAN-COUNTDOWN-SOURCE-01` is why the signed one exists: the clamped owner
+    // made `isRaceWindow >= 0` unable to go false.
+    expect(SHELL).toMatch(/daysUntilRace(?:Signed)?\(/)
   })
 
   // ⚠️ RENAMED 2026-11-15: there is no `Math.ceil` any more, and this case's

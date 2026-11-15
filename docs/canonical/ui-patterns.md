@@ -4773,16 +4773,22 @@ weeksUntilRace(plan.meta.race_date)                       // whole weeks, for th
 | **`≤ 0`** | Returns `''`. The caller decides what race day and the past look like — the formatter does not invent a word for them |
 | **Arithmetic** | `daysUntilRace` only, and it defers to `lib/dates.ts` (D-08, the single owner of whole-day arithmetic). Race-eve morning reads "1 day" all day, which is what `Math.ceil` used to approximate |
 | **Weeks** | `weeksUntilRace` for the surfaces that speak in weeks: five AI prompts, `weekVoice`, the Strava panel |
-| **Past races** | `weeksUntilRaceSigned`, or `calendarDaysBetween` for days. 🔴 **The clamped owners return 0 for a finished race, and that made two guards unreachable** — `race-readiness`'s own `daysToRace < 0`, and `sessionFeedback`'s *" — run N weeks ago"* rung, whose comment already named the clamp as a bug class |
+| **Past races** | `daysUntilRaceSigned` / `weeksUntilRaceSigned`. 🔴 **The clamped owners return 0 for a finished race, and that made FOUR guards unreachable** — `race-readiness`'s `daysToRace < 0`, `sessionFeedback`'s *" — run N weeks ago"* rung (whose own comment already named the clamp as a bug class), the Coach screen's `isRaceWindow >= 0`, **so the race window never closed and an AI route was POSTed on every mount**, and the Plan header's *" · Race day"* |
 | **Parsing** | `parseCalendarDate` (`lib/dates.ts`), never `new Date(str)`. A caller that pre-parses has already lost the calendar day: a Date at UTC midnight is indistinguishable from one legitimately meaning the previous day |
 
-🔴 **THIRTEEN SITES HAND-ROLLED THIS UNTIL 2026-11-15** (`PLAN-COUNTDOWN-SOURCE-01`), in four
-spellings of the divisor. **Six were found by reading, two by the tree sweep on its first run,
-and five by the review round after the set had twice been called complete** — including three
-callers that pre-parsed the date, so **the headline defect was still live on Today and the Plan
-screen after the "fix"**. `DATE-DST-01` had consolidated six copies of the same expression in
-2026-09 and missed two of these. ⚠️ **And `formatDate` had it too**, which makes it every date a
-runner reads: `formatDate('2026-12-12')` rendered **"11 Dec 2026"** in New York and Los Angeles.
+🔴 **FIFTEEN SITES HAND-ROLLED THIS UNTIL 2026-11-15** (`PLAN-COUNTDOWN-SOURCE-01`), in four
+spellings of the divisor. **Six found by reading, two by the tree sweep on its first run, five by
+the review round, and six more by reviewing THAT** — the set was called complete three times.
+Among them: three callers that pre-parsed the date, so **the headline defect was still live on
+Today and the Plan screen after the "fix"**; a copy in `scripts/`, outside the sweep's population,
+under a comment saying it was copied verbatim; and a hole in the sweep's own excluder that let a
+millisecond quotient through by MENTIONING the parser. `DATE-DST-01` consolidated six copies of
+this expression in 2026-09 and missed two of these. ⚠️ **And `formatDate` had it too**, which makes
+it every date a runner reads: `formatDate('2026-12-12')` rendered **"11 Dec 2026"** in New York and
+Los Angeles. ⚠️ **Consolidating is right and it is not free — the owner's edges become everyone's
+edges:** two of the six were regressions the consolidation itself opened (`new Date(2026, 12, 1)`
+rolls over to January rather than failing, and a delegation removed a `throw` another file's guard
+depends on).
 
 🔴 **AND THE ROW ABOVE SAID `Math.ceil` FOR SEVEN WEEKS, WHICH WAS TRUE OF THE MECHANISM AND
 WRONG ABOUT THE RESULT.** `Math.ceil` was applied to a millisecond quotient against

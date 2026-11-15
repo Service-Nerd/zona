@@ -6,6 +6,7 @@ for (const l of readFileSync('.env.local', 'utf8').split('\n')) {
   const m = l.match(/^([A-Z0-9_]+)=(.*)$/); if (m) process.env[m[1]] ??= m[2].replace(/^["']|["']$/g, '')
 }
 import type { Plan } from '@/types/plan'
+import { calendarWeeksBetween } from '@/lib/dates'
 const db = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
 
 async function main() {
@@ -40,7 +41,9 @@ async function main() {
     const end = new Date(Date.parse(start) + weeks * 7 * 864e5)
     // The race date now lives in the stamp (BASEBUILD-GENINPUT-REMEDIATION-01).
     const race = (m.generator_input as { race_date?: string } | undefined)?.race_date
-    const weeksToRace = race ? Math.floor((Date.parse(race) - end.getTime()) / 6048e5) : null
+    // ⚠️ `calendarWeeksBetween`, not a millisecond quotient — the same copy
+    // `baseBuildHandover.weeksBetween` held (`PLAN-COUNTDOWN-SOURCE-01`).
+    const weeksToRace = race ? calendarWeeksBetween(end, race) : null
     console.log(`  ${start} + ${weeks}w → ends ${end.toISOString().slice(0,10)}`
       + `   race ${race ?? '(none)'}   ${weeksToRace} weeks between`
       + `   | ${Math.floor((end.getTime() - today.getTime()) / 864e5)} days from today`)

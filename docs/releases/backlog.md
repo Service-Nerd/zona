@@ -18896,6 +18896,30 @@ asserted to still MATCH so a stale exemption cannot sit there unnoticed.
 🔴 **`DATE-DST-01` CONSOLIDATED SIX COPIES OF THIS EXPRESSION IN 2026-09 AND MISSED TWO OF THESE.**
 Same sweep, second time, fourteen months of the same class.
 
+🔴 **AND THE REVIEW OF THE FIX ROUND FOUND SIX MORE. FIFTEEN SITES, NOT THIRTEEN, NOT EIGHT.**
+
+| Finding | What it was |
+|---|---|
+| **The clamp, on the client, for the THIRD time in one item** | `isRaceWindow = daysToRace >= 0 && <= 14` read the clamped owner, so **the race window never CLOSED**: Coach POSTed `/api/race-readiness` on every mount, burning a rate-limit slot, and rendered *"Race day."* indefinitely off the cached note. The Plan header rendered *" · Race day"* for ever too. `daysUntilRaceSigned` now exists beside the weeks one |
+| **My consolidation OPENED a regression** | `new Date(2026, 12, 1)` **rolls over** to 2027-01-01 rather than failing, so `formatDate('2026-13-01')` returned *"1 Jan 2027"* where the old `new Date(string)` returned Invalid → `null`. **Every caller guards on `isFinite`, so a fabricated date defeats the guard instead of tripping it**, and the `?? fallback` sites render a wrong date rather than nothing |
+| **My delegation removed a THROW another file depends on** | `parseLocalDate(undefined)` used to throw on `.split`, and `TodayScreen.tsx:834`'s comment names that throw as the thing its render guard protects. Delegating made it an Invalid Date, which resolves to **week 1**. It throws again, explicitly |
+| **A verbatim copy, in `scripts/`, which my sweep could not see** | `backfill-generator-input.ts:78` held the engine's expression under the comment *"copied verbatim — not rewritten"*, and the engine's had just changed underneath it: its corroboration arm would `fail()` on valid new telemetry. **`scripts/` is in the population now, and that immediately found a second copy** in `board-evidence-basebuild-handover.ts` |
+| **A hole the width of the rule in my own gate** | the excluder skipped any line *mentioning* `parseCalendarDate(`, so `Math.round((parseCalendarDate(race_date).getTime() - Date.now()) / 86_400_000)` — DST-unsafe, a millisecond quotient, exactly what the sweep exists to stop — **passed all four arms**. Only the arithmetic owners exempt a line now. `ARM_C`'s trailing `\b` also missed `new Date(raceDateStr)` |
+
+⚠️ **AND WIDENING THE POPULATION PRODUCED THREE FALSE POSITIVES, which is the other half of the
+job:** two measurement scripts legitimately BUILD a fixture race date as
+`planStart + weeks * 7 * 86_400_000`, and one line CALLS the owner beside an unrelated
+`Date.parse(created_at)`. **A quotient is the defect; adding a duration to an instant is not** — arm
+A requires a `/` now and arm B requires an assignment rather than a call. **That also retired the
+`grantWindow.ts` exemption**, which the exemption arm forced me to notice. *A guard that fires on
+ordinary work gets switched off, recorded here four times.*
+
+🔑 **AND FALSIFYING MY OWN GATE FOUND ITS LIMIT, WHICH IS NOW A CASE RATHER THAN A MEMORY:**
+re-clamping the window left **all five arms green**, because they check which owner is NAMED, not
+what is done to its result. One arm catches the generalisable `Math.max(0, …Signed(` shape; an
+arbitrary re-clamp is not detectable from source text, and the semantics are covered behaviourally
+instead. **Stated, not claimed.**
+
 🔻 **ONE MEASURED FACT LEFT UNDECIDED, deliberately, because it is about MEANING and not
 arithmetic:** `Math.round(days / 7)` reaches `0` — the prompt's *"Race week."* — only in the
 final **3** days, so days 4–7 of race week are announced as *"1 week to race."* That is a

@@ -831,7 +831,8 @@ export default function TodayScreen({ plan, weekIndex, daysToRace, raceName, pre
   const now = new Date()
   now.setHours(0, 0, 0, 0)
   const todayDow = ['sun','mon','tue','wed','thu','fri','sat'][now.getDay()]
-  // HOOKS-ORDER-02: `parseLocalDate(undefined)` throws on `.split`, so this is
+  // HOOKS-ORDER-02: `parseLocalDate(undefined)` THROWS (explicitly, since it
+  // delegates — it used to throw on `.split`), so this is
   // the line the guard used to protect. Never rendered when the week is missing
   // — the guard below returns before any of it reaches the DOM.
   const weekStartDate = currentWeek ? parseLocalDate((currentWeek as any).date) : new Date()

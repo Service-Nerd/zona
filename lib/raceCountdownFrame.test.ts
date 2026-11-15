@@ -20,7 +20,7 @@
 // ceil contract with `new Date('2027-04-24T00:00:00')` — a Date carrying a TIME,
 // which parses LOCAL. The one input shape no caller uses.
 import { describe, it, expect, afterAll } from 'vitest'
-import { daysUntilRace, weeksUntilRace, weeksUntilRaceSigned, formatDate } from '@/lib/format'
+import { daysUntilRace, daysUntilRaceSigned, weeksUntilRace, weeksUntilRaceSigned, formatDate } from '@/lib/format'
 import { calendarDaysBetween } from '@/lib/dates'
 
 const RACE = '2026-12-12'
@@ -135,6 +135,56 @@ describe('formatDate reads the calendar date, not UTC midnight', () => {
 // it shipped: `race-readiness` read `daysUntilRace`, which clamps at 0, so its
 // own `daysToRace < 0` check could never fire and a finished race would have
 // spent a Sonnet-deep call to be told the race is today.
+// 🔴 THE CONSOLIDATION OPENED THIS, and the second review round caught it:
+// `new Date(2026, 12, 1)` ROLLS OVER to 2027-01-01 rather than failing, so a
+// malformed `YYYY-MM-DD` came back as a real date where `new Date(string)`
+// returned Invalid. Every caller guards on `isFinite`/`isNaN`, so a fabricated
+// date defeats the guard instead of tripping it, and the `?? fallback` call
+// sites render a wrong date rather than nothing.
+describe('an out-of-range calendar date is unusable, not rolled over', () => {
+  it('rejects the month and day that roll', () => {
+    process.env.TZ = 'Europe/London'
+    expect(formatDate('2026-13-01')).toBeNull()
+    expect(formatDate('2026-02-30')).toBeNull()
+    expect(formatDate('2026-00-10')).toBeNull()
+    expect(daysUntilRace('2026-13-01')).toBeNull()
+    expect(weeksUntilRaceSigned('2026-02-30')).toBeNull()
+    expect(daysUntilRaceSigned('2026-13-01')).toBeNull()
+  })
+
+  it('and still accepts the real leap day', () => {
+    process.env.TZ = 'Europe/London'
+    expect(formatDate('2028-02-29', 'medium')).toBe('29 Feb 2028')
+    expect(formatDate('2027-02-28', 'medium')).toBe('28 Feb 2027')
+  })
+})
+
+// 🔴 THE CLAMP, ON THE CLIENT, FOR THE THIRD TIME IN ONE ITEM. `daysUntilRace`
+// returns 0 for a race already run, so `isRaceWindow = daysToRace >= 0 && <= 14`
+// never went FALSE: Coach POSTed /api/race-readiness on every mount and showed
+// "Race day." indefinitely off the cached note, and the Plan header rendered
+// " · Race day" for ever. Both read the signed owner now.
+describe('daysUntilRaceSigned — the race window has to be able to CLOSE', () => {
+  it('goes negative once the race is run, so >= 0 can be false', () => {
+    process.env.TZ = 'Europe/London'
+    const now = new Date('2026-11-15T10:00:00')
+    const past = daysUntilRaceSigned('2026-08-01', now)!
+    expect(past).toBeLessThan(0)
+    expect(past >= 0 && past <= 14, 'isRaceWindow must be false for a run race').toBe(false)
+    expect(daysUntilRace('2026-08-01', now)).toBe(0)        // the clamped owner, for contrast
+    expect(daysUntilRaceSigned('2026-11-15', now)).toBe(0)  // race day is still 0
+    expect(daysUntilRaceSigned('2026-11-29', now)).toBe(14) // the window's far edge
+    expect(daysUntilRaceSigned(null)).toBeNull()
+  })
+
+  it('and the clamped owner is what made the window stick open', () => {
+    process.env.TZ = 'Europe/London'
+    const now = new Date('2026-11-15T10:00:00')
+    const clamped = daysUntilRace('2026-08-01', now)!
+    expect(clamped >= 0 && clamped <= 14, 'the defect, pinned').toBe(true)
+  })
+})
+
 describe('weeksUntilRaceSigned — the unclamped owner', () => {
   it('goes negative for a race behind the runner', () => {
     process.env.TZ = 'Europe/London'

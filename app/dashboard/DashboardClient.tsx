@@ -137,7 +137,7 @@ import NextGoalCard from '@/components/training/NextGoalCard'
 import { isReengagementWeek } from '@/lib/plan/maintenance'
 import { nextGoalOptions, achievementLine, parseTimeToSeconds, type FinishedRace, type NextGoalOption } from '@/lib/coaching/goalSequencing'
 import { composeSession } from '@/lib/plan/sessionComposer'
-import { formatDistance, formatDuration, sumRoundedDistance, resolveSessionMetric, daysUntilRace, formatRaceCountdown } from '@/lib/format'
+import { formatDistance, formatDuration, sumRoundedDistance, resolveSessionMetric, daysUntilRaceSigned, formatRaceCountdown } from '@/lib/format'
 import { backfillAndLoadSessionMetricOverrides, setSessionMetricOverride, clearSessionMetricOverride } from '@/lib/sessionMetricOverrides'
 import { didSessionHitZone, sessionHRBand, zoneForSessionType, zonesFromZoneString, hrBandForZoneString, zoneKeyForZoneString } from '@/lib/coaching/zoneRules'
 import { zoneDiscipline, zoneTimeSplit, weightOf, weekZoneSplitRows, weeklyEasyShares, easyShare } from '@/lib/coaching/weeklyZoneAggregate'
@@ -3001,7 +3001,7 @@ export default function DashboardClient() {
   // day before the owner sees it, and the owner cannot recover it.
   const raceDate = stagedView?.raceDate || plan?.meta?.race_date || null
   const raceName = stagedView?.raceName || plan?.meta?.race_name || ''
-  const daysToRace = daysUntilRace(raceDate, now) ?? 0
+  const daysToRace = daysUntilRaceSigned(raceDate, now) ?? 0
 
   const s: React.CSSProperties = {
     height: '100dvh',
@@ -5068,7 +5068,9 @@ function PlanScreen({ plan, stravaRuns, allOverrides, allCompletions, onOverride
   // day before the owner sees it, and the owner cannot recover it.
   const raceDate = staged?.raceDate || (plan as any)?.meta?.race_date || null
   const raceDateStr = raceDate ? formatDate(raceDate, 'medium') : null
-  const daysToRace = daysUntilRace(raceDate)
+  // ⚠️ SIGNED. The clamped owner returns 0 for a race already run, so
+  // `=== 0` rendered " · Race day" for ever after it.
+  const daysToRace = daysUntilRaceSigned(raceDate)
 
   // Derive done weeks count and deload week numbers from plan
   const doneWeeksCount = (() => {
@@ -5619,7 +5621,10 @@ function CoachScreen({ plan, currentWeek, runs, loadPicture = null, easyShareWee
   const isRaceWeek = (currentWeek as any)?.type === 'race'
 
   // ── R28 / R29 detection ─────────────────────────────────────────────────
-  const daysToRace = daysUntilRace(plan.meta.race_date) ?? -1
+  // ⚠️ SIGNED, and the clamped owner is why: `>= 0` never went false, so the
+  // race window never CLOSED — Coach POSTed /api/race-readiness on every mount
+  // and showed "Race day." indefinitely off the cached note.
+  const daysToRace = daysUntilRaceSigned(plan.meta.race_date) ?? -1
   const isRaceWindow = daysToRace >= 0 && daysToRace <= 14
 
   // Phase transition: compare current week's phase with previous week's phase

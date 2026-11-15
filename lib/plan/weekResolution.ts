@@ -33,6 +33,11 @@ import {
 // ⚠️ DELEGATES, never duplicates: `lib/dates.ts` is the declared owner (D-08) of
 // reading a calendar date, and a second copy agrees with the first by accident.
 export function parseLocalDate(dateStr: string): Date {
+  // ⚠️ STILL THROWS on a missing date. The old body did `dateStr.split('-')`,
+  // so `undefined` threw — and `TodayScreen.tsx` names that throw as the thing
+  // its render guard protects. Delegating silently turned it into an Invalid
+  // Date, which resolves to week 1.
+  if (typeof dateStr !== 'string') throw new TypeError('parseLocalDate: expected a YYYY-MM-DD string')
   return parseCalendarDate(dateStr)
 }
 

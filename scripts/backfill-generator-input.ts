@@ -63,6 +63,7 @@ for (const l of readFileSync('.env.local', 'utf8').split('\n')) {
 }
 import { validateSavedPlan, isBaseBuildPlan } from '@/lib/plan/validateStoredPlan'
 import { jsonEquivalent } from '@/lib/ops/canonicalJson'
+import { weeksUntilRaceSigned } from '@/lib/format'
 import { canModifyPlan } from '@/lib/plan/modifyPlan'
 import type { GeneratorInput, Plan } from '@/types/plan'
 
@@ -74,9 +75,11 @@ const REVERT = arg('revert')
 const RACE_DATE = arg('race-date')
 const SNAP_DIR = '.backups'
 
-/** The route's own expression, copied verbatim — not rewritten. */
+/** 🔴 THIS WAS A VERBATIM COPY OF THE ENGINE'S EXPRESSION AND SAID SO, and the
+ *  engine's changed underneath it (`PLAN-COUNTDOWN-SOURCE-01`) — the exact drift
+ *  the comment was trying to avoid. It reads the owner now. */
 const weeksToRace = (raceDate: string, atMs: number) =>
-  Math.round((new Date(raceDate).getTime() - atMs) / 6048e5)
+  weeksUntilRaceSigned(raceDate, new Date(atMs)) ?? 0
 
 /** The field set is PARSED FROM THE TYPE. A hand-listed set goes short the day
  *  someone widens `GeneratorInput`, and this stamp is read by a regeneration. */
