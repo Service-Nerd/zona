@@ -9,7 +9,7 @@
 // agree. See sumRoundedDistance below.
 
 import type { Session } from '@/types/plan'
-import { calendarDaysBetween } from '@/lib/dates'
+import { calendarDaysBetween, parseCalendarDate } from '@/lib/dates'
 
 export const KM_PER_MI = 1.609344
 
@@ -610,9 +610,14 @@ export function raceDistanceDisplayName(key: string): string {
 // by hand.
 
 /**
- * Whole days from `now` to race day, never negative. The single arithmetic
- * owner: `Math.ceil`, so the morning of race-eve reads "1 day" rather than
- * rounding down to "0" and tripping every `> 0` gate in the app.
+ * Whole CALENDAR days from `now` to race day, never negative.
+ *
+ * ⚠️ This said `Math.ceil` until 2026-11-15 — applied to a UTC-parsed date, so
+ * it read "Race day" from 16:00 the previous afternoon in LA. Days belong to
+ * `lib/dates.ts` (D-08).
+ *
+ * ⚠️ CLAMPED AT 0. A caller that must know the race is BEHIND the runner needs
+ * `weeksUntilRaceSigned` or `calendarDaysBetween`.
  *
  * Returns null for a missing or unparseable date — never 0, which would read as
  * "race day" on a plan that has no race at all.
@@ -641,8 +646,11 @@ export function raceDistanceDisplayName(key: string): string {
  * ⚠️ DISPLAY ONLY. `plan_start` and `race_date` are ISO strings and remain so
  * — they are storage keys and sort keys. Measured before building: **no
  * formatted date is ever parsed back, persisted, sent, sorted or compared**
- * (all 9 round-trip candidates are `new Date(iso).toLocale…`, one-way), and
- * **no test asserts a date format**.
+ * (all 9 round-trip candidates are `new Date(iso).toLocale…`, one-way).
+ *
+ * 🔴 This said *"no test asserts a date format"* — which is how the owner shipped
+ * rendering the WRONG DAY west of UTC for its whole life. Four zones asserted
+ * now (`PLAN-COUNTDOWN-SOURCE-01`).
  */
 export type DateStyle =
   /** `24 Apr` — the workhorse. Within the current season, year is noise. */
@@ -683,36 +691,46 @@ export function formatDate(
   style: DateStyle = 'short',
 ): string | null {
   if (date == null) return null
-  const d = date instanceof Date ? date : new Date(date)
+  // 🔴 `parseCalendarDate`, never `new Date(date)`: a bare `YYYY-MM-DD` parses as
+  // UTC midnight, which rendered the PREVIOUS day west of UTC on every date a
+  // runner reads. `PLAN-COUNTDOWN-SOURCE-01`.
+  const d = parseCalendarDate(date)
   if (Number.isNaN(d.getTime())) return null
   return d.toLocaleDateString('en-GB', DATE_STYLES[style])
 }
 
 export function daysUntilRace(raceDate: string | Date | null | undefined, now: Date = new Date()): number | null {
   if (!raceDate) return null
-  const d = raceDate instanceof Date ? raceDate : new Date(raceDate)
-  if (!Number.isFinite(d.getTime())) return null
+  if (!Number.isFinite(parseCalendarDate(raceDate).getTime())) return null
   // ⚠️ CALENDAR DAYS, NOT A MILLISECOND QUOTIENT — `lib/dates.ts` owns the
-  // arithmetic (D-08) and `raceDate` is a bare `YYYY-MM-DD` at every call site.
+  // arithmetic (D-08).
   return Math.max(0, calendarDaysBetween(now, raceDate))
 }
 
 /**
- * Whole weeks to race, for the surfaces that speak in weeks — the four AI
- * prompts, which ADR-015 Am. 1 makes display surfaces: a number handed to the
- * model is user-facing the moment the model repeats it, and three of the four
- * are *instructed* to state it.
+ * Signed whole weeks: NEGATIVE when the race is behind the runner.
  *
- * ⚠️ `Math.round` IS THE CONVENTION THE FOUR COPIES ALREADY USED and it is kept
- * deliberately, so this commit changes the FRAME and nothing else. Its
- * consequence, stated rather than discovered: a race **4 days** away is handed
- * to the model as **"1 week"**, and **10 days** also as "1 week". Whether a
- * coach should say that is a question about MEANING; it now has one line to
- * change instead of four.
+ * 🔴 THE CLAMP IS A KNOWN BUG CLASS, so it gets an owner rather than a
+ * `Math.max` per call site: `sessionFeedback.ts`'s own comment says a clamp
+ * *"made a finished race look imminent (the §73 in-flight-vs-done bug class)"*.
+ */
+export function weeksUntilRaceSigned(raceDate: string | Date | null | undefined, now: Date = new Date()): number | null {
+  if (!raceDate) return null
+  if (!Number.isFinite(parseCalendarDate(raceDate).getTime())) return null
+  return Math.round(calendarDaysBetween(now, raceDate) / 7)
+}
+
+/**
+ * Whole weeks to race, for the surfaces that speak in weeks — five AI prompts,
+ * which ADR-015 Am. 1 makes display surfaces.
+ *
+ * ⚠️ `Math.round` is the convention the copies already used, kept so the fix
+ * changed the FRAME only. Stated consequence: a race **4 days** away is handed to
+ * the model as **"1 week"**, and so is **10 days** — MEANING, one line now.
  */
 export function weeksUntilRace(raceDate: string | Date | null | undefined, now: Date = new Date()): number | null {
-  const days = daysUntilRace(raceDate, now)
-  return days === null ? null : Math.max(0, Math.round(days / 7))
+  const signed = weeksUntilRaceSigned(raceDate, now)
+  return signed === null ? null : Math.max(0, signed)
 }
 
 /**

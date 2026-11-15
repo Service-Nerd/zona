@@ -62,7 +62,7 @@ import { validateBaseBuildBlock, validateStagedRace } from './baseBuildValidate'
 import { generateGetRunningPlan, getRunningApplies } from './getRunningPlan'
 import { baseBuildOfferLine, baseBuildOfferTitle, baseBuildOfferWhy } from './baseBuildCopy'
 import { LongRunReadinessError } from './longRunReadiness'
-import { formatDistance, type DistanceUnits } from '@/lib/format'
+import { formatDistance, weeksUntilRaceSigned, type DistanceUnits } from '@/lib/format'
 import type { GeneratorInput, Plan } from '@/types/plan'
 
 /** Re-exported so the caller has ONE engine import for generate + validate. The
@@ -569,9 +569,7 @@ function mapRefusal(
       // acknowledged. Without it, 12 of 20 PrepTimeError events were unusable for
       // exactly the question `PREP-ACK-NO-WRITER-01` needed answering.
       reason: (err as { reason?: unknown }).reason ?? null,
-      weeks_to_race: input.race_date
-        ? Math.round((new Date(input.race_date).getTime() - Date.now()) / 6048e5)
-        : null,
+      weeks_to_race: weeksUntilRaceSigned(input.race_date),
       // §116 — WOULD an on-ramp have been offered, and how long?
       //
       // ⚠️ RECORDED EVEN WHEN THE FLAG IS OFF, deliberately: it is the only way the

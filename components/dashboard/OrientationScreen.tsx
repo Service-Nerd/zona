@@ -31,7 +31,9 @@ export default function OrientationScreen({ plan, firstName, zone2Ceiling, resti
   onDismiss: () => void
 }) {
   const raceName   = plan.meta.race_name || 'your race'
-  const raceDate   = plan.meta.race_date ? new Date(plan.meta.race_date) : null
+  // ⚠️ THE STRING, NOT `new Date(str)`: UTC-midnight parsing loses the calendar
+  // day before the owner sees it, and the owner cannot recover it.
+  const raceDate   = plan.meta.race_date || null
   const raceDateStr = raceDate ? formatDate(raceDate, 'long') : null
   const totalWeeks = plan.weeks.length
   const daysToRace = daysUntilRace(raceDate)

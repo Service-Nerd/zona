@@ -1,4 +1,5 @@
 import type { Plan, Session, Week } from '@/types/plan'
+import { parseCalendarDate } from '@/lib/dates'
 import {
   resolveEffectiveDay,
   type DayKey,
@@ -28,10 +29,11 @@ import {
  * rule engine. If a function needs one of those, it belongs in `lib/plan.ts`.
  */
 
-// Parse a YYYY-MM-DD string as local midnight — avoids UTC-offset week mismatches
+// Parse a YYYY-MM-DD string as local midnight — avoids UTC-offset week mismatches.
+// ⚠️ DELEGATES, never duplicates: `lib/dates.ts` is the declared owner (D-08) of
+// reading a calendar date, and a second copy agrees with the first by accident.
 export function parseLocalDate(dateStr: string): Date {
-  const [y, m, d] = dateStr.split('-').map(Number)
-  return new Date(y, m - 1, d)
+  return parseCalendarDate(dateStr)
 }
 
 export function getCurrentWeek(weeks: Plan['weeks']) {
@@ -85,11 +87,6 @@ export function getWeekIndexForDate(weeks: Plan['weeks'], date: Date): number {
     if (parseLocalDate((weeks[i] as any).date) <= target) return i
   }
   return 0
-}
-
-export function getWeeksToRace(raceDate: string) {
-  const ms = new Date(raceDate).getTime() - Date.now()
-  return Math.max(0, Math.round(ms / (1000 * 60 * 60 * 24 * 7)))
 }
 
 /**

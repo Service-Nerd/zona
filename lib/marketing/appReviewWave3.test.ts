@@ -43,7 +43,11 @@ describe('S5 — one time-to-race vocabulary, one owner', () => {
     expect(SHELL).toContain('daysUntilRace(')
   })
 
-  it('ceil, so race-eve morning is "1 day" and not a rounded-down zero', () => {
+  // ⚠️ RENAMED 2026-11-15: there is no `Math.ceil` any more, and this case's
+  // fixture is the reason the defect survived — it passes a `Date` carrying a
+  // TIME, which parses LOCAL, while every production caller hands the owner a
+  // bare `YYYY-MM-DD`. The string form is covered in `raceCountdownFrame.test.ts`.
+  it('whole calendar days, so race-eve morning is "1 day" and not a rounded-down zero', () => {
     const race = new Date('2027-04-24T00:00:00')
     const eveMorning = new Date('2027-04-23T08:00:00')
     expect(daysUntilRace(race, eveMorning)).toBe(1)

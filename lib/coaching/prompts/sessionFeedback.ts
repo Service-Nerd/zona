@@ -10,6 +10,7 @@ import { LIMITER } from '../constants'
 import { readBudgetInstruction } from '@/lib/coaching/readBudget'
 import { buildVoiceHeader } from './voiceRules'
 import { formatPace, formatPaceDelta, type DistanceUnits } from '@/lib/format'
+import { weeksUntilRaceSigned } from '@/lib/format'
 import { promptDistanceFormatters } from '@/lib/coaching/prompts/promptFormat'
 
 export interface SessionFeedbackPromptInput {
@@ -167,9 +168,7 @@ export function buildSessionFeedbackPrompt(input: SessionFeedbackPromptInput): s
   // week" — never "0 weeks away". The old Math.max(0, …) clamp made a finished
   // race look imminent (the §73 in-flight-vs-done bug class). Maintenance plans
   // wipe race_date to '' → null here; their recency comes from the block below.
-  const signedWeeksToRace = plan.meta.race_date
-    ? Math.round((new Date(plan.meta.race_date).getTime() - Date.now()) / MS_PER_WEEK)
-    : null
+  const signedWeeksToRace = weeksUntilRaceSigned(plan.meta.race_date)
   const raceTiming =
     signedWeeksToRace === null ? ''
     : signedWeeksToRace > 0    ? `, ${signedWeeksToRace} week${signedWeeksToRace === 1 ? '' : 's'} away`

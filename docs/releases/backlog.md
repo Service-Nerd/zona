@@ -18872,6 +18872,30 @@ sweep with two patterns, because the first missed two of the eight: it keyed on 
 as a SOURCE and the widget's local is called `race`. Falsified with two real previous lines,
 one per pattern).
 
+🔴 **AND THE REVIEW ROUND FOUND FIVE MORE, INCLUDING THAT THE HEADLINE DEFECT WAS STILL LIVE.**
+I had called the set complete twice. `/code-review` read the owner file rather than the diff:
+
+| Finding | What it was |
+|---|---|
+| **The fix did not reach Today or the Plan screen** | `DashboardClient.tsx:3000`, `:5065` and `OrientationScreen.tsx:34` did `new Date(plan.meta.race_date)` and handed the owner a **Date whose local calendar day was already the previous one**. The owner cannot recover it. **LA still read "Race day" from 16:00 the day before, through the new owner**, and my gate only ever exercised the string form |
+| **`formatDate` has the same defect, and it is wider** | `formatDate('2026-12-12')` → **"11 Dec 2026"** in New York and Los Angeles. ADR-015 makes this file the sole owner of every date a runner reads; **nothing tested it across zones** |
+| **The clamp made a guard unreachable** | `race-readiness` read `daysUntilRace`, which clamps at 0, so its own `daysToRace < 0` check could never fire: a finished-but-unarchived plan would have spent a Sonnet-deep call and persisted a note telling the model the race is today. **Introduced by my fix, caught before it shipped** |
+| **A fifth prompt site, deliberately SIGNED** | `sessionFeedback.ts:171` — `MS_PER_WEEK`, invisible to both sweep arms, and its own comment already names the clamp as a bug class. Routing it through the clamped owner would have reintroduced *" — run N weeks ago"* reading *", this week"* |
+| **Four more passed the sweep** | `weekResolution.getWeeksToRace` (**dead: 0 consumers, deleted with its barrel entry**), `baseBuildHandover.weeksBetween` (`Date.parse(...Z)` against a LOCAL midnight, disagreeing with the owner by a week at 13 days), `engine.ts`'s snake-case `weeks_to_race`, and `MeScreen.tsx:714`, which read a race as **PAST from the afternoon before it happened** |
+
+✅ **FOUR OWNERS NOW, each with its clamp stated:** `daysUntilRace` / `weeksUntilRace` clamp at 0;
+`weeksUntilRaceSigned` and `lib/dates.ts`'s `calendar*Between` do not. `parseCalendarDate` is
+exported from `lib/dates.ts` as the single owner of reading a calendar date, and
+`weekResolution.parseLocalDate` delegates to it instead of holding a third copy.
+📐 **Thirteen sites, four spellings of the divisor** (`86_400_000`, `6048e5`, `MS_PER_WEEK`,
+`24 * 60 * 60 * 1000`). The sweep has **four arms** — source name, destination name, `new Date(`
+on a race date, and `Date.parse` — because arms A and B between them missed five of the thirteen,
+and **two named exemptions with reasons** (`grantWindow.ts` is instant + duration;
+`packages/strength/validate.ts` is frame-consistent and cannot import the owner by design), each
+asserted to still MATCH so a stale exemption cannot sit there unnoticed.
+🔴 **`DATE-DST-01` CONSOLIDATED SIX COPIES OF THIS EXPRESSION IN 2026-09 AND MISSED TWO OF THESE.**
+Same sweep, second time, fourteen months of the same class.
+
 🔻 **ONE MEASURED FACT LEFT UNDECIDED, deliberately, because it is about MEANING and not
 arithmetic:** `Math.round(days / 7)` reaches `0` — the prompt's *"Race week."* — only in the
 final **3** days, so days 4–7 of race week are announced as *"1 week to race."* That is a

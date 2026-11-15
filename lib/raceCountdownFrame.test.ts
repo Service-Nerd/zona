@@ -20,7 +20,7 @@
 // ceil contract with `new Date('2027-04-24T00:00:00')` — a Date carrying a TIME,
 // which parses LOCAL. The one input shape no caller uses.
 import { describe, it, expect, afterAll } from 'vitest'
-import { daysUntilRace, weeksUntilRace } from '@/lib/format'
+import { daysUntilRace, weeksUntilRace, weeksUntilRaceSigned, formatDate } from '@/lib/format'
 import { calendarDaysBetween } from '@/lib/dates'
 
 const RACE = '2026-12-12'
@@ -93,6 +93,67 @@ describe('the race countdown reads the runner\'s calendar', () => {
     expect(daysUntilRace('not-a-date')).toBeNull()
     // A Date carrying a time still reads its LOCAL calendar day.
     expect(daysUntilRace(new Date('2026-12-12T23:00:00'), new Date('2026-12-11T01:00:00'))).toBe(1)
+  })
+})
+
+// 🔴 AND IT WAS NOT ONLY THE COUNTDOWN. The review round that followed the fix
+// read `lib/format.ts` rather than the diff and found `formatDate` doing the
+// same `new Date(string)`, which makes it **every date a runner reads**:
+//
+//   formatDate('2026-12-12')  →  "11 Dec 2026"   in New York and Los Angeles
+//
+// ADR-015 makes this file the sole owner of every date a runner reads, and
+// `DATE-OWNER-01`'s own comment in it says so. Nothing tested it across zones.
+describe('formatDate reads the calendar date, not UTC midnight', () => {
+  it('a bare YYYY-MM-DD renders the same calendar day in every zone', () => {
+    for (const tz of ZONES) {
+      process.env.TZ = tz
+      expect(formatDate('2026-12-12', 'medium'), tz).toBe('12 Dec 2026')
+      expect(formatDate('2027-04-25', 'medium'), tz).toBe('25 Apr 2027')
+    }
+  })
+
+  it('🔴 and the old expression DIVERGES, so this case reaches the defect', () => {
+    const before = (d: string) => new Date(d).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
+    const zonesHit = new Set<string>()
+    for (const tz of ZONES) {
+      process.env.TZ = tz
+      if (before('2026-12-12') !== formatDate('2026-12-12', 'medium')) zonesHit.add(tz)
+    }
+    expect(Array.from(zonesHit).sort()).toEqual(['America/Los_Angeles', 'America/New_York'])
+  })
+
+  it('a Date carrying a time, and the unusable cases, are unchanged', () => {
+    process.env.TZ = 'Europe/London'
+    expect(formatDate(new Date('2026-12-12T18:30:00'), 'medium')).toBe('12 Dec 2026')
+    expect(formatDate(null)).toBeNull()
+    expect(formatDate('not-a-date')).toBeNull()
+  })
+})
+
+// 🔴 THE CLAMP MADE A GUARD UNREACHABLE, and the review round caught it before
+// it shipped: `race-readiness` read `daysUntilRace`, which clamps at 0, so its
+// own `daysToRace < 0` check could never fire and a finished race would have
+// spent a Sonnet-deep call to be told the race is today.
+describe('weeksUntilRaceSigned — the unclamped owner', () => {
+  it('goes negative for a race behind the runner', () => {
+    process.env.TZ = 'Europe/London'
+    const now = new Date('2026-11-15T10:00:00')
+    expect(weeksUntilRaceSigned('2026-08-01', now)).toBeLessThan(0)
+    expect(weeksUntilRace('2026-08-01', now)).toBe(0)          // the clamped owner
+    expect(weeksUntilRaceSigned('2026-11-15', now)).toBe(0)
+    expect(weeksUntilRaceSigned('2026-12-12', now)).toBe(4)
+    expect(weeksUntilRaceSigned(null)).toBeNull()
+    expect(weeksUntilRaceSigned('not-a-date')).toBeNull()
+  })
+
+  it('and sessionFeedback\'s three-way ladder still reads the right rung', () => {
+    // ", N weeks away" / ", this week" / " — run N weeks ago"
+    process.env.TZ = 'Europe/London'
+    const at = (race: string) => weeksUntilRaceSigned(race, new Date('2026-11-15T19:00:00'))
+    expect(at('2026-11-29')).toBe(2)
+    expect(at('2026-11-16')).toBe(0)
+    expect(at('2026-11-01')).toBe(-2)
   })
 })
 

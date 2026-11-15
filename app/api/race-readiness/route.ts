@@ -12,7 +12,7 @@ import { ANTHROPIC_MODEL_DEEP } from '@/lib/ai/models'
 import { callAnthropic } from '@/lib/ai/callAnthropic'
 import type { Plan } from '@/types/plan'
 import { getUserDisplayPrefs } from '@/lib/userPrefs'
-import { daysUntilRace } from '@/lib/format'
+import { calendarDaysBetween } from '@/lib/dates'
 import { createUserScopedClient } from '@/lib/supabase/userScopedClient'
 
 // OPS-FN-DURATION-01 (2026-11-08) — this route can reach the model, so it states its own
@@ -69,10 +69,11 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Plan has no race_date' }, { status: 422 })
   }
 
-  // ADR-015 / S5 — `daysUntilRace` is the single owner. This route used to
-  // hand-roll the same arithmetic with `Math.round`, which is what made the
-  // 14-day gate a SECOND answer to a question the app already answers.
-  const daysToRace = daysUntilRace(race_date) ?? -1
+  // ADR-015 / S5 — the arithmetic belongs to `lib/dates.ts`; this route used to
+  // hand-roll it, making the 14-day gate a SECOND answer.
+  // 🔴 SIGNED, and the first cut was not: a clamped owner makes the
+  // `daysToRace < 0` guard below UNREACHABLE.
+  const daysToRace = calendarDaysBetween(new Date(), race_date)
 
   // Safety guard — only generate within the race window.
   if (daysToRace < 0 || daysToRace > 14) {

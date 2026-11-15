@@ -2997,7 +2997,9 @@ export default function DashboardClient() {
   // NO-RUNNER-TURNED-AWAY-01 — a STAGED base build is the runner's race plan, so Today counts down to THEIR race and
   // names it. Display only (`stagedDisplay`): `meta.race_name` / `race_date` stay as every base build has them.
   const stagedView = stagedDisplay(plan)
-  const raceDate = (stagedView?.raceDate || plan?.meta?.race_date) ? new Date(stagedView?.raceDate || plan!.meta.race_date) : null
+  // ⚠️ THE STRING, NOT `new Date(str)`: UTC-midnight parsing loses the calendar
+  // day before the owner sees it, and the owner cannot recover it.
+  const raceDate = stagedView?.raceDate || plan?.meta?.race_date || null
   const raceName = stagedView?.raceName || plan?.meta?.race_name || ''
   const daysToRace = daysUntilRace(raceDate, now) ?? 0
 
@@ -5062,7 +5064,9 @@ function PlanScreen({ plan, stravaRuns, allOverrides, allCompletions, onOverride
   const staged = stagedDisplay(plan)
   const stagedRace = stagedRaceOf(plan)
   const raceName = staged?.raceName || (plan as any)?.meta?.race_name || ''
-  const raceDate = (staged?.raceDate || (plan as any)?.meta?.race_date) ? new Date(staged?.raceDate || (plan as any).meta.race_date) : null
+  // ⚠️ THE STRING, NOT `new Date(str)`: UTC-midnight parsing loses the calendar
+  // day before the owner sees it, and the owner cannot recover it.
+  const raceDate = staged?.raceDate || (plan as any)?.meta?.race_date || null
   const raceDateStr = raceDate ? formatDate(raceDate, 'medium') : null
   const daysToRace = daysUntilRace(raceDate)
 

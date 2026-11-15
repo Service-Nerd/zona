@@ -8,6 +8,7 @@
 // ⚠️ Bodies UNCHANGED. Edit in a separate commit so the move stays a move.
 
 import { hueText } from '@/lib/ui/hueText'
+import { calendarDaysBetween } from '@/lib/dates'
 import { EmptyState } from '@/components/shared/EmptyState'
 import AIMark from '@/components/shared/AIMark'
 import { getDeviceToken } from '@/components/dashboard/pushDevice'
@@ -711,7 +712,9 @@ function PlanHistoryScreen({ onBack }: { onBack: () => void }) {
           const raceDate  = formatRaceDate(p.race_date)
           let subtitle: string
           if (p.isCurrent) {
-            const raceInPast = p.race_date ? new Date(p.race_date).getTime() < Date.now() : false
+            // ⚠️ CALENDAR days, not an instant: a UTC-parsed race date read as PAST
+            // from the afternoon before it happened (`PLAN-COUNTDOWN-SOURCE-01`).
+            const raceInPast = p.race_date ? calendarDaysBetween(new Date(), p.race_date) < 0 : false
             subtitle = [raceDate, raceInPast ? 'race done' : 'in progress'].filter(Boolean).join(' · ')
           } else {
             const archived = relativeTime(p.archived_at)

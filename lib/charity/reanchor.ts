@@ -12,6 +12,7 @@
 
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { reanchorGrantExpiry } from './grantWindow'
+import { parseCalendarDate } from '@/lib/dates'
 
 export async function reanchorCharityGrant(
   userId: string,
@@ -21,7 +22,9 @@ export async function reanchorCharityGrant(
   try {
     if (!raceDate) return
 
-    const parsed = new Date(raceDate)
+    // ⚠️ `parseCalendarDate`: UTC-midnight parsing anchored the grant expiry
+    // hours early west of UTC (`PLAN-COUNTDOWN-SOURCE-01`).
+    const parsed = parseCalendarDate(raceDate)
     if (Number.isNaN(parsed.getTime())) return
 
     const { data: grant } = await supabase

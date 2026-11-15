@@ -35,7 +35,7 @@ const DATE_ONLY = /^\d{4}-\d{2}-\d{2}$/
  * `new Date(string)` — that parses date-only strings as UTC midnight, which in
  * any negative-offset zone reads back as the PREVIOUS calendar day.
  */
-function toLocalDate(v: DateLike): Date {
+export function parseCalendarDate(v: DateLike): Date {
   if (v instanceof Date) return v
   if (DATE_ONLY.test(v)) {
     const [y, m, d] = v.split('-').map(Number)
@@ -46,8 +46,8 @@ function toLocalDate(v: DateLike): Date {
 
 /** Whole calendar days from `start` to `end`. Negative when `end` precedes `start`. */
 export function calendarDaysBetween(start: DateLike, end: DateLike): number {
-  const a = toLocalDate(start)
-  const b = toLocalDate(end)
+  const a = parseCalendarDate(start)
+  const b = parseCalendarDate(end)
   return Math.round(
     (Date.UTC(b.getFullYear(), b.getMonth(), b.getDate())
       - Date.UTC(a.getFullYear(), a.getMonth(), a.getDate())) / 86_400_000,

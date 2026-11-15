@@ -350,7 +350,6 @@ export {
   getCurrentWeek,
   getCurrentWeekIndex,
   getWeekIndexForDate,
-  getWeeksToRace,
   isDateWithinWeek,
   isDatePastWeek,
   findWeekByN,

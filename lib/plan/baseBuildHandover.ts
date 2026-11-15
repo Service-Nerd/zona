@@ -39,6 +39,7 @@ import type { Plan, GeneratorInput } from '@/types/plan'
 import { isBaseBuildPlan } from './validateStoredPlan'
 import { isDatePastWeek } from './weekResolution'
 import { raceLabelFor } from './raceLabel'
+import { calendarWeeksBetween, parseCalendarDate } from '@/lib/dates'
 import { raceDistanceKey } from './generationConfig'
 import { stagedRaceOf } from './stagedRacePlan'
 
@@ -110,10 +111,11 @@ export function handoverRaceName(input: GeneratorInput): string {
 
 /** Whole weeks from `now` to the race, or null when the date is unusable. */
 export function weeksBetween(now: Date, raceDate: string): number | null {
-  const t = Date.parse(`${raceDate}T00:00:00Z`)
-  if (!Number.isFinite(t)) return null
-  const d = new Date(now); d.setHours(0, 0, 0, 0)
-  return Math.floor((t - d.getTime()) / 6048e5)
+  // ⚠️ `calendarWeeksBetween`, not a millisecond quotient: this differenced a
+  // UTC-parsed date against a LOCAL midnight, so it disagreed with the countdown
+  // owner by a week at 13 days. DATE-DST-01 missed this copy in 2026-09.
+  if (!Number.isFinite(parseCalendarDate(raceDate).getTime())) return null
+  return calendarWeeksBetween(now, raceDate)
 }
 
 /**
