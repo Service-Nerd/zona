@@ -199,3 +199,11 @@ which re-runs the load effect. No prop change.
 returning its verdict would still compile and `PreferencesScreen` would silently never show an
 error again — the same class as the type signature behind `EFFORT-GOVERNED-HR-DISPLAY-01`.
 `onSaveName: (name) => Promise<boolean>` was already the precedent in this component.
+
+
+## "Race in the past" is a CALENDAR comparison (PLAN-COUNTDOWN-SOURCE-01, 2026-11-15)
+
+The plan-history rows read `raceInPast` from `calendarDaysBetween(new Date(), p.race_date) < 0`,
+never `new Date(p.race_date).getTime() < Date.now()`. 🔴 **That instant comparison is what it used
+to be, and `new Date('2026-12-12')` is 16:00 on the 11th in Los Angeles — so a race read as PAST
+from the afternoon before it happened.** Swept tree-wide by `lib/raceCountdownOwner.test.ts`.

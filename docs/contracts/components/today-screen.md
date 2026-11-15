@@ -283,3 +283,12 @@ prescribedHrBand` owns the precedence. No prop interface changed.
 
 Guarded by `components/dashboard/sessionHrDisplay.test.ts`, whose call-site arm fails if any
 caller here narrows the session back down to its type.
+
+
+## `parseLocalDate` must FAIL LOUD here (PLAN-COUNTDOWN-SOURCE-01, 2026-11-15)
+
+`weekStartDate` calls `parseLocalDate((currentWeek as any).date)`, and the render guard above it
+relies on that call THROWING when the week is missing. ⚠️ **It used to throw incidentally, on
+`.split`**; when it was changed to delegate to `lib/dates.ts`'s `parseCalendarDate` the throw
+briefly became an Invalid Date, which resolves to **week 1**. It now throws an explicit
+`TypeError`, and the comment in this component names the mechanism rather than the old accident.
