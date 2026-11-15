@@ -6,6 +6,15 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-11-15 — ROUND-WARNS-UNRULED-01 · I re-derived two numbers out of three and published the third
+**Shipped:** no code. The warn half of the coaching measurement protocol was read and ruled for the first time: 76 firings, 10 codes, 28 cases, nine warns doing their job and one plan we would not hand over.
+**Dev learning:** the founder asked "are documents up to date?" and both gates said yes — `backlog:verify` exit 0, `audit-docs.sh` ALL CLEAN. One number in six records was wrong. I had regenerated the packet, re-derived the firings (76) and the distinct codes (10) from it, and carried "25 cases" forward from the item's 11-09 text without ever counting the rows. There are 28. CLAUDE.md already says ALL CLEAN proves a record EXISTS and never that it is TRUE — it says so twice, both times written after the fact. This is the first arm that actually checks one: the write-back's case count against the validation summary in the same tracked file.
+**Product/creator learning:** the gate found a second instance within a minute, from 2026-10-11 — "0 error violations in every one of the 29 cases" sitting beside a table with 28 rows. Two of these in a month, in the record that tells the board how much work it is looking at.
+**AI-building learning:** my first cut of the arm grepped the whole file for `[0-9]+ cases` and read "066 cases" out of "6,066 cases", a `verify:parity` figure, flagging two correct old packets. Bound the region, reject the digit-adjacent match. That is the third time in two days I have written a guard that reads prose as data, and the repo has a name for it (`HOOK-RGBA-COMMENTS-01`). Knowing the failure class does not stop you writing it; only falsifying against real files does.
+**The honest bit:** I corrected the 11-09 figure in exactly one place and left it, flagged. Its packet has been regenerated since, the tracked copy has no tally at all, and replacing an unverifiable number with a guess is worse than leaving a known-doubtful one with a note on it. That was a harder call than the fix.
+**Hook material:** "Are the documents up to date?" Both gates: yes. One number in six records: wrong. The gate that would have caught it did not exist until the question was asked.
+**Postable?:** yes
+
 ## 2026-11-15 — ENGINE-BASEBUILD-UNVALIDATED-01 · the guard that could only fire on correct behaviour
 **Shipped:** `runEngine`'s base-build branch now validates the block it returns, and the invariant that made that impossible — a week-1 absolute step read as a per-week cap — is a ratio.
 **Dev learning:** `1.5 / 0.10 = 15`. That is the whole bug. §2's ramp is 10% a week and §2 Amendment 2's per-run step was an absolute 1.5 km, so above a 15 km run a *compliant* plan breaches the step every week forever. I only found it because I stopped asking "are these violations real?" and asked "what do they have in common?" — `prevLongest > 15 km` in 28,512 of 28,512, every step 9.7–10.3%. An invariant that fires only on correctness is worse than no invariant, because it stands where a real guard belongs and nobody reads past it.
