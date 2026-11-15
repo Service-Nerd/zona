@@ -32,6 +32,7 @@ import { buildRaceNarrativeBlock } from '../raceNarrative'
 import { LIMITER } from '../constants'
 import { buildVoiceHeader } from './voiceRules'
 import { formatPace, formatPaceDelta, type DistanceUnits } from '@/lib/format'
+import { weeksUntilRace } from '@/lib/format'
 import { promptDistanceFormatters } from '@/lib/coaching/prompts/promptFormat'
 import type { ReframeTier } from '../reframeTier'
 
@@ -218,9 +219,7 @@ ULTRA-DISTANCE EFFORT (${fmtDist(actualDistKm, 0)}) — for sentence 2 (CAUSE), 
     : ''
 
   // Race anchor — drives sentence 4
-  const weeksToRace = plan.meta.race_date
-    ? Math.max(0, Math.round((new Date(plan.meta.race_date).getTime() - Date.now()) / (7 * 24 * 60 * 60 * 1000)))
-    : null
+  const weeksToRace = weeksUntilRace(plan.meta.race_date)
   const raceContext = plan.meta.race_name
     ? `${plan.meta.race_name}${plan.meta.race_distance_km ? ` (${fmtRace(plan.meta.race_distance_km)})` : ''}${weeksToRace !== null ? `, ${weeksToRace} weeks away` : ''}`
     : null

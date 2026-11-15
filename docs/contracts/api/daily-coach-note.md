@@ -40,6 +40,8 @@ training" (§126). Gate: `lib/plan/doubleConsumers.test.ts`.
 - On a cache miss or `force=true`, generates via Claude (claude-haiku), upserts the row, returns the note.
 - Silent fallback: if AI generation fails, returns `null` note rather than erroring. Client handles `null` gracefully (no note shown).
 
+⚠️ **The time-to-race figure handed to the model comes from `weeksUntilRace` in `lib/format.ts`** (ADR-015's owner; ADR-015 Am. 1 makes a number handed to the model a display surface). Until 2026-11-15 this route hand-rolled it from `Date.now()`, so the figure — and in `plan-weekly-note` the *"Race week."* branch that keys on `=== 0` — **moved with the hour the note was generated**: a race 4 days out read *"1 week to race."* at 08:00 and *"Race week."* at 19:00 (`PLAN-COUNTDOWN-SOURCE-01`).
+
 ## Notes
 
 - `date` should be the user's local calendar date, not UTC — pass `new Date().toLocaleDateString('en-CA')` from the client.

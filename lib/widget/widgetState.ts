@@ -8,7 +8,8 @@
 // medium widgets actually render.
 
 import type { Plan } from '@/types/plan'
-import { getCurrentWeekIndex, parseLocalDate } from '@/lib/plan'
+import { getCurrentWeekIndex } from '@/lib/plan'
+import { daysUntilRace } from '@/lib/format'
 import { resolveEffectiveDay, soleSession, type SessionOverride } from '@/lib/plan/effectiveSessions'
 
 export interface WidgetState {
@@ -51,13 +52,10 @@ export function buildWidgetState(input: {
   const raceName = (plan.meta as any)?.race_name ?? null
   const raceDate = (plan.meta as any)?.race_date ?? null
 
-  let daysToRace: number | null = null
-  if (raceDate) {
-    const race = parseLocalDate(raceDate)
-    const today = new Date(now); today.setHours(0, 0, 0, 0)
-    race.setHours(0, 0, 0, 0)
-    daysToRace = Math.max(0, Math.round((race.getTime() - today.getTime()) / 86_400_000))
-  }
+  // ⚠️ The widget and the app must not be able to disagree: the home screen and
+  // Today are two surfaces the runner reads in the same glance, which is exactly
+  // what S5 ruled on. One owner (ADR-015).
+  const daysToRace = daysUntilRace(raceDate, now)
 
   // Find today's effective session (overrides applied).
   const weekIdx = getCurrentWeekIndex(plan.weeks)

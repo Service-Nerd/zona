@@ -1,4 +1,5 @@
 import { isLongRun, isHardEffort } from '@/lib/plan/sessionRole'
+import { weeksUntilRace } from '@/lib/format'
 import type { Plan, Week } from '@/types/plan'
 
 // ── PLAN-BASED COACHING ───────────────────────────────────────────────────
@@ -24,7 +25,10 @@ export interface WeekVoiceContext {
   phase?: string
   hasQuality: boolean
   hasLong: boolean
-  weeksToRace: number
+  /** ⚠️ NULL when the plan has no race date. It used to be `number` and the
+   *  expression yielded **NaN** there — silent at the one consumer, but an
+   *  absence written as a value. */
+  weeksToRace: number | null
 }
 
 export function buildWeekVoiceContext(currentWeek: Week, plan: Plan): WeekVoiceContext {
@@ -33,10 +37,7 @@ export function buildWeekVoiceContext(currentWeek: Week, plan: Plan): WeekVoiceC
     phase: (currentWeek as any).phase as string | undefined,
     hasQuality: sessions.some(s => isHardEffort(s)),
     hasLong: sessions.some(s => s && isLongRun(s)),
-    weeksToRace: Math.max(
-      0,
-      Math.round((new Date(plan.meta.race_date).getTime() - Date.now()) / (7 * 24 * 60 * 60 * 1000))
-    ),
+    weeksToRace: weeksUntilRace(plan.meta.race_date),
   }
 }
 
@@ -64,7 +65,7 @@ export function getWeekVoiceItems(ctx: WeekVoiceContext, max = 3): string[] {
   }
   if (ctx.phase === 'base') items.push("Base phase: volume over intensity. The fitness accrues slowly. That's fine.")
   if (ctx.phase === 'taper') items.push("Resist adding miles. Your goal is to arrive fresh, not to cram.")
-  if (ctx.weeksToRace <= 4 && ctx.weeksToRace > 0) items.push(`${ctx.weeksToRace} week${ctx.weeksToRace !== 1 ? 's' : ''} out. Stay disciplined.`)
+  if (ctx.weeksToRace !== null && ctx.weeksToRace <= 4 && ctx.weeksToRace > 0) items.push(`${ctx.weeksToRace} week${ctx.weeksToRace !== 1 ? 's' : ''} out. Stay disciplined.`)
   return items.slice(0, max)
 }
 

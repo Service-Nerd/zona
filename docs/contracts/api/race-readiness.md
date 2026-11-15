@@ -40,6 +40,8 @@ Keyed on `(user_id, race_date)` via the `race_readiness_notes` primary key. Subs
 
 Only generated when `daysToRace ∈ [0, 14]`. The route enforces this — calls outside the window return 422. CoachScreen enforces the same condition client-side before calling.
 
+⚠️ **"The same condition" was literally two different computations until 2026-11-15** (`PLAN-COUNTDOWN-SOURCE-01`): the client used `daysUntilRace` (ceil from `now`) and this route hand-rolled `Math.round` from UTC midnight. Both now call `daysUntilRace` in `lib/format.ts`, so the sentence above is true of one function rather than of two that happened to agree on a UTC server.
+
 ## Caching / display window
 
 - Stored in `race_readiness_notes` table. One row per `(user_id, race_date)`.

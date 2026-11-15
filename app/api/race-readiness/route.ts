@@ -12,6 +12,7 @@ import { ANTHROPIC_MODEL_DEEP } from '@/lib/ai/models'
 import { callAnthropic } from '@/lib/ai/callAnthropic'
 import type { Plan } from '@/types/plan'
 import { getUserDisplayPrefs } from '@/lib/userPrefs'
+import { daysUntilRace } from '@/lib/format'
 import { createUserScopedClient } from '@/lib/supabase/userScopedClient'
 
 // OPS-FN-DURATION-01 (2026-11-08) — this route can reach the model, so it states its own
@@ -68,12 +69,10 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Plan has no race_date' }, { status: 422 })
   }
 
-  // Compute daysToRace from today.
-  const today = new Date()
-  today.setHours(0, 0, 0, 0)
-  const raceDay = new Date(race_date)
-  raceDay.setHours(0, 0, 0, 0)
-  const daysToRace = Math.round((raceDay.getTime() - today.getTime()) / 86_400_000)
+  // ADR-015 / S5 — `daysUntilRace` is the single owner. This route used to
+  // hand-roll the same arithmetic with `Math.round`, which is what made the
+  // 14-day gate a SECOND answer to a question the app already answers.
+  const daysToRace = daysUntilRace(race_date) ?? -1
 
   // Safety guard — only generate within the race window.
   if (daysToRace < 0 || daysToRace > 14) {
@@ -123,7 +122,11 @@ export async function POST(req: NextRequest) {
 
   // ── Derive current phase from plan ─────────────────────────────────────
   // Find the week whose date range contains today, then read its phase.
-  const todayIso = today.toISOString().slice(0, 10)
+  // ⚠️ LOCAL y/m/d, not `toISOString()` on a midnight-local Date — that reads
+  // back as the PREVIOUS calendar day in any negative-offset zone
+  // (`lib/dates.ts` header). A no-op on the UTC server; correct anywhere.
+  const nowLocal = new Date()
+  const todayIso = `${nowLocal.getFullYear()}-${String(nowLocal.getMonth() + 1).padStart(2, '0')}-${String(nowLocal.getDate()).padStart(2, '0')}`
   let currentPhase: string | null = null
   for (let i = 0; i < plan.weeks.length; i++) {
     const w = plan.weeks[i]

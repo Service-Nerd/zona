@@ -6,7 +6,7 @@ import { authedFetch } from '@/lib/supabase/authedFetch'
 import { formatDuration, hrColour, paceAtHR, getRuns } from '@/lib/strava'
 // FMT-03 — pace comes from the canonical owner and converts for the reader.
 // `lib/strava.ts` had a fourth km-only copy of the rule; it is gone.
-import { formatDistance, formatPace } from '@/lib/format'
+import { formatDistance, formatPace, weeksUntilRace } from '@/lib/format'
 import type { StravaActivity } from '@/types/plan'
 import { formatDate } from '@/lib/format'
 import Button from '@/components/ui/Button'
@@ -56,7 +56,7 @@ export default function StravaPanel({ preloadedRuns, preloadedConnected, preload
   async function analyseActivity(run: StravaActivity) {
     setAnalysis(null)
     const z2 = zone2Ceiling ?? 145
-    const weeksToRace = raceDate ? Math.max(0, Math.round((new Date(raceDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24 * 7))) : null
+    const weeksToRace = weeksUntilRace(raceDate ?? null)
     const raceDesc = [raceName || '', raceDistanceKm ? `${raceDistanceKm}km` : ''].filter(Boolean).join(' ')
     const raceContext = raceDate
       ? `${raceDesc || 'their target race'} on ${formatDate(raceDate, 'long')}${weeksToRace !== null ? ` (${weeksToRace} weeks away)` : ''}`

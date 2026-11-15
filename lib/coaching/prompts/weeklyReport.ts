@@ -2,6 +2,7 @@ import type { Plan } from '@/types/plan'
 import type { InsightPriority, SpotlightSession, WeeklyReportData } from '../weeklyReport'
 import { buildVoiceHeader } from './voiceRules'
 import { type DistanceUnits } from '@/lib/format'
+import { weeksUntilRace } from '@/lib/format'
 import { promptDistanceFormatters } from '@/lib/coaching/prompts/promptFormat'
 
 // Few-shot examples — Zonna voice for each insight type
@@ -99,9 +100,7 @@ export function buildWeeklyReportPrompt(
   raceKmPlanned = 0,
 ): string {
   const { fmtDist, fmtPlanned, fmtRace } = promptDistanceFormatters(units)
-  const weeksToRace = plan.meta.race_date
-    ? Math.max(0, Math.round((new Date(plan.meta.race_date).getTime() - Date.now()) / (7 * 24 * 60 * 60 * 1000)))
-    : null
+  const weeksToRace = weeksUntilRace(plan.meta.race_date)
   const raceName = plan.meta.race_name ?? 'target race'
   const raceContext = raceDebrief
     ? `${raceName}${raceDebrief.distanceKm ? ` (${fmtRace(raceDebrief.distanceKm)})` : ''} — run on ${raceDebrief.dayName}, now complete`

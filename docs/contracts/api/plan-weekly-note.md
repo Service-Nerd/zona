@@ -70,6 +70,8 @@ Null on week 1, or after cache invalidation cleared the row.
 ## Data used by the route
 
 - `plans` — current plan; resolves the week via `findWeekByN(plan.weeks, week_n)` (by `week.n`, never `plan.weeks[week_n - 1]` — out of bounds on a maintenance plan) for session shape, `meta.race_date` / `meta.race_name` / `meta.race_distance` for race countdown
+
+⚠️ **The time-to-race figure handed to the model comes from `weeksUntilRace` in `lib/format.ts`** (ADR-015's owner; ADR-015 Am. 1 makes a number handed to the model a display surface). Until 2026-11-15 this route hand-rolled it from `Date.now()`, so the figure — and in `plan-weekly-note` the *"Race week."* branch that keys on `=== 0` — **moved with the hour the note was generated**: a race 4 days out read *"1 week to race."* at 08:00 and *"Race week."* at 19:00 (`PLAN-COUNTDOWN-SOURCE-01`).
 - `user_settings` — `first_name` for the single-mention voice rule
 - `plan_weekly_notes` — most recent prior week's note for continuity
 

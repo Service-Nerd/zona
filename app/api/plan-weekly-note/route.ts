@@ -14,6 +14,7 @@ import { ANTHROPIC_MODEL } from '@/lib/ai/models'
 import { callAnthropic } from '@/lib/ai/callAnthropic'
 import type { Plan } from '@/types/plan'
 import { getUserDisplayPrefs } from '@/lib/userPrefs'
+import { weeksUntilRace } from '@/lib/format'
 
 // OPS-FN-DURATION-01 (2026-11-08) — this route can reach the model, so it states its own
 // ceiling instead of inheriting a platform default that has changed twice (60 s Hobby /
@@ -143,11 +144,12 @@ export async function POST(req: NextRequest) {
   const raceDateStr = (plan as any)?.meta?.race_date as string | undefined
   const raceName    = (plan as any)?.meta?.race_name as string | undefined ?? null
   const raceDistance = (plan as any)?.meta?.race_distance as string | undefined ?? null
-  let weeksToRace: number | null = null
-  if (raceDateStr) {
-    const ms = new Date(raceDateStr).getTime() - Date.now()
-    weeksToRace = Math.max(0, Math.round(ms / (1000 * 60 * 60 * 24 * 7)))
-  }
+  // 🔴 THIS USED TO DEPEND ON THE TIME OF DAY THE NOTE WAS GENERATED. A race
+  // 4 days out gave `0` in the evening and `1` in the morning, and the prompt
+  // branches on `=== 0` to say *"Race week."* — so the coaching FRAME moved with
+  // the clock. One owner, whole calendar days (ADR-015 Am. 1: a number handed to
+  // the model is user-facing).
+  const weeksToRace = weeksUntilRace(raceDateStr ?? null)
 
   // Session list — skip rest days; preserve plan-week day order (Mon–Sun).
   const sessionsBlock = DAYS_OF_WEEK.flatMap(day => {

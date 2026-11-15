@@ -4759,9 +4759,11 @@ annotate the **peak** left the suite green. That is the recorded `tierResolution
 ```ts
 import { daysUntilRace, formatRaceCountdown } from '@/lib/format'
 
-const days = daysUntilRace(plan.meta.race_date)          // ceil, ≥ 0, null if absent
+const days = daysUntilRace(plan.meta.race_date)          // whole calendar days, >= 0, null if absent
 formatRaceCountdown(days)                                 // "30 weeks, 4 days"
 formatRaceCountdown(days, { suffix: 'out' })              // "30 weeks, 4 days out"
+
+weeksUntilRace(plan.meta.race_date)                       // whole weeks, for the surfaces that speak in weeks
 ```
 
 | | |
@@ -4769,7 +4771,21 @@ formatRaceCountdown(days, { suffix: 'out' })              // "30 weeks, 4 days o
 | **Unit** | Weeks, because plans are weekly and raw days are harder to scale mentally. The unit flips to days inside the final week, where "5 days" beats "0 weeks, 5 days" |
 | **Only permitted variation** | `suffix`. It varies PLACEMENT, never the number or the unit |
 | **`≤ 0`** | Returns `''`. The caller decides what race day and the past look like — the formatter does not invent a word for them |
-| **Arithmetic** | `daysUntilRace` only. `Math.ceil`, so the morning of race-eve reads "1 day" instead of rounding down to 0 and tripping every `> 0` gate |
+| **Arithmetic** | `daysUntilRace` only, and it defers to `lib/dates.ts` (D-08, the single owner of whole-day arithmetic). Race-eve morning reads "1 day" all day, which is what `Math.ceil` used to approximate |
+| **Weeks** | `weeksUntilRace` only, for the surfaces that speak in weeks: the four AI prompts, `weekVoice` and the Strava panel. 🔴 **All eight of them hand-rolled it until 2026-11-15** (`PLAN-COUNTDOWN-SOURCE-01`) |
+
+🔴 **AND THE ROW ABOVE SAID `Math.ceil` FOR SEVEN WEEKS, WHICH WAS TRUE OF THE MECHANISM AND
+WRONG ABOUT THE RESULT.** `Math.ceil` was applied to a millisecond quotient against
+`new Date('YYYY-MM-DD')`, which parses as **UTC midnight** — so the countdown measured to
+16:00 the previous afternoon in Los Angeles and 11:00 the *next* day in Sydney. Measured over
+four zones × five wall-clock probes: **7 of 20 wrong, in both directions.** Los Angeles read
+*"Race day"* from **16:00 the day before**; Sydney read *"1 day"* at **08:00 on race day**.
+`lib/dates.ts` was written the day BEFORE this owner, is declared the single owner of exactly
+this arithmetic, and its header names this exact parsing trap. **The countdown owner did not
+call it, and the gate written to protect S5 could not see it:** its population is two string
+constants, and its only arithmetic fixture passed a `Date` carrying a TIME — the one input
+shape no caller uses. Held now by `lib/raceCountdownFrame.test.ts` (8 cases) and swept
+tree-wide by `lib/raceCountdownOwner.test.ts` (4 cases, two patterns, both falsified).
 
 **Why it is a rule.** The board measured **three vocabularies for one fact** on screens a
 runner sees in the same session: *"214 days to go"* (Plan), *"30 weeks 4 days out"* (Today),

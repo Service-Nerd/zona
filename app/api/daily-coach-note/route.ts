@@ -13,6 +13,7 @@ import { achievementLine } from '@/lib/coaching/goalSequencing'
 import { zoneForSessionType } from '@/lib/coaching/zoneRules'
 import { isVerifiedCompletion } from '@/lib/coaching/completionVerification'
 import { getCurrentWeekIndex, isDateWithinWeek, isPlanComplete, parseLocalDate, readPlanJson } from '@/lib/plan'
+import { weeksUntilRace } from '@/lib/format'
 import { resolveEffectiveDay, slotForOriginalDay, type SessionOverride, SESSION_OVERRIDE_COLUMNS } from '@/lib/plan/effectiveSessions'
 import type { Plan } from '@/types/plan'
 import { ANTHROPIC_MODEL } from '@/lib/ai/models'
@@ -275,9 +276,7 @@ export async function GET(req: NextRequest) {
   }
 
   // Race + plan context
-  const weeksToRace = plan.meta.race_date
-    ? Math.max(0, Math.round((new Date(plan.meta.race_date).getTime() - Date.now()) / (7 * 24 * 60 * 60 * 1000)))
-    : null
+  const weeksToRace = weeksUntilRace(plan.meta.race_date)
 
   // §71.2 — when the plan is over and the last session was the goal race, lead
   // the debrief with a deterministic achievement acknowledgement rather than a

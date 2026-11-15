@@ -9,6 +9,7 @@
 // agree. See sumRoundedDistance below.
 
 import type { Session } from '@/types/plan'
+import { calendarDaysBetween } from '@/lib/dates'
 
 export const KM_PER_MI = 1.609344
 
@@ -608,8 +609,6 @@ export function raceDistanceDisplayName(key: string): string {
 // the marketing device, whose own comment said it "mirrors formatRaceCountdown"
 // by hand.
 
-const MS_PER_DAY = 86_400_000
-
 /**
  * Whole days from `now` to race day, never negative. The single arithmetic
  * owner: `Math.ceil`, so the morning of race-eve reads "1 day" rather than
@@ -693,7 +692,27 @@ export function daysUntilRace(raceDate: string | Date | null | undefined, now: D
   if (!raceDate) return null
   const d = raceDate instanceof Date ? raceDate : new Date(raceDate)
   if (!Number.isFinite(d.getTime())) return null
-  return Math.max(0, Math.ceil((d.getTime() - now.getTime()) / MS_PER_DAY))
+  // ⚠️ CALENDAR DAYS, NOT A MILLISECOND QUOTIENT — `lib/dates.ts` owns the
+  // arithmetic (D-08) and `raceDate` is a bare `YYYY-MM-DD` at every call site.
+  return Math.max(0, calendarDaysBetween(now, raceDate))
+}
+
+/**
+ * Whole weeks to race, for the surfaces that speak in weeks — the four AI
+ * prompts, which ADR-015 Am. 1 makes display surfaces: a number handed to the
+ * model is user-facing the moment the model repeats it, and three of the four
+ * are *instructed* to state it.
+ *
+ * ⚠️ `Math.round` IS THE CONVENTION THE FOUR COPIES ALREADY USED and it is kept
+ * deliberately, so this commit changes the FRAME and nothing else. Its
+ * consequence, stated rather than discovered: a race **4 days** away is handed
+ * to the model as **"1 week"**, and **10 days** also as "1 week". Whether a
+ * coach should say that is a question about MEANING; it now has one line to
+ * change instead of four.
+ */
+export function weeksUntilRace(raceDate: string | Date | null | undefined, now: Date = new Date()): number | null {
+  const days = daysUntilRace(raceDate, now)
+  return days === null ? null : Math.max(0, Math.round(days / 7))
 }
 
 /**

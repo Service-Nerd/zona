@@ -18813,20 +18813,68 @@ arithmetic was right throughout; its **purpose** was not. `BEHIND_VERDICT_MIN_SE
 `behindVerdict.test.ts` is exhaustive over the domain, because an example-based test would have
 passed the whole time.
 
-### 🔧 `PLAN-COUNTDOWN-SOURCE-01` — the days-to-race figure needs checking against the founder's screen ⚙️ **NO BOARD** (open question — a board only if it is confirmed as a defect)
-**Board: none until it is confirmed.** Filed as an OPEN QUESTION, not a diagnosis.
+### ✅ `PLAN-COUNTDOWN-SOURCE-01` — **SHIPPED 2026-11-15. THE PREMISE WAS FALSE AND THE ANSWER WAS WORSE THAN THE QUESTION** ⚙️ **NO BOARD** (defect against documented intent)
 
-While confirming D6 I read the founder's live plan: **race 2026-12-12, which is 81 days out.**
-My note of his Plan-screen feedback records **"214 days to go"**, and Today as **"30 weeks 4 days"**
-(214 days) alongside **"77 days"**. 214 days from today is 2027-04-24, which matches **nothing** in
-his data: `plans.plan_json` says 2026-12-12, `user_settings.plan_json` is **null**, and the legacy
-`gist_url` plan says **2026-07-11**.
+🔴 **THE THREE NUMBERS WERE NEVER THE FOUNDER'S SCREEN. THEY ARE THE S5 RULING'S OWN
+BEFORE-STATE**, recorded verbatim in four places — `design-rulings.md:891`,
+`feature-registry.md:712`, `ui-patterns.md` § Time to race, and the header comment of
+`lib/format.ts` itself: *"Plan '214 days to go' · Today '30 weeks 4 days out' · (and)
+'77 days until then'"*. The item read its own project's doctrine as live feedback. **214
+matched nothing in his data because it was never his data**, and the item's hypothesis — *"a
+third countdown source nobody has named"* — was answerable from the code without the screen
+it was blocked on. **It sat BLOCKED in four state blocks for five weeks on that basis.**
 
-⚠️ **I do not have the screenshot in front of me and the number came from my own notes, so the
-number itself is the unverified part.** Do not build against it. Next step is one look at the
-Plan screen with his account: if it really says 214, there is a third countdown source nobody has
-named, and that is a two-writer split of the kind that has bitten this repo before. If it says 81,
-this closes and only the **vocabulary** problem remains, which is already ruled as **S5**.
+🔴 **AND THERE WAS A REAL COUNTDOWN DEFECT, LIVE, IN THE OWNER S5 CREATED.**
+`daysUntilRace` was `Math.ceil((new Date(raceDate) - now) / 86_400_000)` and every call site
+hands it `plan.meta.race_date`, a bare `YYYY-MM-DD`. **`new Date()` parses a date-only string
+as UTC midnight.** Measured over four zones × five wall-clock probes — **7 of 20 wrong, in
+both directions**:
+
+| Zone | What the runner saw |
+|---|---|
+| America/Los_Angeles | **"Race day"** from **16:00 the day before** |
+| America/New_York | **"Race day"** from **20:00 the day before** |
+| Australia/Sydney | **"1 day"** at **08:00 ON race day**, and "2 days" the morning before |
+
+⚠️ **`lib/dates.ts` was written the day BEFORE the countdown owner, is declared the single
+owner (D-08) of *"how many whole days between these two dates"*, and its header names this
+exact parsing trap in as many words.** The countdown owner did not call it. 🔴 **And S5's own
+gate could not fail: its population is two string constants, and its one arithmetic fixture
+passes `new Date('2027-04-24T00:00:00')` — a Date carrying a TIME, which parses LOCAL. The
+one input shape no caller uses.**
+
+📐 **EIGHT HAND-ROLLED COPIES, NOT THE FOUR S5 COUNTED — and two of the eight were found by
+the sweep, not by reading.** `race-readiness/route.ts` (the 14-day gate, whose contract
+promised the client *"enforces the same condition"* while computing it differently),
+`widgetState.ts` (the iOS home-screen widget), the four AI prompts, **`weekVoice.ts` — which
+the runner reads verbatim, on the app AND the website via `demoPlanScreen` — and
+`StravaPanel.tsx`.** Four spellings of the same millisecond constant.
+
+🔴 **THE PROMPT SITES DEPENDED ON THE HOUR THE CRON FIRED, and `planWeeklyNote` branches on
+`=== 0` to say "Race week."** Verified by running the prompt line, not by reading it:
+
+| Race | Note generated 08:00 | Note generated 19:00 |
+|---|---|---|
+| in 4 days | *"1 week to race."* | **"Race week."** |
+| in 11 days | *"2 weeks to race."* | **"1 week to race."** |
+
+Measured across 605 day × hour combinations: **34 (5.6%) changed.** Same plan, same day, two
+different coaching frames.
+
+✅ **FIX:** `daysUntilRace` defers to `calendarDaysBetween`; a new `weeksUntilRace` owner for
+the six weeks sites, **keeping `Math.round` exactly** so this commit changes the FRAME and
+nothing else. 📦 `lib/raceCountdownFrame.test.ts` (**8 cases**, 4 red on the real previous
+implementation, and it refuses to run if a mid-test `TZ` switch is not honoured — an empty
+population must not render as a pass) + `lib/raceCountdownOwner.test.ts` (**4 cases**, a TREE
+sweep with two patterns, because the first missed two of the eight: it keyed on the race date
+as a SOURCE and the widget's local is called `race`. Falsified with two real previous lines,
+one per pattern).
+
+🔻 **ONE MEASURED FACT LEFT UNDECIDED, deliberately, because it is about MEANING and not
+arithmetic:** `Math.round(days / 7)` reaches `0` — the prompt's *"Race week."* — only in the
+final **3** days, so days 4–7 of race week are announced as *"1 week to race."* That is a
+rounding artefact standing in for a plan concept. It is now **one line** in `lib/format.ts`
+instead of eight, and it is the founder's or the Coaching Board's call, not mine.
 
 ### ✅ `CI-DURATION-TARGETEDGRID-01` — `npm run verify` is non-deterministic at the duration wall ⚙️ **NO BOARD** — **CLOSED 2026-11-08, cause already fixed**
 
