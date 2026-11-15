@@ -207,7 +207,7 @@ I support the scope gate and I want it stated the right way round: a base build 
 whose volume is **too low for their race**. If an edit lifts them above that, the honest answer is
 not a smaller base build, it is *"you don't need this any more."*
 
-On C: `INV-PLAN-LARGEST-SESSIONS-SPACED`, 26 firings across 13 of 25 cases, says in its own message
+On C: `INV-PLAN-LARGEST-SESSIONS-SPACED`, 26 firings across 13 of 28 cases, says in its own message
 *"likely forced by available days."* It is. A runner with three open days cannot put their two
 biggest sessions two days apart. **That is the most honest warn in the set and it should stay a
 warn forever.** If we ever make it an error we will refuse half our own demographic.
@@ -415,7 +415,7 @@ silently. **`S9-SECONDARY-FLOOR-PRECEDENCE-01`.**
 
 ### Part C — `ROUND-WARNS-UNRULED-01`: **weighed. One plan we would not hand over.**
 
-76 firings, 10 codes, 25 cases, 0 errors. Of the ten:
+76 firings · 10 codes · **28 cases, 24 carrying at least one warn**, 0 errors. Of the ten:
 
 | Code | Verdict |
 |---|---|

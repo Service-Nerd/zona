@@ -1274,6 +1274,27 @@ for f in coaching-review/*/review.md; do
   # the first cut matched a round whose write-up explains the phrase, which is
   # a guard reading prose instead of a marker.
   if grep -qE '^\*\*REVIEW PENDING\*\*' "$f"; then say "  PENDING $f -- sitting outcome never written back"; pending=1; fail=1; fi
+  # 🔴 AND THE WRITE-BACK'S CASE COUNT MUST MATCH THE PACKET'S OWN TABLE (2026-11-15).
+  # `ALL CLEAN` proved the write-back EXISTED and never that it was TRUE. Asked whether the
+  # documents were up to date, the 11-15 write-back said "25 cases" while the validation summary
+  # in the same file had 28 rows -- the 25 was INHERITED from the item's 11-09 round and carried
+  # into six records, with only the firings and the codes re-derived from the new packet.
+  # Both numbers are in this one tracked file, so the mismatch is mechanically checkable.
+  # ⚠️ BOUND THE REGION AND REJECT A DIGIT-ADJACENT MATCH. The first cut grepped the whole file
+  # for `[0-9]+ cases` and read "066 cases" out of "6,066 cases" (a `verify:parity` figure) on two
+  # old packets -- `HOOK-RGBA-COMMENTS-01` in a new place. The claim is only normative in the
+  # write-back, which sits ABOVE `## Validation summary`.
+  wb=$(awk '/^## Validation summary/{exit} {print}' "$f" \
+       | grep -oE '(^|[^0-9,])[0-9]+ cases' | head -1 | grep -oE '[0-9]+')
+  if [ -n "$wb" ]; then
+    rows=$(awk '/^## Validation summary/{inside=1; next} inside && /^## /{exit}
+                inside && /^\| / && $0 !~ /^\|[[:space:]]*-/ && $0 !~ /\| Case \|/ {n++}
+                END{print n+0}' "$f")
+    if [ "$rows" -gt 0 ] && [ "$wb" != "$rows" ]; then
+      say "  CASE COUNT $f -- write-back says $wb cases, its own validation summary has $rows rows"
+      pending=1; fail=1
+    fi
+  fi
 done
 [ "$pending" = "0" ] && say "  ok"
 

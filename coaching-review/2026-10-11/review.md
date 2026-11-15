@@ -17,7 +17,7 @@ Register rows: `docs/canonical/coaching-rulings.md`. Items: `docs/releases/backl
 
 ## ✅ This round's own result
 
-**0 error violations in every one of the 29 cases**, with `M7` refused by design (the marathon off a
+**0 error violations in every one of the 28 cases**, with `M7` refused by design (⚠️ **this read 29 until 2026-11-15**, when a new `audit-docs.sh` arm compared it against the validation summary in this same file and found 28 rows. Corrected, not rewritten: the count was always derivable from the table beside it) (the marathon off a
 4 km/week base that §117 does not reach). `review:coaching` whole product **96.5%** against the
 90–95% target band, unchanged across the sitting — correct, because a veto, a vacated ruling, a
 doctrine line and a prohibition that ratifies existing behaviour change no prescription.
