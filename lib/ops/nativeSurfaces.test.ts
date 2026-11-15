@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { readFileSync } from 'node:fs'
 import { execFileSync } from 'node:child_process'
-import { nativeSurfaces, currentManifest, EXCLUDE, MANIFEST } from '../../scripts/native-surface-baseline.mjs'
+import { nativeSurfaces, currentManifest, nativeDeps, EXCLUDE, MANIFEST, ROOT } from '../../scripts/native-surface-baseline.mjs'
 
 /**
  * 🔴 `NATIVE-BATCH-01` FRESHNESS — because that item has gone stale silently, twice.
@@ -30,7 +30,7 @@ import { nativeSurfaces, currentManifest, EXCLUDE, MANIFEST } from '../../script
  * release record was last brought up to date. Different question, different failure.
  */
 describe('NATIVE-BATCH-01 — no native surface changes without reconciling the release item', () => {
-  const baseline = JSON.parse(readFileSync(MANIFEST, 'utf8')).surfaces as Record<string, string>
+  const baseline = JSON.parse(readFileSync(`${ROOT}/${MANIFEST}`, 'utf8')).surfaces as Record<string, string>
 
   it('the population is non-empty and globbed, never hand-listed', () => {
     // `CLEAN — 0 files` was the first answer the colour sweep gave for selecting nothing
@@ -47,17 +47,37 @@ describe('NATIVE-BATCH-01 — no native surface changes without reconciling the 
     // An exclusion whose pattern no longer matches any tracked path has become a no-op, and the
     // population has widened without anyone deciding to. `verify-cap-config`'s own exemption arm
     // exists for exactly this shape, so this one is asserted rather than assumed.
-    const all = execFileSync('git', ['ls-files', 'ios/', 'capacitor.config.ts'], { encoding: 'utf8' })
+    const all = execFileSync('git', ['ls-files', 'ios/', 'capacitor.config.ts'], { cwd: ROOT, encoding: 'utf8' })
       .split('\n').map(f => f.trim()).filter(Boolean)
-    const kept = nativeSurfaces()
     for (const e of EXCLUDE) {
       expect(all.some(f => e.pattern.test(f)), `exclusion ${e.pattern} (${e.why}) matches nothing — remove it`).toBe(true)
-      expect(kept.some(f => e.pattern.test(f)), `exclusion ${e.pattern} leaked into the population`).toBe(false)
+    }
+    // 🔴 THE SECOND HALF OF THIS ARM USED TO BE HOLLOW (`/code-review`, 2026-11-15). It asserted
+    // that `nativeSurfaces()` contains no excluded path — which is TRUE BY CONSTRUCTION, since
+    // that function filters by this same predicate. No mutation could turn it red. The real
+    // question is whether the COMMITTED MANIFEST holds one, because that file can be hand-edited
+    // and is what every other arm reads.
+    for (const e of EXCLUDE) {
+      const leaked = Object.keys(baseline).filter(f => e.pattern.test(f))
+      expect(leaked, `${e.pattern} leaked into the committed manifest`).toEqual([])
     }
   })
 
+  it('a Capacitor PLUGIN BUMP counts as a native surface, with no ios/ diff', () => {
+    // 🔴 THE POPULATION MISSED THIS (`/code-review`). A plugin version bump changes the binary's
+    // native payload and touches no `ios/` file: `Package.swift` names local plugins by PATH with
+    // no version, `Package.resolved` pins only remote transitive deps, and the generated config
+    // is gitignored. So the gate was green while the payload moved.
+    const deps = nativeDeps()
+    expect(deps.length, 'no Capacitor-family dependencies found — the scope list is broken')
+      .toBeGreaterThan(5)
+    expect(deps.some(d => d.startsWith('@capacitor/core@'))).toBe(true)
+    expect(deps.every(d => /@[\^~]?[\d]/.test(d)), 'each entry carries its range').toBe(true)
+    expect(Object.keys(baseline), 'the dep hash is in the manifest').toContain('(native deps)')
+  })
+
   it('🔴 no native surface has changed since the release item was last reconciled', () => {
-    const now = currentManifest() as Record<string, string>
+    const now = currentManifest() as unknown as Record<string, string>
     const changed = Object.keys(now).filter(f => baseline[f] !== undefined && baseline[f] !== now[f])
     const added = Object.keys(now).filter(f => baseline[f] === undefined)
     const removed = Object.keys(baseline).filter(f => now[f] === undefined)

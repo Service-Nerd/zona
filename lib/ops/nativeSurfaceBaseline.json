@@ -36,6 +36,7 @@
     "ios/App/ZonnaWidgetExtension/ZonnaWidget.swift": "e7bf82839237a2bc",
     "ios/App/ZonnaWidgetExtension/ZonnaWidgetExtension.entitlements": "bdd3206f5144dc16",
     "ios/App/ZonnaWidgetExtensionExtension.entitlements": "bdd3206f5144dc16",
-    "ios/debug.xcconfig": "4838938a72b913b9"
+    "ios/debug.xcconfig": "4838938a72b913b9",
+    "(native deps)": "9905edbb28206f94"
   }
 }
