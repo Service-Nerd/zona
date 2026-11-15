@@ -18,6 +18,7 @@ import { assessOnRamp, generateBaseBuildPlan } from './baseBuildOnRamp'
 import { validateBaseBuildBlock } from './baseBuildValidate'
 import { GENERATION_CONFIG as C } from './generationConfig'
 import type { GeneratorInput, Week, Session } from '@/types/plan'
+import { sessionKmSelfPaced } from './sessionDistance'
 
 const input = (over: Partial<GeneratorInput> = {}): GeneratorInput => ({
   race_distance_km: 42.195, race_date: '2027-04-25', days_available: 4,
@@ -123,27 +124,35 @@ describe('§116 Am. 12 — the build-week per-run step is §45\'s ratio', () => 
   // The review reported pairs sitting at exactly 20.00% — `2.5→3.0`, `4.5→5.4`. I probed
   // §118's `generateGetRunningPlan`, found **0 at or over 20%** (worst +19.23%, 335,708 pairs) and
   // wrote that their counts "do not reproduce". They do: there are TWO producers of a base-build
-  // ramp, and the review measured §116's `generateBaseBuildPlan`. Measured there over 2,400 pairs:
-  // **90 (3.75%) at or over the 20% cap**, 102 more in 18–20%, worst **+20.0000%**, step shapes
-  // `2.5→3.0 · 3.0→3.6 · 4.5→5.4 · 5.0→6.0` — exactly the ones named.
+  // ramp and the review measured §116's `generateBaseBuildPlan`.
   //
-  // ⚠️ SO THE CAP IS NOT CLEAR OF THE PRODUCER ON THIS PATH. `onRampCurve` quantises with
-  // `floor1dp` and the week is split across the runner's days, so a lawful 10% WEEKLY step is not
-  // a 10% PER-RUN step: at low volumes the quantisation lands these pairs exactly on 20%. They
-  // pass only because the comparison is `pct > cap + 0.5`. **A nudge to the ramp rate, the
-  // flooring or the deload cadence turns 90 pairs into errors that now THROW in dev and test.**
+  // ⚠️ THE CAUSE: `onRampCurve` quantises with `floor1dp` and the week is split across the
+  // runner's days, so a lawful 10% WEEKLY step is not a 10% PER-RUN step. At low volumes the
+  // quantisation lands pairs exactly on 20%, and they pass only because the comparison is
+  // `pct > cap + 0.5`. **A nudge to the ramp rate, the flooring or the deload cadence turns them
+  // into errors that now THROW in development and test.**
   //
-  // This case pins it so that nudge is a RED TEST rather than a broken build, and asserts the
-  // tolerance is doing the work rather than leaving it to be rediscovered.
+  // ⚠️ THE GRID BELOW IS THE ONE THE NUMBERS COME FROM, and a second review round is why.
+  // The first cut of this case quoted **2,400 pairs / 90 at-cap / four step shapes** from a
+  // standalone probe while the committed grid reached **63 pairs / 2 at-cap** — three of the four
+  // named shapes outside its reach. **A measurement quoted beside a narrower grid is a claim about
+  // a population the test does not visit.** The grid now varies level and longest-recent-run, as
+  // the probe did, so the comment's numbers and the test's numbers are the same numbers.
   it('🔴 the §116 producer lands ON the cap, and only the tolerance keeps it legal', () => {
     const dl = (w: Week) => w.type === 'deload' || w.badge === 'deload'
+    // ⚠️ `sessionKmSelfPaced`, NOT `distance_km ?? 0` — the predicate this pins uses the owner, and
+    // `?? 0` asserts a session covered no ground (SESSION-KM-01/02). Identical today (0
+    // duration-anchored sessions on either producer) and a false negative the day that changes.
     const lg = (w: Week) => Math.max(0, ...(Object.values(w.sessions ?? {}) as (Session | undefined)[])
       .filter((x): x is Session => !!x && x.type !== 'rest' && x.type !== 'cross-train')
-      .map(x => x.distance_km ?? 0))
-    let pairs = 0, atOrOverCap = 0, overTolerance = 0
-    let worst = 0
-    for (const cwk of [2, 4, 5, 6, 8, 10, 12, 15]) for (const days of [3, 4, 5]) {
-      const { a, plan } = build({ current_weekly_km: cwk, days_available: days })
+      .map(x => sessionKmSelfPaced(x) ?? 0))
+    let pairs = 0, atOrOverCap = 0, overTolerance = 0, worst = 0
+    const shapes = new Set<string>()
+    for (const cwk of [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15])
+      for (const days of [3, 4, 5, 6])
+        for (const fitness_level of ['beginner', 'intermediate', 'experienced'] as const)
+          for (const longest_recent_run_km of [0, 2, 3, 5, 8]) {
+      const { a, plan } = build({ current_weekly_km: cwk, days_available: days, fitness_level, longest_recent_run_km })
       if (a.outcome !== 'offered') continue
       const ramp = plan.weeks.filter(w => w.phase === 'base_build')
       for (let k = 1; k < ramp.length; k++) {
@@ -151,17 +160,19 @@ describe('§116 Am. 12 — the build-week per-run step is §45\'s ratio', () => 
         const prev = lg(ramp[k - 1]); if (prev <= 0) continue
         const pct = 100 * (lg(ramp[k]) - prev) / prev
         pairs++
-        if (pct >= C.LONG_RUN_PROGRESSION_CAP_PCT) atOrOverCap++
+        if (pct >= C.LONG_RUN_PROGRESSION_CAP_PCT) { atOrOverCap++; shapes.add(`${prev.toFixed(1)}→${lg(ramp[k]).toFixed(1)}`) }
         if (pct > C.LONG_RUN_PROGRESSION_CAP_PCT + 0.5) overTolerance++
         if (pct > worst) worst = pct
       }
     }
-    expect(pairs, 'no pairs measured — the fixture stopped generating').toBeGreaterThan(40)
-    // The producer DOES reach the cap: this is the finding, asserted rather than remembered.
-    expect(atOrOverCap, 'the producer no longer lands on the cap — re-read this comment').toBeGreaterThan(0)
-    // And nothing exceeds the tolerance, which is what keeps the gate quiet today.
+    // The population, asserted: 2,400 pairs when this was written. A grid that stops generating
+    // would otherwise make every assertion below vacuously true.
+    expect(pairs, 'the grid stopped generating').toBeGreaterThan(2000)
+    // The producer DOES reach the cap. This is the finding, asserted rather than remembered.
+    expect(atOrOverCap, 'the producer no longer lands on the cap — re-read this comment').toBeGreaterThanOrEqual(80)
+    expect(Array.from(shapes).sort()).toEqual(['2.5→3.0', '3.0→3.6', '4.5→5.4', '5.0→6.0'])
+    // And nothing exceeds the tolerance, which is the only reason the gate is quiet.
     expect(overTolerance, `${overTolerance} pairs breach cap + 0.5pp; worst +${worst.toFixed(4)}%`).toBe(0)
-    // The headroom above the cap itself, pinned. A producer change that pushes past 20.5% is red.
     expect(worst).toBeLessThanOrEqual(C.LONG_RUN_PROGRESSION_CAP_PCT + 0.5)
   })
 

@@ -94,17 +94,21 @@ describe('runEngine base_build branch — validated, not returned raw', () => {
 describe('runEngine base_build branch — the walk-run arm is paired, not skipped', () => {
   beforeEach(() => { vi.mocked(generateGetRunningPlan).mockReset(); vi.mocked(generateGetRunningPlan).mockImplementation(realGenerate) })
 
-  /** A below-floor runner gets a walk-run start; corrupt its ladder so `validateWalkRunStart` fires. */
-  function planWithABrokenLadder(): { plan: Plan; endsAtKm: number; weeks: number } {
+  /** A below-floor runner gets a walk-run start; break it so `validateWalkRunStart` fires.
+   *
+   * ⚠️ IT IS THE SESSION DURATION, NOT "the ladder", AND THE FIRST VERSION SAID OTHERWISE.
+   * The comment claimed *"invert the ladder"* and the code also rewrote the session LABEL — which
+   * code review measured as **inert**: a label-only mutation yields 0 violations, and every
+   * violation came from `duration_mins`. The inert line is gone and the name says what fires, so
+   * this case cannot be read as pinning the ladder arms when it pins the duration arm. */
+  function planWithABrokenWalkRunDuration(): { plan: Plan; endsAtKm: number; weeks: number } {
     const belowFloor = { ...input, current_weekly_km: 2, longest_recent_run_km: 0 } as GeneratorInput
     const built = realGenerate(belowFloor, PLAN_START, 15)
     const plan = JSON.parse(JSON.stringify(built.plan)) as Plan
     const wr = plan.weeks.filter(w => (Object.values(w.sessions ?? {}) as any[])
       .some(s => s && typeof s.label === 'string' && /walk/i.test(s.label)))
     expect(wr.length, 'fixture carries no walk-run weeks, so it cannot pin the arm').toBeGreaterThan(0)
-    // Invert the ladder: give the FIRST walk-run week the last week's run minutes.
     for (const s of Object.values(wr[0].sessions ?? {}) as any[]) {
-      if (s && typeof s.label === 'string' && /walk/i.test(s.label)) s.label = s.label.replace(/\d+/, '99')
       if (s && typeof s.duration_mins === 'number') s.duration_mins = 99
     }
     return { ...built, plan }
@@ -122,17 +126,20 @@ describe('runEngine base_build branch — the walk-run arm is paired, not skippe
     // ⚠️ BEHAVIOURAL, and the first cut of this case was not: it compared the two validators
     // directly, which asserts nothing about `engine.ts` and stays green if the branch drops the
     // arm again. Driving it through `runEngine` is what makes it a gate on the WIRING.
-    vi.mocked(generateGetRunningPlan).mockReturnValue(planWithABrokenLadder() as never)
+    vi.mocked(generateGetRunningPlan).mockReturnValue(planWithABrokenWalkRunDuration() as never)
     expect(() => runEngine({
       input, tier: 'paid', displayUnits: 'km', planStart: PLAN_START, today: PLAN_START, acceptBaseBuild: true,
     })).toThrow(/WALKRUN-START-PROGRESSION/)
   })
 
-  it('and the block arm alone does NOT see it, so the case is about the pairing', () => {
-    const { plan } = planWithABrokenLadder()
+  // ⚠️ THE VACUOUS HALF OF THIS CASE IS GONE. It also asserted that the block arm does NOT report
+  // `INV-PLAN-WALKRUN-START-PROGRESSION` — a code only ever pushed inside `validateWalkRunStart`,
+  // so it could not fail and said nothing (code review). What is worth asserting is that the block
+  // arm finds NOTHING here, so the throw above can only have come from the arm the first cut dropped.
+  it('the block arm alone finds nothing, so the throw above is the paired arm\'s', () => {
+    const { plan } = planWithABrokenWalkRunDuration()
     const startKm = Number((plan.meta as never as Record<string, unknown>).base_build_start_km ?? 0)
-    const blockOnly = validateBaseBuildBlock(plan.weeks, startKm).filter(v => v.severity === 'error')
-    expect(blockOnly.map(v => v.code)).not.toContain('INV-PLAN-WALKRUN-START-PROGRESSION')
+    expect(validateBaseBuildBlock(plan.weeks, startKm).filter(v => v.severity === 'error')).toEqual([])
     expect(validateStagedRace(plan).filter(v => v.severity === 'error').map(v => v.code))
       .toContain('INV-PLAN-WALKRUN-START-PROGRESSION')
   })
