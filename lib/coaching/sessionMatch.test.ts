@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest'
+import { readFileSync } from 'node:fs'
 import { findMatchCandidates, autoSelectMatch, isInLinkPool, rankLinkCandidates } from './sessionMatch'
 
 // Golden cases for the auto-match scorer. These exist because we keep
@@ -81,68 +82,6 @@ describe('findMatchCandidates — distance band (Zonna over-trainer)', () => {
 // These arms are keyed to the founder's own capture, because a test written from
 // an invented case would not have caught it: a 20 Sep / 14 km run offered for a
 // Fri 25 Sep / 8 km easy session. 25 Sep - 5 = 20 Sep, EXACTLY the boundary.
-/**
- * 🔴 `ACT-REPORTED-DISTANCE-DOOR-01` — THE ZERO-DISTANCE RUN STILL REACHES A LINK OFFER.
- *
- * Measured 2026-11-15 in production: **88 of 501 Apple Health activities (5 users) arrive with
- * `distance_m` = 0, every one of them `activity_type: 'Run'`, 31.3 min on average**, and
- * **0 distances have ever been typed in** through `AddDistanceSheet`.
- *
- * The item was filed on the theory that the distance door is unreachable for exactly these runs:
- * both render sites (`SessionPopupInner`'s `canAddDistance`, the post-run screen's
- * `canAddPostRunDistance`) require a run ALREADY LINKED to the session, and a zero-distance run
- * on a distance-primary day *"can never reach 70 points — 40 for the weekday plus at most 10 for
- * effort"*. **That arithmetic is right and the conclusion does not follow: 70 is the HIGH
- * threshold, and `resolveAutoMatch` surfaces MEDIUM too** (`AUTO-MATCH-02` — *"Looks like this
- * one?"*, same handler). 40 alone is medium.
- *
- * So these arms pin the thing the item assumed was absent. If the medium threshold moves, or a
- * distance precondition is added to the offer, the trap it describes opens — **silently**, since
- * nothing a runner sees would say so.
- */
-describe('ACT-REPORTED-DISTANCE-DOOR-01 — a zero-distance run can still be linked', () => {
-  const zeroDistanceRun = (day: 'Mon' | 'Tue' | 'Wed', avgHr?: number) => ({
-    ...activityAt(day, 0, avgHr),
-    // `activityAt` derives `moving_time` from distance, which is 0 here. A real one of these
-    // is a 31-minute run the watch never measured, so the duration has to be put back.
-    moving_time: 31 * 60,
-    elapsed_time: 31 * 60,
-  })
-
-  it('reaches MEDIUM on a distance-primary planned day, so a link CTA is offered', () => {
-    const session = { distance_km: 8, primary_metric: 'distance', type: 'easy' } as any
-    const cands = findMatchCandidates(session, sessionAt('Tue'), [zeroDistanceRun('Tue', 142)])
-    // same day (+40) + NO distance match (ratio 0 fails the 0.75 floor) + effort (+10) = 50.
-    expect(cands[0]?.confidence).toBe('medium')
-    expect(cands[0]?.reasons).toContain('same day')
-    expect(cands[0]?.reasons).not.toContain('distance match')
-  })
-
-  it('reaches MEDIUM with no HR at all — the weekday alone is enough', () => {
-    // 48 of the 88 carry HR, so 40 of them clear this on the +40 alone.
-    const session = { distance_km: 8, primary_metric: 'distance', type: 'easy' } as any
-    const cands = findMatchCandidates(session, sessionAt('Tue'), [zeroDistanceRun('Tue')])
-    expect(cands[0]?.confidence).toBe('medium')
-  })
-
-  it('🔴 and the manual picker does not filter on distance either', () => {
-    // The second route to the link, and the one with no scoring in it at all:
-    // `rankLinkCandidates` RANKS, it does not FILTER (its own header says so).
-    const session = { distance_km: 8, primary_metric: 'distance', type: 'easy' } as any
-    const zero = zeroDistanceRun('Tue', 142)
-    expect(isInLinkPool(new Date(zero.start_date), sessionAt('Tue')), 'in the browse window').toBe(true)
-    expect(rankLinkCandidates(session, sessionAt('Tue'), [zero]), 'listed, not dropped').toHaveLength(1)
-  })
-
-  it('the SAME run WITH a measured distance reaches HIGH — so the band is what moved, not the offer', () => {
-    // The control. Without it, "medium" could be read as the scorer being broken for these runs
-    // rather than as the distance band legitimately not scoring.
-    const session = { distance_km: 8, primary_metric: 'distance', type: 'easy' } as any
-    const cands = findMatchCandidates(session, sessionAt('Tue'), [activityAt('Tue', 8100, 142)])
-    expect(cands[0]?.confidence).toBe('high')
-  })
-})
-
 describe('MATCH-LIST-WINDOW-01 — link pool and ranking', () => {
   const SESSION_DAY = new Date('2026-09-25T00:00:00Z')   // Friday
   const NOW         = new Date('2026-09-26T09:00:00Z')
@@ -199,5 +138,113 @@ describe('MATCH-LIST-WINDOW-01 — link pool and ranking', () => {
   it('returns the pool untouched when there is no session date to rank against', () => {
     const pool = [sept20_14k, sept25_8k]
     expect(rankLinkCandidates(easy8k, null, pool)).toEqual(pool)
+  })
+})
+
+/**
+ * 🔴 `ACT-REPORTED-DISTANCE-DOOR-01` — THE ZERO-DISTANCE RUN REACHES THE LINK ANYWAY.
+ *
+ * Measured in production 2026-11-15: **88 of 501 Apple Health activities (5 users) arrive with
+ * `distance_m` = 0, every one `activity_type: 'Run'`, 31.3 min on average**, and **0 distances
+ * have ever been typed in** through `AddDistanceSheet`.
+ *
+ * The item was filed on the theory that the distance door is unreachable for exactly these runs:
+ * both render sites (`SessionPopupInner`'s `canAddDistance`, the post-run screen's
+ * `canAddPostRunDistance`) require a run ALREADY LINKED, and such a run *"can never reach 70
+ * points — 40 for the weekday plus at most 10 for effort"*.
+ *
+ * ⚠️ **THAT ARITHMETIC IS RIGHT FOR A DISTANCE-PRIMARY SESSION AND THE LIVE POPULATION IS NOT
+ * ONE.** The item's own pre-filing measurement says so — *"0 of the 87 land on a distance-primary
+ * planned day; all five planned-day cases are duration-primary, where `distance_km` is null and
+ * the distance band never applies at all"*. On a duration-primary day the **duration** band
+ * scores instead, so the same run reaches **70 on the weekday and the duration alone** and
+ * `autoAnalyse` SILENTLY AUTO-LINKS it (`MIN_AUTO_LINK_CONFIDENCE = 'high'`). No tap, and the
+ * door is open.
+ *
+ * 🔴 **MY FIRST VERSION OF THIS BLOCK TESTED ONLY THE DISTANCE-PRIMARY SHAPE — the branch the
+ * item itself calls empty.** Four arms, all green, all describing a cohort of zero
+ * (`/code-review`). Both shapes are pinned now, with the live one first.
+ */
+describe('ACT-REPORTED-DISTANCE-DOOR-01 — a zero-distance run can still be linked', () => {
+  /** A 31-minute run the watch never measured. `activityAt` derives `moving_time` from
+   *  distance, which is 0 here, so the duration has to be put back explicitly. */
+  const zeroDistanceRun = (day: 'Mon' | 'Tue' | 'Wed', mins: number, avgHr?: number) => ({
+    ...activityAt(day, 0, avgHr),
+    moving_time: mins * 60,
+    elapsed_time: mins * 60,
+    // ⚠️ `activityAt` hardcodes `average_speed: 2.78`, which is not a product value for a run
+    // with no distance. The device reports no speed either when it reports no distance.
+    average_speed: undefined,
+  })
+
+  // ── The LIVE population: duration-primary. 5 of 5 planned-day cases. ──
+  const durationPrimary = { distance_km: null, duration_mins: 30, primary_metric: 'duration', type: 'easy' } as any
+
+  it('🔴 THE LIVE SHAPE: on a duration-primary day it reaches HIGH and is AUTO-LINKED, no tap', () => {
+    // same day (+40) + duration match (+30, 31 vs 30 min is inside the 15% band) = 70 = high,
+    // and `autoSelectMatch` auto-links at high — so the door opens with no user action at all.
+    const cands = findMatchCandidates(durationPrimary, sessionAt('Tue'), [zeroDistanceRun('Tue', 31)])
+    expect(cands[0]?.confidence).toBe('high')
+    expect(cands[0]?.reasons).toEqual(expect.arrayContaining(['same day', 'duration match']))
+    expect(cands[0]?.reasons, 'the distance band must not score — there is no distance')
+      .not.toContain('distance match')
+    expect(autoSelectMatch(cands), 'auto-linked silently at high').toBe(cands[0]?.activity)
+  })
+
+  it('the duration band is what carries it, so a run OUTSIDE that band drops to medium', () => {
+    // 45 min against a 30 min plan is ratio 1.5, outside 0.85–1.15: +40 weekday, +10 effort = 50.
+    // Still OFFERED (medium), just not auto-linked. This is the arm that proves the high above
+    // comes from the duration match rather than from the weekday alone.
+    const cands = findMatchCandidates(durationPrimary, sessionAt('Tue'), [zeroDistanceRun('Tue', 45, 142)])
+    expect(cands[0]?.confidence).toBe('medium')
+    expect(cands[0]?.reasons).not.toContain('duration match')
+    expect(autoSelectMatch(cands), 'medium is never auto-linked').toBeNull()
+  })
+
+  // ── The shape the item reasoned about: distance-primary. 0 of 88 live. ──
+  const distancePrimary = { distance_km: 8, primary_metric: 'distance', type: 'easy' } as any
+
+  it('on a distance-primary day it reaches MEDIUM, so a link CTA is still offered', () => {
+    // 70 is the HIGH threshold; 40 is MEDIUM, and `resolveAutoMatch` surfaces medium too
+    // (`AUTO-MATCH-02` — "Looks like this one?", same handler). This is the cohort of zero.
+    const cands = findMatchCandidates(distancePrimary, sessionAt('Tue'), [zeroDistanceRun('Tue', 31, 142)])
+    expect(cands[0]?.confidence).toBe('medium')
+    expect(cands[0]?.reasons).not.toContain('distance match')
+  })
+
+  it('— and MEDIUM with no HR at all: the weekday alone is 40', () => {
+    const cands = findMatchCandidates(distancePrimary, sessionAt('Tue'), [zeroDistanceRun('Tue', 31)])
+    expect(cands[0]?.confidence).toBe('medium')
+  })
+
+  it('the SAME 31-minute run WITH a measured distance reaches HIGH — one axis moved', () => {
+    // The control. ⚠️ It varies DISTANCE ONLY: `activityAt` would derive a 48.6-min duration
+    // from 8.1 km, so the duration is pinned to the subject's 31 min. Without that this
+    // compares two different runs and proves nothing about the distance band.
+    const measured = { ...activityAt('Tue', 8100, 142), moving_time: 31 * 60, elapsed_time: 31 * 60 }
+    const cands = findMatchCandidates(distancePrimary, sessionAt('Tue'), [measured])
+    expect(cands[0]?.confidence).toBe('high')
+    expect(cands[0]?.reasons).toContain('distance match')
+  })
+
+  it('🔴 and NEITHER picker site filters on distance', () => {
+    // Two routes to the link, and this is the one with no scoring in it at all.
+    const zero = zeroDistanceRun('Tue', 31, 142)
+    expect(isInLinkPool(new Date(zero.start_date), sessionAt('Tue')), 'in the browse window').toBe(true)
+    expect(rankLinkCandidates(distancePrimary, sessionAt('Tue'), [zero] as any), 'ranked, not dropped')
+      .toHaveLength(1)
+
+    // ⚠️ `rankLinkCandidates` IS ONLY HALF THE PICKER. The pool is narrowed in
+    // `SessionPopupInner` before ranking, and that filter is inline in the component — which a
+    // node-environment test cannot mount. So this arm is bounded and source-level: it asserts
+    // the component's filter predicate still tests only claimed ids, because adding a
+    // `distance > 0` clause there would reopen the trap with every arm above still green
+    // (`/code-review` found exactly that hole in the first version of this block).
+    const src = readFileSync(
+      new URL('../../components/dashboard/SessionPopupInner.tsx', import.meta.url), 'utf8')
+    const i = src.indexOf('inLinkWindow.filter(')
+    expect(i, 'the picker filter moved — re-point this arm').toBeGreaterThan(-1)
+    const predicate = src.slice(i, src.indexOf('}) as StravaActivity[]', i))
+    expect(predicate, 'the picker must not filter on distance').not.toMatch(/distance/)
   })
 })
