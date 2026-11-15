@@ -204,7 +204,10 @@ function carryWalkRun(i: GeneratorInput, after: boolean): GeneratorInput {
  *  blocked days would have reported false INV-PLAN-ONRAMP-SPACED violations. One
  *  owner, so the next caller cannot invent a third spelling. */
 export function spacingOpts(plan: Plan, input: GeneratorInput) {
-  return { spaced: (plan.meta as unknown as Record<string, unknown>).onramp_spaced === true, blocked: input.days_cannot_train ?? [] }
+  return {
+    spaced: (plan.meta as unknown as Record<string, unknown>).onramp_spaced === true,
+    blocked: input.days_cannot_train ?? [],
+  }
 }
 
 function ownAck(built: GeneratorInput, request: GeneratorInput): GeneratorInput {
@@ -330,6 +333,17 @@ export function runEngine(req: EngineRequest): EngineOutcome {
     const { plan } = generateGetRunningPlan(
       input, planStart, weeksBetweenLocal(planStart, input.race_date),
     )
+    // 🔴 THIS BRANCH RETURNED WITHOUT A VALIDATOR CALL FOR THE LIFE OF THE FEATURE (§116
+    // Amendment 12). The staged branch below has always validated; this one ran nothing, so the
+    // plan kind built for people who cannot yet run was the one kind reaching a runner
+    // unvalidated — against ADR-020's `INV-PLAN-SINGLE-CONSTRUCTION`. It could not be wired
+    // before that amendment, because the per-run-step arm was firing on §2's own ramp and the
+    // noise would have been fatal in development and test.
+    // ⚠️ `validateStagedRace` is deliberately NOT run: a standalone base build has no race block
+    // (§118 builds for the runway and refuses a target). The staged branch runs both; it has both.
+    enforceViolations(validateBaseBuildBlock(plan.weeks, Number(
+      (plan.meta as unknown as Record<string, unknown>).base_build_start_km ?? 0,
+    ), spacingOpts(plan, input)))
     return { kind: 'base_build', plan }
   }
 

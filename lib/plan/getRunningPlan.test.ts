@@ -94,25 +94,45 @@ describe('§118 — the get-running plan', () => {
   // Above that line the two rules CANNOT BOTH HOLD. Measured: 3 days breaches
   // above 45 km/week, 4 days above 60 — exactly the prediction, every case.
   //
-  // ⚠️ NOT REACHABLE BY ANY RUNNER §118 SERVES TODAY (0 of 522 plans built for
-  // the refused marathon envelope), because those start low enough that 15
-  // weeks of 10% never crosses the line. It is reachable for a runner at
-  // 15-20 km/week, and §118 deliberately has NO volume target — "it builds for
-  // the weeks available and stops" — so nothing bounds it there.
+  // ⚠️ IT WAS NOT REACHABLE WHEN THIS WAS WRITTEN (0 of 522 plans built for the refused marathon
+  // envelope) and IT IS NOW, so this paragraph is kept as the prediction and corrected rather
+  // than quietly edited. The note said it would be *"reachable for a runner at 15-20 km/week"*
+  // because §118 deliberately has NO volume target — *"it builds for the weeks available and
+  // stops"* — and nothing bounds it there. **Measured 2026-11-15: the four runners the engine
+  // actually offers a base build sit at 20 km/week, and the absolute arm fired on 28,512 of
+  // 28,512 violations.** The band was right; "not reachable today" had an expiry date nobody
+  // was watching.
   //
-  // FILED for the Coaching Board. Do not "fix" this by raising the per-run cap
-  // or relaxing §2: both are ratified, Willy owns both, and which yields is his
-  // call, not an implementer's.
-  it('pins the §2 / §116 Am.2 conflict above weekly = days x 15', () => {
+  // ✅ RESOLVED 2026-11-15 — §116 Amendment 12 (`ENGINE-BASEBUILD-UNVALIDATED-01`). This case is
+  // kept and INVERTED rather than deleted, because the resolution is the interesting fact.
+  //
+  // The prediction above was right about the band and wrong about the timing: *"reachable for a
+  // runner at 15-20 km/week"*, and the four runners the engine actually OFFERS a base build in
+  // today's corpus sit at **20 km/week**. Measured before the fix: `prevLongest > 15 km` in
+  // **28,512 of 28,512 violations**, smallest 16.5 km, every step **9.7-10.3% — §2's own rate**.
+  // Not one was a load event.
+  //
+  // ⚠️ AND THE RESOLUTION IS NOT WHAT THE NOTE FORBADE. The per-run cap was NOT raised
+  // (`WEEK1_PER_RUN_STEP_MAX_KM` is still 1.5, still §2 Am. 2's week-1 screen) and §2 was NOT
+  // relaxed (`MAX_WEEKLY_VOLUME_INCREASE_PCT` is still 10). The build-week arm now reads §45's
+  // `LONG_RUN_PROGRESSION_CAP_PCT` — a RATIO — which is this conflict's own diagnosis applied to
+  // the bound instead of the producer: *"a cap measured in different units from the bound it must
+  // satisfy is not a cap."* Willy's call, taken at the sitting.
+  it('§116 Am. 12 — the §2 / §116 conflict above weekly = days x 15 is RESOLVED', () => {
     const inp = mk({ current_weekly_km: 20, longest_recent_run_km: 8, days_available: 3 })
     const { plan } = generateGetRunningPlan(inp, '2026-10-05', 16)
-    const breaches = validateBaseBuildBlock(plan.weeks, 20)
-      .filter(v => v.code === 'INV-PLAN-ONRAMP-PER-RUN-STEP')
-    // If this goes GREEN, the conflict has been resolved by a doctrine change
-    // and this case plus its comment must be revisited — not deleted silently.
-    expect(breaches.length,
-      'the §2/§116 conflict no longer reproduces. If doctrine changed, update this case and the board filing.',
-    ).toBeGreaterThan(0)
+    // The arithmetic that produced the conflict is unchanged and still crosses the line...
+    const incompatibleAbove = G.WEEK1_PER_RUN_STEP_MAX_KM / (G.MAX_WEEKLY_VOLUME_INCREASE_PCT / 100)
+    expect(incompatibleAbove).toBe(15)
+    const longest = (w: typeof plan.weeks[number]) => Math.max(0, ...Object.values(w.sessions ?? {})
+      .filter((x): x is NonNullable<typeof x> => !!x && x.type !== 'rest' && x.type !== 'cross-train')
+      .map(x => x.distance_km ?? 0))
+    expect(Math.max(...plan.weeks.map(longest)),
+      'fixture no longer crosses the 15km line, so it cannot pin anything',
+    ).toBeGreaterThan(incompatibleAbove)
+    // ...and the ratio arm is correctly silent on it, because every step is §2's 10%.
+    expect(validateBaseBuildBlock(plan.weeks, 20)
+      .filter(v => v.code === 'INV-PLAN-ONRAMP-PER-RUN-STEP')).toEqual([])
   })
 
 

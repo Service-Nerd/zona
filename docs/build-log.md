@@ -6,6 +6,15 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-11-15 — ENGINE-BASEBUILD-UNVALIDATED-01 · the guard that could only fire on correct behaviour
+**Shipped:** `runEngine`'s base-build branch now validates the block it returns, and the invariant that made that impossible — a week-1 absolute step read as a per-week cap — is a ratio.
+**Dev learning:** `1.5 / 0.10 = 15`. That is the whole bug. §2's ramp is 10% a week and §2 Amendment 2's per-run step was an absolute 1.5 km, so above a 15 km run a *compliant* plan breaches the step every week forever. I only found it because I stopped asking "are these violations real?" and asked "what do they have in common?" — `prevLongest > 15 km` in 28,512 of 28,512, every step 9.7–10.3%. An invariant that fires only on correctness is worse than no invariant, because it stands where a real guard belongs and nobody reads past it.
+**Product/creator learning:** the item said "1,730 of 1,730 plans carry an error, 100%". I reproduced it to within six rows and it was still wrong, because `getRunningApplies` is a *capability* predicate and the thing that routes a runner to this plan is the *offer*, which is attached to two refusals and not the one the corpus is full of. 1,732 refusals, 1,728 of them a runway warning you just click through, 4 actual offers. Measure through the producer the product calls.
+**AI-building learning:** I built two fixes and reverted both on the measurement, and both were things the repo's own record already forbade in writing — one reversed a ruling called NO-RUNNER-TURNED-AWAY-01, the other was the second ceiling a board member refused in as many words. The record was right and I had read it. Reading a constraint and *substituting your change into it* are different operations, and only the second one works.
+**The honest bit:** the best thing in this ship was written by someone else, in September. `ONRAMP-STEP-UNITS-01`'s registry row says "above weekly > runs x 15 km, §2 and §116 Am.2 CANNOT BOTH HOLD", filed unfixed because "unreachable by any runner §118 serves today (0 of 522)", and predicted it would become "reachable at 15-20 km/week". The four runners now offered a base build are at 20 km/week. The prediction was perfect and the deferral had an expiry date nobody was watching.
+**Hook material:** 28,512 of 28,512 violations were the engine behaving correctly. Behind that noise: a plan prescribing three 88.6 km runs in one week, and 74.7% of reachable blocks asking for a single session longer than the race.
+**Postable?:** yes
+
 ## 2026-11-14 — A11Y-REDUCED-MOTION-01 · the premise was wrong in the useful direction: three components honoured it and the owner was missing
 
 **Shipped:** one owner for the JS half of `prefers-reduced-motion`, and the Coach trend count-up honours it.
@@ -182,7 +191,6 @@ it specific, no polish. The content system adds the voice.
 **Postable?:** yes — "when the measurement doesn't exist, check you're measuring the right noun".
 
 ---
-
 ## 2026-11-13 — AI-TIMEOUT-PER-SURFACE-01 · when the measurement doesn't exist, check the noun
 **Shipped:** two timeout regimes, chosen by the call's own `maxTokens` rather than by which surface made it.
 

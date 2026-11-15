@@ -103,7 +103,17 @@ export function validateBaseBuildBlock(weeks: Week[], startKm: number,
   // Measured against the LONGEST run in each week, because that is the session
   // whose per-run step actually binds. Deload weeks are exempt on the same
   // basis every other ramp check exempts them.
-  const cap = GENERATION_CONFIG.WEEK1_PER_RUN_STEP_MAX_KM
+  // 🔴 A RATIO, NOT AN ABSOLUTE, BECAUSE THE ABSOLUTE WAS UNSATISFIABLE (§116 Amendment 12,
+  // Coaching Board 2026-11-15). This read `WEEK1_PER_RUN_STEP_MAX_KM`, which §2 Amendment 2
+  // ratifies as a WEEK-1 screen, as a per-week cap for the whole block — and §2's ramp is 10%, so
+  // `1.5 / 0.10 = 15`: above a 15 km run a compliant plan breaches it every week, by arithmetic.
+  // §45's `LONG_RUN_PROGRESSION_CAP_PCT` is this board's own cap on a single run's week-on-week
+  // growth and is what Willy's amendment describes — *the per-run DOUBLING is the load event*.
+  // ⚠️ §45's companion `LONG_RUN_PROGRESSION_CAP_ABS_KM` (5 km) is NOT a greater-of floor here: at
+  // this cohort's volumes 2 km → 7 km is +250% and inside it. Gated as a case.
+  // ⚠️ §2 Am. 2 is untouched, so Hutchinson's freeze on that predicate is not engaged.
+  // Numbers, the residual this was masking, and the two reverted fixes: §116 Amendment 12.
+  const stepPct = GENERATION_CONFIG.LONG_RUN_PROGRESSION_CAP_PCT
   const longestOf = (w: Week) =>
     Math.max(0, ...runsOf(w).map(s => sessionKmSelfPaced(s) ?? 0))
   let prevLongest: number | null = null
@@ -111,21 +121,22 @@ export function validateBaseBuildBlock(weeks: Week[], startKm: number,
     const w = ramp[i]
     const longest = longestOf(w)
     if (i > 0 && !isDeload(w) && !isDeload(ramp[i - 1]) && prevLongest != null && prevLongest > 0) {
-      const step = longest - prevLongest
-      if (step > cap + 0.05) {
+      const pct = 100 * (longest - prevLongest) / prevLongest
+      if (pct > stepPct + 0.5) {
         v.push({
           code: 'INV-PLAN-ONRAMP-PER-RUN-STEP',
-          principle_ref: 'CoachingPrinciples §116',
+          principle_ref: 'CoachingPrinciples §116 Am. 12 (§45, §2 Am. 2)',
           severity: 'error',
           week: w.n,
-          message: `Base-build W${w.n}'s longest run steps ${prevLongest.toFixed(1)}km → ${longest.toFixed(1)}km (+${step.toFixed(1)}km). §116 amendment 2 (Willy): the per-run step is the load event, not the weekly total.`,
-          actual: `+${step.toFixed(1)}km`,
-          expected: `≤ +${cap}km`,
+          message: `Base-build W${w.n}'s longest run steps ${prevLongest.toFixed(1)}km → ${longest.toFixed(1)}km (+${pct.toFixed(0)}%). §116 amendment 2 (Willy): the per-run DOUBLING is the load event, not the weekly total — capped at §45's ${stepPct}%.`,
+          actual: `+${pct.toFixed(0)}%`,
+          expected: `≤ +${stepPct}%`,
         })
       }
     }
     prevLongest = longest
   }
+
 
   if (opts.spaced) {
     // ── R2 (Willy): a DELOAD never holds the block's longest run ─────────────

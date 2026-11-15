@@ -11313,6 +11313,87 @@ way neither sitting saw; they are returned to the board before §116's flag may 
 - **C5** — measured: of 880 staged cases, **71.0% clean**; the rest are C4 (WEEK1-LEAP 10.0%, LONG-RUN-SHORT 9.8%, both
   6.2%) and §113 on the recorded long run (3.1%).
 
+### §116 Amendment 12 — THE PER-RUN STEP IS A RATIO, AND THE ABSOLUTE WAS UNSATISFIABLE *(Coaching Board 2026-11-15, `ENGINE-BASEBUILD-UNVALIDATED-01`)*
+
+**Principle.** The per-run step this section's **binding amendment 2** governs is a **ratio**, read
+against §45's `LONG_RUN_PROGRESSION_CAP_PCT`. It is not §2 Amendment 2's absolute
+`WEEK1_PER_RUN_STEP_MAX_KM`, which that amendment ratifies as a **week-1 screen** and which this
+section's enforcement had been reading as a per-week cap for the life of the feature.
+
+**Why. The two rules cannot both hold.** §2's ramp is `MAX_WEEKLY_VOLUME_INCREASE_PCT` (10%) and
+§2 Am. 2's step is an absolute 1.5 km. `1.5 / 0.10 = 15`, so **above a 15 km run any §2-compliant
+ramp breaches the absolute step every week, forever, regardless of the runner.**
+
+**Measured over 28,512 violations:** `prevLongest > 15 km` in **28,512 of 28,512 (100%)**, smallest
+**16.5 km**, and every step **9.7–10.3% of the prior run — §2's own ratified rate.** Not one
+violation in the corpus was a load event. `INV-PLAN-ONRAMP-PER-RUN-STEP` was firing **only** on
+correct ramping: 163,068 error-severity violations across the space the Adjust-sheet door permits,
+and 10,088 on the narrower population the item measured.
+
+🔴 **AND THAT NOISE IS WHY NOBODY READ THE PLANS UNDERNEATH.** An invariant that fires only on
+compliance is worse than no invariant: it stands where a real guard belongs. Behind it,
+**74.7% of edit-reachable blocks prescribe a single session longer than THE RACE DISTANCE and 100%
+prescribe one over twice the runner's longest recent run** — worst, a declared 70 km/week runner
+given a block ending at **265.8 km/week, three runs of 88.6 km.** Every one of those steps is +10%,
+so the ratio arm cannot see them either: **the hazard is the absolute size, not how it was reached,
+and nothing in this constitution bounds it for this plan kind.** §9 and §52 cap the long run as a
+share of the week, and a block with no long run has nothing for them to cap. **Filed, not fixed
+here — see § the residual.**
+
+**Willy, on his own amendment:** *"My amendment is being enforced by a rule I did not ratify, and
+that rule cannot be satisfied. I said the per-run DOUBLING is the load event."* A ratio is what
+those words describe. A 10% step is inside §45's 20%; a doubling is not.
+
+⚠️ **§2 Amendment 2 IS UNTOUCHED and keeps its week-1 job.** Hutchinson's freeze on that predicate
+(*"frozen until we hold adherence or injury data"*) is **not engaged**: nothing here relaxes it.
+
+⚠️ **§45's companion absolute `LONG_RUN_PROGRESSION_CAP_ABS_KM` (5 km) is deliberately NOT used as
+a greater-of floor.** At this cohort's volumes a 2 km → 7 km step is +250% and inside 5 km
+absolute — it would re-open exactly what the ratio closes. Gated as a case.
+
+⚠️ **A SCOPE BOUND ON `getRunningApplies` WAS CONSIDERED AND REJECTED ON THE MEASUREMENT.** §111's
+door is a WEEKLY-VOLUME gate, and the four runners actually offered a base build in the corpus are
+refused by **§113, for their LONG RUN** — 20 km/week with a longest run of 0 km. A volume door
+refuses all four and hands them nothing, reversing `NO-RUNNER-TURNED-AWAY-01`. Right-shaped gate,
+wrong question. ⚠️ **A §106 peak-band arm was also built and REVERTED:** it bites at
+`band / 3.78`, which is §111's own door, so it is the second total-build ceiling Willy refuses —
+*"I will not have two total-build ceilings in one constitution."* §111's ratio ceiling is honoured
+(measured **3.78 against a cap of 4.0**).
+
+**Effect.** No prescription changes: the arm goes from 163,068 violations to **0** on the corpus and
+**0 of 4** on the offer-path population. 🔴 **So the arm is now INERT ON THE CORPUS and its liveness
+comes from mutation**, exactly as §2 Amendment's arm 3 records for itself. Eleven cases in
+`baseBuildPerRunStep.test.ts` and `baseBuildBranchValidates.test.ts`, every one a mutation,
+falsified three ways: restoring the absolute (2 red, including the compliant-ramp regression),
+switching the arm off (3 red), and deleting the branch's `enforceViolations` call (1 red).
+
+**And the other half: the branch now validates.** `runEngine`'s `base_build` branch returned
+`generateGetRunningPlan`'s output with **no validator call at all** while the staged branch ran
+`validateBaseBuildBlock` + `validateStagedRace` — so the plan kind built for people who cannot yet
+run was the one kind reaching a runner unvalidated, against ADR-020's
+`INV-PLAN-SINGLE-CONSTRUCTION`. ⚠️ **It could not be wired before this amendment**, because the
+noise would have been fatal in development and test. The item said as much and was right for the
+wrong reason.
+
+**Config.** No new constant. `LONG_RUN_PROGRESSION_CAP_PCT` (§45) and
+`MAX_WEEKLY_VOLUME_INCREASE_PCT` (§2) both already exist; `WEEK1_PER_RUN_STEP_MAX_KM` is unchanged
+at 1.5 and still §2 Am. 2's.
+
+**Enforced by** `INV-PLAN-ONRAMP-PER-RUN-STEP` (build-week arm; the deload arm R2 is unchanged) and
+by `enforceViolations` in `runEngine`'s `base_build` branch.
+
+#### The residual, stated rather than left
+
+🔻 **The base-build block has NO LONG RUN, and §9, §52 and §106 are all written about a session it
+does not contain.** Measured: **99.5% of edit-reachable blocks give every run in every week
+identical length** — the week is `weeklyKm / daysAvailable`, repeated. Seiler: *"all easy and all
+identical are different things."* McMillan: *"three identical runs is not how anyone trains."*
+Sims: for a peri- or post-menopausal runner the recovery cost of three identical runs does not
+distribute. **This is the live gap and it is a prescription change needing its own measurement and
+its own sitting.**
+
+---
+
 ### §116 Amendment 11 — A §113 REFUSAL IS STAGED TOO, AND THE DOOR MUST LAND THE BLOCK INSIDE §111's RATIO *(Coaching Board 2026-11-06, `STAGED-HM-DOOR-01`)*
 
 > 🔻 **PART 2 IS NARROWED BY §111 Amendment 4 (2026-11-07), NOT MOOT.** This amendment's ratio objection fires where

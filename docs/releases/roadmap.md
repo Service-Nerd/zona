@@ -1467,7 +1467,9 @@ with the Coaching Board (the week-1 floor for someone who has never run, and
 | ~~**A §9 cut says nothing about the minutes it lost**~~ (S9-RESIDUAL-STATED-01) | ✅ | S | **RULED 2026-10-27: no note** (under §40c's 10% bar). |
 | ~~**§9 ratio unchecked on beginner plans**~~ (S9-RATIO-MINUTES-01) | ✅ | M | **SHIPPED 2026-10-27**, §9 Am. 2; beginners and ultras. |
 | ~~**Race day for a runner whose goal pace was withheld**~~ (RACE-DAY-PACE-WITHHELD-01) | ✅ | S | **SHIPPED 2026-10-27**, §80 Am. 2, founder's words. |
-| **§118 base-build plan returns unvalidated** (ENGINE-BASEBUILD-UNVALIDATED-01) | 🔲 | M | Wire the validator call (no board); the violations it surfaces go to the Coaching Board. |
+| **§118 base-build plan returns unvalidated** (ENGINE-BASEBUILD-UNVALIDATED-01) | ✅ | M | SHIPPED 2026-11-15, §116 Am. 12. The branch validates; the invariant it would have thrown was unsatisfiable (28,512 of 28,512 violations were §2's own 10% ramp). Residual: `BASEBUILD-NO-LONG-RUN-01`. |
+| **The base-build block has no long run** (BASEBUILD-NO-LONG-RUN-01) | 🔲 | L | 🏃 Coaching Board. 99.5% of edit-reachable blocks give every run identical length; 74.7% prescribe a session longer than the race. Live exposure zero. Needs a prototype with a designated long run. |
+| **A secondary quality session is held to the primary's floor** (S9-SECONDARY-FLOOR-PRECEDENCE-01) | 🔲 | S | ⚙️ No board. Latent — 0 of 1,600 two-quality weeks enter the band either floor governs — and it goes live silently. The gate is the deliverable. |
 | **Race-week note shown nowhere** (RACE-NOTES-INERT-01) | 🔲 | S | Design Board (render) or retire. |
 | **Recalibration does not re-decide the withholding** (RECAL-GOAL-REACH-01) | 🔲 | S | Board. |
 | **Grids carry no benchmarked goal inside the line** (GRID-GOAL-INSIDE-LINE-01) | ✅ | S | ✅ **Shipped 2026-11-07** — a benchmarked goal **inside** §120's 5% line now exists in `targetedGrid` (10 km off 50:00 with a 49:30 target = **3.10%**, derived by sweeping). Measured before: **0 of 10,368** benchmarked time-target rows were inside, so the gate had only ever seen goals being withheld. Gated + falsified. Filed: No board. |

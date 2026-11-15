@@ -2107,7 +2107,36 @@ line. Named in `rca1026Gates.test.ts`'s `UNREACHED`; reaching them clears the en
 removed).
 ---
 
-### 🔲 `S9-QUALITY-FLOOR-REACH-01` — three paths the 35-minute floor does not reach yet 🏃 **COACHING BOARD** (each changes served plans the 10-27 sitting did not measure)
+### 🔲 `S9-QUALITY-FLOOR-REACH-01` — ONE path left, and it needs a prototype not a count 🏃 **COACHING BOARD**
+
+🔴 **RE-MEASURED AND RULED 2026-11-15** (`docs/decisions/coaching-2026-11-15-wave5-delivered-volume.md`),
+on 45,936 served plans. **Two of the three paths are not what the item says they are.**
+
+**(1) Progressive tempo — NOTHING IS BREACHED.** 0 sessions and 0 plans sit below both floors. The
+exposure was never a live defect; it is that growing it changed 177 served plans for no measured
+benefit. No action, `rca1026Gates` DEBT entry stays.
+
+**(2) The quality distance budget — THE ONLY PATH STILL OPEN, and the board would not rule it on a
+count.** §9's amendment says a session meets the floor at its km floor **OR** 35 minutes; the sizing
+implements **and**, lifting to 5 km regardless. **13,092 sessions across 11,988 plans (26.1%).** A
+real contradiction between a ratified amendment and its producer — but correcting it makes a quarter
+of all plans' quality sessions **shorter**, and nothing measured says what the runner loses.
+**What would settle it, and it is the whole remaining scope:** the delivered duration and
+work-minute distribution of those 13,092 sessions before and after, plus `measure:fitness`. One
+prototype, measured, next sitting.
+
+**(3) The secondary-quality floor — THE ITEM'S MECHANISM IS FALSE AND THE FIX WAS BUILT AND
+REVERTED.** The item says secondary quality *"grows toward 5 km, not its own 4 km floor"*, and the
+code reads that way (`makeQualitySession` hands `continuousThresholdPlan` the primary's 5 km floor
+unconditionally at `ruleEngine.ts:1591` while the budget at `:3848` correctly uses 4). **I made the
+growth loop read the session's own floor and it changed nothing: still 1,600 of 1,600 at or above
+5 km, still 0 in [4,5). Reverted.** Measured: in all 1,600 two-quality weeks the smaller quality
+session is **7.0–11.5 km (median 9.0)**, so the 80%-of-primary budget is **6.0 km at its smallest
+and in 0 of 1,600 weeks falls below even the 5 km primary floor.** Nothing grows these sessions and
+no floor binds them — **a two-quality week only occurs at volumes where the budget is already 6 km
+or more.** `secondary_quality: 4` is read, correct, and unreachable. ⚠️ §25 Amendment 1 applies
+directly: *"read by nothing is evidence a CONSUMER is missing, not that the VALUE is junk."* Not
+deleted, not "fixed". The precedence is filed separately.
 
 Found by the code review of S9-QUALITY-MINUTES-01, 2026-10-27. (1) **Progressive tempo never grows to the floor.** Its
 smallest dose (15 min) is a 33-minute session; growing it through `meetsQualityFloor` was built and REVERTED because it
@@ -2120,6 +2149,71 @@ not its own 4 km floor (pre-existing). Each needs a measurement and a ruling; di
 `meetsQualityFloor`: `progressiveTempoPlan`, `fixedShapePlan` (the pyramid the 26 Oct report named, not listed here
 before) and `effortGovernedPlan` (hills, no pace to price a km floor). Each is named as debt; fixing one fails the gate
 until its entry is removed, and a sixth builder that skips it fails at once.
+---
+
+### 🔲 `S9-SECONDARY-FLOOR-PRECEDENCE-01` — a secondary quality session is held to the PRIMARY's floor, latent only because the band never occurs ⚙️ **NO BOARD** (defect against documented intent)
+
+**Filed 2026-11-15** out of `S9-QUALITY-FLOOR-REACH-01` path 3. `makeQualitySession` hands
+`continuousThresholdPlan` `minKm: MIN_SESSION_DISTANCE_KM.quality` (5 km) **unconditionally**, so
+the week's second, softer quality slot is grown to the primary's floor rather than its own ratified
+`secondary_quality` (4 km) — which the budget at `ruleEngine.ts:3848` uses correctly.
+
+⚠️ **The precedence is wrong in principle and reaches nothing today**, measured: the smallest
+secondary quality session in 45,936 served plans is **7.0 km** and the smallest 80%-of-primary
+budget is **6.0 km**, so in **0 of 1,600 two-quality weeks** does the sizing enter the band either
+floor governs. A fix was built and reverted on exactly that evidence.
+
+🔴 **Why it is still worth filing: it goes live silently.** Any future change that lets a
+two-quality week occur at lower volume — a lower `QUALITY_SESSIONS_PER_WEEK_MAX` threshold, a
+smaller weekly budget, a new distance — makes the primary's floor bind a secondary session with no
+gate and no signal. **A one-line precedence fix plus a gate asserting a secondary session MAY land
+in [4,5); the gate is the deliverable, since the fix itself is unobservable.**
+
+---
+
+### 🔲 `BASEBUILD-NO-LONG-RUN-01` — the base-build block has no long run, so §9, §52 and §106 all reach nothing 🏃 **COACHING BOARD**
+
+**Filed 2026-11-15 by the board as §116 Amendment 12's stated residual**
+(`docs/decisions/coaching-2026-11-15-wave5-delivered-volume.md`). It is the hazard the unsatisfiable
+per-run-step arm was masking.
+
+📐 **Measured on the space the Adjust-sheet door permits** — `BASEBUILD-ADJUST-REBUILD-01` honours
+`accept_base_build` with **no refusal check, by design**, and `runModifyPreview` sends it with
+whatever volume the runner edited:
+
+| | |
+|---|---|
+| every run in every week IDENTICAL length — no long run, no easy run | **99.5%** of 47,662 |
+| peak weekly volume / declared volume | **3.78–3.80×** for the whole population |
+| longest SINGLE session, median / p90 | **44.3 km / 88.6 km** |
+| blocks prescribing a session longer than THE RACE DISTANCE | **74.7%** |
+| blocks prescribing a session over 2× the runner's longest recent run | **100%** |
+
+Worst, read week by week: declared **70 km/week**, longest recent run 28 km, 3 days → a 15-week
+block running **69.9 → 265.8 km/week**, week 15 three identical runs of **88.6 km**.
+
+🔴 **Every one of those steps is +10%, so neither arm of `INV-PLAN-ONRAMP-PER-RUN-STEP` can see
+them.** The hazard is the absolute size, and §9 and §52 cap the long run as a **share of the week** —
+a block with no long run gives them nothing to cap. §106's peak band governs race plans.
+
+⚠️ **Two obvious guards were built and REVERTED at the sitting, each refused by the record.** A
+scope bound on `getRunningApplies` via §111's door refuses all four runners actually offered a base
+build (§113-refused, 20 km/week, longest run 0 km) and hands them nothing, reversing
+`NO-RUNNER-TURNED-AWAY-01`. A §106 peak-band arm bites at `band / 3.78`, which **is** §111's door,
+so it is the second total-build ceiling Willy refuses in terms. **The ratio ceiling is honoured —
+3.78 against a cap of 4.0 — and must not be touched.**
+
+🔻 **LIVE EXPOSURE IS ZERO, CHECKED:** production holds 4 base-build plans, all starting 5–10 km/week
+and peaking 12–37.6 km with a longest session of 5.5–9.4 km. **Nothing is broken for anyone today.**
+This is a latent prescription defect behind a door that asks no question.
+
+**The board's own framing of the fix, which is why it is a sitting and not a build.** Seiler: *"all
+easy and all identical are different things"* — §116 Am. 6 is honoured and does not cover this.
+McMillan: *"three identical runs is not how anyone trains"*, and at 8 km/week over 4 days it does
+not matter because everything is the same run, while at 20 km/week one of them should be longer.
+Sims: three identical runs do not distribute recovery cost for a peri- or post-menopausal runner.
+**Needs a prototype with a designated long run, `measure:fitness`, `cohort:shape` and a ruling.**
+
 ---
 
 ### ✅ `S9-HELD-PEAK-CLASSIFY-01` — **SHIPPED 2026-11-03.** §23 is re-asked on the weeks the runner actually gets ⚙️ **NO BOARD** (defect fix restoring documented intent)
@@ -5016,7 +5110,52 @@ such: the route needs auth, a tier lookup and a service-role client, none of whi
 
 ## ⚖️ FILED 2026-11-13 — `ENGINE-BASEBUILD-UNVALIDATED-01`, found in Wave 1 and never recorded
 
-### 🔲 `ENGINE-BASEBUILD-UNVALIDATED-01` — the §118 base-build plan returns without a validator call ⚙️ **NO BOARD** (wire the call), then 🏃 **COACHING BOARD** if the violations it surfaces require a prescription change
+### ✅ `ENGINE-BASEBUILD-UNVALIDATED-01` — SHIPPED 2026-11-15 (§116 Amendment 12). The branch validates, and the invariant it would have thrown was unsatisfiable
+
+**Ruled by the Coaching Board 2026-11-15** (`docs/decisions/coaching-2026-11-15-wave5-delivered-volume.md`),
+CORRECT WITH AMENDMENT. Both halves shipped in one commit.
+
+🔴 **THE ITEM'S POPULATION WAS WRONG AND SO WAS MY FIRST RE-MEASUREMENT OF IT.** The item says
+1,730 of 1,730 rows carry an error; I reproduced it to within six rows and then found that both
+figures measure a population the product cannot route there. A runner can only send
+`accept_base_build` after `runEngine` has OFFERED them one, and the `get_running` offer is attached
+to §113 and §111 — **not** to `DaysAvailableError`. Measured through `runEngine` itself:
+**47,668 corpus rows → 1,732 refusals → of which 1,728 are `warn_unacknowledged` (the §44 runway
+warning a runner simply acknowledges) → 4 offered a base build.** The 88.6 km session and the 266 km
+week sat on rows nobody is offered one for. **Measure through the producer the product calls, not
+through the capability predicate it happens to consult.**
+
+🔴 **AND THE REAL FINDING: THE INVARIANT COULD NOT BE SATISFIED.** §2's ramp is 10% and §2 Am. 2's
+step was an absolute 1.5 km; `1.5 / 0.10 = 15`, so above a 15 km run a compliant ramp breaches it
+every week. **28,512 of 28,512 violations had `prevLongest > 15 km`, smallest 16.5, every step
+9.7–10.3% — §2's own rate. Not one was a load event.** The build-week arm now reads §45's
+`LONG_RUN_PROGRESSION_CAP_PCT` (20%), a ratio, which is Willy's *"the per-run DOUBLING is the load
+event"* correctly encoded. `WEEK1_PER_RUN_STEP_MAX_KM` is untouched at 1.5 and keeps its week-1 job,
+so Hutchinson's freeze on that predicate is not engaged.
+
+🥇 **THE CONFLICT WAS FILED IN SEPTEMBER AND NAMED THE BAND IT WOULD BECOME REACHABLE IN.**
+`ONRAMP-STEP-UNITS-01`'s registry row said *"above `weekly > runs × 15` km, §2 and §116 Am.2 CANNOT
+BOTH HOLD"*, deferred it as *"unreachable by any runner §118 serves today (0 of 522)"*, and
+predicted *"reachable at 15–20 km/week"*. **The four runners now offered a base build sit at
+20 km/week.** *"Not reachable today"* had an expiry date and nothing was watching it.
+
+⚠️ **Two fixes were BUILT AND REVERTED on the measurement, both of them the thing the record
+forbids.** A scope bound on `getRunningApplies` using §111's door refuses all four offered runners
+— they are §113-refused, for their LONG RUN, at 20 km/week with a longest run of 0 km — and hands
+them nothing, reversing `NO-RUNNER-TURNED-AWAY-01`. A §106 peak-band arm bites at `band / 3.78`,
+which **is** §111's door, so it is the second total-build ceiling Willy refuses.
+
+📐 **Effect: no prescription changes.** 163,068 error violations → 0 on the corpus, 0 of 4 on the
+offer path, so the branch's new `enforceViolations` call is safe. 🔴 **The arm is therefore INERT ON
+THE CORPUS and its liveness is mutation-only**, as §2 Amendment's own arm 3 records for itself:
+11 cases across `baseBuildPerRunStep.test.ts` and `baseBuildBranchValidates.test.ts`, falsified
+three ways — restoring the absolute (2 red, including the compliant-ramp regression), switching the
+arm off (3 red), deleting the branch's `enforceViolations` call (1 red). The wiring gate is
+behavioural, mocking the generator, because a source assertion passes on a comment.
+⚠️ **`verify:parity` is structurally blind to this**: its grid leaves `acceptBaseBuild` unset by
+design, so IDENTICAL proves nothing here and is not quoted as evidence.
+⚠️ **Live exposure was zero and it was checked:** production holds 4 base-build plans, all starting
+5–10 km/week and peaking 12–37.6 km, inside §118's design cohort. Willy's binding condition met.
 
 Found 2026-11-13 during Wave 1 of the coaching triage. `lib/plan/engine.ts` returns the get-running
 plan straight out:
@@ -8980,7 +9119,24 @@ confirming the tally moves** — a count that cannot move is the thing being fix
 🔻 **Not an error-severity gap:** every one of the 29 cases is 0 errors, and that half of the
 protocol works. This is the half the board was asked to judge.
 
-### 🔲 `ROUND-WARNS-UNRULED-01` — 74 warns are legible now and none has been weighed *(filed 2026-11-09, P2)* 🏃 **COACHING BOARD**
+### ✅ `ROUND-WARNS-UNRULED-01` — CLOSED 2026-11-15. All ten weighed: nine warns doing their job, one plan we would not hand over, and it was already filed
+
+**Coaching Board 2026-11-15** (`docs/decisions/coaching-2026-11-15-wave5-delivered-volume.md`).
+Packet regenerated with `npm run review:coaching`. 📐 **The numbers moved: 76 firings, 10 codes,
+25 cases** against the item's 74 / 9 / 25 — the new tenth is `INV-PLAN-PEAK-NOT-BELOW-START` (§106,
+1 firing), absent when the item was filed. The top three are unchanged and are 64 of 76.
+
+**The one that is not a warn doing its job:** `INV-PLAN-RUNWALK-SHORTDIST-SCOPE` (§117 Am. 8, 2
+firings) — a beginner going for 21.1 km off a 5 km longest run with no run-walk prescription,
+because Am. 8 named the 5K and 10K and stopped. **Already filed as `SHORTDIST-RUNWALK-SCOPE-01`**
+and Willy named it this board's next build. Every other code is reporting a residual this board
+has already ratified, or an input constraint (§7's *"likely forced by available days"*, 26 firings
+across 13 of 25 cases, which McMillan ruled must stay a warn permanently: making it an error would
+refuse half the demographic).
+
+⚠️ **One disagreement is recorded, not synthesised:** Sims will not have `INV-PLAN-MIN-LOADING-BLOCK`
+(§119, 1 firing — a 58-year-old with a knee history whose week 2 is a deload) cleared on prevalence.
+It cannot be settled today: there is 1 such plan in production.
 
 📐 **The packet the board was always asked to weigh exists for the first time** (`COACHING-ROUND-WARNS-BLIND-01`,
 same day). Nine codes, 74 firings, 25 cases; the foundation packet carries the same nine at ×18.
