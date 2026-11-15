@@ -81,6 +81,68 @@ describe('findMatchCandidates — distance band (Zonna over-trainer)', () => {
 // These arms are keyed to the founder's own capture, because a test written from
 // an invented case would not have caught it: a 20 Sep / 14 km run offered for a
 // Fri 25 Sep / 8 km easy session. 25 Sep - 5 = 20 Sep, EXACTLY the boundary.
+/**
+ * 🔴 `ACT-REPORTED-DISTANCE-DOOR-01` — THE ZERO-DISTANCE RUN STILL REACHES A LINK OFFER.
+ *
+ * Measured 2026-11-15 in production: **88 of 501 Apple Health activities (5 users) arrive with
+ * `distance_m` = 0, every one of them `activity_type: 'Run'`, 31.3 min on average**, and
+ * **0 distances have ever been typed in** through `AddDistanceSheet`.
+ *
+ * The item was filed on the theory that the distance door is unreachable for exactly these runs:
+ * both render sites (`SessionPopupInner`'s `canAddDistance`, the post-run screen's
+ * `canAddPostRunDistance`) require a run ALREADY LINKED to the session, and a zero-distance run
+ * on a distance-primary day *"can never reach 70 points — 40 for the weekday plus at most 10 for
+ * effort"*. **That arithmetic is right and the conclusion does not follow: 70 is the HIGH
+ * threshold, and `resolveAutoMatch` surfaces MEDIUM too** (`AUTO-MATCH-02` — *"Looks like this
+ * one?"*, same handler). 40 alone is medium.
+ *
+ * So these arms pin the thing the item assumed was absent. If the medium threshold moves, or a
+ * distance precondition is added to the offer, the trap it describes opens — **silently**, since
+ * nothing a runner sees would say so.
+ */
+describe('ACT-REPORTED-DISTANCE-DOOR-01 — a zero-distance run can still be linked', () => {
+  const zeroDistanceRun = (day: 'Mon' | 'Tue' | 'Wed', avgHr?: number) => ({
+    ...activityAt(day, 0, avgHr),
+    // `activityAt` derives `moving_time` from distance, which is 0 here. A real one of these
+    // is a 31-minute run the watch never measured, so the duration has to be put back.
+    moving_time: 31 * 60,
+    elapsed_time: 31 * 60,
+  })
+
+  it('reaches MEDIUM on a distance-primary planned day, so a link CTA is offered', () => {
+    const session = { distance_km: 8, primary_metric: 'distance', type: 'easy' } as any
+    const cands = findMatchCandidates(session, sessionAt('Tue'), [zeroDistanceRun('Tue', 142)])
+    // same day (+40) + NO distance match (ratio 0 fails the 0.75 floor) + effort (+10) = 50.
+    expect(cands[0]?.confidence).toBe('medium')
+    expect(cands[0]?.reasons).toContain('same day')
+    expect(cands[0]?.reasons).not.toContain('distance match')
+  })
+
+  it('reaches MEDIUM with no HR at all — the weekday alone is enough', () => {
+    // 48 of the 88 carry HR, so 40 of them clear this on the +40 alone.
+    const session = { distance_km: 8, primary_metric: 'distance', type: 'easy' } as any
+    const cands = findMatchCandidates(session, sessionAt('Tue'), [zeroDistanceRun('Tue')])
+    expect(cands[0]?.confidence).toBe('medium')
+  })
+
+  it('🔴 and the manual picker does not filter on distance either', () => {
+    // The second route to the link, and the one with no scoring in it at all:
+    // `rankLinkCandidates` RANKS, it does not FILTER (its own header says so).
+    const session = { distance_km: 8, primary_metric: 'distance', type: 'easy' } as any
+    const zero = zeroDistanceRun('Tue', 142)
+    expect(isInLinkPool(new Date(zero.start_date), sessionAt('Tue')), 'in the browse window').toBe(true)
+    expect(rankLinkCandidates(session, sessionAt('Tue'), [zero]), 'listed, not dropped').toHaveLength(1)
+  })
+
+  it('the SAME run WITH a measured distance reaches HIGH — so the band is what moved, not the offer', () => {
+    // The control. Without it, "medium" could be read as the scorer being broken for these runs
+    // rather than as the distance band legitimately not scoring.
+    const session = { distance_km: 8, primary_metric: 'distance', type: 'easy' } as any
+    const cands = findMatchCandidates(session, sessionAt('Tue'), [activityAt('Tue', 8100, 142)])
+    expect(cands[0]?.confidence).toBe('high')
+  })
+})
+
 describe('MATCH-LIST-WINDOW-01 — link pool and ranking', () => {
   const SESSION_DAY = new Date('2026-09-25T00:00:00Z')   // Friday
   const NOW         = new Date('2026-09-26T09:00:00Z')

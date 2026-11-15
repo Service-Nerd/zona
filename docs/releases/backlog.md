@@ -6039,20 +6039,47 @@ dropped events is a symptom; the repo had the diagnosis written down.
 
 ---
 
-### 🔻 `ACT-REPORTED-DISTANCE-DOOR-01` — latent, 0 live instances, recorded not fixed ⚙️ **NO BOARD**
+### ✅ `ACT-REPORTED-DISTANCE-DOOR-01` — CLOSED 2026-11-15, NOT A DEFECT: the premise was false ⚙️ **NO BOARD**
 
-**87 of 489 Apple Health activities (17.8%, 5 users) arrive with zero distance**, and **0 of 533
-activities ever had a distance typed in** by the runner, though `AddDistanceSheet` /
-`AddDistanceRow` are live and wired (`UNMEASURED-DISTANCE-01`). Both render sites require a run
-that is **already linked to a session** (`SessionPopupInner`'s `linkedRun`, and the post-run
-screen's `canAddPostRunDistance`, which needs a `session`). For a **distance-primary** session a
-zero-distance run can never reach 70 points — 40 for the weekday plus at most 10 for effort — so
-the door that would supply the distance sits behind the link the missing distance prevents.
+**As filed:** *"both render sites require a run already linked to a session; for a distance-primary
+session a zero-distance run can never reach 70 points — 40 for the weekday plus at most 10 for
+effort — so the door that would supply the distance sits behind the link the missing distance
+prevents."*
 
-⚠️ **MEASURED BEFORE FILING AND THE TRAP IS EMPTY: 0 of the 87 land on a distance-primary planned
-day.** All five planned-day cases are duration-primary, where `distance_km` is null and the
-distance band never applies at all. **Real in the code, no live instance** — filed so the next
-instance has a name, not sized as a current defect.
+🔴 **THE ARITHMETIC IS RIGHT AND THE CONCLUSION DOES NOT FOLLOW. 70 is the HIGH threshold; 40 is
+MEDIUM, and `resolveAutoMatch` surfaces medium too.** `AUTO-MATCH-02` offers it as *"Looks like
+this one?"* with the **same handler** as high — the framing differs, the capability does not.
+📐 **Measured by running the real matcher**, not by reading it: a zero-distance run on a
+distance-primary planned day scores **50 with HR under 155 and 40 without**, and
+`resolveAutoMatch` returns an offer in both cases. The control — the same run with a measured
+8.1 km against a planned 8 km — reaches **high**. **So the distance band is what moved, not the
+offer.**
+
+🔴 **AND THERE IS A SECOND ROUTE WITH NO SCORING IN IT AT ALL.** The manual picker filters on the
+date window (`isInLinkPool`) and claimed ids, and **nothing else** — `rankLinkCandidates` RANKS,
+it does not FILTER, as its own header says. A zero-distance run is listed and tappable.
+
+📐 **PRODUCTION RE-MEASURED (read-only), and the data barely moved:** **88** of **501** Apple
+Health activities carry `distance_m = 0` (filed as 87 of 489), across the same **5** users,
+**every one of them `activity_type: 'Run'`**, 31.3 min on average, 48 with HR. **0 distances have
+ever been typed in** — unchanged. ⚠️ **And 0 of the 88 has ever been LINKED to a session**, which
+is why the door has never opened in practice: not because the link is prevented, but because
+nobody has made it.
+
+✅ **A GATE, NOT A NOTE** — `lib/coaching/sessionMatch.test.ts`, 4 arms, pinning the capability the
+item assumed was absent. 📐 **Falsified against the three ways the trap could actually open:**
+raise the medium threshold (→ 2 red), add a distance precondition to the weekday points (→ 2 red),
+make the picker filter on distance (→ 1 red). The fourth arm is the HIGH control and fires on
+none of them, deliberately — without it, *"medium"* reads as the scorer being broken for these
+runs rather than as the distance band correctly not scoring.
+
+🔻 **ONE FACT LEFT STANDING, STATED RATHER THAN FILED:** the door is reachable and has never been
+used — 88 zero-distance runs, 0 linked, 0 distances entered. That is a **product** question, not a
+defect, and there is nothing to measure it with: 5 users, no analytics, and the SLT seat that
+would ask *"what is the traffic?"* is stood down (Traynor, recallable). Filing it would be filing
+a question nobody can answer. ⚠️ **What this does not prove:** nothing was exercised on a device,
+and the 88 runs were not inspected individually — the reachability claim is about the code and the
+scorer, both of which were run.
 
 ## 🔲 PARKED 2026-11-04 — two strength engine items from the device review
 
