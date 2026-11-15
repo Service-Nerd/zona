@@ -974,6 +974,10 @@ function pacedRepPlan(
   phase: PhaseType,
   pace: PaceGuide,
   goalPaceMinPerKm: number | null,
+  // S9-SECONDARY-FLOOR-PRECEDENCE-01 — this SLOT's §9 floor, from `sessionFloorsFor`.
+  // Required, not defaulted: the dangerous value is the primary's 5 km on a secondary
+  // slot, which is the defect this parameter exists to remove.
+  qualityFloorKm: number,
   // Coaching Board 2026-09-03 — true when this SESSION (not the row
   // intrinsically) is being prescribed at goal pace, per §22's existing
   // goal-pace-week override (see useGoalPace at the call site). A threshold
@@ -1074,7 +1078,7 @@ function pacedRepPlan(
       reps = cfg.REP_ROW_MIN_REPS
     }
   }
-  const minKm = GENERATION_CONFIG.MIN_SESSION_DISTANCE_KM.quality
+  const minKm = qualityFloorKm
   // §8 Amendment (2026-09-04) — the floor check must price the session the SAME
   // way the session is priced. It divided total duration by WORK pace while the
   // caller now prices warm-up and cool-down at EASY pace, so it certified a
@@ -1376,8 +1380,22 @@ function continuousThresholdPlan(
  *  so a floor check can never be measured in different units from the session it
  *  guards — which is exactly how a 4.5 km session passed a 5 km floor. */
 
-function makeQualitySession(args: {
+/**
+ * The ONE sizer for a quality session — both weekly slots and the V2 resize seam call it.
+ *
+ * ⚠️ EXPORTED FOR `secondaryQualityFloor.test.ts` AND NO OTHER CALLER. The
+ * `secondary_quality` floor is unreachable through `generateRulePlan` — a second quality
+ * session needs `qualityCountInPeak > 1`, and that cohort's threshold dose enters sizing
+ * at 8.33 km at its smallest (45,908 plans) — so a gate driving only the engine would
+ * assert nothing. The export is the seam the gate needs.
+ */
+export function makeQualitySession(args: {
   weekN: number; day: Day; distKm: number; metric: 'distance' | 'duration'
+  // S9-SECONDARY-FLOOR-PRECEDENCE-01 — `.quality` for the week's primary quality
+  // session, `.secondary_quality` for its second. Both growth loops read it; both
+  // used to read `.quality`, while the sizing BUDGET at the secondary call site
+  // already read `.secondary_quality`. Only the floors disagreed with the budget.
+  qualityFloorKm: number
   zones: ZoneTargets; pace: PaceGuide
   catalogueRow: SessionCatalogueRow | null
   phase: PhaseType; fitness: FitnessLevel; isDeload: boolean
@@ -1547,6 +1565,7 @@ function makeQualitySession(args: {
   const goalPaceMinPerKmForSizing = goalPace ? paceStrToMins(goalPace) : null
   const repPlan = pacedRepPlan(
     catalogueRow, fitness, phase, pace, goalPaceMinPerKmForSizing,
+    args.qualityFloorKm,
     substituteThresholdWithGoal, args.raceDistanceKm ?? null,
   )
 
@@ -1588,7 +1607,7 @@ function makeQualitySession(args: {
   // Coaching Board 2026-09-03 — tempo_continuous's single-block continuous
   // sizing (see continuousThresholdPlan). Null for every other row.
   const contTempoPlan = continuousThresholdPlan(catalogueRow, fitness, phase, {
-    minKm: GENERATION_CONFIG.MIN_SESSION_DISTANCE_KM.quality,
+    minKm: args.qualityFloorKm,
     easyPace: pace.minPerKmEasy,
     workPace: pace.minPerKmQuality,
   })
@@ -3769,6 +3788,7 @@ function buildWeekSessions(
       if (process.env.DEBUG_ROT) console.error(`      cat1 -> ${cat1?.id}:${cat1?.category} (pref=${preferredCategory})`)
       sessions[qualDay] = makeQualitySession({
         weekN, day: qualDay, distKm: qualKm, metric, zones, pace,
+        qualityFloorKm: minDist.quality,
         catalogueRow: cat1, phase, fitness: intensityFitness, isDeload, goalPace,
         goalPaceWeek, distLabel: distKey, cueCtx, raceDistanceKm: input.race_distance_km,
       })
@@ -3846,6 +3866,7 @@ function buildWeekSessions(
           sessions[qual2Day] = makeQualitySession({
             weekN, day: qual2Day,
             distKm: Math.max(roundDist(qualKmPerSession * secondaryFraction), minDist.secondary_quality),
+            qualityFloorKm: minDist.secondary_quality,
             metric, zones, pace,
             catalogueRow: cat2, phase, fitness: intensityFitness, isDeload, goalPace,
             goalPaceWeek, distLabel: distKey, cueCtx, raceDistanceKm: input.race_distance_km,
@@ -7873,6 +7894,12 @@ function buildRulePlanOnce(
       const resized = makeQualitySession({
         weekN: week.n, day,
         distKm: session.distance_km ?? 0,
+        // The relocated session's SLOT is not recoverable: this seam swaps Session objects
+        // between weeks and the plan carries no primary/secondary stamp. Held at the primary
+        // floor — the larger of the two, so a relocation can never shrink a session below
+        // what sized it. Stated, not defaulted: an unknown slot is not a primary one.
+        // 📐 Fires on 0 of 45,908 served plans (measured 2026-11-15, not inherited).
+        qualityFloorKm: sessionFloorsFor(input.longest_recent_run_km).quality,
         metric: session.primary_metric === 'duration' ? 'duration' : 'distance',
         zones, pace,
         catalogueRow: row,
