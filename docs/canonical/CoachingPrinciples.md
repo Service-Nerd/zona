@@ -12748,6 +12748,96 @@ rehearsing it (the width `INV-PLAN-RACE-ANCHOR-MATCHES-GOAL` already uses), so �
 
 ---
 
+## §120 Amendment 4 — the bound reaches the runner who has no benchmark (Coaching Board 2026-11-16, GOALPACE-UNBENCHMARKED-MARATHON-01) · **RULED, BUILT, AND HELD — NOT SHIPPED**
+
+🔴 **STATUS: the ruling stands and the code was written, measured, falsified and then REVERTED the same
+day, because building it found a load regression the sitting had cleared on a premise of mine that was
+false.** §47's peak long-run step-back fires only where a peak long run carries race-pace specificity,
+and its trigger is a **LABEL** (`label.includes('pace')`) — the pattern ADR-018 and the pre-commit hook
+exist to kill. Withholding goal pace changes that label, so **§47 silently stops firing: 10,704 peak long
+runs across the grid, of which 3,744 are beginner HM and marathon plans.**
+
+⚠️ **AND MY FIRST READING OF THAT WAS WRONG, WHICH IS THE RECORD.** I reported it as *not* a regression
+on the ground that §47's own comment excludes 5K and 10K by name (6,960 of the 10,704, correctly) and
+that §24b gives beginners no pace segments. **`PEAK-LR-STEPBACK-MINUTES-01` (Coaching Board 2026-09-13)
+exists precisely because 🩹 Willy found that *"a beginner never received a peak long-run step-back
+week"*, and its fixture is an unbenchmarked beginner** — green only because §22's goal-pace override was
+labelling their long run as race-paced and pulling them into §47. **So the 3,744 are the cohort Willy's
+rule was built to protect, and the regression is the one he already fixed once.** Its own test is what
+caught it, by going red where no measurement of mine had looked.
+
+🔑 **The blocker, and it is a defect fix rather than a new rule:** §47's step-back is a **load** rule
+about consecutive peak long runs, and it must not be gated on whether a *pace* is prescribed. Measured
+across all 92,384 peak long runs in the cohort grid, the label and the producer's own `lr_segment_pace`
+stamp **agree on every one — 0 disagreements in either direction** — so moving the trigger onto the
+stamp is a zero-delta refactor today. It does **not** close this: a withheld plan has neither signal,
+so the trigger needs a structural answer to *"is this a peak long run whose load §47 governs?"*
+→ `STEPBACK-TRIGGER-STRUCTURAL-01`, Willy's, and §120 Am. 4 is held behind it.
+
+⚠️ **What was already measured and holds, so the next attempt need not re-derive it:** the bound itself
+(7,704 of 9,504 plans past their own CV, 3,168 past their own interval pace, HM 2,376 of 2,592);
+0 refusals flipped and 0 session counts changed; prescribed minutes median −0.16% and **2,304 plans UP**;
+`neverBuildsPct` masters 14.2 → 14.5 and standard 9.4 → 9.6 on a **km** ruler; the Sims arm satisfied at
+6,192 of 6,192 and 0 reading `comfortable`; `INV-PLAN-UNBENCHMARKED-GOAL-BOUNDED` falsified at its owner
+**400 of 400 / 0**. Evidence: `scripts/board-evidence-unbenchmarked-goal.ts` and
+`board-evidence-unbenchmarked-corpus.ts`, both kept.
+
+
+**Principle.** On an **unbenchmarked** time-target plan, goal-paced work is withheld when the goal pace is faster than
+the **CV pace this same plan prescribes** (`RACE_PACE_ANCHOR_MAX_OVER_CV_PCT`, 0.5%). The decision is taken once, beside
+Amendment 2's, and carried on the pace guide, so every surface that prices goal pace reads one fact. A **finish** goal is
+unchanged; a **benchmarked** runner stays with Amendment 2.
+
+**Why this is not Amendment 2 extended, and not a reversal of its chair's note.** Am. 2 asks *"how far past this
+runner's MEASURED fitness is the goal?"* and answers in a percentage — which is why its binding note refuses to decide
+from an estimate. This asks a different question that needs no percentage: *"is the plan about to prescribe work faster
+than the paces this same plan prescribes?"* That is **Amendment 3's own test** (*"a plan asks in the currency its own
+sessions are priced in"*) applied to a plan whose currency happens to be an estimate — a claim about the plan's internal
+consistency, never about the runner's fitness. 🏃 Hutchinson: *"I am not reversing myself, I am narrowing a sentence
+that was too broad."*
+
+**Why. The mechanism was already ratified and its SCOPE was the defect.** Am. 1 had bounded unbenchmarked runners
+against their fitness-level CV since 2026-09, but inline in `resolveAnchorPace`'s `case 'HM'` — so it bounded the **`HM`
+anchor** and never §22's goal-week override of a T-anchored row, which is the path that carries the volume.
+📐 **Measured over 9,504 generated unbenchmarked time-target plans: 7,704 (81.1%) carried a goal-paced session faster
+than that runner's own CV pace and 3,168 (33.3%) faster than their own INTERVAL pace — including 2,376 of 2,592 HALF
+MARATHONS, the distance everyone believed was bounded.** Am. 2's own rationale describes this shape
+(*"two paths priced goal pace and neither asked whether it was runnable; only the HM anchor was bounded"*) and closed
+the second path for benchmarked runners only.
+
+📐 **Live, one runner:** declared beginner, no benchmark, 20 km/week, longest run ever 10 km, 4:00:00 marathon target —
+prescribed **36 minutes continuous at 5:34–5:48 /km, `Zone 4–5`, 163–187 bpm, where 187 is their own stored maximum**,
+against an easy pace of 6:30–7:30. `ZONE_COPY['Z4-5']` then told them *"You can't talk."*
+
+**⚕️ Sims' sentence, and the premise behind her condition was FALSE.** The submission claimed extending the bound would
+take a **silent** withholding from one distance to four. It would not: **§44 Amendment 2 (`GOAL-PAST-CV-SILENT-01`)
+already exists for exactly this cohort** and is the difficulty note's own arm. So the condition is met by **widening the
+arm that renders it**, never by a second sentence — and both halves had to move: 📐 **2,160 newly-withheld plans first
+took the interval-band arm** and were told *"race-pace sessions will bite harder than the interval work"* on plans
+containing no race-pace session, which McMillan made forbidden in that same sitting; and **1,440 more took
+`constrained_by_inputs` and said nothing**, until the sentence was appended the way Am. 2 appends the gap sentence.
+**Measured after both: 6,192 of 6,192 withheld plans carry it, and 0 read `comfortable`.**
+
+**🎯 McMillan's binding condition, discharged with numbers.** Across 10,368 inputs, before and after:
+**0 refusals flipped** (`NO-RUNNER-TURNED-AWAY-01`), **0 session counts changed**, prescribed minutes moved on 6,060
+plans at a median of **−0.16%** (worst −1.26%, and **2,304 went UP**, max +2.05%), total km median **−0.46%**.
+🩹 Willy: *"the fix only ever makes a session easier."*
+
+⚠️ **AND THE FITNESS HARNESS MOVED, WHICH IS A PROPERTY OF ITS RULER.** `neverBuildsPct` rose masters 14.2 → 14.5 and
+standard 9.4 → 9.6 — about **40 plans of 16,514** crossing its 2% line. `measure:fitness` compares `weekly_km`, and the
+same minutes at threshold cover fewer kilometres than at a faster goal pace, so **any change that prices work more
+slowly will move it without any runner training less.** Re-baselined with that reason, which is the precedent Am. 2 set
+for the identical artefact. **A km ruler cannot see minutes held constant.**
+
+**Config.** No new numeric — `RACE_PACE_ANCHOR_MAX_OVER_CV_PCT` stops being HM-scoped.
+**Owner.** `lib/plan/goalPaceReach.ts → unbenchmarkedGoalWithheld`, decided in `generateRulePlan` beside Am. 2 and
+carried as `PaceGuide.goalWithheld`; `goal_pace_withheld.basis` (`'measured' | 'estimated'`) records which kind, so no
+reader has to infer it from an absent `gap_pct`.
+**Check.** `INV-PLAN-UNBENCHMARKED-GOAL-BOUNDED` (`error`, both directions) · `INV-PLAN-GOAL-PACE-REACHABLE`'s Sims arm
+reads the basis through `explainsWithholding` · `lib/plan/goalPaceUnbenchmarked.test.ts`.
+
+---
+
 ## §120 Amendment 3 — the line is measured against the plan's own currency (Coaching Board 2026-11-07, GOALPACE-REACH-COMPARATOR-01)
 
 **Principle.** The reachability line in Amendment 2 is measured against the **§10-discounted training anchor**
