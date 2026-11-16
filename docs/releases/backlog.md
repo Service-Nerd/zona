@@ -2291,22 +2291,42 @@ commit** or the release goes red — it asserts `'threshold zone (Z3)'` and woul
 
 ---
 
-### 🔲 `COMPLETION-ACTIVITY-JOIN-01` — a completion never joins to its activity, so no prescribed session has ever had an HR ⚙️ **NO BOARD**
+### 🔴 `COMPLETION-ACTIVITY-JOIN-01` — **CLOSED 2026-11-16, SAME DAY: FALSE PREMISE, AND I FILED IT** ⚙️ **NO BOARD**
 
-**Sequenced FIRST** by the Coaching Board 2026-11-16, satisfying 🩹 Willy's condition on
-`THRESHOLD-BAND-ANCHOR-01`.
+Filed this morning claiming *"161 live completions, `strava_activity_id` null on ALL of them — a completion never
+joins to its activity, so no prescribed session has ever had an HR."* **Wrong.** `strava_activity_id` is null
+**because HealthKit is the SOR (ADR-011) and the join is `apple_health_uuid`** — and **16 of 161 completions are
+device-linked, all 16 of which join an activity successfully.** I measured the wrong column, the Coaching Board ruled
+on it, and it was sequenced first in the release plan.
 
-📐 **161 live completions, `strava_activity_id` null on ALL of them.** So the clean measurement — *what did the
-runner's heart do during this prescribed session* — has never been possible. **6 threshold sessions have ever been
-completed, by 2 runners, 1 with an average HR**, against **437 activities carrying HR and 373 carrying a full bpm
-histogram**. The data exists on one side of a join that is not made.
+🔑 **Found by starting the build and re-deriving the premise before writing code** — which is the only reason nothing
+was built on it. Same lesson as every other item this week, except this time the item was mine and four hours old.
 
-🔑 **One defect blocking two questions:** it weakens the chair's evidence for the band change *and* hides Willy's
-denominator — *"this change makes the session harder only for the runners who were obeying the heart rate"*, and
-nobody can say how many that is.
+📐 **What is actually true, and it makes the evidence THINNER than the ruling believed:** 80 completions carry an
+`avg_hr` but **only 8 are device-backed and 72 were typed by hand**; of 9 completed Zone-3 quality sessions, 5 carry
+an HR and **1 is device-backed** — a `progressive_tempo` that declares `['Z2','Z3']` and ramps by design, so its
+average is sub-threshold on purpose and cannot test the T band. **Usable direct evidence: n = 0.**
 
-⚠️ Must be **source-agnostic** (ADR-011): never filter by `source`. Backfill where `apple_health_uuid` or
-date+distance identify the activity. Gate: a join-coverage measure, **baselined at today's 0**.
+→ Re-filed as `COMPLETION-HR-COVERAGE-01` below. → Willy's condition on `THRESHOLD-BAND-ANCHOR-01` is **re-opened**:
+it cannot be discharged by engineering, because there is nothing to build.
+
+---
+
+### 🔲 `COMPLETION-HR-COVERAGE-01` — 72 of 80 recorded heart rates were typed by hand, and nothing says which ⚙️ **NO BOARD** (measurement)
+
+Replaces the closed item above. **Not a defect** — a measurement every future coaching question about executed
+intensity depends on.
+
+📐 **161 live completions: 16 device-linked, 80 carrying an `avg_hr`, of which 8 device-backed and 72 hand-typed**
+(the manual path at `app/api/analyse-run/manual/route.ts` accepts `avg_hr` from the request body).
+
+🔴 **A hand-typed `avg_hr` is indistinguishable from a measured one in the schema**, which is exactly how I came to
+quote 80 as though it were telemetry in a board submission. **Any analysis that reads `session_completions.avg_hr` as
+device data is wrong by 90%.**
+
+**What would help, in order of value:** (a) a provenance flag so the two can be told apart at the query, (b) raising
+device-link coverage above 16/161, (c) nothing else — the sample size is a usage fact and no engineering produces
+more completed quality sessions.
 
 ---
 

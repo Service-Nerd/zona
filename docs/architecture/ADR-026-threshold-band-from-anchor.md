@@ -120,10 +120,22 @@ Two options, a coaching judgement and **not decided here**:
 
 ## 6. What this does not prove
 
-- **The evidence is indicative, not controlled.** The 29-run sample is whole activities selected by *average pace*,
-  not confirmed threshold sessions, because **`session_completions.strava_activity_id` is null on all 161 live
-  completions** — a completion never joins to its activity. Only 6 threshold sessions have ever been completed, by
-  2 runners, 1 with an average HR.
+- 🔴 **CORRECTED 2026-11-16, same day, before any build: my claim that "a completion never joins to its activity"
+  was FALSE.** `strava_activity_id` is null on all 161 completions **because HealthKit is the SOR (ADR-011) and the
+  join is `apple_health_uuid`** — and **16 of 161 are device-linked, all 16 of which join an activity successfully.**
+  I measured the wrong column and filed a defect that does not exist (`COMPLETION-ACTIVITY-JOIN-01`, closed).
+- **What is actually true, and it is worse for the evidence.** 80 completions carry an `avg_hr`, but **only 8 are
+  device-backed; 72 were typed by hand** on the manual path. Of completed **Zone-3 quality** sessions there are
+  **9, of which 5 carry an HR and exactly 1 is device-backed** — and that one is a `progressive_tempo`, which
+  declares `['Z2','Z3']` and ramps by design, so **its whole-session average is sub-threshold on purpose and cannot
+  test the T band at all.** Direct device-backed evidence for this question is therefore **n = 0 usable.**
+- **The 29-run sample is whole activities selected by *average pace*, not confirmed threshold sessions.** It remains
+  the best available telemetry and it is indirect.
+- ⚠️ **And the direct observations point the other way.** The five completed Zone-3 sessions with any HR average
+  **17–33 bpm BELOW** the prescribed ceiling at RPE 4–7. That is not a contradiction — the 29 are runs where the
+  runner *did* hit the prescribed pace, the 5 are prescribed sessions where mostly they did not — but it means
+  **the observed behaviour is runners undershooting both numbers**, which is a different problem from the one this
+  ADR fixes and may matter more.
 - **No number here is a measured threshold HR.** 81–87% HRR is the engine's own T fraction converted through the
   %HRR ≈ %VO2R identity (ACSM / Swain & Leutholtz). ⚕️ **Sims:** the chain is male-derived end to end — Daniels'
   VDOT tables and the conversion cohorts — and *"the ADR should say so rather than presenting the conversion as
@@ -146,8 +158,16 @@ Two options, a coaching judgement and **not decided here**:
    `intervalEffort ? 'interval zone (Z4–5)' : 'threshold zone (Z3)'`. **If threshold becomes Zone 4 it starts firing
    on correct plans** and the release goes red.
 
-**Willy's condition is recorded, not overruled:** the completion→activity join (`COMPLETION-ACTIVITY-JOIN-01`) is
-sequenced **before** this change, which satisfies it without blocking the freshness work.
+🔴 **Willy's condition CANNOT BE DISCHARGED BY ENGINEERING, and the sitting that said it could was working from my
+false premise.** There is no join to fix. The limit is sample size: **10 quality sessions have ever been completed,
+1 device-backed.** No code change creates more of those — only usage does. The condition is re-opened and returned to
+the board.
+
+🔑 **Which leaves the coherence argument, and it needs no cohort data at all:**
+`z2Top` **IS** `z3Low`, so **the threshold floor is the easy ceiling by construction**; and pace comes from
+%VO2max while HR comes from %HRR with **no conversion anywhere in the engine**. Both are provable from the code on
+any machine, for every runner, today. **That is the ground this ADR should stand on** — the telemetry is
+corroboration, not the case.
 
 ## 8. Migration — and ADR-012 does not cover this
 

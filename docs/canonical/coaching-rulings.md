@@ -3330,3 +3330,59 @@ evidence and hides Willy's denominator: **one defect blocking two questions.**
 
 Yes — migration cost and the trust event of a moved number are commercial, not correctness. **SLT ruled BUILD, FREE**,
 and did not contest the three conditions.
+
+
+---
+
+## Re-sitting — the intensity model, same day (2026-11-16): the evidence paragraph was wrong and it was mine
+
+🔴 **CORRECTION, before anything was built.** The sitting above records *"161 live completions, `strava_activity_id`
+null on all of them — a completion never joins to its activity, so no per-session HR exists for any prescribed
+session, ever."* **That is false.** `strava_activity_id` is null **because HealthKit is the SOR (ADR-011) and the join
+is `apple_health_uuid`** — and **16 of 161 completions are device-linked, all 16 of which join an activity.** I
+measured the wrong column, filed `COMPLETION-ACTIVITY-JOIN-01` against a defect that does not exist, and this board
+ruled on it. Found by starting the build and re-deriving the premise first.
+
+📐 **What is actually true, and the evidence is THINNER than the sitting believed, not richer:**
+
+| | |
+|---|---|
+| Live completions | 161 |
+| Device-linked (`apple_health_uuid`) | **16 — all 16 join** |
+| Carrying an `avg_hr` | 80 |
+| …**device-backed** | **8** |
+| …**typed by hand** on the manual path | **72** |
+| Completed **Zone-3 quality** sessions | 9 |
+| …with any HR | 5 |
+| …**device-backed** | **1** |
+
+⚠️ **And that single device-backed one cannot answer the question.** It is a `progressive_tempo`, which declares
+`['Z2','Z3']` and **ramps by design** — E ceiling → Z2-Z3 → T — so a whole-session average well below the T band is
+the **correct** shape for it (observed 125 avg, 162 max, 12.5% in Z4–5, against 144–158 prescribed). **Usable direct
+evidence: n = 0.**
+
+⚠️ **The five Zone-3 completions with any HR average 17–33 bpm BELOW the prescribed ceiling at RPE 4–7.** Four are
+hand-typed, `cat_id: null`, pre-SC-08a "Quality run" rows with no pace target, so they are not threshold sessions and
+should not be read as such. But the direction is worth recording: where we can see anything at all, **runners are
+undershooting both numbers**, not exceeding the HR band.
+
+| Ruling | Outcome |
+|---|---|
+| **`COMPLETION-ACTIVITY-JOIN-01`** | 🔴 **CLOSED — FALSE PREMISE, filed by me and ruled on by this board.** There is no broken join. What is true is that **only 16 of 161 completions are device-linked at all**, which is ingest coverage and usage, not a defect. Re-filed as `COMPLETION-HR-COVERAGE-01` ⚙️, measurement only. |
+| 🩹 **Willy's condition** | 🔴 **RE-OPENED. It cannot be discharged by engineering.** The sitting accepted sequencing a build ahead of the prescription change; there is no build. **10 quality sessions have ever been completed, 1 device-backed.** No code change creates more — only usage does. 🩹 Willy: *"then do not tell me the denominator is coming. Either rule without it or say we are waiting on runners."* |
+| **`THRESHOLD-BAND-ANCHOR-01`, the basis of the ruling** | ⚖️ **STILL CORRECT WITH AMENDMENT — but the GROUND CHANGES.** 🏃 Hutchinson: *"I ratified this on indicative telemetry with a controlled measurement promised behind it. The measurement is not coming, so the ruling has to stand on the part that needs no cohort at all — and it does."* 🔑 **The coherence case is provable from the code on any machine, for every runner, today: `z2Top` IS `z3Low`, so the threshold floor is the easy ceiling by construction; and pace is derived from %VO2max while HR is derived from %HRR with no conversion anywhere in the engine.** The 29 pace-matched runs are corroboration, not the case. **The three conditions are unchanged.** |
+| **Shipping without the denominator** | ⏸️ **FOUNDER'S CALL, stated plainly.** 🩹 Willy will not withdraw: an HR-follower moves from 151 mid-band to 163 and we cannot say how many runners that is. 🏃 Hutchinson holds the floor-equals-ceiling defect is indefensible to leave in place. **Both agree on one thing: no pace moves, so a pace-follower experiences no new load.** The disagreement is entirely about the HR-follower, and it is unmeasurable today. |
+
+### ⚡ Recorded disagreement, revised
+
+🏃 **Hutchinson vs 🩹 Willy, unchanged in substance and now unresolvable by waiting.** *Hutchinson moves if* beginners
+cannot be cleanly excluded. *Willy moves if* the change ships **pace-first** — no pace moves, so a pace-follower is
+unaffected — **or** if the product ever collects enough device-backed quality completions to measure the share, which
+on current usage is not a schedule.
+
+### 🔻 Filed by this re-sitting
+
+- **`COMPLETION-HR-COVERAGE-01`** ⚙️ — **16 of 161 completions are device-linked and 72 of 80 HR values are typed by
+  hand.** Not a defect; a measurement worth watching, because every future coaching question about executed intensity
+  depends on it. ⚠️ **And a hand-typed `avg_hr` is indistinguishable from a measured one in the schema**, which is how
+  I came to quote 80 as though it were telemetry.
