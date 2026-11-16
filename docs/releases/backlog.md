@@ -11737,32 +11737,45 @@ has no React, so the CSS floor is correct there and is not a duplicate.
 
 ---
 
-#### 🟡 `FATIGUE-CHIP-DUPLICATE-01` — the fatigue chips exist twice, with their semantic colour copied *(P3, filed 2026-10-05)* 🧭 **DESIGN BOARD**
+#### ✅ `FATIGUE-CHIP-DUPLICATE-01` — SHIPPED 2026-11-16. **IT WAS SIX SURFACES AND FOUR SCALES, NOT TWO AND ONE** 🧭 **DESIGN BOARD**
 
-**Found while flooring the last five controls for `TAP-TARGET-DECISIONS-01`** — both copies turned
-up in the same register, were floored on the same day, and only then did it become obvious they are
-the same control.
+> ✅ **SHIPPED 2026-11-16.** `components/shared/FatigueChips.tsx` owns the row; `FATIGUE_HUE` owns the scale.
+> Four interactive sites converted, `SessionCompleteCard` reads the owner, the OG mirror is held by a test.
+> **8 arms, 8 mutations falsified**, including each of the three broken scales that were live. Felt at 375×812.
 
-📐 **Measured:** `components/dashboard/SessionPopupInner.tsx` and `app/dashboard/DashboardClient.tsx`
-each render the Fresh / Fine / Heavy / Wrecked row — **same four tags, same per-tag colour mapping,
-same pill geometry (`padding: '8px 18px'`, `borderRadius: '20px'`, 12px), same active treatment**
-(`color-mix(... 12%, transparent)` fill + matching border). Both were 30px; both now carry the floor
-**separately**.
+📐 **BOTH HALVES OF THE ITEM WERE WRONG.** It said the row *"exists twice"* and that *"nothing is broken: both
+render identically today"*. Re-measured: **six surfaces, four scales.**
 
-🔴 **The colour mapping is the duplicated part that matters.** `Fresh → --session-green`,
-`Fine → --accent`, `Heavy → --amber`, `Wrecked → --danger` is a **meaning**, written out twice. The
-Design Board refused to give `Chip` a colour axis on 2026-10-05 precisely because *"a scale rendered
-in one colour is a list"* — so the scale is real doctrine, and it lives in two component files with
-nothing comparing them.
+| | Fresh | Fine | Heavy | Wrecked |
+|---|---|---|---|---|
+| **A** `DashboardClient` | `--moss` | `--s-easy` | `--warn` | **`--danger`** |
+| **B** `SessionPopupInner`:752 · `ManualRunModal` | `--s-recov` | `--moss` | `--warn` | `--s-inter` |
+| **C** `SessionPopupInner`:1585 | `--moss` | **`--moss`** | `--warn` | **`--danger`** |
+| **D** `SessionCompleteCard` + its OG image | `--s-recov` | `--s-easy` | `--warn` | `--s-inter` |
 
-**Why it is a BOARD question, not a refactor:** extracting it means deciding what the shared thing
-IS. A `FatigueChips` component? A colour map in `completionVocab.ts` beside `FATIGUE_TAGS` (which
-both files already import)? The second is smaller and probably right — **the vocabulary owner
-already exists and the colours were left behind.**
+🔑 **D wins on two measurements, not a vote.** `--danger` is forbidden in the training UI, which kills A and C;
+and a four-step scale needs four steps — smallest adjacent ΔE76 is **A 43.2 · B 9.8 · C 0.0 · D 30.4**.
+**C rendered Fresh and Fine in the same token**, which is Silvanto's *"a scale rendered in one colour is a
+list"* — the ruling that refused `Chip` a colour axis, broken by the control it protected.
+⚠️ **All four passed AA** (4.75–9.96 on the 12% tint): the defect was never contrast.
 
-⚠️ **Not folded into `TAP-TARGET-DECISIONS-01`** — that item floors controls; this one extracts a
-meaning, and bundling them is two jobs. 🔻 **Nothing is broken:** both render identically today. The
-cost is that a change to the scale must be made twice, and nothing says so.
+🔴 **`fatigueChipColour`'s comment claimed to be canonical while being one of the four** — *"Mirrors the chip
+palette in SessionPopupInner reflect view"*, which had `Fine → --moss` against its `--s-easy`. The OG mirror is
+now checked against the owner rather than asked nicely.
+
+📱 **And the row WRAPPED THREE AND ONE at 375pt**, which only a browser showed. Four pills need **294.3px** +
+24px of gaps = **318.3px against a 311px container** at the 18px padding two sites used; 16px needs **302.3px**
+and fits with 8.7px spare. A four-step scale wants one line.
+
+🎪 **The duplication was never the colour alone:** four geometries, two border tokens (`--line` / legacy
+`--border-col`), two text tokens (`--mute` / legacy `--text-muted`), a 9% fill where the board measured 12%,
+weights 600/500, and **two captions** — three sites said *Body state*, one said *Body feeling*. 🔻 The majority
+spelling is the default; **a different word there is 👤 founder's, not this board's.**
+
+🔴 **One of my own arms was hollow and a mutation found it:** an arm titled *"the sweep population is real, and
+the stripper works"* counted files and **never ran the stripper**. Now tested both ways, with the honest
+measurement beside it — **0 of 376 non-exempt files need stripping today**, so the defence is kept and tested
+rather than kept and assumed.
 
 ---
 

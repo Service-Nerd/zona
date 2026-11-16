@@ -25,6 +25,68 @@ so a **free** runner gets the name and the mark, not the line. Words founder-app
 with strength that week (Coaching Board). Check: `components/dashboard/phaseOnToday.markup.test.ts` (12 arms, five
 mutations falsified). Note: `docs/decisions/design-2026-10-26-phase-on-today.md`. Not felt on a device.
 
+## 2026-11-16 — `FATIGUE-CHIP-DUPLICATE-01` · SHIP. One fatigue scale, and it has to stay a scale
+
+| Ruling | |
+|---|---|
+| **`FatigueChips` owns the row; `FATIGUE_HUE` owns the scale** | 🟢 **SHIP** |
+| **The scale is `--s-recov` / `--s-easy` / `--warn` / `--s-inter`** | 🟢 **SHIP** — chosen on measurement, not on a vote |
+
+📐 **THE ITEM SAID THE ROW *"EXISTS TWICE"* AND THAT *"BOTH RENDER IDENTICALLY TODAY"*. BOTH HALVES WERE
+WRONG.** Re-measured: **six surfaces, FOUR different scales**, and the divergence was visible rather than theoretical.
+
+| | Fresh | Fine | Heavy | Wrecked |
+|---|---|---|---|---|
+| **A** `DashboardClient` | `--moss` | `--s-easy` | `--warn` | **`--danger`** |
+| **B** `SessionPopupInner`:752 · `ManualRunModal` | `--s-recov` | `--moss` | `--warn` | `--s-inter` |
+| **C** `SessionPopupInner`:1585 | `--moss` | **`--moss`** | `--warn` | **`--danger`** |
+| **D** `SessionCompleteCard` + its OG image | `--s-recov` | `--s-easy` | `--warn` | `--s-inter` |
+
+🔑 **D IS THE ONLY SCALE THAT SATISFIES EVERY RULE ALREADY WRITTEN, AND TWO NUMBERS DECIDED IT.**
+**(1)** `--danger` is forbidden in the training UI (*"amber for warnings, coral for high intensity;
+`--danger` for form/error states only"*), which kills A and C — and `SESSION-INTERVALS-HUE-01` added
+`--s-inter` as *"a coral, distinct from `--danger`"* for exactly this. **(2)** A four-step scale needs four
+steps: measured as CIE Lab ΔE76 between adjacent steps, the smallest step is **A 43.2 · B 9.8 · C 0.0 ·
+D 30.4**. **C rendered Fresh and Fine in the SAME token**, and B's first two steps are two greens below the ~10
+at which a hue reads as a shade of its neighbour. ✨ **That is Silvanto's own line from the sitting that
+refused `Chip` a colour axis** (2026-10-05, unanimous, explicitly NOT by veto): *"a scale rendered in one
+colour is a list."* The ruling he made about the primitive was being broken by the control it protected.
+
+⚠️ **ALL FOUR SCALES PASS AA** on the active label (4.75–9.96 on the 12% tint), and that is worth stating
+rather than leaving implied: **the defect was never contrast.** Legibility did not decide this; meaning did.
+
+🔴 **AND `fatigueChipColour`'s COMMENT CLAIMED TO BE THE CANONICAL ONE WHILE BEING ONE OF THE FOUR.** It
+read *"Mirrors the chip palette in SessionPopupInner reflect view — kept canonical so the chip reads the same
+across surfaces."* That view had `Fine → --moss`; it had `Fine → --s-easy`. **A hand-kept mirror under a
+comment asserting it is in step is how the scale reached four versions**, so the OG route's resolved hex is now
+CHECKED against the owner rather than asked nicely.
+
+📱 **Wroblewski, and it took a browser to see it: the row WRAPPED THREE AND ONE at 375pt.** The four pills
+need **294.3px** and the gaps 24px; at the 18px side padding two sites used that is **318.3px against a 311px
+container**. 16px needs **302.3px** and fits with 8.7px to spare (17px leaves 0.7px, which is not a margin).
+**A four-step scale wants one line — the progression IS the information** — and an orphan is the defect
+`DayGridSelector` was explicitly fixed for. `ManualRunModal` already used 16px, so the value is measured, not
+invented. `flexWrap` stays so a narrower container degrades rather than clips.
+
+🎭 **Collins:** *"four geometries, two border tokens, two text tokens and two captions for one control.
+The duplication was never the colour alone."* Canonical: the **12%** tint the board measured (one site had
+drifted to **9%**), a 1px `--line` hairline (two had 0.5px on the legacy `--border-col`), `--mute` off-text (two
+had the legacy `--text-muted`), weight 500 active (one had 600). 🎓 **Sierra on the caption:** three sites
+said **Body state** and one said **Body feeling**; the majority spelling is the default and the odd one adopts
+it, as `RPEScale` beside it already owns *"Effort (RPE)"*. 🔻 **A different word there is a voice decision,
+not a layout one — 👤 founder may reverse it.**
+
+⛔ **Do not convert this to `Chip`.** The 2026-10-05 kill stands: `Chip` is a selection chip and selection is
+binary; the hue here is the content.
+
+**Artifacts (three, one commit):** pattern → `ui-patterns.md` § FatigueChips · constant → `FATIGUE_HUE` ·
+check → `lib/ui/fatigueScale.test.ts`, **8 arms, 8 mutations falsified** — including **each of the three
+broken scales that were live**, each caught by the arm that names its defect. 🔴 **One of my own arms was
+hollow and a mutation found it:** an arm titled *"the sweep population is real, and the stripper works"*
+counted files and **never ran the stripper**. Crippling the stripper changed nothing. It is now tested in both
+directions, and the honest measurement is recorded with it: **0 of 376 non-exempt files need stripping today**,
+so the defence is kept and tested rather than kept and assumed.
+
 ## 2026-11-16 — `RACE-NOTES-INERT-01` · DON'T SHIP the render. The field is retired
 
 | Ruling | |

@@ -1328,11 +1328,12 @@ with the Coaching Board (the week-1 floor for someone who has never run, and
   does the counting. **The gate's population is the one the gate governs; mine was a directory.**
   📐 No visible delta, proved on the diff; falsified on both literal forms. 🔻 It governs
   `minHeight` only — a control with no `minHeight` at all is still `TAP-TARGET-FLOOR-01`'s.
-- 🧭 `FATIGUE-CHIP-DUPLICATE-01` — **LATER, low.** The Fresh/Fine/Heavy/Wrecked chip row exists
-  TWICE (`SessionPopupInner` + `DashboardClient`), with the per-tag colour MAPPING written out
-  in both. The board refused `Chip` a colour axis because the scale is real doctrine — and that
-  doctrine lives in two files with nothing comparing them. `completionVocab.ts` already owns
-  `FATIGUE_TAGS`; the colours were left behind. Found while flooring. `backlog.md`.
+- 🧭 `FATIGUE-CHIP-DUPLICATE-01` — ✅ **SHIPPED 2026-11-16.** The item said TWICE and *"both render
+  identically"*; re-measured, **six surfaces and FOUR scales** — one rendering Fresh and Fine in the
+  SAME token, two painting Wrecked in the error red the training UI forbids. `FatigueChips` owns the
+  row, `FATIGUE_HUE` the scale, chosen on ΔE76 (smallest adjacent step **43.2 / 9.8 / 0.0 / 30.4**)
+  rather than a vote. ⚠️ All four passed AA: the defect was never contrast. The row also wrapped
+  **three-and-one at 375pt**, found only in a browser. `backlog.md`.
 - 🧭 `MKT-KITBYLINE-COPY-01` — **LATER, low.** `PhoneFrame.tsx`'s `KitByline` declares itself
   *"copy of CoachByline"* while `TabbedPhone.tsx` beside it renders the real one. Whether a
   marketing still tracks the live component or a deliberately pinned copy is a board

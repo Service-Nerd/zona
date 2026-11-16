@@ -18,7 +18,7 @@ import { MICRO_LABELS, FIELD_HINT } from '@/components/shared/microLabels'
 import Button from '@/components/ui/Button'
 import DistanceStepper from '@/components/shared/DistanceStepper'
 import { getCoachingFlag } from '@/lib/coaching/coachingFlag'
-import { FATIGUE_TAGS } from '@/lib/coaching/completionVocab'
+import FatigueChips from '@/components/shared/FatigueChips'
 import { formatDistance } from '@/lib/format'
 import { upsertCompletion } from '@/lib/plan/completions'
 import { getSessionColor } from '@/lib/session-types'
@@ -352,31 +352,17 @@ export default function ManualRunModal({ weekN, sessionKey, preferredUnits, onCl
 
             {/* Feel tags */}
             <div style={{ marginBottom: 'var(--space-5)' }}>
-              <div style={{ ...MICRO_LABELS.eyebrow, fontFamily: 'var(--font-ui)', color: 'var(--text-muted)', marginBottom: 'var(--space-2)' }}>Body state</div>
-              <div style={{ display: 'flex', gap: 'var(--space-2)', flexWrap: 'wrap' }}>
-                {FATIGUE_TAGS.map(tag => {
-                  const active = fatigueTag === tag
-                  const tagColor = tag === 'Fresh' ? 'var(--session-green)' : tag === 'Fine' ? 'var(--accent)' : tag === 'Heavy' ? 'var(--amber)' : 'var(--coral)'
-                  return (
-                    <button key={tag} onClick={() => {
-                      const newTag = active ? null : tag
-                      setFatigueTag(newTag)
-                      if (!reflectResponse) {
-                        const resp = getReflectResponse(sessionType ?? '', rpe, newTag)
-                        setReflectResponse(resp || null)
-                      }
-                      saveReflect(rpe, newTag)
-                    }} style={{
-                      fontFamily: 'var(--font-ui)', fontSize: '12px', padding: '10px 16px', minHeight: TAP_TARGET_MIN_PX,
-                      borderRadius: '20px',
-                      border: `0.5px solid ${active ? tagColor : 'var(--border-col)'}`,
-                      background: active ? `color-mix(in srgb, ${tagColor} 12%, transparent)` : 'transparent',
-                      color: active ? hueText(tagColor) : 'var(--text-muted)',
-                      cursor: 'pointer', fontWeight: active ? 500 : 400, transition: 'all 0.12s',
-                    }}>{tag}</button>
-                  )
-                })}
-              </div>
+              <FatigueChips
+                value={fatigueTag}
+                onChange={(newTag) => {
+                  setFatigueTag(newTag)
+                  if (!reflectResponse) {
+                    const resp = getReflectResponse(sessionType ?? '', rpe, newTag)
+                    setReflectResponse(resp || null)
+                  }
+                  saveReflect(rpe, newTag)
+                }}
+              />
             </div>
 
             {/* Zonna response */}

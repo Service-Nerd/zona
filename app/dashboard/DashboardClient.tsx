@@ -107,7 +107,8 @@ import { useSheetFootActive, useSheetFootNav, registerNavNode } from '@/lib/ui/s
 import { getCompletionCopy } from '@/lib/coaching/completionCopy'
 import { classifyHrPending } from '@/lib/coaching/hrPending'
 import { useWidgetSync } from '@/lib/widget/useWidgetSync'
-import { SKIP_REASONS, FATIGUE_TAGS, isFatigueTag } from '@/lib/coaching/completionVocab'
+import { SKIP_REASONS, isFatigueTag } from '@/lib/coaching/completionVocab'
+import FatigueChips from '@/components/shared/FatigueChips'
 import { useSignOut } from '@/lib/auth/signOut'
 import SignOutLink from '@/components/shared/SignOutLink'
 import ZoneBar, { zoneNumberForType, zoneShortName, type Zone } from '@/components/shared/ZoneBar'
@@ -8242,53 +8243,11 @@ function PostRunScreen({
           </div>
 
           {/* Fatigue tags */}
-          <div>
-            <div style={{ ...MICRO_LABELS.eyebrow, fontFamily: 'var(--font-ui)', color: 'var(--mute)', marginBottom: 'var(--space-3)' }}>
-              Body state
-            </div>
-            <div style={{ display: 'flex', gap: 'var(--space-2)', flexWrap: 'wrap' }}>
-              {FATIGUE_TAGS.map(tag => {
-                const isActive = fatigueTag === tag
-                const tagColor = tag === 'Fresh'  ? 'var(--moss)'
-                              : tag === 'Fine'   ? 'var(--s-easy)'
-                              : tag === 'Heavy'  ? 'var(--warn)'
-                              : 'var(--danger)'
-                return (
-                  <button
-                    key={tag}
-                    onClick={() => {
-                      const newTag = isActive ? null : tag
-                      setFatigueTag(newTag)
-                      void saveRPEFatigue(rpe, newTag)
-                    }}
-                    disabled={savingRPE}
-                    style={{
-                      // 🔴 TAP-TARGET-DECISIONS-01 — was 30px.
-                      // ⚠️ NOT converted to `<Chip>`: these carry a colour PER TAG
-                      // (Fresh / Fine / Heavy / Wrecked), and `Chip` is moss-only, so
-                      // conversion DELETES MEANING — Design Board 2026-10-05 refused
-                      // exactly this, by name, on the identical control.
-                      // 🔴 AND IT IS THE IDENTICAL CONTROL: `SessionPopupInner` carries
-                      // a SECOND copy of this chip row, floored the same day for the
-                      // same reason. Filed as `FATIGUE-CHIP-DUPLICATE-01`.
-                      minHeight: TAP_TARGET_MIN_PX, display: 'inline-flex', alignItems: 'center',
-                      fontFamily: 'var(--font-ui)', fontSize: '12px',
-                      padding: '8px 18px',
-                      borderRadius: '20px',
-                      border: `1px solid ${isActive ? tagColor : 'var(--line)'}`,
-                      background: isActive ? `color-mix(in srgb, ${tagColor} 12%, transparent)` : 'transparent',
-                      color: isActive ? hueText(tagColor) : 'var(--mute)',
-                      cursor: 'pointer',
-                      fontWeight: isActive ? 600 : 400,
-                      transition: 'all 0.12s',
-                    }}
-                  >
-                    {tag}
-                  </button>
-                )
-              })}
-            </div>
-          </div>
+          <FatigueChips
+            value={fatigueTag}
+            onChange={(newTag) => { setFatigueTag(newTag); void saveRPEFatigue(rpe, newTag) }}
+            disabled={savingRPE}
+          />
         </div>
 
         {/* SESSION-LOGGED-HERO-01 (Design Board 2026-10-22, order chosen on UX grounds): the card is the ONE zone

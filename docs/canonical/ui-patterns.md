@@ -1454,6 +1454,24 @@ Inline row appended to a `WeekCard` after the user taps the move icon on a sessi
 
 **Voice rule:** copy describes the move in concrete terms — *what* moves, *from* where, *to* where. Never abstract ("apply change"). Never invents structure not in the diff. Aligns with brand voice — *honest, slightly sarcastic, self-aware, encouraging without cringe*.
 
+### FatigueChips — the Fresh / Fine / Heavy / Wrecked row
+
+`components/shared/FatigueChips.tsx`. One control, four surfaces (`SessionPopupInner` ×2, `DashboardClient`, `ManualRunModal`), and `FATIGUE_HUE` is the single owner of the scale — read also by `SessionCompleteCard` and mirrored, under test, by its OG route.
+
+| | |
+|---|---|
+| **Scale** | Fresh `--s-recov` · Fine `--s-easy` · Heavy `--warn` · Wrecked `--s-inter` |
+| **Pill** | 12px, `8px 16px`, radius 20, `minHeight: TAP_TARGET_MIN_PX` |
+| **Off** | 1px `--line` border, transparent fill, `--mute` text, weight 400 |
+| **Active** | 1px hue border, `color-mix(in srgb, <hue> 12%, transparent)` fill, `hueText(hue)` text, weight 500 |
+| **Caption** | `MICRO_LABELS.eyebrow`, `--mute`, default **"Body state"** — the control owns it, as `RPEScale` owns *"Effort (RPE)"* |
+
+⛔ **Not a `Chip`, and this may not be re-proposed.** The board refused `Chip` a colour axis on 2026-10-05, unanimously and explicitly not by veto: `Chip` is a selection chip and selection is binary, while here **the hue is the content**.
+
+⚠️ **Three rules bind the scale, each with the number behind it.** (1) **Never `--danger`** — red is for form and error states, and `--s-inter` exists as *"a coral, distinct from `--danger`"*. (2) **Every adjacent step must be perceptibly distinct**: measured as CIE Lab ΔE76, the four scales that were live scored a smallest step of **43.2 / 9.8 / 0.0 / 30.4**, and one of them rendered Fresh and Fine in the *same* token. ✋ *"A scale rendered in one colour is a list."* (3) **One line at 375pt**: the four pills need **294.3px** plus 24px of gaps, so 18px side padding overflows a 311px container and wraps **three and one** — the orphan `DayGridSelector` was fixed for. 16px needs **302.3px** and fits.
+
+⚠️ **All four of the old scales passed AA**, so contrast was never the defect. Held by `lib/ui/fatigueScale.test.ts`.
+
 **The race session is the single producer of race-day pacing (`RACE-NOTES-INERT-01`, Design Board 2026-11-16).** Race-day instruction lives in the race session's `coach_notes` and its `race_opening_pace`, and nowhere else. The week-level `week.race_notes` field is **retired**: it was stamped on 39 of 43 live plans, had no render site anywhere, repeated the session's own opening sentence on 5 of 5 short-race plans, and contradicted it on the rest. ⚠️ **A second week-level race line must not come back without saying something the session does not** — and if one is ever added it must pass `quotesGoalPace`, because §80 Am. 2 forbids citing goal pace on a plan where it was withheld and the week field sat outside that check's population. Held by `lib/plan/raceNotesRetired.test.ts`.
 
 **Move-mode day states (`REORDER-BLOCKED-DAY-01`, Design Board 2026-11-16).** While a move is staged, every day row is exactly one of four roles, decided by `moveDayRole()` in `components/training/PlanCalendar.logic.ts` and never by inline booleans in the JSX:

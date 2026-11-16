@@ -23,7 +23,8 @@
 // renderer + @capacitor/share for higher-fidelity export.
 
 import React from 'react'
-import type { FatigueTag } from '@/lib/coaching/completionVocab'
+import { isFatigueTag, type FatigueTag } from '@/lib/coaching/completionVocab'
+import { FATIGUE_HUE } from '@/components/shared/FatigueChips'
 import ZoneBar, { zoneNumberForType } from './ZoneBar'
 import { getSessionLabel, type ClassifiableSession } from '@/lib/session-types'
 import { BRAND } from '@/lib/brand'
@@ -82,16 +83,14 @@ function completedOnLabel(d: Date | string | null | undefined): string | null {
   return base ? base.replace(/^(\w+) /, '$1 · ') : null
 }
 
-// Fatigue tag → token. Mirrors the chip palette in SessionPopupInner reflect
-// view — kept canonical so the chip reads the same across surfaces.
+// 🔴 THIS USED TO HOLD ITS OWN COPY OF THE SCALE, UNDER A COMMENT CLAIMING IT WAS THE CANONICAL
+// ONE. It read *"Mirrors the chip palette in SessionPopupInner reflect view — kept canonical so
+// the chip reads the same across surfaces."* It did not mirror it: that view had `Fine → --moss`
+// and this had `Fine → --s-easy`, two of the FOUR scales the same four tags were rendered in
+// (FATIGUE-CHIP-DUPLICATE-01, Design Board 2026-11-16). The comment is true now because the scale
+// has one owner and this reads it.
 function fatigueChipColour(tag: string | null): string {
-  switch (tag) {
-    case 'Fresh':   return 'var(--s-recov)'
-    case 'Fine':    return 'var(--s-easy)'
-    case 'Heavy':   return 'var(--warn)'
-    case 'Wrecked': return 'var(--s-inter)'
-    default:        return 'var(--mute)'
-  }
+  return isFatigueTag(tag) ? FATIGUE_HUE[tag] : 'var(--mute)'
 }
 
 export default function SessionCompleteCard({

@@ -30,7 +30,8 @@ import type { Session, StravaActivity } from '@/types/plan'
 import type { PostRunData } from '@/components/dashboard/dashboardHelpers'
 import type { Zone } from '@/components/shared/ZoneBar'
 import { BRAND } from '@/lib/brand'
-import { FATIGUE_TAGS, SKIP_REASONS, isFatigueTag } from '@/lib/coaching/completionVocab'
+import { SKIP_REASONS, isFatigueTag } from '@/lib/coaching/completionVocab'
+import FatigueChips from '@/components/shared/FatigueChips'
 import { TAP_TARGET_MIN_PX } from '@/components/ui/tapTarget'
 import { matchEmptyCause, matchEmptyCopy } from '@/lib/ui/matchEmptyCause'
 import { linkPickerCopy, linkedRunDescriptor } from '@/lib/ui/linkPickerCopy'
@@ -747,37 +748,14 @@ export default function SessionPopupInner({ session, weekN, aiNotes, preloadedRu
 
         {/* Feel tags */}
         <div style={{ marginBottom: 'var(--space-6)' }}>
-          <div style={{ ...MICRO_LABELS.eyebrow, fontFamily: 'var(--font-ui)', color: 'var(--text-muted)', marginBottom: 'var(--space-3)' }}>Body state</div>
-          <div style={{ display: 'flex', gap: 'var(--space-2)', flexWrap: 'wrap' }}>
-            {FATIGUE_TAGS.map(tag => {
-              const isActive = fatigueTag === tag
-              const tagColor = tag === 'Fresh' ? 'var(--session-green)' : tag === 'Fine' ? 'var(--accent)' : tag === 'Heavy' ? 'var(--amber)' : 'var(--coral)'
-              return (
-                <button key={tag} onClick={() => {
-                  const newTag = isActive ? null : tag
-                  setFatigueTag(newTag)
-                  saveRPEFatigue(rpe, newTag)
-                  if (!reflectResponse) setReflectResponse(getReflectResponse(session.type, rpe, newTag))
-                }} style={{
-                  // 🔴 TAP-TARGET-DECISIONS-01 batch 8a — was 30px.
-                  // ⚠️ NOT converted to `<Chip>`, and the reason is semantic, not
-                  // cosmetic: `Chip` is moss-only, while these carry a colour PER TAG
-                  // (Fresh / Fine / Heavy / Wrecked). A conversion would delete meaning —
-                  // the exact trap `DANGER-TEXT-CONTRAST-01` recorded, where two controls
-                  // were excluded by name "because both carry a semantic colour a
-                  // conversion would delete". Whether `Chip` should gain a colour axis is
-                  // a 🧭 Design Board question, filed as `CHIP-SEMANTIC-COLOUR-01`.
-                  minHeight: TAP_TARGET_MIN_PX, display: 'inline-flex', alignItems: 'center',
-                  fontFamily: 'var(--font-ui)', fontSize: '12px', padding: '8px 18px',
-                  borderRadius: '20px',
-                  border: `0.5px solid ${isActive ? tagColor : 'var(--border-col)'}`,
-                  background: isActive ? `color-mix(in srgb, ${tagColor} 12%, transparent)` : 'transparent',
-                  color: isActive ? hueText(tagColor) : 'var(--text-muted)',
-                  cursor: 'pointer', fontWeight: isActive ? 500 : 400, transition: 'all 0.12s',
-                }}>{tag}</button>
-              )
-            })}
-          </div>
+          <FatigueChips
+            value={fatigueTag}
+            onChange={(newTag) => {
+              setFatigueTag(newTag)
+              saveRPEFatigue(rpe, newTag)
+              if (!reflectResponse) setReflectResponse(getReflectResponse(session.type, rpe, newTag))
+            }}
+          />
         </div>
 
         {/* COMPLETE-01 — peak-end artefact. Renders once RPE is set so the
@@ -1580,19 +1558,10 @@ export default function SessionPopupInner({ session, weekN, aiNotes, preloadedRu
 
               {/* Fatigue tags */}
               <div style={{ marginBottom: '4px' }}>
-                <div style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--mute)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 'var(--space-3)' }}>Body feeling</div>
-                <div style={{ display: 'flex', gap: 'var(--space-2)', flexWrap: 'wrap' }}>
-                  {FATIGUE_TAGS.map(tag => {
-                    const isActive = fatigueTag === tag
-                    const tagColor = tag === 'Fresh' ? 'var(--moss)' : tag === 'Fine' ? 'var(--moss)' : tag === 'Heavy' ? 'var(--warn)' : 'var(--danger)'
-                    return (
-                      <button key={tag} onClick={() => { const next = isActive ? null : tag; setFatigueTag(next); saveRPEFatigue(rpe, next) }}
-                        style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', padding: '10px 18px', minHeight: TAP_TARGET_MIN_PX, borderRadius: '20px', border: `1px solid ${isActive ? tagColor : 'var(--line)'}`, background: isActive ? `color-mix(in srgb, ${tagColor} 9%, transparent)` : 'transparent', color: isActive ? hueText(tagColor) : 'var(--mute)', cursor: 'pointer', fontWeight: isActive ? 500 : 400, transition: 'all 0.12s' }}>
-                        {tag}
-                      </button>
-                    )
-                  })}
-                </div>
+                <FatigueChips
+                  value={fatigueTag}
+                  onChange={(next) => { setFatigueTag(next); saveRPEFatigue(rpe, next) }}
+                />
               </div>
             </div>
           )}

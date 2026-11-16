@@ -89,8 +89,13 @@ function zoneNumberForType(type: string): Zone | null {
   }
 }
 
-// Fatigue tag → resolved hex pair. Mirrors fatigueChipColour in the in-app
-// SessionCompleteCard; resolved values because CSS vars don't work in next/og.
+// The fatigue scale, RESOLVED. `next/og` cannot read CSS variables, so this is the one place the
+// scale may be written as hex — and being a hand-kept mirror is exactly how the scale came to exist
+// in FOUR versions (FATIGUE-CHIP-DUPLICATE-01, 2026-11-16).
+//
+// ⚠️ IT IS NOT TRUSTED TO STAY IN STEP. `lib/ui/fatigueScale.test.ts` reads `FATIGUE_HUE`, resolves
+// each token out of `globals.css`, and fails if any value here disagrees. Change the scale at the
+// owner; this follows, and the gate says so rather than a comment asking nicely.
 const FATIGUE_COLOURS: Record<string, string> = {
   Fresh:   '#4E8068',  // --s-recov
   Fine:    '#3D6FB0',  // --s-easy
