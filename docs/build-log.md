@@ -6,6 +6,15 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-11-16 — COMPLETION-ACTIVITY-JOIN-01 · I closed my own item four hours after filing it
+**Shipped:** nothing. The item was a false premise and the records now say so.
+**Dev learning:** I filed *"`strava_activity_id` is null on all 161 completions, so a completion never joins to its activity"*. It is null **because HealthKit is the system of record and the join is `apple_health_uuid`** — 16 of 161 completions are device-linked and **all 16 join**. ADR-011 says HealthKit is the SOR in as many words, and I read a Strava-named column as the join anyway. **When a column is null across the board, ask whether it is the column the producer uses** before concluding the mechanism is broken.
+**Product/creator learning:** the correction made the evidence **worse**, not better. 80 completions carry an `avg_hr` — but 8 are device-backed and **72 were typed by hand**, and the schema cannot tell them apart. Of nine completed Zone-3 quality sessions, one is device-backed, and it is a `progressive_tempo` that ramps by design, so its average is sub-threshold on purpose. **Usable direct evidence for the question the Coaching Board asked: n = 0.** The real constraint is that ten quality sessions have ever been completed, which no engineering produces more of.
+**AI-building learning:** this was caught only because the build started with *"re-derive the premise"* rather than *"write the code"*. The item was four hours old, it was mine, a board had ruled on it, the release plan had sequenced it first and the founder had said "go" to it — **five layers of apparent confirmation, none of which had re-measured it.** The repo's own rule is that an item is a snapshot of the day it was written; it does not exempt items written this morning.
+**The honest bit:** I put the false claim in front of a board, into an ADR, into a release plan and into the founder's decision. The useful part is that the correction improves the ADR: with the telemetry gone, the case has to rest on the coherence defect — `z2Top` IS `z3Low`, so a hard session's prescription begins exactly where easy running ends — which is provable from the code for every runner today and needed no cohort at all. **I had the airtight argument and was leaning on the thin one.**
+**Hook material:** 161 completions, one null column, and a defect that did not exist. The column was null because it was the wrong column.
+**Postable?:** yes
+
 ## 2026-11-16 — DOC-AUDIT-DUPLICATE-RECORD-01 · ALL CLEAN over a record written twice
 **Shipped:** a new `audit-docs.sh` arm that fails when a feature-registry row or a build-log heading appears twice, byte-identical.
 **Dev learning:** the question *"are the documents up to date?"* found a defect the script could not. Every arm in that audit asks whether a record EXISTS; none asked whether there is exactly ONE, so two identical registry rows and two identical build-log entries read as ALL CLEAN. The limit is written into `CLAUDE.md` in as many words — *ALL CLEAN cannot see a record that is FALSE* — and I had quoted it earlier the same day without applying it.
