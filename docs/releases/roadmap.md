@@ -630,8 +630,11 @@ with a reason each; the question is which (if any) a reader choosing between tie
 condition that a longer list is the killed list-of-eight. · ✅ `SITE-BAND-RHYTHM-01` — **SHIPPED 2026-11-16: the item was wrong about 20 of its 21 sites.** All 21 pass
 `rhythm="none"` explicitly (a declared opt-out, not drift); the one real instance was the homepage's dark band typing
 **112px, `--sect-y-close`'s own clamp maximum**, so it padded 112 where the token gives **72 at 375px** — a 659px band
-the system intends to be **579px**. Now on the token. · 🧭 `SITE-SPACE-OVERLIMIT-01`,
-`SITE-SUBMEASURE-SPRAWL-01`, `SITE-FRAME-TAXONOMY-01`. · 🧭 **blocked** — whether `TrendCard` belongs on the site
+the system intends to be **579px**. Now on the token. · 🔴 `SITE-FRAME-TAXONOMY-01` — **CLOSED 2026-11-16, DON'T SHIP, withdrawn by the filing seat.** The "six ways
+to frame a product visual" are **one device chrome, one Today still, one trace geometry and one inset**; the
+consolidation shipped **six weeks before the filing**, and the inset is the pattern ratified the day after
+`--surface-moss-wash` was killed. Held by a 6-arm gate so the ruling's premise cannot rot. · 🧭 still open:
+`SITE-SPACE-OVERLIMIT-01`, `SITE-SUBMEASURE-SPRAWL-01`. · 🧭 **blocked** — whether `TrendCard` belongs on the site
 at all: Sierra's transfer objection is unresolved and nobody may decide it without a bundle number.
 Detail in `backlog.md`.
 
@@ -1705,6 +1708,7 @@ with the Coaching Board (the week-1 floor for someone who has never run, and
 | 🏃 **Still under 6 km/week at the checkpoint: resume at 6/1, never restart** (NO-RUNNER-CHECKPOINT-BELOW-FLOOR-01) | ✅ | S | Ruled E3 2026-10-25, not built. |
 | 🧭 **"Log a run" with a date, so it can count at a checkpoint** (NO-RUNNER-CHECKPOINT-LOG-DATE-01) | 🔲 | S | Coaching side settled (E4). Design Board, then founder words. |
 | 🧭 **Should foundation weeks also be called "Base building"?** (FOUNDATION-NAME-COLLAPSE-01) | 🔲 | S | **Filed 2026-10-24, P3.** Collins vs Zhuo, recorded at the NO-RUNNER-TURNED-AWAY-01 sitting. Design Board, then founder. |
+| ⚙️ **75 files strip comments three different ways** (TEST-STRIP-COMMENTS-OWNER-01) | 🔲 | M | **Filed 2026-11-16** while writing `siteFrameOwners.test.ts` and reaching for an existing stripper rather than a new one. 📐 **27 files DECLARE their own `stripComments`; ~40 more filter with an inline `startsWith('//')`.** 🔴 Not untidiness: a source-reading guard sees only what its stripper lets through, so two guards written to one rule enforce different rules — an inline filter cannot see a TRAILING comment (a live instance broke a `fatigueScale` arm the same day), and a naive matcher blanks the `//` in a URL or regex. ✅ The owner EXISTS (`lib/ops/stripTsComments.ts`, moved from the one version with a falsified defect history); **the migration is what is open.** ⚠️ Do it in waves and read each as a code review — a stronger stripper WIDENS what a guard sees, so a migrated arm can legitimately redden on something real. The tree gate belongs at the END as a ratchet: written now it fires on 26 correct-today files and gets switched off. |
 | ⚙️ **On the phone, a sheet from the pill appears mid-screen then drops** (SHEET-ORIGIN-DEVICE-01) | 🔲 | S | **Filed 2026-10-24, P1.** `SHEET-ORIGIN-01` switched off in the app the same day; not reproducible in a browser. Needs a device recording. |
 | ⚙️ **Patch one live plan’s two Friday time trials** (TT-BEFORE-LONG-PATCH-01) | ✅ | XS | **CLOSED 2026-11-13, false premise.** Re-measured: both Fridays are already easy runs at 63/72 min, 0 time-trial sessions in the plan, `recalibration_weeks` null. Nothing to patch. |
 | ~~**A runner whose block loses every benchmark is never told**~~ (TT-SKIPPED-VISIBILITY-01) | ✅ | S | **SHIPPED 2026-11-14, Design Board SHIP WITH AMENDMENT.** 📐 The item said *1 of 27 rebuildable*; measured, **6 of 14 live plans that DECLARE recalibration weeks hold none**, and all 6 render the new tile today. `BenchmarkAbsentTile` in the **existing** `recalTile` slot, one sentence stating the cost, **no affordance** per `BASEBUILD-ADJUST-DOOR-01`. 🔴 The silent skip is `nextRecalibrationDue`'s `if (!ttEntry) continue`, which is CORRECT for its own question. |

@@ -25,6 +25,52 @@ so a **free** runner gets the name and the mark, not the line. Words founder-app
 with strength that week (Coaching Board). Check: `components/dashboard/phaseOnToday.markup.test.ts` (12 arms, five
 mutations falsified). Note: `docs/decisions/design-2026-10-26-phase-on-today.md`. Not felt on a device.
 
+## 2026-11-16 — `SITE-FRAME-TAXONOMY-01` · 🔴 DON'T SHIP. The filing counted exported names, not jobs — and withdrawn by the filing seat
+
+| Ruling | |
+|---|---|
+| **Collapse the site's "six ways to frame a product visual"** | 🔴 **DON'T SHIP** — there is no sprawl to collapse |
+| **`ProductStill` is the ratified inset and is not one option among six** | 🟢 **STANDING** — collapsing it reverses the `--surface-moss-wash` kill |
+| **Two device presentations, static and tabbed** | 🟢 **STANDING** — a measured bundle decision, not drift |
+
+📐 **THE SIX, MEASURED:** `PhoneShell` (168) is **the one device chrome**, extracted 2026-09-21 *"so there
+is ONE phone on this site rather than two"* — **six weeks BEFORE this item was filed**. `PhoneFrame` (322) is
+`<PhoneShell activeTab="Today">{TodayStill}</PhoneShell>`, four lines; the 322 is `TodayStill`, which it
+**exports**. `TabbedPhone` (265) **imports that same still** (*"TODAY IS IMPORTED, NOT REDRAWN"*). `HrTrace`
+(175) owns the trace geometry and `HeroTrace` (155) animates it — parent and child. `ProductStill` (57) is the
+inset this register ratified the day after killing `--surface-moss-wash`. **One chrome, one Today still, one
+trace geometry, one inset.**
+
+⚖️ **Zhuo (chair):** a preference in a finding's clothes. Each file's first paragraph answers *"why are there
+six?"*, and two of the six are the RESULT of a previous collapse.
+✔️ **Silvanto: no veto, and the craft point runs the other way** — `HrTrace` holding the paths apart from the
+animation is why the trace reads as one line; merging them puts geometry and motion in one file, the drift he
+objects to elsewhere.
+👥 **Sierra:** a visitor cannot perceive a component count. They see two devices and an inset.
+📱 **Wroblewski — the decisive seat:** `/charity-runners` renders the STATIC `PhoneFrame` so that page takes
+**no client boundary**. Folding it into `TabbedPhone` hands it 8 hooks, and `clientBundleBoundary.test.ts`
+exists because this site silently went **110 kB → 251 kB twice**.
+🖊️ **Collins WITHDRAWS HIS OWN FILING:** *"I filed it off a file listing after losing placement, and a file
+listing is not a taxonomy. My seat collapses the taxonomies the PRODUCT makes — nine session parts, six session
+colours — not the ones the compiler makes."*
+
+✅ **Artifact, because a question closed in prose is one the next sitting re-proposes** (this register records
+paying for that twice in one day): `lib/marketing/siteFrameOwners.test.ts`, 6 arms, **9 mutations falsified**.
+It asserts the ownership facts the ruling RESTS on, so a second phone, a redrawn Today, a client boundary on the
+static frame or a shadow on the inset fails the build rather than quietly voiding this row.
+🔴 **TWO OF MY OWN CUTS OF ONE ARM COULD NOT GO RED** — `names.some(...)` left the trace arm green when a path
+was un-exported, and the union that replaced it passed identically; **I nearly shipped the second on the
+prediction that it worked.** *"One file owns this"* is TWO assertions: the owner declares every name, and no
+other file declares any.
+⚠️ **And it strips comments, and must:** every reference to the device geometry outside `PhoneShell` is in a
+COMMENT — three quoting `NAV_H = 60` while explaining the website was right and the app had drifted.
+
+🔻 **Not reopened:** placement on the marketing page stays INSUFFICIENT EVIDENCE while `SITE-SCROLL-DEPTH-01`
+is blocked on there being no site analytics. Collins lost placement to that gap twice, and this filing came out
+of the second time.
+
+---
+
 ## 2026-11-16 — `MKT-STEP-CEILING-BAND-01` · SHIP. The copy question was already ruled, and the item understated the reach fivefold
 
 | Ruling | |

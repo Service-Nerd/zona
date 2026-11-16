@@ -825,9 +825,15 @@ before planning against any number below (an item is a snapshot of the code on t
   real **16-week base-build block** for a 0 km/week runner: seven weeks in **minutes with no distance**, then
   kilometres, then a checkpoint drawn as a door. **A published BLOCK is not a published PLAN** — no race H1, no
   race day, no countdown. 🔴 **The engine had refused 0% since 2026-10-25 and the site never said so.**
-- 🧭 **DESIGN BOARD** `SITE-FRAME-TAXONOMY-01` — Collins, filed after losing placement: **six ways to frame a
-  product visual on one site** (`ProductStill`, `PhoneShell`, `TabbedPhone`, `PhoneFrame`, `HeroTrace`, `HrTrace`).
-  Taxonomy question, not this sitting's.
+- 🔴 **CLOSED 2026-11-16 — DON'T SHIP, withdrawn by the filing seat** `SITE-FRAME-TAXONOMY-01`. Filed as
+  **six ways to frame a product visual**; measured, the six are **one device chrome** (`PhoneShell`, geometry
+  declared once, extracted **2026-09-21 — six weeks BEFORE the filing**), **one Today still** (`TodayStill`,
+  exported by `PhoneFrame`, **imported** by `TabbedPhone`), **one trace geometry** (`HrTrace` owns the paths,
+  `HeroTrace` animates them) and **one inset** (`ProductStill`, the pattern `design-rulings.md` ratified the day
+  after killing `--surface-moss-wash`, so collapsing it reverses a kill). 📱 The two device presentations are a
+  measured bundle decision: `PhoneFrame` is a server component so `/charity-runners` takes no client boundary.
+  🖊️ Collins withdrew it: *"a file listing is not a taxonomy."* Ruling + 6-arm gate
+  (`lib/marketing/siteFrameOwners.test.ts`, **9 mutations falsified**) in `design-rulings.md`.
 - 🧭 **DESIGN BOARD, blocked** — whether `TrendCard` belongs on the site at all. Two blockers, both named:
   Sierra's transfer objection (*"138 to 154 teaches no skill"*) is unresolved, and it is `'use client'` with 8
   hooks, so **nobody may decide it without a bundle number** (`clientBundleBoundary.test.ts` exists because this
@@ -2218,6 +2224,40 @@ nobody could read. The contradiction is now resolved absolutely rather than by w
 
 ⚠️ **Safe to remove:** `WeekSchema` is not `.strict()`, so the 39 stored plans still parse (the key is dropped from the
 parsed result), and `savePlanForUser` uses `safeParse` only as a drift **probe**, so nothing rewrites storage.
+
+---
+
+### ⚙️ `TEST-STRIP-COMMENTS-OWNER-01` — 75 files strip comments three different ways, so guards written to one rule enforce different rules ⚙️ **NO BOARD**
+
+**Found 2026-11-16** while writing `siteFrameOwners.test.ts` and reaching for an existing stripper rather than a
+new one. 📐 **Measured from the tree: 27 files DECLARE their own `stripComments` and ~40 more filter lines with
+an inline `startsWith('//')`** — 75 files in all, plus `stripShellComment` and `stripSqlComments` for other
+languages (correctly separate).
+
+🔴 **IT IS NOT UNTIDINESS, IT IS A CAPABILITY GAP.** A source-reading guard can only see what its stripper
+lets through, so two guards written to the same rule enforce different rules:
+
+| Shape | What it cannot see |
+|---|---|
+| inline `startsWith('//')` | a **trailing** comment — so a value in one reads as CODE and the guard fires on prose (`HOOK-RGBA-COMMENTS-01`, which this repo records as how a guard gets switched off) |
+| naive `//` matcher | that the `//` in a URL or a regex is **not** an opener — so it blanks real code |
+| the one in `lib/ops/stripTsComments.ts` | the three paid-for cases: quote state, template literals, and a **regex holding a quote** (`/it\'s/` once broke stripping in **51 of 649 files**) |
+
+⚠️ **A live instance, the same day:** a `fatigueScale` arm broke on the first row of that table.
+
+✅ **The owner EXISTS as of 2026-11-16** — `lib/ops/stripTsComments.ts`, moved verbatim from
+`lib/plan/pinnedClock.test.ts` (the one version with a falsified defect history, which imports it back and
+re-exports it so its own both-directions arms still prove the live code). **What is open is the migration** of
+the remaining 26 declarations and ~40 inline filters.
+
+🔑 **Do it in waves and read each one as a code review, not a sweep.** Pointing a guard at a stronger stripper
+**widens what it can see**, so a migrated guard can legitimately go red on something real — that is the value,
+and it is also why a bulk find-and-replace is the wrong shape. Each wave: migrate, run, and if an arm reddens,
+decide whether the finding or the arm is wrong.
+
+⚠️ **Not a candidate for a tree gate yet.** A check forbidding a local `stripComments` would fire on 26 correct-
+today files and get switched off — the `rhythm="none"` lesson from `SITE-BAND-RHYTHM-01`. The gate belongs at the
+END of the migration, as a ratchet, not at the start.
 
 ---
 

@@ -62,44 +62,13 @@ function tests(dir: string): string[] {
  *     through a variable is resolved now, exactly as `design-guard.py` and `coaching-guard.py` resolve a write
  *     target — the precedent is in this repo and I did not reach for it.
  */
-/** Blanks comment bodies without touching string, template or REGEX contents. */
-export function stripComments(src: string): string {
-  let out = '', i = 0
-  // A `/` starts a regex only in expression position; after a value it is division. This is the standard heuristic:
-  // look back at the last non-space character. Getting it wrong costs a false positive, which is why it is here.
-  const EXPR_BEFORE = new Set(['(', ',', '=', ':', '[', '!', '&', '|', '?', '{', '}', ';', '\n', '+', '-', '*', '%', '<', '>', '~', '^'])
-  const q = { s: false, d: false, t: false }
-  let lastSig = '\n'
-  while (i < src.length) {
-    const c = src[i], n = src[i + 1]
-    const inStr = q.s || q.d || q.t
-    if (!inStr && c === '/' && n === '/') { while (i < src.length && src[i] !== '\n') i++; continue }
-    if (!inStr && c === '/' && n === '*') { i += 2; while (i < src.length && !(src[i] === '*' && src[i + 1] === '/')) i++; i += 2; continue }
-    if (!inStr && c === '/' && EXPR_BEFORE.has(lastSig)) {
-      // A regex literal: copy it verbatim, honouring escapes and character classes, so a quote inside cannot leak.
-      out += c; i++
-      let cls = false
-      while (i < src.length) {
-        const r = src[i]
-        if (r === '\\') { out += r + (src[i + 1] ?? ''); i += 2; continue }
-        if (r === '\n') break
-        out += r; i++
-        if (r === '[') cls = true
-        else if (r === ']') cls = false
-        else if (r === '/' && !cls) break
-      }
-      lastSig = '/'
-      continue
-    }
-    if (c === '\\' && inStr) { out += src[i] + (src[i + 1] ?? ''); i += 2; continue }
-    if (!q.d && !q.t && c === "'") q.s = !q.s
-    else if (!q.s && !q.t && c === '"') q.d = !q.d
-    else if (!q.s && !q.d && c === '`') q.t = !q.t
-    if (!/\s/.test(c) || c === '\n') lastSig = c
-    out += c; i++
-  }
-  return out
-}
+/** The implementation MOVED to `lib/ops/stripTsComments.ts` on 2026-11-16
+ *  (`TEST-STRIP-COMMENTS-OWNER-01`): 27 files declared their own and ~40 more used an inline
+ *  `startsWith('//')` filter, so guards written to one rule enforced different rules. Re-exported
+ *  here because this file's callers and its both-directions arms are the proof of record for the
+ *  two defects named above, and they must keep proving the live code rather than a copy. */
+export { stripTsComments as stripComments } from '@/lib/ops/stripTsComments'
+import { stripTsComments as stripComments } from '@/lib/ops/stripTsComments'
 
 /** A test that FREEZES the clock cannot drift, whatever its fixtures say — a STRONGER remedy than deriving the date,
  *  and the first cut had no exemption for it, so the gate pushed a correctly-written test onto the weaker one. */
