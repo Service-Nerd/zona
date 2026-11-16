@@ -645,6 +645,59 @@ if [ "$_regn" -lt 400 ]; then
 fi
 [ "$rfail3" = "0" ] && say "  ok ($_regn registry ids, $_nobl without a build-log entry — declared debt)"
 
+say "── a record written TWICE — byte-identical row or entry ──"
+# 🔴 FOUND 2026-11-16 BY BEING ASKED "are the documents up to date?", NOT BY THIS SCRIPT.
+# `SITE-FRAME-TAXONOMY-01` had TWO registry rows and TWO build-log entries: a python edit
+# batch wrote both, died on a later assert, and the re-run prepended both again.
+#
+# ⚠️ EVERY OTHER ARM HERE ASKS WHETHER A RECORD EXISTS. None asked whether there is exactly
+# ONE, so ALL CLEAN was printed over a duplicated record — correctly, and uselessly. This is
+# the limit already written into CLAUDE.md § audit-docs in as many words: "ALL CLEAN cannot
+# see a record that is FALSE."
+#
+# ⚠️ THE TEST IS BYTE-IDENTICAL TEXT, NOT A REPEATED ID, and that distinction is the whole
+# arm. 18 registry ids and 31 build-log ids legitimately appear more than once, because a
+# phased item ships more than once and the registry is chronological — an id-repeat check
+# would fire on ~50 correct records and get switched off, which this repo counts as
+# equivalent to having no check. An identical ROW is the signature an accident actually has.
+dupfail=0
+_dupreg=$(grep -E '^\|[[:space:]]*[A-Z][A-Z0-9]*(-[A-Z0-9]+)+' docs/canonical/feature-registry.md \
+  | sort | uniq -d | wc -l | tr -d ' ')
+_dupbl=$(grep '^## ' docs/build-log.md | sort | uniq -d | wc -l | tr -d ' ')
+if [ "$_dupreg" != "0" ]; then
+  say "  A REGISTRY ROW IS WRITTEN TWICE, BYTE-IDENTICAL ($_dupreg):"
+  grep -E '^\|[[:space:]]*[A-Z][A-Z0-9]*(-[A-Z0-9]+)+' docs/canonical/feature-registry.md \
+    | sort | uniq -d | cut -c1-110 | sed 's/^/      /'
+  dupfail=1; fail=1
+fi
+if [ "$_dupbl" != "0" ]; then
+  say "  A BUILD-LOG HEADING IS WRITTEN TWICE, BYTE-IDENTICAL ($_dupbl):"
+  grep '^## ' docs/build-log.md | sort | uniq -d | cut -c1-110 | sed 's/^/      /'
+  say "            Keep ONE. Diff the two bodies first: the later copy is usually the"
+  say "            revised one, and a fact can live in only one of them."
+  dupfail=1; fail=1
+fi
+# The population must be real: a collapsed grep passes in silence, which is how the first
+# cut of three arms in this script reported clean over nothing.
+#
+# ⚠️ THE FLOORS SIT JUST UNDER THE LIVE FIGURES, AND MY FIRST CUT SET THEM AT 400 AGAINST A
+# LIVE 978 / 922 — so cutting the build-log population from 922 to 422 passed. That is the
+# same error as a `rows > 520` guard against 593 rows, made the same day: a floor far below
+# live cannot see a real loss, only a total collapse. Both counts only ever GROW (a record is
+# appended, never removed), so a tight floor is safe here and a loose one is worthless.
+# Raise them when they bind; that is the ratchet working, not a failure.
+_REG_ROWS_FLOOR=950
+_BL_HEADS_FLOOR=900
+_regrows=$(grep -cE '^\|[[:space:]]*[A-Z][A-Z0-9]*(-[A-Z0-9]+)+' docs/canonical/feature-registry.md | tr -d ' ')
+_blheads=$(grep -c '^## ' docs/build-log.md | tr -d ' ')
+if [ "$_regrows" -lt "$_REG_ROWS_FLOOR" ] || [ "$_blheads" -lt "$_BL_HEADS_FLOOR" ]; then
+  say "  THE DUPLICATE SCAN'S POPULATION FELL (rows=$_regrows/$_REG_ROWS_FLOOR headings=$_blheads/$_BL_HEADS_FLOOR)."
+  say "            Either the grep stopped matching, or records were deleted. Both counts only"
+  say "            grow, so neither is routine — look before raising the floor."
+  dupfail=1; fail=1
+fi
+[ "$dupfail" = "0" ] && say "  ok ($_regrows registry rows, $_blheads build-log entries, 0 written twice)"
+
 say "── open backlog items with no roadmap line ──"
 # CLAUDE.md's doc system: "An open item lives in roadmap (as a line) + backlog
 # (as detail)." Nothing checked the roadmap half. Found 2026-09-21 by the peer
