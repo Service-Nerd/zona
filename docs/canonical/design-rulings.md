@@ -25,6 +25,50 @@ so a **free** runner gets the name and the mark, not the line. Words founder-app
 with strength that week (Coaching Board). Check: `components/dashboard/phaseOnToday.markup.test.ts` (12 arms, five
 mutations falsified). Note: `docs/decisions/design-2026-10-26-phase-on-today.md`. Not felt on a device.
 
+## 2026-11-16 — `MKT-STEP-CEILING-BAND-01` · SHIP. The copy question was already ruled, and the item understated the reach fivefold
+
+| Ruling | |
+|---|---|
+| **The website states an easy pace as the CEILING it is, through the app's owner** | 🟢 **SHIP** |
+| **A QUALITY band stays a band** | 🟢 **STANDING** — it is a two-ended target, not a ceiling |
+
+📐 **MEASURED ACROSS THE 9 PUBLISHED PLANS THAT GENERATE** (the 10th is the staged never-run page, refused
+by design):
+
+| | before | after |
+|---|---|---|
+| steps reading `at no faster than 6:30–7:30 /km` | **87 of 205** | **0** |
+| session rows printing the raw band for an easy session | **424 of 507** | **0** |
+| quality bands (genuine two-ended targets) | 58 | **58, untouched** |
+
+🔑 **THE ITEM CALLED THE WORDING AN OPEN COPY DECISION ACROSS TWO SURFACES. IT WAS ALREADY RULED.**
+`design-rulings.md` CD-11 / §12 ratifies *"X or slower"*, and `sessionSteps.ts` records in as many words why the
+app routes through `easyPaceAsCeiling`: *"one screen stated the same fact two ways… this routes through that
+owner instead of being **a second writer of a pace qualifier** (the duplication class this repo keeps paying
+for)."* **Both website renderers were that second writer**, printing the other phrasing on the sales surface.
+
+⚠️ **AND THE REASON IS SUBSTANTIVE, NOT MERELY CONSISTENCY.** §12 caps an easy run at the top of Z2, so
+running **slower** than 7:30 is still a correct easy run — **a range invents a boundary the plan does not
+set.** A quality band is a real two-ended target, which is why the fix passes the session's **real type** and
+leaves 58 of them alone; reducing those would delete half a prescription.
+
+🔴 **THE ITEM FOUND THE STEPS AND MISSED THE ROWS, WHICH ARE FIVE TIMES AS MANY.** Fixing only
+`stepParts` would have left a page where the row says `6:30–7:30 /km` and the step under it says
+`6:30 /km or slower` — **one page, one fact, two ways**, the exact defect the app's own comment describes.
+
+🔻 **The second finding is LATENT, not live.** `in Z2-Z3` measures **0 of 205** steps (195 carry a pace, 5
+an RPE, 5 neither), so it has no live instance. Routed through `formatZone` anyway and recorded as a **hole**,
+not a defect — a latent item and a live one deserve different urgency. ⚠️ §21b Am. 4's *"effort, not pace"*
+qualifier is still deliberately NOT carried to the website, as the item asked.
+
+**Artifacts (three, one commit):** pattern → `ui-patterns.md` § published plan pages · constant →
+`planRowPace` reaching `easyPaceAsCeiling` · check → `lib/marketing/siteCeilingPace.test.ts`, **7 arms, 6
+mutations falsified**. 🔴 **TWO OF THOSE ARMS WERE HOLLOW AND THE MUTATIONS PROVED IT:** restoring the raw
+session row and over-reducing it both stayed **GREEN**, because the harness called `easyPaceAsCeiling` itself
+and so tested the harness rather than the page. The row expression is now a one-line owner (`planRowPace`) that
+the page and the gate both call, and each mutation fires on the arm that names it. **An arm that recomputes its
+subject is not a check.**
+
 ## 2026-11-16 — `SITE-BAND-RHYTHM-01` · SHIP, one line. The item was wrong about 20 of its 21 sites
 
 | Ruling | |

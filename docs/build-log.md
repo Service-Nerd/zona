@@ -6,6 +6,15 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-11-16 — MKT-STEP-CEILING-BAND-01 · the copy decision had already been made, one register away
+**Shipped:** the published plan pages now reduce an easy session's pace band to a ceiling through the app's own owner — step targets and session rows both — so *"no faster than 6:30–7:30 /km"* reads *"6:30 /km or slower"*.
+**Dev learning:** the item called this *"a copy decision across two surfaces"* and held itself open for five weeks on that basis. It was not open. `design-rulings.md` CD-11 ratified the phrasing, and `sessionSteps.ts`'s own header records the mechanism — a surface that words the qualifier itself becomes **a second writer of a pace qualifier**. The website was that second writer. **Before treating an item's open question as open, grep the register for the answer.** Second: the item named `stepParts` and 87 steps; the session ROW above those steps had the same defect on **424 of 507** rows. One page, one fact, two renderers, and the item saw one of them.
+**Product/creator learning:** the reason is substantive and I nearly wrote it as consistency. §12 caps an easy run at the **top** of Z2, so running slower than 7:30 is fine — **a range invents a floor the plan does not set.** A quality band is a genuine two-ended target, which is why the row has to pass the session's real type rather than a literal, and why 58 bands are correctly left alone.
+**AI-building learning:** two of my seven gate arms were hollow and reading them would never have shown it. The harness called `easyPaceAsCeiling` itself, so it was asserting its own arithmetic — restoring the raw row and over-reducing it both stayed GREEN. The fix was structural, not a better assertion: extract `planRowPace` so the page and the gate call the same one line. **If a gate recomputes what the product computes, it is testing the gate.**
+**The honest bit:** three waves in a row now where my own check was the defect, and all three were found by mutation rather than by review. The code in this wave was four lines.
+**Hook material:** 87 steps was the filed number. The real one was 87 + 424, and the 424 were on the line directly above.
+**Postable?:** yes
+
 ## 2026-11-16 — SITE-BAND-RHYTHM-01 · a clamp is a relationship, and typing its maximum throws that away
 **Shipped:** the homepage's dark closing band uses `rhythm="close"` instead of a typed `112px`.
 **Dev learning:** the item alleged sixteen hand-typed band rhythms. There are twenty-one sites, and twenty of them are correct — every single one passes `rhythm="none"` **explicitly**, so they are a declared opt-out rather than drift, and they opt out for good reasons (sub-band pads below the 56px floor, or the inside of a hairline-ruled block where padding is not rhythm). The real finding was one site: the dark band typed `112px`, which is `--sect-y-close`'s own clamp *maximum* — from a token whose declaration in `globals.css` literally names that band, *"the ONE dark band, deliberately heavier"*.

@@ -10,7 +10,8 @@
 // Together with `catalogue_id` (ADR-018) this closes the seventh gap the audit
 // called blocking: identity told us WHICH row, the derived set tells us WHAT
 // this runner actually does. Without both, a v2 schema is invisible to a runner.
-import { qualifyStepLength } from '@/lib/format'
+import { qualifyStepLength, formatZone } from '@/lib/format'
+import { easyPaceAsCeiling, paceAsFloor } from './easyPaceCeiling'
 import type { PaceAnchor, StepTarget, StructureV2 } from './sessionStructureV2'
 import { transitionBand } from './progressionTransition'
 import { GENERATION_CONFIG } from './generationConfig'
@@ -240,12 +241,37 @@ export function resolveMainSet(structure: StructureV2, ctx: ResolveContext): Der
  * one question is how 859 sessions shipped with no pace at all.
  */
 export function stepParts(s: DerivedStep): { action: string; target: string } {
+  // 🔴 THROUGH THE OWNERS, BECAUSE THIS WAS A SECOND WRITER OF A PACE QUALIFIER
+  // (MKT-STEP-CEILING-BAND-01, Design Board 2026-11-16).
+  //
+  // This built its own qualifier — `'no faster than ' + s.pace` — and `s.pace` is a BAND, so a
+  // published plan page read **`at no faster than 6:30–7:30 /km`**: a comparison applied to a
+  // range, naming two numbers where the ceiling is one. 📐 Measured across the 9 published plans
+  // that generate: **87 of 205 rendered steps** said it.
+  //
+  // ⚠️ THE WORDING WAS NOT THE OPEN QUESTION THE ITEM THOUGHT. `sessionSteps.ts` settled it for the
+  // app and recorded why: `design-rulings.md` CD-11 / §12 ratifies *"X or slower"*, and routing
+  // through `easyPaceAsCeiling` exists precisely so there is not *"a second writer of a pace
+  // qualifier (the duplication class this repo keeps paying for)"*. This file was that second
+  // writer, printing the other phrasing on the sales surface. One owner now, one phrasing, both
+  // surfaces.
+  //
+  // ⚠️ `easyPaceAsCeiling` gates on SESSION TYPE and a step has none, so `'easy'` is passed to get
+  // the band→ceiling reduction and **the mode decides whether to call it at all** — the same
+  // argument, in the same words, as the app's renderer.
   const paceStr = s.pace
-    ? `${s.pace_mode === 'ceiling' ? 'no faster than ' : s.pace_mode === 'floor' ? 'no slower than ' : ''}${s.pace}`
+    ? (s.pace_mode === 'ceiling' ? (easyPaceAsCeiling(s.pace, 'easy') ?? s.pace)
+      : s.pace_mode === 'floor' ? paceAsFloor(s.pace)
+      : s.pace)
     : null
   const target = paceStr ? `at ${paceStr}`
     : s.rpe != null ? `at RPE ${s.rpe}`
-    : s.zone ? `in ${s.zone}`
+    // ⚠️ `formatZone` IS THE OWNER, AND THIS BRANCH IS LATENT, NOT LIVE. It printed `s.zone` raw,
+    // so a step reaching here with `Z2-Z3` would read *"in Z2-Z3"* where the app says *"Zone 2–3"*.
+    // 📐 **Measured 0 of 205 steps on every published plan** (195 carry a pace, 5 an RPE, 5
+    // neither) — so the item's second finding has no live instance and is fixed as a hole, not as
+    // a defect. Said plainly because a latent item and a live one deserve different urgency.
+    : s.zone ? `in ${formatZone(s.zone)}`
     : ''
 
   const isWork = s.role === 'work'

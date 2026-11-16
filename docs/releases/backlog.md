@@ -18537,38 +18537,48 @@ whether the toggle should exist at all.
 
 ---
 
-### `MKT-STEP-CEILING-BAND-01` — the website words the pace ceiling correctly and still prints it over a range 🧭 **DESIGN BOARD**
+### ✅ `MKT-STEP-CEILING-BAND-01` — **SHIPPED 2026-11-16. The copy decision was already ruled, and the item understated the reach fivefold** 🧭 **DESIGN BOARD**
 
-**Found during `SESSION-STEP-LEGIBILITY-01` by opening the page, not by reading the code.** The
-published plan pages render steps through a **second, prose renderer** (`stepParts` in
-`resolveMainSet.ts`, not the app's `buildStepGroups`) and print:
+📐 **Measured across the 9 published plans that generate** (the 10th is the staged, never-run page):
+steps reading `at no faster than 6:30–7:30 /km` **87 of 205 → 0**; session rows printing the raw band
+for an easy session **424 of 507 → 0**; quality bands **58, untouched**.
 
-> `jog 1:30 min at no faster than 6:30–7:30 /km`
+🔑 **It was NOT an open copy decision.** `design-rulings.md` CD-11 / §12 ratifies *"X or slower"*, and
+`sessionSteps.ts` records the reason: a surface that words it itself becomes **a second writer of a
+pace qualifier**. **Both website renderers were that second writer**, printing the other phrasing on
+the sales surface. The question the item raised had been settled one register away from it.
 
-The **wording is right** — "no faster than", matching ADR-019 — where the app had the inverted `≤`.
-But it is still a comparison applied to a **band**: "no faster than 6:30–7:30" names two numbers
-where the ceiling is one (`6:30`). The app now reduces the band through the ratified owner
-(`easyPaceAsCeiling` → *"6:30 /km or slower"*).
+⚠️ **The reason is substantive, not consistency.** §12 caps an easy run at the top of Z2, so running
+**slower** than 7:30 is still correct: **a range invents a floor the plan does not set.** A quality
+band is a real two-ended target, so the row passes the session's **real type** and 58 are left alone.
 
-⚠️ **SECOND FINDING, 2026-10-06 evening — the same renderer prints the ABBREVIATED zone.** `stepParts`
-builds its target as `in ${s.zone}`, so a published plan page reads **`6 min in Z2-Z3`** where the app
-renders `Zone 2–3` through `lib/format.ts → formatZone`. The app has a gate asserting no abbreviated
-zone reaches a row; **the website has no equivalent and was never in that gate's population.** Same
-file, same fix shape, so do both in one pass.
+🔴 **The item found the steps and missed the ROWS, which are five times as many.** Fixing only
+`stepParts` would have left a row saying `6:30–7:30 /km` above a step saying `6:30 /km or slower` —
+one page, one fact, two ways.
 
-⚠️ **§21b Am. 4's qualifier is deliberately NOT carried to the website.** `effort, not pace` answers a
-defect in a COLUMN layout — a row leading with minutes beside rows leading with km. The prose renderer
-has no such contrast: *"6 min in Zone 2–3"* does not read as broken. Stated so the next pass does not
-add it for symmetry.
+🔻 **The second finding is LATENT:** `in Z2-Z3` measures **0 of 205** steps (195 pace, 5 RPE, 5
+neither). Routed through `formatZone` anyway and recorded as a hole, not a defect. §21b Am. 4's
+*"effort, not pace"* qualifier is still deliberately NOT carried, as the item asked.
 
-🔴 **Two surfaces, two phrasings, one fact.** Reducing the band is mechanical; choosing whether the
-website says *"no faster than 6:30 /km"* or adopts the app's *"6:30 /km or slower"* is a **copy
-decision across two surfaces**, which is why it was not folded into that build.
+✅ Gate: `lib/marketing/siteCeilingPace.test.ts`, 7 arms, 6 mutations falsified. 🔴 **Two arms were
+HOLLOW and only the mutations said so** — restoring the raw row and over-reducing it both stayed
+green, because the harness recomputed the value instead of calling the page's path. `planRowPace` is
+the one-line owner both now call.
 
-⚠️ **The website also shows NO step notes at all** — `stepParts` returns action + target and never
-the instruction, so the 85.7% finding is fixed in the app and still live on the marketing pages.
-Whether a published plan page should carry coaching notes is a separate question (it is a sales
-surface, and the notes are the product).
+---
+
+### 🧭 **DESIGN BOARD** `MKT-STEP-NOTES-ABSENT-01` — a published plan page shows no step instructions at all
+
+Separated from `MKT-STEP-CEILING-BAND-01` when that shipped (2026-11-16); it was that item's last
+paragraph and is a different question. `stepParts` returns **action + target** and never `step.note`,
+so the instruction the app shows under a step — the 85.7% coverage `SESSION-STEP-LEGIBILITY-01`
+delivered — reaches no published page.
+
+**For the board:** a plan page is a **sales surface** and the notes are the product, so this is a
+give-away question before it is a layout one. 💼 It may want the SLT: the pages are the free,
+no-signup proposition, and the notes are named PAID-adjacent richness. ⚠️ **Measure the delivery
+first** — `SESSION-STEP-LEGIBILITY-01` amended its own budget 26.0 → 16.7 notes per plan on measured
+evidence; a note under every step is the same hazard on a longer page.
 
 ---
 

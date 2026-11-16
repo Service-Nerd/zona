@@ -15,6 +15,7 @@ import { SiteFooter } from '@/components/marketing/SiteFooter'
 import { AppStoreBadge } from '@/components/marketing/AppStoreBadge'
 import SessionSteps from '@/components/shared/SessionSteps'
 import { stepParts, type DerivedSet } from '@/lib/plan/resolveMainSet'
+import { planRowPace } from '@/lib/marketing/planRowPace'
 import { composeSession } from '@/lib/plan/sessionComposer'
 import { catalogueRowFor } from '@/lib/plan/catalogueLink'
 import { displayDerivedSet } from '@/lib/plan/runWalkPlan'
@@ -429,7 +430,17 @@ export function PlanPage({ plan }: { plan: MarketingPlan }) {
                               {s.zone && <span style={{ fontSize: 'var(--fs-eyebrow)', fontWeight: 700, color: 'var(--ink-2)', background: 'var(--bg-soft)', padding: '2px var(--space-2)', borderRadius: 999, letterSpacing: '0.02em' }}>{s.zone}</span>}
                             </div>
                             <div style={{ fontSize: 'var(--fs-sm)', color: 'var(--mute)', marginTop: 2 }}>
-                              {[s.distance_km ? `${s.distance_km} km` : null, s.duration_mins ? `${s.duration_mins} min` : null, s.pace_target || null].filter(Boolean).join('  ·  ')}
+                              {/* 🔴 THE EASY PACE IS A CEILING, NOT A RANGE (MKT-STEP-CEILING-BAND-01,
+                                  Design Board 2026-11-16). This printed `s.pace_target` raw, so **424 of 507
+                                  session rows** across the published plans showed `6:30–7:30 /km` where the app
+                                  shows `6:30 /km or slower` through this same owner.
+                                  ⚠️ The slow end is NOT a limit: §12 caps an easy run at the top of Z2, and
+                                  slower than 7:30 is still a correct easy run — so printing a RANGE invents a
+                                  boundary the plan does not set. CD-11 / §12 ratified *"X or slower"*.
+                                  ⚠️ It passes the real `s.type`, so the owner reduces only easy/recovery/run and
+                                  leaves the **58** quality bands alone, which ARE two-ended targets. Fixing the
+                                  steps alone would have left one page stating one fact two ways. */}
+                              {[s.distance_km ? `${s.distance_km} km` : null, s.duration_mins ? `${s.duration_mins} min` : null, planRowPace(s) || null].filter(Boolean).join('  ·  ')}
                             </div>
                             {isQualitySession(s) && <MainSet s={s} />}
                           </div>
