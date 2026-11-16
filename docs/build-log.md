@@ -6,6 +6,15 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-11-16 — DOC-AUDIT-DUPLICATE-RECORD-01 · ALL CLEAN over a record written twice
+**Shipped:** a new `audit-docs.sh` arm that fails when a feature-registry row or a build-log heading appears twice, byte-identical.
+**Dev learning:** the question *"are the documents up to date?"* found a defect the script could not. Every arm in that audit asks whether a record EXISTS; none asked whether there is exactly ONE, so two identical registry rows and two identical build-log entries read as ALL CLEAN. The limit is written into `CLAUDE.md` in as many words — *ALL CLEAN cannot see a record that is FALSE* — and I had quoted it earlier the same day without applying it.
+**Product/creator learning:** the useful distinction was BYTE-IDENTICAL text versus a repeated id. 18 registry ids and 31 build-log ids legitimately repeat, because a phased item ships more than once and the registry is chronological. An id-repeat check would have fired on about fifty correct records and been switched off inside a week, which this repo already counts as equivalent to having no check. **The signature an accident actually has is the thing to detect, not the thing that looks like the accident.**
+**AI-building learning:** the cause was a python edit batch that wrote two records, hit an assert further down, and died — then the re-run wrote them again. Second instance in one day of treating an earlier printed `ok` as proof the whole batch applied. The fix is not to write shorter batches; it is to verify the END STATE rather than the step, which is what this arm does.
+**The honest bit:** my first cut of the arm's own population guard set the floors at 400 against a live 978 / 922, so cutting the build-log from 922 entries to 422 passed it. **That is exactly the error I had found and written up in a gate four hours earlier** — a `rows > 520` threshold against 593 rows. A floor far below live sees only a total collapse. Both counts only grow, so the floors now sit just under live and a 30-entry loss fails.
+**Hook material:** the audit printed ALL CLEAN. The duplicated record was two lines apart in the file it was auditing.
+**Postable?:** yes
+
 ## 2026-11-16 — SITE-FRAME-TAXONOMY-01 · a file listing is not a taxonomy, and the real finding was somewhere else
 **Shipped:** nothing visible. The Design Board ruled DON'T SHIP on collapsing the site's *"six ways to frame a product visual"*, the filing seat withdrew it, and the ruling's premise is a 6-arm gate now instead of prose.
 **Dev learning:** the item named six components. Two are **internals of the others** — `PhoneShell` is the one device chrome, `HrTrace` is used only inside `HeroTrace` — and the consolidation it asked for shipped **2026-09-21, six weeks before the filing**. One of the remaining four, `ProductStill`, is the inset the register ratified the day after killing `--surface-moss-wash`, so collapsing it would have reversed a kill. **An exported-name count is not a taxonomy**, and the settled-ground scan is what turned a plausible tidy into a DON'T SHIP.
