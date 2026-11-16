@@ -1474,6 +1474,12 @@ Inline row appended to a `WeekCard` after the user taps the move icon on a sessi
 
 **The race session is the single producer of race-day pacing (`RACE-NOTES-INERT-01`, Design Board 2026-11-16).** Race-day instruction lives in the race session's `coach_notes` and its `race_opening_pace`, and nowhere else. The week-level `week.race_notes` field is **retired**: it was stamped on 39 of 43 live plans, had no render site anywhere, repeated the session's own opening sentence on 5 of 5 short-race plans, and contradicted it on the rest. ⚠️ **A second week-level race line must not come back without saying something the session does not** — and if one is ever added it must pass `quotesGoalPace`, because §80 Am. 2 forbids citing goal pace on a plan where it was withheld and the week field sat outside that check's population. Held by `lib/plan/raceNotesRetired.test.ts`.
 
+**The week card's two lines say different things (`WALKRUN-WEEK-LEGIBILITY-01`, Design Board 2026-11-16).** The eyebrow is **position** — `W3 · 16 NOV – 22 NOV`, plus a `--mute` suffix for an exceptional week (`· deload`, `· taper`, `· peak`). The line under it is `week.label`, and it is **what this week is**, never its number again. ⚠️ A label that restates the ordinal spends the card's only varying line on something already on screen: seven walk-run weeks read `Walk-run 1..7` while §117's ladder progressed underneath, invisible.
+
+⚠️ **`week.theme` IS NOT A RENDER TARGET.** Its only reader is Today's maintenance-transition card. `renderGuidance.ts` has recorded *"no reachable render today"* since 2026-10-09, and §117's ladder was ratified into that field sixteen days later. **Copy a runner must see goes in `label` or on the session, never in `theme`.**
+
+⚠️ **An exceptional week is marked on BOTH renderings or neither.** `WeekCard` (expanded, Now/Next) and `WeekStripCard` (collapsed, Later) render the same week; they carried different marks until 2026-11-16, when only the strip said `· deload`. It matters most where a deload **repeats** the previous level — a walk-run deload does, so the two weeks are otherwise byte-identical.
+
 **Move-mode day states (`REORDER-BLOCKED-DAY-01`, Design Board 2026-11-16).** While a move is staged, every day row is exactly one of four roles, decided by `moveDayRole()` in `components/training/PlanCalendar.logic.ts` and never by inline booleans in the JSX:
 
 | Role | Rail | Outline | Background | Line | Tap |

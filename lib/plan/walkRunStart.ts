@@ -140,7 +140,30 @@ export function generateWalkRunWeeks(
     return {
       n: i + 1,
       date: new Date(t0 + i * 7 * 864e5).toISOString().slice(0, 10),
-      label: `Walk-run ${i + 1}`,
+      // 🔴 THE LABEL CARRIES THE LADDER (WALKRUN-WEEK-LEGIBILITY-01, Design Board 2026-11-16).
+      //
+      // It used to read `Walk-run ${i + 1}`, and the Plan screen's week card renders `week.label`
+      // directly under an eyebrow that already says `W3 · 16 NOV – 22 NOV`. **So the label spent
+      // its one line restating the ordinal**, and seven weeks of a progressing ladder
+      // (1/2 → 2/2 → 3/2 → 3/2 → 4/2 → 5/2 → 6/1) rendered as seven identical cards whose session
+      // rows all read "Walk-run".
+      //
+      // ⚠️ THE PROGRESSION WAS AUTHORED AND CORRECT; IT HAD NOWHERE TO GO. It lives in `theme`,
+      // and `renderGuidance.ts` had already recorded — on **2026-10-09**, sixteen days BEFORE
+      // §117's ladder was ratified into this very field — that `week.theme` has **"no reachable
+      // render today"**. Its one reader is Today's maintenance-transition card, which a walk-run
+      // runner never sees. The wizard's phase card promises *"a minute more running each week"*
+      // once at sign-up; nothing afterwards ever showed it happening.
+      //
+      // 🔑 And the chair had already ruled the remedy, in another sitting about another surface:
+      // *"a planned easy week marked by its LABEL, not a second bar."* The mark was in a field
+      // with no render. This is conformance to a documented ruling, not a new decision.
+      label: `Run ${level.run_mins}, walk ${level.walk_mins}`,
+      // ⚠️ `theme` IS LEFT EXACTLY AS RATIFIED (2026-10-25) AND IS STILL UNRENDERED. Do not read
+      // this change as endorsing its wording: on a walk-run deload the level does NOT drop — w3
+      // and w4 are both L2, so the sessions are identical — and *"An easier week"* may therefore
+      // overclaim. Whether that week IS easier is the Coaching Board's, and it is routed, not
+      // decided here (`WALKRUN-DELOAD-CLAIM-01`).
       theme: wk.deload ? 'An easier week, on purpose.' : `Run ${plural(level.run_mins, 'minute')}, walk ${level.walk_mins}.`,
       type: wk.deload ? 'deload' : 'normal',
       phase: 'walk_run_start',

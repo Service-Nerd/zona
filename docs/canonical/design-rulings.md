@@ -25,6 +25,60 @@ so a **free** runner gets the name and the mark, not the line. Words founder-app
 with strength that week (Coaching Board). Check: `components/dashboard/phaseOnToday.markup.test.ts` (12 arms, five
 mutations falsified). Note: `docs/decisions/design-2026-10-26-phase-on-today.md`. Not felt on a device.
 
+## 2026-11-16 — `WALKRUN-WEEK-LEGIBILITY-01` · SHIP. The ladder reaches the week card, and a deload is marked on both renderings
+
+| Ruling | |
+|---|---|
+| **The walk-run week's LABEL carries its interval** | 🟢 **SHIP** — conformance to a ruling already made |
+| **`WeekCard` marks a deload, as `WeekStripCard` already did** | 🟢 **SHIP** |
+
+📐 **THE PREMISE HELD AND THE CAUSE WAS NOT WHERE THE ITEM LOOKED.** 🎯 McMillan was right that
+seven weeks read alike. §117's ladder (**1/2 → 2/2 → 3/2 → 3/2 deload → 4/2 → 5/2 → 6/1**) is correct and
+progressing; the Plan screen's week card renders **`week.label`**, which read `Walk-run 1..7` — an ordinal,
+**directly under an eyebrow that already says `W3 · 16 NOV – 22 NOV`.** The label spent its one line restating
+the number above it, and all 21 session rows read `Walk-run`.
+
+🔑 **THE PROGRESSION WAS AUTHORED AND HAD NOWHERE TO GO, AND THE CODEBASE HAD ALREADY SAID SO.** It lives
+in `week.theme`. `renderGuidance.ts` recorded on **2026-10-09** that `week.theme` has **"no reachable render
+today"** — **sixteen days BEFORE §117's ladder was ratified into that very field** (2026-10-25). Its one
+reader is Today's maintenance-transition card, which a walk-run runner never sees, and the website renders no
+theme either. The wizard's phase card promises *"a minute more running each week"* once at sign-up; nothing
+afterwards ever showed it happening.
+
+✅ **AND THE CHAIR HAD ALREADY RULED THE REMEDY, IN ANOTHER SITTING ABOUT ANOTHER SURFACE:** *"actual bars
+only, a planned easy week marked by its **label**, not a second bar."* The mark was in a field with no render.
+**That makes this conformance to documented intent rather than a decision** — the `HERO-WALKRUN-TOTAL-01`
+framing, where *"the ruling's mechanism was narrower than its intent"*.
+
+🔴 **THE ITEM MISSED THE SHARPEST INSTANCE: THE WALK-RUN DELOAD REPEATS ITS LEVEL.** w3 and w4 are both
+L2, so **every session is byte-identical** — and `WeekCard` carried **no deload mark at all** while
+`WeekStripCard`, in the same file, has rendered `· deload` all along. **Two renderings of the same week
+disagreed about whether it was a planned step back**, and on a walk-run block that left the pair
+indistinguishable. The expanded card now carries the same `--mute` suffix the strip uses; nothing new is
+invented. ⚠️ This marks a deload on **every** plan's Now/Next card, not only walk-run ones
+(**13.3% of plan weeks** are deloads, per `PHASE-ON-TODAY-01`'s own measurement).
+
+🎭 **Collins' own line from the trend sitting is what was going unsaid:** *"Our moment is the thing their
+app cannot draw: a down-week labelled 'on purpose'. A streak product cannot show a dip as success."* That
+label was in `theme`. It reached nobody.
+
+🔻 **ROUTED, NOT DECIDED: on a walk-run deload the level does NOT drop**, so `theme`'s *"An easier week,
+on purpose."* may overclaim — the week is identical to the one before it. Whether it IS easier is the
+Coaching Board's (`WALKRUN-DELOAD-CLAIM-01`). The string is left **exactly as ratified 2026-10-25** and this
+ruling must not be read as endorsing its wording. **The seam rule applied: design owns the encoding, coaching
+owns the meaning.**
+
+**Artifacts (three, one commit):** pattern → `ui-patterns.md` § 10b *Week card* · constant → the label
+derived from `walkRunLadder()` · check → `lib/plan/walkRunWeekLegibility.test.ts`, **7 arms, 4 mutations
+falsified** including **the exact state that shipped**. 🔴 **Twice in one arm I asserted a GENERALISATION
+instead of the property and its own runs caught both**: `/\d+$/` forbids `Run 1, walk 2` because that digit is
+the WALK MINUTES, and `/\b{n}$/` forbids w2's correct `Run 2, walk 2`, which ends in its own week number **by
+coincidence**. *A generalisation that forbids the right answer is not a check.*
+
+✅ **Rendered, not asserted:** `/strength-preview` at 375×812 with a real `generateWalkRunWeeks` block —
+read out of the DOM: `W3 · 23 Nov – 29 Nov` + `Run 3, walk 2`, then **`W4 · 30 Nov – 6 Dec · deload`** +
+`Run 3, walk 2`. Patch reverted.
+
 ## 2026-11-16 — `FATIGUE-CHIP-DUPLICATE-01` · SHIP. One fatigue scale, and it has to stay a scale
 
 | Ruling | |

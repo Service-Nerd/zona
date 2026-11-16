@@ -732,18 +732,39 @@ before planning against any number below (an item is a snapshot of the code on t
   the longest run is DERIVED from volume, so the two can never disagree** — varying an axis is not reaching the
   interaction. ⚕️ Sims wanted this a prerequisite to `STAGED-HM-DOOR-01`; the chair ruled it parallel.
 
-- 🧭 **DESIGN BOARD** `WALKRUN-WEEK-LEGIBILITY-01` — **seven walk-run weeks whose only change is inside the
-  session.** 🎯 McMillan, at the plans sitting: the §117 ladder really does progress (1/2 → 2/2 → 3/2 → 3/2 on the
-  deload → 4/2 → 5/2 → 6/1), but every week renders as *"Walk-run · 30 min · Zone 2"*, so a runner reading the Plan
-  screen sees the same week seven times. **Not a coaching question** — the prescription is right; the question is
-  whether the interval is visible on the week. Nobody has looked at it on a phone.
-  ⚠️ **A SECOND OBSERVATION, MEASURED 2026-11-12 (`GETRUNNING-WALKRUN-FLOOR-01`): one plan now says
-  "an easier week" TWICE, in two different sentences.** A walk-run deload reads *"An easier week, on purpose."*
-  (`walkRunStart.ts`, ratified at the 2026-10-25 sitting) and a ramp deload reads *"Step back"*
-  (`BASEBUILD-WEEK-COPY-01`) — two copies for one concept, four weeks apart in the same plan. It was invisible
-  while only staged plans carried walk-run weeks; §118's plans now carry both phases too.
-  `baseBuildWeekCopy.test.ts` asserts each phase against its OWN marker and deliberately does not reconcile them:
-  changing either sentence is this board's, not a base-build test's.
+- ✅ **SHIPPED 2026-11-16** 🧭 `WALKRUN-WEEK-LEGIBILITY-01` — **the premise held; the cause was not where the item
+  looked, and it missed the sharpest instance.** 🎯 McMillan was right that seven weeks read alike. §117's ladder
+  (**1/2 → 2/2 → 3/2 → 3/2 deload → 4/2 → 5/2 → 6/1**) is correct; the Plan screen's week card renders
+  **`week.label`**, which read `Walk-run 1..7` — an ordinal, **under an eyebrow that already says
+  `W3 · 16 NOV – 22 NOV`** — and all 21 session rows read `Walk-run`.
+  🔑 **The progression was authored and had nowhere to go, and the codebase had already said so:** it lives in
+  `week.theme`, and `renderGuidance.ts` recorded *"no reachable render today"* on **2026-10-09**, **sixteen days
+  before §117's ladder was ratified into that field**. Its one reader is Today's maintenance card; the website
+  renders no theme either. The wizard promises *"a minute more running each week"* once at sign-up and nothing
+  afterwards showed it happening.
+  ✅ **The chair had already ruled the remedy** in another sitting: *"a planned easy week marked by its LABEL, not
+  a second bar."* Conformance, not a decision. The label now reads `Run 3, walk 2`.
+  🔴 **THE INSTANCE THE ITEM MISSED: the walk-run deload REPEATS its level.** w3 and w4 are both L2, so every
+  session is byte-identical — and `WeekCard` had **no deload mark** while `WeekStripCard`, in the same file,
+  has rendered `· deload` all along. Two renderings of one week disagreed. Fixed with the strip's own suffix.
+  ⚠️ That marks a deload on **every** plan's Now/Next card (13.3% of plan weeks).
+  📐 **Second claim re-measured:** *"one plan says 'an easier week' TWICE"* — both sentences are **themes**
+  (`walkRunStart.ts` and `foundationBlock.ts`), so **neither reaches the runner**. The divergence is real in the
+  data and invisible in the product; it is not a live copy defect and was not treated as one.
+  🔻 **Routed, not decided:** `WALKRUN-DELOAD-CLAIM-01` below.
+  ✅ Gate: `lib/plan/walkRunWeekLegibility.test.ts`, 7 arms, 4 mutations falsified **including the exact state
+  that shipped**. Rendered and read out of the DOM at 375×812.
+
+- 🔲 🏃 **COACHING BOARD** `WALKRUN-DELOAD-CLAIM-01` — **the walk-run deload does not drop a level, so "an easier
+  week" may overclaim.** Filed 2026-11-16 out of `WALKRUN-WEEK-LEGIBILITY-01`. `walkRunSchedule()` puts the deload
+  at **the same level as the week before it** (w3 and w4 are both L2), so the sessions are **identical**: same
+  3 × 30 min, same interval, same zone. The week's `theme` says *"An easier week, on purpose."* (ratified
+  2026-10-25) and nothing about the prescription is easier.
+  ⚠️ **It has been invisible, which is why it has never been challenged** — `theme` has no reachable render. The
+  design fix now puts the INTERVAL on the card and deliberately left this sentence alone: **whether the week is
+  easier is the board's, not design's** (seam rule). 🩹 For Willy/McMillan: is a repeat-level week a deload at
+  all, or should it drop a level — and if it is a deload by intent (no step UP after three weeks of stepping up),
+  the sentence should say *that*, not that it is easier.
 
 - 🔻 `STAGED-DOOR-AT-CAP-01` — **the staged door's modal outcome is exactly 4.00×**, because the search stops at
   the first volume inside §111's cap. 🏃 The chair declined a buffer at the sitting on his own standard

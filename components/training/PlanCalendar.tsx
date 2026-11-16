@@ -709,6 +709,17 @@ function WeekCard({ week, weekNum, completions, overrides, onSessionTap, onMove,
             {isMaint
               ? <>{phase === 'maintenance_restoration' ? 'Restoration' : 'Base'} · {formatDateRange(weekStartDate)}</>
               : <>{isRace ? 'Race week · ' : ''}W{weekNum} · {formatDateRange(weekStartDate)}</>}
+            {/* 🔴 THE EXPANDED CARD DID NOT MARK A DELOAD AND THE COLLAPSED STRIP OF THE SAME WEEK DID
+                (WALKRUN-WEEK-LEGIBILITY-01, 2026-11-16). `WeekStripCard` has carried `· deload`
+                beside its `W{n} · dates` eyebrow all along; `WeekCard` — the Now/Next card, the one
+                a runner actually reads — had no mark at all, so **two renderings of the same week in
+                the same file disagreed about whether it was a step back**.
+                ⚠️ It is sharpest on a walk-run block, where the deload REPEATS the previous level
+                (w3 and w4 are both L2, so every session is identical): without this the two weeks
+                are indistinguishable on the Plan screen. The chair's ruling is the ground —
+                *"a planned easy week marked by its label"* — and the same `--mute` suffix the strip
+                already uses is the encoding, so nothing new is invented. */}
+            {!isRace && !isMaint && (week as any).type === 'deload' && <span style={{ color: 'var(--mute)' }}> · deload</span>}
             {movingDay && <span style={{ color: 'var(--moss-strong)', marginLeft: '8px', textTransform: 'none', letterSpacing: 'normal', fontWeight: 500 }}>· Tap where you want it.</span>}
           </div>
           <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', fontWeight: 500, color: isCompleted ? 'var(--mute)' : 'var(--ink)', letterSpacing: '-0.005em' }}>

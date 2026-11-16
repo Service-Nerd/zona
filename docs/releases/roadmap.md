@@ -589,7 +589,12 @@ plans, and it was guaranteed to**: its lowest volume is 15 km/week against an af
 `PARITY-GRID-UNSET-LEVEL-01`, and the two compound. **Every standing harness was blind to this change; only a
 purpose-built grid and production saw it.** Detail in `backlog.md`. · ⚙️ `ENVELOPE-LRR-BLIND-01` — no corpus can reach a §113-refused half runner, so every gate reports
 IDENTICAL and that is blindness, not safety (⚕️ Sims wanted it a prerequisite). · 🧭
-`WALKRUN-WEEK-LEGIBILITY-01` — seven walk-run weeks whose only change is inside the session. · 🔻
+`WALKRUN-WEEK-LEGIBILITY-01` — ✅ **SHIPPED 2026-11-16.** The ladder was correct and written into `week.theme`, a field
+`renderGuidance.ts` had recorded as having *"no reachable render today"* **sixteen days before §117 was ratified into
+it**. The week card renders `label`, which restated the ordinal already in its eyebrow. Now `Run 3, walk 2`; and
+`WeekCard` marks a deload as `WeekStripCard` always did (the walk-run deload REPEATS its level, so the pair was
+otherwise byte-identical). Conformance to the chair's own *"marked by its label"*. 🔻 Filed:
+`WALKRUN-DELOAD-CLAIM-01` (🏃 the deload does not drop a level, so *"an easier week"* may overclaim). · 🔻
 `STAGED-DOOR-AT-CAP-01` — the door's modal outcome is exactly 4.00×; no buffer set, on the chair's own standard.
 Detail in `backlog.md`.
 
