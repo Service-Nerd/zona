@@ -25,6 +25,47 @@ so a **free** runner gets the name and the mark, not the line. Words founder-app
 with strength that week (Coaching Board). Check: `components/dashboard/phaseOnToday.markup.test.ts` (12 arms, five
 mutations falsified). Note: `docs/decisions/design-2026-10-26-phase-on-today.md`. Not felt on a device.
 
+## 2026-11-16 — `INJURY-RECENCY-01` · CANNOT RULE YET. The control's three answers have no defined effect
+
+| Ruling | |
+|---|---|
+| **The per-chip recency control** | 🔴 **NOT RULED — routed back, with the gap named** |
+
+📐 **THE ITEM READS AS READY FOR THIS BOARD AND IT IS NOT.** It is tagged *"COACHING BOARD RULED 2026-11-14:
+COLLECT IT, FOR FOUR CHIPS. Now 🧭 DESIGN BOARD for the control."* The Coaching Board did rule, and its
+measurement is real — but it measured **chip ON versus chip OFF**, which is *what the chip changes*. **The SLT's
+gate asked for something else.**
+
+🔑 **THE SLT'S ORDER, VERBATIM (2026-10-28, recommendation 1):** *"The Coaching Board first states what each
+**answer** (current / within a year / longer ago) changes, **per injury**, with a measurement."* And the chair's
+reason, in the same sitting: *"'longer ago' for a plantar fascia is not 'longer ago' for a lumbar disc, **and Willy
+has already said they should not share a rule**."*
+
+🔴 **SO WHAT IS MISSING IS THE BUCKET SEMANTICS, AND NOTHING IN THE 2026-11-14 SITTING SUPPLIES THEM.** It
+ruled *three buckets, absent or skipped defaults to CURRENT* — both correct and binding — and never stated
+what **within a year** or **longer ago** DOES to Knee, Shin, Back or Plantar. Does a year-old plantar keep the full
+long-run cap, half of it, none? The board explicitly declined to invent one on the neighbouring finding: *"I cannot
+name the restriction without evidence, and **this board does not invent caps**."*
+
+🧭 **Zhuo, and this is the whole ruling:** *"The success condition has to be stated before the design and be
+observable. I cannot state one. A control whose three outputs are indistinguishable to the engine is not a control,
+it is a field — and this board has spent the day deleting fields that nothing reads."* ⚠️ Shipping it would
+be the **third inert field of 2026-11-16**, after `week.race_notes` and `week.theme`'s ladder.
+
+🏃 **Routed back to the Coaching Board with the exact deliverable:** a per-injury mapping from the three
+buckets to the caps each one governs, for Knee, Shin, Back and Plantar — four rules, not one shared rule (Willy) —
+measured the way the chip measurement was. **The moment that exists this board can rule on the control in one
+sitting**, and the SLT has already pre-approved its shape (*"a per-chip toggle on the existing step, not a new
+step"*) and its tier (**FREE**).
+
+⚠️ **ONE MORE THING THE NEXT SITTING MUST SETTLE, FOUND READING THE RULING AGAINST ITS OWN TABLE: the four may
+be five.** The ruling names **Knee, Shin, Back, Plantar** on the rule *"if nothing changes, it is not collected"* —
+but the sitting's own corrected table shows **Achilles removing all 6 hill weeks for a beginner**, and that
+correction (*"the first version of this table was WRONG and said 'Achilles: nothing changes'"*) is in the same
+document, above the ruling. Either Achilles was judged out on being beginner-only and hills-only, which is a
+defensible call **that is not written down**, or the ruling sentence was drafted against the uncorrected table.
+**Not this board's to decide; named so the next sitting does not have to find it again.**
+
 ## 2026-11-16 — `WALKRUN-WEEK-LEGIBILITY-01` · SHIP. The ladder reaches the week card, and a deload is marked on both renderings
 
 | Ruling | |

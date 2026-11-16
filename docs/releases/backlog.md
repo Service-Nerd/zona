@@ -2582,7 +2582,33 @@ volume — which is why it reaches nothing here."*
 gives hip history a strength-side effect first — Blagrove's seat owns that. ⚠️ **Removing a chip four live runners have
 used changes what they are asked, so the step is the Design Board's.**
 
-### 🔲 `INJURY-RECENCY-01` — **COACHING BOARD RULED 2026-11-14: COLLECT IT, FOR FOUR CHIPS.** Now 🧭 **DESIGN BOARD** for the control
+### 🔲 `INJURY-RECENCY-01` — 🔴 **NOT READY FOR THE DESIGN BOARD. The three answers have no defined effect** 🏃 **COACHING BOARD** (again), then 🧭 **DESIGN BOARD**
+
+🔴 **RE-TAGGED 2026-11-16. The Design Board sat and could not rule** (`design-rulings.md`, same date). The heading
+used to read *"COLLECT IT, FOR FOUR CHIPS. Now 🧭 DESIGN BOARD for the control"*, which reads as ready. It is not.
+
+📐 **The 2026-11-14 sitting measured chip ON vs chip OFF — *what the chip changes*. The SLT's gate asked what each
+ANSWER changes.** Verbatim (2026-10-28, recommendation 1): *"The Coaching Board first states what each **answer**
+(current / within a year / longer ago) changes, **per injury**, with a measurement."* And the chair's reason, same
+sitting: *"'longer ago' for a plantar fascia is not 'longer ago' for a lumbar disc, **and Willy has already said they
+should not share a rule**."*
+
+🔑 **So the bucket semantics do not exist.** Three buckets and *absent-or-skipped defaults to CURRENT* are ruled and
+binding; **what `within a year` or `longer ago` DOES to Knee, Shin, Back or Plantar is nowhere stated.** The board
+declined to invent one on the neighbouring finding in that very sitting: *"I cannot name the restriction without
+evidence, and this board does not invent caps."*
+
+⚠️ **Building the control now would ship the third inert field of 2026-11-16**, after `week.race_notes` and the
+`week.theme` ladder. A control whose three outputs are indistinguishable to the engine is a field, not a control.
+
+🏃 **The deliverable, exactly:** a per-injury mapping from the three buckets to the caps each one governs — **four
+rules, not one shared rule** (Willy) — measured as the chip table was. Then 🧭 one sitting rules the control, whose
+shape (*per-chip toggle on the existing step, not a new step*) and tier (**FREE**) the SLT has already pre-approved.
+
+⚠️ **AND THE FOUR MAY BE FIVE.** The ruling names Knee / Shin / Back / Plantar on *"if nothing changes, it is not
+collected"* — yet the sitting's **own corrected table**, printed above the ruling, shows **Achilles removing all 6
+hill weeks for a beginner**. Either it was judged out for being beginner-only and hills-only, which is defensible and
+**is not written down**, or the ruling sentence was drafted against the uncorrected table.
 
 🧭 **Sitting:** `docs/decisions/coaching-2026-11-14-wave3-wizard-inputs.md`. The SLT's 2026-10-28 gate was explicit —
 *state what each answer changes, per injury, with a measurement; if nothing changes, it is not collected* — so **the
