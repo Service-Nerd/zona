@@ -1454,7 +1454,7 @@ Inline row appended to a `WeekCard` after the user taps the move icon on a sessi
 
 **Voice rule:** copy describes the move in concrete terms — *what* moves, *from* where, *to* where. Never abstract ("apply change"). Never invents structure not in the diff. Aligns with brand voice — *honest, slightly sarcastic, self-aware, encouraging without cringe*.
 
-### FatigueChips — the Fresh / Fine / Heavy / Wrecked row
+### FatigueChips — the Fresh / Fine / Heavy / Wrecked row (`FATIGUE-CHIP-DUPLICATE-01`)
 
 `components/shared/FatigueChips.tsx`. One control, four surfaces (`SessionPopupInner` ×2, `DashboardClient`, `ManualRunModal`), and `FATIGUE_HUE` is the single owner of the scale — read also by `SessionCompleteCard` and mirrored, under test, by its OG route.
 

@@ -64,7 +64,8 @@ The `SaveImageButton` component in `DashboardClient.tsx` wraps the call. Rendere
 
 ## Notes
 
-- **Same vocabulary as the in-app card.** Eyebrow strings, completion copy, fatigue chip palette, zone colours all read from the same modules. If the in-app card changes, this route reflects it without code edits.
+- **Same vocabulary as the in-app card.** Eyebrow strings and completion copy read from the same modules, so a change in-app reflects here without code edits.
+- 🔴 **THE FATIGUE PALETTE IS THE EXCEPTION, AND THIS LINE USED TO DENY IT** (`FATIGUE-CHIP-DUPLICATE-01`, 2026-11-16). It read *"…fatigue chip palette, zone colours all read from the same modules. If the in-app card changes, this route reflects it without code edits."* **It does not and cannot:** `next/og` resolves no CSS variables, so `FATIGUE_COLOURS` here is resolved hex, hand-kept. ⚠️ **A mirror under a claim that it is automatic is how the four-tag scale reached FOUR versions across six surfaces** — `fatigueChipColour` carried the same kind of sentence and disagreed with the view it named. The mirror is now **checked**: `lib/ui/fatigueScale.test.ts` reads `FATIGUE_HUE` (`components/shared/FatigueChips.tsx`), resolves each token out of `globals.css`, and fails if any value here disagrees. **Change the scale at the owner; this follows, and the gate says so.**
 - **Strava-independent.** State A activates whenever `run_analysis` is populated — either pipeline.
 - **No new dependencies.** `@capacitor/share` + `@capacitor/filesystem` already installed from SHARE-01.
 - **No watermark URL.** Card carries the wordmark + voice anchor + (conditionally) brand statement; deliberately no `zonna.run` URL to keep the design product-y not advertorial.

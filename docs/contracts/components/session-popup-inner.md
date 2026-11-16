@@ -105,3 +105,16 @@ skipped one.
 
 `ui-patterns.md` § session-detail + Sheet. Rulings: `POST-RUN-01`/`-02`, `AUTO-MATCH-02`,
 `AI-PROVENANCE-01`, `P-01`, `DASHBOARD-SCREEN-EXTRACT-04`.
+
+## The fatigue row is not this component's (`FATIGUE-CHIP-DUPLICATE-01`, 2026-11-16)
+
+Both reflect views render `<FatigueChips />` (`components/shared/FatigueChips.tsx`); neither holds a
+colour scale, a pill geometry or a caption of its own. **This component used to carry TWO hand-rolled
+copies of that row, and they disagreed with each other** — one had `Fine → --moss`, the other
+rendered **Fresh and Fine in the same token** and painted Wrecked in `--danger`, which the design
+system forbids in the training UI. One of them also hand-typed an `11px / uppercase / 0.08em`
+caption reading *"Body feeling"* where every other surface said *"Body state"*.
+
+⚠️ **The caller owns the side effects, never the control.** `onChange` emits the tag (or `null` when
+the runner clears it); saving, the reflect response and the adjustment call stay here. Contract:
+`docs/contracts/components/fatigue-chips.md`.

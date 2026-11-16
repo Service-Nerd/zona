@@ -85,3 +85,14 @@ interface ManualRunModalProps {
 
 `ui-patterns.md` § Sheet. Rulings: `DS-07`, `LOG-OFFPLAN-01`/`-02`, `LOAD-DEDUPE-MANUAL-01`,
 `DASHBOARD-SCREEN-EXTRACT-02`.
+
+## The fatigue row is not this component's (`FATIGUE-CHIP-DUPLICATE-01`, 2026-11-16)
+
+The *"Body state"* row is `<FatigueChips />` (`components/shared/FatigueChips.tsx`). This component
+used to hold one of the **four** scales the same four tags were rendered in; it was one of the two
+that were coaching-legal, and its 16px side padding is the value the shared control adopted, because
+it is the one that keeps all four pills on a single line at 375pt.
+
+⚠️ **The caller owns the side effects, never the control.** `onChange` emits the tag (or `null`);
+`saveReflect` and the reflect response stay here. Contract:
+`docs/contracts/components/fatigue-chips.md`.
