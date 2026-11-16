@@ -774,13 +774,25 @@ before planning against any number below (an item is a snapshot of the code on t
 
 **Found while BUILDING the sitting's items, filed not swept:**
 
-- 🧭 **DESIGN BOARD** `SITE-BAND-RHYTHM-01` — **16 band vertical rhythms are hand-typed where W-07's token family
-  exists.** The `padding` on a `Section`'s `innerStyle` whose horizontal value is the 24px page gutter is a BAND's
-  vertical rhythm, owned by `--sect-y` / `--sect-y-hero` / `--sect-y-close`, not by `--space-*`. `/pricing`,
-  `/about` and `/charity-runners` use the tokens; `app/page.tsx`, `/plans`, `ArticleHub` and `PlanPage` type the
-  numbers (28px ×8, 56, 64, 112, 18 ×2, 20). ⚠️ **Deliberately NOT swept by `SITE-SPACE-GATE-02`**, which exempts
-  them by name: pushing a 112px band onto the element scale is a 64px change and the wrong family besides. **A gate
-  that quietly reassigns a value to another family is worse than one that cannot see it.**
+- ✅ **SHIPPED 2026-11-16** 🧭 `SITE-BAND-RHYTHM-01` — **the item was wrong about 20 of its 21 sites, and the
+  twenty-first was worth the wave.** It said *"16 band vertical rhythms are hand-typed where W-07's token family
+  exists"*. 📐 **Measured: 21 sites, every one passing `rhythm="none"` EXPLICITLY** — not one takes the default
+  and discards it — so they are a **declared opt-out, not drift**: 16 are sub-band pads of 4–28px (below
+  `--sect-y`'s 56px floor), and the rest are the inside of a hairline-ruled block or a card, which is padding,
+  not rhythm.
+  🔴 **The one real instance: the homepage's dark closing band typed `112px`, which is `--sect-y-close`'s own
+  clamp MAXIMUM — from a token whose declaration names that band** (*"the ONE dark band, deliberately
+  heavier"*). Frozen, it never shrank: **at 375px it padded 112px where the token resolves to 72px**, a 659px
+  band the system intends to be **579px**. ✅ Fixed to `rhythm="close"`; re-measured **659 → 579**, exactly the
+  predicted figure, still the heaviest band (72 vs 56 at phone, 92.2 vs 61.4 at 1024) — heavier *by the token*
+  now, not by a number somebody kept in their head.
+  ⛔ **`rhythm="none"` is NOT swept and must not be**: a gate forbidding it fires on 20 correct decisions. ⚠️ The
+  prop offers only a **symmetric** top/bottom, so a band wanting token-top and zero-bottom must opt out and
+  spell it — **25 further sites do exactly that and they are the rhythm system, not a bypass**.
+  ✅ Gate: `lib/marketing/bandRhythm.test.ts`, 4 arms, 4 mutations falsified incl. the shipped state and a
+  re-tune of the token that would silently un-heavy the band. 🔴 **My first classifier called all 25
+  token-valued sites offenders** — the gate was wrong, not the tree.
+
 - 🧭 **DESIGN BOARD** (re-tagged 2026-11-08; was ⚙️ NO BOARD, which the item's own body contradicted)
   `SITE-SPACE-OVERLIMIT-01` — spacing values whose nearest-token shift exceeds the board's 4px limit, so the sweep
   left them. **Per `SITE-WAVE-4` these return to the board rather than being swept, which is a 🧭 question: a

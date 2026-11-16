@@ -627,7 +627,10 @@ are withheld by the discount, not by their running. ⚙️ `TEST-CLOCK-BENCHDATE
 **OPEN (re-measured 2026-11-06).** 🏃 `STAGED-HM-DOOR-01` — Coaching Board, and the only one of these about a
 runner rather than the site. · 🧭 `SITE-FREE-COLUMN-COPY-01` — six free gates registered in `OMITTED_FROM_PRICING`
 with a reason each; the question is which (if any) a reader choosing between tiers needs named, against 🎓 Sierra's
-condition that a longer list is the killed list-of-eight. · 🧭 `SITE-BAND-RHYTHM-01`, `SITE-SPACE-OVERLIMIT-01`,
+condition that a longer list is the killed list-of-eight. · ✅ `SITE-BAND-RHYTHM-01` — **SHIPPED 2026-11-16: the item was wrong about 20 of its 21 sites.** All 21 pass
+`rhythm="none"` explicitly (a declared opt-out, not drift); the one real instance was the homepage's dark band typing
+**112px, `--sect-y-close`'s own clamp maximum**, so it padded 112 where the token gives **72 at 375px** — a 659px band
+the system intends to be **579px**. Now on the token. · 🧭 `SITE-SPACE-OVERLIMIT-01`,
 `SITE-SUBMEASURE-SPRAWL-01`, `SITE-FRAME-TAXONOMY-01`. · 🧭 **blocked** — whether `TrendCard` belongs on the site
 at all: Sierra's transfer objection is unresolved and nobody may decide it without a bundle number.
 Detail in `backlog.md`.

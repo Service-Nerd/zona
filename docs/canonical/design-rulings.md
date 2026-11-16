@@ -25,6 +25,51 @@ so a **free** runner gets the name and the mark, not the line. Words founder-app
 with strength that week (Coaching Board). Check: `components/dashboard/phaseOnToday.markup.test.ts` (12 arms, five
 mutations falsified). Note: `docs/decisions/design-2026-10-26-phase-on-today.md`. Not felt on a device.
 
+## 2026-11-16 — `SITE-BAND-RHYTHM-01` · SHIP, one line. The item was wrong about 20 of its 21 sites
+
+| Ruling | |
+|---|---|
+| **A free-standing band takes its rhythm from the token family, never a typed number** | 🟢 **SHIP** |
+| **`rhythm="none"` with a typed or token padding stays legal** | 🟢 **STANDING** — 20 of 21 uses are correct |
+
+📐 **THE ITEM SAID *"16 BAND VERTICAL RHYTHMS ARE HAND-TYPED WHERE W-07'S TOKEN FAMILY EXISTS."* MEASURED:
+21 SITES, AND 20 OF THEM ARE RIGHT.** Every one passes **`rhythm="none"` explicitly** — **not one takes the
+default and discards it** — so they are a declared opt-out, not drift. And they opt out for reasons:
+
+| | |
+|---|---|
+| **16** | sub-band pads of 4–28px, where `--sect-y`'s **56px floor** is the wrong family |
+| **3** | the inside of a **hairline-ruled** block or a **card** — padding, not rhythm |
+| **1** | `PlanPage`'s card wrapper, same |
+| **1** | 🔴 a free-standing band typing a value the token owns |
+
+🔴 **THAT ONE IS THE HOMEPAGE'S DARK CLOSING BAND, AND THE TOKEN WAS WRITTEN FOR IT BY NAME.**
+`--sect-y-close`'s declaration in `globals.css` reads *"the ONE dark band, deliberately heavier"*. The band opted
+out with `rhythm="none"` and typed **112px — the token's own clamp MAXIMUM** — so it never shrank.
+📐 **Measured at 375px: 112px of padding where the token resolves to 72px**, making it a **659px** band the
+rhythm system intends to be **579px**. The typed value was only ever correct at ≥ 1244px, where the clamp
+reaches 112 anyway. ✅ **Fixed, re-measured: 659 → 579, exactly the predicted figure**, and still the heaviest
+band on the page (**72 against other bands' 56** at phone width, **92.2 against 61.4** at 1024) — now heavier
+*by the token* rather than by a frozen number, which is what "deliberately heavier" was supposed to mean.
+
+✨ **Silvanto: no veto, and the craft point is the whole ruling.** *"A clamp is a relationship. Typing its
+maximum keeps the number and throws away the relationship, which is the only part that was designed."*
+🎭 **Collins:** the band is the page's full stop and must stay the heaviest — asserted now by the token
+family rather than by a value somebody kept in their head.
+
+⛔ **DO NOT SWEEP `rhythm="none"`.** A gate forbidding it would fire on **20 correct decisions**, which this
+repo records as how a guard gets switched off. ⚠️ **And the prop only offers a SYMMETRIC top/bottom**, so a band
+wanting token-top and zero-bottom *must* opt out and spell it: `padding: 'var(--sect-y) 24px 0'`. **25 further
+sites do exactly that and they are the rhythm system, not a bypass of it.**
+
+**Artifacts (three, one commit):** pattern → `ui-patterns.md` § Section rhythm · constant → `rhythm="close"`
+reaching `--sect-y-close` · check → `lib/marketing/bandRhythm.test.ts`, **4 arms, 4 mutations falsified**
+including the exact state that shipped and a re-tune of the token that would silently un-heavy the band.
+🔴 **My first classifier reported all 25 token-valued sites as offenders** — the gate was wrong, not the
+tree, and widening it was the correct population rather than a retreat to green. ⚠️ And
+`[...tag.matchAll(…)]` **passed vitest while failing `tsc`**: the `--downlevelIteration` class `CLAUDE.md`
+records for `Set`, second instance today.
+
 ## 2026-11-16 — `INJURY-RECENCY-01` · CANNOT RULE YET. The control's three answers have no defined effect
 
 | Ruling | |

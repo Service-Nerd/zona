@@ -1069,8 +1069,17 @@ export default async function Home() {
           to LAST position; surface="dark" resolves to the same --ground and
           --on-ground pair the raw style set. Zero visual delta.
           ⚠️ EXACTLY ONE near-black band per page (ADR-008). This is it. */}
-      <Section surface="dark" width="full" rhythm="none"
-        innerStyle={{ padding: '112px 24px' }}>
+      {/* 🔴 `rhythm="close"`, NOT A TYPED 112 (SITE-BAND-RHYTHM-01, Design Board 2026-11-16).
+          `--sect-y-close` exists FOR THIS BAND and says so in its own declaration —
+          *"the ONE dark band, deliberately heavier"* — and this call site opted out of it with
+          `rhythm="none"` and then typed **112px, the token's own clamp MAXIMUM**. So the band
+          never shrank: measured at 375px it padded **112px where the token resolves to 72px**,
+          making it a **659px** band that the rhythm system intends to be **579px**. The typed
+          value is only correct at ≥1244px, where the clamp reaches 112 anyway.
+          ⚠️ It is the ONLY one of 21 `rhythm="none"` sites that is a free-standing band the token
+          family owns; the rest are sub-band pads or the inside of a hairline-ruled or card block,
+          where opting out is right. See `walkRunWeekLegibility`-style note in the ruling. */}
+      <Section surface="dark" width="full" rhythm="close">
         {/* ⚠️ THE ONE DELIBERATE EXCEPTION, and it is centred on purpose. W-09
             makes the dark band the page's punctuation mark and it goes last, so
             one break at the end is a full stop rather than a fifth wobble
