@@ -393,7 +393,6 @@ export interface Week {
   long_run_hrs: number | null
   weekly_km: number
   weekly_duration_mins?: number           // for time-based plans, alongside weekly_km
-  race_notes?: string
   tune_up_callout?: string                // L-01 — optional mid-build tune-up race suggestion
 
   /** GEN-FIX-10 (§8, 2026-08-06) — a reshape deliberately removed this week's

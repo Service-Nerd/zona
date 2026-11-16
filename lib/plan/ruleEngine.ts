@@ -7682,16 +7682,12 @@ function buildRulePlanOnce(
       sessions,
       long_run_hrs: longRunHrs,
       weekly_km: actualWeeklyKm,
-      ...(isRaceWeek ? {
-        // §77 / INV-PLAN-NO-PLACEHOLDER-COPY (F6) — never interpolate an invented
-        // race name into user-facing copy.
-        // GOALPACE-5K-01 (D8) — "Start at Zone 2" is long-race pacing; at 5K/10K it contradicted the race
-        // session's own note ("first 0.6 km at goal pace"). Distance-aware; copy approved by the founder 2026-10-23.
-        race_notes: `${input.race_name ? `Race day: ${input.race_name}.` : 'Race day.'} `
-          + (input.race_distance_km <= 10
-            ? 'Start slower than feels right, then settle into goal pace.'
-            : 'Start at Zone 2. The second half is where the race begins.'),
-      } : {}),
+      // 🔴 `race_notes` IS RETIRED (RACE-NOTES-INERT-01, Design Board 2026-11-16). It was stamped on
+      // every race week, had ZERO readers anywhere, and said a vaguer version of what the race
+      // SESSION already says with the runner's own numbers in it. **The race session is the single
+      // producer of race-day pacing.** Do not re-stamp a week-level note: on a goal-pace-withheld
+      // plan it would breach §80 Am. 2 where `quotesGoalPace` cannot see it, because that detector
+      // reads `coach_notes`. Reasoning and figures: `lib/plan/raceNotesRetired.test.ts`.
       ...(weekN === tuneUpWeekN ? {
         tune_up_callout: 'Optional: drop a parkrun PB or local 5K this week. Use the result as a fitness check, not a race effort.',
       } : {}),

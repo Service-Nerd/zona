@@ -2146,15 +2146,71 @@ through peak for masters and beginners. **Re-measure each on the grids before it
 
 ---
 
-### 🔲 `RACE-NOTES-INERT-01` — the race-week note is written into every plan and shown nowhere 🧭 **DESIGN BOARD** (render it) or ⚙️ **NO BOARD** (retire it)
+### ✅ `RACE-NOTES-INERT-01` — SHIPPED 2026-11-16. **DON'T SHIP THE RENDER: IT WAS A WORSE DUPLICATE OF WHAT THE SESSION ALREADY SAYS** 🧭 **DESIGN BOARD**
 
-Found 2026-10-27 preparing RACE-DAY-PACE-WITHHELD-01. `week.race_notes` (*"Start at Zone 2. The second half is where the
-race begins."* / *"… settle into goal pace."*) has 0 readers in `app/` and `components/`. Its only consumers are the
-schema, an invariant and the regeneration script. Founder-approved copy that no runner sees: either the Design Board
-places it, or it is retired with its check. On a withheld plan its ≤10K line says "goal pace", so if it is ever rendered
-it needs §80 Am. 2's treatment first.
+> ✅ **SHIPPED 2026-11-16.** Design Board ruled **DON'T SHIP the render; RETIRE the field.** Producer, type, schema,
+> invariant token-scan entry, three script readers and D8's test assertion all gone, held by
+> `lib/plan/raceNotesRetired.test.ts` — 9 arms, 6 mutations falsified. Parity declared.
+
+📐 **RE-MEASURED over all 43 live plans, and the item understated it.** 39 carried `race_notes`; **0 readers in
+`app/`, `components/` or the marketing site**, which publishes nine real generated plans. Nothing it said had ever
+reached a runner.
+
+🔴 **IT WAS NOT UNPLACED COPY WORTH PLACING. IT WAS A STRICTLY WORSE DUPLICATE.** The race SESSION already carries
+race-day pacing, personalised with the runner's own numbers:
+
+- **5 of 5** short-race plans opened with the *identical* sentence, *"Start slower than feels right"*, from two
+  different producers.
+- Where it **differed it was wrong**. **5 of the 6** plans carrying *"settle into goal pace"* had goal pace
+  **withheld** by §120 Am. 2 / §80 Am. 2; and a marathon read *"Start at Zone 2"* beside a session reading
+  *"First 5.1 km at 5:34 /km, the pace your training says you can hold today."* Two openings, one race.
+- It named the race a **third** time (session label + week note).
+
+🔑 **AND THE GATE FOR THAT WAS ALREADY WRITTEN, WITH THE FIELD OUTSIDE ITS POPULATION.** §80 Am. 2 is enforced by
+`quotesGoalPace` over the race session's `coach_notes`, and that detector's own header says it exists *"so the two
+cannot drift"*. It would flag *"settle into goal pace"* on sight. **`week.race_notes` was never in its population**,
+so rendering the field would have shipped a violation straight past the check written to stop exactly that.
+
+⚠️ **THE FOUNDER APPROVED THIS COPY ON 2026-10-23 AND THAT IS RECORDED, NOT OVERRIDDEN.** GOALPACE-5K-01 D8 made it
+distance-aware *because* it contradicted the race session's note. He approved the **wording**, in a sitting about that
+contradiction. **Nobody asked whether the field had a render site.** It did not, and never had, so D8 corrected copy
+nobody could read. The contradiction is now resolved absolutely rather than by wording.
+
+🥇 **Three more inert things found on the way, each measured:**
+1. `scripts/user-a-regen-preview.ts` printed `plan.meta.race_notes` — a field that has **never existed on `PlanMeta`**
+   (it was on the WEEK). It printed `null` every run, for every plan, reading as *"this plan carries no race note"*.
+2. Both regeneration scripts diffed the field; `goalpace-5k-01-regen.ts` exists **for that field's copy**.
+3. `tune_up_callout` is its sibling in the same `weeks.push` and is **also inert** → filed separately below. That one
+   is **not** a duplicate, so it is a different decision.
+
+⚠️ **Safe to remove:** `WeekSchema` is not `.strict()`, so the 39 stored plans still parse (the key is dropped from the
+parsed result), and `savePlanForUser` uses `safeParse` only as a drift **probe**, so nothing rewrites storage.
 
 ---
+
+### 🔲 `TUNE-UP-CALLOUT-INERT-01` — a tune-up race suggestion on 33 live plans that no runner can see 🧭 **DESIGN BOARD** → 💼 **SLT**
+
+📐 **Found 2026-11-16 measuring `RACE-NOTES-INERT-01`; it is the sibling field in the same `weeks.push` block.**
+`week.tune_up_callout` (*"Optional: drop a parkrun PB or local 5K this week. Use the result as a fitness check, not a
+race effort."*) is stamped on the latest non-deload build week of any plan at or over `TUNE_UP_MIN_PLAN_WEEKS`.
+**33 of 43 live plans carry it. It has 0 readers in `app/`, `components/` or the marketing site.**
+
+🔴 **AND AN INVARIANT CLAIMS IT IS SURFACED.** `INV-PLAN-TUNE-UP-CALLOUT` (§32, `warn`) fires when a long plan
+*"offers no tune-up race callout anywhere"*, and its own comment says it reads *"the WEEK field the generator actually
+stamps … Checking the wrong field is how a rule reads as enforced and is not."* **It reads the right field and the
+field reaches nobody** — the rule is enforced on a value with no consumer. Same shape as §92's claimed enforcement.
+
+⚠️ **THIS IS NOT `RACE-NOTES-INERT-01` AND MUST NOT BE CLOSED THE SAME WAY.** That field was retired because the race
+session already said everything it said, better. **Nothing anywhere else suggests a tune-up race**, so retiring this
+deletes a capability rather than a duplicate. §32 exists and the Coaching Board ratified the idea.
+
+**For the boards:** 🧭 where a mid-build week's optional suggestion sits, given *"one job per screen"* and the standing
+hostility to decoration on a week card — and whether an *optional* suggestion survives the restraint rules at all.
+💼 whether it is worth the surface. ⚠️ If it is **not** built, the invariant and §32's claim must say so, because an
+unenforceable rule recorded as enforced is worse than no rule.
+
+---
+
 ### 🔲 `RECAL-GOAL-REACH-01` — a recalibration does not re-decide the goal-pace withholding 🏃 **COACHING BOARD**
 
 A time trial rewrites forward paces (ADR-014) and leaves sessions, so a runner withheld at 7% who now sits 3% past fitness

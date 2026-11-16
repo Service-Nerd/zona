@@ -1441,7 +1441,6 @@ exports[`golden plans > P0-user-a-beginner-3d-hm-finish — full plan snapshot 1
       "long_run_hrs": null,
       "n": 16,
       "phase": "taper",
-      "race_notes": "Race day. Start at Zone 2. The second half is where the race begins.",
       "sessions": {
         "mon": {
           "coach_notes": [
@@ -2153,7 +2152,6 @@ exports[`golden plans > P1-beginner-3d-5k-finish-free-no-benchmark — full plan
       "long_run_hrs": null,
       "n": 12,
       "phase": "taper",
-      "race_notes": "Race day. Start slower than feels right, then settle into goal pace.",
       "sessions": {
         "tue": {
           "coach_notes": [
@@ -3476,7 +3474,6 @@ exports[`golden plans > P2-intermediate-4d-10k-time-target — full plan snapsho
       "long_run_hrs": null,
       "n": 14,
       "phase": "taper",
-      "race_notes": "Race day. Start slower than feels right, then settle into goal pace.",
       "sessions": {
         "tue": {
           "coach_notes": [
@@ -5084,7 +5081,6 @@ exports[`golden plans > P3-intermediate-4d-hm-time-target — full plan snapshot
       "long_run_hrs": null,
       "n": 16,
       "phase": "taper",
-      "race_notes": "Race day. Start at Zone 2. The second half is where the race begins.",
       "sessions": {
         "mon": {
           "coach_notes": [
@@ -6903,7 +6899,6 @@ exports[`golden plans > P4-experienced-5d-marathon-time-target — full plan sna
       "long_run_hrs": null,
       "n": 16,
       "phase": "taper",
-      "race_notes": "Race day. Start at Zone 2. The second half is where the race begins.",
       "sessions": {
         "mon": {
           "coach_notes": [
@@ -8378,7 +8373,6 @@ exports[`golden plans > P5-beginner-3d-hm-finish-no-benchmark-masters — full p
       "long_run_hrs": null,
       "n": 16,
       "phase": "taper",
-      "race_notes": "Race day. Start at Zone 2. The second half is where the race begins.",
       "sessions": {
         "tue": {
           "coach_notes": [
@@ -10191,7 +10185,6 @@ exports[`golden plans > P6-experienced-5d-marathon-finish — full plan snapshot
       "long_run_hrs": null,
       "n": 16,
       "phase": "taper",
-      "race_notes": "Race day. Start at Zone 2. The second half is where the race begins.",
       "sessions": {
         "mon": {
           "coach_notes": [

@@ -150,7 +150,9 @@ export const WeekSchema = z.object({
   long_run_hrs:         z.number().nullable().optional(),
   weekly_km:            z.number().nonnegative().optional(),
   weekly_duration_mins: z.number().nonnegative().optional(),
-  race_notes:           z.string().optional(),
+  // RACE-NOTES-INERT-01 (2026-11-16) — `race_notes` retired. No `.strict()` here, so the 39 stored
+  // plans that still carry the key keep parsing; the key is simply dropped from the parsed result,
+  // and `savePlanForUser` only uses `safeParse` as a drift PROBE, so nothing rewrites storage.
   tune_up_callout:      z.string().optional(),
   // GEN-FIX-10 — set by the reshaper when a fatigue/EF signal removed this
   // week's quality session. Distinguishes an intentional downgrade from a

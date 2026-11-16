@@ -49,7 +49,9 @@ line(`hr_assumption_note   ${plan.meta.hr_assumption_note ?? '(none)'}`)
 line(`fitness_level        ${plan.meta.fitness_level ?? 'n/a'}   intensity_level ${plan.meta.fitness_intensity_level ?? 'n/a'}`)
 line(`compressed flags     time_compressed=${plan.meta.time_compressed}  volume_constrained=${plan.meta.volume_constrained}`)
 line(`recalibration_weeks  ${JSON.stringify(plan.meta.recalibration_weeks ?? [])}`)
-line(`race_notes           ${JSON.stringify(plan.meta.race_notes ?? null)}`)
+// RACE-NOTES-INERT-01 (2026-11-16) — removed, and it was wrong before it was retired: it read
+// `plan.meta.race_notes`, which has NEVER existed on `PlanMeta` (the field was on the WEEK). So it
+// printed `null` on every run for every plan, and read as evidence the plan carried no race note.
 
 // Long run = the session with the biggest distance/duration in the week (any type).
 const sizeOf = (s: any) => s?.distance_km ?? (s?.duration_mins ? s.duration_mins / 60 * 10 : 0) // ~min→km proxy

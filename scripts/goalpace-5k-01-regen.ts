@@ -161,9 +161,7 @@ async function main() {
         ;(w.sessions as Record<string, unknown>)[d] = JSON.parse(JSON.stringify((f.sessions as Record<string, unknown>)[d] ?? null)) ?? undefined
       }
       // Engine-authored week fields only; label and theme are AI-written and stay.
-      w.race_notes = f.race_notes
       w.peak_stepback = f.peak_stepback
-      if (w.race_notes === undefined) delete w.race_notes
       if (w.peak_stepback === undefined) delete w.peak_stepback
     }
     const cm = candidate.meta as unknown as Record<string, unknown>
@@ -199,8 +197,8 @@ async function main() {
   }
   const noteOf = (p: Plan) => (p.meta as unknown as Record<string, unknown>).load_residual_note ?? '—'
   if (noteOf(plan) !== noteOf(candidate)) console.log(`  Load note  ${noteOf(plan)}\n           → ${noteOf(candidate)}`)
-  const raceNote = (p: Plan) => p.weeks.find(w => w.race_notes)?.race_notes ?? '—'
-  if (raceNote(plan) !== raceNote(candidate)) console.log(`  Race week  ${raceNote(plan)}\n           → ${raceNote(candidate)}`)
+  // RACE-NOTES-INERT-01 (2026-11-16) — the race-week note line is gone with the field it reported.
+  // ⚠️ This script's whole subject was that field's copy, and the field had no render site the entire time.
   console.log(`  ${changed} session days changed`)
 
   if (!APPLY) { console.log(`\nDRY-RUN — nothing written. Re-run with --apply to write.`); return }

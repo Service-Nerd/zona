@@ -25,6 +25,55 @@ so a **free** runner gets the name and the mark, not the line. Words founder-app
 with strength that week (Coaching Board). Check: `components/dashboard/phaseOnToday.markup.test.ts` (12 arms, five
 mutations falsified). Note: `docs/decisions/design-2026-10-26-phase-on-today.md`. Not felt on a device.
 
+## 2026-11-16 — `RACE-NOTES-INERT-01` · DON'T SHIP the render. The field is retired
+
+| Ruling | |
+|---|---|
+| **`week.race_notes` is not placed; it is retired** | 🔴 **DON'T SHIP the render** · ✅ retire |
+
+📐 **The item offered the board a choice — place it, or retire it — and the measurement made it one choice.**
+Over all 43 live plans: **39 carried `race_notes` and it had 0 readers in `app/`, `components/` or the marketing
+site**, which publishes nine real generated plans. Nothing it said had ever reached a runner.
+
+🔴 **IT WAS NOT UNPLACED COPY. IT WAS A STRICTLY WORSE DUPLICATE OF THE RACE SESSION'S OWN NOTE.**
+**5 of 5** short-race plans opened with the *identical* sentence from two producers, *"Start slower than feels
+right"*. Where it differed it was **wrong**: **5 of the 6** plans carrying *"settle into goal pace"* had goal pace
+**withheld**, and a marathon read *"Start at Zone 2"* beside a session reading *"First 5.1 km at 5:34 /km, the pace
+your training says you can hold today."* **Two openings, one race.** It also named the race a third time.
+
+🔑 **AND THE RULE AGAINST IT WAS ALREADY WRITTEN, WITH THE FIELD OUTSIDE THE CHECKER'S POPULATION.** §80 Am. 2
+is enforced by `quotesGoalPace` over `coach_notes`, and that detector's header says it exists *"so the two cannot
+drift"*. It flags *"settle into goal pace"* on sight. **`week.race_notes` was never in its population**, so placing
+the field would have shipped a violation past the gate written to stop exactly that. ⚠️ *The checker's population
+excluded the case at risk* — this repo's most-recorded class, and the reason a render was the dangerous option.
+
+🎭 **Collins:** *"a second note on the week card, saying a vaguer version of what the session says one tap
+later, is the taxonomy defect in copy. The runner does not need a race-day voice and a race-day sentence."*
+🎓 **Sierra:** the session's note makes the runner better — it carries their own numbers and their own
+training history. The week note carries neither. ✨ **Silvanto: no veto**; nothing of the palette or type scale is
+touched by a deletion. 📱 **Wroblewski: no objection** — nothing is added to the week card, and the row that
+would have carried it is the race row, already the busiest in the plan.
+
+⚠️ **THE FOUNDER APPROVED THIS COPY ON 2026-10-23, AND THAT IS RECORDED RATHER THAN OVERRIDDEN.**
+GOALPACE-5K-01 D8 made it distance-aware **because it contradicted the race session's note**; he approved the
+**wording**, in a sitting about that contradiction. **Nobody asked whether the field had a render site.** It did
+not, and never had, so D8 corrected copy nobody could read. 🔻 If he wants a week-level race line, it is a
+founder call on voice and this board will place it — but it must then say something the session does not.
+
+🥇 **Three more inert things found on the way:** `scripts/user-a-regen-preview.ts` printed
+`plan.meta.race_notes`, a field that has **never existed on `PlanMeta`**, so it printed `null` every run and read as
+*"no race note"*; both regeneration scripts diffed the field; and the sibling `tune_up_callout` is **also inert on
+33 live plans** with an invariant claiming it is surfaced — filed as `TUNE-UP-CALLOUT-INERT-01`, **not** closed
+the same way, because it is not a duplicate of anything.
+
+**Artifacts (three, one commit):** pattern → the race session is the single producer of race-day pacing, recorded
+in `ui-patterns.md` § 10b · constant → the field, its schema entry and its token-scan entry removed · check →
+`lib/plan/raceNotesRetired.test.ts`, **9 arms, 6 mutations falsified**. 🔴 **Two of those mutations were against
+my own arms and both passed first:** an exempt file reading the field for something else stayed green because the
+check was per-LINE and a line can assert absence *and* do something else, and removing the real reference stayed
+green because the field's name survived inside the assertion's own failure message. **Strings blanked, not just
+comments.**
+
 ## 2026-11-16 — `REORDER-BLOCKED-DAY-01` · SHIP. A blocked day is not a destination, and it says why
 
 | Ruling | |

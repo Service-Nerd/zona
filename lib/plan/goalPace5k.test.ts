@@ -122,8 +122,17 @@ describe('GOALPACE-5K-01 — the stored 5K beginner, inside the line', () => {
       const held = /Held weekly volume at (\d+) km \(target (\d+)\)/.exec(a.resolution)
       if (held) expect(Number(held[1])).toBeLessThanOrEqual(Number(held[2]))
     }
-    const raceWeek = plan.weeks.find((w: any) => w.race_notes)
-    expect(raceWeek.race_notes).not.toMatch(/Zone 2/)
+    // 🔴 D8's SUBJECT IS RETIRED, SO THE ASSERTION BECOMES ITS ABSENCE (RACE-NOTES-INERT-01, 2026-11-16).
+    // This asserted that a 5K/10K race week's `race_notes` did not say "Zone 2" — the long-race
+    // pacing line, which contradicted the race session's own note. **The field had NO render site in
+    // `app/`, `components/` or the marketing site, and never had**, so nothing it said or avoided
+    // saying ever reached a runner: D8 corrected copy nobody could read. The contradiction is now
+    // resolved absolutely rather than by wording, and the race session is the single producer of
+    // race-day pacing. A re-stamp anywhere would bring the contradiction back, so the shape is
+    // asserted over EVERY week rather than over the one that used to carry it.
+    for (const w of plan.weeks as any[]) {
+      expect(w.race_notes, `w${w.n} re-stamped race_notes; the race session owns race-day pacing`).toBeUndefined()
+    }
   })
 })
 

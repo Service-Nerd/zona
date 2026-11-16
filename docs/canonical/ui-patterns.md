@@ -1454,6 +1454,8 @@ Inline row appended to a `WeekCard` after the user taps the move icon on a sessi
 
 **Voice rule:** copy describes the move in concrete terms — *what* moves, *from* where, *to* where. Never abstract ("apply change"). Never invents structure not in the diff. Aligns with brand voice — *honest, slightly sarcastic, self-aware, encouraging without cringe*.
 
+**The race session is the single producer of race-day pacing (`RACE-NOTES-INERT-01`, Design Board 2026-11-16).** Race-day instruction lives in the race session's `coach_notes` and its `race_opening_pace`, and nowhere else. The week-level `week.race_notes` field is **retired**: it was stamped on 39 of 43 live plans, had no render site anywhere, repeated the session's own opening sentence on 5 of 5 short-race plans, and contradicted it on the rest. ⚠️ **A second week-level race line must not come back without saying something the session does not** — and if one is ever added it must pass `quotesGoalPace`, because §80 Am. 2 forbids citing goal pace on a plan where it was withheld and the week field sat outside that check's population. Held by `lib/plan/raceNotesRetired.test.ts`.
+
 **Move-mode day states (`REORDER-BLOCKED-DAY-01`, Design Board 2026-11-16).** While a move is staged, every day row is exactly one of four roles, decided by `moveDayRole()` in `components/training/PlanCalendar.logic.ts` and never by inline booleans in the JSX:
 
 | Role | Rail | Outline | Background | Line | Tap |

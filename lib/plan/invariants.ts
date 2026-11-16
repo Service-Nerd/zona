@@ -7107,7 +7107,6 @@ export function validatePlan(plan: Plan, rawInput: GeneratorInput): Violation[] 
     for (const w of plan.weeks) {
       scan.push([`w${w.n}.label`, w.label])
       scan.push([`w${w.n}.theme`, w.theme])
-      scan.push([`w${w.n}.race_notes`, w.race_notes])
       for (const [day, sess] of Object.entries(w.sessions ?? {})) {
         if (!sess) continue
         scan.push([`w${w.n}.${day}.label`, sess.label])

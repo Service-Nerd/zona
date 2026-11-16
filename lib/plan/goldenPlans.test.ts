@@ -19,6 +19,14 @@ import type { Tier } from './ruleEngine'
  *
  * A failing snapshot is not a failing test — it is a change to what runners are
  * prescribed. Read the diff. If it is intended, update it deliberately.
+ *
+ * ── Re-records, each with its reason ──────────────────────────────────────
+ * **2026-11-16 · RACE-NOTES-INERT-01** — `week.race_notes` retired (Design Board: DON'T SHIP the
+ * render). The delta is **7 deletions and 0 additions, every one of them that key** — read before
+ * re-recording, not after. ⚠️ Two of the seven carried the ≤10K line *"settle into goal pace"*, so
+ * the golden corpus held the §80 Am. 2-adjacent copy too. Nothing else about what these personas
+ * are prescribed moved: `npm run verify:parity` over 159 envelope plans is byte-identical once that
+ * one key is removed from the baseline.
  */
 
 const PLAN_START = '2026-08-03'
