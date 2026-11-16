@@ -99,7 +99,47 @@ Computed by calling the real producers (`computeZones`, `buildPaceFromVDOT`, `ca
 moves.** Seiler's "27-beat span" objection is discharged (14 → 7 bpm) and Hutchinson's floor objection is discharged
 (+12 to +16 bpm clear of the easy ceiling).
 
-## 5. 🔴 The condition that is NOT resolved
+## 5. ✅ The overlap, RESOLVED by the second sitting (2026-11-16)
+
+🔑 **The ladder is already closed by the fractions the engine owns.** E 0.59–0.74 · **T 0.83–0.88** · **CV 0.88–0.92** ·
+**I 0.95–1.00**: every boundary from T upward is a **shared fraction**, so anchoring each band — the same move R1
+makes for threshold, one rung further — makes an overlap impossible *by construction* rather than by a chosen number.
+
+| persona | interval floor TODAY | ruled new floor (CV ceiling) |
+|---|---|---|
+| max 185, rest 48, VDOT 41.0 | 158 | **173** |
+| max 190, rest 50, VDOT 44.6 | 162 | **178** |
+| max 191, rest 60, VDOT 20.2 | 165 | **178** |
+| max 190, rest 65, VDOT 16.2 | 165 | **177** |
+
+🔴 **The overlap was understated when this ADR was written, and the error is mine.** §5 as filed compared the threshold
+**floor** (160) to the interval floor (158), which reads as 2 bpm. The right comparison is the threshold **ceiling**
+(167): the overlap is **9 bpm at VDOT 41 — 9 · 10 · 7 · 6 across the four personas — which EXCEEDS the 7-bpm
+width of the proposed threshold band itself.** The whole band sits inside today's interval band, with room to spare.
+
+🔴 **And R1 as drafted creates a second incoherence, in the opposite direction.** `cv_intervals` and `tempo_over_under`
+are `category: 'threshold'`, so `hrBandFor` returns `'quality'` and **19 live sessions** would take the **T**-anchored
+band while prescribing **CV** pace — and **R4's own `INV-PLAN-HR-MATCHES-PACE` would fire on them**, which is
+condition 3 repeating. **R3 is therefore narrowed: "the threshold band only" becomes "easy and shakeout are
+excluded", and R1 governs — the band follows the session's own anchor.**
+
+⚠️ **Easy is the ladder's boundary and that is a ruling, not an omission.** E's own fraction gives **55–72% HRR**, and
+71.6% breaches §12's 70% Z2 ceiling — the same measurement that made the board reject the brief's own proposal (§3,
+option A). **Anchored from T upward; easy and shakeout keep the zone table.**
+
+📊 **Seiler's steady-state-vs-ramp doctrine is granted, as the justification for the widths rather than a substitute
+for closing the overlap:** threshold is 7–8 bpm because HR plateaus at a steady state; an interval band is 12–18 bpm
+because HR climbs through each rep. The engine treats them identically today, and that is the accident.
+
+⚠️ **Raising the interval floor is itself a prescription change** (158–185 → 173–185) and must ship in the **same
+release** as the threshold band, or the overlap exists between them. 🎯 **McMillan's recorded condition:** the interval
+arm reports its own `measure:fitness` and `cohort:shape` figures, separately, before the release ships.
+
+🔑 **Declared, and to be measured before shipping: 144–160 bpm becomes prescribed by nothing.** The grey zone §1 exists
+to prevent becomes literally unprescribable, which is the right outcome — and `progressive_tempo`'s middle third must
+keep its deliberate `Z2-Z3` transition target.
+
+## 5b. The original filing, kept because its numbers are what the ruling corrects
 
 **The proposed threshold floor (160 bpm for a VDOT-41 runner) is above the current interval floor (158 bpm)**, because
 `intervalsHR` is `z4Low–max` and `z4Low` is the same number as `z3Top`. **Threshold would sit inside intervals.**
@@ -150,10 +190,17 @@ Two options, a coaching judgement and **not decided here**:
 
 ## 7. Conditions on shipping (Coaching Board, binding)
 
-1. **Resolve the threshold/interval overlap** (§5 above) — Seiler, blocking.
-2. **Beginners excluded** pending a §24b sitting. 🎯 McMillan: **13 of 25 beginner plans carry threshold work, down
-   to VDOT 16.2** — a runner whose benchmark is a 7:40 marathon. *"Whatever this board rules for trained runners, I
-   want beginners excluded until §24b has looked at whether they should be receiving these rows at all."*
+1. ✅ **CLEARED 2026-11-16 (second sitting) — the threshold/interval overlap is resolved** by anchoring every band
+   from T upward, so T · CV · I share their boundaries. See §5.
+2. ✅ **CLEARED — and the condition was built on a false premise of mine.** Measured on the level the catalogue gate
+   actually reads (`fitness_intensity_level ?? fitness_level`, which `INV-PLAN-CATALOGUE-ELIGIBLE` uses): **4 of 16
+   beginner plans carry threshold work, every one `time_target`, and the only rows reached are `tempo_continuous` and
+   `progressive_tempo` — exactly the two §110b rung 4 grants and §110 Am. 2 conditions on a time target. Zero
+   violations.** The VDOT-16.2 runner is a **structural** beginner whose **intensity** level is `intermediate`, by
+   their own declaration. **There was nothing to exclude beginners from**, and the grant survives the band change: no
+   row and no pace moves, only the HR expression of the same T-pace. ⚠️ Sims' fuelling arm carries forward; the
+   surviving half of the condition is filed as `INTENSITY-DECLARATION-FLOOR-01`. ⚠️ **§24b was also the wrong venue** —
+   it governs long-run segment sizing; the beginner intensity question lives in **§110 Am. 2 / §110b**.
 3. 🔴 **`INV-PLAN-PACE-ZONE-COHERENT` amended in the same commit.** It asserts
    `intervalEffort ? 'interval zone (Z4–5)' : 'threshold zone (Z3)'`. **If threshold becomes Zone 4 it starts firing
    on correct plans** and the release goes red.
