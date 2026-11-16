@@ -3605,3 +3605,138 @@ marathoners is the one this board would refuse.**
 ### ↗️ SLT escalation
 
 **None.** No tier, no price. The release makes sessions easier for 81% of one cohort and refuses nobody.
+
+---
+
+## 🩹 Sitting — `STEPBACK-TRIGGER-STRUCTURAL-01`, 2026-11-16 · **CORRECT WITH AMENDMENT (§47 Amendment 4). The load rule was gated on a pace, and the pace it was gated on should not exist.**
+
+**Trigger:** soft, qualifying — §47's trigger decides a load. **Convened immediately after
+`GOALPACE-UNBENCHMARKED-MARATHON-01` was built and held on this.** Willy's question.
+**Evidence:** `scripts/board-evidence-stepback-trigger.ts`.
+
+### 🔍 Conflict scan
+
+**§47's own principle is the conflict** and it is explicit: *"A 'peak long run' here means a long run at
+≥90% of the plan's peak long-run distance **that includes race-pace segments** (MP / HM-pace / similar
+specificity)."* · **§47 Am. 3** supplies the precedent *against* the current implementation, from this
+board: *"identifies a step-back week by the structural `week.peak_stepback` stamp rather than by the
+coach-note string (D-17: the note is display copy the enricher may rewrite)"* — and frames the two rules
+as *"§52 is a tissue-tolerance rule about the load landing in a single bout; **§47 Am. 2 is a rule about
+the shape of the week**"* · **§47 Am. 1** (`PEAK-LR-STEPBACK-MINUTES-01`) is the ruling at risk · **§24b**
+settles what a beginner may be priced at · **§25** owns the race-pace long-run finish · **§120 Am. 4**
+is held behind this · **ADR-018 / INV-CLASS** forbid classifying by a display string.
+
+### 📐 The measurement, and it inverts the question
+
+| | |
+|---|---|
+| Peak long runs in the cohort grid | 92,384 |
+| …where the LABEL and the producer's `lr_segment_pace` stamp disagree | **0, in either direction** |
+| …carrying a **race-anchored work step** (`anchor: goal / M / HM`) | **0, at every level** |
+| Unbenchmarked **beginner** peak long runs carrying a race-pace finish today | **2,304** (HM 1,728 of 2,592 · marathon 576 of 1,152) |
+| `buildFallbackPace('beginner')` marathon / HM pace | **null / null** (§24b) |
+
+🔑 **THE FINDING. An unbenchmarked beginner's "Long run with HM-pace finish" is priced at their GOAL
+pace, because §24b leaves them no current HM pace to use instead.** So the specificity §47 is spacing
+out is a finish at a pace `GOALPACE-UNBENCHMARKED-MARATHON-01` measured as **faster than that runner's
+own interval pace** on a third of this cohort. 🩹 Willy: *"I asked whether withholding takes the
+step-back away from beginners. It does. What I had not been shown is what the step-back was spacing out —
+and it is a segment at a pace they cannot run. We are not protecting a load, we are rationing one."*
+
+⚠️ **AND `GOAL-PACE-LR-CURRENT-01` CANNOT BE EXTENDED HERE, measured, not assumed.** Am. 2's remedy keeps
+the finish at the runner's CURRENT marathon/HM pace — and its own text says *"a withheld plan is always
+benchmarked, so its pace guide always carries MP/HM."* **That sentence stops being true under §120 Am. 4:**
+a beginner's fallback guide has both fields null, so there is nothing to reprice the finish with.
+
+### 🩹 Rich Willy
+
+*"Then my clearance last sitting was given on the wrong question and I am grateful it was withdrawn
+before it shipped. The load event is **running ninety per cent of your peak long run in consecutive
+weeks**. That is true whether the last three kilometres are fast, slow, or exactly as slow as the rest.
+§47's principle names race-pace specificity because when it was written the only plans carrying a big
+peak long run were race-paced ones — that is a description of the population it was drafted against, not
+a mechanism. **Take the pace out of the trigger.** It is a rule about the shape of the week, as this
+board already said in Amendment 3, and a rule about the shape of the week may not be switched off by a
+pace string."*
+
+### 🏃 Alex Hutchinson (Chair)
+
+*"I want the scope bounded by measurement rather than by argument, because 'a load is a load' widens to
+every finish-goal marathoner with a thirty-kilometre long run and I am not ruling on that today. The
+trigger should reach exactly the plans it reaches now, minus the pace dependency — and the figure that
+makes that safe is in front of us: **label and stamp agree on 92,384 of 92,384**, so a structural trigger
+over the same population is a zero-delta change today and a correct one tomorrow. **CORRECT WITH
+AMENDMENT**, and the widening to finish goals is a separate sitting with its own numbers."*
+
+### 🎯 Greg McMillan
+
+*"No objection. One note for whoever builds it: `PEAK-LR-STEPBACK-MINUTES-01`'s own test fixture is an
+unbenchmarked beginner and it was green only through the label, so **the test that proved the bug is
+sitting on the bug**. Re-point it in the same change, and do not widen
+`STEPBACK-STALE-PEAK-01`'s two-minute tolerance to make a new fixture pass — its comment says so in as
+many words and it is right."*
+
+### 📊 Stephen Seiler · ⚕️ Stacy Sims
+
+**No objection from either seat.** Sims adds one line: *"the cohort is first-time beginner HM and
+marathon runners, and they keep their step-back under this ruling. That is the only thing I was watching."*
+
+### 🔴 Correction before the ruling — my scope clause was wrong, and the script caught it
+
+**I drafted this as *"scope is today's population exactly: time-target HM and marathon"*, and that would
+have NARROWED §47.** 📐 Measured: §47 fires today on **5K and 10K time-target plans as well**
+(beginner 5K benchmarked 1,728 of 5,184 peak long runs, intermediate 5K 1,512 of 3,264, and so on at
+10K) — because §25's finish is priced at the GOAL pace whenever it is not withheld, at every distance.
+⚠️ **§47's own explanatory comment claims it skips 5K and 10K** (*"flat Zone 2 … don't have the
+back-to-back overload risk"*) **and the code follows the principle instead, which is the wider rule.**
+Comment and principle have disagreed since the gate was written. 🔑 **Third time in this session I
+mis-stated this population, and all three were caught by running something rather than by reading it.**
+
+### ⚖️ Ruling — SPLIT. One half is settled and ships; the scope question returns to the chair.
+
+**1. SETTLED, and it is a defect fix, not a new rule: §47's plan-level gate reads the producer's stamp,
+never the label.** `anyPeakIsRacePace` greps `label.includes('pace')`; it will read
+`lr_segment_pace != null` instead. 📐 **Measured against today's decision on every one of 39,744
+generated plans: identical — 0 disagreements in either direction**, whether the stamp is sought in peak
+weeks only or in any week. This is ADR-018 / INV-CLASS / D-17 applied where §47 Am. 3 already applied it
+to the step-back stamp, and it removes a live hazard: **any change to a long run's label silently
+switches a load rule off.** No board artifact beyond this row; it changes no plan.
+
+**2. NOT SETTLED, and it is the chair's scope call, with the numbers now in front of him.** The stamp fix
+does **not** unblock §120 Am. 4, because withholding nulls the stamp as surely as it changed the label.
+Three options, measured:
+
+| | option | effect today | does §120 Am. 4 survive it? |
+|---|---|---|---|
+| a | keep the specificity requirement | **0 plans** | **No** — 2,304 beginner peak long runs lose the step-back |
+| b | drop it for **time-target** plans | **+3,456 plans** gain §47 (all 5K beginners with no benchmark) | **Yes** |
+| c | drop it entirely, incl. finish goals | not measured | Yes, and wider than this board has seen |
+
+🩹 **Willy's position is (b) or (c)** — *"the load event is running ninety per cent of your peak long run
+in consecutive weeks, whether or not the last three kilometres are fast"* — and it is the position §47
+Am. 3's own framing supports. 🏃 **The chair declines to rule (b) or (c) in this sitting** and asks for
+`measure:fitness` and `cohort:shape` on each before choosing, which is McMillan's standing condition and
+the same sequencing the threshold ladder got this morning. → **`STEPBACK-SPECIFICITY-SCOPE-01`.**
+
+**3. The root cause is upstream of §47 and should be named:** a withheld plan loses its §25 finish
+*entirely* for a beginner (MP and HM null by §24b) and at 5K/10K (`lrSegPace` has no branch for them).
+`GOAL-PACE-LR-CURRENT-01` repriced the finish to current pace for everyone it could, and its own text
+says *"a withheld plan is always benchmarked, so its pace guide always carries MP/HM"* — the sentence
+§120 Am. 4 falsifies. → **`LR-FINISH-WITHHELD-PRICING-01`.**
+
+**4.** 🔴 **`PEAK-LR-STEPBACK-MINUTES-01`'s fixture is an unbenchmarked beginner and is green only via
+the label**, so the test that proved the bug is sitting on the bug. It is unchanged by the stamp fix
+(label ≡ stamp) and must be re-pointed by whichever of (b)/(c) lands.
+⚠️ `STEPBACK-STALE-PEAK-01`'s two-minute tolerance is not to be widened — its own comment says so.
+
+### 📦 Required artifacts
+
+| | |
+|---|---|
+| **Principle** | **none for part 1** — it is a defect fix restoring ADR-018/D-17, stated rather than invented. §47's principle text moves only when the chair rules (b) or (c) |
+| **Numeric** | none; `PEAK_LR_STEPBACK_MAX_PCT` and the ≥90% definition already exist |
+| **Check** | `lib/plan/stepbackTriggerStamp.test.ts` — the gate reads the stamp, falsified by reverting it to the label; `INV-PLAN-PEAK-LR-ALTERNATION` keeps its population unchanged (0 of 39,744 plans move) |
+
+### ↗️ SLT escalation
+
+**None.** Part 1 changes no plan today; parts 2 and 3 are coaching scope, not commercial.

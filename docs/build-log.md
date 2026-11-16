@@ -6,6 +6,22 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-11-16 — STEPBACK-TRIGGER-STRUCTURAL-01 · the load rule was switched off by a string, and the thing that found it was a change I reverted
+**Shipped:** §47's plan-level step-back gate now reads the producer's `lr_segment_pace` stamp instead of grepping the session label for the word "pace".
+
+**Dev learning:** a zero-delta refactor can still need a source assertion, and this one shows why. Label and stamp decide the gate identically on all 39,744 generated plans — that agreement is the evidence the change is safe, and it is also the reason every behavioural arm stays green if someone puts the label back. So the gate's own test has an arm that reads `ruleEngine.ts` and asserts the predicate, plus one asserting the old `labelHasRacePace` helper is **deleted** rather than left sitting beside the new code. The second arm is the one I nearly skipped.
+
+**Product/creator learning:** §47's explanatory comment said the rule skips 5K and 10K because their long runs are "flat Zone 2". It does not and never did — §25 prices their finish at goal pace, so a benchmarked beginner 5K plan has 1,728 race-paced peak long runs of 5,184. The comment described the population someone had in mind; the code followed the principle, which is wider. I quoted that comment back to the founder as evidence, twice, before a script showed me otherwise.
+
+**AI-building learning:** I stated this population wrong three times in one session and a script caught it every time. First "the HM is bounded" (it is not — 2,376 of 2,592 past CV). Then "not a load regression, §47 excludes 5K/10K" (the comment does, the code does not). Then a ruling clause scoped to "time-target HM and marathon" that would have *narrowed* §47. The pattern is that I reason from the nearest written sentence, and the written sentence is the thing most likely to have rotted. The habit that worked was cheap: before each claim, one query that could falsify it.
+
+**The honest bit:** the whole chain started from a build I then threw away. I wrote §120 Amendment 4, measured it on 9,504 plans, falsified its invariant 400/400 at the owner, and reverted all of it — because the build is what surfaced that withholding goal pace silently disables a load rule for 2,304 beginner plans. The test that caught it, `PEAK-LR-STEPBACK-MINUTES-01`, is itself green only because of the defect: its fixture is an unbenchmarked beginner whose long run carries a goal-pace label. The test that proved the bug is sitting on the bug.
+
+**Hook material:** a load rule for injury-prone beginners, gated on whether a string contained the word "pace" — found by writing a fix, measuring it on 9,504 plans, and deleting it.
+
+**Postable?:** yes
+
+
 ## 2026-11-16 — COMPLETION-ACTIVITY-JOIN-01 · I closed my own item four hours after filing it
 **Shipped:** nothing. The item was a false premise and the records now say so.
 **Dev learning:** I filed *"`strava_activity_id` is null on all 161 completions, so a completion never joins to its activity"*. It is null **because HealthKit is the system of record and the join is `apple_health_uuid`** — 16 of 161 completions are device-linked and **all 16 join**. ADR-011 says HealthKit is the SOR in as many words, and I read a Strava-named column as the join anyway. **When a column is null across the board, ask whether it is the column the producer uses** before concluding the mechanism is broken.

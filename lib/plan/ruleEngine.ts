@@ -4701,18 +4701,37 @@ function applyPeakLongRunAlternation(
   const peakMaxLrMins = Math.max(...peakLrs.map(l => l.session.duration_mins ?? 0), 0)
   if (peakMaxLrKm <= 0 && peakMaxLrMins <= 0) return steppedBack
 
-  // §47 only applies to weeks where the long run carries race-pace specificity
-  // (MP-finish / HM-pace). Plans whose peak long runs are flat Zone 2 (5K, 10K,
-  // and finish-goal HM/marathon) don't have the back-to-back overload risk —
-  // they're aerobic, not specific. Skip alternation entirely if no peak LR has
-  // race-pace segments.
-  const labelHasRacePace = (label: string): boolean => {
-    const l = label.toLowerCase()
-    return l.includes('pace') || l.includes(' mp') || l.startsWith('mp') || l.includes('hm-pace')
-  }
+  // §47 only applies to plans whose peak long runs carry race-pace specificity (an MP or HM
+  // finish). A plan whose peak long runs are flat Zone 2 does not have the back-to-back
+  // overload risk this rule exists for, so alternation is skipped entirely.
+  //
+  // 🔴 THIS READ THE SESSION **LABEL** UNTIL 2026-11-16 — `label.includes('pace')` — WHICH IS
+  // THE PATTERN ADR-018, INV-CLASS AND D-17 EXIST TO KILL, IN A **LOAD** RULE.
+  //
+  // `lr_segment_pace` is the producer's own stamp for "this long run finishes at a race pace"
+  // (`lrSegPace`, written a few hundred lines up). Reading it instead is the same move §47
+  // Amendment 3 already made for the step-back week — *"identifies a step-back week by the
+  // structural `week.peak_stepback` stamp rather than by the coach-note string"*.
+  //
+  // ⚠️ WHY IT MATTERED, and it is not tidiness: ANY change to a long run's label silently
+  // switched this rule off. `GOALPACE-UNBENCHMARKED-MARATHON-01` found it by withholding goal
+  // pace, which changes the label on **10,704 peak long runs** — among them **2,304 belonging to
+  // unbenchmarked beginners**, who are the exact cohort §47 Amendment 1 was built for (Willy,
+  // 2026-09-13: *"a beginner never received a peak long-run step-back week"*).
+  //
+  // 📐 MEASURED ZERO-DELTA BEFORE SHIPPING: across all **39,744** generated cohort-grid plans the
+  // stamp and the label decide this gate **identically — 0 disagreements in either direction** —
+  // and across all **92,384** peak long runs the two agree session by session.
+  //
+  // 🔻 WHAT THIS DOES NOT FIX, stated so it is not mistaken for closed: the stamp goes null under
+  // a withholding too, so §120 Am. 4 is still blocked. That is a SCOPE question — should §47
+  // require specificity at all? — and it is the chair's: `STEPBACK-SPECIFICITY-SCOPE-01`, with
+  // option (b) measured at +3,456 plans. ⚠️ Also note the comment above said §47 skips 5K and 10K;
+  // it does not, and never did (§25 prices their finish at goal pace), which is why that sentence
+  // is gone rather than preserved.
   const anyPeakIsRacePace = peakWeekIdxs.some(i => {
     const lr = longRunOf(weeks[i])
-    return lr ? labelHasRacePace(lr.session.label ?? '') : false
+    return lr ? lr.session.lr_segment_pace != null : false
   })
   if (!anyPeakIsRacePace) return steppedBack
 
