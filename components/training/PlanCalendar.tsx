@@ -1,7 +1,7 @@
 'use client'
 
 import { SectionLabel } from '@/components/shared/SectionLabel'
-import React, { useState } from 'react'
+import React, { useMemo, useState } from 'react'
 import type { Week, Session } from '@/types/plan'
 import type { DerivedSet } from '@/lib/plan/resolveMainSet'
 import { getSessionColor } from '@/lib/session-types'
@@ -18,6 +18,9 @@ import { planMove, type OverrideRow } from '@/lib/plan/overrideMoves'
 import EasedMark from '@/components/shared/EasedMark'
 import { isEasedForRecovery } from '@/lib/ui/easedMark'
 import { SLOT_LABEL, moveChoices } from '@/lib/plan/doubles'
+// REORDER-BLOCKED-DAY-01 — the move-mode day verdict, and the one spelling of its sentence.
+import { moveDayRole, blockedDayLine } from './PlanCalendar.logic'
+import { normaliseDays, type Day } from '@/lib/plan/days'
 import { InlineError } from '@/components/shared/InlineError'
 import { resolveEffectiveDay } from '@/lib/plan/effectiveSessions'
 import { sessionDisplayLabel } from '@/lib/plan/catalogueLink'
@@ -108,6 +111,42 @@ const loadMoreStyle: React.CSSProperties = {
   letterSpacing: '0.06em', textTransform: 'uppercase',
 }
 
+// 🔴 ONE REGISTER FOR BOTH MOVE-MODE DAY LINES (REORDER-BLOCKED-DAY-01, 2026-11-16).
+//
+// "Move here" was a hand-rolled `fontSize: '11px' / letterSpacing: '0.04em'` inline on the row, and
+// the blocked-day sentence is its sibling: same place, same job, different verdict. Written out a
+// second time it would be the micro-label drift `MICRO-LABEL-DRIFT-01` collapsed — four uppercase
+// labels at three trackings on one screen. **Take the type from one place; the caller passes only
+// the colour**, which is the channel that carries the meaning (`DESIGN-DAYDOT-CHANNEL-01`).
+//
+// ⚠️ IT IS NOT A `MICRO_LABELS` ROLE AND MUST NOT BECOME ONE. All three roles are UPPERCASE and
+// tracked; this is a sentence-case sentence. `MICRO-LABEL-FIELDHINT-01` ruled exactly this
+// distinction — a lowercase untracked hint is not a caption above a section, and the board declined
+// to make it a fourth role.
+//
+// 🔴 12/400, AND I SHIPPED THE OLD SIZE FIRST AND THE MICRO-LABEL REGISTER CAUGHT ME TWICE.
+//
+// `Move here` was hand-rolled at the retired size with stray tracking, and `ui-patterns.md` rules
+// that size is NOT a level, sending genuinely secondary text to **Card secondary 12/400**. I matched
+// the shipped line rather than correct it, reasoning that restyling a shipped control is a type
+// ruling and not a craft call. ⚠️ **That was wrong, and a mechanism proved it rather than an
+// argument.** `microLabel.test.ts` only sees a size written as a literal INSIDE a JSX style block
+// that also carries tracking, so lifting the value into this const took the line out of its
+// population: the register fell **18 to 17 while the real count of such lines went 1 to 2.** A
+// consolidation that hides debt from the register measuring it is worse than the debt.
+//
+// So both converge on the documented level: **12px / 400, untracked.** With no tracking it leaves
+// that population honestly rather than hiding inside it, and the baseline is lowered to 17.
+//
+// ⚠️ AND THE SECOND CATCH IS WHY THIS COMMENT IS WORDED LIKE THIS. My first draft of it quoted the
+// scanner's own syntax, so the scanner matched the prose: it paired this const's size with a brace
+// pair and the word it looks for, invented a label that does not exist, and the register read 18
+// again — **green by accident.** Same class as `HOOK-RGBA-COMMENTS-01`: searching for the thing
+// finds the comment about the thing. Describe a guard's pattern; never spell it.
+const MOVE_MODE_LINE: React.CSSProperties = {
+  fontFamily: 'var(--font-ui)', fontSize: '12px', fontWeight: 400,
+}
+
 interface Props {
   weeks: Week[]
   allOverrides: OverrideRow[]
@@ -121,9 +160,22 @@ interface Props {
   /** Per-session metric overrides from SessionScreen toggle, keyed `${weekN}_${sessionKey}`. */
   sessionMetricOverrides?: SessionMetricOverrides
   strength?: PlanStrength | null
+  /**
+   * REORDER-BLOCKED-DAY-01 — the days the runner declared they cannot train, free-form as the
+   * wizard stored them (`days_cannot_train`: 'monday' or 'mon'). Normalised here, once, through
+   * the owner. Absent means UNKNOWN, never "nothing is blocked": 7 of 43 live plans predate
+   * `meta.generator_input` and cannot answer, and a control must not claim a constraint it
+   * cannot read. Measured 2026-11-16: `meta.generator_input.days_cannot_train` is the only
+   * source worth reading — 4 plans carry the top-level `meta.days_cannot_train` as well and all
+   * 4 AGREE, and **0 plans carry it alone**, so a `??` fallback onto it would never fire.
+   */
+  blockedDays?: readonly string[]
 }
 
-export default function PlanCalendar({ weeks, allOverrides, allCompletions, onOverrideChange, onSessionTap, overridesReady = true, units = 'km', preferredMetric = 'distance', sessionMetricOverrides = {}, strength = null }: Props) {
+export default function PlanCalendar({ weeks, allOverrides, allCompletions, onOverrideChange, onSessionTap, overridesReady = true, units = 'km', preferredMetric = 'distance', sessionMetricOverrides = {}, strength = null, blockedDays }: Props) {
+  // Normalised once for the whole calendar rather than per week card: `normaliseDays` is the owner
+  // of both wire spellings (`days.ts`), and the free-form array never reaches a day row.
+  const blocked = useMemo(() => normaliseDays(blockedDays), [blockedDays])
   const [showPast, setShowPast] = useState(false)
   // SESSION-SLOTS-01 — a move or swap that failed to save, said once, beside the plan (InlineError).
   const [moveError, setMoveError] = useState<string | null>(null)
@@ -280,6 +332,7 @@ export default function PlanCalendar({ weeks, allOverrides, allCompletions, onOv
         units={units}
         preferredMetric={preferredMetric}
         sessionMetricOverrides={sessionMetricOverrides}
+        blocked={blocked}
       />
     )
   }
@@ -442,7 +495,9 @@ function MaintSeam() {
 // This is a convergence the ruling asked for, not an accident.
 
 
-function WeekCard({ week, weekNum, completions, overrides, onSessionTap, onMove, onSwap, units, preferredMetric, sessionMetricOverrides, strength = null }: {
+function WeekCard({ week, weekNum, completions, overrides, onSessionTap, onMove, onSwap, units, preferredMetric, sessionMetricOverrides, strength = null, blocked }: {
+  /** REORDER-BLOCKED-DAY-01 — normalised by `PlanCalendar`; empty means "we cannot tell". */
+  blocked: ReadonlySet<Day>
   strength?: PlanStrength | null
   week: Week; weekNum: number; completions: Completion[]; overrides: { week_n: number; original_day: string; new_day: string; new_slot?: 'am' | 'pm' | null }[]
   onSessionTap: (session: SessionTapPayload, weekN: number) => void
@@ -699,8 +754,15 @@ function WeekCard({ week, weekNum, completions, overrides, onSessionTap, onMove,
         // never is, §126). Two flavours:
         //   - move target  → empty slot (no session, or only a rest placeholder)
         //   - swap target  → an occupied day: Swap, Do both, or both on offer
-        const isMoveTarget = !!choices && !occupiedDay
-        const isSwapTarget = !!choices && occupiedDay && !!s && s.type !== 'rest'
+        // REORDER-BLOCKED-DAY-01 — ONE verdict, in `PlanCalendar.logic`. A third inline boolean
+        // beside these two is how a day row ends up with four states nobody can enumerate.
+        const role = moveDayRole({
+          targetDay: key, blocked, choices, occupied: occupiedDay,
+          rowHasSession: !!s && s.type !== 'rest',
+        })
+        const isMoveTarget = role === 'move'
+        const isSwapTarget = role === 'swap'
+        const isBlockedDay = role === 'blocked'
         const isDouble = list.length >= 2
         // Per-session metric override is keyed by originalDay (where the user
         // tapped the toggle in SessionPopupInner), not by display slot.
@@ -730,6 +792,7 @@ function WeekCard({ week, weekNum, completions, overrides, onSessionTap, onMove,
             isMoving={isMoving}
             isMoveTarget={isMoveTarget}
             isSwapTarget={isSwapTarget}
+            blockedLine={isBlockedDay ? blockedDayLine(key) : null}
             isMoveMode={!!movingDay}
             isLast={(i === DOW_ORDER.length - 1 && idx === rows.length - 1) || idx < rows.length - 1}
             units={units}
@@ -737,6 +800,13 @@ function WeekCard({ week, weekNum, completions, overrides, onSessionTap, onMove,
             strength={dayStrength}
             onTap={() => {
               if (isMoveTarget || isSwapTarget) { handleTargetTap(key); return }
+              // 🔴 A BLOCKED ROW IS INERT, AND THAT IS THE OTHER HALF OF THE FIX.
+              // Every non-target tap in move mode calls `abandonMove()`, which is what reads to the
+              // runner as the app refusing: the staged move simply vanishes, unexplained. This row now
+              // carries the explanation, so cancelling the move as a side effect of touching the
+              // explanation would be the same defect in a new costume. It also must return BEFORE the
+              // strength branch below, or reading it would open a strength session mid-move.
+              if (isBlockedDay) return
               if (movingDay) { abandonMove(); return }
               if (!s || s.type === 'rest') { dayStrength?.onOpen(); return }
               onSessionTap({
@@ -843,7 +913,7 @@ function rowLabelStyle({ color, struck }: { color: string; struck: boolean }): R
   }
 }
 
-function DayRow({ dayKey, session, date, isToday, isPast, isFuture, completion, isMovable, isMoving, isMoveTarget, isSwapTarget, isMoveMode, isLast, onTap, onMoveIconTap, units, metric, strength = null, slot = null, continuation = false, swapHint = 'tap to swap' }: {
+function DayRow({ dayKey, session, date, isToday, isPast, isFuture, completion, isMovable, isMoving, isMoveTarget, isSwapTarget, isMoveMode, isLast, onTap, onMoveIconTap, units, metric, strength = null, slot = null, continuation = false, swapHint = 'tap to swap', blockedLine = null }: {
   /** STRENGTH-APP-01 (C) — a strength session on this day, when strength is on. */
   strength?: DayStrength | null
   /** SESSION-SLOTS-01 — AM / PM on a two-session day (the label, never colour alone); null otherwise. */
@@ -852,6 +922,12 @@ function DayRow({ dayKey, session, date, isToday, isPast, isFuture, completion, 
   continuation?: boolean
   /** What a tap on an occupied target does: swap, or (from a double) join it. */
   swapHint?: string
+  /**
+   * REORDER-BLOCKED-DAY-01 — the sentence for a day the runner declared they cannot train, while a
+   * move is staged; `null` otherwise. Set ⇒ this row is not a destination and is inert.
+   * The caller owns the words (`blockedDayLine`), so the row cannot spell a day two ways.
+   */
+  blockedLine?: string | null
   dayKey: string; session: EffectiveSession | undefined; date: Date; isToday: boolean; isPast: boolean; isFuture: boolean
   completion?: Completion; isMovable: boolean; isMoving: boolean
   isMoveTarget: boolean; isSwapTarget: boolean
@@ -880,11 +956,22 @@ function DayRow({ dayKey, session, date, isToday, isPast, isFuture, completion, 
         // flight. Setting it up front would kill scrolling on the whole list,
         // which is the objection this prototype exists to test, not to dodge.
         display: 'flex', alignItems: 'center',
-        padding: isRestType && !isTarget && !strengthRow ? '6px 14px' : '10px 14px',
+        // A blocked row carries a sentence, so it gets the 10px a line of text needs, not a bare
+        // rest day's 6px.
+        padding: isRestType && !isTarget && !strengthRow && !blockedLine ? '6px 14px' : '10px 14px',
         borderBottom: isLast ? 'none' : '1px solid var(--line)',
         background: isMoving || isTarget ? 'var(--moss-soft)' : 'transparent',
-        cursor: (hasSession || isTarget || strengthRow) ? 'pointer' : 'default',
-        opacity: isMoving ? 0.7 : isMoveMode && !isTarget && !isMoving ? 0.4 : isSkipped ? 0.5 : isPast && !isComplete && hasSession ? 0.45 : 1,
+        // Inert, and it says so with the cursor — `strengthRow` would otherwise make it a pointer.
+        cursor: blockedLine ? 'default' : (hasSession || isTarget || strengthRow) ? 'pointer' : 'default',
+        // 🔴 A BLOCKED ROW IS EXEMPT FROM THE MOVE-MODE DIM, AND THE REASON IS A CONTRAST
+        // MEASUREMENT, NOT A PREFERENCE. `opacity` is multiplicative over the subtree, so a child
+        // cannot opt out: `--mute` (#6D6963) is **5.45:1** on `--card` and composites to roughly
+        // #C5C3C1 at 0.4, which is **about 1.8:1** and fails AA outright. The dim means "nothing to
+        // read here"; this is the one non-target row whose whole job is to be read.
+        // ⚠️ This adds NO fourth meaning to the opacity channel, which `DESIGN-DAYDOT-CHANNEL-01`
+        // forbids (0.5 skipped / 0.45 past-not-complete / 0.4 move mode, three meanings inside 0.1).
+        // It declines to apply the third. The state lives in the label, per that same ruling.
+        opacity: blockedLine ? 1 : isMoving ? 0.7 : isMoveMode && !isTarget && !isMoving ? 0.4 : isSkipped ? 0.5 : isPast && !isComplete && hasSession ? 0.45 : 1,
         // dashed = move (empty slot); solid = swap (occupied slot); solid on the source while moving.
         outline: isMoveTarget
           ? '1px dashed var(--moss-mid)'
@@ -932,8 +1019,16 @@ function DayRow({ dayKey, session, date, isToday, isPast, isFuture, completion, 
       )}
 
       <div style={{ flex: 1, minWidth: 0 }}>
-        {isMoveTarget ? (
-          <div style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--moss-strong)', letterSpacing: '0.04em' }}>
+        {/* REORDER-BLOCKED-DAY-01 — a blocked day leads, and it is mutually exclusive with
+            `isMoveTarget` by construction (`moveDayRole` returns exactly one role). It outranks the
+            strength block for the same reason "Move here" already does: while a move is staged the
+            row answers the move, and the strength session is one tap away once it is placed. */}
+        {blockedLine ? (
+          <div style={{ ...MOVE_MODE_LINE, color: 'var(--mute)' }}>
+            {blockedLine}
+          </div>
+        ) : isMoveTarget ? (
+          <div style={{ ...MOVE_MODE_LINE, color: 'var(--moss-strong)' }}>
             Move here
           </div>
         ) : strengthRow && strength ? (

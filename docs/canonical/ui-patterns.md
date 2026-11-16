@@ -1454,6 +1454,21 @@ Inline row appended to a `WeekCard` after the user taps the move icon on a sessi
 
 **Voice rule:** copy describes the move in concrete terms — *what* moves, *from* where, *to* where. Never abstract ("apply change"). Never invents structure not in the diff. Aligns with brand voice — *honest, slightly sarcastic, self-aware, encouraging without cringe*.
 
+**Move-mode day states (`REORDER-BLOCKED-DAY-01`, Design Board 2026-11-16).** While a move is staged, every day row is exactly one of four roles, decided by `moveDayRole()` in `components/training/PlanCalendar.logic.ts` and never by inline booleans in the JSX:
+
+| Role | Rail | Outline | Background | Line | Tap |
+|---|---|---|---|---|---|
+| **move** — empty, offerable | 3px `--moss-mid`, 34px | 1px dashed `--moss-mid` | `--moss-soft` | `Move here`, `--moss-strong` | stages the move |
+| **swap** — occupied, offerable | 3px `--moss` | 1px solid `--moss-mid` | `--moss-soft` | hint inline on the label (`tap to swap` / `tap to double up`) | stages the swap |
+| **blocked** — empty, and the runner declared they cannot train it | the day's own (transparent on a rest day) | none | none | `You don't run Thursdays`, `--mute` | **inert** |
+| **none** — the source's own day, or a day already holding two (§126) | the day's own | none | none | none | cancels the move |
+
+Both standalone lines take their type from one local `MOVE_MODE_LINE` const (11px / 0.04em, sentence case); the caller passes only the colour, which is the channel carrying the meaning. It is **not** a `MICRO_LABELS` role and must not become one: all three roles are uppercase and tracked, and `MICRO-LABEL-FIELDHINT-01` already ruled that a sentence-case untracked line is not a caption above a section.
+
+⚠️ **Three rules bind this and are worth restating where the next person will read them.** (1) **`blocked` is scoped to an EMPTY day.** Measured 2026-11-16 across 563 live plan-weeks: 1,688 of 3,941 day rows are blocked days and **1,679 (99.5%) are empty**, because §18 kept them clear; the 9 occupied ones are **all races**, which §77 exempts deliberately, so an occupied blocked day keeps its swap. (2) **A blocked row is exempt from move mode's 0.4 dim**, because `opacity` is multiplicative over the subtree and `--mute` composites from 5.45:1 to roughly **1.8:1** at 0.4 — this is the one non-target row whose job is to be read. It adds no fourth meaning to the opacity channel (`DESIGN-DAYDOT-CHANNEL-01`); it declines to apply the third. (3) **The sentence says "run", not "train".** Strength carries its own `unavailable_days` on the strength profile, a different field from the run plan's `days_cannot_train`, so a lift may legitimately sit on a run-blocked day and *"you don't train"* would be printed on a row the runner can see has a session on it. It is also what the wizard asked: `WeekGrid` cycles each day **Rest → Run → Long**. (4) **The line appears only while a move is staged.** For the median runner three of seven days are blocked, and a permanent sentence on three rows of every week is noise, not information.
+
+**Why it exists:** the engine's own §18 compliance was being rendered as an invitation. A blocked day is empty, an empty day was offerable, so the most inviting affordance on the screen — a dashed moss outline reading *"Move here"* — appeared on exactly the days the runner had said they could not train. **7 of 14 live overrides took it.** The move was never refused: `handleMove` writes `session_overrides` directly and posts `/api/adjust-plan` as `void`, and `INV-PLAN-NO-SESSIONS-ON-BLOCKED-DAYS` runs on generated plans and never sees an override.
+
 **Move-icon affordance:** the trigger button on each `DayRow` is a moss-soft pill containing `↕ Move`, not a hamburger. The pre-fix 3-line hamburger at 0.45 opacity read as "more options"; the explicit glyph + label removes the ambiguity that caused the incident.
 
 Reference: `components/training/PlanCalendar.tsx → WeekCard`  

@@ -1619,28 +1619,100 @@ machine. ⚙️ Fix: switch it, then run the script in DRY-RUN against productio
 remedy counts per plan before and after. Held by an arm in `storedPlanDebt.test.ts` that fails if
 the exemption goes stale.
 
-### 🔲 `REORDER-BLOCKED-DAY-01` — the reorder screen offers days the runner said they cannot train 🧭 **DESIGN BOARD**
+### ✅ `REORDER-BLOCKED-DAY-01` — SHIPPED 2026-11-16. **THE ITEM SAID THE SAVE WAS REFUSED. NOTHING REFUSES** 🧭 **DESIGN BOARD**
 
-📐 **Found 2026-11-03, and it was a new subscriber's first action.** He redeemed an offer code and one minute
-later tried to move a week-7 session onto a day he had himself marked unavailable. The app let him pick it, then
-refused the save.
+> ✅ **SHIPPED 2026-11-16.** A blocked day is never a move target, carries one `--mute` sentence naming the runner's
+> own setting, and is **inert**. Design Board ruling + the three artifacts in one commit. **16 arms, seven mutations
+> falsified.** Felt on `/strength-preview` at 375×812, not asserted.
 
-**`components/training/PlanCalendar.tsx` never mentions `days_cannot_train` or "blocked" anywhere.** The move
-and swap UI offers all seven days. The constraint is enforced at generation (§18 — verified: his plan has zero
-sessions on his two blocked days across all 12 weeks) and again at the save boundary by
-`INV-PLAN-NO-SESSIONS-ON-BLOCKED-DAYS`, and is **expressed nowhere in between**. The runner can only discover
-it by being refused.
+🔴 **THE MECHANISM WAS WRONG AND THE TRUTH IS WORSE.** The item recorded *"the app let him pick it, then refused the
+save"*. **Nothing refuses.** `handleMove` writes `session_overrides` directly and posts `/api/adjust-plan` as `void`;
+`INV-PLAN-NO-SESSIONS-ON-BLOCKED-DAYS` runs on GENERATED plans and never sees an override. The constraint is broken
+**silently and persists** — re-measured on live data 2026-11-16: **7 of 14 live non-superseded overrides belonging to a
+runner who declared blocked days land ON one**, four runners, most recent **2026-11-14**. The item's own case (week 7,
+2026-11-03) reconciles with no stored row.
 
-⚠️ **There are two sources for the same fact, and the UI reads neither.** `meta.days_cannot_train` is
-**undefined** on his plan while `meta.generator_input.days_cannot_train` is `["monday","thursday"]`. The
-validator reads the second. Anything built against the first would be silently inert — the
-`SWEEP-VACUOUS-01` shape.
+📐 **AND THE ENGINE'S OWN COMPLIANCE WAS THE CAUSE.** Across **563 live plan-weeks**, **1,688 of 3,941 day rows
+(42.8%)** are blocked days and **1,679 (99.5%) are EMPTY** *because* §18 kept them clear — so they read as the dashed
+moss **"Move here"** target, the most inviting affordance on the screen. For the median runner **3 of 7 rows** invited
+a move that breaks their own rule.
 
-**For the board:** a blocked day should not be offerable. Whether it is hidden, disabled with a reason, or
-offered with a warning is an interaction decision (Wroblewski's seat), and "disabled with no explanation" is the
-option this repo has previously ruled against.
+✅ **§77 carve-out, measured:** `blocked` applies only to an **empty** day. All **9** occupied blocked-day slots are
+**races**, which §77 exempts deliberately. An occupied blocked day keeps its swap.
+
+⚠️ **The item's two-source warning was right about WHICH to read and wrong that it needs a fallback.** All 43 live
+plans: 36 carry `meta.generator_input.days_cannot_train`; **4 carry the top-level `meta.days_cannot_train` as well and
+all 4 AGREE; 0 carry it alone.** A `??` onto the top-level could never fire. The 7 plans with neither answer
+`undefined`, which the control reads as UNKNOWN and leaves every day offerable — never as "nothing is blocked".
+
+🔑 **The half the item did not see: a plain non-target would have PRODUCED the defect it was filed for.** Every
+non-target tap in move mode calls `abandonMove()` and the staged move vanishes unexplained — almost certainly what was
+experienced as a refusal. The blocked row returns before the abandon **and** before the strength-open branch.
+
+🔻 **WHAT IT DOES NOT DO, AND THIS IS THE RESIDUAL: it repairs none of the 7 rows already stored.** A UI fix reaches no
+existing record. Deleting a runner's deliberate move is a founder call, not a board one, and a production write is
+refused from this machine in any case. Filed as `BLOCKED-DAY-OVERRIDE-REPAIR-01` below.
 
 ---
+
+### 🔲 `TEST-CLOCK-CONSTRUCTED-DATE-01` — three engine tests anchor their race date to a stale literal ⚙️ **NO BOARD**
+
+📐 **Found 2026-11-16 while fixing a red `main`, and MEASURED rather than inferred.** `refusalCoherence.test.ts`
+called `generateRulePlan(c.input, 'paid')` with no `planStart`, so the engine started from
+`nextMonday(new Date())` while `distanceEnvelope` derived every `race_date` from its pinned `2026-11-02`. Two
+weeks of real time turned declared 11-week runways into 9: **207 marathon §44 refusals and 119 fresh 50K
+refusals, with no engine change.** Fixed in that file (`ENVELOPE_PLAN_START` passed as the 3rd and 5th
+arguments) and that is what made the suite green again.
+
+🔴 **THE GATE FOR THIS EXISTS AND HAS A HOLE THE SHAPE OF A COMPUTED DATE.**
+`lib/plan/testClockIndependence.test.ts` has two populations and the case falls between them:
+
+| Arm | Population | Why it missed |
+|---|---|---|
+| `TEST-CLOCK-PREPTIME-01` | every `*.test.ts` | `offends()` requires **`ABSOLUTE_RACE_DATE`** — the literal `race_date: '20xx-xx-xx'` — **AND** an unpinned call. A date built by a helper is not a literal |
+| `ENVELOPE-CLOCK-01` | **non-test** files under `lib/` | a `.test.ts` is excluded by construction |
+
+⚠️ **And the file says so in a comment that is now false:** the both-directions arm asserts that an unpinned
+call with no absolute date is fine because *"arm 6 owns that case"* — arm 6 is the non-test arm, so for a test
+file **nobody owns it**.
+
+📐 **The denominators, derived 2026-11-16:** 215 test files call `generateRulePlan`; **79 carry no absolute
+`race_date` literal and are invisible to arm 1**; **5 of those 79 have an unpinned call**; and **3 of the 5 are
+the live defect**, each with a local `race(wk)` helper anchored to a hardcoded `new Date(2026, 8, 7)` while the
+engine picks today's Monday — **ten weeks of drift already**:
+
+- `lib/plan/foundationOnRamp.test.ts` · `lib/plan/foundationResize.test.ts` · `lib/plan/onsetWeekTwo.test.ts`
+
+The other two (`marketingPlanOwner.test.ts`, `parityProducer.test.ts`) match only inside prose or a case table
+and are not call sites.
+
+⚙️ **Scope, and why it was NOT folded into the wave that found it.** The fix looks like one line per file and is
+not: pinning the start changes the runway each test actually exercises, so each needs re-deriving against what
+it intends to assert — they may be passing today against a 4-week window where the fixture declares 14. That is
+`an item is a snapshot` in reverse. **Then widen the gate**, whose predicate should be "an absolute date
+anywhere, literal **or constructed from a `new Date(y, m, d)` literal**, beside an unpinned call" — and the
+false coverage claim in that comment corrected in the same commit.
+
+⚠️ **Do not fix the three by deriving the race date from `new Date()`** without checking what each asserts:
+clock-relative is the right remedy in general (`GOALPACE-5K-CLOCK-01`), but a test that needs a fixed phase
+boundary needs a pinned pair, not a floating one.
+
+---
+
+### 🔲 `BLOCKED-DAY-OVERRIDE-REPAIR-01` — seven stored moves sit on a day the runner said they cannot train 👤 **FOUNDER**
+
+Filed out of `REORDER-BLOCKED-DAY-01` (2026-11-16), which stopped the eighth and repaired none of the seven.
+**Measured:** 7 live non-superseded `session_overrides` rows, 4 runners, dated 2026-09-30 to 2026-11-14, each putting a
+session on a day that runner's `meta.generator_input.days_cannot_train` names.
+
+⚠️ **It is not obvious they are wrong, which is exactly why it is not mine.** A manual move is the runner's own
+deliberate act and may be them changing their mind in the moment; `days_cannot_train` is a generation-time input. The
+options are (a) leave them, (b) supersede them and let the session return to its generated day, (c) ask the four
+runners. **(b) silently moves a session the runner put where they wanted it**, which is the 2026-06-26 incident's own
+shape.
+
+⚙️ Whichever is chosen, the write is a production `UPDATE` on `session_overrides` and **must be run from the Supabase
+SQL editor**, not from here. No code change is implied.
 
 ### ✅ `REDEEM-SCREEN-UNREACHABLE-01` — SHIPPED 2026-11-14. **NOT AN SLT QUESTION: THE FOUNDER HAD RULED IT FOUR TIMES** ⚙️ **NO BOARD**
 

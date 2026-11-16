@@ -45,8 +45,34 @@ interface Props {
   // quiet "Strength" text mark, never a second row. STRENGTH-PLAN-GLYPH-01 (2026-10-17): both
   // carry the dumbbell Glyph (the row title "Full body" never says strength). Run rows carry none.
   strength?: PlanStrength | null                    // { sessionsByDate, completions, onOpen }
+  // REORDER-BLOCKED-DAY-01, 2026-11-16. The days the runner declared they cannot run, free-form as
+  // the wizard stored them ('monday' or 'mon'); normalised once inside the component through
+  // `normaliseDays`. ABSENT MEANS UNKNOWN, never "nothing is blocked" — 7 of 43 live plans predate
+  // `meta.generator_input` and cannot answer, so every day stays offerable rather than the control
+  // claiming a constraint it cannot read. Absent on the marketing phone still and on the previews,
+  // which then render exactly as before.
+  blockedDays?: readonly string[]                   // §18 days_cannot_train, run placement only
 }
 ```
+
+**A blocked day is not a destination (REORDER-BLOCKED-DAY-01, Design Board 2026-11-16).** While a
+move is staged, `moveDayRole()` in `components/training/PlanCalendar.logic.ts` is the single owner of
+what each day row is: `move` / `swap` / `blocked` / `none`. An **empty** day named in `blockedDays`
+is `blocked`: no outline, no `--moss-soft`, **exempt from move mode's 0.4 dim** (`opacity` is
+multiplicative over the subtree and `--mute` composites from 5.45:1 to roughly 1.8:1, failing AA),
+one line reading `You don't run Thursdays` at Card secondary 12/400, and **inert** — it returns
+before `abandonMove()` and before the strength-open, because every other non-target tap silently
+cancels the staged move.
+
+⚠️ **The source is `meta.generator_input.days_cannot_train` and nothing else.** Measured over all 43
+live plans 2026-11-16: 36 carry it, **4 also carry the top-level `meta.days_cannot_train` and all 4
+agree, 0 carry the top-level alone** — so a `??` fallback onto it could never fire.
+
+⚠️ **An OCCUPIED blocked day keeps its swap.** All 9 live instances are races, which §77 exempts
+deliberately. ⚠️ **The sentence says "run", not "train":** strength carries its own
+`unavailable_days`, so a lift may legitimately sit on a run-blocked day.
+
+Gate: `components/training/planCalendar.logic.test.ts` — 16 arms, 7 mutations falsified.
 
 **Moving a session — one gesture, and it is TAP.** Tap the `↕` handle, the week enters move
 mode, tap a day, and an inline confirmation row names source, destination and swap before

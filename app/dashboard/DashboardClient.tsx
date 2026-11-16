@@ -5292,6 +5292,19 @@ function PlanScreen({ plan, stravaRuns, allOverrides, allCompletions, onOverride
           preferredMetric={preferredMetric}
           sessionMetricOverrides={sessionMetricOverrides}
           strength={strength}
+          /**
+           * REORDER-BLOCKED-DAY-01 — the days this runner said they cannot train, so move mode
+           * stops offering them. §18 keeps sessions off these days at generation, which is exactly
+           * why they are EMPTY and therefore read as the dashed "Move here" target.
+           *
+           * ⚠️ `meta.generator_input.days_cannot_train` IS THE SOURCE, and the choice is measured,
+           * not guessed (2026-11-16, all 43 live plans): 36 carry it; 4 ALSO carry the top-level
+           * `meta.days_cannot_train` and all 4 agree; **0 carry the top-level alone**, so a `??`
+           * fallback onto it could never fire and would be the decorative-config shape. The
+           * remaining 7 plans predate `generator_input` and answer `undefined` — which `PlanCalendar`
+           * reads as UNKNOWN and leaves every day offerable, never as "nothing is blocked".
+           */
+          blockedDays={(plan.meta as unknown as { generator_input?: { days_cannot_train?: readonly string[] } } | undefined)?.generator_input?.days_cannot_train}
           onSessionTap={(session, weekN) => {
             onOpenSession?.({ ...session, weekN })
           }}

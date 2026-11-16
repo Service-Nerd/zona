@@ -19,7 +19,7 @@
 // message that still contained the impossible number.
 
 import { describe, it, expect } from 'vitest'
-import { distanceEnvelope } from './useCaseEnvelope'
+import { distanceEnvelope, ENVELOPE_PLAN_START } from './useCaseEnvelope'
 import { generateRulePlan } from './ruleEngine'
 import { isDesignedRefusal } from './designedRefusal'
 import { REFUSAL_NAMES_NEXT_STEP } from './envelopeMeasure'
@@ -35,7 +35,23 @@ function sweepRefusals(distanceKm: number, stride: number) {
   let refusals = 0
   const cases = distanceEnvelope(distanceKm).filter((_, i) => i % stride === 0)
   for (const c of cases) {
-    try { generateRulePlan(c.input, 'paid'); continue } catch (e) {
+    // 🔴 THE PLAN START IS PASSED, AND OMITTING IT MADE THIS FILE RED ON A DATE (2026-11-16).
+    //
+    // `distanceEnvelope` derives every `race_date` as `ENVELOPE_PLAN_START + N weeks` from its own
+    // pinned literal, and `generateRulePlan` with no third argument starts from
+    // `nextMonday(new Date())`. So the runway the engine sees shrinks by one week every week that
+    // passes. Measured on 2026-11-16, two weeks after the pin: **207 marathon cases refused on §44
+    // prep time** (*"9 weeks isn't enough to build a marathon safely. It needs 10 weeks."*) and
+    // **119 fresh 50K refusals**, against 0 of either when the file was written. Nothing in the
+    // engine changed.
+    //
+    // ⚠️ THIS IS NOT A NEW LESSON. `COHORT-REVIEW-CLOCK-01` is the same defect in
+    // `scripts/cohort-review.ts`, `SWEEP-VACUOUS-01` is it in the property sweep, and
+    // `useCaseEnvelope.ts` states the rule beside the constant: *"a runway is measured from HERE;
+    // callers must pass it"*. `envelopeMeasure.ts` and `intensityRunway.test.ts` both do. **This
+    // file was the one envelope caller that did not**, which is why `envelopeCallerPinned.test.ts`
+    // now gates the population rather than the instance.
+    try { generateRulePlan(c.input, 'paid', ENVELOPE_PLAN_START, undefined, ENVELOPE_PLAN_START); continue } catch (e) {
       if (!isDesignedRefusal(e)) continue
       const err = e as Error & { base?: { current_weekly_km: number; min_base_km: number } }
       refusals++

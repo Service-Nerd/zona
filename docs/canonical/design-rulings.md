@@ -25,6 +25,85 @@ so a **free** runner gets the name and the mark, not the line. Words founder-app
 with strength that week (Coaching Board). Check: `components/dashboard/phaseOnToday.markup.test.ts` (12 arms, five
 mutations falsified). Note: `docs/decisions/design-2026-10-26-phase-on-today.md`. Not felt on a device.
 
+## 2026-11-16 — `REORDER-BLOCKED-DAY-01` · SHIP. A blocked day is not a destination, and it says why
+
+| Ruling | |
+|---|---|
+| **In move mode an EMPTY blocked day is never a target, carries one `--mute` sentence naming the runner's own setting, and is inert** | 🟢 **SHIP** |
+
+🔴 **THE ITEM'S MECHANISM WAS FALSE, AND THE TRUTH IS WORSE.** It recorded *"the app let him pick it, then
+refused the save"*. **Nothing refuses.** `handleMove` writes `session_overrides` directly and posts
+`/api/adjust-plan` as `void`; `INV-PLAN-NO-SESSIONS-ON-BLOCKED-DAYS` runs on GENERATED plans and never sees an
+override. So the runner's own constraint is broken **silently, and it persists** — measured on live data
+2026-11-16: **7 of 14 live non-superseded overrides belonging to a runner who declared blocked days land ON one**,
+across four runners, most recent **2026-11-14**. The item's own case (week 7, 2026-11-03) does not reconcile with any
+stored row; the class is real and larger than the instance.
+
+📐 **AND THE SHARPER FINDING IS THAT THE ENGINE'S COMPLIANCE WAS THE CAUSE.** Across **563 live plan-weeks**,
+**1,688 of 3,941 day rows (42.8%) are days the runner said they cannot train, and 1,679 of those (99.5%) are EMPTY**
+— *because* §18 kept them clear. An empty day is offerable, so the most inviting affordance on the screen, a
+dashed moss outline reading **"Move here"**, was painted on exactly the days the plan had refused to schedule. For the
+median runner **three of seven rows** invited a move that breaks their own rule (blocked-day distribution over 43 live
+plans: 7×0, 2×1, 5×2, 18×3, 11×4).
+
+✅ **§77 CARVE-OUT, MEASURED NOT ASSUMED: `blocked` applies only to an EMPTY day.** All **9** occupied
+blocked-day slots are **races**, which §77 exempts deliberately (a runner who cannot train on Wednesdays can still
+race on one). Calling those blocked would deny a swap with a session that is legitimately there, and it is the arm a
+careless fix breaks.
+
+✋ **Silvanto — no veto, and one regression NAMED rather than exercised on.** `ui-patterns.md` rules
+*"11px is NOT a level"* and sends secondary text to Card secondary 12/400; the shipped `Move here` line is a
+hand-rolled **11px / 0.04em**. The new sentence **matches it exactly rather than widening the drift**, and both now
+take their type from one `MOVE_MODE_LINE` const so neither can move alone. ⚠️ **`appTypeScale.test.ts` DECLARES 11**
+(the nav label is `0.6875rem`), so this neither grows the undeclared-size debt nor pays it. **Converging both to
+12/400 changes a shipped control and is a type ruling, not a craft call** — recorded, not taken here.
+
+🔴 **AND ONE RULE OVERTURNED A DESIGN I HAD ALREADY DRAWN.** The blocked row was to keep move mode's 0.4 dim
+like every other non-target. `opacity` is **multiplicative over the subtree**, so the sentence cannot opt out:
+`--mute` (#6D6963) is **5.45:1** on `--card` and composites to roughly **#C5C3C1, about 1.8:1**, failing AA outright.
+**The dim means "nothing to read here"; this is the one non-target row whose whole job is to be read**, so it is
+exempt. That adds **no fourth meaning** to the opacity channel — `DESIGN-DAYDOT-CHANNEL-01` records three already
+inside 0.1 of each other — it declines to apply the third, and the state lives in the label, per that same ruling.
+
+📱 **Wroblewski, and it is the half the item did not see: the row is INERT, not merely non-target.** Every
+non-target tap in move mode calls `abandonMove()` — the staged move vanishes, unexplained. That is almost certainly
+what the item recorded as a refusal. Making a blocked day a plain non-target would have *produced* the defect it was
+filed for: the runner reads the sentence, taps it, and loses the move. It returns before the abandon **and** before the
+strength-open branch.
+
+🎭 **Collins proposed the bolder read and lost on the screen's job:** hide blocked days from the week
+entirely. A calendar that shows five days is not a week, the rows carry the date column, and 42.8% of rows would
+vanish and reappear by context. **Recorded as a loss, not softened.**
+
+🔴 **THE COPY SAYS "RUN", NOT "TRAIN", AND THE FIRST DRAFT WAS WRONG ON SCREEN.** `packages/strength` carries
+its own `unavailable_days` on the strength profile — a **different field** from the run plan's
+`days_cannot_train` — so a lift may legitimately sit on a run-blocked day, and *"You don't train Thursdays"* would
+have been printed on a row the runner can see has a session on it. ⚠️ **It is also simply what they answered:**
+the wizard's `WeekGrid` cycles each day **Rest → Run → Long**, so `days_cannot_train` means "not a run day" and
+nothing wider. Found reviewing the diff, not by a test. 🔻 *Whether a run-blocked day should also block
+strength is a real question and is NOT this board's* — it changes what the engine prescribes.
+
+🎓 **Sierra: no link to change the setting, and that is deliberate.** Move mode places a session;
+`days_cannot_train` belongs to the Adjust plan door. A tappable line inside a staged move is a second commit-shaped
+gesture in a flow the 2026-06-26 incident hardened.
+
+🧭 **Zhuo:** the success condition was stated before the design and is observable — **a new override onto a
+blocked day can no longer be created from this surface.** ⚠️ **WHAT IT DOES NOT DO: it repairs none of the 7
+rows already stored.** An engine or UI fix reaches no existing record, and deleting a runner's deliberate move is not
+this board's call. Filed.
+
+**Artifacts (three, one commit):** pattern → `ui-patterns.md` § 10b *Move-mode day states* · named constant
+→ `moveDayRole` / `blockedDayLine` / `MOVE_MODE_LINE` · check →
+`components/training/planCalendar.logic.test.ts`, **16 arms, seven mutations falsified** (drop the blocked arm; let blocked
+win on an occupied day → the §77 arm; remove the inert guard; restore the dim; re-inline the booleans; write the
+line's type out twice; **re-guard the verdict in the caller**). ⚠️ **The gate caught its OWN first cut**: it read `abandonMove()`
+out of the comment the fix had just written above the guard — `HOOK-RGBA-COMMENTS-01` from the other side — so
+its reader strips comments and that stripper has its own arm.
+
+✅ **Felt on a real page, not asserted:** `/strength-preview` at 375×812 with blocked days patched in locally,
+move staged, blocked row tapped — the move **stayed staged**; the control (tapping a non-blocked non-target) still
+cancelled. Patch reverted.
+
 ## 2026-11-14 — `PLAN-NOTE-HEAVIER-WEEK-PLACEMENT-01`: measured, ruled NOT YET, and the sequence fixed
 
 Sitting: `docs/decisions/design-2026-11-14-heavier-week-placement.md`. Filed by §6ak, which deferred
