@@ -431,7 +431,7 @@ export function PlanPage({ plan }: { plan: MarketingPlan }) {
                             </div>
                             <div style={{ fontSize: 'var(--fs-sm)', color: 'var(--mute)', marginTop: 2 }}>
                               {/* 🔴 THE EASY PACE IS A CEILING, NOT A RANGE (MKT-STEP-CEILING-BAND-01,
-                                  Design Board 2026-11-16). This printed `s.pace_target` raw, so **424 of 507
+                                  Design Board 2026-11-16). This printed `s.pace_target` raw, so **462 of 593
                                   session rows** across the published plans showed `6:30–7:30 /km` where the app
                                   shows `6:30 /km or slower` through this same owner.
                                   ⚠️ The slow end is NOT a limit: §12 caps an easy run at the top of Z2, and

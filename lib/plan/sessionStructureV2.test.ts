@@ -101,7 +101,10 @@ describe('SC-08b — the six cases the v1 structure could not express', () => {
     const rec = d.blocks[0].steps.find(x => x.role === 'recovery')!
     expect(rec.pace).toBe('6:00–7:15 /km')
     expect(rec.pace_mode, 'a floor, not a band to hit').toBe('floor')
-    expect(describeDerivedSet(d)).toContain('no slower than')
+    // MKT-STEP-CEILING-BAND-01: the FLOOR is expressed through `paceAsFloor`, the app's own
+    // owner, so the prose reads "7:15 /km or faster". The semantics asserted above are
+    // unchanged; this file used to assert them through the renderer's own second phrasing.
+    expect(describeDerivedSet(d)).toContain('7:15 /km or faster')
   })
 
   it('CASE 4 (was PARTIAL) — typed recovery genuinely differs', () => {
@@ -174,7 +177,9 @@ describe('SC-08b — the six cases the v1 structure could not express', () => {
       ] }],
     })
     expect(resolveMainSet(s, CTX).blocks[0].steps[0].pace_mode).toBe('ceiling')
-    expect(describeDerivedSet(resolveMainSet(s, CTX))).toContain('no faster than')
+    // Same: CD-11's ratified wording for a ceiling, via `easyPaceAsCeiling`. Reducing a band
+    // to its fast end is the point of CASE 6 — `6:00 /km or slower` says it in one number.
+    expect(describeDerivedSet(resolveMainSet(s, CTX))).toContain('6:00 /km or slower')
   })
 })
 

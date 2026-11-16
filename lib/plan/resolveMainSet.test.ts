@@ -49,11 +49,11 @@ describe('describeDerivedSet — hill reps (the regression)', () => {
   })
 
   it('names the descent by direction and keeps its pace', () => {
-    expect(out).toContain('jog back down at no faster than 5:53–7:02 /km')
+    expect(out).toContain('jog back down at 5:53 /km or slower')
   })
 
   it('runs the lead-in to the landmark as a run', () => {
-    expect(out).toContain('run to the bottom of the hill at no faster than 5:53–7:02 /km')
+    expect(out).toContain('run to the bottom of the hill at 5:53 /km or slower')
   })
 
   it('keeps the climb effort-governed with its terrain', () => {
@@ -62,8 +62,8 @@ describe('describeDerivedSet — hill reps (the regression)', () => {
 
   it('reads as a coherent whole', () => {
     expect(out).toBe(
-      'run to the bottom of the hill at no faster than 5:53–7:02 /km, then ' +
-      '8 × (1:30 min uphill at RPE 8 + stand until ready + jog back down at no faster than 5:53–7:02 /km)',
+      'run to the bottom of the hill at 5:53 /km or slower, then ' +
+      '8 × (1:30 min uphill at RPE 8 + stand until ready + jog back down at 5:53 /km or slower)',
     )
   })
 })
@@ -82,7 +82,7 @@ describe('describeDerivedSet — classic rep set is unchanged in spirit', () => 
 
   it('renders reps with work + recovery legibly', () => {
     expect(describeDerivedSet(REPS)).toBe(
-      '4 × (5 min at 4:25–4:35 /km + jog 1:30 min at no faster than 5:53–7:02 /km)',
+      '4 × (5 min at 4:25–4:35 /km + jog 1:30 min at 5:53 /km or slower)',
     )
   })
 })

@@ -32,14 +32,21 @@ mutations falsified). Note: `docs/decisions/design-2026-10-26-phase-on-today.md`
 | **The website states an easy pace as the CEILING it is, through the app's owner** | 🟢 **SHIP** |
 | **A QUALITY band stays a band** | 🟢 **STANDING** — it is a two-ended target, not a ceiling |
 
-📐 **MEASURED ACROSS THE 9 PUBLISHED PLANS THAT GENERATE** (the 10th is the staged never-run page, refused
-by design):
+📐 **MEASURED BOTH SIDES ACROSS ALL 10 PUBLISHED PLANS, through `generateMarketingPlan`:**
 
 | | before | after |
 |---|---|---|
 | steps reading `at no faster than 6:30–7:30 /km` | **87 of 205** | **0** |
-| session rows printing the raw band for an easy session | **424 of 507** | **0** |
+| session rows printing the raw band for an easy session | **462 of 593** | **0** |
 | quality bands (genuine two-ended targets) | 58 | **58, untouched** |
+
+🔴 **THE ROW FIGURES WERE FIRST PUT TO THIS BOARD AS 424 OF 507, AND THE ERROR WAS THE POPULATION.** The
+gate called `generateRulePlan` behind a `try/catch … continue`, silently dropping the never-run page, so
+the submission said *"the 9 plans that generate"* about a page `runEngine` **stages**. `SITE-STAGED-PLAN-01`'s
+owner gate caught it — the gate whose own header records the identical error at the identical entry point.
+⚠️ **The vacuity guard could not see it either:** `rows > 520` stayed green at 9 of 10 pages, because 593
+minus one page clears any stable floor. **Only a count of pages can see a page missing**, which is now the
+arm.
 
 🔑 **THE ITEM CALLED THE WORDING AN OPEN COPY DECISION ACROSS TWO SURFACES. IT WAS ALREADY RULED.**
 `design-rulings.md` CD-11 / §12 ratifies *"X or slower"*, and `sessionSteps.ts` records in as many words why the

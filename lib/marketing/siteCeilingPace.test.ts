@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { readFileSync } from 'node:fs'
 import { MARKETING_PLANS } from './plans'
-import { generateRulePlan } from '@/lib/plan/ruleEngine'
+import { generateMarketingPlan } from './marketingPlan'
 import { stepParts } from '@/lib/plan/resolveMainSet'
 import { planRowPace } from './planRowPace'
 
@@ -9,12 +9,17 @@ import { planRowPace } from './planRowPace'
  * MKT-STEP-CEILING-BAND-01 (Design Board 2026-11-16) — the website expresses an easy pace as the
  * CEILING it is, through the same owner as the app.
  *
- * 📐 **MEASURED BEFORE, across the 9 published plans that generate** (the 10th is the staged
- * never-run page, refused by design):
+ * 📐 **MEASURED BOTH SIDES, across all 10 published plans, through `generateMarketingPlan`:**
  *
  *   · **87 of 205** rendered steps read `at no faster than 6:30–7:30 /km` — a comparison applied
- *     to a RANGE, naming two numbers where the ceiling is one.
- *   · **424 of 507** session rows printed the raw band where the app shows `6:30 /km or slower`.
+ *     to a RANGE, naming two numbers where the ceiling is one. **→ 0.**
+ *   · **462 of 593** session rows printed the raw band where the app shows `6:30 /km or slower`.
+ *     **→ 0**, all 462 now ceilings.
+ *
+ * ⚠️ **Those row figures were first reported as 424 of 507, and the error was in the POPULATION,
+ * not the arithmetic.** My first cut called `generateRulePlan` behind a `try/catch … continue`,
+ * which silently dropped the never-run page — so I wrote "the 9 plans that generate" about a
+ * page `runEngine` STAGES perfectly well. `SITE-STAGED-PLAN-01`'s owner gate caught it.
  *
  * 🔑 **The wording was never the open question the item thought.** `sessionSteps.ts` settled it for
  * the app and recorded why: `design-rulings.md` CD-11 / §12 ratifies *"X or slower"*, and routing
@@ -23,21 +28,23 @@ import { planRowPace } from './planRowPace'
  *
  * ⚠️ **The slow end is not a limit.** §12 caps an easy run at the top of Z2; running slower than
  * 7:30 is still a correct easy run, so a RANGE invents a boundary the plan does not set. A quality
- * session's band is a genuine two-ended target and is left alone — **58 of 482** stay bands.
+ * session's band is a genuine two-ended target and is left alone — **58** stay bands, on both sides.
  */
 
-const START = '2026-11-23'
-const iso = (d: number) => new Date(Date.parse(`${START}T00:00:00Z`) + d * 864e5).toISOString().slice(0, 10)
-
-interface Row { steps: string[]; rows: { pace: string | null; type: string }[] }
+interface Row { steps: string[]; rows: { pace: string | null; type: string }[]; plans: number }
 
 function render(): Row {
   const steps: string[] = []
   const rows: { pace: string | null; type: string }[] = []
+  let plans = 0
   for (const meta of MARKETING_PLANS) {
-    let plan: { weeks?: unknown[] }
-    try { plan = generateRulePlan(meta.input(iso(meta.dayOffset)) as never, 'free', START) as never }
-    catch { continue }   // the staged never-run page refuses by design
+    // 🔴 THROUGH THE SITE'S OWN ENTRY POINT. My first cut called `generateRulePlan` with a
+    // `try/catch … continue`, which SILENTLY DROPPED the tenth page and let me report "the 9
+    // plans that generate". `SITE-STAGED-PLAN-01`'s owner gate caught it. The never-run page is
+    // not refused: `runEngine` STAGES it as a base-build block, and it renders rows and steps
+    // like any other — so it belongs in the population this gate measures.
+    const plan = generateMarketingPlan(meta).plan as { weeks?: unknown[] }
+    plans++
     for (const w of (plan.weeks ?? []) as { sessions?: Record<string, unknown> }[]) {
       for (const s of Object.values(w.sessions ?? {}) as ({
         type?: string; pace_target?: string | null
@@ -54,16 +61,21 @@ function render(): Row {
       }
     }
   }
-  return { steps, rows }
+  return { steps, rows, plans }
 }
 
 describe('MKT-STEP-CEILING-BAND-01 — the published plan pages', () => {
   const r = render()
 
-  it('the corpus is real: nine plans, hundreds of steps and rows', () => {
-    // Vacuity guard. Every arm below passes on an empty corpus, which is how a gate dies quietly.
+  it('the corpus is EVERY published plan, and a dropped page fails here', () => {
+    // 🔴 THE POPULATION ARM, and it is not a threshold. My first version guarded vacuity with
+    // `rows > 520` and I falsified it by rendering 9 of the 10 plans — it stayed GREEN, because
+    // 593 rows minus one plan is still over any floor loose enough to be stable. A count of
+    // pages is the only thing that can see a page missing, which is the error this gate actually
+    // made. Thresholds below are the vacuity guard; this is the completeness one.
+    expect(r.plans, 'a published plan page was skipped').toBe(MARKETING_PLANS.length)
     expect(r.steps.length).toBeGreaterThan(150)
-    expect(r.rows.length).toBeGreaterThan(400)
+    expect(r.rows.length).toBeGreaterThan(520)
   })
 
   it('🔴 no step applies a comparison to a RANGE', () => {
@@ -79,7 +91,7 @@ describe('MKT-STEP-CEILING-BAND-01 — the published plan pages', () => {
   })
 
   it('🔴 an easy session row shows a CEILING, never a band', () => {
-    // 424 of 507 rows printed the raw band before.
+    // 462 of 593 rows printed the raw band before.
     const bad = r.rows.filter(x => (x.type === 'easy' || x.type === 'recovery')
       && !!x.pace && /\d{1,2}:\d{2}\s*[–-]\s*\d{1,2}:\d{2}/.test(x.pace))
     expect(bad.map(x => x.pace), 'an easy row still names two numbers').toEqual([])
