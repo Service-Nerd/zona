@@ -143,8 +143,9 @@ export function calcVDOTFromBenchmark(b: BenchmarkInput): number {
 }
 
 // VDOT conservatism (CoachingPrinciples §10, §42) — protects users from
-// training at peak race-day output. Discount = base 3% + staleness ramp,
-// capped at MAX. Surfaced in plan.meta.vdot_discount_applied_pct.
+// training at peak race-day output. Discount = base 3% + staleness ramp, capped at MAX. An UNDATED
+// benchmark keeps the base and is DECLARED rather than priced (§10 Am., 2026-11-16 — see below).
+// Surfaced in plan.meta.vdot_discount_applied_pct.
 export function applyVdotDiscount(rawVdot: number, b: BenchmarkInput, today: Date): { vdot: number; discountPct: number } {
   let discountPct: number = GENERATION_CONFIG.VDOT_CONSERVATIVE_DISCOUNT_PCT
   if (b.benchmark_date) {
@@ -157,6 +158,27 @@ export function applyVdotDiscount(rawVdot: number, b: BenchmarkInput, today: Dat
     }
     discountPct = Math.min(discountPct, GENERATION_CONFIG.VDOT_STALENESS_MAX_DISCOUNT_PCT)
   }
+  // 🔑 §10 AMENDMENT (Coaching Board 2026-11-16, BENCHMARK-DATELESS-FRESH-01) — WHY THERE IS NO
+  // `else` HERE, WRITTEN DOWN BECAUSE ONE WAS BUILT AND REVERTED THE SAME DAY.
+  //
+  // A benchmark with no date keeps the 3% base, and that reads like a bug: the runner the engine
+  // knows least about receives its LEAST conservative figure. 📐 8 of 23 live benchmark plans carry
+  // no date, the founder's 2026 plan on a 2024 10K among them.
+  //
+  // 🔴 AND THE FIX IS NOT A NUMBER HERE. The ceiling was built, measured and reverted:
+  //   · §10's own `VDOT-STALENESS-CURVE-01` (2026-11-07) holds the ramp's SHAPE to be INSUFFICIENT
+  //     EVIDENCE (re-open trigger 20+ benchmarked runners at ≥ 8 weeks of logged runs; measured 10),
+  //     so pricing an UNKNOWN age through that curve is a new application of it, not a reading of it.
+  //   · Measured on production: all 8 dateless plans were built within 143 DAYS, six within 54. The
+  //     ceiling is the 964-day figure, so applying it would be wrong IN FACT for six of eight, not
+  //     merely unevidenced.
+  //   · ⚕️ Sims: it penalises a runner for a field the product never required.
+  //   · And the plan's own build date bounds the age only from BELOW, so it cannot price it either.
+  //
+  // 🔑 The engine has no information about this race's age. The honest act is to DECLARE the unknown
+  // (`INV-PLAN-VDOT-DISCOUNT-DATELESS`, `warn`) and to ASK — `benchmarkFromFields` does
+  // `v.date ? { benchmark_date: v.date } : {}`, so the wizard asks for the date and does not require
+  // it (`BENCHMARK-DATE-REQUIRED-01`, Design Board then founder). Not to invent a figure here.
   return { vdot: rawVdot * (1 - discountPct / 100), discountPct }
 }
 

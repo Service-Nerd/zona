@@ -1623,6 +1623,26 @@ producer's owner. Tests: `lib/plan/injuryLongRunCap.test.ts`.
 
 Implemented in `buildPaceFromVDOT(discountedVdot, rawVdot)` in `lib/plan/ruleEngine.ts`. Easy/quality paces use `discountedVdot`; interval pace uses `rawVdot`. The applied discount is surfaced in `plan.meta.vdot_discount_applied_pct` so the user can see what the engine did and why.
 
+**🔴 §10 Amendment — AN UNDATED BENCHMARK IS DECLARED, NEVER PRICED.** *(Coaching Board 2026-11-16, `BENCHMARK-DATELESS-FRESH-01`, CORRECT. The sitting earlier the same day ruled the opposite and is VACATED — see below.)*
+
+`applyVdotDiscount` ramps only `if (b.benchmark_date)`, so a benchmark with **no date** keeps the **3% base** — §10's least conservative figure — for the runner whose fitness the engine knows least about. 📐 **Measured: 8 of 23 live benchmark plans carry no date**, including the founder's 2026 plan built on a 2024 10K. **That reads like a defect, and the obvious fix is wrong.**
+
+🔴 **THE CEILING WAS RULED, BUILT, MEASURED AND REVERTED THE SAME DAY. Three independent reasons, and the first two are this section's own:**
+
+1. **`VDOT-STALENESS-CURVE-01` (this board, 2026-11-07, two bullets up) holds the ramp's SHAPE to be INSUFFICIENT EVIDENCE**, with a re-open trigger of **20+ benchmarked runners with ≥ 8 weeks of logged runs each**. 📐 Measured at the build: **10** (`30 · 14 · 11 · 11 · 10 · 9 · 9 · 8 · 8 · 8 · 7 · 6 · 4 · 3 · 3 · 2 · 0×7`). Pricing an **unknown** age through that curve is a new application of it, not a reading of it.
+2. 📐 **It is wrong in FACT, not merely unevidenced.** All 8 dateless plans were **built within 143 days, six within 54** — and the ceiling is the 964-day figure. ⚠️ The plan's own build date bounds the benchmark's age **from below only**, so it cannot price it either.
+3. ⚕️ **Sims:** it penalises a runner for a field the product never required.
+
+🔴 **The vacated sitting also raised the cap 7% → 10% and added a prompt at 26 weeks, citing 🩹 Willy's protective direction as a reason — which the 11-07 ruling records as "a TIEBREAK, not a reason … so it is never later cited as evidence."** Two conflict scans missed all of this because they named **§10** and not its **amendments**, which is the failure mode printed at the top of `coaching-rulings.md`.
+
+🔑 **The rule.** The engine has no information about this race's age, so it invents none: the base stands and the plan **declares the unknown**. **The real remedy is upstream and is not this board's** — `benchmarkFromFields` does `v.date ? { benchmark_date: v.date } : {}`, so the wizard asks for the date and does not require it, inside a step already optional (*"Recent race result? … Skip if you haven't raced lately."*) → `BENCHMARK-DATE-REQUIRED-01`, 🧭 **Design Board then** 👤 **founder**, because asking *"when?"* is interaction and copy.
+
+🔑 **`benchmarkFreshness` had always read this correctly** — it returns `'stale_or_unknown'` without a date — so the runner-facing **lever** was right all along and only the **discount** disagreed. The resolution was to stop asking the discount a question it has no input for.
+
+**Numeric: none, and no existing value moved.** **Enforcement:** `INV-PLAN-VDOT-DISCOUNT-DATELESS` (**`warn`** — it declares an unknown, it does not demand a figure) plus `lib/plan/vdotDiscountDateless.test.ts`, which pins the ramp **rung by rung** and asserts `VDOT_STALENESS_MAX_DISCOUNT_PCT` is still **7**, so neither the curve nor the vacated ceiling can return unnoticed.
+
+---
+
 **A sub-6-month runner's declared volume is capped, because it is a claim, not a measurement.** *(CD-6, SLT-signed 2026-08-06.)* `current_weekly_km` is self-reported in the wizard, taken at face value. For a `training_age: '<6mo'` runner that is the whole plan's foundation — it drives the fitness classification, the starting volume, and whether the runner gets any quality at all — and the downside of an over-claim is a genuine beginner handed an intermediate's load. So the starting volume is capped at `GENERATION_CONFIG.BEGINNER_WEEK1_VOLUME_CAP_KM = 30` regardless of what was declared (belt). Where a HealthKit connection exists, the declared figure should additionally be tempered toward the observed 4-week average (braces, ADR-011) — the device-only half, tracked in backlog PV2-E. This is §10's "protect users from themselves" applied to the input, not just the paces.
 
 **🔴 §10 Amendment — A DECLARED ZERO IS EVIDENCE OF THE LOWEST STATE, NOT THE ABSENCE OF EVIDENCE.** *(Coaching Board 2026-10-09, `WIZARD-ZERO-VOLUME-REFUSAL-01`, CORRECT WITH AMENDMENT x3. Routed down from the SLT: "it changes what the engine REFUSES, which is coaching.")*

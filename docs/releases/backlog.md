@@ -2340,7 +2340,21 @@ more completed quality sessions.
 
 ---
 
-### 🔲 `BENCHMARK-STALENESS-CEILING-01` — the staleness ramp saturates at 16 weeks, and a dateless benchmark is treated as fresh 🏃 **COACHING BOARD** (two numbers to set)
+### 🔲 `BENCHMARK-STALENESS-CEILING-01` — the ramp saturates at 16 weeks 🏃 **COACHING BOARD** · 🔴 **BOTH NUMBERS VACATED 2026-11-16, and the dateless half SHIPPED instead**
+
+🔴 **THE CEILING (7% → 10%) AND THE 26-WEEK PROMPT ARE VACATED.** §10 already carries
+`VDOT-STALENESS-CURVE-01` (Coaching Board **2026-11-07**): the ramp's **shape** is INSUFFICIENT
+EVIDENCE, with a re-open trigger of **20+ benchmarked runners with ≥ 8 weeks of logged runs each**.
+📐 **Measured at the build: 10** — `30 · 14 · 11 · 11 · 10 · 9 · 9 · 8 · 8 · 8 · 7 · 6 · 4 · 3 · 3 · 2 · 0×7`.
+Raising the cap extends an unevidenced curve on no new evidence, and the vacated sitting cited
+🩹 Willy's protective direction as a *reason* where the 11-07 ruling records it as **"a TIEBREAK, not
+a reason … so it is never later cited as evidence."** ⚠️ **Two conflict scans missed this because they
+named §10 and not its amendments** — the failure mode printed at the top of `coaching-rulings.md`.
+
+✅ **What shipped instead: the dateless half, as a DECLARATION rather than a price** — see
+`BENCHMARK-DATELESS-FRESH-01` in the feature registry. **This item returns when the trigger does.**
+
+**The original filing, kept because its measurements stand:**
 
 **Includes `BENCHMARK-DATELESS-FRESH-01`, which the founder bundled here rather than shipping alone (2026-11-16).**
 
@@ -2368,7 +2382,24 @@ a runner carrying on at a 2.6-year-old pace, which is today. 📦 `VDOT_STALENES
 
 ---
 
-### 🔲 `MAXHR-RECENCY-01` — the max-HR source has no observation date 🏃 **COACHING BOARD** (one number to set)
+### 🔲 `MAXHR-RECENCY-01` — the max-HR source has no observation date 🏃 **COACHING BOARD** · ⏸️ **WITHDRAWN from Release A 2026-11-16 on its own re-measurement**
+
+🔴 **ASKED THROUGH THE OWNER INSTEAD OF THE COLUMN, THE RETARGETING WAS ALSO WRONG.** The item was
+retargeted on 2026-11-16 to *"the stored max is never raised by the runner's own activities — 2 of 20
+sit below their own recent peak, one by 10 bpm."* **`resolveMaxHr` already floors a sub-estimate
+`observed` max to the Tanaka estimate** (§50, `MAX_HR_BELOW_ESTIMATE_TOLERANCE_PCT = 0`), and the
+−10 case (`e98c3253`, stored 168) is one of **2 already floored** — so the zones are built on the
+estimate and the 10-bpm claim is void.
+
+📐 **Re-measured through `resolveMaxHr` (`scripts/board-evidence-maxhr-reconcile.ts`): 3 runners whose
+own recorded peak exceeds the max their zones are built on, by +6, +1 and +1.** Below the threshold
+where a prescription change earns its cost. **The board's 26-week window stands and has nothing to act
+on.** 🔑 **Third time in one session I read a column where I should have asked the owner.**
+
+⚠️ **And the re-measurement found something bigger: 6 of 24 runners have NO AGE on file**, so
+`resolveMaxHr` cannot be asked for them at all → `MAXHR-AGE-ABSENT-01` below.
+
+**The original filing:**
 
 `resolveMaxHr` implements §50's asymmetry well, but `MaxHrSource` is `observed | user_confirmed | undefined` and
 carries **no date**, so a max observed 18 months ago is trusted exactly like one from last week and a runner whose
@@ -2453,6 +2484,49 @@ cohort without raising fuelling guidance is how low energy availability is found
 
 ⚠️ **The cohort least able to absorb an over-hard prescription is on the same single band as everyone else**, and for
 them the band change is the **largest relative** move. The finding the Coaching Board would least like left open.
+
+---
+
+### 🔲 `BENCHMARK-DATE-REQUIRED-01` — the wizard asks when the race was and does not require it 🧭 **DESIGN BOARD** → 👤 **FOUNDER** (copy)
+
+**The upstream remedy the Coaching Board routed out of its own gift, 2026-11-16.** `benchmarkFromFields`
+does `const date = v.date ? { benchmark_date: v.date } : {}` — the date is optional inside a step that
+is already optional (*"Recent race result? … Skip if you haven't raced lately."*). 📐 **8 of 23 live
+benchmark plans carry no date**, the founder's 2026 plan on a 2024 10K among them, and §10's whole
+staleness ramp is therefore unreachable for them.
+
+⚕️ Sims, at the sitting: *"what is not defensible is asking the question, accepting a blank, and then
+pricing the blank. Require the date."* ⚠️ **And a runner who genuinely cannot remember must have an
+honest way through** — which is why this is interaction and copy rather than coaching. The engine side
+is already done: the unknown is declared by `INV-PLAN-VDOT-DISCOUNT-DATELESS`.
+
+---
+
+### 🔲 `MAXHR-AGE-ABSENT-01` — `resolveMaxHr` cannot be asked for 6 of 24 runners ⚙️ **NO BOARD** to measure; 🏃 **COACHING BOARD** if the fallback changes
+
+**Found 2026-11-16 re-measuring `MAXHR-RECENCY-01` through its owner.** `resolveMaxHr(supplied, age,
+source)` needs an **age** — every arm of §50's asymmetry is relative to the Tanaka estimate. 📐 **6 of
+the 24 runners with both a stored max and an HR-bearing activity have neither `date_of_birth` nor
+`birth_year`**, so the plausibility guard cannot run for them and their stored max is taken as given.
+⚠️ **Measure what their plans actually do before proposing anything** — the engine may already have a
+separate path, and this item is a count, not a diagnosis.
+
+---
+
+### 🔲 `CORPUS-DATELESS-BENCHMARK-01` — no measurement corpus can express an undated benchmark ⚙️ **NO BOARD**
+
+**Found 2026-11-16 while shipping `BENCHMARK-DATELESS-FRESH-01`.** 📐 **`cohortGrid`: 19,872
+benchmarked plans, 0 of them dateless** (`BENCHMARKS = [undefined, { … benchmark_date: '2026-04-01' }]`),
+against **8 of 23 live benchmark plans with no date**. So `INV-PLAN-VDOT-DISCOUNT-DATELESS` fires on
+**0 of 39,744** corpus plans while being the live state of a third of benchmarked runners.
+
+🔑 This is `COHORT-GRID-UNSET-LEVEL-01`'s class — **a corpus that cannot build the shape the wizard
+posts** — and the wizard can post a dateless benchmark, because the field is optional. ⚠️ Adding a
+third `BENCHMARKS` variant takes the grid 41,472 → 62,208 and **moves every baseline**, so price it
+before taking it; a constructed cell or a `targetedGrid` row may be enough. ⚠️ **Not a defect in the
+shipped invariant** — its own gate generates a dateless-benchmark plan directly and asserts both
+directions. ⚠️ `invariant:liveness` reports the code WOKEN and **which corpus wakes it was not
+traced**, so that is stated rather than claimed.
 
 ---
 
@@ -15670,6 +15744,8 @@ guard which cries wolf gets disabled, which is the same as having no guard.
 **🏃 Same day — `GOALPACE-UNBENCHMARKED-MARATHON-01`: RULED, BUILT, MEASURED, FALSIFIED AND REVERTED, AND BOTH THINGS THAT STOPPED IT WERE PREMISES OF MINE THE BOARD HAD ACCEPTED.** (**812 files / 8,350 tests, ALL GREEN** on the reverted tree; `tsc` 0; `audit-docs.sh` ALL CLEAN; `backlog:verify` 0 with **80 open · 33 COACHING · 13 DESIGN · 13 ⚙️ · 13 SLT · 8 FOUNDER**. Code: none in the tree. Kept: the ruling, §120 Am. 4's status note, two evidence scripts.) 🔑 **§120 Am. 2 bounds goal pace ONLY on a benchmarked plan** — *"a runner with no benchmark is unchanged"*, in as many words — and Am. 1's CV test lived inside `resolveAnchorPace`'s `case 'HM'`, so it bounded the **HM anchor** and never §22's override of a T-anchored row, which is the path carrying the volume. 📐 **7,704 of 9,504 unbenchmarked time-target plans carried a goal-paced session faster than that runner's own CV pace; 3,168 (33.3%) faster than their own INTERVAL pace; HM 2,376 of 2,592 — the distance everyone believed was bounded.** Live: a declared beginner, no benchmark, 20 km/wk, longest run ever 10 km, 4:00:00 target → **36 MINUTES CONTINUOUS at 5:34–5:48 /km, `Zone 4–5`, 163–187 bpm, and 187 IS their stored max.** 🏃 **The chair narrowed his own binding note rather than reversing it:** he refused deriving a PERCENTAGE from an estimate; Am. 1's mechanism quotes nothing and asks only whether the plan is about to prescribe work faster than the paces this same plan prescribes — Am. 3's own test, applied to a plan whose currency is an estimate. ✅ **Everything measured held:** 0 refusals flipped, 0 session counts changed, prescribed minutes median **−0.16%** (worst −1.26%, **2,304 UP**), km median −0.46%; the new invariant falsified **at its owner, 400 of 400 fire, 0 restored**. 🔴 **⚕️ SIMS' CONDITION RESTED ON A FALSE CLAIM OF MINE:** I told the board that extending the bound would make the withholding SILENT at four distances. **§44 Am. 2 (`GOAL-PAST-CV-SILENT-01`) already existed for exactly this cohort** — the item's own name is the silence it closed — so the fix was to widen the arm that renders it, never a second sentence. Measuring both halves found **2,160 newly-withheld plans taking the interval-band arm** and being told *"race-pace sessions will bite harder than the interval work"* on plans with **no race-pace session** (McMillan's own forbidden sentence, same sitting) and **1,440 more saying nothing** behind `constrained_by_inputs`; after both, **6,192 of 6,192 carry it and 0 read `comfortable`.** 🔴 **AND 🩹 WILLY'S CLEARANCE — *"the fix only ever makes a session easier"* — IS WITHDRAWN, BECAUSE IT WAS MINE TO CHECK.** §47's peak long-run step-back fires only on a race-paced peak long run and its trigger reads a **LABEL** (`label.includes('pace')`) — the pattern ADR-018 and the pre-commit hook exist to kill — so withholding turns a **load** rule off on **10,704 peak long runs**. ⚠️ **I reported that as not a regression and was wrong twice:** 6,960 are 5K/10K, which §47's own comment excludes by name, but **3,744 are beginner HM and marathon plans and `PEAK-LR-STEPBACK-MINUTES-01` exists because Willy found *"a beginner never received a peak long-run step-back week"*** — its fixture is an unbenchmarked beginner, **green only because §22's override labelled their long run race-paced.** 🔑 **The regression is the one he already fixed once, and his own test caught it where no measurement of mine had looked.** 📍 **Blocker filed: `STEPBACK-TRIGGER-STRUCTURAL-01`** — label and `lr_segment_pace` **agree on all 92,384** peak long runs, so moving the trigger onto the stamp is zero-delta, and it does **not** close the item: a withheld plan has neither signal, and §24b gives beginners no segment while they are the cohort §47 is for. 🔑 **Holding leaves a live over-prescription in place, which is the cost; shipping a load regression onto first-time beginner marathoners is the one this board would refuse.** 🔴 **Four of my own premises died today — two items I filed this morning and two conditions a board accepted — and all four were found by re-deriving or by running something, never by reading.**
 
 **🩹 Same day — `STEPBACK-TRIGGER-STRUCTURAL-01`: A LOAD RULE FOR INJURY-PRONE BEGINNERS WAS GATED ON WHETHER A STRING CONTAINED THE WORD "PACE", AND THE THING THAT FOUND IT WAS A BUILD I HAD JUST THROWN AWAY.** (last ship `49704c66`, after `87fcffd5` and `9f90d52d`. **813 files / 8,354 tests, ALL GREEN**; `tsc` 0; `verify:parity` **IDENTICAL, 6,210 cases**; `cohort:shape` and `measure:fitness` baselines **unmoved**; `audit-docs.sh` ALL CLEAN; `backlog:verify` 0 with **81 open · 34 COACHING · 13 DESIGN · 13 ⚙️ · 13 SLT · 8 FOUNDER**.) ✅ **PART 1 SHIPPED:** §47's plan-level gate `anyPeakIsRacePace` grepped `label.includes('pace')`; it reads the producer's `lr_segment_pace` stamp now — ADR-018 / INV-CLASS / D-17, and the same move §47 **Am. 3** already made for the step-back week. 📐 **Zero-delta three ways: the stamp and the label decide the gate identically on all 39,744 generated plans (0 disagreements either way) and agree session-by-session on all 92,384 peak long runs.** ⚠️ **And a zero-delta refactor still needed a SOURCE arm, which is the lesson:** that very agreement means every behavioural arm stays green if someone puts the label back, so the gate's test reads `ruleEngine.ts` and also asserts the old `labelHasRacePace` helper is **deleted** rather than left beside the new code. Reverting the gate fails 2 of 4 arms. 🔴 **THE HAZARD IS WHY IT MATTERS: any change to a long run's LABEL switched a load rule off in silence**, and `GOALPACE-UNBENCHMARKED-MARATHON-01` does exactly that on **10,704 peak long runs, 2,304 of them unbenchmarked beginners** — the cohort §47 **Am. 1** exists for (🩹 Willy, 2026-09-13: *"a beginner never received a peak long-run step-back week"*). ⚠️ **`PEAK-LR-STEPBACK-MINUTES-01`'s own fixture is an unbenchmarked beginner, green only via that label — the test that proved the bug is sitting on the bug.** 🔑 **AND THE ROOT CAUSE INVERTS THE OBVIOUS FIX:** `buildFallbackPace('beginner')` has **MP and HM null** (§24b), so an unbenchmarked beginner's *"Long run with HM-pace finish"* is priced at their **GOAL** pace — **1,728 of 2,592 HM and 576 of 1,152 marathon** peak long runs — the pace measured as faster than their own interval pace on a third of the cohort. 🩹 Willy: *"we are not protecting a load, we are rationing one."* 🔻 **So the sitting SPLIT:** part 1 ships, and the scope question (`STEPBACK-SPECIFICITY-SCOPE-01` — (a) 0 plans but Am. 4 dies · **(b) +3,456 plans and Am. 4 lives** · (c) unmeasured) plus the pricing gap (`LR-FINISH-WITHHELD-PRICING-01`) go back to the chair with numbers, because McMillan's standing condition is `measure:fitness` and `cohort:shape` on each. 🔴 **I STATED THIS POPULATION WRONG THREE TIMES IN ONE SESSION AND A SCRIPT CAUGHT IT EVERY TIME:** *"the HM is bounded"* (2,376 of 2,592 past CV) · *"not a load regression, §47 excludes 5K/10K"* (**its COMMENT does; the code never did** — §25 prices their finish at goal pace, so benchmarked beginner 5K is 1,728 of 5,184) · and a ruling clause scoped to *"time-target HM and marathon"* that would have **NARROWED §47**. 🔑 **Each time I reasoned from the nearest written sentence, and the written sentence is the thing most likely to have rotted.**
+
+**🏃 Same day — RELEASE A OF THE FOUNDER'S INTENSITY BRIEF: I RULED A NUMBER IN THE AFTERNOON THAT MY OWN PRINCIPLE HAD DECLINED TO EVIDENCE NINE DAYS EARLIER.** (**814 files / 8,359 tests, ALL GREEN**; `tsc` 0; `verify:parity` **IDENTICAL, 6,210 cases**; `invariant:liveness` 166/169 woken, 3 UNPROVEN unchanged; `audit-docs.sh` ALL CLEAN; `backlog:verify` 0 with **82 open · 32 🏃 · 14 🧭 · 15 ⚙️ · 13 💼 · 8 👤**.) 🔑 **THE SETTLED-GROUND SCAN IS THE CHEAPEST STEP IN THE BUILD PROCEDURE AND IT IS THE ONE I KEEP HALF-DOING.** §10 already carried **`VDOT-STALENESS-CURVE-01` (Coaching Board 2026-11-07)**: the staleness ramp's **shape** is **INSUFFICIENT EVIDENCE**, re-open trigger **20+ benchmarked runners with ≥ 8 weeks of logged runs — measured 10**; 📊 Seiler allowed the number *"provided this section stops presenting it as measured"*; 🩹 **Willy's protective direction is recorded as "a TIEBREAK, not a reason, so it is never later cited as evidence"** — and the afternoon's sitting cited it as a reason. **Both numbers VACATED: the ceiling stays 7% and the 26-week prompt goes with it.** ⚠️ **Two conflict scans missed this because they named §10 and not its AMENDMENTS**, which is the failure mode printed at the top of `coaching-rulings.md`. ✅ **WHAT SHIPPED IS THE HALF THAT NEEDS NO NUMBER: `BENCHMARK-DATELESS-FRESH-01`.** 8 of 23 live benchmark plans carry **no date** — the founder's 2026 plan on a 2024 10K among them — and keep §10's **3% base**, its least conservative figure, for the runner it knows least about. 🔴 **THE OBVIOUS FIX WAS BUILT, MEASURED AND REVERTED THE SAME DAY.** Giving it the ramp's ceiling fails three ways: the curve is unevidenced (above); 📐 **all 8 dateless plans were built within 143 DAYS, six within 54**, and the ceiling is the **964-day** figure, so it is wrong **IN FACT** for six of eight; and ⚕️ Sims — it penalises a runner for a field the product never required. ⚠️ The plan's own build date bounds the age **from below only**, so it cannot price it either. 🔑 **So the engine invents nothing and the plan DECLARES the unknown** (`INV-PLAN-VDOT-DISCOUNT-DATELESS`, `warn`); **no numeric moved and parity is IDENTICAL.** The real remedy was routed out as 🧭 `BENCHMARK-DATE-REQUIRED-01` — `benchmarkFromFields` does `v.date ? { benchmark_date: v.date } : {}`. ⚠️ **199 TESTS WENT RED ON THE FIRST FIX AND I NEARLY TREATED THAT AS A COACHING ARGUMENT.** Its right use was as a prompt to re-ask whether the rule was right, not a cost to work around by patching 46 fixtures — and re-asking is what produced the `generated_at` query that settled it. 🔴 **AND THREE TIMES TODAY I READ A DATABASE COLUMN WHERE I SHOULD HAVE ASKED THE MODULE THAT OWNS THE QUESTION:** `strava_activity_id` instead of the HealthKit join · `meta.fitness_level` instead of the level the catalogue gate reads · `user_settings.max_hr` instead of `resolveMaxHr`, **which already floors a sub-estimate max and made my headline 10-bpm finding void** — asked through the owner it is **3 runners at +6, +1, +1**, so `MAXHR-RECENCY-01` is withdrawn from the release. ⚠️ **Declared limit: 0 of 39,744 corpus plans can reach the new invariant** (`cohortGrid`'s only benchmark is dated) against 8 of 23 live → `CORPUS-DATELESS-BENCHMARK-01`; and `invariant:liveness` reports it WOKEN while **which corpus wakes it was not traced**, which is stated rather than claimed. 🔻 **Filed, not built: `BENCHMARK-DATE-REQUIRED-01` · `MAXHR-AGE-ABSENT-01` (6 of 24 runners have no age, so §50's guard cannot run) · `CORPUS-DATELESS-BENCHMARK-01`.**
 
 **Prior — state at END of 2026-11-15 — W9: THE ARITHMETIC WAS RIGHT AND THE CONCLUSION WAS WRONG** (last ship `a9891daa` — `ACT-REPORTED-DISTANCE-DOOR-01`, with `7d1486e8` — after `254f679e`. **804 files / 8,283 tests, ALL GREEN** (`VITEST EXIT: 0`, unpiped); `tsc` 0; `audit-docs.sh` ALL CLEAN; `backlog:verify` 0 with **72 open · 24 COACHING · 19 DESIGN · 9 ⚙️ NO BOARD · 13 SLT · 7 FOUNDER**.) ✅ **CLOSED AS NOT A DEFECT, with a gate.** The item held the add-distance door unreachable for a zero-distance run, because a run with no distance *"can never reach 70 points"* on a distance-primary day. 🔴 **Correct arithmetic, wrong constant: 70 is the HIGH threshold and `resolveAutoMatch` surfaces MEDIUM too** (`AUTO-MATCH-02`, same handler, softer framing). 📐 **Measured by RUNNING the matcher: 50 with HR under 155, 40 without, an offer in both cases; the control with a real 8.1 km reaches high**, so the distance band is what moved, not the offer. 🔴 **And a second route has no scoring at all** — the picker filters on date and claimed ids only, because `rankLinkCandidates` ranks without filtering. 📐 **Production, read-only: 88 of 501 zero-distance (filed as 87 of 489), same 5 users, EVERY ONE a `Run`, 31.3 min mean — 0 distances ever typed and 0 of the 88 EVER LINKED**, which is why the door has never opened: nobody made the link, rather than the link being prevented. ✅ 4 arms, falsified against the three ways the trap could open (raise the threshold · gate the weekday points on distance · make the picker filter) — the fourth is the HIGH control and fires on none, deliberately. ⚠️ **MY FIRST PROBE REPORTED "no offer" FOR EVERY CASE INCLUDING THE CONTROL, which is what caught it:** the fixture omitted `type: 'Run'`, so I had measured my own fixture. **A control that fails tells you the harness is wrong.** 🔴 **AND THE REVIEW FOUND I HAD TESTED THE EMPTY BRANCH.** The item's own line says *"0 of the 87 land on a distance-primary planned day; all five planned-day cases are duration-primary"* — and all four of my arms were distance-primary: **four green arms describing a cohort of zero.** 📐 **The live shape is stronger:** the **duration** band scores where the distance band cannot, so a zero-distance 31-min run on a 30-min plan reaches **70 — high — with no HR needed**, and `autoAnalyse` **silently auto-links** it. **No tap; the door opens by itself.** ⚠️ Three more, all mine: the picker arm covered half the picker (the real narrowing is inline in the component, and a `distance > 0` clause there reopened the trap with every arm green), my block orphaned another describe's header, and my control varied two axes. ✅ **6 arms, live shape first**, falsified three ways. 🔻 **Stated rather than filed:** the door is reachable and never used — a product question with nothing to measure it (5 users, no analytics, Traynor's seat stood down).
 

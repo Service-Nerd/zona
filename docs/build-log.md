@@ -6,6 +6,22 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-11-16 — BENCHMARK-DATELESS-FRESH-01 · I ruled a number in the afternoon that my own principle had declined to evidence nine days earlier
+**Shipped:** an undated benchmark now declares that its age is unknown, instead of being silently priced as the freshest possible evidence. No number changed.
+
+**Dev learning:** the settled-ground scan is the cheapest step in the build procedure and it is the one I keep half-doing. I scanned "§10" twice today and ruled a ceiling increase; §10's own `VDOT-STALENESS-CURVE-01` amendment, nine days old, had already held that curve to be insufficiently evidenced and named a re-open trigger. The register's own preamble says most of this constitution's content is now in amendments and a scan that stops at `## §N` is not a scan. Mine stopped there, twice, on the same section.
+
+**Product/creator learning:** the first fix I wrote was defensible in principle and wrong in fact. Giving a dateless benchmark the staleness ceiling treats it as 964 days old; all eight live dateless plans were built within 143 days, six within 54. The measurement that settled it took one query against `generated_at` and I ran it only because 199 tests went red and made me stop. If the fix had been cheap to ship I would have shipped it.
+
+**AI-building learning:** 199 failing tests is not a coaching argument, and I nearly treated it as one. The right use of it was as a prompt to re-ask whether the rule was right, not as a cost to work around by patching 46 fixtures. The honest answer turned out to be that the engine has no information to price with — so the fix is to ask the runner for the date, which is a design question, not a coaching one.
+
+**The honest bit:** three separate times today I read a database column where I should have asked the module that owns the question. `strava_activity_id` instead of the HealthKit join. `meta.fitness_level` instead of the level the catalogue gate reads. `user_settings.max_hr` instead of `resolveMaxHr`, which already floors a sub-estimate max and made my headline 10-bpm finding void. Same error, three shapes, one day.
+
+**Hook material:** I raised a training-pace discount from 7% to 10%, then found the note in my own doctrine, written nine days earlier, explaining why that number has no evidence behind it. The re-open trigger needed 20 runners. We have 10.
+
+**Postable?:** yes
+
+
 ## 2026-11-16 — STEPBACK-TRIGGER-STRUCTURAL-01 · the load rule was switched off by a string, and the thing that found it was a change I reverted
 **Shipped:** §47's plan-level step-back gate now reads the producer's `lr_segment_pace` stamp instead of grepping the session label for the word "pace".
 

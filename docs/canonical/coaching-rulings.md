@@ -3740,3 +3740,75 @@ the label**, so the test that proved the bug is sitting on the bug. It is unchan
 ### ↗️ SLT escalation
 
 **None.** Part 1 changes no plan today; parts 2 and 3 are coaching scope, not commercial.
+
+---
+
+## 🏃 Re-sitting — the staleness numbers, same day (2026-11-16): **MY CEILING RULING IS VACATED. §10 ruled this curve INSUFFICIENT EVIDENCE nine days ago and neither of my conflict scans found it.**
+
+**Convened by the architect at the start of the build, on the settled-ground scan.** Nothing had been built.
+
+### 🔴 What the scan found
+
+**§10 carries `VDOT-STALENESS-CURVE-01` — this board, 2026-11-07, INSUFFICIENT EVIDENCE — on precisely the
+curve I extended this afternoon.** It records that the 1%-per-4-week shape *"has no citation"*; that
+📊 **Seiler allowed the number to stand only "provided this section stops presenting it as measured"**;
+that 🩹 **Willy offered the protective direction "as a TIEBREAK, not a reason, recorded so it is never
+later cited as evidence"**; and ⚕️ **Sims' objection that "who races infrequently is not random … a
+penalty for not having RACED is not a penalty for having DETRAINED, and the ramp cannot tell them
+apart."** It names a re-open trigger: **20+ benchmarked runners with ≥ 8 weeks of logged runs each.**
+
+📐 **Measured at the start of this build: 10.** Weeks-of-runs across the 23 benchmarked runners:
+`30 · 14 · 11 · 11 · 10 · 9 · 9 · 8 · 8 · 8 · 7 · 6 · 4 · 3 · 3 · 2 · 0×7`.
+
+🔴 **So raising the cap 7% → 10% extends an unevidenced curve further on no new evidence, and the
+afternoon's sitting cited Willy's protective direction as a reason — which the 11-07 ruling explicitly
+forbids.** My conflict scans named *"§10/§42 take the staleness numbers"* and found none of this.
+**A scan that names a section is not a scan of its amendments**, which is the rule at the top of this
+register, broken by the author of today's other four corrections.
+
+### ⚖️ Ruling
+
+**1. VACATED: the ceiling stays `VDOT_STALENESS_MAX_DISCOUNT_PCT = 7`.** 🏃 Hutchinson: *"I framed the
+ramp as a bound on what the engine may ASSUME. That framing permits the bound to stand; it does not
+permit me to widen it because a wider one feels safer. The trigger is 20 and we have 10."*
+
+**2. VACATED with it: the 26-week prompt.** It is a new number on the same curve, and ⚕️ Sims' objection
+bites hardest there — a prompt aimed at an age band is still the engine acting on a shape it cannot
+evidence. **It returns when the trigger does.**
+
+**3. CORRECT, and it needs no new numeric: an undated benchmark takes the ramp's existing CEILING.**
+`applyVdotDiscount` ramps only `if (b.benchmark_date)`, so a dateless benchmark receives §10's **3%
+minimum** — the least conservative figure the engine applies to anything — for the runner it knows
+least about. 📐 **8 of 23 live benchmark plans carry no date**, the founder's 2024 10K among them.
+This is a defect against §10's own documented intent and it is settled by reading an existing ratified
+constant rather than choosing a value. 🩹 **Willy's protective direction is admissible HERE and only
+here, because this is a tiebreak between two existing ratified values and not a claim about a curve** —
+which is the use the 11-07 ruling reserved for it.
+
+**4. 🔑 AND THE REAL REMEDY IS UPSTREAM, NOT IN THIS BOARD'S GIFT.** `benchmarkFromFields` does
+`v.date ? { benchmark_date: v.date } : {}` — **the wizard asks for the date and does not require it**,
+inside a step already marked optional (*"Recent race result? … Skip if you haven't raced lately."*).
+⚕️ **Sims, and it is her objection answered rather than overridden:** *"you are not penalising these
+runners for failing to race, you are declining to assume a race was recent when nobody told you.
+That is defensible. What is not defensible is asking the question, accepting a blank, and then pricing
+the blank. Require the date."* → **`BENCHMARK-DATE-REQUIRED-01`, 🧭 Design Board then 👤 founder** —
+asking *"when?"* is interaction and copy, not coaching, and a runner who cannot remember must have an
+honest way through.
+
+**5.** ⏸️ **`MAXHR-RECENCY-01` withdrawn from this release by the architect, on its own
+re-measurement** — see the item. The board's 26-week window stands unused; there is nothing for it to
+act on.
+
+### 📦 Required artifacts
+
+| | |
+|---|---|
+| **Principle** | **§10 Amendment** — an undated benchmark is an undated benchmark, not a fresh one: it takes the ceiling. Two sentences, and it cites `VDOT-STALENESS-CURVE-01` so the next reader finds the evidence state before the number |
+| **Numeric** | **none** — `VDOT_STALENESS_MAX_DISCOUNT_PCT` (7) already exists and is already read |
+| **Invariant** | `INV-PLAN-VDOT-DISCOUNT-DATELESS` (`error`) — a plan whose benchmark carries no date records the ceiling discount |
+
+### ↗️ SLT escalation
+
+**None.** 🔻 **For the founder, not the SLT:** this reprices **8 live plans from 3% to 7%** — about
++21 s/km on easy paces at VDOT 41 — and **his own plan is one of them**. Per ADR-014 the migration is
+prompted and confirmed, never silent.

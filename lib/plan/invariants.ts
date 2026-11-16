@@ -165,6 +165,7 @@ export const INVARIANT_CODES = [
   'INV-PLAN-SHORT-OPENING-BLOCK-DECLARED',
   'INV-PLAN-GOAL-PAST-CV-DECLARED',
   'INV-PLAN-GOAL-PACE-REACHABLE',
+  'INV-PLAN-VDOT-DISCOUNT-DATELESS',
   'INV-PLAN-GOAL-BELOW-EASY-DECLARED',
   'INV-PLAN-STRIDES-PRESENT',
   'INV-PLAN-STRIDES-NO-CARRIER',
@@ -9662,6 +9663,38 @@ export function validatePlan(plan: Plan, rawInput: GeneratorInput): Violation[] 
       }
     }
   }
+
+    // ── INV-PLAN-VDOT-DISCOUNT-DATELESS (§10 Amendment, Coaching Board 2026-11-16) ──────────────────────
+    //
+    // 🔑 IT DECLARES AN UNKNOWN; IT DOES NOT DEMAND A NUMBER. A benchmark with no date gives the
+    // engine no information about the race's age, so every pace on the plan rests on an unknown and
+    // the plan should SAY SO (§34's declared-residual pattern) rather than have a figure invented.
+    //
+    // 🔴 WHY IT IS NOT AN `error` DEMANDING THE CEILING — which is what the first cut of this
+    // amendment built, before it was measured and reverted the same day: §10's
+    // `VDOT-STALENESS-CURVE-01` (2026-11-07) holds the ramp's SHAPE to be INSUFFICIENT EVIDENCE,
+    // and measured on production **all 8 dateless plans were built within 143 days, six within
+    // 54** — so the ceiling (a 964-day figure) is wrong IN FACT for six of eight, not merely
+    // unevidenced. The plan's own build date bounds the age from BELOW only, so it cannot price it
+    // either.
+    //
+    // 📐 8 of 23 live benchmark plans carry no date, the founder's 2026 plan on a 2024 10K among
+    // them. The real remedy is upstream: `benchmarkFromFields` asks for the date and does not
+    // require it (`BENCHMARK-DATE-REQUIRED-01`, Design Board then founder).
+    {
+      const b = input.benchmark
+      const applied = plan.meta.vdot_discount_applied_pct
+      if (b && !b.benchmark_date && typeof applied === 'number') {
+        violations.push({
+          code: 'INV-PLAN-VDOT-DISCOUNT-DATELESS', principle_ref: 'CoachingPrinciples §10 Am.',
+          severity: 'warn', week: 0,
+          message: `This benchmark carries no date, so §10's staleness ramp cannot run and every pace rests on an unknown age. The plan is priced at the ${applied}% base.`,
+          actual: 'a benchmark with no date',
+          expected: 'a dated benchmark, or the unknown declared',
+        })
+      }
+    }
+
 
   // ── GOALPACE-5K-01 (Coaching Board 2026-10-23) ─────────────────────────────────────────────────────
   // A 5K beginner was prescribed 21 minutes CONTINUOUS at goal pace with a threshold HR band, and every
