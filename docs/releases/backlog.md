@@ -2261,6 +2261,134 @@ END of the migration, as a ratchet, not at the start.
 
 ---
 
+### 🔲 `THRESHOLD-BAND-ANCHOR-01` — the whole threshold complex shares one HR band, and it is the wrong one 🏃 **COACHING BOARD** ruled 2026-11-16 → 🧭 **DESIGN BOARD** ruled → ⚙️ build
+
+**ADR-026. Founder approved the direction 2026-11-16** ("one derived band, not five"). **Blocked on three conditions
+and on `COMPLETION-ACTIVITY-JOIN-01` landing first.**
+
+📐 `computeZones` can express **four** HR bands and `hrBandFor` can return four; **nine threshold/tempo catalogue rows
+map to one of them** (`qualityHR` = Z3, 70–80% HRR). **169 threshold sessions / 23 live plans, 164 carrying
+`Zone 3`.** Across 28 plans the product shows **5.36 names, 2.36 paces, 1.18 HR bands**.
+
+🔑 **The threshold floor IS the easy ceiling, by construction** — `z2Top` and `z3Low` are the same number, so a hard
+session's prescription begins exactly where easy running ends. Hutchinson said so in September (§84 Am. 1); it is now
+measured on every persona.
+
+📐 **Evidence: 29 runs at the prescribed threshold pace spend 51% of time above the prescribed ceiling**, peaks 13 bpm
+over. ⚠️ **The whole-activity average says the opposite** (159 bpm / 75% HRR, inside the band) because it is diluted by
+warm-up and cool-down. Time-in-zone is the instrument.
+
+**The fix:** the HR band is derived from the pace anchor the session already uses (`T`, 0.83–0.88 of VO2max) through
+%HRR ≈ %VO2R, and the zone label is read off the zone table from the result. One derivation, so the two prescriptions
+cannot disagree. Russ: `Zone 3` 144–158 (14 bpm) → `Zone 4` **160–167** (7 bpm). **No pace moves.**
+
+🔴 **Conditions (binding):** (1) resolve the threshold/interval overlap → `THRESHOLD-INTERVAL-OVERLAP-01`;
+(2) beginners excluded → `BEGINNER-THRESHOLD-ELIGIBILITY-01`; (3) **`INV-PLAN-PACE-ZONE-COHERENT` amended in the same
+commit** or the release goes red — it asserts `'threshold zone (Z3)'` and would fire on correct plans.
+
+⚠️ **Migration is prompted, never silent** (ADR-014's precedent, not ADR-012's — see `ADR012-INTENSITY-TERM-01`).
+`applyHrToPlan` is the tool and is already the single owner. 164 sessions, 23 plans, 10 public plan pages.
+
+---
+
+### 🔲 `COMPLETION-ACTIVITY-JOIN-01` — a completion never joins to its activity, so no prescribed session has ever had an HR ⚙️ **NO BOARD**
+
+**Sequenced FIRST** by the Coaching Board 2026-11-16, satisfying 🩹 Willy's condition on
+`THRESHOLD-BAND-ANCHOR-01`.
+
+📐 **161 live completions, `strava_activity_id` null on ALL of them.** So the clean measurement — *what did the
+runner's heart do during this prescribed session* — has never been possible. **6 threshold sessions have ever been
+completed, by 2 runners, 1 with an average HR**, against **437 activities carrying HR and 373 carrying a full bpm
+histogram**. The data exists on one side of a join that is not made.
+
+🔑 **One defect blocking two questions:** it weakens the chair's evidence for the band change *and* hides Willy's
+denominator — *"this change makes the session harder only for the runners who were obeying the heart rate"*, and
+nobody can say how many that is.
+
+⚠️ Must be **source-agnostic** (ADR-011): never filter by `source`. Backfill where `apple_health_uuid` or
+date+distance identify the activity. Gate: a join-coverage measure, **baselined at today's 0**.
+
+---
+
+### 🔲 `BENCHMARK-STALENESS-CEILING-01` — the staleness ramp saturates at 16 weeks, and a dateless benchmark is treated as fresh 🏃 **COACHING BOARD** (two numbers to set)
+
+**Includes `BENCHMARK-DATELESS-FRESH-01`, which the founder bundled here rather than shipping alone (2026-11-16).**
+
+📐 Computed: the ramp is 3% at week 0, 4% at 5, 5% at 8, 6% at 12 and **7% at week 16 — and 7% for ever after**. A
+benchmark 3.7 months old and one five years old are priced identically. Live: 15 dated benchmarks, **7 at or past
+saturation, 5 older than 6 months, 2 older than 24 months, oldest 2024-03-27**, mean age 200 days.
+
+🔴 **And `applyVdotDiscount` ramps only `if (b.benchmark_date)`, so a dateless benchmark gets the 3% base — the
+minimum the engine applies to anything.** **8 of 23 live benchmark plans carry no date, including the founder's own
+10K 49:00 on a 2024 PB.** A benchmark with no date is being treated as the freshest possible evidence. ⚙️ That half is
+a defect against §10's own intent and needs no board number.
+
+**The board must set:** (a) the ceiling past 16 weeks; (b) **the age at which a discount becomes a prompt instead** —
+beyond some age a percentage is dishonest arithmetic on an unknown. Reuses `RECALIBRATION_TIME_TRIAL`,
+`applyRecalibration` (ADR-014) and `BenchmarkAbsentTile`. ⚠️ Consider routing a dateless benchmark to §109's
+**estimate** path rather than treating it as a measurement.
+
+---
+
+### 🔲 `MAXHR-RECENCY-01` — the max-HR source has no observation date 🏃 **COACHING BOARD** (one number to set)
+
+`resolveMaxHr` implements §50's asymmetry well, but `MaxHrSource` is `observed | user_confirmed | undefined` and
+carries **no date**, so a max observed 18 months ago is trusted exactly like one from last week and a runner whose
+fitness has moved is priced off a stale ceiling with no ramp and no prompt. Proposed precedence: **user-confirmed →
+observed in window → observed stale, noted → age estimate**. Data exists (`strava_activities.max_hr`,
+`health_daily_samples`). Extends §50/L-03.
+
+---
+
+### 🔲 `THRESHOLD-INTERVAL-OVERLAP-01` — fixing threshold exposes that the interval floor is the same number 🏃 **COACHING BOARD**
+
+**Condition 1 on `THRESHOLD-BAND-ANCHOR-01`, blocking.** The proposed threshold floor (160 bpm for a VDOT-41 runner)
+is **above** the current interval floor (158), because `intervalsHR` is `z4Low–max` and **`z4Low` is the same number
+as `z3Top`**. Threshold would sit inside intervals.
+
+Today the bands are contiguous and tidy — threshold ends at 158, intervals begin at 158 — **and that tidiness is the
+artefact of both being wrong in the same direction.**
+
+📊 Seiler, blocking: *"two bands of different kinds is a real distinction; two bands that overlap by accident is a bug
+waiting to be found by a runner."* **Either raise the interval floor toward the CV/I region, or ratify
+steady-state-vs-ramp as doctrine** — threshold is narrow because HR plateaus; an interval band is wide because HR
+climbs through each rep. The engine treats them identically today. **Option 2 is probably right and needs writing
+down rather than leaving as an accident.**
+
+---
+
+### 🔲 `BEGINNER-THRESHOLD-ELIGIBILITY-01` — a VDOT-16 runner is being prescribed threshold work 🏃 **COACHING BOARD** (§24b)
+
+**Condition 2 on `THRESHOLD-BAND-ANCHOR-01`.** 📐 **13 of 25 beginner plans carry threshold sessions, and the lowest
+VDOT receiving threshold work is 16.2** — a runner whose benchmark is a 7:40 marathon.
+
+🎯 McMillan: *"a 7:40-marathon runner at 164–172 bpm is not a tempo session, it is a hard day they did not ask for.
+Whatever this board rules for trained runners, I want beginners excluded until §24b has looked at whether they should
+be receiving these rows at all."* ⚕️ Sims concurs for a second reason: raising prescribed intensity for a low-fitness
+cohort without raising fuelling guidance is how low energy availability is found.
+
+⚠️ **The cohort least able to absorb an over-hard prescription is on the same single band as everyone else**, and for
+them the band change is the **largest relative** move. The finding the Coaching Board would least like left open.
+
+---
+
+### 🔲 `ADR012-INTENSITY-TERM-01` — the reshape authority model would have applied a +16 bpm change silently ⚙️ **NO BOARD** to measure; 🏃 **COACHING BOARD** if the threshold changes
+
+Found 2026-11-16 while designing `THRESHOLD-BAND-ANCHOR-01`'s migration. **ADR-012's magnitude test has no term for
+intensity.** Its structural triggers are day-of-week moves, session-type swaps, >15% trims and >15% week-volume
+changes; anything below them **auto-applies silently**.
+
+A heart-rate band moving **+16 bpm** moves no day, swaps no session and changes no volume, so **ADR-012 as written
+classifies it as sub-threshold and applies it silently** — which is exactly the class of surprise it exists to
+prevent. 🔬 Wood: *"a system that can move a prescription without telling anyone will eventually move one that
+matters."*
+
+⚠️ **This is a finding about ADR-012, not about the band.** The band's own migration follows ADR-014's precedent
+instead (prompted and confirmed, never silent). Left unfixed, the next prescription change of this shape ships
+silently too.
+
+---
+
 ### 🔲 `TUNE-UP-CALLOUT-INERT-01` — a tune-up race suggestion on 33 live plans that no runner can see 🧭 **DESIGN BOARD** → 💼 **SLT**
 
 📐 **Found 2026-11-16 measuring `RACE-NOTES-INERT-01`; it is the sibling field in the same `weeks.push` block.**

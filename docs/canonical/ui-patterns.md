@@ -1429,6 +1429,37 @@ Integration: `DashboardClient.tsx` → `AdjustmentBanner` wrapper (owns API call
 Diff utility: `lib/coaching/diff/sessionDiff.ts` (pure)  
 Summary validator: `lib/coaching/diff/validateAiSummary.ts` (pure)
 
+#### 10a. The band-change notice — a `PendingAdjustmentBanner` variant (`THRESHOLD-BAND-ANCHOR-01`, Design Board 2026-11-16)
+
+🟡 **RULED, NOT BUILT.** The pattern is settled; the build is gated on the Coaching Board's three conditions
+and on `COMPLETION-ACTIVITY-JOIN-01`. Recorded now so the ruling is not prose — see `design-rulings.md` and ADR-026.
+
+**When a prescription changes for every runner at once** — not because their plan was reshaped, but because the
+engine's own rule was corrected — the notice is **this component, not a new screen**.
+
+| Rule | Why |
+|---|---|
+| **Reuse `PendingAdjustmentBanner`** | 📱 Wroblewski: it already carries *"the plan changed, here is what and why"* with a confirm/decline shape. A bespoke screen is a second back path to get wrong |
+| **It must not block the session** | A runner opening the app at 6am sees **the session first**. The notice sits under it. Never an interstitial, never a modal (modals are destructive-only) |
+| **Once per runner, not once per card** | 164 sessions across 23 plans is **one decision each**. A per-session notice is 164 notices |
+| **Lead with the new number** | ✋ Silvanto: what matters now is Tuesday's target. The reason is the second line, not the first |
+| **Inset, no new ground** | `--bg-soft` + one hairline, per the `--surface-moss-wash` kill. No tint, no fourth ground |
+| **Old and new side by side** | 🔬 Wood: *"an unexplained cue change does not produce a new habit, it produces abandonment of the old one."* The runner has a habit built on a number; show both |
+| **No celebration** | No streak, no badge, no *"you hit your new zone"*. The number needs to be right, not rewarded |
+
+⚠️ **Declining must leave the plan as it is.** The migration follows ADR-014's precedent (prompted and confirmed,
+never silent), **not** ADR-012's magnitude test — which has no intensity term and would have applied this silently.
+
+🔴 **The education copy is part of this pattern, not downstream of it.** `ZONE_COPY` is keyed
+`Z1 / Z2 / Z3 / Z4-5 / Z5`, and `zoneCopyByNumber(4)` returns the **`Z4-5`** entry. A tempo session labelled `Zone 4`
+therefore resolves to *"Hard. Genuinely hard. Intervals, hill reps, fast finishes. You can't talk."* 👥 Sierra:
+**that is not their session, and teaching the wrong distinction is worse than teaching none.** A `Z4` entry
+describing sustained threshold work ships in the same release, held by `zoneCopyReach.test.ts`.
+
+🔻 **Unmeasured, and stated rather than assumed:** `Zone 3–4` is four characters longer than `Zone 3` in a Today
+eyebrow that already carries the week and the date, and **nothing has run on a device.** Measure at 375pt before
+release (Silvanto, advisory).
+
 ---
 
 ### 10b. Move-confirmation row (PlanCalendar)

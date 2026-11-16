@@ -531,6 +531,30 @@ engine's real base-build block for someone who has never run. Both boards sat. �
 2026-10-25 and the site never said so. 🏃 **New for the Coaching Board: `STAGED-HM-DOOR-01`** — a never-run runner is
 staged into a marathon and **refused a half**, at every runway from 12 to 30 weeks.
 
+### 🏃 ENGINE — the intensity model (ADR-026, boards sat 2026-11-16; founder approved the direction)
+
+**2026-11-16, read-only analysis on a founder brief naming five suspected defects: three confirmed, one real in a
+different shape, one refuted.** 📐 `computeZones` can express **four** HR bands and **nine threshold/tempo catalogue
+rows map to one of them** — across 28 live plans the product shows **5.36 session names, 2.36 paces, 1.18 HR bands**.
+📐 **29 runs at the prescribed threshold pace spend 51% of time above the prescribed ceiling**, peaks 13 bpm over.
+🔑 **§84 Amendment 1 found this on 2026-09-04 and recorded INSUFFICIENT EVIDENCE, naming what was missing; the data
+now exists.** ⚠️ **The brief's own remedy was rejected on measurement** — a zone per session type maps easy to 55–72%
+HRR and breaches §12. Sequence: the completion join first (Willy's condition), then the band, then freshness.
+
+| Item | Status | Size | Note |
+|---|---|---|---|
+| ⚙️ **A completion never joins to its activity** (COMPLETION-ACTIVITY-JOIN-01) | 🔲 | S | **FIRST.** `strava_activity_id` null on **all 161** live completions, so no prescribed session has ever had an HR — against 437 activities carrying HR. **One defect blocking two questions**: the band's evidence and Willy's HR-follower denominator. Source-agnostic (ADR-011); gate baselined at today's 0 |
+| 🏃 **Threshold shares one HR band with everything** (THRESHOLD-BAND-ANCHOR-01) | 🔲 | M | **ADR-026, direction approved 2026-11-16.** Coaching Board CORRECT WITH AMENDMENT (3 conditions), SLT BUILD/FREE, Design Board SHIP WITH AMENDMENT. The band is derived from the `T` anchor so HR and pace are one derivation. Russ: `Zone 3` 144–158 → `Zone 4` **160–167**, band 14 → 7 bpm, **no pace moves**. 164 sessions / 23 plans; migration **prompted, never silent** |
+| 🏃 **Fixing threshold exposes the interval floor** (THRESHOLD-INTERVAL-OVERLAP-01) | 🔲 | S | **Condition 1, blocking.** `z4Low` IS `z3Top`, so the new threshold floor (160) sits above the interval floor (158). Raise the interval floor, or ratify **steady-state vs ramp** as doctrine. Seiler: *"two bands that overlap by accident is a bug waiting to be found by a runner"* |
+| 🏃 **A VDOT-16 runner gets threshold work** (BEGINNER-THRESHOLD-ELIGIBILITY-01) | 🔲 | S | **Condition 2.** **13 of 25 beginner plans carry threshold sessions, lowest VDOT 16.2** — a 7:40-marathon runner. §24b. The finding the board would least like left open |
+| 🏃 **Staleness saturates at 16 weeks; a dateless benchmark reads as fresh** (BENCHMARK-STALENESS-CEILING-01) | 🔲 | S | **8 of 23 benchmark plans carry NO date** — including the founder's 2024 PB — and get the **3% minimum**. Past week 16 everything is 7% for ever. **Two board numbers**: the new ceiling, and the age at which a discount becomes a prompt. Founder bundled the dateless half here 2026-11-16 |
+| 🏃 **The max-HR source has no observation date** (MAXHR-RECENCY-01) | 🔲 | XS | A max observed 18 months ago is trusted like one from last week. Extends §50: user-confirmed → observed in window → observed stale, noted → estimate. One board number |
+| ⚙️ **ADR-012 would have applied this silently** (ADR012-INTENSITY-TERM-01) | 🔲 | XS | Its magnitude test has **no intensity term**: +16 bpm moves no day, no session type and no volume, so it classifies as sub-threshold. Wood: *"a system that can move a prescription without telling anyone will eventually move one that matters"* |
+
+🔻 **Still open and not resolved by ADR-026: CD-1.** The 2026-10-02 falsification measured main-set **anchors** and
+never looked at heart rate; on that axis Collins' original sentence holds (`distinct_hr = 1` on every plan). After
+the band fix the engine still makes 2.36 pace distinctions while the product prints 5.36 names.
+
 ### 🏃 ENGINE — `STAGED-HM-DOOR-01` shipped 2026-11-06, four items filed
 
 **2026-11-06.** 🟢 **`STAGED-HM-DOOR-01` SHIPPED** — a never-run runner was refused a half at every runway while

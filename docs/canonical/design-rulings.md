@@ -25,6 +25,70 @@ so a **free** runner gets the name and the mark, not the line. Words founder-app
 with strength that week (Coaching Board). Check: `components/dashboard/phaseOnToday.markup.test.ts` (12 arms, five
 mutations falsified). Note: `docs/decisions/design-2026-10-26-phase-on-today.md`. Not felt on a device.
 
+## 2026-11-16 — `THRESHOLD-BAND-ANCHOR-01` · 🟢 SHIP WITH AMENDMENT. The education copy ships with the band, not after it
+
+| Ruling | |
+|---|---|
+| **The band-change notice reuses `PendingAdjustmentBanner`** | 🟢 **SHIP** — do not author a new screen |
+| **`ZONE_COPY` gains a `Z4` entry, in the same release as the band** | 🟢 **SHIP** — blocking, per Sierra |
+| **`Zone 3–4` as a displayed string** | 🟢 **STANDING** — an existing shape, no new primitive |
+
+**Record:** `ADR-026`. Coaching Board ruled first (CORRECT WITH AMENDMENT, three conditions); SLT ruled BUILD, FREE.
+This board owns only the education copy and the one notice surface — **not** the zone model, the session card or the
+Plan screen.
+
+### 🔍 Settled-ground scan
+
+**§84 label doctrine** — the proposal extends it (the label is derived one step further back), does not contradict it ·
+**`--surface-moss-wash` KILLED 2026-09-21** — binds the notice: if it needs emphasis it is an **inset**, `--bg-soft` +
+one hairline, no new ground · **No popups** — the notice is **not a modal**; modals are for destructive confirmations ·
+**MICRO-LABEL-DRIFT-01** — any micro-label takes its type from `MICRO_LABELS` · **Zone ranges are already supported**
+(`zone-rules.md:89` lists `"Zone 4–5"`, `zonesFromZoneString` parses ranges).
+
+🔑 **CD-1 is HALF-falsified, and this sitting supplies the other half.** The register records CD-1's premise as
+falsified on 2026-10-02 with 🎪 Collins withdrawing his framing — *"the engine does make the distinction… and I was
+wrong."* **That measurement was of main-set ANCHORS and never looked at heart rate.** Measured now: across 28 plans,
+**5.36 names, 2.36 paces, 1.18 HR bands** (`distinct_hr = 1` on every plan). 🎪 Collins: *"on that axis my original
+sentence was exactly true — the names change, the effort does not. I would like the register to carry that, not as
+vindication but because it currently says CD-1 is falsified and that is half a conclusion."* **CD-1 remains OPEN:**
+after this ADR the engine makes 2.36 distinctions and the product still prints 5.36 names.
+
+👥 **Sierra carried the blocking amendment.** `ZONE_COPY` is keyed `Z1 / Z2 / Z3 / Z4-5 / Z5` and
+`zoneCopyByNumber(4)` returns the **`Z4-5`** entry. So a runner on a 20-minute tempo labelled `Zone 4` taps it and
+reads *"Hard. Genuinely hard. Intervals, hill reps, fast finishes. You can't talk. You're counting down to the
+rest."* **That is not their session, and now they have learned something false about their own training** —
+`ZONE_COPY.Z3`'s *"Tempo — the pace you could just about hold for an hour"* is the entry that describes it, and the
+fix moves them off it. *"Teaching the wrong distinction is worse than teaching none."*
+
+📱 **Wroblewski:** reuse `PendingAdjustmentBanner` (it already has the confirm/decline shape for *"the plan changed,
+here is what and why"*); **the notice must not block the session** — a runner opening the app at 6am sees the session
+first; and **once per runner**, not once per card (164 sessions, 23 plans, one decision each).
+
+✋ **Silvanto: no veto** — the band changes its numbers, not its treatment, so nothing regresses. Two craft points: the
+notice **leads with the new number**, not the apology; and 🔻 **`Zone 3–4` is four characters longer than `Zone 3`** in
+a Today eyebrow already carrying the week and the date, **unmeasured at 375pt**. Advisory, not blocking. **Nothing in
+this analysis has run on a device.**
+
+🧭 **Zhuo's success condition, offered to both boards:** *after the change, a runner following the HR target and a
+runner following the pace target are doing the same session.* Today they are not, and it is observable from telemetry
+already stored.
+
+### ⚡ Recorded disagreement
+
+👥 **Sierra vs any sequencing that ships the band before the copy.** *Sierra moves if* the label stays `Zone 3–4` for
+everyone, so the existing tempo copy still applies; *the schedule moves if* any runner can reach a `Zone 4` label with
+`Z4-5` copy behind it.
+
+### 📦 Three artifacts
+
+**Pattern** — `ui-patterns.md`, the band-change notice as a `PendingAdjustmentBanner` variant: inset, under the
+session, once. **Token** — `ZONE_COPY['Z4']`, with `zoneCopyByNumber(4)` repointed. **Check** —
+`zoneCopyReach.test.ts`: every zone string `computeZones` can emit resolves to education copy that describes that
+work. **Falsifiable today**: `Zone 4` currently resolves to *"Intervals, hill reps, fast finishes"*, so it goes red
+before the copy exists and green after.
+
+---
+
 ## 2026-11-16 — `SITE-FRAME-TAXONOMY-01` · 🔴 DON'T SHIP. The filing counted exported names, not jobs — and withdrawn by the filing seat
 
 | Ruling | |

@@ -3271,3 +3271,62 @@ board: `npm run review:coaching`, all seven steps, envelope 94.6%, fitness ok, n
 ### ⇗ SLT escalation
 
 None. Nothing in this sitting turns on tier, price or build cost.
+
+
+---
+
+## Sitting — the intensity model, 2026-11-16
+
+**Trigger:** hard (`generationConfig.ts`, `CoachingPrinciples.md`, `zone-rules.md`). **Record:** `ADR-026`.
+Convened on a founder brief naming five suspected defects. ⚠️ **The brief routed Phase 3 to the SLT and the Design
+Board and did not route this board**; under ADR-017 it rules first and its INCORRECT is a veto.
+
+### 🔍 Conflict scan
+
+**§84 + Amendment 1** — this board's own 2026-09-04 INSUFFICIENT EVIDENCE, discharged not contradicted · **§1** not
+violated (Am. 1 settles that §1 governs easy runs drifting into Z3; and **CD-19 §1 counts SESSIONS, so moving a band
+moves no §1 number**) · **§12** untouched by the accepted option and **breached by the rejected one** · **§14**
+untouched, the zone table does not move · **§10/§42/§19 Stance B** touched by the freshness arm, asymmetry survives ·
+**§50/L-03** extended by the max-HR arm · **§19** and **§85** unaffected — **no pace moves** · 🔴 **§83 Am.
+(`INV-PLAN-PACE-ZONE-COHERENT`) CONFLICTS** and must be amended in the same commit · **§24b/§116** receives the
+beginner question.
+
+| Ruling | Outcome |
+|---|---|
+| **`THRESHOLD-BAND-ANCHOR-01`** | ⚖️ **CORRECT WITH AMENDMENT — three binding conditions. NOT BUILT.** The entire threshold and tempo complex (nine catalogue rows) shares ONE HR band, because `computeZones` can express only four and `hrBandFor` can return only four. 📐 **169 threshold sessions / 23 live plans, 164 carrying `Zone 3`**; across 28 plans the product shows **5.36 names, 2.36 paces, 1.18 HR bands**. 🔑 **The threshold floor IS the easy ceiling by construction** — `qualityHR` is `z3Low–z3Top`, `easyHR` is `< z2Top`, and `z2Top = z3Low` — which is Hutchinson's September objection, now measured on every persona. 📐 **Evidence: 29 runs at the prescribed threshold pace spend 51% of time above the prescribed ceiling** (26 with a genuine split), peaks **13 bpm** over, 19 of 26 over a third of the run above it. ⚠️ **The first measurement said the opposite** — whole-activity mean HR 159 / 75% HRR, inside the band — because an average over a session with a warm-up is not a measurement of the work. ⚖️ Hutchinson ratifies the band only in **derived** form: *"a band computed from the anchor the session already uses is not a number we invented — it is the pace prescription expressed in the other unit. Ratifying 81–87% as a constant would be the same mistake as 70–80% was."* 📊 Seiler's *"weather forecast"* objection discharged, 14 → 7 bpm. **Conditions: (1)** resolve the threshold/interval overlap — the proposed floor (160) is above the current interval floor (158) because `z4Low = z3Top`, so **write steady-state-vs-ramp as doctrine or raise the interval floor; do not ship an accidental overlap** (Seiler, blocking); **(2)** beginners excluded pending §24b — **13 of 25 beginner plans carry threshold work, lowest VDOT 16.2**, a 7:40-marathon runner (McMillan, Sims); **(3)** `INV-PLAN-PACE-ZONE-COHERENT` amended in the same commit or the release goes red. |
+| **`BENCHMARK-DATELESS-FRESH-01`** | ⚖️ **CORRECT, no board number needed.** `applyVdotDiscount` ramps only `if (b.benchmark_date)`, so **a benchmark with no date is treated as the freshest possible evidence** — the opposite of the safe default. 📐 **8 of 23 live benchmark plans carry no date**, including the founder's own 10K 49:00, discounted at the **3% minimum** on a 2024 PB. A defect against §10's documented intent, not a prescription change. 🔻 **Founder bundled it into the freshness release rather than shipping it alone** (2026-11-16). |
+| **`BENCHMARK-STALENESS-CEILING-01`** | ⏸️ **CORRECT IN PRINCIPLE, BLOCKED ON TWO BOARD NUMBERS.** Computed: the ramp is 3% at week 0, 4% at 5, 5% at 8, 6% at 12 and **7% at week 16 — and 7% for ever after**. A benchmark 3.7 months old and one five years old are priced identically; the oldest live benchmark is **2024-03-27**. The board must set (a) the ceiling past 16 weeks and (b) **the age at which a discount should become a prompt instead** — beyond some age a percentage is dishonest arithmetic on an unknown. Reuses `RECALIBRATION_TIME_TRIAL`, `applyRecalibration` (ADR-014) and `BenchmarkAbsentTile`; builds no new surface. |
+| **`MAXHR-RECENCY-01`** | ⚖️ **CORRECT, extends §50. Blocked on one number.** `resolveMaxHr` implements a defensible precedence already, but `MaxHrSource` is `observed \| user_confirmed \| undefined` and carries **no observation date**, so a max observed 18 months ago is trusted exactly like one from last week. Proposed: **user-confirmed → observed in window → observed stale, noted → age estimate**. Data exists (`strava_activities.max_hr`, `health_daily_samples`). |
+| **The brief's "a zone per session type"** | 🔴 **INCORRECT — rejected on measurement.** Deriving every band from its Daniels fraction maps easy to **55–72% HRR**, crossing the Z2 ceiling and **raising the easy ceiling into the grey zone §1 exists to prevent — a §12 breach** — and sends intervals to 95–100% HRR, not an achievable average for 1 km reps. 📦 Fried at the SLT: *"do not let it come back as a phase 2."* |
+| **The brief's "threshold = 85–88% HRR"** | 🔴 **INCORRECT.** ~3 points hot; the engine's own T fraction implies **81–87%**. 85–88% is nearer 10K effort and prescribing it would overcook the session. |
+| **The brief's "tempo needs its own band"** | 🔴 **INCORRECT on pace, CORRECT on HR (= the band above).** `tempo_continuous` anchors to `T` and a Daniels tempo run *is* T-pace; it differs from cruise intervals in **structure**, not intensity. What survives is a naming question, which is CD-1's and the Design Board's. |
+| **The brief's "no age rule exists"** | 🔴 **REFUTED.** §10's staleness ramp exists. Its defects are saturation at week 16 and the dateless case, both above. |
+
+### ⚡ Recorded disagreement
+
+🏃 **Hutchinson vs 🩹 Willy, and it is not resolvable with today's data.** Hutchinson holds the band is demonstrably
+wrong and should be corrected now on indicative evidence. Willy holds that **the change makes the session harder only
+for the runners who were obeying the heart rate** — a pace-follower is already running the pace and already spending
+half the session above the old ceiling, while an HR-follower moves from 151 mid-band to 163 — and that the fraction is
+measurable, so it should be measured first.
+
+- *Hutchinson moves if* the HR-follower share is large, or if beginners cannot be cleanly excluded.
+- *Willy moves if* the completion→activity join lands and the share is small, **or** if the change ships pace-first,
+  since no pace moves and a pace-follower experiences no new load at all.
+
+🩹 **Willy's condition is recorded, not overruled:** `COMPLETION-ACTIVITY-JOIN-01` is sequenced before the
+prescription change. **161 live completions, `strava_activity_id` null on all of them** — a completion never joins to
+its activity, so no per-session HR exists for any prescribed session, ever. The same missing join weakens the chair's
+evidence and hides Willy's denominator: **one defect blocking two questions.**
+
+### 🔻 Residuals the board filed rather than left
+
+- **§24b beginner threshold eligibility** 🏃 — should a VDOT-16 runner receive threshold rows at all? 13 of 25
+  beginner plans do today. The finding this board would least like left open.
+- **The threshold/interval overlap** 🏃 — condition 1, needs its own ruling.
+- **`ADR-012` has no intensity term** ⚙️ — it would have applied a +16 bpm prescription change silently.
+
+### ⇗ SLT escalation
+
+Yes — migration cost and the trust event of a moved number are commercial, not correctness. **SLT ruled BUILD, FREE**,
+and did not contest the three conditions.
