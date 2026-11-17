@@ -2446,45 +2446,6 @@ set the notice addresses is smaller than the set carrying threshold work — and
 runner's own numbers. 🔬 **Wood's condition stands:** a runner holding 144–158 has a habit built on that number, so
 show both and explain why; an unexplained cue change produces abandonment, not a new habit.
 
-### 🔲 `THRESHOLD-INTERVAL-OVERLAP-01` — fixing threshold exposes that the interval floor is the same number 🏃 **COACHING BOARD** ruled 2026-11-16 → ⚙️ build
-
-✅ **RULED CORRECT WITH AMENDMENT, 2026-11-16 (second sitting). Condition 1 on `THRESHOLD-BAND-ANCHOR-01` is
-resolved: BOTH options, and the fix is a derivation rather than a chosen number.** 🔑 The ladder is already closed by
-the fractions the engine owns — E 0.59–0.74 · **T 0.83–0.88** · **CV 0.88–0.92** · **I 0.95–1.00** — so every boundary
-from T upward is a **shared fraction** and anchoring each band makes overlap impossible *by construction*.
-📐 Measured on four personas: interval floor today **158 · 162 · 165 · 165**; the ruled new floor (the CV ceiling)
-**173 · 178 · 178 · 177**. 🔴 **The item below understated the overlap and I wrote it:** it compares the threshold
-FLOOR (160) to the interval floor (158). The right comparison is the threshold **CEILING** (167): the overlap is **9 bpm
-at VDOT 41 (9 · 10 · 7 · 6 across four personas), which EXCEEDS the 7-bpm width of the proposed band itself** — the
-whole band sits inside today's interval band with room to spare. 🔴 **And R1 as drafted creates a second incoherence:**
-`cv_intervals` and `tempo_over_under` are `category: 'threshold'`, so `hrBandFor` returns `'quality'` and **19 live
-sessions** would take a T-anchored band while prescribing CV pace, firing R4's own new invariant. **ADR-026 R3 is
-narrowed to "easy and shakeout are excluded"; R1 governs.** ⚠️ **Easy is the boundary, not an oversight:** its own
-fraction gives **55–72% HRR** and 71.6% breaches §12's 70% ceiling. 📊 Seiler's steady-vs-ramp doctrine is granted as
-the **justification for the widths** (threshold 7–8 bpm, plateau; intervals 12–18, climbing), never as a substitute
-for closing the overlap. ⚠️ **Raising the interval floor is itself a prescription change (158–185 → 173–185) and must
-ship in the same release**, with McMillan's recorded condition: its own `measure:fitness` and `cohort:shape` figures,
-reported separately. 🔑 **Declared and to be measured: 144–160 bpm becomes prescribed by nothing** — the grey zone
-becomes unprescribable, which is §1 working, and `progressive_tempo`'s deliberate `Z2-Z3` middle third must survive it.
-Register: `coaching-rulings.md`, *"the four conditions on ADR-026"*.
-
-**The original filing, kept because its numbers are the measurement the ruling corrects:**
-
-**Condition 1 on `THRESHOLD-BAND-ANCHOR-01`, blocking.** The proposed threshold floor (160 bpm for a VDOT-41 runner)
-is **above** the current interval floor (158), because `intervalsHR` is `z4Low–max` and **`z4Low` is the same number
-as `z3Top`**. Threshold would sit inside intervals.
-
-Today the bands are contiguous and tidy — threshold ends at 158, intervals begin at 158 — **and that tidiness is the
-artefact of both being wrong in the same direction.**
-
-📊 Seiler, blocking: *"two bands of different kinds is a real distinction; two bands that overlap by accident is a bug
-waiting to be found by a runner."* **Either raise the interval floor toward the CV/I region, or ratify
-steady-state-vs-ramp as doctrine** — threshold is narrow because HR plateaus; an interval band is wide because HR
-climbs through each rep. The engine treats them identically today. **Option 2 is probably right and needs writing
-down rather than leaving as an accident.**
-
----
-
 ### 🔴 `BEGINNER-THRESHOLD-ELIGIBILITY-01` — CLOSED 2026-11-16, FALSE PREMISE, filed by me the same day 🏃 **COACHING BOARD** ruled
 
 🔴 **I read the wrong level field. Second false premise of the day, same error class.** 📐 The item said *"13 of 25

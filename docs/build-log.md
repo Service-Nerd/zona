@@ -6,6 +6,21 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-11-17 — THRESHOLD-INTERVAL-OVERLAP-01 · the ruling asked for two outcomes and one of them contradicted the other
+**Shipped:** inside `ANCHOR-BAND-FLIP-01` — the interval band's floor moves to the CV ceiling, so threshold, CV and intervals share their boundaries and cannot overlap. 158 to 173 bpm for a VDOT-41 runner.
+
+**Dev learning:** I closed this item by reading the brief's open items after the ship, not by setting out to close it. `backlog-touch.py` fires when a commit's changed file paths appear in an open item — and this item named no file, because its content was a derivation. That is `PUSH-UNITS-01`'s exact shape and the hook cannot cover it. The cheap habit that caught it: after a release, re-read the open items of the brief that produced it, not just the one you were building.
+
+**Product/creator learning:** the ruling declared two things to measure after shipping. *"144–160 bpm becomes prescribed by nothing — the grey zone becomes unprescribable"*, and *"`progressive_tempo`'s deliberate Z2-Z3 middle third must survive it."* Both were written in the same paragraph, by me, and **they cannot both be true**: `progressive_tempo`'s band IS 144–160, because the row is anchored E+T, E is unbandable by §12's Z2 ceiling, and the row therefore keeps the zone table — by the ruling's own exception two sentences earlier. Measured: 335 of 1,141 banded quality sessions still cover the old grey midpoint and **every single one is `progressive_tempo`**. The one the board called binding held, 84 of 84. The other was never available.
+
+**AI-building learning:** McMillan's condition was *"the interval arm reports its own `measure:fitness` and `cohort:shape` figures, separately, before the release ships"* — and both harnesses are structurally blind to the thing it wanted. `cohort:shape` measures the volume profile; `measure:fitness` measures build and specificity. Both read distances and weeks, and a band change moves no distance, duration, day or session. The right answer is not to quote two unmoved numbers as though they were evidence; it is to say the named instruments cannot see it, show that the baselines are untouched, and report the arm separately using the probe that can. Third time in one release that a condition was right about the risk and wrong about the instrument.
+
+**The honest bit:** three of ADR-026's conditions named a remedy that turned out not to apply — one invariant that never fires, one amendment that was the wrong rule, and two harnesses that cannot see the change. I wrote all three conditions. The pattern is that a condition written before the code exists is a hypothesis about a mechanism, and the mechanism is the part you learn by building.
+
+**Hook material:** a board ruling asked for two outcomes in the same paragraph and one of them was impossible because of an exception granted two sentences earlier. 335 of 1,141 sessions prove it, and all 335 are the same catalogue row.
+
+**Postable?:** maybe
+
 ## 2026-11-17 — ANCHOR-BAND-FLIP-01 · the condition that said "amend this or the release goes red" needed nothing
 **Shipped:** a quality session's heart-rate band is now its pace prescription re-expressed in heart rate, derived from the same Daniels fraction of VO2max the pace was built from, instead of a zone constant chosen separately. 34.7% of cohort quality sessions carrying a band take a new zone and HR. Forward-only: existing plans are untouched.
 
