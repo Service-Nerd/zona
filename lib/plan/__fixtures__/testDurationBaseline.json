@@ -165,7 +165,7 @@
       "file": "lib/plan/weeklyKmAfterCap.test.ts",
       "title": "and the invariant agrees — producer and checker, not one of them",
       "ms": 1130,
-      "reason": "TODO — state why this test is allowed to be slow."
+      "reason": "Generates plans and runs validatePlan over them — the cost IS the claim, since the arm's whole point is that the producer and the checker agree on the same output rather than one of them being asserted alone. ⚠️ Crossed the 1,000 ms reporting line during ADR-026's re-baseline (28 -> 32) and is NOT part of that change; it is the eight-slow-tests-entered-unflagged class CHECK-SLOW-STALE-01 recorded, caught here because the register now refuses a TODO."
     },
     {
       "file": "lib/email/noRawEmailSends.test.ts",
@@ -177,13 +177,13 @@
       "file": "lib/marketing/noToningClaim.test.ts",
       "title": "no runner-facing copy names toning",
       "ms": 1035,
-      "reason": "TODO — state why this test is allowed to be slow."
+      "reason": "Reads and scans runner-facing marketing and app copy from disk rather than a list, because a list is what goes stale and the claim is about the TREE. ⚠️ Crossed the reporting line during ADR-026's re-baseline and is unrelated to it."
     },
     {
       "file": "lib/plan/planSchemaConformance.test.ts",
       "title": "NO phase is ever empty or inverted — a phase with no weeks is not a phase",
       "ms": 1016,
-      "reason": "TODO — state why this test is allowed to be slow."
+      "reason": "Generates a representative spread of real runners and walks every week of every plan; a fixture could not make a claim about 'no phase, ever'. ⚠️ Crossed the reporting line during ADR-026's re-baseline and is unrelated to it."
     },
     {
       "file": "lib/plan/effortGovernedBand.test.ts",
