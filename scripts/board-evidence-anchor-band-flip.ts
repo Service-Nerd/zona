@@ -29,7 +29,9 @@ for (const [maxHr, restingHr, vdot] of [[185, 48, 41.0], [190, 50, 44.6], [191, 
   const z = computeZones(maxHr, restingHr)
   const r = { maxHr, restingHr, vdot }
   const T = bandForAnchors(['T'], r), CV = bandForAnchors(['CV'], r), I = bandForAnchors(['I'], r)
-  const p = buildPaceFromVDOT(vdot)
+  // ⚠️ TWO ARGUMENTS: the DISCOUNTED anchor and the RAW VDOT (§10). The personas are stated as a
+  // single figure in ADR-026 §4, so both are that figure — which is what the ADR's own table assumes.
+  const p = buildPaceFromVDOT(vdot, vdot)
   console.log(`max ${maxHr} rest ${restingHr} VDOT ${vdot}`)
   console.log(`   T-pace ${p.qualityPaceStr}  was ${z.qualityZone} ${z.qualityHR}  ->  ${T?.zone} ${T?.hr}`)
   console.log(`   intervals            was ${z.intervalsZone} ${z.intervalsHR}  ->  ${I?.zone} ${I?.hr}`)
