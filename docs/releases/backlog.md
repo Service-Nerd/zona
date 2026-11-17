@@ -2346,6 +2346,12 @@ more completed quality sessions.
 `VDOT-STALENESS-CURVE-01` (Coaching Board **2026-11-07**): the ramp's **shape** is INSUFFICIENT
 EVIDENCE, with a re-open trigger of **20+ benchmarked runners with ≥ 8 weeks of logged runs each**.
 📐 **Measured at the build: 10** — `30 · 14 · 11 · 11 · 10 · 9 · 9 · 8 · 8 · 8 · 7 · 6 · 4 · 3 · 3 · 2 · 0×7`.
+🔁 **RE-MEASURED 2026-11-17 (`scripts/board-evidence-staleness-trigger.ts`): STILL 10, NOT MET, short by 10.**
+Of **21** benchmarked runners with a live plan, `29·13·10·10·10·9·9·9·8·8·7·5·3·2·0×7` weeks of logged runs. ⚠️ **The
+denominator drifted 23 → 21** between the filing and today (plans superseded or removed), so a figure quoted as
+*"x of 23"* anywhere is now stale. **13 carry a benchmark date, 8 do not.** 🔑 The binding constraint is **logging
+duration, not acquisition** — all 21 exist already; 11 of them have under 8 weeks logged, so this trigger moves on its
+own with time. **Re-run the script; do not remember the number.**
 Raising the cap extends an unevidenced curve on no new evidence, and the vacated sitting cited
 🩹 Willy's protective direction as a *reason* where the 11-07 ruling records it as **"a TIEBREAK, not
 a reason … so it is never later cited as evidence."** ⚠️ **Two conflict scans missed this because they
@@ -2395,6 +2401,12 @@ estimate and the 10-bpm claim is void.
 own recorded peak exceeds the max their zones are built on, by +6, +1 and +1.** Below the threshold
 where a prescription change earns its cost. **The board's 26-week window stands and has nothing to act
 on.** 🔑 **Third time in one session I read a column where I should have asked the owner.**
+
+🔁 **RE-MEASURED 2026-11-17 (`board-evidence-maxhr-reconcile.ts`, through `resolveMaxHr`): UNCHANGED.** Of 24 runners with a stored
+max and an HR-bearing activity: **3** sit above the max their zones are built on (`0a972fdf` +6, `1afc17e4` +1,
+`2189a632` +1), **2** already floored to the estimate by §50, **6** with no age. Still below the line where a
+prescription change earns its cost, so the withdrawal stands. ⚠️ **The 6-with-no-age finding became its own shipped
+item today** (`MAXHR-AGE-ABSENT-01`) and turned out to be the larger defect.
 
 ⚠️ **And the re-measurement found something bigger: 6 of 24 runners have NO AGE on file**, so
 `resolveMaxHr` cannot be asked for them at all → `MAXHR-AGE-ABSENT-01` below.
@@ -2475,7 +2487,7 @@ them the band change is the **largest relative** move. The finding the Coaching 
 
 **The upstream remedy the Coaching Board routed out of its own gift, 2026-11-16.** `benchmarkFromFields`
 does `const date = v.date ? { benchmark_date: v.date } : {}` — the date is optional inside a step that
-is already optional (*"Recent race result? … Skip if you haven't raced lately."*). 📐 **8 of 23 live
+is already optional (*"Recent race result? … Skip if you haven't raced lately."*). 📐 **8 of 21 (23 when filed; re-measured 2026-11-17) live
 benchmark plans carry no date**, the founder's 2026 plan on a 2024 10K among them, and §10's whole
 staleness ramp is therefore unreachable for them.
 
@@ -2516,7 +2528,7 @@ front of the founder: require the field, or accept that these runners train by f
 
 **Found 2026-11-16 while shipping `BENCHMARK-DATELESS-FRESH-01`.** 📐 **`cohortGrid`: 19,872
 benchmarked plans, 0 of them dateless** (`BENCHMARKS = [undefined, { … benchmark_date: '2026-04-01' }]`),
-against **8 of 23 live benchmark plans with no date**. So `INV-PLAN-VDOT-DISCOUNT-DATELESS` fires on
+against **8 of 21 live benchmark plans with no date** (23 when filed; re-measured 2026-11-17). So `INV-PLAN-VDOT-DISCOUNT-DATELESS` fires on
 **0 of 39,744** corpus plans while being the live state of a third of benchmarked runners.
 
 🔑 This is `COHORT-GRID-UNSET-LEVEL-01`'s class — **a corpus that cannot build the shape the wizard
