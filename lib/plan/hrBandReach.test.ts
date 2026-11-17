@@ -64,15 +64,15 @@ function walk(inputs: GeneratorInput[]): Seen {
         : typeof plan.meta?.vdot === 'number' ? plan.meta.vdot : null,
     }
     const expectedFor = (sn: Session, band: string): { zone?: string; hr: string } => {
-      if (band === 'shakeout') return { hr: z.shakeoutHR }
-      if (band === 'easy') return { hr: z.easyHR }
+      if (band === 'shakeout') return { hr: z.shakeoutHR! }
+      if (band === 'easy') return { hr: z.easyHR! }
       const row = catalogueRowFor(sn)
       const anchors = band === 'intervals' ? ['I'] : anchorsForQualityPrescription(row)
       const derived = bandForAnchors(anchors, runner)
       if (derived) return { zone: derived.zone, hr: derived.hr }
       return band === 'intervals'
-        ? { zone: z.intervalsZone, hr: z.intervalsHR }
-        : { zone: z.qualityZone, hr: z.qualityHR }
+        ? { zone: z.intervalsZone!, hr: z.intervalsHR! }
+        : { zone: z.qualityZone!, hr: z.qualityHR! }
     }
     for (const w of plan.weeks) {
       for (const [day, s] of Object.entries(w.sessions)) {

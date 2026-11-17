@@ -204,13 +204,16 @@ export function ladder() {
     const band = (k: keyof typeof FRACTIONS) => FRACTIONS[k].map(f => hrAt(f, p.vdot, p.max, p.rest)) as [number, number]
     const [tLo, tHi] = band('T'); const [cvLo, cvHi] = band('CV'); const [iLo, iHi] = band('I')
     const [eLo, eHi] = band('E')
-    const z3Top = Number(z.qualityHR.match(/–(\d+)/)![1])
+    // MAXHR-AGE-ABSENT-01 — `ZoneTargets`'s fields are optional now (a runner with no age and
+    // no max has no zones). These personas all carry a max, so the non-null assertions are
+    // facts about the fixture rather than hope; the probe would throw loudly if that changed.
+    const z3Top = Number(z.qualityHR!.match(/–(\d+)/)![1])
     console.log(`  ${p.name}`)
     console.log(`    TODAY   easy ${z.easyHR}  threshold ${z.qualityHR} (${z.qualityZone})  intervals ${z.intervalsHR} (${z.intervalsZone})`)
     console.log(`    ANCHOR  E ${eLo}–${eHi} (${(vo2r(0.59,p.vdot)*100).toFixed(1)}–${(vo2r(0.74,p.vdot)*100).toFixed(1)}% HRR — 🔴 BREACHES §12's 70% Z2 ceiling, so easy is NOT anchored)`)
     console.log(`    ANCHOR  T ${tLo}–${tHi} (w ${tHi-tLo})   CV ${cvLo}–${cvHi} (w ${cvHi-cvLo})   I ${iLo}–${iHi} (w ${iHi-iLo})`)
     console.log(`    LADDER  interval floor TODAY ${z3Top} → RULED ${cvHi} (the CV ceiling); overlap with T today ${tHi - z3Top} bpm (the WHOLE threshold band)`)
-    console.log(`    GREY    ${Number(z.easyHR.match(/(\d+)/)![1])}–${tLo} bpm is prescribed by nothing after the change`)
+    console.log(`    GREY    ${Number(z.easyHR!.match(/(\d+)/)![1])}–${tLo} bpm is prescribed by nothing after the change`)
   }
 }
 ladder()

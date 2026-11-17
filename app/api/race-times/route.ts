@@ -385,14 +385,23 @@ export async function GET(req: NextRequest) {
   // easy run they had ever logged counted toward a VDOT estimate.
   //
   // `computeZones` is the owner and handles the absent case per §14.
-  const zones = computeZones(meta.max_hr, meta.resting_hr)
-  const z2Ceiling = meta.zone2_ceiling ?? zones.zone2Ceiling
-  const z2Floor   = zones.zone2Floor
+  // MAXHR-AGE-ABSENT-01 — `meta.max_hr` is optional now (no age and no max means no max), and
+  // `computeZones` needs one. An absent max yields no band, which the guard below turns into an
+  // EMPTY aerobic sample rather than an unbounded one.
+  const zones = typeof meta.max_hr === 'number' ? computeZones(meta.max_hr, meta.resting_hr) : null
+  const z2Ceiling = meta.zone2_ceiling ?? zones?.zone2Ceiling
+  const z2Floor   = zones?.zone2Floor
 
-  const aerobicRuns = (stravaRuns ?? []).filter(
+  // MAXHR-AGE-ABSENT-01 — `ZoneTargets`'s fields became optional because a runner with no age
+  // and no max has no zones at all. ⚠️ AN ABSENT BAND MUST SELECT NOTHING, not everything: a
+  // missing floor read as 0 and a missing ceiling as Infinity would make every run "aerobic"
+  // and silently widen the sample this estimate rests on.
+  const bandKnown = typeof z2Floor === 'number' && typeof z2Ceiling === 'number'
+
+  const aerobicRuns = !bandKnown ? [] : (stravaRuns ?? []).filter(
     (r) =>
-      r.avg_hr >= z2Floor &&
-      r.avg_hr <= z2Ceiling &&
+      r.avg_hr >= z2Floor! &&
+      r.avg_hr <= z2Ceiling! &&
       r.distance_m >= 3000  // at least 3km for a meaningful aerobic sample
   )
 

@@ -31,7 +31,7 @@ generateRulePlan(
 
 ## Input — `GeneratorInput`, 31 fields
 
-**7 required**, and the engine cannot run without them:
+**6 required**, and the engine cannot run without them:
 
 | Field | Type |
 |---|---|
@@ -41,9 +41,18 @@ generateRulePlan(
 | `current_weekly_km` | number |
 | `longest_recent_run_km` | number |
 | `days_available` | number |
-| `age` | number — Tanaka max-HR derivation |
 
-**24 optional.** Full list and semantics in `types/plan.ts`; it is the source and this contract
+🔴 **`age` LEFT THIS TABLE ON 2026-11-17 (`MAXHR-AGE-ABSENT-01`, Coaching Board), and it was never
+really in it.** The only producer of `input.age` was `GeneratePlanScreen`, which satisfied the
+`number` with a hardcoded `: 30` whenever the runner skipped the optional birth-year step — so
+**a required field whose only caller always filled it by fabrication, which is an optional field
+with a lie in front of it.** 16 of 56 live runners carry no age.
+
+⚠️ **The absence now propagates rather than being priced:** §50's every *"estimate max from age"*
+arm declines, and §3's masters cadence resolves to the cautious side. §55 still rejects a PRESENT
+age outside 13–90 — absent became valid, nonsense did not.
+
+**25 optional.** Full list and semantics in `types/plan.ts`; it is the source and this contract
 does not restate it, because a second copy is how `deloadCadence` started.
 
 ⚠️ **Two traps in the optional set, both already paid for:**

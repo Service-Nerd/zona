@@ -544,6 +544,12 @@ export const MUTATIONS: Mutation[] = [
       sn.stimulus = 'race_pace'
       sn.zone = /[45]/.test(String(sn.zone ?? '')) ? 'Zone 3' : 'Zone 4–5'
     }) },
+  // MAXHR-AGE-ABSENT-01 — `INV-PLAN-NO-INVENTED-AGE`. ⚠️ Its ABSENT-age arms cannot be woken from
+  // here by construction: a mutation receives only the PLAN, and every corpus input carries an age
+  // (measured 0 of 41,472 `cohortGrid` rows without one). Its DISAGREEMENT arm can, and that arm is
+  // the `storedPlanInput` defect — `age: m.age ?? 40` made meta and input disagree rather than one
+  // be absent, so a plan was re-validated against a different runner than it was built for.
+  { name: 'meta.age disagrees with the input', apply: p => { (p.meta as unknown as Poke).age = 99 } },
   { name: 'placeholder copy',          apply: p => sessionsOf(p).forEach(s => { (s as unknown as Poke).coach_notes = ['TODO', 'TBD']; (s as unknown as Poke).label = 'TBD' }) },
   { name: 'all sessions quality',      apply: p => sessionsOf(p).forEach(s => { (s as unknown as Poke).type = 'quality' }) },
   { name: 'all sessions easy',         apply: p => sessionsOf(p).forEach(s => { (s as unknown as Poke).type = 'easy' }) },

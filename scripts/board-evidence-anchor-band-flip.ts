@@ -35,7 +35,7 @@ for (const [maxHr, restingHr, vdot] of [[185, 48, 41.0], [190, 50, 44.6], [191, 
   console.log(`max ${maxHr} rest ${restingHr} VDOT ${vdot}`)
   console.log(`   T-pace ${p.qualityPaceStr}  was ${z.qualityZone} ${z.qualityHR}  ->  ${T?.zone} ${T?.hr}`)
   console.log(`   intervals            was ${z.intervalsZone} ${z.intervalsHR}  ->  ${I?.zone} ${I?.hr}`)
-  console.log(`   CV ${CV?.lo}–${CV?.hi} · T ceiling ${T?.hi} vs I floor ${I?.lo} · easy ceiling ${z.zone2Ceiling}, T floor ${T?.lo} (clear by ${(T?.lo ?? 0) - z.zone2Ceiling})`)
+  console.log(`   CV ${CV?.lo}–${CV?.hi} · T ceiling ${T?.hi} vs I floor ${I?.lo} · easy ceiling ${z.zone2Ceiling}, T floor ${T?.lo} (clear by ${(T?.lo ?? 0) - (z.zone2Ceiling ?? 0)})`)
 }
 
 // ── 2/3/4. the corpus ─────────────────────────────────────────────────────────────────

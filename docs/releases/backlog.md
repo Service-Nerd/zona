@@ -2486,16 +2486,31 @@ is already done: the unknown is declared by `INV-PLAN-VDOT-DISCOUNT-DATELESS`.
 
 ---
 
-### 🔲 `MAXHR-AGE-ABSENT-01` — `resolveMaxHr` cannot be asked for 6 of 24 runners ⚙️ **NO BOARD** to measure; 🏃 **COACHING BOARD** if the fallback changes
+### 🔲 `PROFILE-BIRTH-YEAR-REQUIRED-01` — the wizard asks for the year, marks it optional, and told the runner it does not matter 🧭 **DESIGN BOARD** then 👤 **FOUNDER**
 
-**Found 2026-11-16 re-measuring `MAXHR-RECENCY-01` through its owner.** `resolveMaxHr(supplied, age,
-source)` needs an **age** — every arm of §50's asymmetry is relative to the Tanaka estimate. 📐 **6 of
-the 24 runners with both a stored max and an HR-bearing activity have neither `date_of_birth` nor
-`birth_year`**, so the plausibility guard cannot run for them and their stored max is taken as given.
-⚠️ **Measure what their plans actually do before proposing anything** — the engine may already have a
-separate path, and this item is a count, not a diagnosis.
+**Filed from the `MAXHR-AGE-ABSENT-01` sitting (Coaching Board 2026-11-17), by the seam rule: the engine's
+treatment of a blank is MEANING and was fixed there; whether the wizard may accept one is ENCODING.**
 
----
+⚕️ **Sims, and it is her own objection on `BENCHMARK-DATE-REQUIRED-01` one field over:** *"What is not
+defensible is asking the question, accepting a blank, and then pricing the blank."* 🏃 The chair declined to
+rule it here: *"we can fix ours today without waiting for theirs, and we should, because requiring the field
+fixes nobody who has already generated."*
+
+**Three things to decide, and the first is a copy defect that is already measured:**
+
+1. 🔴 **The subtitle is FALSE.** *"Only to estimate your max heart rate, if you haven't set one."* The age is
+   what **checks** a max the runner HAS set (§50's asymmetry floors a sub-estimate `observed` max and rejects
+   an implausibly high one), and it sets §3's masters cadence. 📐 **6 of 6 ageless runners with a stored max
+   would get a different effective max depending on their age.** The copy tells them the question is
+   irrelevant precisely when it is most relevant.
+2. `optional: true` and `canProceed` returning `true` unconditionally (`GeneratePlanScreen.tsx:282`, `:976`) —
+   skipping is a supported path, not an edge case. 📐 **16 of 56 live runners have no age.**
+3. A runner who will not say must still have an honest way through, which is what makes this design and not a
+   `required` flag.
+
+⚠️ **The engine half is SHIPPED and this item is no longer a correctness risk** — absence propagates, so a
+blank now costs the runner their HR zones rather than giving them someone else's. That is the trade to put in
+front of the founder: require the field, or accept that these runners train by feel.
 
 ### 🔲 `CORPUS-DATELESS-BENCHMARK-01` — no measurement corpus can express an undated benchmark ⚙️ **NO BOARD**
 

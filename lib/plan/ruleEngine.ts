@@ -41,6 +41,7 @@ import { sessionFloorsFor, heldEasyMins, type SessionFloors } from './sessionFlo
 import { strideCarrierDay, isDayAfterLongRun, neuromuscularNote, neuromuscularLabel, hasHillRestrictingInjury, weekHasNeuromuscular } from './neuromuscular'
 import { computeZones, type ZoneTargets } from './zones'
 import { buildHRZonesWithFallback } from './hrZones'
+import { mastersCadenceApplies } from './mastersCadence'
 import { isEffortGovernedRow } from './hrBand'
 import { effectiveStartKm } from './startVolume'
 import { weeksBetweenLocal } from './length'
@@ -725,7 +726,7 @@ function easySession(
     ...(metric === 'distance' ? { distance_km: rounded } : {}),
     duration_mins: dur(rounded, pace.minPerKmEasy),
     primary_metric: metric,
-    zone: 'Zone 2', hr_target: zones.easyHR,
+    ...easyZonePair(zones),
     pace_target: pace.easyPaceStr, rpe_target: rpe,
     ...(notes ? { coach_notes: notes } : {}),
   }
@@ -744,7 +745,7 @@ function longSession(
     ...(metric === 'distance' ? { distance_km: rounded } : {}),
     duration_mins: dur(rounded, pace.minPerKmEasy),
     primary_metric: metric,
-    zone: 'Zone 2', hr_target: zones.easyHR,
+    ...easyZonePair(zones),
     pace_target: pace.easyPaceStr, rpe_target: 4,
     ...(notes ? { coach_notes: notes } : {}),
   }
@@ -768,8 +769,29 @@ function runnerBand(zones: ZoneTargets, pace: PaceGuide): BandRunner {
  * `null`'s only meaning here: the runner has no HR reserve or no VDOT, measured at 35.2% of
  * live threshold sessions, declared in §84 Amendment 2 with its number.
  */
-function bandOrZoneTable(band: AnchorBand | null, zoneFallback: string, hrFallback: string) {
-  return { zone: band?.zone ?? zoneFallback, hr_target: band?.hr ?? hrFallback }
+function bandOrZoneTable(band: AnchorBand | null, zoneFallback?: string, hrFallback?: string) {
+  // MAXHR-AGE-ABSENT-01 — both halves omitted when neither a band nor a zone table exists, so
+  // the session carries no zone AND no target rather than one of the two (§84 Am. 1's pairing,
+  // §14 Am. 2's absence).
+  const zone = band?.zone ?? zoneFallback
+  const hr = band?.hr ?? hrFallback
+  return { ...(zone ? { zone } : {}), ...(hr ? { hr_target: hr } : {}) }
+}
+
+/**
+ * The easy-band zone/HR pair, omitted TOGETHER when nothing is derivable.
+ *
+ * 🔴 `zone: 'Zone 2'` WAS A HARDCODED LITERAL BESIDE A DERIVED HR (MAXHR-AGE-ABSENT-01). With no
+ * age and no max the HR is absent and the literal stayed, which is exactly what §14 Amendment 2
+ * forbids in as many words: *"`session.zone` without `session.hr_target` is a label about
+ * nothing."* 📐 Measured on the constructed ageless case before the fix: 0 of 55 sessions had an
+ * `hr_target` and 48 of 55 still claimed a zone.
+ *
+ * ⚠️ THE PAIR, ALWAYS — the same rule §84 Amendment 1 exists for, one band down from the quality
+ * sessions that already obey it.
+ */
+function easyZonePair(zones: ZoneTargets) {
+  return zones.easyHR ? { zone: 'Zone 2', hr_target: zones.easyHR } : {}
 }
 
 function qualitySession(
@@ -1799,7 +1821,10 @@ export function makeQualitySession(args: {
   let label: string
   let minPerKm: number
   let paceTarget: string
-  let zone: string
+  // MAXHR-AGE-ABSENT-01 — `string | undefined`, because a runner with no age and no max has no
+  // zones at all and §14 Amendment 2 is explicit that the field then STAYS ABSENT: *"a zone
+  // without an hr_target is a label about nothing."* The pair is omitted together below.
+  let zone: string | undefined
   // §40b Am.4 — `undefined` where an effort-governed session carries no band at all.
   let hrTarget: string | undefined
 
@@ -2198,7 +2223,7 @@ export function makeQualitySession(args: {
       ? Math.round(durationForMainSet(structuredMainMins))
       : dur(rounded, minPerKm),
     primary_metric: metric,
-    zone,
+    ...(zone ? { zone } : {}),
     // §40b Am.4 — an effort-governed session carries NO HR band. Omitted, not empty:
     // `hrBandFor` reads a non-string as "never had one" and leaves it alone.
     ...(hrTarget ? { hr_target: hrTarget } : {}),
@@ -2297,7 +2322,7 @@ function raceSpecificLongRunSession(
     duration_mins: dur(rounded, pace.minPerKmEasy),
     primary_metric: metric,
     zone,
-    hr_target: zones.easyHR,
+    ...(zones.easyHR ? { hr_target: zones.easyHR } : {}),
     pace_target: pace.easyPaceStr,
     rpe_target: 6,
     coach_notes,
@@ -2394,8 +2419,11 @@ function shakeoutSession(
     ? 'Short and relaxed. Wake the legs, nothing more.'
     : 'The last one before race day. Short on purpose: if it feels too easy, that is the point.'
   const session = easySession(weekN, day, km, 'distance', zones, pace, label, 2, [note])
-  session.zone = 'Zone 1'
-  session.hr_target = zones.shakeoutHR
+  // MAXHR-AGE-ABSENT-01 — §78's shakeout keeps its Z1 claim only while it has a Z1 NUMBER.
+  if (zones.shakeoutHR) session.zone = 'Zone 1'
+  else delete session.zone
+  if (zones.shakeoutHR) session.hr_target = zones.shakeoutHR
+  else delete session.hr_target
   session.role = 'shakeout'   // structural, label-independent (see sessionRole.ts)
   return session
 }
@@ -2633,7 +2661,7 @@ function fiveKTenKPeakLongRunSession(
     duration_mins: dur(rounded, pace.minPerKmEasy),
     primary_metric: metric,
     zone: 'Zone 2–3',
-    hr_target: zones.easyHR,
+    ...(zones.easyHR ? { hr_target: zones.easyHR } : {}),
     pace_target: pace.easyPaceStr,
     rpe_target: 6,
     coach_notes,
@@ -2665,8 +2693,9 @@ function finishGoalPeakLongRunSession(
     ...(metric === 'distance' ? { distance_km: rounded } : {}),
     duration_mins: dur(rounded, pace.minPerKmEasy),
     primary_metric: metric,
-    zone: 'Zone 2',
-    hr_target: zones.easyHR,
+    // MAXHR-AGE-ABSENT-01 — the PAIR, like every other band. §14 Am. 2: a zone with no target
+    // is a label about nothing, and the pace plus RPE 5 are the prescription without it.
+    ...easyZonePair(zones),
     pace_target: pace.easyPaceStr,
     rpe_target: 5,
     coach_notes,
@@ -7357,7 +7386,21 @@ function buildRulePlanOnce(
 
   // Recovery cadence — masters (age ≥ 45) recover every 3 weeks (CoachingPrinciples §3).
   // Computed once and shared between volume sequence + week badging so they stay aligned.
-  const recoveryFreq = input.age >= GENERATION_CONFIG.MASTERS_AGE_THRESHOLD
+  // 🔴 NO AGE RESOLVES TO THE **MASTERS** CADENCE, NOT THE STANDARD ONE
+  // (MAXHR-AGE-ABSENT-01, Coaching Board 2026-11-17 — 🩹 Willy, binding).
+  //
+  // The invented age 30 did a second thing nobody had measured: it declared every ageless
+  // runner NOT a masters runner, so all 16 of them silently took the 4-week deload instead of
+  // the 3-week one. That is a LOAD decision made on a fabricated number.
+  //
+  // 🩹 Willy: *"I am not asserting these sixteen are masters. I am asserting that we have no
+  // basis for asserting they are not, and §3 currently resolves that ignorance to the less
+  // protective of two ratified cadences. Resolve ignorance to the cautious side or decline to
+  // resolve it. Do not resolve it to thirty."*
+  //
+  // ⚠️ `>= threshold` ON AN ABSENT AGE IS FALSE IN JAVASCRIPT, so the old code did not choose
+  // the standard cadence — it fell into it. This chooses.
+  const recoveryFreq = mastersCadenceApplies(input.age)
     ? GENERATION_CONFIG.RECOVERY_WEEK_FREQUENCY_MASTERS
     : GENERATION_CONFIG.RECOVERY_WEEK_FREQUENCY_STANDARD
 
@@ -10015,8 +10058,11 @@ function buildRulePlanOnce(
     // covered no ground. Omitted now, so §14's %MaxHR branch applies and the plan
     // passes PlanSchema instead of recording plan_schema_drift on every save.
     ...(typeof rhr === 'number' && rhr > 0 ? { resting_hr: rhr } : {}),
-    max_hr:        derivedMaxHR,
-    zone2_ceiling: zones.zone2Ceiling,
+    // MAXHR-AGE-ABSENT-01 — CONDITIONAL, not zeroed. `derived_max` is null and `zone2Ceiling`
+    // undefined for the `no_hr_no_age` case, and `hr_derived_max == null` is precisely the
+    // escape hatch `INV-PLAN-ZONE-LABEL-HAS-PRESCRIPTION` already tests for.
+    ...(typeof derivedMaxHR === 'number' ? { max_hr: derivedMaxHR } : {}),
+    ...(typeof zones.zone2Ceiling === 'number' ? { zone2_ceiling: zones.zone2Ceiling } : {}),
 
     version:      '2.0',
     last_updated: today,
@@ -10406,7 +10452,11 @@ function buildRulePlanOnce(
     // §50 asymmetry (HR-MAX-01) — the max the zones were actually built on, plus
     // its provenance. Lets INV-PLAN-MAX-HR-NOT-BELOW-ESTIMATE-FLOOR verify no
     // plan rests on a device/unattributed max below its own age estimate.
-    hr_derived_max: hrFallback.derived_max,
+    // ⚠️ OMITTED WHEN NULL, NOT WRITTEN AS NULL (MAXHR-AGE-ABSENT-01). `hr_derived_max == null`
+    // is the escape hatch `INV-PLAN-ZONE-LABEL-HAS-PRESCRIPTION` reads, and an ABSENT key and a
+    // `null` key answer `!= null` identically — but only the absent one survives the schema's
+    // `number | undefined` without recording plan_schema_drift on every save.
+    ...(hrFallback.derived_max !== null ? { hr_derived_max: hrFallback.derived_max } : {}),
     ...(hrFallback.max_source ? { hr_max_source: hrFallback.max_source } : {}),
     // 🔑 ADR-026 §8 — THE MIGRATION IS FORWARD-ONLY, AND THIS STAMP IS WHAT MAKES THAT
     // MECHANICAL RATHER THAN REMEMBERED.

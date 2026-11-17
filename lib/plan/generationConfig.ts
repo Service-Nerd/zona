@@ -1212,6 +1212,16 @@ export const GENERATION_CONFIG = {
   // false per-km precision). MAX is a sane ceiling for the day-job demographic;
   // the engine's caps (§2 +10%, §29 fresh-return, §18 beginner belt) still bind
   // whatever is entered. Not a target the engine fills — an input it tempers.
+  // ── Wizard birth-year wheel resting position (MAXHR-AGE-ABSENT-01, 2026-11-17) ──
+  // 🔑 A SCROLL POSITION, NOT AN AGE, AND THE DISTINCTION IS THE WHOLE ITEM. It was an inline
+  // `currentYear - 35` beside a generator that fabricated 30 for a skipped step, so the wheel
+  // showed one age and the plan was built on another (Tanaka 184 vs 187). It is named here
+  // because the Configuration Singularity's test applies — a coach could reasonably want to
+  // tune where the wheel opens — and because a literal next to a deleted literal is how the
+  // next one comes back. ⚠️ It MUST NOT be read as a default age: `birthYear` stays null until
+  // the runner moves the wheel, and `hrGuardableAge(null)` is null, by design.
+  WIZARD_BIRTH_YEAR_WHEEL_ANCHOR_AGE: 35,
+
   WIZARD_VOLUME_RULER: {
     WEEKLY_KM_MIN:       0,
     WEEKLY_KM_MAX:       160,

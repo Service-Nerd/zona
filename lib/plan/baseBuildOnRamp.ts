@@ -245,11 +245,15 @@ export function generateBaseBuildPlan(
   // ⚠️ `Number.isFinite`, not a truthiness check — NaN is falsy here by accident and
   // 0 would also have to go, but relying on that is the kind of coincidence this
   // repo has paid for before.
-  const hrDerivable = Number.isFinite(hr.zones.zone2Ceiling) && hr.zones.zone2Ceiling > 0
-    && Number.isFinite(hr.derived_max) && hr.derived_max > 0
+  // ✅ AND SINCE `MAXHR-AGE-ABSENT-01` THE TYPES AGREE WITH THIS COMMENT. `zone2Ceiling` and
+  // `derived_max` are now genuinely optional — the `no_hr_no_age` case emits neither — so this
+  // predicate stopped being a defensive read of a required field and became the real question.
+  const hrDerivable = typeof hr.zones.zone2Ceiling === 'number' && Number.isFinite(hr.zones.zone2Ceiling)
+    && hr.zones.zone2Ceiling > 0
+    && typeof hr.derived_max === 'number' && Number.isFinite(hr.derived_max) && hr.derived_max > 0
 
   const { weeks: built } = generateFoundationBlock({
-    easyTargets: { paceTarget: null, hrTarget: hrDerivable ? hr.zones.easyHR : null },
+    easyTargets: { paceTarget: null, hrTarget: hrDerivable ? (hr.zones.easyHR ?? null) : null },
     input,
     // The block generator dates weeks BACKWARDS from a plan start, so handing
     // it the start of the race plan would date the ramp into the past. The

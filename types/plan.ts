@@ -36,7 +36,19 @@ export interface GeneratorInput {
   current_weekly_km: number
   longest_recent_run_km: number
   days_available: number
-  age: number                   // used for Tanaka max HR derivation
+  /**
+   * 🔴 OPTIONAL SINCE `MAXHR-AGE-ABSENT-01` (Coaching Board 2026-11-17), AND IT WAS REQUIRED
+   * BY A LIE. `GeneratePlanScreen` satisfied the old `number` with a hardcoded `: 30` whenever
+   * the runner had no birth year — so the field was never really required, it was always
+   * supplied, sometimes by fabrication. 16 of 56 live `user_settings` rows carry neither
+   * `birth_year` nor `date_of_birth`.
+   *
+   * ⚠️ EVERY ARM OF §50's FALLBACK TABLE SAYS "estimate max from age", so this absence
+   * propagates into the HR prescription AND into §3's masters cadence (`age >= 45`). Measured:
+   * a 60-year-old priced at 30 is told easy <= 150 bpm when 150 is above the top of their own
+   * Zone 3 — §12 breached in fact — and is put on the 4-week deload instead of the 3-week one.
+   */
+  age?: number                  // used for Tanaka max HR derivation; ABSENT is a real state
 
   // Derived server-side (optional — computed from age + data if absent).
   // API-level STRUCTURAL declaration: when supplied it stands in for the
@@ -563,8 +575,24 @@ export interface PlanMeta {
    *  the only thing that satisfied both. It satisfied neither honestly: three
    *  live plans failed PlanSchema on exactly this field. */
   resting_hr?: number
-  max_hr: number
-  zone2_ceiling: number
+  /**
+   * 🔴 OPTIONAL SINCE `MAXHR-AGE-ABSENT-01` (Coaching Board 2026-11-17). A runner with no age
+   * AND no stored max has no max at all — §50's every "estimate from age" arm needs an age, and
+   * the old engine supplied one by fabricating 30 in the wizard. 📐 10 of 16 ageless runners
+   * carry no max, 1 of them with a plan built on that fabrication.
+   *
+   * ⚠️ ABSENT, NEVER ZERO. `hr_derived_max == null` is the escape hatch
+   * `INV-PLAN-ZONE-LABEL-HAS-PRESCRIPTION` already tests for, and §14 Amendment 2 asks for the
+   * field to stay absent so effort governs rather than a number nobody derived.
+   */
+  max_hr?: number
+  /**
+   * ⚠️ OPTIONAL SINCE `MAXHR-AGE-ABSENT-01` — it is derived from `max_hr`, so where there is no
+   * max there is no ceiling. ABSENT, never 0: a zero easy cap reads as "run slower than
+   * walking" to every consumer that compares against it, and `race-times` was already burned
+   * by exactly that (`meta.resting_hr = 0` gave a 187 bpm runner an aerobic floor of 112).
+   */
+  zone2_ceiling?: number
 
   // Plan metadata
   version: string
@@ -916,6 +944,11 @@ export interface PlanMeta {
 
   hr_zone_method?: 'karvonen' | 'karvonen_estimated_max' | 'percent_of_max' | 'percent_of_estimated_max'
                  | 'observed_max' | 'age_estimate_implausible_input' | 'age_estimate_max_floor'
+                 // MAXHR-AGE-ABSENT-01 (Coaching Board 2026-11-17) — §50's table says "estimate
+                 // max from age" in every arm that could help and never said what to do with NO
+                 // age. These are that answer: one where the max is real but uncheckable, one
+                 // where nothing is derivable at all (§14 Am. 2).
+                 | 'max_unguarded_no_age' | 'no_hr_no_age'
   hr_assumption_note?: string
   hr_estimated_max?: number
   // §50 asymmetry (HR-MAX-01) — the max HR the zones were actually built on, and

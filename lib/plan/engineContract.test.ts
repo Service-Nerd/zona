@@ -25,7 +25,7 @@ const TYPES = readFileSync('types/plan.ts', 'utf8')
 const ENGINE = readFileSync('lib/plan/ruleEngine.ts', 'utf8')
 
 describe('ENGINE-CONTRACT-01 — the contract matches the engine', () => {
-  it('the required-field count is still 7, and the contract says 7', () => {
+  it('the required-field count is still 6, and the contract says 6', () => {
     // The number a reader builds a request from. If a field becomes required and the
     // contract still says 7, an external caller sends an invalid payload.
     const i = TYPES.indexOf('GeneratorInput')
@@ -38,8 +38,13 @@ describe('ENGINE-CONTRACT-01 — the contract matches the engine', () => {
     const body = TYPES.slice(open, end)
     const required = Array.from(body.matchAll(/^ {2}([a-z_][a-zA-Z_0-9]*)(\??):/gm))
       .filter(m => m[2] !== '?').map(m => m[1])
-    expect(required.length, `GeneratorInput now has ${required.length} required fields`).toBe(7)
-    expect(CONTRACT).toContain('**7 required**')
+    // 🔴 WAS 7 UNTIL 2026-11-17. `age` left the required set (`MAXHR-AGE-ABSENT-01`, Coaching
+    // Board) because it was only ever required on paper: `GeneratePlanScreen`, its sole producer,
+    // satisfied the `number` with a hardcoded `: 30` for any runner who skipped the optional
+    // birth-year step. ⚠️ This arm is the reason the contract moved WITH the type rather than
+    // weeks later — which is exactly what it was written for.
+    expect(required.length, `GeneratorInput now has ${required.length} required fields`).toBe(6)
+    expect(CONTRACT).toContain('**6 required**')
     for (const f of required) {
       expect(CONTRACT, `required field \`${f}\` is missing from the contract table`).toContain(f)
     }

@@ -679,13 +679,25 @@ export function validateInputFields(input: GeneratorInput): void {
     }
   }
 
-  // age is always required
+  // 🔴 AGE IS NO LONGER REQUIRED, AND IT NEVER REALLY WAS (MAXHR-AGE-ABSENT-01, Coaching Board
+  // 2026-11-17). This comment said *"age is always required"* and the throw enforced it — but
+  // the only producer of `input.age` was `GeneratePlanScreen`, which satisfied it with a
+  // hardcoded `: 30` whenever the runner skipped the optional birth-year step. **A required
+  // field that one caller always fills by fabrication is an optional field with a lie in front
+  // of it**, and the lie was load-bearing: §50's asymmetry and §3's masters cadence both read it.
+  //
+  // ⚠️ ABSENT IS NOW VALID; NONSENSE STILL IS NOT. §55's job is rejecting the impossible, and a
+  // present age out of range is still impossible. 🔑 The difference matters because §50's own
+  // founding case (2026-04-28) is `resting_hr: 0` passing validation — a value that was present
+  // and absurd. An absent age is neither.
   const age = input.age
-  if (typeof age !== 'number' || !Number.isFinite(age)) {
-    throw new InputFieldError('age', Number(age), ranges.age)
-  }
-  if (age < ranges.age.min || age > ranges.age.max) {
-    throw new InputFieldError('age', age, ranges.age)
+  if (age !== undefined && age !== null) {
+    if (typeof age !== 'number' || !Number.isFinite(age)) {
+      throw new InputFieldError('age', Number(age), ranges.age)
+    }
+    if (age < ranges.age.min || age > ranges.age.max) {
+      throw new InputFieldError('age', age, ranges.age)
+    }
   }
 
   // resting_hr and max_hr are optional. Only validate if provided. A value of

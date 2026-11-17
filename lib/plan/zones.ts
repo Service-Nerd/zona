@@ -30,27 +30,44 @@ import { hrBandFor } from './hrBand'
 import { bandForAnchors, anchorsForQualityPrescription } from './anchorBand'
 import { catalogueRowFor } from './catalogueLink'
 
+/**
+ * 🔴 EVERY FIELD IS OPTIONAL SINCE `MAXHR-AGE-ABSENT-01` (Coaching Board 2026-11-17), AND THE
+ * REASON IS THAT THE ENGINE USED TO INVENT AN AGE RATHER THAN ADMIT IT HAD NONE.
+ *
+ * `computeZones` always populates every field — it is handed a max. The absent case comes from
+ * `buildHRZonesWithFallback`: with **no age and no max** there is nothing to derive a zone from,
+ * and §50's fallback table says *"estimate max from age"* in every arm that could help. The old
+ * code satisfied that by fabricating age 30 in the WIZARD (`GeneratePlanScreen.tsx:1024`), which
+ * put a 60-year-old's easy ceiling at 150 bpm when 150 is above the top of their own Zone 3.
+ *
+ * ⚠️ SO THE OPTIONALITY IS THE POINT, NOT A CONVENIENCE: §14 Amendment 2 says *"where nothing
+ * can be derived, the field stays absent and the talk test IS the prescription"*, and it warns
+ * that *"nothing derivable means no `hr_derived_max`, not 'the runner supplied nothing'"* —
+ * because §50 falls back to Tanaka. **With no age Tanaka cannot be computed, so this is the
+ * first case that genuinely meets that clause's own test.** The compiler is what enumerates the
+ * read sites; a sentinel number would have let them all pass.
+ */
 export interface ZoneTargets {
-  zone2Ceiling: number
+  zone2Ceiling?: number
   /** Bottom of Z2. Added 2026-09-24 (PLAN-RESTING-HR-ZERO-01) because
    *  `race-times` was deriving it by hand — the third copy of this formula —
    *  and doing so UNGUARDED, so a stored `resting_hr: 0` gave a 187 bpm runner
    *  an aerobic floor of 112. A caller that has to re-derive half a band is a
    *  caller the owner has under-served. */
-  zone2Floor: number
-  easyHR: string
-  shakeoutHR: string
-  qualityHR: string
+  zone2Floor?: number
+  easyHR?: string
+  shakeoutHR?: string
+  qualityHR?: string
   /** §84 — the zone string that DESCRIBES `qualityHR`. Paired at construction. */
-  qualityZone: string
+  qualityZone?: string
   /** §84 — the zone string that DESCRIBES `intervalsHR`. Paired at construction. */
-  intervalsZone: string
-  intervalsHR: string
+  intervalsZone?: string
+  intervalsHR?: string
   /** ADR-026 R1 — the two numbers `anchorHrBand` converts through, carried so a caller
    *  holding a `ZoneTargets` never re-fetches or re-guesses them. `restingHr` is `null`
    *  when the %MaxHR branch was taken, which is exactly when no band can be derived. */
-  maxHr: number
-  restingHr: number | null
+  maxHr?: number
+  restingHr?: number | null
 }
 
 
@@ -227,3 +244,18 @@ export function applyHrToPlan<T extends {
   } as T
 }
 
+
+/**
+ * The zone facts for a runner with NO AGE AND NO MAX HR — which is to say, none.
+ *
+ * ⚠️ IT IS AN EMPTY OBJECT ON PURPOSE AND THAT IS NOT A SHRUG. Every alternative writes an
+ * absence as a value: a sentinel max, a zero ceiling, an assumed age. §14 Amendment 2's
+ * remedy is the field STAYING ABSENT, and `hr_derived_max == null` is already the escape hatch
+ * `INV-PLAN-ZONE-LABEL-HAS-PRESCRIPTION` tests for (`invariants.ts`, *"the only genuine
+ * exemption is a plan where nothing could be derived at all"*). This is the producer finally
+ * emitting the state the checker was already written to accept.
+ *
+ * 📐 Live population 2026-11-17: 10 of 16 runners with no age also have no stored max, 1 of
+ * whom has a generated plan (`df2cc6e6`, `percent_of_estimated_max` off a fabricated 30).
+ */
+export const UNDERIVABLE_ZONES: ZoneTargets = {}

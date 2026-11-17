@@ -46,7 +46,12 @@ export function storedPlanInput(plan: Plan): GeneratorInput {
         current_weekly_km:     0,   // absent on legacy meta — dependent invariants self-skip on 0
         longest_recent_run_km: 0,   // absent on legacy meta — dependent invariants self-skip on 0
         days_available:        m.days_available ?? 7,
-        age:                   m.age ?? 40,
+        // 🔴 A SECOND INVENTED AGE, AND IT DISAGREED WITH THE FIRST (MAXHR-AGE-ABSENT-01).
+        // The wizard fabricated 30 at generation; this fabricated 40 on every re-validation and
+        // reshape, so a legacy plan was re-checked against a different Tanaka estimate than it
+        // was built with (187 vs 177) — the producer/checker split, in a field nobody chose.
+        // Absent stays absent; §50 and §3 now both have a defined answer for that.
+        age:                   m.age,
         fitness_level:         m.fitness_level,
         // §79 (2026-09-02) — carry the intensity level across the meta→input
         // round-trip. Without it the quality-per-week ceiling re-derives from

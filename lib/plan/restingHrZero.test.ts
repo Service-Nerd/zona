@@ -55,7 +55,7 @@ describe('PLAN-RESTING-HR-ZERO-01 — zero is absent, not measured', () => {
     const hrr = (pct: number) => Math.round(0 + (pct / 100) * (187 - 0))
     expect(correct.zone2Floor).toBe(Math.round(187 * 0.70))   // 131
     expect(hrr(60)).toBe(112)                                 // what the bug produced
-    expect(correct.zone2Floor - hrr(60)).toBe(19)             // 19 bpm too low
+    expect(correct.zone2Floor! - hrr(60)).toBe(19)             // 19 bpm too low
   })
 
   it('the PRODUCER omits the key rather than writing a zero', () => {

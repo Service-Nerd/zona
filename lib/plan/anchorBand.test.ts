@@ -68,16 +68,16 @@ describe('anchorHrBand — ADR-026 R1', () => {
     for (const p of PERSONAS) {
       const z = computeZones(p.maxHr, p.restingHr)
       const t = anchorHrBand({ anchor: 'T', vdot: p.vdot, maxHr: p.maxHr, restingHr: p.restingHr })!
-      expect(t.lo, `${p.name}: new floor above the easy ceiling`).toBeGreaterThan(z.zone2Ceiling)
-      const old = Number(z.qualityHR.match(/^(\d+)/)![1])
-      expect(old, `${p.name}: the OLD floor was the easy ceiling`).toBe(z.zone2Ceiling)
+      expect(t.lo, `${p.name}: new floor above the easy ceiling`).toBeGreaterThan(z.zone2Ceiling!)
+      const old = Number(z.qualityHR!.match(/^(\d+)/)![1])
+      expect(old, `${p.name}: the OLD floor was the easy ceiling`).toBe(z.zone2Ceiling!)
     }
   })
 
   it('🔴 narrows Seiler\'s "weather forecast" — the band is ~7–8 bpm, not ~14', () => {
     for (const p of PERSONAS) {
       const z = computeZones(p.maxHr, p.restingHr)
-      const [oLo, oHi] = z.qualityHR.match(/(\d+)–(\d+)/)!.slice(1).map(Number)
+      const [oLo, oHi] = z.qualityHR!.match(/(\d+)–(\d+)/)!.slice(1).map(Number)
       const t = anchorHrBand({ anchor: 'T', vdot: p.vdot, maxHr: p.maxHr, restingHr: p.restingHr })!
       expect(t.hi - t.lo, `${p.name}: narrower than today`).toBeLessThan(oHi - oLo)
       expect(t.hi - t.lo, `${p.name}: and not collapsed to a point`).toBeGreaterThanOrEqual(5)

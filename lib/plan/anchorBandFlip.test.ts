@@ -116,7 +116,7 @@ describe('ANCHOR-BAND-FLIP-01 — the engine prescribes the anchor-derived band'
       expect(CV.hi).toBe(I.lo)
       expect(I.hi).toBe(maxHr)
       // Hutchinson's floor objection: clear of the easy ceiling, not sitting on it.
-      expect(T.lo).toBeGreaterThan(computeZones(maxHr, restingHr).zone2Ceiling)
+      expect(T.lo).toBeGreaterThan(computeZones(maxHr, restingHr).zone2Ceiling!)
     }
   })
 

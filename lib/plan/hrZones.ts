@@ -18,7 +18,7 @@
  * change that follows it goes wrong, the two are not tangled.
  */
 import type { GeneratorInput } from '@/types/plan'
-import { computeZones, type ZoneTargets } from './zones'
+import { computeZones, UNDERIVABLE_ZONES, type ZoneTargets } from './zones'
 import { resolveMaxHr } from './maxHrGuard'
 import { GENERATION_CONFIG } from './generationConfig'
 
@@ -27,6 +27,12 @@ import { GENERATION_CONFIG } from './generationConfig'
 // values; §50 fills MISSING values without refusing to generate.
 
 export type HRZoneMethod =
+  // MAXHR-AGE-ABSENT-01 (Coaching Board 2026-11-17) — §50's table says "estimate max from age"
+  // in every arm where the max is missing, and never said what to do with no AGE. These two
+  // are that answer. They are distinct methods, not a shared "unknown", because the runner is
+  // told a different thing in each and `INV-PLAN-HR-ASSUMPTIONS-SURFACED` reads the method.
+  | 'max_unguarded_no_age'        // a max we cannot plausibility-check, used as given and said so
+  | 'no_hr_no_age'                // nothing derivable at all — no number, effort governs (§14 Am. 2)
   | 'karvonen'                    // both max + resting provided
   | 'karvonen_estimated_max'      // only resting provided; max estimated from age
   | 'percent_of_max'              // only max provided
@@ -37,7 +43,9 @@ export type HRZoneMethod =
 
 export interface HRZoneFallbackResult {
   zones: ZoneTargets
-  derived_max: number
+  /** `null` ONLY for `no_hr_no_age` — nothing was derivable, which is the escape hatch
+   *  `INV-PLAN-ZONE-LABEL-HAS-PRESCRIPTION` already tests for. */
+  derived_max: number | null
   method: HRZoneMethod
   assumption_note?: string
   estimated_max?: number
@@ -56,7 +64,58 @@ export function buildHRZonesWithFallback(input: GeneratorInput): HRZoneFallbackR
   // client zone display) decides which max to trust: it rejects a value below the
   // age estimate as a floor (unless user-confirmed) and one implausibly above it
   // as an artifact. §55 has already rejected the physiologically impossible.
-  const { estimatedMax, suppliedMax, outcome } = resolveMaxHr(input.max_hr, input.age, input.max_hr_source)
+  // 🔴 NO AGE MEANS §50's GUARD CANNOT BE ASKED, AND THE OLD CODE ASKED IT ANYWAY
+  // (MAXHR-AGE-ABSENT-01, Coaching Board 2026-11-17).
+  //
+  // Every arm of §50's asymmetry is relative to the Tanaka estimate, and Tanaka needs an age.
+  // The wizard used to supply a hardcoded 30, so `resolveMaxHr` ran against a fabricated
+  // ceiling and inverted its own logic: a stored max of 176 was FLOORED UP to 187 "because the
+  // runner is 30". 📐 Measured on live data: 6 of 6 ageless runners with a stored max would
+  // get a DIFFERENT effective max depending on their age, and a 60-year-old priced at 30 is
+  // told easy <= 150 bpm when 150 is above the top of their own Zone 3 — §12 breached in fact.
+  //
+  // 🏃 Hutchinson: *"Thirty is not an estimate. An estimate is a value with a stated method and
+  // an error bar; this is a literal, chosen because it sat at the end of a ternary."*
+  //
+  // ⚠️ THE DISPLAY PATH WAS ALREADY HONEST and this is the asymmetry that gave it away:
+  // `DashboardClient` asks `hrGuardableAge`, gets null, and says so. The generator pretended.
+  // Two cases, ruled separately, because the runner is owed a different thing in each.
+  const guardableAge = typeof input.age === 'number' && Number.isFinite(input.age) ? input.age : null
+  if (guardableAge === null) {
+    const suppliedNoAge =
+      typeof input.max_hr === 'number' && Number.isFinite(input.max_hr) && input.max_hr > 0
+        ? Math.round(input.max_hr) : null
+
+    // CASE 2 — nothing derivable. §14 Amendment 2 literally: the field stays absent and the
+    // talk test IS the prescription. This is the first case that meets that clause's own test,
+    // because its stated reason for NOT applying ("§50 falls back to Tanaka") needs an age.
+    if (suppliedNoAge === null) {
+      return {
+        zones: UNDERIVABLE_ZONES,
+        derived_max: null,
+        method: 'no_hr_no_age',
+        assumption_note: 'No heart-rate zones in this plan: we have no max HR on file and no year of birth to estimate one from, and a zone built on a guess is worse than none. Run the easy days by feel: conversational, and if you are not sure, slower. Add either your year of birth or a max HR in Profile and the zones appear.',
+      }
+    }
+
+    // CASE 1 — the max is real and the PLAUSIBILITY CHECK is what cannot run. Use it as given.
+    // ⚠️ NEVER FLOORED AGAINST AN ESTIMATE WE INVENTED, which is the defect: §50's asymmetry
+    // rests on "a recorded max is a lower bound", and guarding it against a fabricated ceiling
+    // inverts that into raising a genuine 55-year-old's max by eleven beats.
+    const zones = hasResting ? computeZones(suppliedNoAge, input.resting_hr!) : computeZones(suppliedNoAge)
+    return {
+      zones,
+      derived_max: suppliedNoAge,
+      method: 'max_unguarded_no_age',
+      max_source: input.max_hr_source === 'user_confirmed' ? undefined : input.max_hr_source,
+      // ⚠️ THE COPY SAYS WHY THE YEAR MATTERS, because the wizard's own subtitle says it does
+      // not ("Only to estimate your max heart rate, if you haven't set one") and that is false:
+      // the age is what CHECKS a max the runner has set. ⚕️ Sims' objection, answered here.
+      assumption_note: `Zones use the max HR on file (${suppliedNoAge} bpm) exactly as given. Without your year of birth we cannot sanity-check it, so if that number came from a device that caught a stray reading, or never caught a hard effort, the zones inherit it (Zone 2 ceiling ≈ ${zones.zone2Ceiling} bpm). Adding your year of birth in Profile lets us check it.`,
+    }
+  }
+
+  const { estimatedMax, suppliedMax, outcome } = resolveMaxHr(input.max_hr, guardableAge, input.max_hr_source)
 
   // Rejected supplied max (floor below the estimate, or artifact above it) — fall
   // back to Tanaka and say so. The wrong max poisons every HR target for the
@@ -74,8 +133,8 @@ export function buildHRZonesWithFallback(input: GeneratorInput): HRZoneFallbackR
       // value below the estimate is a floor — the highest the device happened to
       // catch, not a maximum. A value far above it is a stray reading.
       assumption_note: outcome === 'floored'
-        ? `The max HR on file (${suppliedMax} bpm) is below the age estimate for ${input.age} (${estimatedMax} bpm). A recorded max below the estimate is a floor: the highest your device happened to catch, not your true ceiling, so zones use ${estimatedMax} bpm (Zone 2 ceiling ≈ ${zones.zone2Ceiling} bpm). If ${suppliedMax} really is your max, set it in Profile and we'll use it.`
-        : `The max HR on file (${suppliedMax} bpm) is well above the typical range for age ${input.age}, worth double-checking it wasn't a stray reading. Zones use the age estimate of ${estimatedMax} bpm instead (Zone 2 ceiling ≈ ${zones.zone2Ceiling} bpm). If ${suppliedMax} really is your max, set it in Profile and we'll use it.`,
+        ? `The max HR on file (${suppliedMax} bpm) is below the age estimate for age ${guardableAge} (${estimatedMax} bpm). A recorded max below the estimate is a floor: the highest your device happened to catch, not your true ceiling, so zones use ${estimatedMax} bpm (Zone 2 ceiling ≈ ${zones.zone2Ceiling} bpm). If ${suppliedMax} really is your max, set it in Profile and we'll use it.`
+        : `The max HR on file (${suppliedMax} bpm) is well above the typical range for age ${guardableAge}, worth double-checking it wasn't a stray reading. Zones use the age estimate of ${estimatedMax} bpm instead (Zone 2 ceiling ≈ ${zones.zone2Ceiling} bpm). If ${suppliedMax} really is your max, set it in Profile and we'll use it.`,
     }
   }
 

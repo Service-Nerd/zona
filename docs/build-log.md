@@ -6,6 +6,25 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-11-17 — MAXHR-AGE-ABSENT-01 · a required field whose only caller always filled it by fabrication
+**Shipped:** the engine stops inventing an age. With no age and a max, the max is used as given and we say the plausibility check could not run. With neither, nothing is derivable: no ceiling, no zone, no target, and the talk test is the prescription. §3's masters cadence resolves to the cautious side.
+
+**Dev learning:** `inputs.ts` said *"age is always required"* and threw to enforce it. It was true of the type and false of the product, because the only producer of `input.age` was the wizard, and the wizard had `: 30` at the end of a ternary. **A required field whose sole caller always fills it by fabrication is an optional field with a lie in front of it**, and the lie was load-bearing twice: §50's whole asymmetry is relative to the Tanaka estimate, and §3's masters cadence is `age >= 45`. Making the field optional cost three compile errors. Three. The compiler enumerated the entire blast radius of a defect that had been there for the life of the wizard.
+
+The other technique worth keeping: I made `ZoneTargets`' fields optional rather than inventing a sentinel, and let tsc list the read sites. 42 errors, ~14 real ones. A zero ceiling or a sentinel max would have passed every one of them silently.
+
+**Product/creator learning:** the invented thirty was not a neutral guess. Thirty is the youngest plausible adult, so it produces the highest Tanaka ceiling and the least recovery — and a 60-year-old was told to run easy at 150 bpm when 150 is above the top of their own Zone 3. The easy cap is the one number this product exists to get right, and it was being set from a literal. Sims put it better than I can: when a product invents a missing body it invents a young one, and the people it costs are masters runners and post-menopausal women.
+
+The deload was the part nobody had measured, including me, and I only found it because `input.age` had seven readers and I read all seven instead of grepping for the one I expected. Two of them were §3's cadence — producer and checker — and `undefined >= 45` is false, so the engine did not *choose* the four-week cadence for sixteen runners. It fell into it. An operator's coercion rule was making a load decision.
+
+**AI-building learning:** three separate self-inflicted errors in one build, each caught by something I had written earlier for a different reason. My source ratchet for the deleted literals matched the comment I had just written *about* the deleted literal — the comment-stripping lesson, third recorded instance. My new invariant could not be woken by any mutation, and rather than baseline it I asked why: its absent-age arms need an ageless *input*, and mutations only get a plan. The fix made the invariant **stronger** — it now also catches meta and input *disagreeing*, which is exactly the `storedPlanInput: age: m.age ?? 40` defect, where neither side was absent. A check that cannot be falsified is usually a check that is asking too narrow a question.
+
+**The honest bit:** four tests asserted the doctrine the board had just overturned, and one of them was named *"rejects a missing age rather than estimating one"*. Its comment reasoned correctly — age is the only input HR zones cannot be derived without — and then drew a conclusion the product never implemented, because the wizard made the throw unreachable. I kept the old reasoning in the replacement arm, because being half right in a way that survives for months is more instructive than being wrong.
+
+**Hook material:** making one field optional produced three TypeScript errors and uncovered that sixteen runners were on the wrong deload cadence because `undefined >= 45` is false. Four different invented ages existed in one codebase — 30, 40, 35, 0 — and the only one a runner ever saw was the one the engine did not use.
+
+**Postable?:** yes
+
 ## 2026-11-17 — THRESHOLD-INTERVAL-OVERLAP-01 · the ruling asked for two outcomes and one of them contradicted the other
 **Shipped:** inside `ANCHOR-BAND-FLIP-01` — the interval band's floor moves to the CV ceiling, so threshold, CV and intervals share their boundaries and cannot overlap. 158 to 173 bpm for a VDOT-41 runner.
 

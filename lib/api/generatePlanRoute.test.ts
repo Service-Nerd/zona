@@ -532,10 +532,26 @@ describe('H — a failed or refused generation is on the record, so it cannot lo
     expect((S.store.ops_events ?? []).find(r => r.kind === 'plan_generate_failed')?.user_id).toBe(UID)
   })
 
-  it('H2 — a §55 refusal (no age) is 422 AND writes plan_input_refused naming the field, never its value', async () => {
-    const res = await post(body({ age: undefined }))
+  it('H2 — a §55 refusal (an age out of range) is 422 AND writes plan_input_refused naming the field, never its value', async () => {
+    // 🔴 THIS USED `age: undefined` UNTIL 2026-11-17 AND NOW RETURNS 200 FOR IT. `MAXHR-AGE-ABSENT-01`
+    // (Coaching Board) made an ABSENT age valid: 16 of 56 live runners have none, and the old
+    // "requirement" was satisfied by the wizard fabricating 30, so the refusal fired for nobody.
+    //
+    // ⚠️ THE ARM'S SUBJECT IS UNCHANGED AND IS NOT ABOUT AGE: a §55 refusal must name the FIELD
+    // and never the VALUE. A present-but-impossible age still refuses, which is the §55/§50
+    // distinction the amendment preserved — absent became valid, nonsense did not.
+    const res = await post(body({ age: 7 }))
     expect(res.status).toBe(422)
     expect(eventDetail('plan_input_refused')).toEqual({ field: 'age', race_distance_km: 21.1 })
+  })
+
+  it('H2b — an ABSENT age now BUILDS, and that is the ruling rather than a relaxation', async () => {
+    // The other half, asserted so nobody re-adds the throw: §50's own principle is that the
+    // engine never refuses to generate for missing HR inputs, and age is an HR input.
+    const res = await post(body({ age: undefined }))
+    expect(res.status).toBe(200)
+    await res.text()
+    expect(events()).not.toContain('plan_input_refused')
   })
 
   it('H3 — a plan that builds records neither', async () => {

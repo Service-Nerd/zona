@@ -28,6 +28,7 @@ import SignOutLink from '@/components/shared/SignOutLink'
 import { createEnrichSaveCoordinator } from '@/lib/plan/enrichSaveCoordinator'
 import { weekVolumeLabel } from '@/lib/plan/weekVolume'
 import { GENERATION_CONFIG, raceDistanceKey } from '@/lib/plan/generationConfig'
+import { hrGuardableAge } from '@/lib/plan/hrSaveResolution'
 import { convertDistanceString, formatDate, formatDistance, formatDuration } from '@/lib/format'
 import { renderPlanProse, planProseContext } from '@/lib/plan/renderGuidance'
 import { isPaidDistance } from '@/lib/plan/canUseFeature'
@@ -1021,7 +1022,15 @@ export default function GeneratePlanScreen({
     if (!opts?.acceptBaseBuild) setErrorOffer(null)
     if (!opts?.acknowledge) setAckKind(null)
 
-    const ageYears      = birthYear !== null ? new Date().getFullYear() - birthYear : 30
+    // 🔴 THE `: 30` IS GONE (MAXHR-AGE-ABSENT-01, Coaching Board 2026-11-17). It was the only
+    // producer of `input.age`, so "age is always required" in `inputs.ts` was satisfied by a
+    // FABRICATION whenever the runner skipped this optional step — and §50's whole asymmetry,
+    // plus §3's masters cadence, hangs off that number. Measured: a 60-year-old priced at 30
+    // was told easy <= 150 bpm when 150 is above the top of their own Zone 3.
+    //
+    // ⚠️ `hrGuardableAge` IS THE OWNER and the DISPLAY path already used it. It returns null
+    // for an absent or implausible birth year, which is the same answer the engine now wants.
+    const ageYears      = hrGuardableAge(birthYear) ?? undefined
     const weeklyKmVal   = weeklyKm   ?? GENERATION_CONFIG.WIZARD_VOLUME_RULER.WEEKLY_KM_ANCHOR
     const longestRunVal = longestRun ?? GENERATION_CONFIG.WIZARD_VOLUME_RULER.LONGEST_RUN_KM_ANCHOR
 
@@ -2199,7 +2208,12 @@ export default function GeneratePlanScreen({
         // Descending years (newest first) so the wheel opens near most birth
         // years. 14–90 = the allowable runner age range.
         const years = Array.from({ length: 90 - 14 + 1 }, (_, i) => currentYear - 14 - i)
-        const anchor = currentYear - 35   // ~age 35 resting position when unset
+        // ⚠️ A THIRD INVENTED AGE LIVED HERE AND THE RUNNER WAS THE ONLY ONE WHO SAW IT. The
+        // wheel rested at ~35 while a skipped step was priced at 30 (Tanaka 184 vs 187), so
+        // the screen showed one age and the plan was built on another. The wheel's resting
+        // position is now only ever a SCROLL POSITION — `birthYear` stays null until the runner
+        // moves it, and an untouched wheel yields no age at all rather than the one on screen.
+        const anchor = currentYear - GENERATION_CONFIG.WIZARD_BIRTH_YEAR_WHEEL_ANCHOR_AGE
         return (
           <div style={{ display: 'flex', justifyContent: 'center' }}>
             <WheelPicker

@@ -34,6 +34,7 @@
 import type { Plan, Session } from '@/types/plan'
 import type { Day } from './days'
 import { GENERATION_CONFIG, raceDistanceKey } from './generationConfig'
+import { mastersCadenceApplies } from './mastersCadence'
 import { SESSION_FORMAT, sessionSplit } from './sessionFormat'
 import { isLongRun, isShakeout, isTimeTrial } from './sessionRole'
 import { catalogueRowFor } from './catalogueLink'
@@ -426,7 +427,10 @@ export function checkPlanShape(plan: Plan): ShapeFinding[] {
   // first recovery no earlier than week 4" for every non-masters plan, including
   // all nine published ones.
   {
-    const freq = (plan.meta.age ?? 0) >= GENERATION_CONFIG.MASTERS_AGE_THRESHOLD
+    // MAXHR-AGE-ABSENT-01 — was `(plan.meta.age ?? 0) >= threshold`, a FOURTH invented age
+    // (zero), which resolved an absent age to the standard cadence while the producer now
+    // resolves it to the masters one. Same owner on both sides.
+    const freq = mastersCadenceApplies(plan.meta.age)
       ? GENERATION_CONFIG.RECOVERY_WEEK_FREQUENCY_MASTERS
       : GENERATION_CONFIG.RECOVERY_WEEK_FREQUENCY_STANDARD
     const minLoading = freq - 1

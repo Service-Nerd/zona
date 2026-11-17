@@ -45,10 +45,28 @@ describe('§55 — age is required and bounded 13-90', () => {
     expect(() => validateInputFields({ ...OK, age: 13 })).not.toThrow()
     expect(() => validateInputFields({ ...OK, age: 90 })).not.toThrow()
   })
-  it('rejects a missing age rather than estimating one', () => {
-    // Age is the only input HR zones cannot be derived without (§50's Tanaka
-    // fallback needs it), so absence is a refusal, not a fallback.
-    throwsOn({ age: undefined } as Partial<GeneratorInput>, 'age')
+  it('ACCEPTS a missing age — and this arm asserted the opposite until 2026-11-17', () => {
+    // 🔴 REVERSED BY `MAXHR-AGE-ABSENT-01` (Coaching Board 2026-11-17), and the old reasoning is
+    // kept because it was half right. It said: *"age is the only input HR zones cannot be derived
+    // without, so absence is a refusal, not a fallback."* The premise is true; the conclusion was
+    // never implemented. `GeneratePlanScreen` — the ONLY producer of `input.age` — satisfied this
+    // throw with a hardcoded `: 30` whenever the runner skipped the optional birth-year step, so
+    // the refusal fired for nobody and the fabrication reached §50 and §3 instead.
+    //
+    // ⚠️ A REQUIRED FIELD WHOSE ONLY CALLER ALWAYS FILLS IT BY FABRICATION IS AN OPTIONAL FIELD
+    // WITH A LIE IN FRONT OF IT. 16 of 56 live runners have no age. The board's answer is that
+    // absence propagates: no max estimate, no zone, no number, and §3's cadence resolves cautious.
+    expect(() => validateInputFields({ ...OK, age: undefined })).not.toThrow()
+    expect(() => validateInputFields({ ...OK, age: null as unknown as number })).not.toThrow()
+  })
+
+  it('still rejects a PRESENT age that is nonsense — §55 is unchanged', () => {
+    // The distinction §55 exists for, and §50's founding case (`resting_hr: 0`) is why it matters:
+    // absent is a real state, present-and-absurd is a defect. Only the first became valid.
+    throwsOn({ age: 0 } as Partial<GeneratorInput>, 'age')
+    throwsOn({ age: 12 } as Partial<GeneratorInput>, 'age')
+    throwsOn({ age: 91 } as Partial<GeneratorInput>, 'age')
+    throwsOn({ age: Number.NaN } as Partial<GeneratorInput>, 'age')
   })
 })
 

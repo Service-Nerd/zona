@@ -36,6 +36,7 @@ import { catalogueRowFor } from './catalogueLink'
 import { isEffortGovernedRow } from './hrBand'
 import { zoneStringFromZoneKeys } from '@/lib/coaching/zoneRules'
 import { bandForAnchors, anchorsForQualityPrescription, zonesOverlappedBy } from './anchorBand'
+import { mastersCadenceApplies } from './mastersCadence'
 import { isLongRun, isShakeout, isTimeTrial, classifyStimulus, isVo2maxSession, isStructuredSession, isQualitySession, isHardEffort, workClassFor } from './sessionRole'
 import { mainSetMinutes, durationForMainSet } from './sessionFormat'
 import { isV2Structure, StructureV2Schema, goalPaceShapeWord } from './sessionStructureV2'
@@ -96,6 +97,7 @@ export const INVARIANT_CODES = [
   'INV-PLAN-COACH-NOTES-MATCH-INTENT',
   'INV-PLAN-DISPLAY-ZONE-MATCHES-WORK',
   'INV-PLAN-HR-MATCHES-PACE',
+  'INV-PLAN-NO-INVENTED-AGE',
   'INV-PLAN-LABEL-MATCHES-PACE',
   'INV-PLAN-OVER-UNDER-MEAN-NEAR-THRESHOLD',
   'INV-PLAN-DELOAD-PLACEMENT',
@@ -1728,7 +1730,11 @@ export function validatePlan(plan: Plan, rawInput: GeneratorInput): Violation[] 
       // A quality session must carry the prescribed zone string the display
       // reads. The engine always sets it (makeQualitySession); a missing one is
       // a regression that would silently fall back to a coarse type-derived zone.
-      if (session.type === 'quality' && !zoneKey) {
+      // MAXHR-AGE-ABSENT-01 — same escape hatch. A quality session legitimately carries NO zone
+      // when nothing could be derived (§14 Am. 2: the field stays absent and effort governs);
+      // `hr_derived_max == null` is how the producer says so, and this arm must not fire on it.
+      const nothingDerivable = (plan.meta as unknown as Record<string, unknown>).hr_derived_max == null
+      if (!nothingDerivable && session.type === 'quality' && !zoneKey) {
         violations.push({
           code: 'INV-PLAN-DISPLAY-ZONE-MATCHES-WORK',
           principle_ref: 'CoachingPrinciples §84',
@@ -1902,6 +1908,68 @@ export function validatePlan(plan: Plan, rawInput: GeneratorInput): Violation[] 
       }
     }
 
+    // INV-PLAN-NO-INVENTED-AGE (§50 Amendment, MAXHR-AGE-ABSENT-01) — a plan must not record an
+    // age it was never given, and where it has none it must say so.
+    //
+    // 🔴 THE DEFECT: `GeneratePlanScreen.tsx` satisfied a REQUIRED `input.age` with a hardcoded
+    // `: 30` for any runner who skipped the optional birth-year step. §50's whole asymmetry is
+    // relative to the Tanaka estimate and §3's masters cadence is `age >= 45`, so one fabricated
+    // literal moved the easy ceiling AND the deload frequency. 📐 Measured: 16 of 56 live
+    // runners have no age; a 60-year-old priced at 30 is told easy <= 150 bpm when 150 is above
+    // the top of their own Zone 3 (§12 breached in fact); and all 16 were put on the 4-week
+    // deload instead of the 3-week one.
+    //
+    // ⚠️ IT CHECKS THE PLAN AGAINST ITS OWN INPUT, which is the only way to see a fabrication:
+    // an age of 30 is perfectly plausible on its own and says nothing. The violation is the
+    // DISAGREEMENT — meta claims an age the input did not carry.
+    {
+      const inputAge = input.age
+      const metaAge = (plan.meta as unknown as Record<string, unknown>).age
+      const inputHasAge = typeof inputAge === 'number' && Number.isFinite(inputAge)
+      // 🔑 AND IT CHECKS DISAGREEMENT, NOT ONLY FABRICATION — which is both stronger and the
+      // reason the liveness harness can wake it at all. `storedPlanInput` round-trips meta into
+      // an input on every reshape, and its own defect was `age: m.age ?? 40`: the two then
+      // DISAGREED (187 vs 177 through Tanaka) rather than one being absent. An invariant that
+      // only caught absent-vs-present would have been blind to the second of the four literals.
+      if (inputHasAge && metaAge != null && metaAge !== inputAge) {
+        violations.push({
+          code: 'INV-PLAN-NO-INVENTED-AGE',
+          principle_ref: 'CoachingPrinciples §50 Amendment',
+          severity: 'error',
+          week: plan.weeks[0]?.n ?? 1,
+          message: `The plan records age ${String(metaAge)} but its input carried ${String(inputAge)}. §50 derives the max from the age and §3 reads it for the masters cadence, so the two disagreeing means the plan was validated against a different runner than it was built for.`,
+          actual: `meta.age = ${String(metaAge)}, input.age = ${String(inputAge)}`,
+          expected: 'meta.age to equal the age the plan was built with',
+        })
+      }
+      if (!inputHasAge && metaAge != null) {
+        violations.push({
+          code: 'INV-PLAN-NO-INVENTED-AGE',
+          principle_ref: 'CoachingPrinciples §50 Amendment',
+          severity: 'error',
+          week: plan.weeks[0]?.n ?? 1,
+          message: `The plan records age ${String(metaAge)} but its input carried none. §50 estimates a max HR FROM the age and §3 reads it for the masters cadence, so an invented age moves the easy ceiling and the deload frequency at once.`,
+          actual: `meta.age = ${String(metaAge)}, input.age = absent`,
+          expected: 'no age in meta when the input carried none',
+        })
+      }
+      // The other half, and it is the one §14 Amendment 2 asks for: with no age the engine must
+      // SAY what it could not do. A silent absence is the original defect wearing a different
+      // hat — the runner could not tell their zones rested on a guess, which is §50's own
+      // founding case (2026-04-28, `resting_hr: 0`).
+      if (!inputHasAge && !(plan.meta as unknown as Record<string, unknown>).hr_assumption_note) {
+        violations.push({
+          code: 'INV-PLAN-NO-INVENTED-AGE',
+          principle_ref: 'CoachingPrinciples §50 Amendment, §14 Amendment 2',
+          severity: 'error',
+          week: plan.weeks[0]?.n ?? 1,
+          message: 'The plan was built without an age and carries no assumption note. §50 closes the SILENCE hole, not only the validation hole: the runner must be able to tell that their zones could not be sanity-checked.',
+          actual: 'no age, no hr_assumption_note',
+          expected: 'an assumption note naming what could not be derived',
+        })
+      }
+    }
+
     // INV-PLAN-INJURY-NO-HILLS — runners with hill-restricting injury history
     // (knee, ITB, Achilles, shin, calf, plantar) get no hill sessions in ANY
     // phase. §21's peak reintroduction is gated on a symptom-free build that is
@@ -2038,6 +2106,12 @@ export function validatePlan(plan: Plan, rawInput: GeneratorInput): Violation[] 
       const zone = (session.zone ?? '').toLowerCase()
       // SHARED OWNER (see `labelImplications`): `mergePlan` reads the same three
       // booleans to refuse a cross-class rename, and two copies would drift.
+      // MAXHR-AGE-ABSENT-01 — NOTHING DERIVABLE MEANS NO ZONE TO COMPARE AGAINST, and the arms
+      // below read the string. Without this the checker reported `zone is "undefined"` on the
+      // engine's own correct output for a runner with no age and no max. ⚠️ The ESCAPE HATCH IS
+      // DERIVABILITY, not absence of data — the same wording `INV-PLAN-ZONE-LABEL-HAS-PRESCRIPTION`
+      // already uses, so a runner who merely supplied nothing still gets checked via Tanaka.
+      if (!session.zone && (plan.meta as unknown as Record<string, unknown>).hr_derived_max == null) continue
       const { vo2: labelImpliesVo2, threshold: labelImpliesThreshold } = labelImplications(label)
       // 🔑 THE LABEL SIDE IS A LABEL READ ON PURPOSE; THE PRESCRIPTION SIDE IS NOT
       // (ZONE-STRING-CLASSIFIER-01). §19's question is "the NAME claims X — does the WORK
@@ -2719,7 +2793,10 @@ export function validatePlan(plan: Plan, rawInput: GeneratorInput): Violation[] 
     //      in peak and week 9 did not exist, and re-anchoring restores the 3:1
     //      §3 actually promises. So the check is one-sided on purpose.
     {
-      const recoveryFreq = input.age >= GENERATION_CONFIG.MASTERS_AGE_THRESHOLD
+      // MAXHR-AGE-ABSENT-01 — the checker reads the SAME owner as the producer. Written out
+      // twice, an absent age would have given the two different cadences and the invariant
+      // would have fired on the engine's own correct output.
+      const recoveryFreq = mastersCadenceApplies(input.age)
         ? GENERATION_CONFIG.RECOVERY_WEEK_FREQUENCY_MASTERS
         : GENERATION_CONFIG.RECOVERY_WEEK_FREQUENCY_STANDARD
       // Phase read off the PRODUCED plan, not recomputed from the distribution

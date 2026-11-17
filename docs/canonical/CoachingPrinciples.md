@@ -4946,6 +4946,86 @@ Enforced by `INV-PLAN-HR-ASSUMPTIONS-SURFACED`. Non-Karvonen methods MUST surfac
 
 ---
 
+### Amendment — AN ABSENT AGE IS NOT AN AGE — added 2026-11-17 (Coaching Board, `MAXHR-AGE-ABSENT-01`)
+
+**Principle.** Every arm of the fallback table above that could help a runner with no max HR says
+*"estimate max from age"*, and **none of them says what to do when there is no age either.** The
+engine does not choose a number. Two cases, and they are owed different things:
+
+| state | what the engine does | method |
+|---|---|---|
+| **no age, max present** | uses the max **exactly as given**, and says the plausibility check could not run | `max_unguarded_no_age` |
+| **no age, no max** | **nothing is derivable**: no max, no ceiling, no zone, no target. Effort governs, and the note says so | `no_hr_no_age` |
+
+**And §3's masters cadence resolves to the CAUTIOUS side under ignorance** — an absent age takes the
+**3-week** recovery cadence, not the 4-week one.
+
+**Why.** `GeneratePlanScreen.tsx` satisfied a *required* `input.age` with a hardcoded **`: 30`**
+whenever the runner skipped the optional birth-year step. **A required field that its only caller
+always fills by fabrication is an optional field with a lie in front of it**, and this lie was
+load-bearing twice over: §50's entire asymmetry is relative to the Tanaka estimate, and §3's
+cadence is `age >= 45`.
+
+📐 **Measured 2026-11-17: 16 of 56 live runners carry neither `birth_year` nor `date_of_birth`**;
+3 have a generated plan and **all three record `age=30`**. The cost, by real age:
+
+| a runner aged | was told easy ≤ | their own Z2 top | their own Zone 3 |
+|---|---|---|---|
+| 45 | 150 bpm | 142 (+8) | 142–154 |
+| 55 | 150 bpm | 136 (+14) | 136–148 |
+| **60** | **150 bpm** | **133 (+17)** | **133–144** |
+| 65 | 150 bpm | 130 (+20) | 130–142 |
+
+🔴 **A 60-year-old was told to run easy at a heart rate above the top of their own Zone 3.** §12 is
+breached in fact, and §1's grey zone arrives through the easy cap — 📊 Seiler: *"it does not
+mis-prescribe one run; it converts every easy run in an eighteen-week plan into exactly the
+moderate-intensity grinding this product exists to prevent. And §1 will not see it: it counts
+SESSIONS, and the session is still typed easy."*
+
+🔴 **The second consequence nobody had measured: all 16 were put on the 4-week deload instead of
+the 3-week one.** 🩹 Willy, binding: *"I am not asserting these sixteen are masters. I am asserting
+that we have no basis for asserting they are not, and §3 currently resolves that ignorance to the
+less protective of two ratified cadences. Resolve ignorance to the cautious side or decline to
+resolve it. Do not resolve it to thirty."* ⚠️ And it was not even a decision — `undefined >= 45` is
+false in JavaScript, so the engine **fell into** the standard cadence rather than choosing it.
+
+🔑 **The tell was one file away.** The DISPLAY path already asked `hrGuardableAge`, got `null`, and
+said so in a comment. 🏃 Hutchinson: *"Thirty is not an estimate. An estimate is a value with a
+stated method and an error bar; this is a literal, chosen because it sat at the end of a ternary.
+The display admits it does not know and the generator pretended."*
+
+⚠️ **FOUR invented ages existed and they disagreed** — `30` (wizard, generation), `40`
+(`storedPlanInput`, every re-validation, so a legacy plan was re-checked against a different
+Tanaka estimate than it was built with), `35` (the birth-year wheel's resting position, **the only
+one a runner ever saw**), `0` (`planShapeInvariants`). All four are gone; the wheel's 35 survives
+as `WIZARD_BIRTH_YEAR_WHEEL_ANCHOR_AGE`, a **scroll position and not an age**.
+
+⚕️ **Sims, and it is her own objection one field over** (she made it on `BENCHMARK-DATE-REQUIRED-01`):
+*"What is not defensible is asking the question, accepting a blank, and then pricing the blank."*
+The step is marked optional and its subtitle says the year matters *"only to estimate your max heart
+rate, if you haven't set one"* — **which is false**: the age is what *checks* a max the runner has
+set, and 6 of 6 ageless runners with a stored max would get a different effective max depending on
+it. ⚠️ **And note which blank was chosen: thirty, the youngest plausible adult, which yields the
+highest ceiling and the least recovery.** *"When a product invents a missing body it invents a young
+one, and the people it costs are masters runners and peri- and post-menopausal women."*
+
+**Relation to §14 Amendment 2.** That amendment says *"where nothing can be derived, the field stays
+absent and the talk test IS the prescription"*, and warns that *"nothing derivable means no
+`hr_derived_max`, not 'the runner supplied nothing'"* — **because §50 falls back to Tanaka.** Tanaka
+needs an age. **This is the first case that genuinely meets that clause's own test**, and it is
+honoured rather than contradicted: `hr_derived_max` is absent, and `INV-PLAN-ZONE-LABEL-HAS-PRESCRIPTION`
+was already written to accept exactly that state. The producer has finally caught up with the checker.
+
+**Out of scope, by ruling.** Whether the wizard may accept a blank at all is **encoding** — the
+Design Board's, then the founder's (`PROFILE-BIRTH-YEAR-REQUIRED-01`). 🏃 The chair: *"we can fix
+ours today without waiting for theirs, and we should, because requiring the field fixes nobody who
+has already generated."*
+
+**Config.** `WIZARD_BIRTH_YEAR_WHEEL_ANCHOR_AGE` (a scroll position); `lib/plan/mastersCadence.ts`
+is the single owner of §3's cadence question, shared by the producer and both checkers. **Enforced
+by** `INV-PLAN-NO-INVENTED-AGE` — a plan must not record an age its input did not carry, and an
+ageless plan must carry an assumption note.
+
 ## 51. Returning-runner allowance must be communicated
 
 **Principle.** When the engine activates the returning-runner allowance (§2) OR the fresh-from-layoff start fraction (§29), plan meta MUST surface a `returning_runner_note` that names the change and the reason. Silent mechanism is a coaching defect.
