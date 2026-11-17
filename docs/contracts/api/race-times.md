@@ -35,6 +35,21 @@ copy of Karvonen in the codebase — and did so **unguarded**. The engine wrote
 essentially every run they had ever logged qualified and fed the VDOT estimate.
 `computeZones` handles the absent case with §14's %MaxHR fallback.
 
+⚠️ **AND SINCE `MAXHR-AGE-ABSENT-01` (2026-11-17) THERE IS A STATE WITH NO BAND AT ALL.**
+`plan.meta.max_hr` is now optional — a runner with no age and no stored max has no max, because
+§50's every *"estimate from age"* arm needs an age and the engine no longer invents one. So:
+
+| `meta.max_hr` | band | qualifying runs |
+|---|---|---|
+| present | `computeZones` as above | as above |
+| **absent** | **none** | **EMPTY — state 1, never state 2 or 3** |
+
+🔴 **AN ABSENT BAND MUST SELECT NOTHING, NOT EVERYTHING, and that is the same defect one shape
+over.** A missing floor read as `0` and a missing ceiling as `Infinity` would make every logged run
+"aerobic" and silently widen the sample this VDOT estimate rests on — which is precisely what
+`resting_hr: 0` did above. The route therefore returns an empty aerobic set when the band is
+unknown, rather than an unbounded one.
+
 ⚠️ **`meta.resting_hr` is OPTIONAL and may be absent.** Since the same ship the
 engine omits the key rather than storing a zero, and `PlanSchema` rejects a
 non-positive value. Any consumer reading it must treat absent as "use %MaxHR",
