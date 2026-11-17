@@ -35,7 +35,7 @@ import { requiredPaceAnchors } from './sessionCatalogueData'
 import { catalogueRowFor } from './catalogueLink'
 import { isEffortGovernedRow } from './hrBand'
 import { zoneStringFromZoneKeys } from '@/lib/coaching/zoneRules'
-import { isLongRun, isShakeout, isTimeTrial, classifyStimulus, isVo2maxSession, isStructuredSession, isQualitySession, isHardEffort } from './sessionRole'
+import { isLongRun, isShakeout, isTimeTrial, classifyStimulus, isVo2maxSession, isStructuredSession, isQualitySession, isHardEffort, workClassFor } from './sessionRole'
 import { mainSetMinutes, durationForMainSet } from './sessionFormat'
 import { isV2Structure, StructureV2Schema, goalPaceShapeWord } from './sessionStructureV2'
 import { hrBandForZoneString } from '@/lib/coaching/zoneRules'
@@ -1967,10 +1967,38 @@ export function validatePlan(plan: Plan, rawInput: GeneratorInput): Violation[] 
       // SHARED OWNER (see `labelImplications`): `mergePlan` reads the same three
       // booleans to refuse a cross-class rename, and two copies would drift.
       const { vo2: labelImpliesVo2, threshold: labelImpliesThreshold } = labelImplications(label)
+      // 🔑 THE LABEL SIDE IS A LABEL READ ON PURPOSE; THE PRESCRIPTION SIDE IS NOT
+      // (ZONE-STRING-CLASSIFIER-01). §19's question is "the NAME claims X — does the WORK
+      // agree?", so `labelImplications` must read the name. What the work IS was read from
+      // `session.zone`, which is a second label (§84 Am. 1: *"`hr_target` is the
+      // prescription; `session.zone` is a label ABOUT it"*) — so both sides of a
+      // label-versus-work check were labels. `workClassFor` reads the stamped catalogue row
+      // (ADR-018), which is the producer's own record of what it prescribed.
+      const workClass = workClassFor(session, V1_SESSION_CATALOGUE)
+      // ⚠️ THE ZONE STRING SURVIVES AS THE FALLBACK AND ONLY THERE: a plan from before the
+      // ADR-018 stamp has no row, and for those the string is the only record there is.
+      const prescribesVo2 = workClass !== null
+        ? workClass === 'vo2max'
+        : zone.includes('zone 4') || zone.includes('zone 5')
+      // 🔑 AND THIS ARM STAYS ON THE ZONE STRING, DELIBERATELY — I re-keyed it, the suite went
+      // red in 13 files, and the red was right (ZONE-STRING-CLASSIFIER-01).
+      //
+      // §33 REPURPOSING AND §22's GOAL-PACE OVERRIDE BOTH MOVE THE PRESCRIPTION OFF THE ROW.
+      // `rowRepurposedAsQuality` takes an `aerobic` or non-effort-governed `ultra_specific`
+      // row into a quality slot at T-pace in Zone 3 and renames it ("Tempo run"), which the
+      // board sanctioned (`ULTRA-VOICE-REPURPOSED-01`). So `time_on_feet` — declared `['Z1','Z2']`
+      // — is legitimately delivered as a Zone 3 tempo, and its CATEGORY describes what the row is
+      // FOR, not what this instance was prescribed AS. The row cannot answer this question.
+      // `session.zone` is written at construction from the band actually prescribed, so here it
+      // IS the prescription's record rather than a label about it.
+      //
+      // ⚠️ AND IT SURVIVES ADR-026 BY CONSTRUCTION, which is why it needs no amendment: the test
+      // is "at least Zone 3", so a threshold session whose derived band reads Zone 4 satisfies
+      // `zoneIsVo2` and the arm still does not fire.
       const zoneIsVo2 = zone.includes('zone 4') || zone.includes('zone 5')
       const zoneIsThreshold = zone.includes('zone 3') && !zone.includes('zone 4')
 
-      if (labelImpliesVo2 && !zoneIsVo2) {
+      if (labelImpliesVo2 && !prescribesVo2) {
         violations.push({
           code: 'INV-PLAN-LABEL-MATCHES-PACE',
           principle_ref: 'CoachingPrinciples §19',
@@ -2007,6 +2035,8 @@ export function validatePlan(plan: Plan, rawInput: GeneratorInput): Violation[] 
       // catalogue category to key off (the seventh gap — SC-08). When SC-08
       // lands, re-key this on the structural category per INV-CLASS.
       const { easy: labelImpliesEasy } = labelImplications(label)
+      // Same reasoning as the arm above, and the same conclusion: an easy NAME must sit in an
+      // easy BAND, and the band is what §33 repurposing changes while the row's category does not.
       const zoneIsEasy = zone.includes('zone 1') || zone.includes('zone 2')
       if (labelImpliesEasy && !zoneIsEasy) {
         violations.push({
@@ -6407,6 +6437,20 @@ export function validatePlan(plan: Plan, rawInput: GeneratorInput): Violation[] 
         const mid = parsePaceMidpoint(session.pace_target)
         if (mid == null) continue
         const zone = (session.zone ?? '').toLowerCase()
+        // 🔻 ZONE-STRING-CLASSIFIER-01 CONSIDERED RE-KEYING THESE TWO TO THE CATALOGUE ROW AND
+        // LEFT THEM, with the reason recorded rather than the change made.
+        //
+        // The row cannot answer this one either: §33 repurposing delivers an `ultra_specific`
+        // row at T-pace and §22 delivers a `threshold` row at goal pace, so on both sides the
+        // category describes what the row is FOR and not what this instance was prescribed AS
+        // — measured, 26,928 of 250,616 cohort quality sessions sit on the VO2max side of this
+        // comparison purely because §22 renamed them, and the category would move all of them.
+        //
+        // ⚠️ AND UNLIKE THE §19 ARMS ABOVE, THIS ONE DOES NOT SURVIVE ADR-026 BY CONSTRUCTION:
+        // once the band is derived from the runner's own pace anchor, a threshold session can
+        // read "Zone 4" and join the VO2max side, so the pair being compared changes per runner.
+        // That is ADR-026 condition 3 exactly, it needs the board rather than a re-key, and it
+        // is carried in `ANCHOR-BAND-FLIP-01` beside `INV-PLAN-PACE-ZONE-COHERENT`.
         const isVo2Band = zone.includes('zone 4') || zone.includes('zone 5')
         const isThresholdBand = zone.includes('zone 3') && !isVo2Band
         const entry = { mid, label: session.label ?? '(unlabelled)', week: w.n }

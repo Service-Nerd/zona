@@ -2423,39 +2423,30 @@ arm: **observed below the runner's own recorded peak is reconciled upward, promp
 
 ---
 
-### 🔲 `ZONE-STRING-CLASSIFIER-01` — four prescription guards classify a session by its DISPLAY STRING ⚙️ **NO BOARD** (defect against INV-CLASS)
-
-🔴 **Found 2026-11-17 while building ADR-026 B1, by wiring the band and measuring what fired.** `session.zone` is a
-display label (§84 Am. 1: *"`hr_target` is the prescription; `session.zone` is a label ABOUT it"*). Four places branch
-on it with **no structural fallback**:
-
-| where | what it decides |
-|---|---|
-| `invariants.ts:1970` `INV-PLAN-LABEL-MATCHES-PACE` | `zoneIsVo2` / `zoneIsThreshold` from `zone.includes('zone 4')` |
-| `invariants.ts:6410` `INV-PLAN-PACE-INVERSION` | the same pair, to compare fastest threshold against fastest VO2max |
-| `INV-PLAN-VO2MAX-MAIN-SET-CAP` | applies the **12–18 min VO2max dose bound** to anything labelled Z4/Z5 |
-| `ruleEngine.ts:8186` `physBucket` | §53's label-variety alternatives — **prescription-visible**, it rewrites labels |
-
-🔑 **This is INV-CLASS verbatim** — *"classify by a structural signal the producer stamps, never by a display string
-another layer can rewrite"* — and the signal is already stamped: **`catalogue_id` via `catalogueRowFor` (ADR-018)**.
-`classifyStimulus` in `sessionRole.ts` already does it right (`if (session.stimulus) return session.stimulus` first),
-which is the shape to copy.
-
-📐 **Latent today, live under ADR-026 B3.** With the band wired, `INV-PLAN-VO2MAX-MAIN-SET-CAP` fired on **"CV
-intervals", 24 min, as VO2max work** — a CV *threshold* session judged against the VO2max dose band. 1,910 of 6,516
-quality sessions (29.3%) take a new label once R2 lands, so each of these four starts answering a **runner-dependent**
-question. ⚠️ **It is a defect now, not only then:** the enricher may rewrite a label, and §84 Am. 1 exists because the
-zone string and the band had already diverged on 10–15% of sessions per distance.
-
-**Scope:** re-key all four to the catalogue category; keep the zone string as a fallback only where no row resolves
-(`null` must mean *leave it alone*, per `hrBand.ts`). ⚠️ **Measure the bucket delta BEFORE and AFTER on today's
-engine** — if any session changes bucket without ADR-026, that is a live mis-classification and its own finding.
-**Blocks `ANCHOR-BAND-FLIP-01`.**
-
 ### 🔲 `ANCHOR-BAND-FLIP-01` — turn the anchor-derived band on 🏃 **COACHING BOARD** ruled (ADR-026 + `ANCHOR-BAND-OWNER-01`) → ⚙️ build
 
 **The owner, its 27 tests and the fractions ship in `ANCHOR-BAND-OWNER-01`; nothing calls them from the generator yet.**
-This is the flip, and it is a prescription change. **Blocked on `ZONE-STRING-CLASSIFIER-01`.**
+This is the flip, and it is a prescription change. ✅ **`ZONE-STRING-CLASSIFIER-01` SHIPPED 2026-11-17 and
+UNBLOCKED it — but it also HANDED TWO MORE SITES TO THIS ITEM, having measured that neither is a
+display-string defect:**
+
+- 🔑 **`INV-PLAN-INTENSITY-ORDERING`** (not `INV-PLAN-PACE-INVERSION`, which exists nowhere) compares the
+  fastest Zone-3 pace against the fastest Zone-4–5 pace. Re-keying it to the catalogue row was **measured
+  and declined**: §33 repurposing delivers an `ultra_specific` row at T-pace and §22 delivers a `threshold`
+  row at goal pace, so on both sides the category says what the row is FOR, not what the instance was
+  prescribed AS — **26,928 of 250,616 cohort quality sessions sit on the VO2max side purely because §22
+  renamed them.** ⚠️ **Unlike §19's threshold and easy arms it does NOT survive ADR-026 by construction:**
+  once the band is derived per runner, a threshold session can read "Zone 4" and join the VO2max side, so
+  the pair being compared changes per runner. **Same question as condition 3; amend it here.**
+- 🔑 **`hrBand.ts:116`** reads `/Zone 4/` for `session.stimulus === 'race_pace'` — **deliberately**, per §83
+  Amendment, because the generator records "which band this goal pace sits in" in the zone and nowhere
+  else. It is paired with its producer today and **breaks the moment threshold reads Zone 4.** The module
+  whose header is forty lines about parallel-classifier drift, from the other side.
+
+⚠️ **AND THE §19 ARMS NEED NO AMENDMENT, WHICH IS WORTH KNOWING BEFORE PLANNING AGAINST THEM:** the
+threshold arm tests "at least Zone 3" and the easy arm "at most Zone 2", so a threshold session whose
+derived band reads Zone 4 satisfies `zoneIsVo2` and neither fires. Only the vo2max arm needed re-keying
+and it is done.
 
 **What it does:** `makeQualitySession`'s vo2max and threshold branches, the no-row threshold builder, §97's two
 escalation rungs and `applyHrToPlan` each ask `bandForRow(catalogueRow, { ...zones, vdot: pace.vdot })` and fall back to

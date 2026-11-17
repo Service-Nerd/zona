@@ -11,6 +11,10 @@
 // once a plan carries the stamp.
 import type { Session, SessionType } from '@/types/plan'
 import { GENERATION_CONFIG } from './generationConfig'
+import { zonesFromZoneString, zoneStringFromZoneKeys } from '@/lib/coaching/zoneRules'
+// ⚠️ ACYCLIC, CHECKED: `sessionCatalogueData` imports only `generationConfig` and
+// `sessionStructureV2`, neither of which reaches back here.
+import { V1_SESSION_CATALOGUE } from './sessionCatalogueData'
 
 // A session the engine models as `type: 'easy'`. Kept narrow so callers pass a
 // real classification signal, not a bare string.
@@ -130,6 +134,22 @@ export function coachingSessionType(s: ClassifiableSession): string {
 }
 
 /**
+ * STIMULUS-FROM-CATALOGUE-01 (2026-10-23) — the stimulus a catalogue CATEGORY implies, for the generator to stamp
+ * when the label says nothing. Used ONLY as the fallback: CLASSIFY-STIMULUS-01 keeps the label first, because a
+ * threshold row prescribed at goal pace is `race_pace` and an aerobic-repurposed one is aerobic, and the label is
+ * what records those decisions. The fallback exists because four threshold rows carry labels the heuristic cannot
+ * read ("CV intervals", "Over-unders", "1600m repeats", "Threshold pyramid"): 6,213 of their sessions on 5,664 cohort
+ * plans were stamped with NO stimulus, invisible to every rule that reads one, including §8's ordering (22 sweep
+ * plans compared an 18-minute VO2max set with a taper tempo while their 24-minute CV set did not count).
+ */
+export const STIMULUS_OF_CATEGORY: Readonly<Record<string, keyof typeof GENERATION_CONFIG.STIMULUS_RANK>> = {
+  threshold: 'tempo',
+  race_specific: 'race_pace',
+  vo2max: 'vo2max',
+  aerobic: 'steady_aerobic',
+}
+
+/**
  * The STIMULUS a quality session delivers — the axis `STIMULUS_RANK` orders.
  *
  * Moved here from ruleEngine.ts (2026-08-20, SC-07). It was a private helper
@@ -149,13 +169,26 @@ export function coachingSessionType(s: ClassifiableSession): string {
  * the label reads as nothing (`STIMULUS_OF_CATEGORY`, STIMULUS-FROM-CATALOGUE-01), never ahead of it.
  */
 export function classifyStimulus(
-  session: { label?: string | null; zone?: string | null; stimulus?: keyof typeof GENERATION_CONFIG.STIMULUS_RANK },
+  session: { label?: string | null; zone?: string | null; stimulus?: keyof typeof GENERATION_CONFIG.STIMULUS_RANK; catalogue_id?: string },
+  catalogue: Array<{ id: string; category: string }> = V1_SESSION_CATALOGUE,
 ): keyof typeof GENERATION_CONFIG.STIMULUS_RANK | null {
   if (session.stimulus) return session.stimulus
   const label = (session.label ?? '').toLowerCase()
   const zone  = (session.zone  ?? '').toLowerCase()
-  // VO2max is unambiguous — drives off both label and zone.
-  if (label.includes('vo2') || zone.includes('zone 4–5') || zone.includes('zone 5')) return 'vo2max'
+  // 🔴 VO2max IS UNAMBIGUOUS, AND THE ZONE STRING IS NOT THE WAY TO ASK
+  // (ZONE-STRING-CLASSIFIER-01, 2026-11-17). This read `zone.includes('zone 4–5')`, so the
+  // answer moved with a DISPLAY label. It is latent today only because the generator writes
+  // one string per band; under ADR-026 the band is derived per RUNNER, a threshold row can
+  // read "Zone 4–5", and this would stamp it `vo2max` — which is how a 24-minute CV
+  // THRESHOLD session came to be judged against the 12–18 min VO2max dose bound.
+  //
+  // ⚠️ THE ZONE READ IS KEPT AS THE FALLBACK AND ONLY THERE. A plan from before ADR-018
+  // carries no stamp, and for those the string is the only record of the band there is.
+  // `workClassFor` returns null for exactly that case, which is when the old test runs.
+  const workClass = workClassFor(session, catalogue)
+  if (label.includes('vo2')) return 'vo2max'
+  if (workClass === 'vo2max') return 'vo2max'
+  if (workClass === null && (zone.includes('zone 4–5') || zone.includes('zone 5'))) return 'vo2max'
   // Goal-pace and tempo both sit at rank 4 (race_pace / tempo). Distinguish for
   // the audit log; rank is identical so escalation logic isn't affected.
   if (label.includes('-pace') || label.includes('goal pace') || label.includes('sharpener')) return 'race_pace'
@@ -163,23 +196,99 @@ export function classifyStimulus(
   if (label.includes('hill'))  return 'hills'
   if (label.includes('strid')) return 'strides'
   if (label.includes('aerobic') || label.includes('steady')) return 'steady_aerobic'
+  // 🔴 THE CATEGORY FALLBACK MOVED IN HERE, AND THE REASON IS THAT IT LIVED AT ONE CALLER OF
+  // EIGHT (ZONE-STRING-CLASSIFIER-01). `ruleEngine.ts`'s stamp site wrote
+  // `classifyStimulus(...) ?? STIMULUS_OF_CATEGORY[row.category]` by hand, so the seven
+  // invariant call sites answered `null` for a session whose class is sitting on its own
+  // stamped row. Harmless today only because the stamp short-circuits at line 1 — a default
+  // assembled by the caller is a default most callers do not have.
+  //
+  // Still the FALLBACK and never ahead of the label, which is CLASSIFY-STIMULUS-01's own
+  // ruling: a threshold row re-prescribed at goal pace is `race_pace`, and the label is where
+  // that decision was recorded.
+  return workClass ? STIMULUS_OF_CATEGORY[workClass] ?? null : null
+}
+
+
+/**
+ * ZONE-STRING-CLASSIFIER-01 (2026-11-17) — the single owner of "what KIND of work does this session
+ * prescribe", read from the stamp the producer wrote.
+ *
+ * 🔴 WHY IT EXISTS. Five places asked that question of `session.zone`, which is a DISPLAY STRING —
+ * §84 Amendment 1 settled it in as many words: *"`hr_target` is the prescription; `session.zone` is
+ * a label ABOUT it"*. That is INV-CLASS verbatim (*classify by a structural signal the producer
+ * stamps, never by a display string another layer can rewrite*), and the signal has been stamped
+ * since ADR-018. It was latent only because the generator wrote one zone string per band; ADR-026
+ * makes the string runner-dependent and every one of the five starts answering a different question
+ * for the same session.
+ *
+ * ⚠️ IT WAS ALREADY WRONG, TODAY, IN ONE OF THEM, AND THE COMMENT BESIDE IT SAID SO. §53's
+ * `physBucket` is documented *"Zone 3 / Zone 3–4 = threshold; Zone 4–5 = vo2max"* and returned
+ * `vo2max` for anything containing "zone 4" — so `cv_intervals` and `tempo_over_under`, which
+ * declare `[Z3,Z4]` and are threshold TRAINING, could never enter the threshold swap pool.
+ *
+ * 🔑 TWO PREDICATES, BECAUSE THE SITES ASK TWO DIFFERENT QUESTIONS AND `cv_intervals` PROVES THEY
+ * ARE DIFFERENT FACTS: its `category` is `threshold` while its `intensity_zones` are `[Z3,Z4]`. So
+ * the zone SET cannot answer "is this VO2max training" and the CATEGORY cannot answer "which zones
+ * is the work in". `workClassFor` is the first; `workZonesFor` is the second.
+ */
+export type WorkClass = 'vo2max' | 'threshold' | 'race_specific' | 'aerobic' | 'ultra_specific' | null
+
+/**
+ * The catalogue CATEGORY of this session's work. `null` when no row resolves — and `null` means
+ * "leave this session's classification alone", never "probably threshold". Guessing a band for an
+ * unresolvable session is the move that downgraded a live runner's VO2max set (see `hrBand.ts`).
+ *
+ * ⚠️ The LABEL fallback is kept and the ZONE fallback is deliberately not added. A label is at
+ * least authored next to the prescription; the zone string is derived from it, so reading the zone
+ * to classify the prescription is circular the moment the band moves.
+ */
+/**
+ * ⚠️ INDEXED, AND THE REASON IS A MEASURED 3.2x. `classifyStimulus` consults `workClassFor` on
+ * every call and is itself called per session by seven invariants, so the obvious
+ * `catalogue.find(...)` scan of 31 rows put `effortGovernedBand.test.ts` from 1,161 ms to
+ * 3,705 ms — caught by `npm run check:slow`, which is what that gate is for. Keyed on the ARRAY
+ * so an injected test catalogue gets its own index and a mutated one is never served a stale map.
+ */
+const CATEGORY_INDEX = new WeakMap<object, Map<string, string>>()
+function categoryOf(catalogue: Array<{ id: string; category: string }>, id: string): string | undefined {
+  let idx = CATEGORY_INDEX.get(catalogue)
+  if (!idx) {
+    idx = new Map(catalogue.map(r => [r.id, r.category]))
+    CATEGORY_INDEX.set(catalogue, idx)
+  }
+  return idx.get(id)
+}
+
+export function workClassFor(
+  session: { catalogue_id?: string; label?: string | null },
+  catalogue: Array<{ id: string; category: string }> = V1_SESSION_CATALOGUE,
+): WorkClass {
+  if (session.catalogue_id) {
+    const category = categoryOf(catalogue, session.catalogue_id)
+    if (category) return (category as WorkClass) ?? null
+  }
+  const label = (session.label ?? '').toLowerCase()
+  if (label.includes('vo2max') || label.includes('vo2 max')) return 'vo2max'
   return null
 }
 
 /**
- * STIMULUS-FROM-CATALOGUE-01 (2026-10-23) — the stimulus a catalogue CATEGORY implies, for the generator to stamp
- * when the label says nothing. Used ONLY as the fallback: CLASSIFY-STIMULUS-01 keeps the label first, because a
- * threshold row prescribed at goal pace is `race_pace` and an aerobic-repurposed one is aerobic, and the label is
- * what records those decisions. The fallback exists because four threshold rows carry labels the heuristic cannot
- * read ("CV intervals", "Over-unders", "1600m repeats", "Threshold pyramid"): 6,213 of their sessions on 5,664 cohort
- * plans were stamped with NO stimulus, invisible to every rule that reads one, including §8's ordering (22 sweep
- * plans compared an 18-minute VO2max set with a taper tempo while their 24-minute CV set did not count).
+ * The zone NUMBERS this session's work sits in, from the row's own `intensity_zones` declaration —
+ * `[3, 4]` for a row declaring `['Z3','Z4']`. Empty when no row resolves.
+ *
+ * ⚠️ READS THE ROW, NEVER THE SESSION'S ZONE STRING, and the two are not the same claim: the row
+ * declares what the work IS, the string displays what the runner is told. `zoneStringFromZoneKeys`
+ * exists for exactly this round trip (§107) and `zonesFromZoneString` expands a span, so a row
+ * declaring `['Z3','Z5']` yields `[3,4,5]`.
  */
-export const STIMULUS_OF_CATEGORY: Readonly<Record<string, keyof typeof GENERATION_CONFIG.STIMULUS_RANK>> = {
-  threshold: 'tempo',
-  race_specific: 'race_pace',
-  vo2max: 'vo2max',
-  aerobic: 'steady_aerobic',
+export function workZonesFor(
+  session: { catalogue_id?: string; label?: string | null },
+  catalogue: Array<{ id: string; category: string; intensity_zones?: readonly string[] }> = V1_SESSION_CATALOGUE,
+): number[] {
+  const row = session.catalogue_id ? catalogue.find(r => r.id === session.catalogue_id) : undefined
+  if (!row) return []
+  return zonesFromZoneString(zoneStringFromZoneKeys(row.intensity_zones))
 }
 
 /**
@@ -194,17 +303,15 @@ export const STIMULUS_OF_CATEGORY: Readonly<Record<string, keyof typeof GENERATI
  * D-17 again, and the third site this week where `catalogue_id` (ADR-018) makes
  * the structural answer available. The label fallback stays for legacy plans
  * generated before the stamp.
+ *
+ * ⚠️ DELEGATES to `workClassFor` since ZONE-STRING-CLASSIFIER-01 — it was the first half of that
+ * owner and keeping a second copy of the category test is the drift this file exists to prevent.
  */
 export function isVo2maxSession(
   session: { catalogue_id?: string; label?: string | null },
   catalogue: Array<{ id: string; category: string }>,
 ): boolean {
-  if (session.catalogue_id) {
-    const row = catalogue.find(r => r.id === session.catalogue_id)
-    if (row) return row.category === 'vo2max'
-  }
-  const label = (session.label ?? '').toLowerCase()
-  return label.includes('vo2max') || label.includes('vo2 max')
+  return workClassFor(session, catalogue) === 'vo2max'
 }
 
 /**

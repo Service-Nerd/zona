@@ -48,7 +48,7 @@ import { enforcePrepTime, enforceDaysAvailable, validateInputFields, coherentGoa
 import { normaliseDays, longRunDayFor, dayGap, canHoldSpacedQuality } from './days'
 import { sessionKmOrZero, sessionKmSelfPaced } from '@/lib/plan/sessionDistance'
 import { zoneStringFromZoneKeys } from '@/lib/coaching/zoneRules'
-import { isLongRun, isShakeout, classifyStimulus, STIMULUS_OF_CATEGORY, isStructuredSession, isVo2maxSession, isQualitySession, isSecondaryQuality } from './sessionRole'
+import { isLongRun, isShakeout, classifyStimulus, isStructuredSession, isVo2maxSession, isQualitySession, isSecondaryQuality, workClassFor } from './sessionRole'
 import { PLAN_SIGNATURES } from './planSignatures'
 import { isV2Structure, StructureV2Schema, goalPaceShapeWord, PACE_ANCHORS, type PaceAnchor, workAnchorOf } from './sessionStructureV2'
 import { durationForMainSet, segmentPricedDistance, meetsQualityFloor } from './sessionFormat'
@@ -2119,7 +2119,10 @@ export function makeQualitySession(args: {
   // vo2max; the prescription decision is the authority, not the label or the zone.
   // STIMULUS-FROM-CATALOGUE-01 — the row's category only when the label says nothing (four threshold rows).
   const stimulus = (useGoalPace && goalCenterMins != null) ? 'race_pace' as const
-    : classifyStimulus({ label, zone }) ?? (catalogueRow ? STIMULUS_OF_CATEGORY[catalogueRow.category] ?? null : null)
+    // ZONE-STRING-CLASSIFIER-01 — `catalogue_id` is passed so `classifyStimulus` can read the
+    // row rather than the zone string. This is the PRODUCER of the stamp every consumer then
+    // trusts, so a zone-derived answer here poisons all of them at once.
+    : classifyStimulus({ label, zone, catalogue_id: catalogueRow?.id })
   return {
     id: `w${weekN}-${day}`,
     type: 'quality', label, detail: null,
@@ -8151,13 +8154,22 @@ function buildRulePlanOnce(
     // reps", "…-pace ladder" — so the old enumerated regex no longer covers it).
     const isOverride = (label: string): boolean => label.includes('-pace ')
 
-    const physBucket = (s: Session): 'threshold' | 'vo2max' | 'other' => {
-      const zone = (s.zone ?? '').toLowerCase()
-      if (zone.includes('zone 4') || zone.includes('zone 5')) return 'vo2max'
-      if (zone.includes('zone 3')) return 'threshold'
-      return 'other'
-    }
-
+    // 🔴 ZONE-STRING-CLASSIFIER-01 — `physBucket` IS GONE, not re-keyed. It was a private
+    // closure answering "what kind of work is this" from `session.zone`, which is a display
+    // string (§84 Am. 1), beside an owner that answers it from the stamped catalogue row.
+    // A second copy of a classifier is what `hrBand.ts`'s header is forty lines about, so the
+    // right move was to delete the copy rather than teach it the same lesson twice. The swap
+    // below asks the owner directly.
+    //
+    // ⚠️ AND THE COMMENT ABOVE IT DESCRIBED A BEHAVIOUR IT DID NOT HAVE. It said *"Zone 3 /
+    // Zone 3–4 = threshold; Zone 4–5 = vo2max"*; the code returned `vo2max` for anything
+    // containing "zone 4", so "Zone 3–4" was bucketed vo2max — the opposite of the documented
+    // intent. ⚠️ With NO live instance: the generator writes only "Zone 3" or "Zone 4–5" for a
+    // quality session, so the branch the comment describes is unreachable today. ADR-026 makes
+    // the string runner-derived and reachable, at which point `cv_intervals` and
+    // `tempo_over_under` — threshold TRAINING declaring `[Z3,Z4]` — would silently leave the
+    // threshold swap pool. Measured on 250,616 cohort quality sessions: 0 carry no catalogue
+    // row, so the owner always has an answer here.
     // Threshold-bucket alternative labels + matching coach voices.
     const THRESHOLD_ALTS: { label: string; voice: string }[] = [
       { label: 'Continuous tempo', voice: 'Sustained sub-threshold work. Builds the ceiling.' },
@@ -8170,8 +8182,10 @@ function buildRulePlanOnce(
       if (positions.length <= max) continue
       const overage = positions.length - max
       const sample = positions[0].session
-      const bucket = physBucket(sample)
-      if (bucket !== 'threshold') continue  // current swap pool covers threshold only
+      // A same-category swap is what this block promises, and the category is what the
+      // producer stamped (ADR-018) — not the zone set, which says Z4 for `cv_intervals`
+      // while the training is threshold.
+      if (workClassFor(sample, V1_SESSION_CATALOGUE) !== 'threshold') continue  // swap pool covers threshold only
 
       // Pick alternative threshold labels under cap.
       const labelCounts = new Map<string, number>()

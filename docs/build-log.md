@@ -6,6 +6,23 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-11-17 — ZONE-STRING-CLASSIFIER-01 · the suite told me two of the five "defects" were not defects
+**Shipped:** the prescription guards that decided what KIND of work a session is now read the stamped catalogue row instead of `session.zone`, which is a display string — except the two where reading the string turned out to be correct, and those are reverted with the reason written beside them.
+
+**Dev learning:** I filed this item yesterday and it was wrong about itself in two places. It cited an invariant called `INV-PLAN-PACE-INVERSION`; grep it and you get nothing, because the real code is `INV-PLAN-INTENSITY-ORDERING`. And it said the VO2max dose cap reads the zone string — it does not, it reads `classifyStimulus`, and the zone read is one level up in a predicate with eight callers. Both errors made the work look like something it was not. The rule in CLAUDE.md is "an item is a snapshot of the code on the day it was written"; this is the first time the stale item was one I wrote the day before, which is a shorter half-life than I had assumed.
+
+The bigger lesson is about which structural signal. I started with "classify by the catalogue row" as though the row were one fact. It is two: `category` says what the row is FOR, `intensity_zones` says which zones its work sits in, and `cv_intervals` separates them — category `threshold`, zones `['Z3','Z4']`. Threshold training whose work reaches Z4. Neither field alone can answer both questions, so the owner is two functions, and picking the wrong one of the two is exactly the mistake the suite caught me in.
+
+**Product/creator learning:** §33 repurposing takes an `ultra_specific` row like `time_on_feet` — declared `['Z1','Z2']` — into a quality slot, prescribes it at T-pace in Zone 3 and renames it "Tempo run". The board sanctioned that. Which means the row's category is not what the runner is being prescribed, and the zone string is the ONLY record of the decision. So "never classify by the display string" is not universally true in this codebase: where a per-instance prescription decision exists and the string is where the producer wrote it, the string IS the record. I would have shipped the stronger claim without the suite.
+
+**AI-building learning:** I measured the wrong unit twice. First a BUCKET delta, which came back at 46.6% and told me nothing, because almost all of it was §22 legitimately re-prescribing a threshold row at goal pace — a correct decision recorded in the string. Then a VIOLATION delta, which came back 0 of 250,616 and was true but blind: `cohortGrid` contains no ultra plan, and every one of the 18 failures was ultra. The corpus I trusted could not reach the case. And one arm of my own gate was hollow in a way only a mutation found: `INV-PLAN-LABEL-MATCHES-PACE` has four arms under one code, so counting the code meant a pre-existing numeric pace check satisfied the assertion, and the arm passed under the exact revert it claimed to catch. A green mutation is the signal to doubt the check, not the code.
+
+**The honest bit:** I posted an analysis block claiming `cv_intervals` "could never enter the threshold swap pool" under `physBucket`. False. The generator writes "Zone 3" for it, so `physBucket` already bucketed it threshold; the documented-vs-coded mismatch I found is real but has no live instance until ADR-026 makes one. I also wrote `INV-PLAN-ZONE-PRESENT` into the gate's exemption list, a name that does not exist — the same class of error as the item's, in the fix for the item. The gate now asserts every exempted code is a registered invariant, so a fictional name fails the build.
+
+**Hook material:** re-keyed five guards off a display string, 13 test files went red across 18 tests, and the red was right: a 100 km plan was legitimately prescribing `time_on_feet` — the most explicitly easy row in the catalogue, declared Zone 1–2 — as a Zone 3 tempo. Zero prescription delta shipped: `verify:parity` IDENTICAL over 6,210 cases, 0 verdict change over 250,616 quality sessions.
+
+**Postable?:** yes
+
 ## 2026-11-17 — ANCHOR-BAND-OWNER-01 · the measurement told me the release was three, not one
 **Shipped:** the mechanism for ADR-026's anchor-derived heart-rate band — the Daniels fractions named once so the pace and the HR band read the same numbers, plus the band owner and its 27 tests — with zero prescription delta, nothing in the generator calling it yet.
 
