@@ -6705,3 +6705,42 @@ None unresolved. 🎪 **Collins got what he asked for twice** — one big number
 ⛰️ **Veto not exercised.** Silvanto's Q1 amendment is a **correction to a pattern's stated premise**, not a palette or type regression, and he said so: *"the pattern was right about the treatment and wrong about where the number comes from. That is debt, not a regression."*
 
 **Pattern:** `ui-patterns.md` § 40 *FreeRunReadCard — the measured, unadvised state*. **Constant:** `FREE_RUN_READ_BANDS`, plus `post_run` in `UPGRADE_SOURCES`. **Checks:** `freeRunRead.test.ts` (13) · `freeRunRead.markup.test.ts` (23) · `paywallOrder.test.ts` (5); **12 mutations red.** ⚠️ **Not seen on a device** — rendered and measured at 375px in `/post-run-preview`, and **`OrientationScreen` itself is not in any harness**, so the sample card's placement in that screen is verified by its own height and the screen's existing `overflowY: auto`, not by a render of the composition.
+
+---
+
+## 2026-11-17 — `ANCHOR-BAND-FLIP-01` · the Zone 4 explainer, and the notice that did not ship
+
+**Not a sitting.** This records the artifacts for a ruling the board already made: ADR-026 §9 carries Sierra's
+condition that *"the education copy ships WITH the band, not after it"*, and `ui-patterns.md` § 10a carries the
+band-change notice pattern. Recorded here because **`audit-docs.sh` § board rulings is the only check that can see a
+ruling which edits no doctrine file**, and because one half of it did not ship.
+
+### ✅ SHIPPED — the education copy
+
+🔴 **`zoneCopyByNumber(4)` returned the `Z4-5` entry**, so a runner on a 20-minute tempo now labelled `Zone 4` would
+have tapped it and read *"Hard. Genuinely hard. Intervals, hill reps, fast finishes. You can't talk."* 👥 **Sierra:
+that is not their session, and teaching the wrong distinction is worse than teaching none.**
+
+- **`ZONE_COPY['Z4']`** added — *"Threshold. Sustained hard running. Tempo and cruise work land here once you are
+  trained."* 9,384 cohort sessions now read `Zone 4`.
+- ⚠️ **`ZONE_COPY['Z5']` REWRITTEN, which §9 does not ask for and the measurement required.** The interval band is
+  now floored on the CV ceiling, so for a runner with a VDOT it sits wholly inside Z5 — **904 interval sessions read
+  `Zone 5` where every one of them read `Zone 4–5` before.** The old copy (*"Maximum effort. Short, sharp, full
+  recovery between."*) describes a sprint; a 5 × 3 min set at interval pace is not a sprint.
+- **`zoneKeyForZoneString`** resolves `Zone 4` and `Zone 5` separately. Its old `hi >= 4 → 'Z4-5'` was complete while
+  the engine could emit only "Zone 3" or "Zone 4–5". ⚠️ **A span is named by the hardest work in it**, so `Zone 3–4`
+  reads as threshold — a decision, recorded, not an accident.
+
+**Token:** `ZONE_COPY['Z4']`, `ZoneCopyKey`. **Check:** `anchorBandFlip.test.ts`'s reach arm — every zone string the
+engine actually emits must resolve to copy whose top zone matches, asserted over strings collected from generated
+plans rather than a list; **two mutations red** (`zoneCopyByNumber(4)` repointed back, `zoneKeyForZoneString`
+reverted). ⚠️ **Not seen on a device.** `Zone 4` is no longer than `Zone 3`, so Silvanto's advisory 375pt measurement
+of `Zone 3–4` in the Today eyebrow is **narrowed, not discharged**: that string is still emitted, 1,681 times.
+
+### 🔻 NOT SHIPPED — the band-change notice
+
+The pattern is ruled (`ui-patterns.md` § 10a) and the build is filed as **`ANCHOR-BAND-MIGRATION-NOTICE-01`**. The
+release needed *"prompted, never silent"* and took the cheaper half: `plan.meta.hr_band_source` keeps the change off
+existing plans entirely, so nothing is silent. 🔻 **The consequence is a different residual from the one ADR-026 §8
+anticipated — those runners keep an incoherent band indefinitely rather than a coherent one unasked.** Safer, and
+still owed. 🔬 **Wood's condition carries forward unchanged.**

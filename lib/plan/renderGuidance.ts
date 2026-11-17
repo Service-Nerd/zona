@@ -22,7 +22,9 @@
 //   Session-level (from the current Session):
 //     {{session_pace}}     — pace_target, e.g. "6:06–7:17 /km"
 //     {{session_hr}}       — hr_target, e.g. "< 141 bpm" or "141–154 bpm"
-//     {{session_zone}}     — zone, e.g. "Zone 2" / "Zone 3–4"
+//     {{session_zone}}     — zone, e.g. "Zone 2" / "Zone 4" (ADR-026: DERIVED from the band, so the
+//                            same T-pace session reads "Zone 4" for a trained runner and "Zone 3–4"
+//                            for one less trained; "Zone 3–4" was the only form before §84 Am. 1)
 //     {{session_distance}} — distance_km
 //     {{session_duration}} — duration_mins
 //     {{session_rpe}}      — rpe_target (1–10)

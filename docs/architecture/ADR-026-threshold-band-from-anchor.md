@@ -1,4 +1,30 @@
-# ADR-026 — Threshold is prescribed from its own pace anchor (ACCEPTED WITH CONDITIONS, not built)
+# ADR-026 — Threshold is prescribed from its own pace anchor (✅ BUILT 2026-11-17, forward-only)
+
+> **Status: BUILT, in three releases, every condition discharged.**
+> **B1** `ANCHOR-BAND-OWNER-01` — the Daniels fractions get one owner; the band is built, gated and NOT wired.
+> **B2** `ZONE-STRING-CLASSIFIER-01` — the prescription guards stop classifying by the display string.
+> **B3** `ANCHOR-BAND-FLIP-01` — the band is wired, the invariants amended, the Zone 4 copy added.
+>
+> 📐 **Measured on 5,678 cohort plans / 34,520 quality sessions carrying a band: 11,969 (34.7%) take a new zone and
+> HR.** `Zone 4` ×9,384 · `Zone 4–5` ×1,681 · `Zone 5` ×904. 🎯 **McMillan's condition, reported separately:
+> interval arm 904 of 2,294 (39.4%), threshold arm 11,065 of 32,226 (34.3%).** Zero ERROR violations across the
+> corpus, including the new `INV-PLAN-HR-MATCHES-PACE`, which is satisfied by construction exactly as R4 predicted.
+>
+> 🔻 **FORWARD-ONLY, and the migration notice is NOT built.** `plan.meta.hr_band_source` keeps the change off
+> existing plans, including through an unrelated HR correction — so nothing is silent, and those plans keep an
+> incoherent band until the notice ships (`ANCHOR-BAND-MIGRATION-NOTICE-01`, pattern already ruled).
+>
+> ⚠️ **Two consequences this document did not predict, both measured while building it:** the interval band's LABEL
+> moves from `Zone 4–5` to `Zone 5` for a runner with a VDOT (§4's before/after table does not show it, and `Z5`'s
+> education copy had to be rewritten with it); and `INV-PLAN-PACE-ZONE-COHERENT` **never fires**, so condition 3 is
+> discharged by SCOPE rather than by the amendment it demanded — goal-paced work keeps the zone table because its
+> pace is not a fraction of VDOT.
+>
+> ⚠️ **And `INV-PLAN-DISPLAY-ZONE-MATCHES-WORK` needed a different amendment from the one §9 names.** "Equals →
+> overlaps" was built first as CONTAINMENT and the existing falsification arm caught it: 145–158 bpm is contained in
+> `Zone 3–4`'s 145–172, so containment passed the very card §84 Amendment 1 was written for. The rule that works is
+> Amendment 1's own — **the label names exactly the zones the target overlaps** — and it needed one shared overlap
+> predicate, because an inclusive test reported Zone 3's own band as "Zone 2–4" (every zone boundary is shared).
 
 **Status:** PROPOSED 2026-11-16. **Coaching Board: CORRECT WITH AMENDMENT (three conditions).** SLT: BUILD, FREE.
 **Design Board: SHIP WITH AMENDMENT.** **Founder approved the direction 2026-11-16** ("one derived band, not five").

@@ -12,6 +12,14 @@ import { HR_ZONE_TOLERANCE_BPM } from './constants'
 
 export type ZoneKey = 'Z1' | 'Z2' | 'Z3' | 'Z4-5'
 
+/**
+ * Every key the EDUCATION copy is held under — `ZoneKey` plus the two ADR-026 made reachable.
+ * Kept separate from `ZoneKey` because that type is the four-band model `ZONE_TABLE` and
+ * `ZoneBand` are built on, and widening it would claim the engine has six HR bands when it has
+ * four; what has six is the set of zone STRINGS the derived band can name.
+ */
+export type ZoneCopyKey = ZoneKey | 'Z4' | 'Z5'
+
 export interface ZoneBand {
   /** The zone the session prescribes. */
   zone: ZoneKey
@@ -150,11 +158,23 @@ export function zoneStringFromZoneKeys(keys: readonly string[] | null | undefine
  * already shows. Returns null when the string names no zone, so the caller can
  * fall back rather than assert something.
  */
-export function zoneKeyForZoneString(zoneStr: string | undefined | null): ZoneKey | null {
+export function zoneKeyForZoneString(zoneStr: string | undefined | null): ZoneCopyKey | null {
   const zones = zonesFromZoneString(zoneStr)
   if (zones.length === 0) return null
   const hi = Math.max(...zones)
-  if (hi >= 4) return 'Z4-5'
+  // 🔑 ADR-026 — `Zone 4` AND `Zone 5` ARE NOW EMITTED SEPARATELY AND MUST RESOLVE SEPARATELY.
+  // This read `hi >= 4 ? 'Z4-5'`, which was complete while the engine could only write
+  // "Zone 3" or "Zone 4–5". The band is derived from the session's pace anchor now, so a
+  // threshold session reads `Zone 4` (9,384 measured) and an interval session reads `Zone 5`
+  // (904 measured) — and the old branch handed both of them the "Hard. Intervals, hill reps,
+  // fast finishes. You can't talk." entry.
+  //
+  // ⚠️ THE COPY FOLLOWS THE TOP OF THE SPAN, which is a decision and not an accident: a span
+  // is named by the hardest work in it, because that is the part a runner has to respect.
+  // `Zone 3–4` therefore reads as threshold, which is what a T-anchored band on a less-trained
+  // runner is.
+  if (hi === 5) return zones.includes(4) ? 'Z4-5' : 'Z5'
+  if (hi === 4) return 'Z4'
   if (hi === 3) return 'Z3'
   if (hi === 2) return 'Z2'
   return 'Z1'

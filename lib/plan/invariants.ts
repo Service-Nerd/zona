@@ -35,6 +35,7 @@ import { requiredPaceAnchors } from './sessionCatalogueData'
 import { catalogueRowFor } from './catalogueLink'
 import { isEffortGovernedRow } from './hrBand'
 import { zoneStringFromZoneKeys } from '@/lib/coaching/zoneRules'
+import { bandForAnchors, anchorsForQualityPrescription, zonesOverlappedBy } from './anchorBand'
 import { isLongRun, isShakeout, isTimeTrial, classifyStimulus, isVo2maxSession, isStructuredSession, isQualitySession, isHardEffort, workClassFor } from './sessionRole'
 import { mainSetMinutes, durationForMainSet } from './sessionFormat'
 import { isV2Structure, StructureV2Schema, goalPaceShapeWord } from './sessionStructureV2'
@@ -94,6 +95,7 @@ export const INVARIANT_CODES = [
   'INV-PLAN-NO-SESSIONS-ON-BLOCKED-DAYS',
   'INV-PLAN-COACH-NOTES-MATCH-INTENT',
   'INV-PLAN-DISPLAY-ZONE-MATCHES-WORK',
+  'INV-PLAN-HR-MATCHES-PACE',
   'INV-PLAN-LABEL-MATCHES-PACE',
   'INV-PLAN-OVER-UNDER-MEAN-NEAR-THRESHOLD',
   'INV-PLAN-DELOAD-PLACEMENT',
@@ -1817,16 +1819,86 @@ export function validatePlan(plan: Plan, rawInput: GeneratorInput): Violation[] 
       )
       if (!band) continue                     // no HR data to derive from
       const lo = Number(m[1]), hi = Number(m[2])
-      if (band.lo !== lo || band.hi !== hi) {
+      // 🔑 §84 AMENDMENT 2 / ADR-026 R2 — THE TEST IS NOW "THE LABEL NAMES EXACTLY THE ZONES THE
+      // TARGET OVERLAPS", which is Amendment 1's own rule stated as a check rather than a
+      // comparison against the zone table.
+      //
+      // Amendment 1 could demand the zone's band EQUAL the target, because the target WAS a
+      // zone-table row. ADR-026 derives it from the session's pace anchor, so a T-anchored band
+      // sits INSIDE a zone (159–167 within Zone 4's 158–171) and equality fails on correct plans.
+      //
+      // 🔴 CONTAINMENT WAS THE FIRST FIX AND IT WAS TOO LOOSE — the existing falsification arm
+      // found it, which is what that arm is for. The shipped defect this invariant exists for is
+      // a label WIDENED past its target: "Zone 3–4" (145–172 bpm) above "Hold 145–158 bpm", two
+      // numbers on one card. 145–158 is CONTAINED in 145–172, so containment passed the very
+      // card the founder photographed. Naming exactly the overlapped zones forbids both
+      // directions: a label claiming a zone the target never reaches, and a target leaking
+      // outside the zones it claims.
+      // ⚠️ THE OWNER, NOT A SECOND COPY. `zonesOverlappedBy` is what `zoneStringForBand` uses to
+      // WRITE the label, so this asks the producer's own question. A hand-rolled overlap here
+      // disagreed with it on the shared-endpoint case and fired on correct plans.
+      const maxForZones = (plan.meta.max_hr ?? input.max_hr ?? null) as number | null
+      if (maxForZones === null) continue
+      const expectedZone = zoneStringFromZoneKeys(
+        zonesOverlappedBy(lo, hi, maxForZones, plan.meta.resting_hr ?? input.resting_hr ?? null).map(n => `Z${n}`),
+      )
+      if (expectedZone && zoneStr.trim() !== expectedZone) {
         violations.push({
           code: 'INV-PLAN-DISPLAY-ZONE-MATCHES-WORK',
-          principle_ref: 'CoachingPrinciples §84',
+          principle_ref: 'CoachingPrinciples §84 Amendment 2',
           severity: 'error',
           week: w.n, day,
-          message: `"${session.label}" states zone "${zoneStr}" (${band.lo}–${band.hi} bpm) but prescribes hr_target "${hr}" — the session-detail header reads the zone and the coach note reads the target, so the runner sees both numbers on one card.`,
-          actual: `zone ${zoneStr} = ${band.lo}–${band.hi} bpm vs hr_target ${hr}`,
-          expected: 'the zone string and hr_target to describe the same band',
+          message: `"${session.label}" states zone "${zoneStr}" but its hr_target "${hr}" falls in ${expectedZone} — the session-detail header reads the zone and the coach note reads the target, so the runner sees two different numbers on one card.`,
+          actual: `zone ${zoneStr}, hr_target ${hr} (= ${expectedZone}; the zone string's own band is ${band.lo}–${band.hi} bpm)`,
+          expected: `zone "${expectedZone}" — the label names exactly the zones the target overlaps`,
         })
+      }
+    }
+
+    // INV-PLAN-HR-MATCHES-PACE (ADR-026 R4, §84 Amendment 2) — the pace and the heart rate
+    // must describe the SAME effort.
+    //
+    // 🔴 THE DEFECT IT CLOSES IS THE WHOLE OF ADR-026. Pace came from Daniels fractions of
+    // VO2max; HR came from Karvonen fractions of HR reserve; **nothing in the engine converted
+    // between them.** So a threshold session carried two prescriptions describing two different
+    // efforts, with `z2Top` IS `z3Low` meaning its HR floor was the easy CEILING. For threshold
+    // this is satisfied by construction after R1 — which is exactly why it is written down:
+    // **its job is the next band that drifts**, not this one.
+    //
+    // ⚠️ IT MUST NOT FIRE ON A SESSION WITH NO DERIVABLE BAND, AND THAT IS 65.3% OF THEM
+    // (measured on the cohort; 35.2% of LIVE threshold sessions). %HRR needs an HR reserve and
+    // the anchor is a fraction of VO2max, so a runner missing either keeps the zone-table band
+    // and the incoherence survives for them — §84 Amendment 2 declares that residual with its
+    // number. A check that fired there would be firing on the absence of data, not on a defect.
+    {
+      const vdot = typeof plan.meta.vdot_training_anchor === 'number' ? plan.meta.vdot_training_anchor
+        : typeof plan.meta.vdot === 'number' ? plan.meta.vdot : null
+      const maxHr = (plan.meta.max_hr ?? input.max_hr ?? null) as number | null
+      const restingHr = (plan.meta.resting_hr ?? input.resting_hr ?? null) as number | null
+      for (const { day, session } of placedRunning) {
+        if (session.type !== 'quality' || typeof session.hr_target !== 'string') continue
+        const m = /^\s*(\d+)\s*[–-]\s*(\d+)\s*bpm\s*$/.exec(session.hr_target)
+        if (!m) continue                       // a ceiling is a different claim — out of scope
+        const row = catalogueRowFor(session)
+        // §22's goal-paced work is out of scope BY RULING, not by omission: its pace is the
+        // runner's goal, which is not a fraction of VDOT at all, so no anchor describes it and
+        // §83 Amendment's own treatment stands (ADR-026 R3 as narrowed by §5).
+        if (classifyStimulus(session) === 'race_pace') continue
+        const anchors = row?.category === 'vo2max' ? ['I'] : anchorsForQualityPrescription(row)
+        const band = bandForAnchors(anchors, { maxHr, restingHr, vdot })
+        if (!band) continue                    // no derivable band — see the note above
+        const lo = Number(m[1]), hi = Number(m[2])
+        if (lo !== band.lo || hi !== band.hi) {
+          violations.push({
+            code: 'INV-PLAN-HR-MATCHES-PACE',
+            principle_ref: 'CoachingPrinciples §84 Amendment 2 (ADR-026 R4)',
+            severity: 'error',
+            week: w.n, day,
+            message: `"${session.label}" prescribes hr_target "${session.hr_target}" but its pace anchor (${band.anchor}) implies ${band.hr} — the pace and the heart rate describe two different efforts, which is the defect ADR-026 exists to end.`,
+            actual: `hr_target ${session.hr_target}, anchor ${band.anchor} implies ${band.hr}`,
+            expected: `${band.hr} (the ${band.anchor} anchor re-expressed through %HRR ≈ %VO2R)`,
+          })
+        }
       }
     }
 

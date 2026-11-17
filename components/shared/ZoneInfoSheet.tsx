@@ -9,11 +9,13 @@
 import Sheet from './Sheet'
 import IconButton from '@/components/ui/IconButton'
 import { ZONE_COPY, type ZoneCopy } from '@/lib/coaching/zoneCopy'
-import type { ZoneKey } from '@/lib/coaching/zoneRules'
+import type { ZoneCopyKey } from '@/lib/coaching/zoneRules'
 import { MICRO_LABELS } from '@/components/shared/microLabels'
 
 interface Props {
-  zoneKey: ZoneKey | 'Z1' | 'Z5' | null
+  // ADR-026 — `Z4` and `Z5` resolve separately now (`zoneKeyForZoneString`), so the sheet
+  // must accept them or a `Zone 4` tempo cannot be explained at all.
+  zoneKey: ZoneCopyKey | null
   /** Live HR band for this zone (lo, hi). Null when HR data unavailable. */
   hrBand?: { lo: number; hi: number } | null
   onClose: () => void

@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { readFileSync } from 'node:fs'
-import { anchorHrBand, zoneStringForBand, vo2Reserve, isBandableAnchor } from './anchorBand'
+import { anchorHrBand, zoneStringForBand, zonesOverlappedBy, vo2Reserve, isBandableAnchor } from './anchorBand'
 import { VDOT_FRACTIONS } from './paceBands'
 import { computeZones } from './zones'
 import { GENERATION_CONFIG } from './generationConfig'
@@ -137,15 +137,34 @@ describe('anchorHrBand — ADR-026 R1', () => {
     expect(vo2Reserve(1.0, vdot), 'the identity: 100% of VDOT is 100% of reserve').toBeCloseTo(1, 10)
   })
 
-  it('🔴 zoneStringForBand overlaps INCLUSIVELY, because every boundary is shared', () => {
-    // z2Top IS z3Low. A band ending exactly on it touches both zones, and a half-open
-    // test silently drops one — which is the band this whole ADR is about.
+  it('🔴 an overlap must have WIDTH, because every zone boundary is SHARED', () => {
+    // 🔴 THIS ARM ASSERTED THE OPPOSITE UNTIL 2026-11-17 AND THE OPPOSITE WAS WRONG. It read
+    // "overlaps INCLUSIVELY, because every boundary is shared" — and inclusive is exactly what
+    // makes a shared boundary poisonous: `z2Top` IS `z3Low`, so a band ending on it was reported
+    // as touching BOTH zones. Zone 3's own band came out as "Zone 2–4", and when
+    // `INV-PLAN-DISPLAY-ZONE-MATCHES-WORK` started reading this owner (ADR-026 R2) it fired on
+    // the engine's own correct output. A single shared endpoint is not a zone the work reaches.
     const maxHr = 185, restingHr = 48, hrr = maxHr - restingHr
     const k = (p: number) => Math.round(restingHr + (p / 100) * hrr)
     const z2Top = k(GENERATION_CONFIG.ZONES.Z2.karvonen_pct[1])
-    expect(zoneStringForBand(z2Top, z2Top, maxHr, restingHr)).toBe('Zone 2–3')
+    const z3Top = k(GENERATION_CONFIG.ZONES.Z3.karvonen_pct[1])
+    // A zone's OWN band names only that zone — the case the inclusive rule got wrong.
+    expect(zoneStringForBand(z2Top, z3Top, maxHr, restingHr)).toBe('Zone 3')
     expect(zoneStringForBand(k(62), k(66), maxHr, restingHr)).toBe('Zone 2')
-    expect(zoneStringForBand(k(66), k(84), maxHr, restingHr)).toBe('Zone 2–4')
+    // A band with real width across three zones still names all three.
+    expect(zoneStringForBand(k(65), k(84), maxHr, restingHr)).toBe('Zone 2–4')
+    // ⚠️ A ZERO-WIDTH BAND ON A SHARED BOUNDARY STILL GETS AN ANSWER, never an empty string: the
+    // strict test matches nothing there, so the owner falls back to the zone that boundary opens.
+    expect(zoneStringForBand(z2Top, z2Top, maxHr, restingHr)).not.toBe('')
+  })
+
+  it('zonesOverlappedBy answers on the %MaxHR branch too, where no reserve exists', () => {
+    // §14's second formula. The invariant reads this owner for EVERY plan, and 65.3% of cohort
+    // quality sessions have no derivable anchor band — but they still have a zone STRING that
+    // has to be checkable, and 14 of 43 live plans carry no resting HR at all.
+    expect(zonesOverlappedBy(150, 160, 190, null).length).toBeGreaterThan(0)
+    expect(zonesOverlappedBy(150, 160, 190, 0).length).toBeGreaterThan(0)
+    expect(zonesOverlappedBy(150, 160, 190, null)).not.toEqual(zonesOverlappedBy(150, 160, 190, 50))
   })
 
   it('🔴 the fractions have ONE owner — a second copy here would be the drift', () => {

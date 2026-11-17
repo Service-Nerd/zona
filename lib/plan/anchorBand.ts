@@ -114,20 +114,51 @@ export interface AnchorBandInput {
  * caller returns `null` otherwise), so reading `karvonen_pct` is not a branch that can be
  * taken with the wrong formula — which is `PLAN-RESTING-HR-ZERO-01`'s defect.
  */
-export function zoneStringForBand(lo: number, hi: number, maxHr: number, restingHr: number): string {
-  const hrr = maxHr - restingHr
-  const k = (pct: number) => Math.round(restingHr + (pct / 100) * hrr)
+export function zonesOverlappedBy(
+  lo: number, hi: number, maxHr: number, restingHr: number | null | undefined,
+): number[] {
+  const usable = typeof restingHr === 'number' && Number.isFinite(restingHr) && restingHr > 0 ? restingHr : null
+  // §14's own two formulas — Karvonen where a reserve exists, %MaxHR otherwise. Both, because
+  // `INV-PLAN-DISPLAY-ZONE-MATCHES-WORK` reads this for EVERY plan and a Karvonen-only owner
+  // would have made it re-derive the other branch by hand, which is the second copy this
+  // function exists to prevent.
+  const band = usable !== null
+    ? (pct: number) => Math.round(usable + (pct / 100) * (maxHr - usable))
+    : (pct: number) => Math.round((pct / 100) * maxHr)
+  const key = usable !== null ? 'karvonen_pct' as const : 'maxhr_pct' as const
   const hit: number[] = []
-  for (const [key, def] of Object.entries(GENERATION_CONFIG.ZONES)) {
-    const zLo = k((def as { karvonen_pct: readonly number[] }).karvonen_pct[0])
-    const zHi = k((def as { karvonen_pct: readonly number[] }).karvonen_pct[1])
-    // Overlap, inclusive. A band ending exactly on a boundary touches both zones and the
-    // boundary belongs to both by construction (`z2Top` IS `z3Low`), so a half-open test
-    // would silently drop one of them.
-    if (hi >= zLo && lo <= zHi) hit.push(Number(key.replace('Z', '')))
+  for (const [zKey, def] of Object.entries(GENERATION_CONFIG.ZONES)) {
+    const zLo = band((def as Record<string, readonly number[]>)[key][0])
+    const zHi = band((def as Record<string, readonly number[]>)[key][1])
+    // 🔴 STRICT, AND THE INCLUSIVE VERSION SHIPPED FIRST AND WAS WRONG. Every zone boundary is
+    // SHARED — `z2Top` IS `z3Low` — so an inclusive test names a zone a band merely touches at
+    // one beat: Zone 3's own band 146–160 came out as "Zone 2–4", and the invariant below then
+    // fired on the engine's own correct output. A single shared endpoint is not a zone the work
+    // reaches; an overlap has to have width.
+    if (hi > zLo && lo < zHi) hit.push(Number(zKey.replace('Z', '')))
   }
-  if (!hit.length) return ''
+  // A band sitting exactly ON a boundary (lo === hi === a shared endpoint) overlaps nothing by
+  // the strict test, so it falls back to the zone that boundary opens — never an empty answer.
+  if (!hit.length) {
+    for (const [zKey, def] of Object.entries(GENERATION_CONFIG.ZONES)) {
+      const zLo = band((def as Record<string, readonly number[]>)[key][0])
+      const zHi = band((def as Record<string, readonly number[]>)[key][1])
+      if (hi >= zLo && lo <= zHi) { hit.push(Number(zKey.replace('Z', ''))); break }
+    }
+  }
   hit.sort((a, b) => a - b)
+  return hit
+}
+
+/**
+ * ⚠️ ONE PREDICATE, TWO CALLERS. This and `INV-PLAN-DISPLAY-ZONE-MATCHES-WORK` must agree about
+ * which zones a band falls in, or the engine writes a label its own checker rejects. They did
+ * not, for one commit: the invariant re-derived the overlap with an inclusive test while this
+ * used another, and the disagreement was exactly the shared-endpoint case.
+ */
+export function zoneStringForBand(lo: number, hi: number, maxHr: number, restingHr: number): string {
+  const hit = zonesOverlappedBy(lo, hi, maxHr, restingHr)
+  if (!hit.length) return ''
   return hit.length === 1 ? `Zone ${hit[0]}` : `Zone ${hit[0]}–${hit[hit.length - 1]}`
 }
 
@@ -235,4 +266,63 @@ export function bandForRow(
   const anchors = workAnchorsOf(row)
   if (!anchors.length) return null
   return anchorHrBand({ anchor: anchors, vdot: runner.vdot, maxHr: runner.maxHr, restingHr: runner.restingHr })
+}
+
+/** The runner's three derivation inputs, carried together so a caller cannot supply two of three. */
+export interface BandRunner {
+  maxHr: number | null | undefined
+  restingHr: number | null | undefined
+  vdot: number | null | undefined
+}
+
+/**
+ * The band for an anchor set the CALLER names, rather than the one its row declares.
+ *
+ * 🔑 THE TWO ARE DIFFERENT FACTS AND THE GENERATOR IS WHERE THEY DIVERGE. `bandForRow` is
+ * right wherever the row's own work anchors are what the session was prescribed at. They are
+ * not, in two documented cases:
+ *
+ *   · **§33 repurposing** takes an `aerobic` or non-effort-governed `ultra_specific` row into a
+ *     quality slot and prescribes it at **T-pace**. The row declares `E` (or `Z2`), which is
+ *     unbandable by ruling, so `bandForRow` would return `null` and the session would keep the
+ *     zone-table band it is incoherent under — while its pace is a `T` pace.
+ *   · the **no-row** threshold builder has no row at all and prescribes `pace.minPerKmQuality`,
+ *     which IS the `T` anchor.
+ *
+ * ⚠️ §22's GOAL-PACE OVERRIDE IS THE OPPOSITE CASE AND MUST NOT USE THIS. There the pace is the
+ * runner's goal, which is not a fraction of VDOT at all, so no anchor describes it and §83
+ * Amendment's existing treatment stands. Naming the anchor at the call site is what keeps those
+ * three cases distinguishable; a single `bandForRow` everywhere would collapse them.
+ */
+export function bandForAnchors(
+  anchors: readonly (string | null | undefined)[],
+  runner: BandRunner,
+): AnchorBand | null {
+  if (!anchors.length) return null
+  return anchorHrBand({ anchor: anchors, vdot: runner.vdot, maxHr: runner.maxHr, restingHr: runner.restingHr })
+}
+
+/**
+ * The anchors a QUALITY session's prescription actually used, from its row.
+ *
+ * 🔴 THIS EXISTS BECAUSE THE GENERATOR AND `applyHrToPlan` WOULD OTHERWISE DISAGREE, WHICH IS
+ * THE DEFECT `hrBand.ts`'s HEADER IS FORTY LINES ABOUT. The generator knows a row was
+ * repurposed (§33) because it computed `rowRepurposedAsQuality`; `applyHrToPlan` holds only a
+ * stored session. Written out twice, the recalculation path would hand a repurposed row `null`
+ * — its row declares `E` / `Z2` — put the zone-table band back on a session the generator had
+ * given the T band, and silently undo the release on the next HR correction.
+ *
+ * The rule, derived from the row rather than remembered: an `aerobic` or `ultra_specific` row
+ * sitting in a quality slot was repurposed and is prescribed at **T-pace** (§33 / SC-02), so it
+ * takes the `T` anchor. Everything else is prescribed at its own row's anchors.
+ *
+ * ⚠️ An effort-governed `ultra_specific` row never reaches here: the generator branches on it
+ * first and gives it no HR band at all (§40b Am. 4), so `hrBandFor` returns `null` for it.
+ */
+export function anchorsForQualityPrescription(
+  row: { category?: string; main_set_structure?: unknown } | null | undefined,
+): readonly (string | null | undefined)[] {
+  if (!row) return ['T']
+  if (row.category === 'aerobic' || row.category === 'ultra_specific') return ['T']
+  return workAnchorsOf(row)
 }

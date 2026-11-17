@@ -27,6 +27,8 @@ import { GENERATION_CONFIG } from './generationConfig'
 // `hrBand.ts`, beside the reason — a second copy of a classifier is what put a
 // VO2max session in the threshold band on a live plan.
 import { hrBandFor } from './hrBand'
+import { bandForAnchors, anchorsForQualityPrescription } from './anchorBand'
+import { catalogueRowFor } from './catalogueLink'
 
 export interface ZoneTargets {
   zone2Ceiling: number
@@ -154,7 +156,10 @@ export function computeZones(mhr: number, rhr?: number): ZoneTargets {
  */
 export function applyHrToPlan<T extends {
   meta?: Record<string, unknown>
-  weeks?: Array<{ sessions?: Record<string, { type?: string; role?: string; label?: string; zone?: string; hr_target?: string } | undefined> }>
+  // ⚠️ `catalogue_id` IS READ (ADR-026 — the band comes from the row's anchors), so it is
+  // declared rather than reached through `as never`: a caller stripping it would silently get
+  // the zone-table band back on every quality session.
+  weeks?: Array<{ sessions?: Record<string, { type?: string; role?: string; label?: string; zone?: string; hr_target?: string; catalogue_id?: string } | undefined> }>
 }>(plan: T, restingHr: number, maxHr: number): T {
   if (!plan?.weeks?.length) return plan
   if (!Number.isFinite(restingHr) || !Number.isFinite(maxHr) || maxHr <= 0) return plan
@@ -180,10 +185,31 @@ export function applyHrToPlan<T extends {
       // §84 — the zone string and the HR string are written TOGETHER, from the
       // same expression, exactly as `computeZones` pairs them at generation.
       // Authoring them apart is the defect §84 Am. was written for.
+      // ADR-026 §8 — forward-only, by the producer's stamp. A plan generated before the release
+      // carries no `hr_band_source`, so it keeps the band it has always had rather than being
+      // migrated silently on an unrelated HR correction. See the stamp's comment in ruleEngine.
+      const derivesBands = plan.meta?.hr_band_source === 'anchor'
       if (band === 'quality') {
-        sessions[day] = { ...s, zone: z.qualityZone, hr_target: z.qualityHR }
+        // 🔑 ADR-026 — the DERIVED band, and this path must agree with the generator or the
+        // next HR recalculation silently un-does the release. `hrBandFor` has already resolved
+        // the catalogue row, so the anchors come from the same place the generator reads them.
+        // ⚠️ `vdot` comes off `plan.meta`, which is where the generator recorded the DISCOUNTED
+        // anchor VDOT (§10) — the same number the pace was built from. Without it the band is
+        // `null` and the session keeps the zone table, which is the honest answer rather than a
+        // band derived from a different VDOT than the pace.
+        const derived = !derivesBands ? null : bandForAnchors(anchorsForQualityPrescription(catalogueRowFor(s)), {
+          maxHr, restingHr,
+          vdot: typeof plan.meta?.vdot_training_anchor === 'number' ? plan.meta.vdot_training_anchor
+            : typeof plan.meta?.vdot === 'number' ? plan.meta.vdot : null,
+        })
+        sessions[day] = { ...s, zone: derived?.zone ?? z.qualityZone, hr_target: derived?.hr ?? z.qualityHR }
       } else if (band === 'intervals') {
-        sessions[day] = { ...s, zone: z.intervalsZone, hr_target: z.intervalsHR }
+        const derived = !derivesBands ? null : bandForAnchors(['I'], {
+          maxHr, restingHr,
+          vdot: typeof plan.meta?.vdot_training_anchor === 'number' ? plan.meta.vdot_training_anchor
+            : typeof plan.meta?.vdot === 'number' ? plan.meta.vdot : null,
+        })
+        sessions[day] = { ...s, zone: derived?.zone ?? z.intervalsZone, hr_target: derived?.hr ?? z.intervalsHR }
       } else if (band === 'shakeout') {
         // §78's race-week shakeout — a Z1 ceiling, not Z2.
         sessions[day] = { ...s, hr_target: z.shakeoutHR }

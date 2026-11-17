@@ -48,9 +48,10 @@ import { enforcePrepTime, enforceDaysAvailable, validateInputFields, coherentGoa
 import { normaliseDays, longRunDayFor, dayGap, canHoldSpacedQuality } from './days'
 import { sessionKmOrZero, sessionKmSelfPaced } from '@/lib/plan/sessionDistance'
 import { zoneStringFromZoneKeys } from '@/lib/coaching/zoneRules'
+import { bandForAnchors, anchorsForQualityPrescription, type AnchorBand, type BandRunner } from './anchorBand'
 import { isLongRun, isShakeout, classifyStimulus, isStructuredSession, isVo2maxSession, isQualitySession, isSecondaryQuality, workClassFor } from './sessionRole'
 import { PLAN_SIGNATURES } from './planSignatures'
-import { isV2Structure, StructureV2Schema, goalPaceShapeWord, PACE_ANCHORS, type PaceAnchor, workAnchorOf } from './sessionStructureV2'
+import { isV2Structure, StructureV2Schema, goalPaceShapeWord, PACE_ANCHORS, type PaceAnchor, workAnchorOf, workAnchorsOf } from './sessionStructureV2'
 import { durationForMainSet, segmentPricedDistance, meetsQualityFloor } from './sessionFormat'
 import { resolveMainSet, type PaceAnchorMap } from './resolveMainSet'
 import { isDeloadWeek, computeDeloadWeeks, deloadVolumeFraction, shortOpeningBlockWeeks } from './deloadCadence'
@@ -749,6 +750,28 @@ function longSession(
   }
 }
 
+/**
+ * ADR-026 — the three inputs `anchorHrBand` derives from, read off the two owners that hold
+ * them. Named so a call site cannot supply two of three and silently get `null`: `PaceGuide.vdot`
+ * is the DISCOUNTED anchor VDOT (§10), which is the same number the pace was built from, and
+ * `ZoneTargets.restingHr` is `null` on the %MaxHR branch — which is exactly when no band exists.
+ */
+function runnerBand(zones: ZoneTargets, pace: PaceGuide): BandRunner {
+  return { maxHr: zones.maxHr, restingHr: zones.restingHr, vdot: pace.vdot }
+}
+
+/**
+ * The zone/HR pair for a session, from its derived band or from the zone table.
+ *
+ * ⚠️ THE PAIR, ALWAYS, AND NEVER ONE OF THE TWO — §84 Amendment 1 exists because they were
+ * authored apart and a card read "145–172 bpm" above "Hold 145–158 bpm". Falling back is
+ * `null`'s only meaning here: the runner has no HR reserve or no VDOT, measured at 35.2% of
+ * live threshold sessions, declared in §84 Amendment 2 with its number.
+ */
+function bandOrZoneTable(band: AnchorBand | null, zoneFallback: string, hrFallback: string) {
+  return { zone: band?.zone ?? zoneFallback, hr_target: band?.hr ?? hrFallback }
+}
+
 function qualitySession(
   weekN: number, day: Day,
   distKm: number, metric: 'distance' | 'duration',
@@ -763,7 +786,10 @@ function qualitySession(
     ...(metric === 'distance' ? { distance_km: Math.round(distKm * 10) / 10 } : {}),
     duration_mins: dur(distKm, pace.minPerKmQuality),
     primary_metric: metric,
-    zone: zones.qualityZone, hr_target: zones.qualityHR,
+    // ADR-026 R1/R2 — this builder prescribes `pace.minPerKmQuality`, which IS the `T`
+    // anchor, so the band is that anchor re-expressed in heart rate. `null` (no VDOT or no
+    // HR reserve) keeps the zone table, which is §84 Amendment 2's declared residual.
+    ...bandOrZoneTable(bandForAnchors(['T'], runnerBand(zones, pace)), zones.qualityZone, zones.qualityHR),
     pace_target: pace.qualityPaceStr, rpe_target: rpe,
     ...(notes ? { coach_notes: notes } : {}),
   }
@@ -1721,7 +1747,8 @@ export function makeQualitySession(args: {
   // override prescription to goal pace and rename label.
 
   // SC-02 / CD-15 (§19, §33) — an AEROBIC catalogue row selected into a quality
-  // slot is prescribed at threshold pace in Zone 3–4 by the final branch below.
+  // slot is prescribed at threshold pace by the final branch below, in the zone its T-anchored
+  // band falls in (ADR-026 — "Zone 4" for a trained runner, "Zone 3–4" for one less trained).
   // Keeping the row's own name ships a session whose label says easy and whose
   // prescription says threshold: "Steady aerobic" at T-pace in the grey zone,
   // which is what every 5K and 10K build week contained until this landed.
@@ -1897,8 +1924,17 @@ export function makeQualitySession(args: {
     label = catalogueRow?.name ?? fallbackLabel
     minPerKm = pace.minPerKmInterval
     paceTarget = pace.intervalPaceStr
-    zone = zones.intervalsZone
-    hrTarget = zones.intervalsHR
+    // 🔑 ADR-026 §5 — the interval FLOOR becomes the CV ceiling, and that is what closes the
+    // overlap rather than a chosen number. `anchorHrBand` does it for the `I` anchor by
+    // construction (its floor is `VDOT_FRACTIONS.CV[1]`), so T · CV · I share their
+    // boundaries: measured 160–167 / 167–173 / 173–185 at VDOT 41, max 185, rest 48.
+    // ⚠️ Raising it IS a prescription change (158–185 → 173–185) and ships here deliberately,
+    // in the same release as the threshold band, or the overlap exists between them.
+    {
+      const band = bandForAnchors(['I'], runnerBand(zones, pace))
+      zone = band?.zone ?? zones.intervalsZone
+      hrTarget = band?.hr ?? zones.intervalsHR
+    }
   } else {
     // SC-02 — a repurposed aerobic row takes the engine's own threshold label
     // ("Tempo run" / "Cruise intervals" / "Tempo run — short"), which is what
@@ -1959,8 +1995,21 @@ export function makeQualitySession(args: {
       derivedSet,
       categoryBand: pace.qualityPaceStr,
     })
-    zone = zones.qualityZone
-    hrTarget = zones.qualityHR
+    // ADR-026 R1/R2 — the band follows the anchor THIS SESSION was prescribed at.
+    //
+    // ⚠️ A REPURPOSED ROW IS NAMED EXPLICITLY, because its row cannot answer. §33 takes an
+    // `aerobic` or non-effort-governed `ultra_specific` row into this slot and prescribes it at
+    // T-pace; the row declares `E` / `Z2`, which is unbandable by ruling (§12's Z2 ceiling), so
+    // asking the row would hand it `null` and leave it on the incoherent zone-table band while
+    // its pace is a `T` pace. Everything else asks the row, which is how `cv_intervals` and
+    // `tempo_over_under` get the CV+T union that IS the work they prescribe, and how
+    // `progressive_tempo` (E+T) keeps its deliberate Z2–Z3 ramp by construction rather than by
+    // a named exception — ADR-026 §5 requires both in as many words.
+    {
+      const band = bandForAnchors(anchorsForQualityPrescription(catalogueRow), runnerBand(zones, pace))
+      zone = band?.zone ?? zones.qualityZone
+      hrTarget = band?.hr ?? zones.qualityHR
+    }
   }
 
   // Coach notes — must match the session's actual intent, not the underlying
@@ -6354,8 +6403,10 @@ function applyV5StimulusProgression(
       // hand-written label and the band agreed by coincidence. ⚠️ ZERO DELTA — the same
       // string, from the owner that pairs it with the HR — which is the whole of the
       // amendment's rule: *"authored in the same expression, so the two cannot drift."*
-      s.zone         = zones.qualityZone
-      s.hr_target    = zones.qualityHR
+      // ADR-026 — this rung REWRITES the session to "Continuous tempo" at `pace.qualityPaceStr`,
+      // which is the `T` anchor, so the band is that anchor. Named rather than read from the
+      // row, because the row it is overwriting is whatever regressed.
+      Object.assign(s, bandOrZoneTable(bandForAnchors(['T'], runnerBand(zones, pace)), zones.qualityZone, zones.qualityHR))
       s.pace_target  = pace.qualityPaceStr
       s.coach_notes  = ['Sustainable. Same pace at the end as at the start.']
       curr.rank = GENERATION_CONFIG.STIMULUS_RANK.tempo
@@ -6365,8 +6416,8 @@ function applyV5StimulusProgression(
       s.label        = 'Classic VO2max'
       // Same as the tempo rung above: hand-authored string, paired by the owner. Zero delta
       // (`zones.intervalsZone` IS `'Zone 4–5'`), and the pairing is what §84 Am. 1 asks for.
-      s.zone         = zones.intervalsZone
-      s.hr_target    = zones.intervalsHR
+      // ADR-026 — rewritten to interval pace, so the `I` anchor, floored at the CV ceiling.
+      Object.assign(s, bandOrZoneTable(bandForAnchors(['I'], runnerBand(zones, pace)), zones.intervalsZone, zones.intervalsHR))
       s.pace_target  = pace.intervalPaceStr
       s.coach_notes  = ['Three minutes is long. Don\'t blow rep one.']
       curr.rank = GENERATION_CONFIG.STIMULUS_RANK.vo2max
@@ -8145,7 +8196,8 @@ function buildRulePlanOnce(
     const max = cap(totalQuality)
 
     // Find under-represented labels in the same physiology bucket. We bucket by
-    // the session's zone tag — Zone 3 / Zone 3–4 = threshold; Zone 4–5 = vo2max.
+    // the session's CATALOGUE CATEGORY (ZONE-STRING-CLASSIFIER-01 — the zone tag is a display
+    // string and ADR-026 makes it runner-derived, so it cannot classify).
     // Goal-pace overrides are skipped — they're a coordinated specificity move
     // per §22, not catalogue rotation. Rotating one into a bare threshold name
     // ("Cruise intervals") strips its race-pace signal and trips §22/§19.
@@ -10356,6 +10408,20 @@ function buildRulePlanOnce(
     // plan rests on a device/unattributed max below its own age estimate.
     hr_derived_max: hrFallback.derived_max,
     ...(hrFallback.max_source ? { hr_max_source: hrFallback.max_source } : {}),
+    // 🔑 ADR-026 §8 — THE MIGRATION IS FORWARD-ONLY, AND THIS STAMP IS WHAT MAKES THAT
+    // MECHANICAL RATHER THAN REMEMBERED.
+    //
+    // The band change is "prompted, never silent" (ADR-014's precedent: a time-trial result
+    // rewrites forward paces only on confirmation). `applyHrToPlan` runs whenever a runner
+    // corrects their HR, and without this stamp it would hand a plan built before the release a
+    // band 16 bpm higher with no notice — the exact surprise ADR-012 exists to prevent and
+    // cannot detect, because a band moves no day, swaps no session and changes no volume.
+    //
+    // So the recalculation path reads this stamp and derives a band only for a plan that was
+    // GENERATED with one. A pre-release plan keeps the zone-table band it has always had until
+    // its runner is prompted. INV-CLASS applied to a migration: a structural signal the producer
+    // stamps, never a date comparison or a guess from the numbers.
+    hr_band_source: 'anchor' as const,
 
     // CoachingPrinciples §44 — prep-time status surface. 'ok' or 'warned'.
     // 'block' outcomes never reach this code path (PrepTimeError thrown above).

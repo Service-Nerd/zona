@@ -1462,6 +1462,30 @@ release (Silvanto, advisory).
 
 ---
 
+#### ✅/🔻 STATUS 2026-11-17 — the band shipped FORWARD-ONLY and this notice is NOT built
+
+`ANCHOR-BAND-FLIP-01` shipped the engine change. **The notice above is not built, and the reason is that it turned
+out not to be the blocker.**
+
+The release needed *"prompted, never silent"*, and the cheaper half of that is **not applying the change to an
+existing plan at all**. `plan.meta.hr_band_source = 'anchor'` is stamped at generation and `applyHrToPlan` derives a
+band only for a plan that carries it — so a pre-release plan keeps the band it has always had, including through an
+unrelated HR correction, which is the one path that would otherwise have migrated it in silence. INV-CLASS applied to
+a migration: a structural signal the producer stamps, never a date comparison. Held by `anchorBandFlip.test.ts`'s
+forward-only arm, which strips the stamp and asserts nothing moves.
+
+🔻 **SO THE RESIDUAL IS REAL AND IT IS NOT THE ONE THE ADR EXPECTED: those live plans now keep an incoherent band
+indefinitely**, rather than receiving a coherent one without being asked. That is the safer of the two, and it is
+still a runner whose threshold floor is their easy ceiling. The notice is what closes it, this pattern is already
+ruled, and it is filed as **`ANCHOR-BAND-MIGRATION-NOTICE-01`**.
+
+⚠️ **The 164-sessions-across-23-plans figure in the "once per runner" row above is from 2026-11-16 and was measured
+on live data then.** Re-measure before building the notice: the same session's zone depends on the runner's VDOT and
+HR reserve, and **56 of 159 live threshold sessions (35.2%) cannot take the new band at all**, so the population the
+notice addresses is smaller than the population that carries threshold work.
+
+---
+
 ### 10b. Move-confirmation row (PlanCalendar)
 
 Inline row appended to a `WeekCard` after the user taps the move icon on a session and then taps a destination day. Stages the move; the actual `session_overrides` insert + `/api/adjust-plan` call only fire on **Confirm**. **Cancel** aborts with no DB side-effect.

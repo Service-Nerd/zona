@@ -24,9 +24,11 @@
 import { describe, it, expect } from 'vitest'
 import { generateRulePlan } from './ruleEngine'
 import { computeZones } from './zones'
+import { bandForAnchors, anchorsForQualityPrescription } from './anchorBand'
+import { catalogueRowFor } from './catalogueLink'
 import { hrBandFor } from './hrBand'
 import { cohortGrid, COHORT_PLAN_START } from './cohortGrid'
-import type { GeneratorInput, Plan } from '@/types/plan'
+import type { GeneratorInput, Plan, Session } from '@/types/plan'
 
 /** A spread of the grid — coprime stride, so it is not just the head. */
 const STRIDE = 7919
@@ -46,12 +48,31 @@ function walk(inputs: GeneratorInput[]): Seen {
     const mhr = plan.meta?.max_hr
     if (typeof mhr !== 'number' || mhr <= 0) continue
     const z = computeZones(mhr, plan.meta?.resting_hr)
-    // What the generator ACTUALLY wrote, keyed by the band it implies.
-    const written: Record<string, { zone?: string; hr: string }> = {
-      quality:   { zone: z.qualityZone,   hr: z.qualityHR },
-      intervals: { zone: z.intervalsZone, hr: z.intervalsHR },
-      shakeout:  { hr: z.shakeoutHR },
-      easy:      { hr: z.easyHR },
+    // 🔑 ADR-026 — THE EXPECTATION IS NOW PER SESSION, NOT PER BAND, because the quality and
+    // interval bands are DERIVED from the session's own pace anchor. Keying this table by band
+    // alone was complete while the engine had exactly two quality pairs to write; it now writes
+    // one per (anchor, runner), so a band-keyed table would compare every derived band against
+    // the zone-table row it replaced and report the release as 11,969 disagreements.
+    //
+    // ⚠️ IT IS BUILT THE WAY THE ENGINE BUILDS IT — `anchorsForQualityPrescription` and
+    // `bandForAnchors`, the same two owners — which is the point of this file: a checker that
+    // re-derives the answer its own way is the drift `hrBand.ts`'s header is about.
+    const runner = {
+      maxHr: mhr,
+      restingHr: plan.meta?.resting_hr ?? null,
+      vdot: typeof plan.meta?.vdot_training_anchor === 'number' ? plan.meta.vdot_training_anchor
+        : typeof plan.meta?.vdot === 'number' ? plan.meta.vdot : null,
+    }
+    const expectedFor = (sn: Session, band: string): { zone?: string; hr: string } => {
+      if (band === 'shakeout') return { hr: z.shakeoutHR }
+      if (band === 'easy') return { hr: z.easyHR }
+      const row = catalogueRowFor(sn)
+      const anchors = band === 'intervals' ? ['I'] : anchorsForQualityPrescription(row)
+      const derived = bandForAnchors(anchors, runner)
+      if (derived) return { zone: derived.zone, hr: derived.hr }
+      return band === 'intervals'
+        ? { zone: z.intervalsZone, hr: z.intervalsHR }
+        : { zone: z.qualityZone, hr: z.qualityHR }
     }
     for (const w of plan.weeks) {
       for (const [day, s] of Object.entries(w.sessions)) {
@@ -60,7 +81,7 @@ function walk(inputs: GeneratorInput[]): Seen {
         const band = hrBandFor(s as never)
         if (band === null) continue          // "leave alone" — never an assertion
         out.byBand[band] = (out.byBand[band] ?? 0) + 1
-        const expect_ = written[band]
+        const expect_ = expectedFor(s as Session, band)
         if (s.hr_target !== expect_.hr || (expect_.zone !== undefined && s.zone !== undefined && s.zone !== expect_.zone)) {
           out.disagreements.push(
             `${input.race_distance_km}km/${input.fitness_level} w${w.n} ${day} type=${s.type} `

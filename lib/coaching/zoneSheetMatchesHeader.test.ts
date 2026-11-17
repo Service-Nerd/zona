@@ -100,8 +100,15 @@ describe('ZONE-SHEET-01 — the sheet agrees with the header', () => {
   it('maps a range to its PEAK — the hardest part is what needs explaining', () => {
     expect(zoneKeyForZoneString('Zone 4–5')).toBe('Z4-5')
     expect(zoneKeyForZoneString('Zone 2–3')).toBe('Z3')
-    expect(zoneKeyForZoneString('Zone 3–4')).toBe('Z4-5')
     expect(zoneKeyForZoneString('Zone 2')).toBe('Z2')
     expect(zoneKeyForZoneString('Zone 1')).toBe('Z1')
+    // ADR-026 — `Zone 3–4` was 'Z4-5' while the engine could emit only "Zone 3" or "Zone 4–5",
+    // so every range with a 4 in it was the intervals explainer. The band is derived from the
+    // session's pace anchor now and `Zone 4` / `Zone 5` are emitted separately, so the PEAK rule
+    // this test is named for resolves them to their own copy. The rule did not change; the set
+    // of strings it has to resolve did.
+    expect(zoneKeyForZoneString('Zone 3–4')).toBe('Z4')
+    expect(zoneKeyForZoneString('Zone 4')).toBe('Z4')
+    expect(zoneKeyForZoneString('Zone 5')).toBe('Z5')
   })
 })

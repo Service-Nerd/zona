@@ -2423,54 +2423,28 @@ arm: **observed below the runner's own recorded peak is reconciled upward, promp
 
 ---
 
-### 🔲 `ANCHOR-BAND-FLIP-01` — turn the anchor-derived band on 🏃 **COACHING BOARD** ruled (ADR-026 + `ANCHOR-BAND-OWNER-01`) → ⚙️ build
+### 🔲 `ANCHOR-BAND-MIGRATION-NOTICE-01` — the 23 live plans keep an incoherent band until they are asked 🧭 **DESIGN BOARD** ruled (ADR-026 §9 / `ui-patterns.md` §10a) → ⚙️ build
 
-**The owner, its 27 tests and the fractions ship in `ANCHOR-BAND-OWNER-01`; nothing calls them from the generator yet.**
-This is the flip, and it is a prescription change. ✅ **`ZONE-STRING-CLASSIFIER-01` SHIPPED 2026-11-17 and
-UNBLOCKED it — but it also HANDED TWO MORE SITES TO THIS ITEM, having measured that neither is a
-display-string defect:**
+**`ANCHOR-BAND-FLIP-01` shipped FORWARD-ONLY on 2026-11-17 and this is the half it did not close.**
+`plan.meta.hr_band_source = 'anchor'` is stamped at generation and `applyHrToPlan` derives a band only for a plan
+that carries it, so a pre-release plan keeps the band it has always had — including through an unrelated HR
+correction, which is the one path that would otherwise have migrated it in silence (ADR-012 has no intensity term
+and cannot see a band move: no day, no session swap, no volume).
 
-- 🔑 **`INV-PLAN-INTENSITY-ORDERING`** (not `INV-PLAN-PACE-INVERSION`, which exists nowhere) compares the
-  fastest Zone-3 pace against the fastest Zone-4–5 pace. Re-keying it to the catalogue row was **measured
-  and declined**: §33 repurposing delivers an `ultra_specific` row at T-pace and §22 delivers a `threshold`
-  row at goal pace, so on both sides the category says what the row is FOR, not what the instance was
-  prescribed AS — **26,928 of 250,616 cohort quality sessions sit on the VO2max side purely because §22
-  renamed them.** ⚠️ **Unlike §19's threshold and easy arms it does NOT survive ADR-026 by construction:**
-  once the band is derived per runner, a threshold session can read "Zone 4" and join the VO2max side, so
-  the pair being compared changes per runner. **Same question as condition 3; amend it here.**
-- 🔑 **`hrBand.ts:116`** reads `/Zone 4/` for `session.stimulus === 'race_pace'` — **deliberately**, per §83
-  Amendment, because the generator records "which band this goal pace sits in" in the zone and nowhere
-  else. It is paired with its producer today and **breaks the moment threshold reads Zone 4.** The module
-  whose header is forty lines about parallel-classifier drift, from the other side.
+🔻 **So the residual is real and it is not the one ADR-026 §8 expected: those plans now keep an INCOHERENT band
+indefinitely** rather than receiving a coherent one unasked. Safer of the two, and still a runner whose threshold
+floor is their easy ceiling.
 
-⚠️ **AND THE §19 ARMS NEED NO AMENDMENT, WHICH IS WORTH KNOWING BEFORE PLANNING AGAINST THEM:** the
-threshold arm tests "at least Zone 3" and the easy arm "at most Zone 2", so a threshold session whose
-derived band reads Zone 4 satisfies `zoneIsVo2` and neither fires. Only the vo2max arm needed re-keying
-and it is done.
+**The pattern is already ruled** — `ui-patterns.md` § 10a, the band-change notice as a `PendingAdjustmentBanner`
+variant: reuse the banner, never block the session, **once per runner not once per card**, lead with the new number,
+inset with no new ground, old and new side by side, no celebration. Declining leaves the plan as it is (ADR-014's
+precedent, not ADR-012's magnitude test).
 
-**What it does:** `makeQualitySession`'s vo2max and threshold branches, the no-row threshold builder, §97's two
-escalation rungs and `applyHrToPlan` each ask `bandForRow(catalogueRow, { ...zones, vdot: pace.vdot })` and fall back to
-the zone table on `null`. Five call sites, one line each — the work is everything around them:
-
-- **amend `INV-PLAN-DISPLAY-ZONE-MATCHES-WORK`**: equals → **overlaps** (§84 Am. 1's enforcement; it fires today on
-  every derived band, measured)
-- **amend `INV-PLAN-PACE-ZONE-COHERENT`**: `zoneSaysInterval = zone.includes('4')` fires on correct plans once
-  threshold reads Zone 4 (ADR-026 condition 3)
-- **add `INV-PLAN-HR-MATCHES-PACE`** (R4), and it **must not fire on the 35.2% with no derivable band**
-- **`ZONE_COPY['Z4']` as a fifth voice** + `zoneCopyByNumber(4)` repointed + a new reach test asserting every zone string `computeZones` can emit resolves to copy describing that work — Design Board's
-  blocking amendment: today `zoneCopyByNumber(4)` returns the `Z4-5` entry (*"Hard. Genuinely hard… You can't talk."*)
-  and a 20-minute tempo labelled Zone 4 would teach the runner something false. ⚠️ **`Zone 5` is also newly emitted
-  (169 of 6,516)** — its entry exists, but the reach test must cover it.
-- **prompted migration** per ADR-014 via `applyHrToPlan`, never silent (ADR-012 has no term for intensity — filed)
-- **docs that become true again**: `zone-rules.md:27/:72/:77`, `ruleEngine.ts:1702`, `renderGuidance.ts:25`
-- **§84 Amendment 2**, declaring the 35.2% residual with its number
-- **McMillan's binding condition**: the interval arm reports its own `measure:fitness` and `cohort:shape` figures
-  **separately** before it ships
-- 41 golden snapshots
-
-⚠️ **`verify:parity` will show a large INTENDED diff, so it stops being evidence here.** The gate is the before/after
-band table per persona plus the two cohort measurements.
-
+⚠️ **RE-MEASURE THE POPULATION BEFORE BUILDING.** The *"164 sessions across 23 plans"* figure is from 2026-11-16.
+**56 of 159 live threshold sessions (35.2%) cannot take the new band at all** (no HR reserve, or no VDOT), so the
+set the notice addresses is smaller than the set carrying threshold work — and the same session's zone depends on the
+runner's own numbers. 🔬 **Wood's condition stands:** a runner holding 144–158 has a habit built on that number, so
+show both and explain why; an unexplained cue change produces abandonment, not a new habit.
 
 ### 🔲 `THRESHOLD-INTERVAL-OVERLAP-01` — fixing threshold exposes that the interval floor is the same number 🏃 **COACHING BOARD** ruled 2026-11-16 → ⚙️ build
 

@@ -924,6 +924,17 @@ export interface PlanMeta {
   // plan never rests on a device/unattributed max below hr_estimated_max.
   hr_derived_max?: number
   hr_max_source?: 'observed' | 'user_confirmed'
+  /**
+   * ADR-026 §8 — which derivation produced this plan's quality HR bands. `'anchor'` means the
+   * band is the pace prescription re-expressed in heart rate (§84 Amendment 2); ABSENT means the
+   * plan predates the release and carries zone-table bands.
+   *
+   * ⚠️ READ BY `applyHrToPlan` TO KEEP THE MIGRATION FORWARD-ONLY. The band change is prompted,
+   * never silent, and a band moves no day, swaps no session and changes no volume — so ADR-012's
+   * magnitude test cannot see it. Without this stamp an unrelated HR correction would migrate a
+   * live runner's plan by +16 bpm with no notice.
+   */
+  hr_band_source?: 'anchor'
 
   // 2026-04-28 / H-01 — prep-time validation surface (CoachingPrinciples §44).
   // 'ok' on adequately-resourced plans, 'warned' on plans generated under an

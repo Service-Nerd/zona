@@ -7375,6 +7375,58 @@ The data inconsistency long predated §84; the **contradiction on screen was hou
 
 **Enforcement.** `INV-PLAN-DISPLAY-ZONE-MATCHES-WORK` in `lib/plan/invariants.ts`: every zone-bearing session carries a non-empty `session.zone`, and no `coach_note` states a literal `Zone N`/`Zone N–M` that contradicts it. Older plans with no stored `session.zone` fall back to the type-derived single zone at display time (graceful degradation, not a violation).
 
+### Amendment 2 — the band is DERIVED FROM THE PACE ANCHOR, and 35.2% of live threshold sessions cannot take one — added 2026-11-17 (Coaching Board, ADR-026, `ANCHOR-BAND-FLIP-01`)
+
+**Principle.** A quality session's HR band is the **pace prescription re-expressed in heart rate**, computed from the
+same Daniels fraction of VO2max the pace was built from, through the %HRR ≈ %VO2R identity. Amendment 1 derived the
+zone STRING from the target; this derives the TARGET from the anchor, so the label follows a band that followed an
+anchor. **Anchored from `T` upward** — `T`, `CV`, `I`, which share their fractions, so the bands share their
+boundaries and cannot overlap. **Easy and shakeout keep the zone table**, by ruling: `E`'s own fraction gives 55–72%
+HRR and 71.6% breaches §12's 70% Z2 ceiling.
+
+**Why.** Pace came from %VO2max and HR came from %HRR, and **nothing in the engine converted between them**. The
+consequence is not subtle and needs no cohort data to see: `z2Top` **IS** `z3Low` by construction, so a threshold
+session's HR **floor was the easy CEILING** — a runner at the bottom of their "threshold" band was running at the top
+of easy. Measured on 29 live runs at the prescribed threshold pace, **51% of the time was spent above the prescribed
+HR ceiling** and peaks ran 13 bpm over. The fix is one derivation, not a better second constant: the board rejected
+ratifying a new band because *"ratifying 81–87% would be the same mistake 70–80% was"*. **No pace moves.**
+
+**What changed, measured on 5,678 cohort plans / 34,520 quality sessions carrying a band:** **11,969 (34.7%)** take a
+new zone and HR. `Zone 4` ×9,384 · `Zone 4–5` ×1,681 · `Zone 5` ×904. Reported separately on McMillan's binding
+condition: **interval arm 904 of 2,294 (39.4%)**, **threshold arm 11,065 of 32,226 (34.3%)**. The interval FLOOR moves
+to the CV ceiling (158 → 173 bpm at VDOT 41, max 185, rest 48), which is what closes the threshold/interval overlap —
+🔴 a prescription change in its own right, shipped in the same release deliberately, or the overlap exists between
+them. ⚠️ **A consequence ADR-026 §4's own table does not show: the interval band's LABEL moves from `Zone 4–5` to
+`Zone 5`** for a runner with a VDOT, because the band sits wholly inside Z5. Its education copy was rewritten with it
+("Maximum effort. Short, sharp, full recovery between." described a sprint, and a 5 × 3 min set at interval pace is
+not a sprint).
+
+🔴 **THE RESIDUAL, DECLARED WITH ITS NUMBER RATHER THAN HIDDEN: 56 of 159 live threshold sessions (35.2%) CANNOT TAKE
+THE BAND, and 65.3% of cohort quality sessions keep the zone table.** %HRR needs an HR **reserve** and the anchor is a
+fraction of VO2max: **14 of 43 live plans carry no resting HR, 2 no max HR, 22 no VDOT, and only 14 carry all three.**
+ADR-026 §4's three worked personas all carry all three, which is how the precondition went unstated through two
+sittings. **For those sessions the floor-equals-easy-ceiling incoherence survives.** ⚠️ §14 Amendment's *"where
+nothing can be derived, carry no number"* is deliberately NOT applied: something CAN be derived (the zone table), and
+removing a number 56 sessions already display is a larger change than leaving it. The upstream remedy is a benchmark
+date and a resting HR, not a different band.
+
+**Out of scope, by ruling and not omission.** §22's goal-paced work: its pace is the runner's own goal, which is not a
+fraction of VDOT at all, so no anchor describes it and §83 Amendment's existing treatment stands. §40b's
+effort-governed rows carry no band at all. `progressive_tempo` is `E`+`T` and `E` is unbandable, so it **keeps its
+deliberate Z2–Z3 ramp by construction** rather than by a named exception — which §5 requires in as many words.
+
+⚠️ **What this does not prove.** It is not a measured threshold heart rate for these runners: direct device-backed
+evidence is n = 0 usable, and ⚕️ **Sims' objection is recorded and stands** — Daniels' tables and the %VO2R conversion
+cohorts are male-derived end to end. The ground this stands on is **coherence**, provable from the code for every
+runner, with the telemetry as corroboration and never as the case. 🩹 **Willy's residual stands too:** two
+observations is not a cohort, and the prompted migration is the mitigation rather than a courtesy.
+
+**Config.** `VDOT_FRACTIONS` (`lib/plan/paceBands.ts`) names the Daniels fractions once, read by both the pace and
+the band; `lib/plan/anchorBand.ts` is the single owner of the conversion. **Enforced by** the new
+`INV-PLAN-HR-MATCHES-PACE` and by `INV-PLAN-DISPLAY-ZONE-MATCHES-WORK`, whose Amendment 1 test of **equality**
+becomes **containment** — a derived band sits inside a zone rather than equal to it, and a target that leaks outside
+the zone it names still fails.
+
 ---
 
 ## 85. Intensity has an inventory, or the runner's answer means nothing

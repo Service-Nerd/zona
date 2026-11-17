@@ -49,7 +49,11 @@ describe('PLAN-ZONE-VS-HRTARGET-01 — an HR correction reaches the sessions', (
     }
     const after = dz(validatePlan(metaOnly as never, { ...AT_GENERATION, ...{ resting_hr: CORRECTED.rhr, max_hr: CORRECTED.mhr } } as never))
     expect(after.length).toBeGreaterThan(0)
-    expect(after[0].actual).toMatch(/zone Zone 3 = \d+–\d+ bpm vs hr_target/)
+    // ADR-026 amended the diagnostic's wording with the rule (the label must name exactly the
+    // zones the target overlaps), so this asserts the SUBSTANCE: the stale zone, the stale
+    // target, and the zone the target actually falls in. Matching the old sentence would have
+    // made this arm a test of a string.
+    expect(after[0].actual).toMatch(/zone Zone 3, hr_target \d+–\d+ bpm \(= Zone /)
   })
 
   it('applyHrToPlan closes it — zone and hr_target agree again', () => {

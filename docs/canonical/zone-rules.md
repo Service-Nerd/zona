@@ -24,7 +24,7 @@ Both formulas produce the same five zone names. Consumers read zone strings (e.g
 |---|---|---|---|
 | Z1 | 50–60 | 65–70 | Recovery — active recovery only |
 | Z2 | 60–70 | 70–80 | Easy aerobic — most of the work happens here |
-| Z3 | 70–80 | 80–87 | Threshold — comfortably hard, sustainable for ~30–60 min |
+| Z3 | 70–80 | 80–87 | Threshold — comfortably hard, sustainable for ~30–60 min. ⚠️ **Since ADR-026 a threshold SESSION is no longer prescribed from this row** — its band is derived from the `T` anchor and usually lands in Z4. This row remains the zone TABLE, which is what the display parses a zone string against and what a session with no derivable band falls back to |
 | Z4 | 80–90 | 87–93 | VO2max ramp-up — short, hard intervals |
 | Z5 | 90–100 | 93–100 | VO2max — short, very hard repeats |
 
@@ -69,12 +69,12 @@ The Tanaka formula choice is documented in `docs/canonical/CoachingPrinciples.md
 | Session type (slot) | Catalogue category | Primary zone | Notes |
 |---|---|---|---|
 | `easy`, `long`, `recovery`, `run` | aerobic | Z2 | Capped at Z2 top — see CoachingPrinciples §12 |
-| `quality`, `tempo` | threshold | Z3 | Z3 is the sustained threshold band |
-| `intervals`, `hard` | vo2max | Z4–Z5 | Short repeats; the rep duration determines whether Z4 or Z5 dominates |
+| `quality`, `tempo` | threshold | **derived from the `T` anchor** | ADR-026: the band is the pace prescription re-expressed in heart rate, so it lands in **Z4** for a trained runner and **Z3–Z4** for one less trained. `Z3` only where no band can be derived |
+| `intervals`, `hard` | vo2max | **derived from the `I` anchor, floored on the CV ceiling** | ADR-026 §5: **Z5** for a runner with a VDOT, `Z4–Z5` otherwise. The floor moved 158 → 173 bpm at VDOT 41 to close the threshold/interval overlap |
 | `race` | — | Race pace | Derived from target time, not from HR — HR is the governor on hot/hilly days |
 | `strength`, `cross-train`, `rest` | — | — | No HR target |
 
-> **This table is the engine's ASSIGNMENT source, not the DISPLAY source (§84).** The type slot is coarse: every quality session is typed `quality`, so a `type → zone` map at display time collapses tempo, VO2 intervals and hill reps all to a flat "Zone 3". The engine writes the honest per-session zone to `session.zone` ("Zone 3–4" for threshold, "Zone 4–5" for VO2/hills) — a single zone or a range. **Every display surface (the session-detail "Hold the zone" header, the Today eyebrow, the ZoneBar) and every coach note read `session.zone`, never `session.type`.** `zonesFromZoneString` / `hrBandForZoneString` in `lib/coaching/zoneRules.ts` parse that string into the displayed zone(s) and the live HR band; `displayZonesForSession()` in `DashboardClient.tsx` is the single display owner. See `CoachingPrinciples.md §84` and `GENERATION_CONFIG.DISPLAY_ZONE_SOURCE`.
+> **This table is the engine's ASSIGNMENT source, not the DISPLAY source (§84).** The type slot is coarse: every quality session is typed `quality`, so a `type → zone` map at display time collapses tempo, VO2 intervals and hill reps all to a flat "Zone 3". The engine writes the honest per-session zone to `session.zone` — a single zone or a range, and since **ADR-026 it is DERIVED from the band rather than chosen**, so the same T-pace session reads `Zone 4` for a trained runner and `Zone 3–4` for one less trained (R2 extends §84 Amendment 1 one step back: the target is derived too, so the label follows a band that followed an anchor). ⚠️ **`Zone 4` and `Zone 5` are emitted separately now** and resolve to their own education copy; `zoneKeyForZoneString`'s old `hi >= 4 → 'Z4-5'` handed a 20-minute tempo the intervals explainer. **Every display surface (the session-detail "Hold the zone" header, the Today eyebrow, the ZoneBar) and every coach note read `session.zone`, never `session.type`.** `zonesFromZoneString` / `hrBandForZoneString` in `lib/coaching/zoneRules.ts` parse that string into the displayed zone(s) and the live HR band; `displayZonesForSession()` in `DashboardClient.tsx` is the single display owner. See `CoachingPrinciples.md §84` and `GENERATION_CONFIG.DISPLAY_ZONE_SOURCE`.
 
 ---
 
