@@ -44,6 +44,11 @@ export interface ZoneTargets {
   /** §84 — the zone string that DESCRIBES `intervalsHR`. Paired at construction. */
   intervalsZone: string
   intervalsHR: string
+  /** ADR-026 R1 — the two numbers `anchorHrBand` converts through, carried so a caller
+   *  holding a `ZoneTargets` never re-fetches or re-guesses them. `restingHr` is `null`
+   *  when the %MaxHR branch was taken, which is exactly when no band can be derived. */
+  maxHr: number
+  restingHr: number | null
 }
 
 
@@ -90,6 +95,8 @@ export function computeZones(mhr: number, rhr?: number): ZoneTargets {
       // it was true for intervals and assumed for quality.
       qualityZone:   'Zone 3',
       intervalsZone: 'Zone 4–5',
+      maxHr: mhr,
+      restingHr: usable,
     }
   }
   // %MaxHR — used when resting HR not provided
@@ -110,6 +117,13 @@ export function computeZones(mhr: number, rhr?: number): ZoneTargets {
     // §84 Amendment — see the Karvonen branch above. Same pairing, same reason.
     qualityZone:   'Zone 3',
     intervalsZone: 'Zone 4–5',
+    maxHr: mhr,
+    // 🔴 NO HR RESERVE, SO NO ANCHOR-DERIVED BAND, AND IT IS 35.2% OF LIVE THRESHOLD
+    // SESSIONS (ADR-026, measured 2026-11-17). %HRR ≈ %VO2R needs a reserve; this branch
+    // exists precisely because there isn't one. These sessions keep the zone-table band
+    // above, so the floor-equals-easy-ceiling incoherence survives for them — declared in
+    // §84 Amendment 2 with its number rather than hidden here.
+    restingHr: null,
   }
 }
 

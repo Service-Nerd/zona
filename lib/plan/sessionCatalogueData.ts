@@ -25,6 +25,7 @@
 // The cost, accepted: catalogue changes require a deploy.
 
 import { GENERATION_CONFIG } from './generationConfig'
+import { workAnchorsOf } from './sessionStructureV2'
 
 export type CatalogueCategory =
   | 'aerobic' | 'threshold' | 'vo2max' | 'race_specific' | 'ultra_specific'
@@ -1559,20 +1560,13 @@ export function ultraFuellingCadenceMins(
   return { min: Math.min(...mins), max: Math.max(...mins) }
 }
 
+/** ⚙️ EXEMPT REFACTOR, zero behavioural delta (ADR-026 R1, 2026-11-17): the body moved to
+ *  `workAnchorsOf` in `sessionStructureV2.ts` so the HR band can ask the same question the
+ *  selector asks. Three copies of this parse existed; this is now the one, read raw exactly
+ *  as it always was. The public name stays because the selector gate and §5 of the selector
+ *  doc-comment both reference it. */
 export function requiredPaceAnchors(row: SessionCatalogueRow): string[] {
-  const m = row.main_set_structure as {
-    version?: number
-    blocks?: Array<{ steps?: Array<{ role?: string; target?: { kind?: string; anchor?: string } }> }>
-  }
-  if (m.version !== 2 || !Array.isArray(m.blocks)) return []
-  const anchors = new Set<string>()
-  for (const b of m.blocks) {
-    for (const st of b.steps ?? []) {
-      if (st.role !== 'work') continue
-      if (st.target?.kind === 'pace' && st.target.anchor) anchors.add(st.target.anchor)
-    }
-  }
-  return Array.from(anchors)
+  return workAnchorsOf(row)
 }
 
 /**

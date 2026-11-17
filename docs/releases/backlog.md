@@ -2423,6 +2423,64 @@ arm: **observed below the runner's own recorded peak is reconciled upward, promp
 
 ---
 
+### 🔲 `ZONE-STRING-CLASSIFIER-01` — four prescription guards classify a session by its DISPLAY STRING ⚙️ **NO BOARD** (defect against INV-CLASS)
+
+🔴 **Found 2026-11-17 while building ADR-026 B1, by wiring the band and measuring what fired.** `session.zone` is a
+display label (§84 Am. 1: *"`hr_target` is the prescription; `session.zone` is a label ABOUT it"*). Four places branch
+on it with **no structural fallback**:
+
+| where | what it decides |
+|---|---|
+| `invariants.ts:1970` `INV-PLAN-LABEL-MATCHES-PACE` | `zoneIsVo2` / `zoneIsThreshold` from `zone.includes('zone 4')` |
+| `invariants.ts:6410` `INV-PLAN-PACE-INVERSION` | the same pair, to compare fastest threshold against fastest VO2max |
+| `INV-PLAN-VO2MAX-MAIN-SET-CAP` | applies the **12–18 min VO2max dose bound** to anything labelled Z4/Z5 |
+| `ruleEngine.ts:8186` `physBucket` | §53's label-variety alternatives — **prescription-visible**, it rewrites labels |
+
+🔑 **This is INV-CLASS verbatim** — *"classify by a structural signal the producer stamps, never by a display string
+another layer can rewrite"* — and the signal is already stamped: **`catalogue_id` via `catalogueRowFor` (ADR-018)**.
+`classifyStimulus` in `sessionRole.ts` already does it right (`if (session.stimulus) return session.stimulus` first),
+which is the shape to copy.
+
+📐 **Latent today, live under ADR-026 B3.** With the band wired, `INV-PLAN-VO2MAX-MAIN-SET-CAP` fired on **"CV
+intervals", 24 min, as VO2max work** — a CV *threshold* session judged against the VO2max dose band. 1,910 of 6,516
+quality sessions (29.3%) take a new label once R2 lands, so each of these four starts answering a **runner-dependent**
+question. ⚠️ **It is a defect now, not only then:** the enricher may rewrite a label, and §84 Am. 1 exists because the
+zone string and the band had already diverged on 10–15% of sessions per distance.
+
+**Scope:** re-key all four to the catalogue category; keep the zone string as a fallback only where no row resolves
+(`null` must mean *leave it alone*, per `hrBand.ts`). ⚠️ **Measure the bucket delta BEFORE and AFTER on today's
+engine** — if any session changes bucket without ADR-026, that is a live mis-classification and its own finding.
+**Blocks `ANCHOR-BAND-FLIP-01`.**
+
+### 🔲 `ANCHOR-BAND-FLIP-01` — turn the anchor-derived band on 🏃 **COACHING BOARD** ruled (ADR-026 + `ANCHOR-BAND-OWNER-01`) → ⚙️ build
+
+**The owner, its 27 tests and the fractions ship in `ANCHOR-BAND-OWNER-01`; nothing calls them from the generator yet.**
+This is the flip, and it is a prescription change. **Blocked on `ZONE-STRING-CLASSIFIER-01`.**
+
+**What it does:** `makeQualitySession`'s vo2max and threshold branches, the no-row threshold builder, §97's two
+escalation rungs and `applyHrToPlan` each ask `bandForRow(catalogueRow, { ...zones, vdot: pace.vdot })` and fall back to
+the zone table on `null`. Five call sites, one line each — the work is everything around them:
+
+- **amend `INV-PLAN-DISPLAY-ZONE-MATCHES-WORK`**: equals → **overlaps** (§84 Am. 1's enforcement; it fires today on
+  every derived band, measured)
+- **amend `INV-PLAN-PACE-ZONE-COHERENT`**: `zoneSaysInterval = zone.includes('4')` fires on correct plans once
+  threshold reads Zone 4 (ADR-026 condition 3)
+- **add `INV-PLAN-HR-MATCHES-PACE`** (R4), and it **must not fire on the 35.2% with no derivable band**
+- **`ZONE_COPY['Z4']` as a fifth voice** + `zoneCopyByNumber(4)` repointed + a new reach test asserting every zone string `computeZones` can emit resolves to copy describing that work — Design Board's
+  blocking amendment: today `zoneCopyByNumber(4)` returns the `Z4-5` entry (*"Hard. Genuinely hard… You can't talk."*)
+  and a 20-minute tempo labelled Zone 4 would teach the runner something false. ⚠️ **`Zone 5` is also newly emitted
+  (169 of 6,516)** — its entry exists, but the reach test must cover it.
+- **prompted migration** per ADR-014 via `applyHrToPlan`, never silent (ADR-012 has no term for intensity — filed)
+- **docs that become true again**: `zone-rules.md:27/:72/:77`, `ruleEngine.ts:1702`, `renderGuidance.ts:25`
+- **§84 Amendment 2**, declaring the 35.2% residual with its number
+- **McMillan's binding condition**: the interval arm reports its own `measure:fitness` and `cohort:shape` figures
+  **separately** before it ships
+- 41 golden snapshots
+
+⚠️ **`verify:parity` will show a large INTENDED diff, so it stops being evidence here.** The gate is the before/after
+band table per persona plus the two cohort measurements.
+
+
 ### 🔲 `THRESHOLD-INTERVAL-OVERLAP-01` — fixing threshold exposes that the interval floor is the same number 🏃 **COACHING BOARD** ruled 2026-11-16 → ⚙️ build
 
 ✅ **RULED CORRECT WITH AMENDMENT, 2026-11-16 (second sitting). Condition 1 on `THRESHOLD-BAND-ANCHOR-01` is

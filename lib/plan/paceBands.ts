@@ -44,6 +44,25 @@ export interface PaceGuide {
   minPerKmMarathon: number | null
   minPerKmHM:       number | null
   source: 'vdot' | 'fitness_level'
+  /**
+   * ADR-026 R1 — the DISCOUNTED VDOT these bands were priced at, or `null` when the guide
+   * was not priced from a VDOT at all.
+   *
+   * 🔑 IT RIDES WITH THE PACE BECAUSE THE HR BAND MUST BE DERIVED FROM THE SAME NUMBER.
+   * That is the entire content of ADR-026: the pace came from %VO2max, the HR came from a
+   * zone constant, and nothing converted between them, so one session carried two
+   * prescriptions for two different efforts. A band computed from a VDOT fetched
+   * separately could drift from the pace beside it, which is the defect wearing a
+   * different hat. `anchorHrBand` reads this.
+   *
+   * ⚠️ DISCOUNTED, not raw, for the same reason T and CV paces are (§10/§42's
+   * conservatism). The interval band needs no raw VDOT: its floor is the CV ceiling and
+   * its top is max HR, so no I fraction is ever converted.
+   *
+   * ⚠️ `null` IS THE COMMON CASE — `buildFallbackPace` prices from a fitness level and has
+   * no VDOT, which is 22 of 43 live plans. Those sessions get no anchor-derived band.
+   */
+  vdot: number | null
   /** §120 Amendment 2 (GOAL-PACE-REACHABLE-01) — set ONLY by `generateRulePlan`, from `goalPaceReach`, when the stated
    *  goal is past `GOAL_PACE_MAX_STRETCH_PCT` beyond current race fitness. Carried on the pace guide because it IS a
    *  fact about this runner's paces ("goal pace is not one they can train at yet") and every place that prices goal
@@ -53,6 +72,37 @@ export interface PaceGuide {
    *  ("m:ss /km"), which the race-day opening quotes instead of the goal. */
   currentRacePaceStr?: string
 }
+
+/**
+ * ADR-026 R1 — the Daniels VO2 fractions, named once, read by BOTH prescriptions.
+ *
+ * 🔴 THESE NUMBERS WERE WRITTEN OUT INLINE IN `buildPaceFromVDOT` AND NOWHERE ELSE,
+ * AND THAT WAS CORRECT UNTIL A SECOND CONSUMER EXISTED. ADR-026 gives a session's HR
+ * band the same anchor its pace already uses, so `anchorHrBand` needs the identical
+ * fractions. Writing `0.83`/`0.88` a second time there is the SESSION-KM-01 /
+ * DELOAD-OWNER-01 / TIER-OWNER-01 class — two copies of one truth that agree until
+ * one is tuned — and it is the precise failure ADR-026 exists to end: the pace came
+ * from %VO2max, the HR came from a zone constant, nothing converted between them, and
+ * so the two prescriptions on one session described different efforts.
+ *
+ * ⚠️ STILL EXEMPT FROM `GENERATION_CONFIG`, deliberately. CLAUDE.md names "Daniels VDOT
+ * coefficients in `buildPaceFromVDOT`" as algorithm-formula constants that stay inline:
+ * they are facts about Daniels' tables, not coaching choices a coach would tune. Naming
+ * them does not make them config; it gives the second reader the first reader's numbers.
+ *
+ * M and HM are single-point anchors (§24b/§24c/§24d), stored as a degenerate band so
+ * every anchor has one shape.
+ */
+export const VDOT_FRACTIONS = {
+  E:  [0.59, 0.74],
+  T:  [0.83, 0.88],
+  CV: [0.88, 0.92],
+  I:  [0.95, 1.00],
+  M:  [0.79, 0.79],
+  HM: [0.84, 0.84],
+} as const
+
+export type FractionedAnchor = keyof typeof VDOT_FRACTIONS
 
 // Velocity (m/min) at a given fraction of VDOT — quadratic solve
 export function velocityAtFraction(vdot: number, fraction: number): number {
@@ -84,24 +134,24 @@ export function paceBandStr(centerMins: number, pctTolerance: number): string {
 }
 
 export function buildPaceFromVDOT(discountedVdot: number, rawVdot: number): PaceGuide {
-  const eFast = paceAtFraction(discountedVdot, 0.74)
-  const eSlow = paceAtFraction(discountedVdot, 0.59)
-  const tFast = paceAtFraction(discountedVdot, 0.88)
-  const tSlow = paceAtFraction(discountedVdot, 0.83)
+  const eFast = paceAtFraction(discountedVdot, VDOT_FRACTIONS.E[1])
+  const eSlow = paceAtFraction(discountedVdot, VDOT_FRACTIONS.E[0])
+  const tFast = paceAtFraction(discountedVdot, VDOT_FRACTIONS.T[1])
+  const tSlow = paceAtFraction(discountedVdot, VDOT_FRACTIONS.T[0])
   // CV band (§85). Deliberately narrow and deliberately adjacent to T's top:
   // an over-under's "over" is *just* over threshold, not a third gear. Its
   // midpoint (0.90) sits 2.6% faster than T's (0.855) in pace terms, which is
   // what keeps a 50/50 over-under inside INV-PLAN-LABEL-MATCHES-PACE's ±3%
   // threshold tolerance without amending §19. Discounted VDOT, like T — same
   // conservatism doctrine (§10, §42); only I-pace uses raw.
-  const cvFast = paceAtFraction(discountedVdot, 0.92)
-  const cvSlow = paceAtFraction(discountedVdot, 0.88)
-  const iFast = paceAtFraction(rawVdot, 1.00)  // top of interval band, raw VDOT
-  const iSlow = paceAtFraction(rawVdot, 0.95)  // sustainable interval pace, raw VDOT
+  const cvFast = paceAtFraction(discountedVdot, VDOT_FRACTIONS.CV[1])
+  const cvSlow = paceAtFraction(discountedVdot, VDOT_FRACTIONS.CV[0])
+  const iFast = paceAtFraction(rawVdot, VDOT_FRACTIONS.I[1])  // top of interval band, raw VDOT
+  const iSlow = paceAtFraction(rawVdot, VDOT_FRACTIONS.I[0])  // sustainable interval pace, raw VDOT
   // Marathon (~79% VDOT) and HM (~84% VDOT) segment paces. Both use discounted
   // VDOT (same conservatism doctrine as easy/threshold). §24b/§24c/§24d.
-  const mpMins = paceAtFraction(discountedVdot, 0.79)
-  const hmMins = paceAtFraction(discountedVdot, 0.84)
+  const mpMins = paceAtFraction(discountedVdot, VDOT_FRACTIONS.M[0])
+  const hmMins = paceAtFraction(discountedVdot, VDOT_FRACTIONS.HM[0])
   const eMid  = (eFast + eSlow) / 2
   const tMid  = (tFast + tSlow) / 2
   const cvMid = (cvFast + cvSlow) / 2
@@ -120,6 +170,7 @@ export function buildPaceFromVDOT(discountedVdot: number, rawVdot: number): Pace
     minPerKmMarathon: mpMins,
     minPerKmHM:       hmMins,
     source: 'vdot',
+    vdot: discountedVdot,
   }
 }
 

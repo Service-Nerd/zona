@@ -50,7 +50,7 @@ import { sessionKmOrZero, sessionKmSelfPaced } from '@/lib/plan/sessionDistance'
 import { zoneStringFromZoneKeys } from '@/lib/coaching/zoneRules'
 import { isLongRun, isShakeout, classifyStimulus, STIMULUS_OF_CATEGORY, isStructuredSession, isVo2maxSession, isQualitySession, isSecondaryQuality } from './sessionRole'
 import { PLAN_SIGNATURES } from './planSignatures'
-import { isV2Structure, StructureV2Schema, goalPaceShapeWord, PACE_ANCHORS, type PaceAnchor } from './sessionStructureV2'
+import { isV2Structure, StructureV2Schema, goalPaceShapeWord, PACE_ANCHORS, type PaceAnchor, workAnchorOf } from './sessionStructureV2'
 import { durationForMainSet, segmentPricedDistance, meetsQualityFloor } from './sessionFormat'
 import { resolveMainSet, type PaceAnchorMap } from './resolveMainSet'
 import { isDeloadWeek, computeDeloadWeeks, deloadVolumeFraction, shortOpeningBlockWeeks } from './deloadCadence'
@@ -246,7 +246,8 @@ export function derivedLevelsFor(input: GeneratorInput): ResolvedLevels {
 // ─── Pace guides by fitness level (fallback when no benchmark) ─────────────────
 
 // CV is deliberately absent here and derived in buildFallbackPace — see CV_PACE_RATIO_OF_T.
-const PACE_GUIDE: Record<FitnessLevel, Omit<PaceGuide, 'source' | 'marathonPaceStr' | 'hmPaceStr' | 'cvPaceStr' | 'minPerKmCV' | 'minPerKmMarathon' | 'minPerKmHM'>> = {
+// `vdot` is omitted alongside `source`: this table IS the no-VDOT path (ADR-026).
+const PACE_GUIDE: Record<FitnessLevel, Omit<PaceGuide, 'source' | 'vdot' | 'marathonPaceStr' | 'hmPaceStr' | 'cvPaceStr' | 'minPerKmCV' | 'minPerKmMarathon' | 'minPerKmHM'>> = {
   beginner:     { easyPaceStr: '7:30–9:00 /km', qualityPaceStr: '6:30–7:30 /km', intervalPaceStr: '5:30–6:30 /km', minPerKmEasy: 8.0,  minPerKmQuality: 7.0,  minPerKmInterval: 6.0 },
   intermediate: { easyPaceStr: '6:30–7:30 /km', qualityPaceStr: '5:30–6:00 /km', intervalPaceStr: '4:30–5:00 /km', minPerKmEasy: 7.0,  minPerKmQuality: 5.75, minPerKmInterval: 4.75 },
   experienced:  { easyPaceStr: '5:45–6:45 /km', qualityPaceStr: '4:45–5:20 /km', intervalPaceStr: '3:50–4:20 /km', minPerKmEasy: 6.25, minPerKmQuality: 5.0,  minPerKmInterval: 4.05 },
@@ -291,6 +292,8 @@ export function buildFallbackPace(fitness: FitnessLevel): PaceGuide {
     marathonPaceStr, hmPaceStr,
     minPerKmMarathon: mpMins, minPerKmHM: hmMins,
     source: 'fitness_level',
+    // ADR-026 — no VDOT, so no anchor-derived HR band. Absence written as absence, not 0.
+    vdot: null,
   }
 }
 
@@ -1352,13 +1355,10 @@ function fixedShapePlan(
   // flat share — the allowlist entry above would have LOOKED applied and done
   // nothing. Priced through `resolveAnchorPace`, the single owner of anchor
   // pricing, so this and the derived set cannot disagree about what the pace is.
-  const workAnchors = new Set(
-    parsed.data.blocks.flatMap(b => b.steps)
-      .filter(s => s.role === 'work')
-      .map(s => (s.target.kind === 'pace' ? s.target.anchor : null)),
-  )
-  if (workAnchors.size !== 1) return null
-  const [anchor] = Array.from(workAnchors)
+  // ADR-026 R1 — asks the OWNER instead of restating the rule. The paragraph above is
+  // this predicate's reason and stays here; the predicate moved to `workAnchorOf` because
+  // the HR band now needs the same answer and a second copy is the drift.
+  const anchor = workAnchorOf(row)
   if (anchor == null) return null
   // §22's goal-pace override applies to a T-anchored row being run at goal pace;
   // it must not silently re-price a row anchored at something else.
@@ -6345,7 +6345,13 @@ function applyV5StimulusProgression(
       // Mechanically: rewrite to a "Continuous tempo" / threshold session.
       const s = curr.session
       s.label        = 'Continuous tempo'
-      s.zone         = 'Zone 3'
+      // 🔴 THIS AUTHORED `'Zone 3'` BY HAND BESIDE THE HR BAND — §84 AMENDMENT 1'S DEFECT,
+      // STILL LIVE IN §97's ESCALATION PATH, AND A PATH THAT AMENDMENT NEVER ENUMERATED.
+      // Invisible today because `zones.qualityZone` IS the literal `'Zone 3'`, so the
+      // hand-written label and the band agreed by coincidence. ⚠️ ZERO DELTA — the same
+      // string, from the owner that pairs it with the HR — which is the whole of the
+      // amendment's rule: *"authored in the same expression, so the two cannot drift."*
+      s.zone         = zones.qualityZone
       s.hr_target    = zones.qualityHR
       s.pace_target  = pace.qualityPaceStr
       s.coach_notes  = ['Sustainable. Same pace at the end as at the start.']
@@ -6354,7 +6360,9 @@ function applyV5StimulusProgression(
     } else if (targetRank === 5 && canEscalateToVo2) {
       const s = curr.session
       s.label        = 'Classic VO2max'
-      s.zone         = 'Zone 4–5'
+      // Same as the tempo rung above: hand-authored string, paired by the owner. Zero delta
+      // (`zones.intervalsZone` IS `'Zone 4–5'`), and the pairing is what §84 Am. 1 asks for.
+      s.zone         = zones.intervalsZone
       s.hr_target    = zones.intervalsHR
       s.pace_target  = pace.intervalPaceStr
       s.coach_notes  = ['Three minutes is long. Don\'t blow rep one.']

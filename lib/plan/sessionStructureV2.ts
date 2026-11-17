@@ -222,3 +222,64 @@ export function goalPaceShapeWord(row: { main_set_structure?: unknown } | null |
     default:           return null
   }
 }
+
+/**
+ * The ONE pace anchor a row's work steps are run at, or `null`.
+ *
+ * 🔴 EXTRACTED 2026-11-17 (ADR-026 R1) FROM A PRIVATE SIZER IN `ruleEngine.ts`, WHICH IS
+ * THE THIRD CALLER FINDING AN OWNER. The rule and its reasoning were already written
+ * there, verbatim: *"The row must have exactly ONE work anchor, and the session is priced
+ * at it. A second anchor still returns null — a session priced at a pace half its work is
+ * not run at is the defect this sizer exists to prevent."* ADR-026 needs the same
+ * question answered to give the session an HR band from the same anchor, and
+ * `applyHrToPlan` needs it on the client. Re-deriving it in either place is the
+ * SESSION-KM-01 class; this is `CB-HMPACE-SIZING-01`'s own lesson applied one step on.
+ *
+ * ⚠️ `null` IS THE COMMON ANSWER AND IT IS NOT A FAILURE. A v1 row has no steps to read;
+ * an effort-governed row's work steps carry an RPE, not a pace (§40b Am. 4); an
+ * over-under legitimately mixes T and CV. Every one of those must keep whatever the
+ * generator already gave it rather than acquire a band from a guess — `hrBand.ts`'s
+ * header is forty lines about what guessing costs.
+ */
+export function workAnchorOf(row: { main_set_structure?: unknown } | null | undefined): PaceAnchor | null {
+  if (!row || !isV2Structure(row.main_set_structure)) return null
+  // Both guards are the sizer's, kept verbatim so the extraction is zero-delta: it held a
+  // `parsed.data` from a successful `safeParse`, so a row the schema rejects reached this
+  // rule not at all. `workAnchorsOf` below deliberately does the RAW read instead — see
+  // its own note — and the two must not be collapsed without measuring the difference.
+  if (!StructureV2Schema.safeParse(row.main_set_structure).success) return null
+  const anchors = workAnchorsOf(row)
+  if (anchors.length !== 1) return null
+  return anchors[0]
+}
+
+/**
+ * Every DISTINCT pace anchor this row's work steps name.
+ *
+ * 🔑 THE SHARED DERIVATION, AND IT HAD THREE COPIES BEFORE THIS. `requiredPaceAnchors` in
+ * `sessionCatalogueData.ts` (which the selector's anchor-resolvability gate reads,
+ * `CAT-ROW-ELIGIBILITY-01`), the private sizer in `ruleEngine.ts`, and — for about ten
+ * minutes on 2026-11-17 — a fourth that I wrote here before checking. The reuse step
+ * caught it; the three that existed agreed only by accident.
+ *
+ * ⚠️ A RAW READ, NOT A ZOD PARSE, DELIBERATELY. `requiredPaceAnchors` has always read the
+ * shape directly, so validating here would change what the SELECTOR sees for a malformed
+ * row — from "needs these anchors" to "needs none", which makes an unbuildable row look
+ * eligible. Zero-delta is the point of the extraction; `workAnchorOf` adds the schema
+ * guard for the caller that always had one.
+ */
+export function workAnchorsOf(row: { main_set_structure?: unknown } | null | undefined): PaceAnchor[] {
+  const m = row?.main_set_structure as {
+    version?: number
+    blocks?: Array<{ steps?: Array<{ role?: string; target?: { kind?: string; anchor?: string } }> }>
+  } | undefined
+  if (!m || m.version !== 2 || !Array.isArray(m.blocks)) return []
+  const anchors = new Set<string>()
+  for (const b of m.blocks) {
+    for (const st of b.steps ?? []) {
+      if (st.role !== 'work') continue
+      if (st.target?.kind === 'pace' && st.target.anchor) anchors.add(st.target.anchor)
+    }
+  }
+  return Array.from(anchors) as PaceAnchor[]
+}

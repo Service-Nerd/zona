@@ -188,6 +188,47 @@ Two options, a coaching judgement and **not decided here**:
 - **Nothing has run on a device.** ✋ Silvanto: `Zone 3–4` is four characters longer than `Zone 3` in a Today eyebrow
   that is tight at 375pt, and nobody has measured it.
 
+## 6b. 🔴 Three things this ADR got wrong about itself, measured 2026-11-17 while building it
+
+**1. Willy's condition is answerable, and §7 is wrong that it is not.** §7 says *"no code change creates
+more of those — only usage does"*, which is true of the SAMPLE SIZE and false of the INSTRUMENT. §6 looked
+for an **activity-id** join. The answerable join is a **calendar date**: `meta.plan_start` and `week.date`
+are both stored and `getSessionsForDate` is ADR-016's canonical resolver. 📐 **7 runs have ever landed on a
+prescribed-threshold day; 2 of them honoured the HR band and missed the pace.** Willy's cohort is **2 of 7**,
+not unknown. ⚠️ Bounded: only **29 of 274** working runs of these runners fall inside the current plan's
+window at all. 🔴 **And the 29-run sample in §1 cannot contain an HR-follower by construction** — it selects
+on pace falling INSIDE the band, and an HR-follower runs slower than it. The 13-bpm overshoot measures
+pace-followers only. Evidence: `scripts/board-evidence-hr-follower.ts`.
+
+**2. The precondition §4 never states: 56 of 159 live threshold sessions (35.2%) cannot take the new band.**
+%HRR ≈ %VO2R needs an HR RESERVE and the anchor is a fraction of VO2max. **14 of 43 live plans carry no
+resting HR, 2 no max HR, 22 no VDOT; only 14 carry all three.** §4's three worked personas all carry all
+three, which is how it went unstated. ⚠️ **Not a plumbing defect — checked: 0 of 16** plans missing a resting
+HR have one in `health_daily_samples`. Those sessions keep the zone-table band, so the
+floor-equals-easy-ceiling incoherence **survives for 35.2% of them**, declared rather than hidden.
+
+**3. §9 names two invariants to amend. Four classifiers flip, because R2 makes `session.zone`
+runner-dependent.** Measured by wiring the band and generating 1,074 cohort plans: **1,910 of 6,516 quality
+sessions (29.3%) take a new label** (`Zone 4` 1,741, `Zone 5` 169 — ⚠️ **the interval band moving into Z5 is
+a label change §4 does not mention**). Besides `INV-PLAN-DISPLAY-ZONE-MATCHES-WORK` and
+`INV-PLAN-PACE-ZONE-COHERENT`, these branch on the zone STRING with no structural fallback:
+`INV-PLAN-LABEL-MATCHES-PACE`, `INV-PLAN-PACE-INVERSION`, `INV-PLAN-VO2MAX-MAIN-SET-CAP`, and `physBucket`
+in §53's label-variety path — the last being prescription-visible. The VO2max dose cap fired in the probe,
+applying a 12–18 min VO2max bound to a 24-minute **CV threshold** session. 🔑 **INV-CLASS exactly**:
+*classify by a structural signal the producer stamps, never by a display string another layer can rewrite.*
+The signal is already stamped (`catalogue_id`, ADR-018).
+
+### Consequence: the release is three, not one
+
+| | | |
+|---|---|---|
+| **B1** | the mechanism at **zero prescription delta** | ✅ **SHIPPED 2026-11-17** (`ANCHOR-BAND-OWNER-01`) |
+| **B2** | re-key the four label-based classifiers to `catalogue_id` | 🔲 `ZONE-STRING-CLASSIFIER-01` |
+| **B3** | flip the band on: R1/R2, the invariant amendments, `ZONE_COPY['Z4']`, the prompted migration | 🔲 `ANCHOR-BAND-FLIP-01` |
+
+Shipping R1 without R2 reintroduces §84 Amendment 1's defect; shipping R2 over four label-based classifiers
+ships a prescription guard that reads a label. **Neither half is a release.**
+
 ## 7. Conditions on shipping (Coaching Board, binding)
 
 1. ✅ **CLEARED 2026-11-16 (second sitting) — the threshold/interval overlap is resolved** by anchoring every band
@@ -205,10 +246,14 @@ Two options, a coaching judgement and **not decided here**:
    `intervalEffort ? 'interval zone (Z4–5)' : 'threshold zone (Z3)'`. **If threshold becomes Zone 4 it starts firing
    on correct plans** and the release goes red.
 
-🔴 **Willy's condition CANNOT BE DISCHARGED BY ENGINEERING, and the sitting that said it could was working from my
-false premise.** There is no join to fix. The limit is sample size: **10 quality sessions have ever been completed,
-1 device-backed.** No code change creates more of those — only usage does. The condition is re-opened and returned to
-the board.
+4. ✅ **CLEARED 2026-11-17 — and the measurement reversed its direction.** This condition was re-opened on the
+grounds that *"there is no join to fix"*. **There was: a calendar date, not an activity id** — see §6b.1.
+Willy's cohort is **2 of 7** threshold attempts, and the one visible case ran 6.0 km at **7:39 /km with HR 149**
+against a prescription of 5:07–5:22 /km and 144–158 bpm: they honoured the heart rate and ran **2:17 /km slower
+than prescribed.** The band was not shielding them from a hard session; it was certifying an easy one as their
+tempo. 🩹 Willy accepts the discharge and keeps the residual — two observations is not a cohort, and the prompted
+migration is the mitigation rather than a courtesy. ⚠️ The sample size remains what §6 says it is, and no code
+change raises it.
 
 🔑 **Which leaves the coherence argument, and it needs no cohort data at all:**
 `z2Top` **IS** `z3Low`, so **the threshold floor is the easy ceiling by construction**; and pace comes from

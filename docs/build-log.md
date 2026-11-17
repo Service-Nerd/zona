@@ -6,6 +6,21 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-11-17 — ANCHOR-BAND-OWNER-01 · the measurement told me the release was three, not one
+**Shipped:** the mechanism for ADR-026's anchor-derived heart-rate band — the Daniels fractions named once so the pace and the HR band read the same numbers, plus the band owner and its 27 tests — with zero prescription delta, nothing in the generator calling it yet.
+
+**Dev learning:** I wired the whole thing up first, ran the cohort grid, and read what fired. Two invariants were expected. **Four classifiers flipped**, because the ADR's R2 makes `session.zone` a function of the runner and four prescription guards branch on that string with no structural fallback — including the VO2max dose cap, which fired live on a 24-minute *CV threshold* session judged against a 12–18 minute VO2max bound. That is this repo's own INV-CLASS rule verbatim ("classify by a structural signal the producer stamps, never by a display string another layer can rewrite"), and the signal has been stamped since ADR-018. **Wiring it up to see what breaks is a measurement, and it found something no amount of reading the ADR would have.** The reuse step also caught me writing a fourth copy of a parse that already had three.
+
+**Product/creator learning:** I split a ruled, approved, founder-backed release into three because the middle piece turned out to be a defect that exists today and has nothing to do with the feature. Shipping R1 alone reintroduces the exact contradiction §84 Amendment 1 was written to end; shipping R2 over four label-reading guards ships a prescription guard that reads a label. Neither half is a release. SLC's "Complete" is the clause that forced the split — not scope discipline, completeness.
+
+**AI-building learning:** the board condition I was told could not be discharged by engineering — "how many runners follow heart rate rather than pace is unknown and unknowable until the completion join lands" — was answerable in about twenty minutes. The ADR had looked for an **activity-id** join. The join that answers it is a **calendar date**, and `meta.plan_start`, `week.date` and `getSessionsForDate` have all been there the whole time. I wrote that "unknowable" sentence myself the day before. **When I record that something cannot be measured, that sentence is the thing to re-measure first.**
+
+**The honest bit:** my first theory about the data was wrong and the numbers said so immediately. I thought 78 runs sitting inside the prescribed threshold HR band at easy pace were contaminating my classification — easy runs landing in a "threshold" band because the threshold floor IS the easy ceiling. Only 7 of 78 were at easy pace. Then the date join cut 78 down to **2 runs** that were actually on a prescribed threshold day, bounded by **7** such runs existing in the whole database. And the one case I can see runs opposite to the concern: a runner prescribed 5:07–5:22/km and 144–158 bpm ran at **7:39/km with a heart rate of 149**. They obeyed the heart rate and ran two minutes seventeen per kilometre slower than their session. The band was not protecting them from a hard tempo. It was telling them an easy run was their tempo.
+
+**Hook material:** the condition said the number was unknowable. The number is 2 of 7, and the join it needed was a date.
+
+**Postable?:** yes — the "unknowable" claim I wrote myself and then measured in twenty minutes is the post.
+
 ## 2026-11-16 — BENCHMARK-DATELESS-FRESH-01 · I ruled a number in the afternoon that my own principle had declined to evidence nine days earlier
 **Shipped:** an undated benchmark now declares that its age is unknown, instead of being silently priced as the freshest possible evidence. No number changed.
 
