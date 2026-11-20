@@ -1,6 +1,18 @@
-# ADR-027: the coaching engine as a layered service (PROPOSED, 2026-11-20)
+# ADR-027: the coaching engine as a layered service (ACCEPTED, 2026-11-20)
 
-**Status:** PROPOSED. Awaiting the founder's approval.
+**Status:** ✅ **ACCEPTED 2026-11-20** by the founder.
+
+Founder decisions, 2026-11-20:
+1. Architecture approved.
+2. The current engine is frozen, apart from four hotfixes:
+   - run-walk on a maximal TT
+   - the base-build ramp ignoring injury caps
+   - the per-side plyo dose
+   - every plan write must go through `savePlanForUser`
+3. Hosting: a package in this repo first. A separate deployment comes only when a second consumer exists.
+4. Start with B0.
+5. Each cut-over is signed off by both: the Coaching Board on the coaching, and the founder on go-live.
+6. The `build` skill is used throughout.
 **HLD:** `docs/architecture/hld-coaching-engine-service-2026-11-20.html` (published as a private artifact,
 https://claude.ai/artifact/HSgFxUU2qhWBbSdMbptN5F).
 **Inventory:** `docs/architecture/engine-inventory-2026-11-20.md`.
@@ -66,7 +78,7 @@ The coaching doctrine is unchanged. Rulings become L2 entries.
 - **Tier:** the engine stays tier-blind (ADR-003).
 - **Hotfix:** every plan write goes through `savePlanForUser`.
 
-### New principles (proposed)
+### New principles (binding since 2026-11-20)
 | ID | Principle |
 |---|---|
 | ARCH-ENG-001 | Layers depend downward only. Nothing mutates the plan after L3, except L6 copy, which is re-verified |

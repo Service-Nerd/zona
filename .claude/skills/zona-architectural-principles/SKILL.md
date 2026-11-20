@@ -620,9 +620,9 @@ Every ⚠️ or ❌ cell must have a corresponding UI state with a one-line expl
 
 ---
 
-## 18. Engine Service Principles (PROPOSED: ADR-027, pending founder approval)
+## 18. Engine Service Principles (ADR-027, ACCEPTED 2026-11-20, binding)
 
-**Authority:** `docs/architecture/ADR-027-coaching-engine-service.md` and its HLD. These principles bind once ADR-027 is accepted. Until then, read them as the direction the engine work is heading.
+**Authority:** `docs/architecture/ADR-027-coaching-engine-service.md` and its HLD. Accepted by the founder 2026-11-20. Each principle's mechanical check ships in the B-phase that introduces it. **The current engine is frozen except the four ADR-027 hotfixes.**
 
 | ID | Principle |
 |---|---|
