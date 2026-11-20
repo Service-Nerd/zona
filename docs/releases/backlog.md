@@ -3109,7 +3109,7 @@ volume — which is why it reaches nothing here."*
 gives hip history a strength-side effect first — Blagrove's seat owns that. ⚠️ **Removing a chip four live runners have
 used changes what they are asked, so the step is the Design Board's.**
 
-### 🔲 `INJURY-RECENCY-01` — 🔴 **NOT READY FOR THE DESIGN BOARD. The three answers have no defined effect** 🏃 **COACHING BOARD** (again), then 🧭 **DESIGN BOARD**
+### 🔲 `INJURY-RECENCY-01` — a recency follow-up for Back and Plantar fasciitis, ruled by both boards 2026-11-20, copy decided 🏃 **COACHING BOARD** (ruled) → 🧭 **DESIGN BOARD** (ruled)
 
 ⚖️ **SAT 2026-11-20** (🏃 Coaching Board) — **CORRECT WITH AMENDMENT**: the per-injury mapping exists. Bucket = last flare-up; within a year = current; longer ago lifts **only the long-run time cap, for Back and Plantar**; Knee, Shin and Achilles do not vary and are not collected (🎯 McMillan dissents on Knee). Condition: `measure:fitness` on the back/plantar cohort. 🧭 Design Board can now rule the control (two chips). `docs/decisions/coaching-2026-11-20-injury-recency-01.md`.
 
@@ -8489,7 +8489,8 @@ false triggers (RHR up a few bpm, HRV down), moot without cycle data. **Artifact
 S13, `STRENGTH_CONFIG.RECOVERY_SET_FACTOR`, invariant `S-RECOVERY-SUBTRACT-ONLY`. Depends on
 `READINESS-SURFACE-01` item 3 for the shared "Eased for recovery" mark. **Tags:** 🏃 ruled → ⚙️ build.
 
-### 🟡 `STRENGTH-ENGINE-01` — a separate strength & conditioning engine that places sessions AROUND the run plan *(filed 2026-10-16, side project)* 🏃 **COACHING BOARD** (ruled) → 💼 **SLT** (ruled) → 🧭 **DESIGN BOARD** (before any UI) → 👤 **FOUNDER** (seat, session length)
+### ✅ `STRENGTH-ENGINE-01` — **CLOSED 2026-11-20 as an umbrella: the engine shipped; what remains is tracked by its own items** 🏃 **COACHING BOARD**
+🔒 **CLOSED 2026-11-20** (founder: every coaching-engine item build-ready or closed). This is the parent of the strength engine, not a build. Its open work lives in `STRENGTH-RELEASE-01` (release conditions), `STRENGTH-PAIR-STRIDE-01`, `STRENGTH-CARRY-PATTERN-01` and `STRENGTH-MEDIA-01`.
 
 > **Founder's brief:** a separate engine that works WITH the coaching engine, never contradicts it, helps the goal;
 > supplementary sessions; running-focused or general; 45 or 60 min with warm-ups; animated exercises, sets and
