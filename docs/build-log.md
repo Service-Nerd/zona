@@ -6,6 +6,18 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-11-20 — BOARD-EVIDENCE-GATES-2026-11-20 · a sitting's evidence scripts are code too
+
+**Shipped:** two script-hygiene gates gained named exemptions for six read-only board-evidence scripts, and one gate's `size === 0` arm now checks the thing its own message demanded, a removal condition on every exemption.
+
+**Dev learning:** the sittings changed no app code, so I never ran the suite before committing. The scripts they wrote still sit inside two gates' populations, and `main` was red locally from the first commit of the day until the push. A day that "changes no code" still adds `.ts` files.
+
+**AI-building learning:** a file-level predicate (`reads plans` AND `calls validatePlan`) cannot tell a script that validates generated plans from one that validates stored ones. The exemption is the honest fix here; rewriting the scripts would change figures already quoted in the decision notes.
+
+**The honest bit:** the pre-push gate caught it, not me.
+
+---
+
 ## 2026-11-17 — MAXHR-AGE-ABSENT-01 · a required field whose only caller always filled it by fabrication
 **Shipped:** the engine stops inventing an age. With no age and a max, the max is used as given and we say the plausibility check could not run. With neither, nothing is derivable: no ceiling, no zone, no target, and the talk test is the prescription. §3's masters cadence resolves to the cautious side.
 
