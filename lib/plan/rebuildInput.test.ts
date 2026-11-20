@@ -86,6 +86,7 @@ const READ_ONLY: Record<string, string> = {
   'scripts/_tmp-catch.ts': 'scratch read',
   'scripts/board-evidence-injury-recency-01.ts': 'board evidence (2026-11-20 sitting): prints, writes nothing',
   'scripts/board-evidence-week1-delivered-ceiling-01.ts': 'board evidence (2026-11-20 sitting): prints, writes nothing',
+  'scripts/board-evidence-injury-hip-inert-01.ts': 'board evidence (2026-11-20 sitting): prints, writes nothing',
   'scripts/board-evidence-wizard-paid-inputs-tier-01.ts': 'board evidence (2026-11-20 SLT sitting): generates from cohortGrid, only COUNTS generator_input fields in --live, writes nothing',
   'scripts/board-evidence-wizard-paid-inputs-tier-01-coaching.ts': 'board evidence (2026-11-20 Coaching Board follow-up): generates from cohortGrid and a fixed ultra runner, names generator_input only to drop it from a meta diff, no production read, writes nothing',
   'scripts/sync-plan-corpus.ts': 'writes the local fixture corpus, never a stored plan',
