@@ -6877,3 +6877,18 @@ Amends **only the visibility row** of this morning's `INJURY-RECENCY-01` (follow
 | **No chip or distance literal; the scope is derived** | 🟢 **SHIP** (restates the morning row) | Until 135 is built the same predicate still shows Back at the half; no coordination between the two builds |
 
 Check (build), added to the morning's: expectations derived from `longRunTimeCap`; arm (a) both chips at the marathon shows both; arm (b) Back shown at HM ⇔ `back < LONG_RUN_CAP_MINUTES.HM`. Falsified by a full-input predicate (a red) and a hardcoded "HM and longer" (b red once back = 135). ⛔ Veto: none. Sierra's optional dissent stands, not reopened. ⚠️ Not rendered or seen on a device; marathon/ultra Back share actually reaching 135 not measured; 50K/100K and maintenance paths not measured. Note: `docs/decisions/design-2026-11-20-injury-recency-01-scope-amendment.md`.
+
+## 🧭 2026-11-20 — `PLAN-NOTE-MULTIWEEK-RAMP-01`: every heavier week is marked on its own week, in its own scope · **SHIP WITH AMENDMENT (6)** · NOT BUILT
+
+Amends this morning's `PLAN-NOTE-HEAVIER-WEEK-PLACEMENT-01` on the Coaching Board's CORRECT (every warned week declared, own scope, no cap; producer stamps `meta.load_residual_weeks: {week, scope}[]`). 📐 Re-derived (cohortGrid stride 23, 1,728 plans): marks per warned plan **1: 228 · 2: 84 · 3: 10** healthy (1.32 per plan), **4+ on 4 of 444** Achilles; back-to-back stamped weeks **1.9% / 4.5% / 3.9%** (healthy / Achilles / knee); 🔑 **mixed scope in one plan 0 healthy, 14.9% Achilles, 9.7% knee** (the healthy grid cannot falsify a scope check); stamped week is also the tune-up week on **81 of 426**; never a deload, taper, race or first week. Production multi-week reach not measurable (stamp not shipped).
+
+| Decision | Status | Why |
+|---|---|---|
+| **Every stamped week carries its own muted suffix, both renderings, past and future** | 🟢 **SHIP** | 📱 Wroblewski: max 3 healthy, deload suffixes already sit on 13% of weeks. ✋ Silvanto: the week's identity, as `· deload`. No grouping, count, chip or cap. Replaces `· peak` |
+| **Guidance line per week, in THAT week's scope; Now, Next, expanded Later only** | 🟢 **SHIP** | 🎓 Sierra: the injury sentence on a non-injury week is a false statement. Both Now and Next carry their line when both are stamped; never shortened |
+| **Today** | 🟢 **SHIP** (unchanged form) | Mark whenever the current week is stamped; coach line and AI note take that week's scope. One week is current, so one mark |
+| **One accessor owns "is week n stamped, with what scope"** | 🟢 **SHIP** | 🧭 Zhuo: three surfaces ask it. Nothing places a mark from `load_residual_week` or reads scope off the note string; old single-field plans keep the tile, no week mark (live-plan policy) |
+| **Tune-up yields on EVERY stamped week** | 🟢 **SHIP** (amends `TUNE-UP-CALLOUT-INERT-01` row 3 and its check) | 81 of 426 stamped weeks collide; the morning precedence named only week N. Moot once §32 Am.1 builds |
+| **Plan-tile rank; its multi-week sentence** | ⏸️ **NOT RULED** / 👤 sentence decided on the founder's delegation | §6ak. 🎪 Collins: a tile naming week 9 beside a calendar marking 4, 9, 13 reads as a disagreement |
+
+Artifact 3 is now *"exactly the stamped weeks carry it"*: mark set = stamped set in both renderings, per-week scope sentence, Today per current stamped week, no `%`, no tune-up line on a stamped week, on the healthy grid AND an Achilles overlay; falsified by a `load_residual_week`-only render, a single scope for all weeks (red only on the overlay), and dropping the precedence. Mockups M1–M8 to 👤 founder before build, at 320 and 390pt; simulator before merge. ⛔ Veto: none. ⚠️ Not seen on a device. Note: `docs/decisions/design-2026-11-20-plan-note-multiweek-ramp-01.md`.

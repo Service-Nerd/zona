@@ -52,3 +52,12 @@ tile give the same instruction. The injury line names the injury history, the Co
 | Coaching follow-up (§40c) | Plan note, `love` × injury history | *You like the hard sessions. With your injury history, the plan keeps them at the standard amount.* |
 
 **Checked:** no em dashes; the §40c line says why the answer had no effect, which is what §40c requires, and claims no outcome.
+
+## `PLAN-NOTE-MULTIWEEK-RAMP-01` — plan tile, more than one heavier week (assistant, on the founder's delegation)
+
+| Surface | Words |
+|---|---|
+| Plan-level tile, when the plan stamps more than one week | *A few weeks rise more than we normally allow. Each one is marked on its week.* |
+| Same, when any stamped week carries the injury scope | *A few weeks rise more than your injury history would normally allow. Each one is marked on its week.* |
+
+**Checked:** no numbers, no em dash; never names one week, so it cannot disagree with the calendar (Collins).

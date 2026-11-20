@@ -2722,6 +2722,7 @@ silently too.
 ---
 
 ### 🔲 `TUNE-UP-CALLOUT-INERT-01` — a tune-up race suggestion on 33 live plans that no runner can see 🧭 **DESIGN BOARD** → 💼 **SLT**
+📐 **AMENDED 2026-11-20** by the `PLAN-NOTE-MULTIWEEK-RAMP-01` Design ruling: the tune-up line yields on ANY stamped week (`load_residual_weeks`), not only `load_residual_week`; its check reads the same.
 
 ⚖️ **SAT 2026-11-20** (🧭 Design Board) — **SHIP WITH AMENDMENT (4), conditional on 💼 SLT.** One `--ink-2` line on the tune-up week's WeekCard (Now/Next only); not on strips or Today; the ramp warning wins when both fall in one week (13 of 58 engine plans → 🏃); copy → 👤. If the SLT declines, §32 and the invariant are amended. `docs/decisions/design-2026-11-20-tune-up-callout-inert-01.md`.
 👤 **COPY APPROVED 2026-11-20** by the founder — the words are in `docs/decisions/founder-2026-11-20-copy-approvals.md`; they land with the build.
@@ -5815,6 +5816,7 @@ reached it is not measured. Found by the `TUNE-UP-CALLOUT-INERT-01` SLT follow-u
 
 ### 🔲 `PLAN-NOTE-MULTIWEEK-RAMP-01` — about 29% of warned plans exceed the ramp in more than one week; the mark names one 🏃 **COACHING BOARD** (whether more than one week must be told) → 🧭 **DESIGN BOARD** (how)
 ⚖️ **RULED 2026-11-20** (🏃 Coaching Board) — **CORRECT**: every warned week is declared on that week, each with its own scope (29.2% / 29.7% reproduced; the left-out weeks average 0.86 of the named rise; 23 Achilles plans name the smaller week). Producer stamps `load_residual_weeks`; §90 Am.3 + set-equality test; no numeric; builds with PLACEMENT-01. Coaching side READY TO BUILD; 🧭 Design Board rules the multi-mark encoding first. `docs/decisions/coaching-2026-11-20-plan-note-multiweek-ramp-01.md`.
+⚖️ **SAT 2026-11-20** (🧭 Design Board): **SHIP WITH AMENDMENT (6)**, NOT BUILT. Every stamped week gets its own muted suffix (past and future), and its own WeekCard line in that week's scope (14.9% of Achilles plans mix scopes; healthy 0). Today marks whichever stamped week is current; one accessor owns the stamp; tune-up yields on every stamped week (81 of 426 collide). Artifact 3 becomes "exactly the stamped weeks carry it", falsified on an Achilles overlay. Mockups M1–M8 to 👤 founder before build (shared with PLACEMENT-01). Multi-week tile sentence decided (copy approvals file). Rank not ruled. **READY TO BUILD after the mockups.** `docs/decisions/design-2026-11-20-plan-note-multiweek-ramp-01.md`.
 
 📐 Willy, recorded in `coaching-2026-11-20-plan-note-heavier-week-placement-01-followup.md`: **29% of warned healthy
 plans and 30% of Achilles plans** breach the ramp in more than one week. The producer names the largest rise, and the

@@ -53,27 +53,67 @@ list below is confirmed or re-drawn.
 
 ---
 
-## 3. The build waves (as drawn now; re-drawn if 0.1 or 0.2 changes them)
+## 2b. Phase 0 results (2026-11-20)
 
-**Order principle:**
-- Producers first, the warnings they move next, and the readers of those warnings last.
-- Each wave lands, is measured, and is pushed before the next wave starts.
+- **0.1 Objection triage** (`coaching-2026-11-20-objection-triage.md`). The 2,878 findings break down as:
+  - FIX: 1,714
+  - ACCEPT the plan, FIX the note: 299
+  - REDEFINE the auditor: 865
+- **0.2 Root cause** (`coaching-2026-11-20-phase0-root-cause.md`): **partly**. The curve vs placed-volume divergence (52% of cohortGrid weeks) explains:
+  - all four delivered-volume warnings
+  - BINGE-WEEK
+  - FLAT-CURVE
+  - BASEBUILD-DURATION's gate
+
+  It does **not** explain NEVER-BUILDS, WEEK1-LEAP or LONG-RUN-SHORT, which make up 77% of the objections.
+- **0.3 Collisions** (`coaching-2026-11-20-phase0-collisions-numbering.md`):
+  - STAGED-RAMP's hold is latent through the engine but turns 1 in 13 producer plans' ratio errors into CURVE-CLIMBS errors. A ratio-held rule is measured, and it clears 100% of the affected weeks.
+  - NO-LONG-RUN + DURATION together: 7 of DURATION's 10 refused plans now climb, but there are +116 weekday sessions over the cap (the long run lands on a weekday for weekend-blocked runners).
+  - Risks 4 and 9: no interaction.
+- **0.4 Numbering:** one table, in the collisions note. §47's is Am. 4, not 5. It also found four existing numbering defects in CoachingPrinciples.
+- **0.5 Design:** PLAN-NOTE-MULTIWEEK ruled. Mockups M1–M8 are owed before W5.
+
+### New build items from Phase 0
+
+| Id | Source | What | Wave |
+|---|---|---|---|
+| `AUDIT-REDEFINE-2026-11-20` | 0.1 rows 1, 6, 9, 11 | The auditor scores only real failures (865 findings move to watched, each with its reason) | **W0** |
+| `DOCTRINE-NUMBERING-2026-11-20` | 0.4 | Fix §118's duplicate Am. 4, re-home §40b Am. 4 and §44 Am. 2/3, number §3's unnumbered amendment | **W0** |
+| `DELIVERED-VOLUME-OWNER-01` | 0.2 | Capacity first, ramp within capacity, one reconciliation after the post-passes, §52's share reads the delivered week. **Prototype + Coaching Board before W1.** Also the lever for 0.1 row 4 | **W1 lead** |
+| `STAGED-RATIO-HELD-01` | 0.3 | §116 Am. 15, the ratio-held exemption, plus `reaches_door` for held ramps. **Coaching Board before W1** | W1 |
+| `NOTE-NAMES-BINDING-CONSTRAINT-01` | 0.1 rows 2, 5 | The false "already where this distance wants it" sentence (235 plans) is replaced by a note naming the actual constraint; §106's shortfall note is no longer suppressed | W1 |
+| `DECLARED-LEVEL-PEAK-FLOOR-01` | 0.1 row 3 | An upward level declaration never peaks below the assessed-level twin (219) | W1 |
+| `PLACEMENT-BELOW-CURRENT-01` | 0.1 row 4 | Placement never delivers below current volume when no runner constraint binds (277; 32 need `/zona-debug` first) | W1, via the owner |
+| `RUNWALK-INTERVAL-BELOW-BAR-01` | 0.1 row 8 | Below the 55% bar, every session carries the §117 interval (429) | W3 |
+| `RUNWALK-17KM-BOUND-01` | 0.1 row 7 | §117 Am. 2's 17 km bound covers every `run_walk_prescribed` plan (508) | W4 |
+| `LOPSIDED-ALWAYS-DECLARED-01` | 0.1 row 10 | The lopsided-week fact is always written; it is dropped today by the note fallback (281) | W5 |
+
+Note copy for these items is written by the assistant, on the founder's standing delegation.
+
+## 3. The build waves (redrawn after Phase 0)
+
+**Before W1 (Phase 0b):**
+- Prototype and rule `DELIVERED-VOLUME-OWNER-01`.
+- Rule `STAGED-RATIO-HELD-01`.
+- Produce mockups M1–M8 for the founder.
 
 | Wave | Items (in order) | Why this order |
 |---|---|---|
-| **W0 hygiene** | TEST-CLOCK-CONSTRUCTED-DATE · GETRUNNING-S111-DENOMINATOR · HR-SAVE-UNEDITED-CONFIRMS · DOUBLE-STRIDES · WALKRUN-DELOAD-CLAIM · INJURY-HIP-INERT | Small and independent; makes the suite stable before the large waves |
-| **W1 base-build ramp** | a committed ramp measurement gate (the existing harnesses cannot see a ramp) → BASEBUILD-NO-LONG-RUN (§116 Am. 13) → BASEBUILD-DURATION (Am. 14) → STAGED-RAMP-RATIO-16W → GETRUNNING-WALKRUN-LRHALF | Same function. DURATION must re-measure its 8 refused runners after NO-LONG-RUN |
-| **W2 quality sizing** | S9-QUALITY-FLOOR-REACH (§40b Am. 5) → WEEKDAY-OVERRUN-BOUND (§81 Am. 3; its 124 ratchet re-measured after S9) | Both size through `makeQualitySession` |
-| **W3 peak and goal pace** | STEPBACK-SPECIFICITY (§47 Am. 5) → GOALPACE-UNBENCHMARKED + §44 gap arm + LR-FINISH-WITHHELD in one commit → BEGINNER-TAPER (population re-derived after §120 Am. 4) → WIZARD-PAID-INPUTS engine half (§96 Am. 1 cue survives STEPBACK's +494) → COACH-READ claim 5 | Each one's population is moved by the one before |
-| **W4 load shape and injury** | COACH-READ claims 1 → 7 → 6 → 4a → 3 · ACHILLES-QUALITY-ONSET (0 new bounceback is binding) · LONG-RUN-CAP-INJURY-VALUE → INJURY-RECENCY | The deload checker and placement change before ACHILLES is held to them |
-| **W5 warning readers** | PLAN-NOTE-HEAVIER-WEEK + CP-90 → PLAN-NOTE-MULTIWEEK → TUNE-UP-CALLOUT (device check) | They read the ramp verdict that W1–W4 move, so they are built once it stops moving |
-| **W6 inputs and migration** | BENCHMARK-DATE-REQUIRED · PROFILE-BIRTH-YEAR-REQUIRED · ANCHOR-BAND-MIGRATION-NOTICE · ADR012-INTENSITY-TERM · API-WEEKLY-KM-UNBOUNDED | These move real runners into existing rules. Built last, so they land on a settled engine |
-| **W7 strength (parallel)** | STRENGTH-PAIR-STRIDE (fixes the live clock double-charge) → STRENGTH-CARRY-PATTERN → STRENGTH-RELEASE (founder phone check) | Separate engine; no shared code with W1–W6 |
-| **W8 live-plan retro-fix** | After W1–W6 have landed and their gate is green: regenerate the stored plan of every live runner who has **not logged a run**, through the single owner (`regenerateFromStored`), from the runner's own stored inputs. Measure the population first: no `session_completions` row and no linked activity. Then validate every regenerated plan, and diff it against the stored one before writing. Each write is a production write, so it is handed over as exact SQL or run by the founder | Founder decision 2026-11-20. Runners who have logged runs keep their plan (the 08-20 policy still applies to them) |
+| **W0 hygiene and the measure** | AUDIT-REDEFINE · DOCTRINE-NUMBERING · TEST-CLOCK-CONSTRUCTED-DATE · GETRUNNING-S111 · HR-SAVE-UNEDITED-CONFIRMS · DOUBLE-STRIDES · WALKRUN-DELOAD-CLAIM · INJURY-HIP-INERT | The auditor must measure the right thing before anything is built against it |
+| **W1 volume** | DELIVERED-VOLUME-OWNER (capacity function used by both generators) → PLACEMENT-BELOW-CURRENT → DECLARED-LEVEL-PEAK-FLOOR → NOTE-NAMES-BINDING-CONSTRAINT → base-build ramp gate → BASEBUILD-NO-LONG-RUN (§116 Am. 13) → BASEBUILD-DURATION (Am. 14; fix the +116 weekday overruns from the combination) → STAGED-RAMP + STAGED-RATIO-HELD (Am. 15) → GETRUNNING-WALKRUN-LRHALF | The owner changes most plans, so everything after it is measured on it |
+| **W2 quality sizing** | S9-QUALITY-FLOOR-REACH → WEEKDAY-OVERRUN-BOUND | Shown independent of W1's root cause |
+| **W3 peak and goal pace** | STEPBACK (§47 **Am. 4**) → GOALPACE + §44 gap + LR-FINISH → BEGINNER-TAPER → WIZARD engine half → COACH-READ claim 5 → RUNWALK-INTERVAL-BELOW-BAR | |
+| **W4 load shape and injury** | COACH-READ 1 → 7 → 6 → 4a → 3 · ACHILLES (its "0 new bounceback" condition is measured after the W1 owner) · LONG-RUN-CAP → INJURY-RECENCY · RUNWALK-17KM-BOUND | |
+| **W5 what the runner is told** | LOPSIDED-ALWAYS-DECLARED · PLAN-NOTE-HEAVIER + CP-90 → MULTIWEEK → TUNE-UP | These read what W1–W4 settle |
+| **W6 inputs** | BENCHMARK-DATE · PROFILE-BIRTH-YEAR · ANCHOR-BAND notice · ADR012 · API-WEEKLY-KM | They move real runners onto a settled engine |
+| **W7 strength (parallel)** | PAIR-STRIDE → CARRY → RELEASE | Separate engine |
+| **W8 live-plan retro-fix** | Regenerate the plans of runners with no logged run (founder 2026-11-20) | After W1–W6 |
 
-Phase 0.1 will add **FIX items** for the objection classes. They slot into W1 (ramp/volume), W2 or W4 by mechanism.
-
----
+**End state:**
+- `audit:plans` has **0 findings in every FIX class**, and every REDEFINE/ACCEPT class is watched with its written reason.
+- `review:coaching` is green.
+- No error-severity violations.
+- Every ruling's conditions are met.
 
 ## 4. The gate after every wave
 
