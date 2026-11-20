@@ -69,6 +69,7 @@ list below is confirmed or re-drawn.
 | **W5 warning readers** | PLAN-NOTE-HEAVIER-WEEK + CP-90 → PLAN-NOTE-MULTIWEEK → TUNE-UP-CALLOUT (device check) | They read the ramp verdict that W1–W4 move, so they are built once it stops moving |
 | **W6 inputs and migration** | BENCHMARK-DATE-REQUIRED · PROFILE-BIRTH-YEAR-REQUIRED · ANCHOR-BAND-MIGRATION-NOTICE · ADR012-INTENSITY-TERM · API-WEEKLY-KM-UNBOUNDED | These move real runners into existing rules. Built last, so they land on a settled engine |
 | **W7 strength (parallel)** | STRENGTH-PAIR-STRIDE (fixes the live clock double-charge) → STRENGTH-CARRY-PATTERN → STRENGTH-RELEASE (founder phone check) | Separate engine; no shared code with W1–W6 |
+| **W8 live-plan retro-fix** | After W1–W6 have landed and their gate is green: regenerate the stored plan of every live runner who has **not logged a run**, through the single owner (`regenerateFromStored`), from the runner's own stored inputs. Measure the population first: no `session_completions` row and no linked activity. Then validate every regenerated plan, and diff it against the stored one before writing. Each write is a production write, so it is handed over as exact SQL or run by the founder | Founder decision 2026-11-20. Runners who have logged runs keep their plan (the 08-20 policy still applies to them) |
 
 Phase 0.1 will add **FIX items** for the objection classes. They slot into W1 (ramp/volume), W2 or W4 by mechanism.
 
@@ -94,16 +95,16 @@ stop. Return to 0.2 and change the approach rather than add more patches.
 
 ## 5. What cannot be closed by this build
 
-- **Live stored plans:** 30 of 43 carry error-severity violations. The 2026-08-20 policy is new plans only, no
-  backfill, so nothing in the waves repairs them. *(Founder decision needed.)*
+- **Live stored plans of runners who HAVE logged runs:** they keep their plan under the 2026-08-20 policy. W8 covers
+  everyone who has not.
 - **Waiting on data, kept by the founder:** EMAIL-WAVE-4-PATTERN · LOG-OFFPLAN-03 · ADJUST-TRIGGER-REACH-02.
 - **Dissents that reopen only on outcome data:** McMillan, Willy, Seiler, Sims (listed in the inventory §5).
 - **Nothing here is seen on a device**, except the W5 and W7 checks named above.
 
 ---
 
-## 6. Founder decisions needed before Phase 0 ends
+## 6. Founder decisions (taken 2026-11-20)
 
-1. **What "happy with the plans" means as numbers:** the target for each objection class after triage. Proposal: every
-   FIX class reaches 0. REDEFINE and ACCEPT classes are written down with their reason.
-2. **Live plans:** leave them (current policy), or add a regeneration wave using FLEET-INVALID-DEBT-02's opt-in.
+1. ✅ **Targets: every FIX class reaches 0; REDEFINE and ACCEPT classes are written down with their reason.**
+2. ✅ **Live plans: add W8. Retro-fix the plans of runners who have not logged runs.** Runners with logged runs keep
+   theirs.
