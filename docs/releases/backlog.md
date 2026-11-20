@@ -2204,6 +2204,7 @@ outlived its basis by one commit. M7 has no `benchmark`, so even the shipped for
 ---
 
 ### 🔲 `COACH-READ-1027-FOLLOWUPS-01` — claims from the 27 Oct board read still to measure 🏃 **COACHING BOARD** (after measurement)
+⚖️ **RULED 2026-11-20 on a prototype** (🏃 Coaching Board) — claim 6 CORRECT: §6 Am. 3, an easy run does not grow inside the taper (cap at the previous week's, km, trimmed distance leaves the week; `INV-PLAN-TAPER-EASY-NON-INCREASING`). Claim 7 CORRECT WITH AMENDMENT: §3 Am. 2 writes the peak/taper exemption with its reason, bounded by `MASTERS_MAX_LOADING_RUN_WEEKS = 5` (`INV-PLAN-MASTERS-LOADING-RUN-BOUNDED`); removing the exemption is INCORRECT on measurement. With this morning's claim already ruled, every claim in this item is decided. Prototype branch `proto/coach-read-1027-followups-01` (not merged). **READY TO BUILD.** `docs/decisions/coaching-2026-11-20-coach-read-1027-followups-01-prototype.md`.
 
 ⚖️ **SAT 2026-11-20** (🏃 Coaching Board) — seven claims re-measured. **CORRECT**: "not to chase a time" is withheld where race-pace work is prescribed (123 of 155 plans; words → 👤). **INSUFFICIENT EVIDENCE**: taper easy-run growth, and masters ≥5 loading weeks (finding: §3's peak/taper exemption is written only in `deloadCadence.ts`). **Exempt defects**: equal-volume deload, long-run deload cut (attribute first), "highest volume" label. Ramps settled; step-back closed (1.3%). `docs/decisions/coaching-2026-11-20-coach-read-1027-followups-01.md`.
 👤 **COPY APPROVED 2026-11-20** by the founder — the words are in `docs/decisions/founder-2026-11-20-copy-approvals.md`; they land with the build.
@@ -3110,6 +3111,7 @@ gives hip history a strength-side effect first — Blagrove's seat owns that. �
 used changes what they are asked, so the step is the Design Board's.**
 
 ### 🔲 `INJURY-RECENCY-01` — a recency follow-up for Back and Plantar fasciitis, ruled by both boards 2026-11-20, copy decided 🏃 **COACHING BOARD** (ruled) → 🧭 **DESIGN BOARD** (ruled)
+⚖️ **SAT 2026-11-20** (🧭 Design Board, scope amendment) — **SHIP WITH AMENDMENT, NOT BUILT**: on `LONG-RUN-CAP-INJURY-VALUE-01`'s Back = HM cap, Back's follow-up shows at marathon+ only and Plantar's from the half. The visibility predicate is **per chip, evaluated as if that chip alone were ticked**, because the full input hides Back whenever Plantar is ticked. **READY TO BUILD** with the morning ruling. `docs/decisions/design-2026-11-20-injury-recency-01-scope-amendment.md`.
 
 ⚖️ **SAT 2026-11-20** (🏃 Coaching Board) — **CORRECT WITH AMENDMENT**: the per-injury mapping exists. Bucket = last flare-up; within a year = current; longer ago lifts **only the long-run time cap, for Back and Plantar**; Knee, Shin and Achilles do not vary and are not collected (🎯 McMillan dissents on Knee). Condition: `measure:fitness` on the back/plantar cohort. 🧭 Design Board can now rule the control (two chips). `docs/decisions/coaching-2026-11-20-injury-recency-01.md`.
 
@@ -6892,7 +6894,8 @@ scorer, both of which were run.
 
 ## 🔲 PARKED 2026-11-04 — two strength engine items from the device review
 
-### 🔴 `STRENGTH-PAIR-STRIDE-01` — the superset pairing strands most of what S10 says it should pair 🏃 **COACHING BOARD** (re-sat, INSUFFICIENT EVIDENCE)
+### 🔲 `STRENGTH-PAIR-STRIDE-01` — the superset pairing strands most of what S10 says it should pair 🏃 **COACHING BOARD** (ruled 2026-11-20 on a prototype)
+⚖️ **RULED 2026-11-20 on a prototype** (🏃 Coaching Board) — **CORRECT WITH AMENDMENT, option B**: greedy pairing plus a clock that charges each superset once per session. The dose loss came from the clock charging cross-block supersets twice, which is live today on 29.5% of sessions. Under B sets rise 15.433 → 16.441 and lower main holds at 2.233. S10 Am. 6, no numeric, `S-PAIR-STRANDED` + `S-CLOCK-RECOUNT`, Willy's dose ratchet binding. Prototype branch `proto/strength-pair-stride-01` (not merged). **READY TO BUILD.** `docs/decisions/coaching-2026-11-20-strength-pair-stride-01-prototype.md`.
 
 **The defect is certain.** `packages/strength/session.ts` walks accessory+core items in FIXED ADJACENT PAIRS
 (`i += 2`) and pairs only when `PATTERN_REGION` differs, so a same-region neighbour **strands BOTH items** and the
@@ -6919,6 +6922,7 @@ closer to the clock when a pair is arithmetically ~60 s cheaper than the same tw
 Scripts on disk: `strength-pairing-measure.ts`, `strength-dose-delta.ts`, `strength-repeat-measure.ts`.
 
 ### 🔲 `STRENGTH-CARRY-PATTERN-01` — Blagrove's carries merge names a thing the data model does not have 🏃 **COACHING BOARD**
+⚖️ **SAT 2026-11-20** (🏃 Coaching Board, Blagrove seated) — **CORRECT WITH AMENDMENT**. The merge runs AFTER S10 Am. 6's pairing walk, only on carries it left standalone (22,845 of 52,767 sessions; merging first breaks 15,196 supersets and puts 2,622 over the clock). The merged part runs as many rounds as its longer half and rests the SUM of the two rests, which keeps the clock unchanged. Artifacts: S10 Am. 7, `CARRY_MEDLEY`, `S-CARRY-MEDLEY`; Willy's STRENGTH-PAIR-STRIDE-01 ratchet binds; builds after STRENGTH-PAIR-STRIDE-01. 🧭 Design Board names the merged part at build. ⚠️ The filing text below that says the pairing fix may make the merge unnecessary is wrong: carries never pair with each other. **READY TO BUILD.** `docs/decisions/coaching-2026-11-20-strength-carry-pattern-01.md`.
 📐 **VALIDITY SWEEP 2026-11-20** — REWRITE. The parking reason is false: `anti_rotation` and `lateral_core` are **both region `'core'`** (`packages/strength/catalogue.ts:189`, unchanged since `a1d28deb`), so a stride fix would never pair the carries. **Corrected premise: the carries merge needs its own build, keyed on a named exercise set per the 2026-11-12 amendment (`coaching-board-open-items-2026-11-12.md:130`); it does not depend on `STRENGTH-PAIR-STRIDE-01`.**
 
 The board ruled *"two carries back to back is ONE part, a merge not a superset"*. **There is no `carry` pattern.**

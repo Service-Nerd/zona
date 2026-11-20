@@ -6865,3 +6865,15 @@ Reopen on a measured drop-off at that step. `hard-sessions` card copy beyond the
 Board. Check (build): `lib/ui/wizardInjuryFree.test.ts` (sequence identical at both tiers; no TeaserCard) +
 `modifyPlan.test.ts` terrain arm. Note: `docs/decisions/design-2026-11-20-wizard-paid-inputs-tier-01.md`. Not walked on
 a device.
+
+## 🧭 2026-11-20 — `INJURY-RECENCY-01` (scope amendment): Back from the marathon, Plantar from the half · **SHIP WITH AMENDMENT** · NOT BUILT
+
+Amends **only the visibility row** of this morning's `INJURY-RECENCY-01` (follow-up) ruling, on the Coaching Board's `LONG-RUN-CAP-INJURY-VALUE-01` hand-off (Back's cap = `LONG_RUN_CAP_MINUTES.HM`, 135; Plantar stays 120). 📐 **Re-derived through `longRunTimeCap` with the value set in memory:** Back at the half resolves to `135/distance` (equal, not lower), so its answer is engine-identical there; it still binds at marathon, 50K and 100K; Plantar binds from the half. Live (re-run, read-only): **0 of 43 plans are Back at the half, 0 carry both chips**, so no live runner's view changes; still 2 of 43 asked.
+
+| Decision | Status | Why |
+|---|---|---|
+| **Back's follow-up at marathon / 50K / 100K only; Plantar's from the half** | 🟢 **SHIP (amendment)** | SLT 2026-10-28: *"if nothing changes, it is not collected"* |
+| **Predicate per chip, evaluated as if that chip alone were ticked** (shown ⇔ its ceiling is strictly below the race's distance ceiling) | 🟢 **SHIP (amendment)** | `longRunTimeCap` names ONE binding injury, the lowest: read off the full input it hides Back at the marathon whenever Plantar is ticked, where Back's answer still moves the cap (210 vs 135). Per-chip-alone also never moves a row when another chip is ticked (📱 Wroblewski) |
+| **No chip or distance literal; the scope is derived** | 🟢 **SHIP** (restates the morning row) | Until 135 is built the same predicate still shows Back at the half; no coordination between the two builds |
+
+Check (build), added to the morning's: expectations derived from `longRunTimeCap`; arm (a) both chips at the marathon shows both; arm (b) Back shown at HM ⇔ `back < LONG_RUN_CAP_MINUTES.HM`. Falsified by a full-input predicate (a red) and a hardcoded "HM and longer" (b red once back = 135). ⛔ Veto: none. Sierra's optional dissent stands, not reopened. ⚠️ Not rendered or seen on a device; marathon/ultra Back share actually reaching 135 not measured; 50K/100K and maintenance paths not measured. Note: `docs/decisions/design-2026-11-20-injury-recency-01-scope-amendment.md`.
