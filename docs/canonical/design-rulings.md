@@ -6850,7 +6850,7 @@ Discharges the 2026-11-16 CANNOT RULE: the Coaching Board ruled the bucket meani
 
 Pattern `ui-patterns.md` § Wizard step inventory (`injuries` row) · predicate in `lib/plan/` · check: chip × distance × goal, shown ⇔ cap binds, payload only for shown follow-ups; falsified by adding Knee, showing at 10K, posting a hidden answer. Gated on the Coaching Board's `measure:fitness` condition. ⛔ Veto: none. ⚠️ Not rendered or seen on a device; HM+ share where the cap actually binds not measured; maintenance path not measured. Note: `docs/decisions/design-2026-11-20-injury-recency-01-followup.md`.
 
-## 2026-11-20 — `WIZARD-PAID-INPUTS-TIER-01` (b) · 🟢 SHIP WITH AMENDMENT. One wizard for every tier; the upsell card goes
+## 2026-11-20 — `WIZARD-PAID-INPUTS-TIER-01` (b) · 🟢 SHIP WITH AMENDMENT, NOT BUILT. One wizard for every tier; the upsell card goes
 
 | Ruling | |
 |---|---|
