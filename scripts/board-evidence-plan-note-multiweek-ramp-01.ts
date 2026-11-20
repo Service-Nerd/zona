@@ -38,10 +38,10 @@ function engine() {
     warned++; byDist[d][0]++
     // per week: max rise across codes
     const perWeek = new Map<number, any>()
-    for (const x of v) { const c = perWeek.get(x.week); if (!c || x.ramp.rise_pct > c.ramp.rise_pct) perWeek.set(x.week, x) }
+    for (const x of v) { const c = perWeek.get(x.week); if (!c || (x.ramp?.rise_pct ?? 0) > (c.ramp?.rise_pct ?? 0)) perWeek.set(x.week, x) }
     bump(nWeeks, Math.min(perWeek.size, 4) + (perWeek.size >= 4 ? '+' : ''))
     const named = plan.meta.load_residual_week
-    const largest = [...perWeek.values()].reduce((a, b) => b.ramp.rise_pct > a.ramp.rise_pct ? b : a)
+    const largest = Array.from(perWeek.values()).reduce((a, b) => b.ramp.rise_pct > a.ramp.rise_pct ? b : a)
     if (largest.week === named) namedIsLargest++; else namedNotLargest++
     if (perWeek.size < 2) continue
     multi++; byDist[d][1]++
@@ -49,7 +49,7 @@ function engine() {
     namedRises.push(namedV?.ramp.rise_pct ?? NaN)
     let anyNonAdj = false
     const weeks = plan.weeks as any[]
-    for (const [wk, x] of perWeek) {
+    for (const [wk, x] of Array.from(perWeek.entries())) {
       if (wk === named) continue
       othersTotal++
       const g = Math.abs(wk - named); bump(gap, g >= 5 ? '5+' : g)

@@ -76,7 +76,7 @@ async function live() {
   const sp = await sb.from('strength_plans').select('user_id')
   const spUsers = new Set((sp.data ?? []).map((r: any) => r.user_id))
   console.log(`\n== (C) LIVE plans ${plans!.length}; injury chips`, chips)
-  console.log(`   runners with Hip: ${hipUsers.size}; strength_plans rows ${sp.error ? 'ERR ' + sp.error.message : sp.data!.length}; hip runners with a strength plan ${[...hipUsers].filter(u => spUsers.has(u)).length}`)
+  console.log(`   runners with Hip: ${hipUsers.size}; strength_plans rows ${sp.error ? 'ERR ' + sp.error.message : sp.data!.length}; hip runners with a strength plan ${Array.from(hipUsers).filter(u => spUsers.has(u)).length}`)
   for (const t of ['strength_lift_logs', 'strength_logs', 'lift_logs']) {
     const r = await sb.from(t).select('user_id', { count: 'exact', head: true })
     if (!r.error) console.log(`   ${t} rows: ${r.count}`)
