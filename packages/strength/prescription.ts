@@ -47,7 +47,11 @@ export function prescribe(ex: Exercise, role: BlockRole, ctx: DoseContext): Pres
   }
   if (role === 'plyo') {
     const contacts = plyoContacts(ctx.weekIndex, ctx.profile.experience)
-    const sets = ctx.phase === 'deload' ? Math.max(1, Math.round((contacts / C.PLYO_CONTACTS_PER_SET) * C.DELOAD_SET_FACTOR)) : Math.ceil(contacts / C.PLYO_CONTACTS_PER_SET)
+    // ADR-027 hotfix 3 (S8 defect fix): S8 doses TOTAL foot contacts. A per-side set of N lands 2N, so a unilateral
+    // jump takes half the sets; the per-side count per set stays PLYO_CONTACTS_PER_SET. Before this, "5 × 10/side"
+    // was 100 contacts against S8's cap of 60, and S-PLYO-CONTACTS counted it as 50.
+    const contactsPerSet = C.PLYO_CONTACTS_PER_SET * (per_side ? 2 : 1)
+    const sets = ctx.phase === 'deload' ? Math.max(1, Math.round((contacts / contactsPerSet) * C.DELOAD_SET_FACTOR)) : Math.max(1, Math.floor(contacts / contactsPerSet))
     return { ...base, sets, contacts: C.PLYO_CONTACTS_PER_SET, rir: null, rest_s: C.REST_S.plyo }
   }
   if (role === 'core') {

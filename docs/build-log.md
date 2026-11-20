@@ -6,6 +6,12 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-11-20 — STRENGTH-PLYO-PER-SIDE-01 · the check repeated the dose's own miscount
+
+**Dev.** S8 caps jumps at 60 total foot contacts. `prescribe('plyo')` set sets = contacts ÷ 10 and ignored `per_side`. `S-PLYO-CONTACTS` checked `contacts × sets`, the same arithmetic. So "6 × 10/side" was 120 contacts, read as 60, and every sweep stayed green. The fix halves the sets for unilateral jumps, and the check now counts from the item's own fields.
+
+**The honest bit.** This is ADR-027's cause 4 in miniature: a check that shares the producer's derivation is blind to that derivation's defect. The sweep reported 0 violations both before and after the fix. It only became a check once the validator stopped copying the prescriber's arithmetic.
+
 ## 2026-11-20 — ENGINE-PROTOTYPE-RULINGS-2026-11-20 · a prototype answers the question a sitting could not
 
 **Dev.** Seven engine items had been sat and sent back as "needs a prototype". Each got a flagged, branch-only prototype in its own worktree, measured baseline against option, then one Coaching Board sitting on the numbers. Nothing merged; the notes, register rows and backlog lines are the deliverable. Worktree isolation blocked the agents writing notes into main, so each was copied across.

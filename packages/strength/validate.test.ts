@@ -192,6 +192,13 @@ describe('validateStrengthPlan', () => {
     expect(BASE.weeks[0].sessions.some(s => s.heavy_legs)).toBe(true)
   })
 
+  // ADR-027 hotfix 3: 4 × 10/side is 80 foot contacts, over S8's 60. Before the fix the check read it as 40 and stayed silent.
+  it('🔴 S-PLYO-CONTACTS counts a per-side set on both legs', () => {
+    const p = clone(BASE)
+    heavy(p, 1).blocks.push({ role: 'plyo', items: [{ exercise_id: 'single_leg_pogo', sets: 4, contacts: 10, rir: null, rest_s: 60, per_side: true }] })
+    expect(codes(p)).toContain('S-PLYO-CONTACTS')
+  })
+
   for (const [code, mutate, profile] of CASES) {
     it(`🔴 ${code} fires when its rule is broken`, () => {
       const p = clone(profile && code !== 'S-UNAVAILABLE-DAY' && code !== 'S-TOO-MANY' ? generateStrengthPlan(profile, C) : BASE)

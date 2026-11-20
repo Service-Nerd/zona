@@ -180,6 +180,13 @@ convention, not research **[C]**. Technique before load, load before impact (Bla
 climbed from the week the gate OPENED, so a runner whose days held no leg day for weeks met a level-2 jump first. It
 now climbs from the first jump actually placed. **Check:** `S-PLYO-START-LEVEL`.
 
+**Defect fix (2026-11-20, ADR-027 hotfix 3, restores S8's cap).** S8 doses **total foot contacts**. A per-side set of 10 lands 20,
+but the dose and `S-PLYO-CONTACTS` both counted it as 10. Single-leg pogo and lateral bound therefore reached 100–120
+contacts against the cap of 60, on 6,466 swept sessions (final plan read, 2026-11-20). A unilateral jump now takes half
+the sets, and the check multiplies per-side items by two from the item's own fields. No number changed. **Check:**
+`S-PLYO-CONTACTS` (per-side arm) and `plyoPerSide.test.ts`. Falsified: reverting either half turns its test red, and
+the old dose under the new check fails `verify:strength` (up to 120 contacts).
+
 ## S9. Injury, bone and equipment steer the choice
 
 **Principle.** An exercise is never prescribed if it needs kit the runner did not tick, if its `avoid_with` matches

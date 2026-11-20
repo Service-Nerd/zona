@@ -179,7 +179,10 @@ export function validateStrengthPlan(plan: StrengthPlan, ctx: RunContext | null)
           if (wi < minWeeks) v.push({ code: 'S-PLYO-TOO-SOON', week: w.n, day: where, detail: ex.id })
           if (Array.from(injuries).some(t => C.PLYO_RESTRICTING_INJURIES.includes(t))) v.push({ code: 'S-PLYO-INJURY', week: w.n, day: where, detail: ex.id })
           if (w.phase === 'taper' || w.phase === 'race_week') v.push({ code: 'S-PLYO-TAPER', week: w.n, day: where, detail: ex.id })
-          if ((it.contacts ?? 0) * it.sets > C.PLYO_CONTACTS_MAX) v.push({ code: 'S-PLYO-CONTACTS', week: w.n, day: where, detail: `${(it.contacts ?? 0) * it.sets} contacts` })
+          // Total foot contacts: a per-side prescription lands on both legs (ADR-027 hotfix 3). Counted from the item's own
+          // fields, never from the prescriber's arithmetic, so the check cannot share the dose's miscount.
+          const totalContacts = (it.contacts ?? 0) * it.sets * (it.per_side ? 2 : 1)
+          if (totalContacts > C.PLYO_CONTACTS_MAX) v.push({ code: 'S-PLYO-CONTACTS', week: w.n, day: where, detail: `${totalContacts} contacts` })
           // The board's direction: the FIRST jump a runner meets is the easiest one.
           if (!firstPlyoSeen && ex.level !== 1) v.push({ code: 'S-PLYO-START-LEVEL', week: w.n, day: where, detail: `${ex.id} is level ${ex.level}` })
           firstPlyoSeen = true
