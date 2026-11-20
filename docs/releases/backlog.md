@@ -781,6 +781,7 @@ before planning against any number below (an item is a snapshot of the code on t
   the sentence should say *that*, not that it is easier.
 
   ⚖️ **SAT 2026-11-20** (🏃 Coaching Board) — **CORRECT WITH AMENDMENT.** The repeat-level week IS the deload (L1 stands); "easier" is withdrawn — copy may claim a deliberate repeat with no step up. 👤 Founder writes the words. `docs/decisions/coaching-2026-11-20-walkrun-deload-claim-01.md`.
+  👤 **COPY APPROVED 2026-11-20** by the founder — the words are in `docs/decisions/founder-2026-11-20-copy-approvals.md`; they land with the build.
 
 - 🔻 `STAGED-DOOR-AT-CAP-01` — **the staged door's modal outcome is exactly 4.00×**, because the search stops at
   the first volume inside §111's cap. 🏃 The chair declined a buffer at the sitting on his own standard
@@ -2201,6 +2202,7 @@ outlived its basis by one commit. M7 has no `benchmark`, so even the shipped for
 ### 🔲 `COACH-READ-1027-FOLLOWUPS-01` — claims from the 27 Oct board read still to measure 🏃 **COACHING BOARD** (after measurement)
 
 ⚖️ **SAT 2026-11-20** (🏃 Coaching Board) — seven claims re-measured. **CORRECT**: "not to chase a time" is withheld where race-pace work is prescribed (123 of 155 plans; words → 👤). **INSUFFICIENT EVIDENCE**: taper easy-run growth, and masters ≥5 loading weeks (finding: §3's peak/taper exemption is written only in `deloadCadence.ts`). **Exempt defects**: equal-volume deload, long-run deload cut (attribute first), "highest volume" label. Ramps settled; step-back closed (1.3%). `docs/decisions/coaching-2026-11-20-coach-read-1027-followups-01.md`.
+👤 **COPY APPROVED 2026-11-20** by the founder — the words are in `docs/decisions/founder-2026-11-20-copy-approvals.md`; they land with the build.
 
 Raised by the read of 28 plans, not yet verified: deloads that do not reduce (t3 w6, m3 w10; t1/t1d are ruled ground);
 delivered ramps past §2 on injury and masters plans (declared warn debt: how long has it sat?); a long run cut harder than its
@@ -2512,6 +2514,7 @@ them the band change is the **largest relative** move. The finding the Coaching 
 ### 🔲 `BENCHMARK-DATE-REQUIRED-01` — the wizard asks when the race was and does not require it 🧭 **DESIGN BOARD** → 👤 **FOUNDER** (copy)
 
 ⚖️ **SAT 2026-11-20** (🧭 Design Board) — **SHIP WITH AMENDMENT (4).** A started benchmark takes a date or an in-field `I don't remember`; all three exits gated — including the native estimate confirm, which posts no date today; the declaration is stored. Re-measured 8 of 23 dateless. Copy → 👤 founder. `docs/decisions/design-2026-11-20-benchmark-date-required-01.md`.
+👤 **COPY APPROVED 2026-11-20** by the founder — the words are in `docs/decisions/founder-2026-11-20-copy-approvals.md`; they land with the build.
 
 **The upstream remedy the Coaching Board routed out of its own gift, 2026-11-16.** `benchmarkFromFields`
 does `const date = v.date ? { benchmark_date: v.date } : {}` — the date is optional inside a step that
@@ -2529,6 +2532,7 @@ is already done: the unknown is declared by `INV-PLAN-VDOT-DISCOUNT-DATELESS`.
 ### 🔲 `PROFILE-BIRTH-YEAR-REQUIRED-01` — the wizard asks for the year, marks it optional, and told the runner it does not matter 🧭 **DESIGN BOARD** then 👤 **FOUNDER**
 
 ⚖️ **SAT 2026-11-20** (🧭 Design Board) — **SHIP WITH AMENDMENT (4).** The step is answered or declared (in-step decline; `Continue` waits for the wheel to move), the false subtitle goes, the declaration is stored. Re-measured: **13 of the 16 ageless accounts never onboarded**; the wizard's blank is 3 of 43 plan-holders. New: an untouched wheel shows 1991 and records nothing. Copy and the App Store 5.1.1 reading → 👤 founder. `docs/decisions/design-2026-11-20-profile-birth-year-required-01.md`.
+👤 **COPY APPROVED 2026-11-20** by the founder — the words are in `docs/decisions/founder-2026-11-20-copy-approvals.md`; they land with the build.
 
 **Filed from the `MAXHR-AGE-ABSENT-01` sitting (Coaching Board 2026-11-17), by the seam rule: the engine's
 treatment of a blank is MEANING and was fixed there; whether the wizard may accept one is ENCODING.**
@@ -2710,6 +2714,7 @@ silently too.
 ### 🔲 `TUNE-UP-CALLOUT-INERT-01` — a tune-up race suggestion on 33 live plans that no runner can see 🧭 **DESIGN BOARD** → 💼 **SLT**
 
 ⚖️ **SAT 2026-11-20** (🧭 Design Board) — **SHIP WITH AMENDMENT (4), conditional on 💼 SLT.** One `--ink-2` line on the tune-up week's WeekCard (Now/Next only); not on strips or Today; the ramp warning wins when both fall in one week (13 of 58 engine plans → 🏃); copy → 👤. If the SLT declines, §32 and the invariant are amended. `docs/decisions/design-2026-11-20-tune-up-callout-inert-01.md`.
+👤 **COPY APPROVED 2026-11-20** by the founder — the words are in `docs/decisions/founder-2026-11-20-copy-approvals.md`; they land with the build.
 
 📐 **Found 2026-11-16 measuring `RACE-NOTES-INERT-01`; it is the sibling field in the same `weeks.push` block.**
 `week.tune_up_callout` (*"Optional: drop a parkrun PB or local 5K this week. Use the result as a fitness check, not a
@@ -8017,6 +8022,7 @@ push / daily note / readiness / auto-match / missed-session prompt taught; `sole
 ### `DOUBLE-STRIDES-01` — may a strides run be half of a double? *(filed 2026-10-17, OPEN)*
 
 ⚖️ **SAT 2026-11-20** (🏃 Coaching Board) — **CORRECT WITH AMENDMENT**: a strides or hill-strides easy run may be half of a §126 double; hill strides are advised first (advice only). No prescription change (`canDouble` already allows it); the build adds §126 Am. 1 and a `doubles.test.ts` arm. 403 of 2,371 live run sessions carry strides; 0 doubles ever. `docs/decisions/coaching-2026-11-20-double-strides-01.md`.
+👤 **COPY APPROVED 2026-11-20** by the founder — the words are in `docs/decisions/founder-2026-11-20-copy-approvals.md`; they land with the build.
 
 §126 allows a double of two easy or recovery runs and forbids quality / structured. An **"Easy run + strides"**
 session is typed `easy` and `isStructuredSession` is false, so the Plan move flow offers "Do both" for it (seen at
