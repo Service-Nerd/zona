@@ -12162,7 +12162,8 @@ guards do — preserving newlines** — or the reported line numbers go wrong, w
 repo has also already had (`^\s*//` matching `\n`).
 
 
-### 📱 `NAV-BLACK-LINE-01` — the untraced black line; **BLOCKED ON A DEVICE** (a native effect cannot be diagnosed from this machine) ⚙️ **NO BOARD**
+### ✅ `NAV-BLACK-LINE-01` — **CLOSED 2026-11-20, founder confirmed done** — the untraced black line ⚙️ **NO BOARD**
+✅ **CLOSED 2026-11-20 on the founder's word (*"its done"*).** Not verified from this machine: no device capture was taken here, and no cause was recorded.
 **Reported 2026-09-26** (*"at the bottom there is a line of this open session screen, it looks bad"*).
 First recorded at the app review 2026-09-22: *"The black line above the nav. Untraced — it is not
 the nav's border."* No ruling was made on an unidentified artefact.
@@ -15889,7 +15890,7 @@ fails every morning for a reason nobody needs to read is a test everybody learns
 the next real failure in that file arrives pre-ignored. This repo has already recorded that a
 guard which cries wolf gets disabled, which is the same as having no guard.
 
-**State at END of 2026-11-20 — BOARD DAY: every sitting run, every hand-off sat, every finding filed** (last ship `fd44f9e5` — `BOARD-EVIDENCE-GATES-2026-11-20`, two script-hygiene gates given named exemptions for today's read-only board-evidence scripts, after the docs commits `fa149dab` (36 items analysed, 30 sat, 6 not ready), `5a9c0e09` (founder copy for six rulings), `44975700` (five findings filed), `7c8c28f5` (four follow-up sittings) and `093a633c` (three more findings filed). **818 files / 8,423 tests, ALL GREEN** at the pre-push gate; `tsc` 0; `backlog:verify` 0 with **82 open · 29 COACHING · 15 DESIGN · 18 ⚙️ NO BOARD · 11 SLT · 9 FOUNDER** (`RUNKED-COMPARE-PAGE-01` removed by the founder). No engine or app code changed today; `verify:parity` not run because nothing it measures moved.) ⚠️ **`main` was red locally from `fa149dab` until `fd44f9e5`** (the evidence scripts tripped the gates); nothing red was pushed. 🔻 Waiting on the founder: the seven engine prototypes. Follow-up copy decided on his delegation.
+**State at END of 2026-11-20 — BOARD DAY: every sitting run, every hand-off sat, every finding filed** (last ship `fd44f9e5` — `BOARD-EVIDENCE-GATES-2026-11-20`, two script-hygiene gates given named exemptions for today's read-only board-evidence scripts, after the docs commits `fa149dab` (36 items analysed, 30 sat, 6 not ready), `5a9c0e09` (founder copy for six rulings), `44975700` (five findings filed), `7c8c28f5` (four follow-up sittings) and `093a633c` (three more findings filed). **818 files / 8,423 tests, ALL GREEN** at the pre-push gate; `tsc` 0; `backlog:verify` 0 with **81 open · 29 COACHING · 15 DESIGN · 17 ⚙️ NO BOARD · 11 SLT · 9 FOUNDER** (`RUNKED-COMPARE-PAGE-01` removed by the founder). No engine or app code changed today; `verify:parity` not run because nothing it measures moved.) ⚠️ **`main` was red locally from `fa149dab` until `fd44f9e5`** (the evidence scripts tripped the gates); nothing red was pushed. 🔻 Waiting on the founder: the seven engine prototypes. Follow-up copy decided on his delegation.
 
 **Prior state block (ADR-026, ships `57fb016c`/`7521806e`/`9497de8e`) — superseded by the paragraph above; see `docs/build-log.md` for its detail.**
 
