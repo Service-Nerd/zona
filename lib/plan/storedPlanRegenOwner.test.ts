@@ -38,6 +38,8 @@ const OWNER = 'lib/plan/storedPlanRegen.ts'
  * "today" it composes from, because that is the only thing the owner decides differently.
  */
 const DECLARED_DIVERGENCES: Record<string, string> = {
+  'scripts/board-evidence-injury-hip-inert-01.ts':
+    'read-only board evidence (2026-11-20): a [] vs [\'Hip\'] counterfactual over generated plans plus a live count; regenerates nothing that is stored or written. REMOVE WHEN the INJURY-HIP-INERT-01 build lands and the script is deleted',
   'scripts/fleet-invalid-debt-01-regen.ts':
     'anchors to the ORIGINAL plan_start so main-week identity is unchanged; gap 0 → no new foundation prefix, which is the point for a fleet sweep',
   'scripts/recal-live-repair.ts':
