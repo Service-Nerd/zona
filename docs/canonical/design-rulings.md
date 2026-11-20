@@ -6744,3 +6744,91 @@ release needed *"prompted, never silent"* and took the cheaper half: `plan.meta.
 existing plans entirely, so nothing is silent. 🔻 **The consequence is a different residual from the one ADR-026 §8
 anticipated — those runners keep an incoherent band indefinitely rather than a coherent one unasked.** Safer, and
 still owed. 🔬 **Wood's condition carries forward unchanged.**
+
+## 🧭 2026-11-20 — `MKT-STEP-NOTES-ABSENT-01`: notes under every week-table step · **DON'T SHIP (not permanent)**
+
+Sitting: `docs/decisions/design-2026-11-20-mkt-step-notes-absent-01.md`. 🔴 **The premise was a month stale when filed:** its sentence came from `SESSION-STEP-LEGIBILITY-01`'s 2026-10-06 limits line, and `SITE-SESSION-STEPS-01` mounted `SessionSteps` on 2026-11-05. 📐 **42 step notes already render, 42 of 42**, every race page's exemplar band (server-rendered, `scripts/board-evidence-mkt-step-notes-absent-01.ts`). Week tables: 74 quality sessions, **74 of 74** already carry a how-to line; 184 of 205 steps carry a note (42 distinct); the filed change would add **142**. Step notes are **FREE** catalogue copy, so there is no give-away question and no SLT hand-off. The table keeps compact rows on the one-exemplar ruling (15.7 → 26.0 phone screens as first built; Sierra: *"the transfer happens on the FIRST one"*). 🎪 **Collins lost**: one note per table session on the work step, for voice. May return **with a rendered phone-screen delta**. ⛔ Veto: none. ⚠️ Nothing rendered for either variant; **no check asserts the exemplar renders its notes** (`realComponents.test.ts` asserts the mount count only).
+
+## 🧭 2026-11-20 — `SITE-FREE-COLUMN-COPY-01`: which retained-from-trial gates the free column names · **DON'T SHIP — no rows (not permanent)**
+
+Sitting: `docs/decisions/design-2026-11-20-site-free-column-copy-01.md`. 📐 **The page already says four of the six**: the *"What happens on day fifteen"* card names the plan, zones, paces and *"the coach notes already on your sessions… What stops is the ongoing part"*, which is the only form that can say *existing notes, no new ones*. `session_catalogue_full` has **no effect at a free distance** (27 free rows, 4 paid-only, all four `ultra_specific` at 50K/100K). `injury_adaptations_initial` is **identical at both tiers** (no tier check; SLT 2026-09-11), so it cannot separate them. All six gate names have **0 consumers** outside `featureGates.ts` / `pricing.ts`. Settled ground: the killed list-of-eight (permanent) and Sierra's standing objection to *"free tier, now with more rows"*. **Build consequence:** the six `OMITTED_FROM_PRICING` reasons cite this ruling instead of "reserved". 🎪 Collins recorded that injury adaptation is an under-told proposition; it belongs on the homepage, where it already is. ⛔ Veto: none. ⚠️ /pricing not rendered; **no check binds the day-fifteen card to the four gates it discharges.**
+
+## 🧭 2026-11-20 — `SITE-SUBMEASURE-SPRAWL-01`: a second reading measure · **SHIP WITH AMENDMENT — a `ch` line length, never a third px measure** · NOT BUILT
+
+Sitting: `docs/decisions/design-2026-11-20-site-submeasure-sprawl-01.md`. 📐 Source: **32 sites, 7 values** (520×6 · 540 · 560 · 600×3 · 620×14 · 640×6 · 420); the filed **720 is no longer hand-typed**. Rendered at **1440**, production, five pages: **46 caps, 30 bind, 16 inert**; **59–110 characters per line** at a binding cap. 🔑 **A px cap is font-size-blind**: one `620px` gives 74 at 18px and 110 at 12px, so the family is seven attempts at a line length in a unit that cannot hold one. Ruling: **one** second measure token, in **`ch`**; the 30 binding caps convert; **the 16 inert caps are deleted, not converted** (📱 Wroblewski: or the consumer count lies). **The value is the build's measurement** at 1440 and 1024, stated as characters per line before and after; the chair declined to author a number on no render. Settled ground respected: *720px for prose stays*, the left edge does not move, and `SITE-MEASURE-THIRD-01`'s retirement forbids a typed px measure. ✋ Silvanto's stated veto condition: **a third px measure token**. 🎪 Collins wanted the value set at the sitting; deferred to the render. Artifacts with the build: `ui-patterns.md` website measures · one `ch` token in `globals.css` · a `contentMeasure.test.ts` arm failing on a numeric sub-measure `maxWidth`, falsified. ⚠️ Not settled: the value; 1024 not rendered; characters per line are canvas arithmetic, not counted lines; the 640 page column on /privacy, /support, /terms is outside this ruling.
+
+## 🧭 2026-11-20 — `CTA-INLINE-PAINT-02`: the 51 inline Button overrides · **SHIP WITH AMENDMENT — a policy per species, not 51 rulings** · NOT BUILT
+
+Sitting: `docs/decisions/design-2026-11-20-cta-inline-paint-02.md`. 📐 **51 confirmed two ways** (register sum; independent pass over 174 `<Button>`s, `scripts/board-evidence-cta-inline-paint-02.ts`); **21 files** carry one (23 register entries, two at 0). **Pure restatements: 0**; 19 restate a background and all 19 also carry geometry. Species and policy:
+
+| Species | Sites | Policy |
+|---|---|---|
+| **A. Named off-palette paint** (Strava; Apple sign-in) | 2 | **Stays; leaves the debt count.** Named exception by file + property + value + reason. Only the paint is exempt; Apple's geometry follows D |
+| **B. State paint inline** (`HRZonesSection`, System-B `--teal-dim`) | 1 | **Drift, defect fix**: switch to an existing variant (`BUTTON-COMPONENT-01`: the moss fill is the only selected affordance) |
+| **C. `ghost`/`quiet` with their own geometry** | 30 | **Variant stays; geometry moves into AT MOST ONE text-control size** carrying the 44px `::after` hit area (`TAP-TARGET-DECISIONS-01`), **only if the build measures that a majority share it**. 10/11/13px migrate (`MICRO-LABEL-DRIFT-01`, `ADJUST-JOURNEY-TYPE-01`). Redundant backgrounds go in the same edit. The six row-shaped sites are re-read against `GHOST-AFFORDANCE-01`. `BackButton`'s zero padding is a named exception |
+| **D. Filled CTA re-sized off the scale** | 18 | **Drift: conform to `regular`, or `compact` only in a side-by-side row** (`CTA-COMPACT-SCOPE-01`). **No new size authored from these values**; a load-bearing site names its reason and becomes an exception |
+
+**Binding:** paid **per screen**, rendered at 375pt before and after, register lowered in the same commit; a screen batch goes to the founder on a device before the next (he has twice reported the CTAs). Check: `buttonInlineOverride.test.ts` gains a **named-exception list** asserted both ways (the `OVERLIMIT_BY_FILE` shape), so the number counts drift only; falsified by an unnamed `background` override and by a stale exception. ⚡ Collins (re-read row-shaped ghosts for a surface) vs Wroblewski (size only): **split**, neither lost. ⛔ Silvanto named his veto condition (keeping 10/11px on a control); not exercised. ⚠️ Nothing rendered or felt; the C size is conditional on a geometry measurement this sitting did not take; nothing schedules the work.
+
+## 🧭 2026-11-20 — `BENCHMARK-DATE-REQUIRED-01`: a recency field is answered or declared · **SHIP WITH AMENDMENT (4)** · NOT BUILT
+
+📐 **8 of 23 live benchmarked plans carry no date** (re-measured 2026-11-20; 21 on 11-17). 🔴 **Three exits carry a dateless benchmark past the step, and the item named one:** the optional field; `Not sure, continue`, which keeps the answer (S4) and is not gated on the date; and **the native estimate confirm, which never sets a date and never shows the field**. Which exit produced each of the 8 is not determinable from the stored plan.
+
+| Decision | Status | Why |
+|---|---|---|
+| **A started benchmark takes a date OR an in-field `I don't remember`** | 🟢 **SHIP** | 🎓 Sierra: a runner who has to say "I don't remember" learns the date matters. No step, no modal (`WIZARD-WEEKDAY-CONFIRM-01 (a)`). The step itself stays optional. Lands in `BenchmarkFields`, so **Update Paces inherits it** (BENCHMARK-INPUT-01) |
+| **Every exit is gated, not the field** | 🟢 **SHIP** | 📱 Wroblewski: both footer buttons, draft restore, and the estimate confirm, which is dated or posted as declared, never silently blank. *Which* date an estimate carries is §10 meaning (→ 🏃 if wanted) |
+| **The declaration is stored** | 🟢 **SHIP** | 🧭 Zhuo's success condition, stated first: every dateless benchmark in a new plan is one the runner chose. Unobservable without it |
+| **Recency buckets** (Collins) | 🔴 **DECLINED, not killed** | Bucket meaning is the Coaching Board's; same refusal as injury recency 2026-11-14. **Collins lost.** Returns with bucket semantics |
+
+Copy 👤 founder: states the consequence, never reassures. Pattern `ui-patterns.md` § Benchmark entry · constant in `benchmarkCheck.ts` · check: every exit refuses an undated, undeclared benchmark, falsified per exit. Fixes no existing plan. ⚠️ Not seen on a device. Note: `docs/decisions/design-2026-11-20-benchmark-date-required-01.md`.
+
+## 🧭 2026-11-20 — `PROFILE-BIRTH-YEAR-REQUIRED-01`: answered or declared, and a wheel records nothing it was not moved to · **SHIP WITH AMENDMENT (4)** · NOT BUILT
+
+📐 **The item's "16 of 56 live runners have no age" is a count of ACCOUNTS: 13 of the 16 never onboarded and the wizard never asked them.** Every runner with a birth year has a plan; the wizard's blank is **3 of 43 plan-holders (2 external)**. 🔴 **The finding is the subtitle**, false for everyone: the age also checks a SET max (§50) and decides §3's cadence. 🔴 **And a new one:** the wheel rests on 1991 while `birthYear` stays `null`, so `Continue` on an untouched wheel posts no age while the screen shows a year.
+
+| Decision | Status | Why |
+|---|---|---|
+| **The step is answered or declared** | 🟢 **SHIP** | `optional` off; `Continue` waits for the wheel to move; an **in-step** decline is the only way through. 📱 Wroblewski: committing the shown year would invent a 35-year-old for every untouched wheel, the body the Coaching Board refused 2026-11-17. Leaves S4's population (six optional steps → five): consistent, not a reversal |
+| **The decline states its cost on the step** | 🟢 **SHIP** | ✋ Silvanto: quietly, no amber; a decline is a legitimate answer. The claim is the Coaching Board's 2026-11-17 ruling |
+| **Subtitle replaced; declaration stored** | 🟢 **SHIP** | 🎓 Sierra: the subtitle trains the runner with a watch to under-answer |
+| **No exit at all** (Sims, 2026-11-17) | 🟡 **NOT ADOPTED** | App Store 5.1.1 is recorded as *"never required"* (code + 2026-08-30 investigation): the declaration is required, the data is not. A difference from her ask, recorded |
+
+Copy 👤 founder (and the 5.1.1 reading is his). Pattern shared with `BENCHMARK-DATE-REQUIRED-01` · declined value a named constant · check: an untouched wheel cannot proceed, the decline records, the "Only to estimate" claim is gone; falsified by restoring `optional: true`. ⚠️ Not seen on a device. Note: `docs/decisions/design-2026-11-20-profile-birth-year-required-01.md`.
+
+## 🧭 2026-11-20 — `PLAN-NOTE-HEAVIER-WEEK-PLACEMENT-01`: the week-N encoding · **SHIP WITH AMENDMENT (5)**. The rank is still NOT ruled · NOT BUILT
+
+The sitting the 2026-11-14 sequence asked for: *"the week-N surface first, the rank second."* 📐 Re-measured on the engine (stride 131, 304 plans): **58 carriers (19.1%)**, `load_residual_week` on 58 of 58; week N is **build 36 · peak 12 · base 10, never a deload or taper**, median 39% through the plan. **Production: 1 of 43 live plans, week N ahead.** 🔑 Today's rule coach line is paid-gated (`hasPaidAccess`), so it cannot be the only place a free runner is told.
+
+| Decision | Status | Why |
+|---|---|---|
+| **Both calendar renderings mark week N** | 🟢 **SHIP** | The `· deload` muted suffix (WALKRUN-WEEK-LEGIBILITY-01), reused. Replaces `· peak` when both apply; must not wrap at 320pt (📱 Wroblewski) |
+| **WeekCard (Now / Next / expanded Later): one guidance line** | 🟢 **SHIP** | 🎓 Sierra: the action, never the percentages. ✋ Silvanto: `--ink-2`, **not amber**, because `--warn` is `--s-quality`'s hex and a quality session sits on most of these weeks. Passes RACE-NOTES-INERT-01's test: it says what no session says |
+| **Today, week N current** | 🟢 **SHIP** | Through `weekIdentity`, race › deload › taper › **heavier** › phase, ink, no new hue (PHASE-ON-TODAY-01). The paid coach line carries the action; the AI note is told |
+| **One vocabulary** | 🟢 **SHIP** | 🎪 Collins: the engine makes the distinction, so it earns a mark, in the plan tile's own word |
+| **Plan-tile rank** | ⏸️ **NOT RULED** | After this ships, on a measurement (§6ak). Whether week N satisfies "a warned plan tells the runner" is 🏃's |
+
+Mockups to 👤 founder before build; device/simulator before merge (Wroblewski's 11-14 block carried). Pattern `ui-patterns.md` § 10b · label/rank through `weekIdentity` · check: every warned plan, FREE tier, shows the mark on week N in both renderings and on Today, no other week does, no `%` in the line; falsified by un-wiring each. ⚠️ Not seen on a device. Note: `docs/decisions/design-2026-11-20-plan-note-heavier-week-placement-01.md`.
+
+## 🧭 2026-11-20 — `METRIC-TOGGLE-SCOPE-01`: is the toggle the wrong instrument? · **DON'T SHIP (not permanent)**
+
+📐 **The post-E number, taken first as the item required** (cohortGrid stride 131, every row `buildSessionRows` emits): on the **distance** setting **67.96%** of rows lead in the chosen metric (cohortGrid is beginner-heavy, so this is not comparable to the founder's 83.68% on his 10-07 corpus), and **90.2% of the misses are duration-anchored sessions, which the founder ruled KEEP AS IS**. On the **duration** setting: **100%**. Live: **55 distance (also the default) · 1 duration**; **17 of 18 active per-session overrides set the unit the session is already anchored in.**
+
+| Decision | Status | Why |
+|---|---|---|
+| **Lead slot = the session's own unit; the toggle governs km/mi only** | 🔴 **DON'T SHIP (not permanent)** | 📱 Wroblewski: read as the session ANCHOR it is the distance setting today with the duration option deleted, and the duration option is the only setting honoured on **every** row. Read as each STEP's prescription it puts minutes on **2,800 of 3,085 (90.8%)** work steps under a km header, which is Option E's founder complaint and 6t-B's killed shape. 🎓 Sierra: line 3 already shows the other metric on every row. 🧭 Zhuo: a true finding attached to the wrong remedy |
+
+⚡ **🎪 Collins LOST, recorded** (third time on this question). His measurement stands: the default setting leads in its metric on two rows in three on this corpus. **Returns only with** a measured runner complaint about the toggle, or a shift in the duration-anchored share of plans, and must name its reading. No artifacts; E's arms stand. Note: `docs/decisions/design-2026-11-20-metric-toggle-scope-01.md`.
+
+## 🧭 2026-11-20 — `TUNE-UP-CALLOUT-INERT-01`: an optional offer, one line, on its own week · **SHIP WITH AMENDMENT (4), conditional on the SLT** · NOT BUILT
+
+📐 **33 of 43 live plans carry `week.tune_up_callout`** (still ahead on 20) and **0 readers** (grep: schema, invariant, stamp, config comment, fixture). The engine stamps it on **304 of 304** generated plans. 🔴 **13 of 58** engine plans carrying the ramp warning place the tune-up **in that same week**.
+
+| Decision | Status | Why |
+|---|---|---|
+| **One line on the tune-up week's WeekCard, Now / Next / expanded Later only** | 🟢 **SHIP (if the SLT approves)** | 🎓 Sierra: a tune-up is perceptual expertise. It passes RACE-NOTES-INERT-01's test, because nothing else suggests one. ✋ Silvanto: a warning travels to the arc, **an offer does not**, so not on the strips; `--ink-2`. Not on Today (one session, one day) |
+| **Precedence: the ramp warning wins the slot** | 🟢 **SHIP** | 📱 Wroblewski: suggesting a race effort in the week flagged over the ramp is a coaching contradiction, → 🏃 (§32) |
+| **Copy rewritten** | 👤 **FOUNDER** | 🎪 Collins: it is a stamp, not an insight, so it offers and never instructs; and *"drop a parkrun PB… not a race effort"* contradicts itself |
+| **If the SLT declines** | ⚖️ **BINDING** | `INV-PLAN-TUNE-UP-CALLOUT` and §32's claim are amended (🏃). Never an enforcement recorded on a field nobody reads |
+
+💼 Worth-the-surface handed to the SLT, not sat. Pattern `ui-patterns.md` § 10b (guidance line + precedence, shared with `PLAN-NOTE-HEAVIER-WEEK-PLACEMENT-01` — author it once) · check: on its WeekCard when Now/Next, never on a strip, on Today, or on a `load_residual_week` week; falsified both ways. ⚠️ Not seen on a device. Note: `docs/decisions/design-2026-11-20-tune-up-callout-inert-01.md`.

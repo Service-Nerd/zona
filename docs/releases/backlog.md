@@ -73,6 +73,8 @@ the exemption register carries a reason per entry.
 
 ### 🧭 `SITE-CURRENCY-FOLLOWONS-01` — what the website review left open
 
+⏸️ **NOT READY 2026-11-20** — nothing of its own to rule: all 8 findings closed; `SITE-FREE-COLUMN-COPY-01` and `SITE-SUBMEASURE-SPRAWL-01` sat today under their own ids; `SITE-SPACE-OVERLIMIT-01` open under its own id; TrendCard waits on a bundle number; placement waits on site analytics. `docs/decisions/design-2026-11-20-site-currency-followons-01.md`.
+
 > ✅ The review itself and 4 of its 8 findings **shipped 2026-11-05** and live in `feature-registry.md` under
 > `SITE-CURRENCY-REVIEW-01`. This section is the remainder. ⚠️ Separate id on purpose: a shipped item and its open
 > follow-ons sharing one id is how `audit-docs.sh` reads a closed thing as open forever.
@@ -135,6 +137,8 @@ before planning against any number below (an item is a snapshot of the code on t
   row form:** `ai_coach_notes_existing` means a free user keeps the notes already on their plan and gets no NEW ones,
   which a four-word bullet cannot say. The question for the board is which of the six (if any) a reader choosing
   between tiers actually needs named.
+
+  ⚖️ **SAT 2026-11-20** (🧭 Design Board) — **DON'T SHIP: no free-column rows.** Four of the six are already named in /pricing's day-fifteen card; the catalogue gate has no free-distance effect; injury adaptation is identical at both tiers. The build only rewrites the six `OMITTED_FROM_PRICING` reasons to cite this ruling. `docs/decisions/design-2026-11-20-site-free-column-copy-01.md`.
 
 - ✅ **SHIPPED 2026-11-06** `STAGED-HM-DOOR-01` — **a never-run runner was staged into a MARATHON and refused a
   HALF**, at every runway from 12 to 30. 🏃 Coaching Board **CORRECT WITH AMENDMENT**, two sittings (the second on the
@@ -335,7 +339,9 @@ before planning against any number below (an item is a snapshot of the code on t
   arm at **6,333 ms**, invisible until `CHECK-SLOW-STALE-01` was fixed the same day it landed.
   Baselined with a written reason, and the stale `prosePreference` entry dropped: **register 30 → 30.**
 
-- 🏃 **COACHING BOARD** `WEEK1-DELIVERED-CEILING-01` — **week 1 is composed from the runner's LONGEST RUN and never
+- ✅ 🏃 **COACHING BOARD** `WEEK1-DELIVERED-CEILING-01` — **CLOSED 2026-11-20: INCORRECT (veto)** — **week 1 is composed from the runner's LONGEST RUN and never
+
+  ⚖️ **SAT 2026-11-20** (🏃 Coaching Board) — ⛔ **INCORRECT (veto), item closes.** No admissible lever: 111 of 129 over-ceiling weeks have no easy headroom above the floor, and the long run is protected. Per session there is no hazard: 0 of 92 week-1 sessions exceed the declared longest run by >0.5 km. By the owner (`week1Leap`) the population is 52, not 129. 🩹⚕️ Willy and Sims dissent on the residual — run frequency — which needs an input Zonna does not collect. `docs/decisions/coaching-2026-11-20-week1-delivered-ceiling-01.md`.
 
   > 📐 **THE BOARD'S NAMED EVIDENCE IS IN HAND — 2026-11-13 — AND IT OVERTURNS THE PROPOSED LEVER.**
   > Reproducible: `npm run board:week1-bound`. **STILL OPEN: this is evidence for the re-sitting, not a ruling.**
@@ -450,6 +456,8 @@ before planning against any number below (an item is a snapshot of the code on t
   of two registers, read as the answer.** The arm now asserts BOTH verdicts so neither can be quoted without
   the other, and it fails if either moves. Found by the SECOND `/code-review` round.
 
+  ⚖️ **SAT 2026-11-20** (🏃 Coaching Board) — **CORRECT (clarification, no prescription change).** A base-build block is bounded by `INV-PLAN-GET-RUNNING-BUILD-RATIO` from its own start; §111's raw ratio is a race-plan invariant asked at the checkpoint (L5). The "§118 calls no validator" half was already closed by §116 Am. 12. Build: a dispatch test + the stale `invariants.ts:3950` comment. `docs/decisions/coaching-2026-11-20-getrunning-s111-denominator-01.md`.
+
 - 🏃 **COACHING BOARD** `GETRUNNING-WALKRUN-LRHALF-01` — **the half of `GETRUNNING-WALKRUN-FLOOR-01` that was
   deferred to the board, and measurement has INVERTED which half matters.** §117 Am. 7 prescribes a walk-run start
   to a runner at or above §116's volume floor whose declared longest run is under
@@ -467,6 +475,8 @@ before planning against any number below (an item is a snapshot of the code on t
   🩹 Willy's. **The options are not symmetric:** honouring Am. 7 here costs destination; not honouring it leaves a
   runner who cannot run 2 km continuously being prescribed continuous running.
 
+  ⚖️ **SAT 2026-11-20** (🏃 Coaching Board) — **CORRECT WITH AMENDMENT.** No reseed; L5's 6/1 run-walk carry on every §118 ramp session for this shape (0 km destination change), and the warn becomes an error. All 206 reachable cases declare a longest run shorter than their own mean run; production 0. `docs/decisions/coaching-2026-11-20-getrunning-walkrun-lrhalf-01.md`.
+
 - 🏃 **COACHING BOARD** `STAGED-RAMP-RATIO-16W-01` — **`INV-PLAN-GET-RUNNING-BUILD-RATIO` fires at 4.17× against
   Willy's 4.0 ceiling, on the staged path, today.** Found incidentally 2026-11-12 while measuring
   `GETRUNNING-WALKRUN-FLOOR-01`; **pre-existing — 6 firings on both sides of that change, identical.** The message is
@@ -477,13 +487,17 @@ before planning against any number below (an item is a snapshot of the code on t
   `console.error`s in production** — which is why a plan carrying it still reaches a runner. Which side yields (the
   week count, or the ratio) is Willy's call, exactly as the §2/§116 Am. 2 conflict is pinned rather than fixed.
 
-- 🏃 **COACHING BOARD** `FOUNDATION-FLOOR-SUBKM-01` — **`INV-PLAN-FOUNDATION-BLOCK` fires 192 times at the very
+  ⚖️ **SAT 2026-11-20** (🏃 Coaching Board) — **CORRECT WITH AMENDMENT: the week count yields, the ratio stands.** Re-measured LATENT: 0 firings through the engine across >2,700 staged plans; the producer called directly builds to 21 w / 6.72×. Surplus runway holds at the reached volume. `docs/decisions/coaching-2026-11-20-staged-ramp-ratio-16w-01.md`.
+
+- ✅ 🏃 **COACHING BOARD** `FOUNDATION-FLOOR-SUBKM-01` — **CLOSED 2026-11-20: MOOT AS FILED** — **`INV-PLAN-FOUNDATION-BLOCK` fires 192 times at the very
   bottom of the volume range**, again pre-existing and unchanged by the 2026-11-12 fix (192 on both sides). At
   `current_weekly_km: 1` a foundation week is built at **1.5 km against a §57 ceiling of 1.1 km** (`cw × 1.10`):
   the block's minimum session cannot go below 1.5, so the floor and the ceiling cross. Two ratified rules that
   cannot both hold below ~1.4 km/week, the same shape as the §2 / §116 Am. 2 conflict §118's tests already pin.
   ⚠️ **Reachability unmeasured** — these rows came from a grid, and whether any runner declares 1 km/week and
   reaches a foundation block is a production question nothing here answers.
+
+  ⚖️ **SAT 2026-11-20** (🏃 Coaching Board) — ⛔ **MOOT AS FILED, item closes.** The crossing is exactly 0 < cw < 1.36 km/week and no producer reaches it: wizard ruler step 5, 0 of 450 checkpoint run-walk/half probes, 0 live inputs, 0 fires. `FRESH-FLOOR-01` (D-21) already rules the floor holds. The error arm stays as a tripwire; if the band is ever reached, the remedy is routing to walk-run. `docs/decisions/coaching-2026-11-20-foundation-floor-subkm-01.md`.
 - ✅ **SHIPPED 2026-11-13 as §117 Amendment 8** — 🏃 **COACHING BOARD** `SHORTDIST-RUNWALK-SCOPE-01` — **a 5K or 10K runner whose longest run is 0 is prescribed a
 
   > ✅ **SHIPPED 2026-11-13 — §117 Amendment 8.** The instruction's distance scope is
@@ -766,6 +780,8 @@ before planning against any number below (an item is a snapshot of the code on t
   all, or should it drop a level — and if it is a deload by intent (no step UP after three weeks of stepping up),
   the sentence should say *that*, not that it is easier.
 
+  ⚖️ **SAT 2026-11-20** (🏃 Coaching Board) — **CORRECT WITH AMENDMENT.** The repeat-level week IS the deload (L1 stands); "easier" is withdrawn — copy may claim a deliberate repeat with no step up. 👤 Founder writes the words. `docs/decisions/coaching-2026-11-20-walkrun-deload-claim-01.md`.
+
 - 🔻 `STAGED-DOOR-AT-CAP-01` — **the staged door's modal outcome is exactly 4.00×**, because the search stops at
   the first volume inside §111's cap. 🏃 The chair declined a buffer at the sitting on his own standard
   (*"a number because I happen to have one"*, `SESSION-ACHIEVABLE-01`). Evidence that would settle it: whether a
@@ -817,6 +833,8 @@ before planning against any number below (an item is a snapshot of the code on t
   the measure was never the defect"*), which is why `SITE-MEASURE-THIRD-02` left them alone — sweeping them is a
   new ruling, not the execution of an old one. The question for the board is whether a second, smaller reading
   measure should be a token at all.
+
+  ⚖️ **SAT 2026-11-20** (🧭 Design Board) — **SHIP WITH AMENDMENT**: one second measure token, in `ch`, never px; 30 binding caps convert, 16 inert caps are deleted; the value is set by a render at 1440/1024. Re-measured: 32 sites, 7 values; 720 no longer hand-typed. `docs/decisions/design-2026-11-20-site-submeasure-sprawl-01.md`.
 
 **Filed by the sitting, not built:**
 
@@ -1851,6 +1869,8 @@ live to 2026-12-22, and the branch is what stops a lapsed grant being told "14 d
 
 ### 🔲 `COMP-NO-IN-PRODUCT-PATH-01` — there is no way to give a runner paid access without App Store Connect and the runner's own action 💼 **SLT**
 
+⚖️ **SAT 2026-11-20** (💼 SLT) — BUILD DIFFERENTLY, no code: Offer Codes stay primary; the fallback for a runner who won't or can't act is a SQL-claimed grant on the existing `resolveTier` `grant` branch, documented in `docs/runbooks/charity-codes.md` with a non-TEST batch, explicit expiry and a stated "no cap enforced". Option 1 is gone (redeem door deleted 11-14). `docs/decisions/slt-2026-11-20-comp-no-in-product-path-01.md`.
+
 📐 **Found 2026-11-02 from a live request** — a runner whose trial had lapsed needed paid access, and there is
 no path the founder can execute alone.
 
@@ -1879,6 +1899,8 @@ get while lapsed. The live case had been on free for a month before anyone notic
 ---
 
 ### 🔲 `SIG-ULTRA-UNBUILT-01` — what an ultra's midweek quality slot should carry 💼 **SLT** (gate check) → 🏃 **COACHING BOARD**
+
+⚖️ **SAT 2026-11-20** (💼 SLT) — GATE NOT MET: 0 ultra plans from any account but the demo's and the founder's July 100K; 0 of 138 distance-carrying generation events since 09-02 are ultra. Trigger is now **the first 50K/100K plan from any other account** (`scripts/board-evidence-sig-ultra-unbuilt-01.ts`); 🏃 Coaching Board sits on that trigger, Seiler's measurement first. `docs/decisions/slt-2026-11-20-sig-ultra-unbuilt-01.md`.
 
 Ruled **2026-09-13** (§24e, ULTRA-FUEL-NOTE-01's adjacent-finding paragraph) and re-confirmed
 **2026-11-02**: this is a prescription question, not a defect fix. **Build is SLT-gated on ultra
@@ -2061,6 +2083,8 @@ tight days — so it is recorded, not changed.
 
 ### 🔲 `HR-SAVE-UNEDITED-CONFIRMS-01` — a RESTING-HR-only save promotes an observed FLOOR to a confirmed max 🏃 **COACHING BOARD** (§50 asymmetry)
 
+⚖️ **SAT 2026-11-20** (🏃 Coaching Board) — **CORRECT, status quo ratified**: a save while the floor note is showing confirms the max, whichever field changed. At-risk population re-measured at **2** (not 7; the 11-12 count cannot be reproduced). 🎯 McMillan dissent recorded; re-open triggers named (>5 at risk, or a sheet saving the two values separately). `docs/decisions/coaching-2026-11-20-hr-save-unedited-confirms-01.md`.
+
 ✅ **HALF ANSWERED AND CLOSED 2026-11-12. 🔴 THE OTHER HALF IS NOT CLOSEABLE AND ITS POPULATION HAS
 MORE THAN DOUBLED IN FOUR DAYS.** The board sitting listed this item as *"Closeable — the item's own
 research concludes a save IS a confirmation by design … Nothing to rule."* **That is the first half
@@ -2175,6 +2199,8 @@ outlived its basis by one commit. M7 has no `benchmark`, so even the shipped for
 ---
 
 ### 🔲 `COACH-READ-1027-FOLLOWUPS-01` — claims from the 27 Oct board read still to measure 🏃 **COACHING BOARD** (after measurement)
+
+⚖️ **SAT 2026-11-20** (🏃 Coaching Board) — seven claims re-measured. **CORRECT**: "not to chase a time" is withheld where race-pace work is prescribed (123 of 155 plans; words → 👤). **INSUFFICIENT EVIDENCE**: taper easy-run growth, and masters ≥5 loading weeks (finding: §3's peak/taper exemption is written only in `deloadCadence.ts`). **Exempt defects**: equal-volume deload, long-run deload cut (attribute first), "highest volume" label. Ramps settled; step-back closed (1.3%). `docs/decisions/coaching-2026-11-20-coach-read-1027-followups-01.md`.
 
 Raised by the read of 28 plans, not yet verified: deloads that do not reduce (t3 w6, m3 w10; t1/t1d are ruled ground);
 delivered ramps past §2 on injury and masters plans (declared warn debt: how long has it sat?); a long run cut harder than its
@@ -2485,6 +2511,8 @@ them the band change is the **largest relative** move. The finding the Coaching 
 
 ### 🔲 `BENCHMARK-DATE-REQUIRED-01` — the wizard asks when the race was and does not require it 🧭 **DESIGN BOARD** → 👤 **FOUNDER** (copy)
 
+⚖️ **SAT 2026-11-20** (🧭 Design Board) — **SHIP WITH AMENDMENT (4).** A started benchmark takes a date or an in-field `I don't remember`; all three exits gated — including the native estimate confirm, which posts no date today; the declaration is stored. Re-measured 8 of 23 dateless. Copy → 👤 founder. `docs/decisions/design-2026-11-20-benchmark-date-required-01.md`.
+
 **The upstream remedy the Coaching Board routed out of its own gift, 2026-11-16.** `benchmarkFromFields`
 does `const date = v.date ? { benchmark_date: v.date } : {}` — the date is optional inside a step that
 is already optional (*"Recent race result? … Skip if you haven't raced lately."*). 📐 **8 of 21 (23 when filed; re-measured 2026-11-17) live
@@ -2499,6 +2527,8 @@ is already done: the unknown is declared by `INV-PLAN-VDOT-DISCOUNT-DATELESS`.
 ---
 
 ### 🔲 `PROFILE-BIRTH-YEAR-REQUIRED-01` — the wizard asks for the year, marks it optional, and told the runner it does not matter 🧭 **DESIGN BOARD** then 👤 **FOUNDER**
+
+⚖️ **SAT 2026-11-20** (🧭 Design Board) — **SHIP WITH AMENDMENT (4).** The step is answered or declared (in-step decline; `Continue` waits for the wheel to move), the false subtitle goes, the declaration is stored. Re-measured: **13 of the 16 ageless accounts never onboarded**; the wizard's blank is 3 of 43 plan-holders. New: an untouched wheel shows 1991 and records nothing. Copy and the App Store 5.1.1 reading → 👤 founder. `docs/decisions/design-2026-11-20-profile-birth-year-required-01.md`.
 
 **Filed from the `MAXHR-AGE-ABSENT-01` sitting (Coaching Board 2026-11-17), by the seam rule: the engine's
 treatment of a blank is MEANING and was fixed there; whether the wizard may accept one is ENCODING.**
@@ -2593,6 +2623,8 @@ an unbenchmarked beginner green only via the goal-pace label. ⚠️ Do **not** 
 
 ### 🔲 `LR-FINISH-WITHHELD-PRICING-01` — a withheld plan loses its §25 finish entirely for a beginner 🏃 **COACHING BOARD** (§24b seam)
 
+⚖️ **SAT 2026-11-20** (🏃 Coaching Board) — **CORRECT WITH AMENDMENT.** A withheld plan with no current race pace builds its long run as the finish-goal plan would (§120 Am. 2's precedent). The headline is false TODAY: 0 plans lose a finish (withheld HM/MAR keep current-pace segments; 5K/10K keep 864 of 864). Lands only with §120 Am. 4 (2,304 peak long runs). McMillan/Willy disagreement recorded. `docs/decisions/coaching-2026-11-20-lr-finish-withheld-pricing-01.md`.
+
 **The root cause upstream of §47, named at the 2026-11-16 sitting.** `GOAL-PACE-LR-CURRENT-01` reprices a
 withheld plan's race-pace long-run finish to the runner's **current** marathon/HM pace, and its own text
 says *"a withheld plan is always benchmarked, so its pace guide always carries MP/HM."* 🔴 **§120 Am. 4
@@ -2639,7 +2671,9 @@ widen it to make a new fixture pass.
 
 ---
 
-### 🔲 `INTENSITY-DECLARATION-FLOOR-01` — a declaration is self-image, and ADR-021 wanted demonstrated readiness 🏃 **COACHING BOARD**
+### ✅ 🔲 `INTENSITY-DECLARATION-FLOOR-01` — a declaration is self-image, and ADR-021 wanted demonstrated readiness 🏃 **COACHING BOARD** · **CLOSED 2026-11-20: INCORRECT (veto), re-opens on outcome data**
+
+⚖️ **SAT 2026-11-20** (🏃 Coaching Board) — ⛔ **INCORRECT (veto).** No VDOT floor and no second prompt. The declaration is the cause on only 3 of the 9 cited beginners (5 of 10 plans), all inside §79 Am. 3's re-entry window at one quality session a week. ADR-021's sentence governs the onset gate, not intensity. Re-opens on outcome data. `docs/decisions/coaching-2026-11-20-intensity-declaration-floor-01.md`.
 
 **The surviving half of `BEGINNER-THRESHOLD-ELIGIBILITY-01`, which closed as a false premise 2026-11-16.** §79 lets a
 runner's declared intensity experience set the INTENSITY level independently of the structural one, and the engine is
@@ -2675,6 +2709,8 @@ silently too.
 
 ### 🔲 `TUNE-UP-CALLOUT-INERT-01` — a tune-up race suggestion on 33 live plans that no runner can see 🧭 **DESIGN BOARD** → 💼 **SLT**
 
+⚖️ **SAT 2026-11-20** (🧭 Design Board) — **SHIP WITH AMENDMENT (4), conditional on 💼 SLT.** One `--ink-2` line on the tune-up week's WeekCard (Now/Next only); not on strips or Today; the ramp warning wins when both fall in one week (13 of 58 engine plans → 🏃); copy → 👤. If the SLT declines, §32 and the invariant are amended. `docs/decisions/design-2026-11-20-tune-up-callout-inert-01.md`.
+
 📐 **Found 2026-11-16 measuring `RACE-NOTES-INERT-01`; it is the sibling field in the same `weeks.push` block.**
 `week.tune_up_callout` (*"Optional: drop a parkrun PB or local 5K this week. Use the result as a fitness check, not a
 race effort."*) is stamped on the latest non-deload build week of any plan at or over `TUNE_UP_MIN_PLAN_WEEKS`.
@@ -2697,6 +2733,8 @@ unenforceable rule recorded as enforced is worse than no rule.
 ---
 
 ### 🔲 `RECAL-GOAL-REACH-01` — a recalibration does not re-decide the goal-pace withholding 🏃 **COACHING BOARD**
+
+⏸️ **NOT READY 2026-11-20** — the board's 2026-11-12 "do not sit" gate holds: **0 plans ever recalibrated** (43 live, 80 archived; `meta.recalibrations_applied`). Re-measure 2026-12-12, or the chair re-scopes it as a corpus simulation. `docs/decisions/coaching-2026-11-20-recal-goal-reach-01.md`.
 
 A time trial rewrites forward paces (ADR-014) and leaves sessions, so a runner withheld at 7% who now sits 3% past fitness
 keeps a plan with no goal-pace work (and the reverse). The validator checks the decision against the VDOT it was made at,
@@ -3048,6 +3086,8 @@ used changes what they are asked, so the step is the Design Board's.**
 
 ### 🔲 `INJURY-RECENCY-01` — 🔴 **NOT READY FOR THE DESIGN BOARD. The three answers have no defined effect** 🏃 **COACHING BOARD** (again), then 🧭 **DESIGN BOARD**
 
+⚖️ **SAT 2026-11-20** (🏃 Coaching Board) — **CORRECT WITH AMENDMENT**: the per-injury mapping exists. Bucket = last flare-up; within a year = current; longer ago lifts **only the long-run time cap, for Back and Plantar**; Knee, Shin and Achilles do not vary and are not collected (🎯 McMillan dissents on Knee). Condition: `measure:fitness` on the back/plantar cohort. 🧭 Design Board can now rule the control (two chips). `docs/decisions/coaching-2026-11-20-injury-recency-01.md`.
+
 🔴 **RE-TAGGED 2026-11-16. The Design Board sat and could not rule** (`design-rulings.md`, same date). The heading
 used to read *"COLLECT IT, FOR FOUR CHIPS. Now 🧭 DESIGN BOARD for the control"*, which reads as ready. It is not.
 
@@ -3175,6 +3215,8 @@ reinstate the hole.
 
 
 ### 🔲 `PLAN-NOTE-HEAVIER-WEEK-PLACEMENT-01` — **MEASURED AND RULED 2026-11-14; STILL OPEN, AND THE SEQUENCE IS NOW FIXED** 🧭 **DESIGN BOARD** (encoding), then build
+
+⚖️ **SAT 2026-11-20** (🧭 Design Board) — encoding **SHIP WITH AMENDMENT (5)**: a muted eyebrow mark on both calendar renderings, a one-line action on the WeekCard, the week identity on Today through `weekIdentity` (free tier included). **The rank is still not ruled.** Mockups → 👤 founder, then a device. `docs/decisions/design-2026-11-20-plan-note-heavier-week-placement-01.md`.
 
 🧭 **Sitting:** `docs/decisions/design-2026-11-14-heavier-week-placement.md`.
 
@@ -3580,6 +3622,8 @@ can be reused. Reaches 2 runners today (see `RUNKED-LOAD-VIEW-01`), so small but
 
 ### 🔲 `RUNKED-COMPARE-PAGE-01` — a comparison page answering the gamified running apps 💼 **SLT** (build order) → 👤 **FOUNDER** (copy; naming a competitor) → 🏃 **COACHING BOARD** (claims only)
 
+⚖️ **SAT 2026-11-20** (💼 SLT) — BUILD as one catalogue entry answering the **category** ("gamified running apps"), linked to and from page 1's no-streaks argument; next comparison page, ahead of any second guide. 👤 Founder decides naming and page 9 vs extending page 1; claims through the claims gate. Re-measured: **8 comparison pages live, not 7**. `docs/decisions/slt-2026-11-20-runked-compare-page-01.md`.
+
 ⚠️ **RE-TAGGED 2026-11-12, Coaching Board sitting:** *"this board owns only the **claims**, which the
 existing claims gate already checks."* The decisions in front of it — whether to build a comparison page at
 all, in what order, and whether to name a competitor — are the SLT's and the founder's. The board tag stays
@@ -3593,6 +3637,8 @@ is page 8 or a ninth is the founder's call. Runked's facts (price, no free tier,
 with a verification date. Plan gate applies.
 
 ### 🔲 `RUNKED-GUIDES-01` — easy-running guides on the searches Runked owns 💼 **SLT** (build order) → 👤 **FOUNDER** (reads) → 🏃 **COACHING BOARD** (claims only)
+
+⚖️ **SAT 2026-11-20** (💼 SLT) — BUILD DIFFERENTLY, no series: guide 1 gains outbound links to pages 6 and 8, then ONE guide, "am I overtraining or just tired" (§2/§3), which the live `/guides` meta description already promises; after `RUNKED-COMPARE-PAGE-01`. Zone 2 / recovery-pace guides not authorised (covered); 80/20 deferred (INV-COACH-004). `docs/decisions/slt-2026-11-20-runked-guides-01.md`.
 
 ⚠️ **RE-TAGGED 2026-11-12, Coaching Board sitting** — same reasoning as `RUNKED-COMPARE-PAGE-01` above:
 whether to write 66 guides' worth of content is a build-order decision, not a coaching one. Each guide's
@@ -3609,7 +3655,9 @@ Runked scores *"effort relative to your own fitness"*. Our version: an easy run 
 easy. **Crossover:** the locked taglines (`lib/brand.ts`) and `brand.md` voice. **Default: a line inside existing copy,
 never a new tagline** (taglines are locked). Founder's words. Plan gate applies.
 
-### 🔲 `RUNKED-GARMIN-01` — what direct Garmin sync would add 💼 **SLT**
+### ✅ 🔲 `RUNKED-GARMIN-01` — what direct Garmin sync would add 💼 **SLT** · **CLOSED 2026-11-20: DON'T BUILD, re-open triggers recorded**
+
+⚖️ **SAT 2026-11-20** (💼 SLT) — DON'T BUILD: HealthKit already carries Garmin runs (**178 rows, 9 runners, 96% with summary HR**; the item's 107 was by name, and the name has read `Run` since 10-08). Only Garmin-specific gap is HR density (median 21 samples/run vs hundreds from a Watch); no non-iPhone demand in any table. Re-open triggers in `docs/decisions/slt-2026-11-20-runked-garmin-01.md`.
 
 Runked advertises Garmin sync. **Crossover:** Garmin runs already reach us through Apple Health (107 stored rows written
 by Garmin Connect, named `Run (Connect)`); ADR-011 makes HealthKit the record. **Default: measure first** what a direct
@@ -4267,6 +4315,8 @@ strength plan for a running-focused runner (coaching)? Measure how often chosen-
 
 ### 🔲 `BEGINNER-TAPER-RACE-ROW-01` — HM and marathon beginners have no race-specific taper row 🏃 **COACHING BOARD** *(filed 2026-10-23)*
 
+⚖️ **SAT 2026-11-20** (🏃 Coaching Board) — **CORRECT WITH AMENDMENT.** Open `beginner_goal_pace_blocks` to the taper at no more than its build dose; opening the sharpener to beginners is INCORRECT (§110b: blocks, not repeats); no new row. Measured: the sharpener reaches **1,418 of 1,490** beginner HM/MAR live-goal tapers — the norm, not an edge. Build gated on parity confined to that cohort. `docs/decisions/coaching-2026-11-20-beginner-taper-race-row-01.md`.
+
 Found building GOALPACE-5K-01: the taper sharpener path skipped the fitness check, so beginners at every distance reached
 the intermediate-only `goal_pace_sharpener`. Fixing it for 5K/10K (where `beginner_goal_pace_reps` now exists) and
 applying it at HM/marathon made the taper repeat a tempo (§36: 6 + 6 probe cases, 295 sweep hits). Shipped behaviour:
@@ -4416,6 +4466,8 @@ visual sweep is not what was asked and is exactly what the register exists to av
 number is honest for the first time. See `CTA-INLINE-PAINT-02` below.
 
 ### 🔲 `CTA-INLINE-PAINT-02` — **RE-MEASURED 2026-11-14: 51, and ZERO are free** 🧭 **DESIGN BOARD**
+
+⚖️ **SAT 2026-11-20** (🧭 Design Board) — **SHIP WITH AMENDMENT, a policy per species**: A named paint 2 (exempt by name) · B state paint 1 (defect fix) · C ghost/quiet geometry 30 (at most one text-control size with a 44px hit area, only if measured shared) · D filled CTAs off-scale 18 (conform to `regular`/`compact`, no new size). Paid per screen with a 375pt render. Re-measured 51 sites / 21 files. `docs/decisions/design-2026-11-20-cta-inline-paint-02.md`.
 
 📐 **51 call sites across 23 files**, not 56. The item's own instruction was to derive it from
 `buttonInlineOverride.test.ts` rather than from its text, and two of that drop are today's `RedeemCodeScreen` deletion.
@@ -5620,6 +5672,8 @@ different rulings:** pass the third figure so the split is explicit, or forbid t
 for anything under a majority. The first is an input fix; the second is a voice rule.
 
 ### ⏸️ `SESSION-JOURNEY-01` — ⚖️ **SLT RULED 2026-10-07: DON'T BUILD, re-measure 2026-11-04** *(P1)* 💼 SLT
+
+⚖️ **SAT 2026-11-20** (💼 SLT) — re-measured: users who log a session 6 → 14 (8 of 29 on `v_metric_users`), so it is no longer a demand question; the break is step 4 — **12 metric plan-holders have runs arriving and zero completions, 6 of them paid/trial**. Still DON'T BUILD steps 3 and 6; next is a ⚙️ step-4 investigation. `docs/decisions/slt-2026-11-20-session-journey-01.md`.
 
 **Decision note: `docs/decisions/slt-2026-10-07-session-journey.md`.**
 
@@ -7962,6 +8016,8 @@ push / daily note / readiness / auto-match / missed-session prompt taught; `sole
 
 ### `DOUBLE-STRIDES-01` — may a strides run be half of a double? *(filed 2026-10-17, OPEN)*
 
+⚖️ **SAT 2026-11-20** (🏃 Coaching Board) — **CORRECT WITH AMENDMENT**: a strides or hill-strides easy run may be half of a §126 double; hill strides are advised first (advice only). No prescription change (`canDouble` already allows it); the build adds §126 Am. 1 and a `doubles.test.ts` arm. 403 of 2,371 live run sessions carry strides; 0 doubles ever. `docs/decisions/coaching-2026-11-20-double-strides-01.md`.
+
 §126 allows a double of two easy or recovery runs and forbids quality / structured. An **"Easy run + strides"**
 session is typed `easy` and `isStructuredSession` is false, so the Plan move flow offers "Do both" for it (seen at
 375px on `/strength-preview`, W3 Mon → Wed). The ruling does not mention strides. Strides are short neuromuscular
@@ -8256,7 +8312,9 @@ Founder's own plan showed week 3 (2–8 Nov) as done with runs from 7–11 Oct. 
 change; a same-race rebuild on a new start date kept them. Fixed by `calendarChangedWeeks` (incident
 `docs/incidents/2026-10-18-plan-rebuild-inherited-completions.md`). ✅ **Clean-up run 2026-10-18** (`scripts/sql/2026-10-18-plan-rebuild-remediation.sql`): 24 rows set aside, 3 runners, re-count 0. Fix deployed. **Tags:** ⚙️ NO BOARD (defect).
 
-#### `PLAN-IDENTITY-01` — every plan gets an identity; several plans per runner, switch between them *(filed 2026-10-18, OPEN)*
+#### ✅ `PLAN-IDENTITY-01` — every plan gets an identity; several plans per runner, switch between them *(filed 2026-10-18)* · **PARKED 2026-11-20 by the SLT: DON'T BUILD NOW, trigger recorded**
+
+⚖️ **SAT 2026-11-20** (💼 SLT) — DON'T BUILD NOW: the overwrite hazard is contained by supersede and no runner has asked to switch. PAID if ever built; trigger is a runner asking to return to a past plan, or non-comped paying subscribers; one active plan at a time; Coaching Board rules on switch continuity first. `docs/decisions/slt-2026-11-20-plan-identity-01.md`.
 **Founder, verbatim:** *"Eventually I want a user to be able to create multiple plans and in fact possibly be able to
 switch between so we can not over write sessions."* Option 2 of the PLAN-REBUILD-SUPERSEDE-01 RCA: a `plan_id` on
 `plans` and on every week-keyed table (seven), every reader filtering by the active plan; completions can then never
@@ -8852,6 +8910,8 @@ that cannot happen.
    `GUARD-COLOUR-KEYWORD-01`.
 
 ### 🔴 `WAITLIST-UNREACHABLE-01` — the waitlist form has NO render site; the route and the table are live *(filed 2026-11-08, P2)* 💼 **SLT** (is the waitlist a live surface?) → 🧭 **DESIGN BOARD** (where it renders)
+
+⚖️ **SAT 2026-11-20** (💼 SLT) — not a live surface: removed by decision 2026-06-15 and 2026-09-21, the App Store badge is live, the table holds 0 rows. RETIRE form + route + table + trigger clause together (⚙️ NO BOARD; the trigger clause and the drop ship together); the Design Board leg falls away. `docs/decisions/slt-2026-11-20-waitlist-unreachable-01.md`.
 
 Found 2026-11-08 while writing component contracts (`CONTRACT-COVERAGE-03`), by the new
 ANY-importer count catching a component with **zero** importers.
@@ -10610,6 +10670,8 @@ the cap and the index disagree about the domain model, and that is the question 
 
 ### 🏃 `RECAL-MIXED-MEAN-01` — an over-under keeps the category band, not §85's mean *(filed 2026-10-09)* 🏃 **COACHING BOARD**
 
+⏸️ **NOT READY 2026-11-20** — blocked by the 2026-11-12 production gate (**0 recalibrations ever**) and by being half of one build with `RECAL-DISTANCE-REPS-01` (INSUFFICIENT EVIDENCE; step lengths still unstamped). Mixed-anchor share re-measured at **25.3%** (63,420 of 250,616, full cohortGrid) vs the item's 82 of 297. `docs/decisions/coaching-2026-11-20-recal-mixed-mean-01.md`.
+
 > **82 of 297** generated quality sessions are mixed-anchor (`progressive_tempo`,
 > `tempo_over_under`). Their header is §85's time-weighted mean, which needs step weights — and
 > **192 of their 228 work-step lengths are `parameter` kind** whose values are not stored, so the
@@ -11023,6 +11085,8 @@ the gap so widening a corpus fails loudly and the arm gets replaced by a floor. 
 > outranked — `TRIGGER-BACKTEST-02` (masking analysis) is stubbed and not built.
 
 ### 🔴 `BASEBUILD-DURATION-01` — the base-build ramp ignores the runner's weekday budget 🏃 **COACHING BOARD** *(re-filed 2026-11-11 after a SECOND build and revert — read this before touching it)*
+
+⏸️ **NOT READY 2026-11-20** — the board cannot rule the fourth `assessOnRamp` outcome without its refused cohort, and no read-only path produces one: today's ramp is uncapped, and the only capped producer (`b85d3e4f`) is 194 commits behind with the on-ramp code changed 157 lines since. Needs a branch-only prototype of the three reusable parts on `HEAD` plus a candidate predicate, swept with blocked days and absent budgets varied. Live: 4 base-build runners, **2 with no weekday budget**, all 4 blocking one weekend day. `docs/decisions/coaching-2026-11-20-basebuild-duration-01.md`.
 
 ✅ **THE DIAGNOSIS IS SETTLED AND MEASURED. IT IS THE REMEDY THAT HAS FAILED TWICE.**
 
@@ -15345,6 +15409,8 @@ build, exactly as `configPrincipleSync` fails on a stale baseline row.
 
 ### ⏸️ `OPS-ARTIFACT-PLACEMENT-01` — SLT 2026-10-05: the freeze STANDS, and the CONDITION is REPLACED 💼 **SLT**
 
+⏸️ **NOT READY 2026-11-20** — reachability re-measured: `ShareWeekButton` renders for **1 of 37 metric users** today; scored reports in 28 days cover 2 users (1 metric). Condition unmet, unchanged since 10-05 (2 of 41). Blockers: 33/38 unsuperseded reports carry a null `zone_discipline_score`, and the report week trails the plan week for 12 of 14 report-holders. Evidence: `scripts/board-evidence-slt-2026-11-20.ts`.
+
 🔴 **THE OLD CONDITION WAS UNSATISFIABLE.** *"Do not build, do not decide until the reach events accumulate"* cannot be met: `ShareWeekButton` (`DashboardClient.tsx:5358`) renders only on `reportIsCurrent && weeklyReport?.zone_discipline_score != null`. Measured 2026-10-05: **18 weekly reports across 3 users; 13 carry a score, across 2 users** — so the eligible population is **2 of 41** — and the **newest scored report is 2026-09-23, twelve days old**, so the button has not been renderable recently at all. **`share_week_pressed` = 0, which is 0 of 2.** Waiting for usage data from a denominator of two is waiting forever.
 
 ✅ **NEW CONDITION: REACHABILITY, NOT USAGE.** Until a meaningful number of users can SEE the button, press-rate is evidence of nothing. The constraint is the render gate, not demand. ⚠️ **5 of 18 reports carry a NULL `zone_discipline_score`**, so even generating a report does not guarantee the control appears — worth its own look.
@@ -18812,6 +18878,8 @@ quality now prescribes some. Baseline lowered to lock it in.
 ## ⚖️ FILED 2026-09-22 SHIPPING §120 — two items, one of them a principle DEADLOCK
 
 ### 🏃 `WEEKDAY-OVERRUN-BOUND-01` — is +187% over a stated weekday cap still "don't shrink to fit"? **NOW CARRIES `SESSION-WEEK-SHARE-01` TOO (merged 2026-10-11)** 🏃 **COACHING BOARD**
+
+⏸️ **NOT READY 2026-11-20** — population re-measured (560 sessions past tolerance, was 675; all at a 30-minute cap; worst +177%). A bound's cost (what the selector substitutes, quality lost, `measure:fitness`) needs a prototype selector, which is engine code. `docs/decisions/coaching-2026-11-20-weekday-overrun-bound-01.md`.
 > ⚖️ **MERGED 2026-10-11.** `SESSION-WEEK-SHARE-01` was measured, Willy withdrew the frequency half
 > of his own objection, and what survived is **one cell** — CV intervals at **47.9% of the week**
 > (11.5 km of 24.0 km, experienced, 20 km/wk, cap 30). That is the same runner, the same session
@@ -18908,7 +18976,9 @@ override yield. It fixes **only half** (62 → 33; the rest are intrinsically go
 
 ---
 
-### `METRIC-TOGGLE-SCOPE-01` — is the distance/duration toggle the wrong instrument? 🧭 **DESIGN BOARD** → 💼 **SLT**
+### ✅ `METRIC-TOGGLE-SCOPE-01` — is the distance/duration toggle the wrong instrument? 🧭 **DESIGN BOARD** → 💼 **SLT** · **CLOSED 2026-11-20: DON'T SHIP (not permanent)**
+
+⚖️ **SAT 2026-11-20** (🧭 Design Board) — **DON'T SHIP (not permanent).** Post-E: distance setting 67.96% of rows lead in the chosen metric (90.2% of misses are duration-anchored, founder KEEP AS IS), duration setting 100%; live 55 distance / 1 duration. Both readings of the proposal either delete the coherent setting or bring back the mixing E removed. No SLT hand-off. `docs/decisions/design-2026-11-20-metric-toggle-scope-01.md`.
 
 🎪 **Collins, filed not ruled, 2026-10-06.** He lost the layout argument and made a bigger one the
 chair declined to take in the same sitting:
@@ -19038,7 +19108,9 @@ the one-line owner both now call.
 
 ---
 
-### 🧭 **DESIGN BOARD** `MKT-STEP-NOTES-ABSENT-01` — a published plan page shows no step instructions at all
+### ✅ 🧭 **DESIGN BOARD** `MKT-STEP-NOTES-ABSENT-01` — a published plan page shows no step instructions at all · **CLOSED 2026-11-20: DON'T SHIP (not permanent)**
+
+⚖️ **SAT 2026-11-20** (🧭 Design Board) — **DON'T SHIP, not permanent.** The premise was false when filed: **42 of 42 step notes already render** on the exemplar band since `SITE-SESSION-STEPS-01` (2026-11-05). Step notes are FREE catalogue copy, so no SLT hand-off. `docs/decisions/design-2026-11-20-mkt-step-notes-absent-01.md`.
 
 Separated from `MKT-STEP-CEILING-BAND-01` when that shipped (2026-11-16); it was that item's last
 paragraph and is a different question. `stepParts` returns **action + target** and never `step.note`,

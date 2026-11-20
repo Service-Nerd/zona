@@ -3815,3 +3815,142 @@ act on.
 **None.** 🔻 **For the founder, not the SLT:** this reprices **8 live plans from 3% to 7%** — about
 +21 s/km on easy paces at VDOT 41 — and **his own plan is one of them**. Per ADR-014 the migration is
 prompted and confirmed, never silent.
+
+## 🏃 Sittings — the get-running / staged path, 2026-11-20 · **4 rulings: 1 CORRECT (clarification), 3 CORRECT WITH AMENDMENT**
+
+Evidence: `scripts/board-evidence-getrunning-four.ts` (read-only; grid, `--prod`, `--prod-inputs`, `--item3`). One decision note per item under `docs/decisions/coaching-2026-11-20-*.md`. Nothing built.
+
+| Item | Ruling | Build |
+|---|---|---|
+| **`GETRUNNING-S111-DENOMINATOR-01`** | 🟢 **CORRECT — 2026-11-20 (clarification, no prescription change).** §111 has two ratio invariants, and on a ramp after a walk-run start they disagree: 1.93× against the block start, **5.8×** against the runner's volume at `cw 2` (both re-derived). **They never judge the same plan in production.** Every validator entry point sends `plan_kind: 'base_build'` to the base-build constitution, and `validatePlan` on such a plan is the category error `marketingPlan.ts` already names (`RESHAPE-VALIDATOR-KIND-01`'s twin). **A base-build block is bounded by `INV-PLAN-GET-RUNNING-BUILD-RATIO` from its own start; `INV-PLAN-BASE-BUILD-RATIO` is a race-plan invariant, asked at the checkpoint (L5, 2026-10-25).** Re-measured: `cw 2` cannot be entered on the ruler (step 5). On ruler values, raw §111 fires 0/286 on accepted §118 plans and 22/276 on staged plans, every one at `cw 0` (∞, the HM sitting's label artefact). Production 0/4. The item's "§118 calls no validator" was closed by §116 Am. 12. | **TO BUILD.** 📦 §111 note · no numeric · dispatch test across every validator entry point, replacing the live-verdict arm at `getRunningPlan.test.ts:207`; stale "RAW `current_weekly_km`" comment at `invariants.ts:3950` → `effectiveStartKm`. Decision note: `docs/decisions/coaching-2026-11-20-getrunning-s111-denominator-01.md`. |
+| **`GETRUNNING-WALKRUN-LRHALF-01`** | 🟢 **CORRECT WITH AMENDMENT — 2026-11-20.** §117 Am. 7's longest-run half on §118's producer. The item framed it as destination against continuous running. **Re-measured: the reseed costs −26.3 / −45.3 / −64.3 km at the volumes the ruler can enter (cw 10/15/20); the item's −11.1/−18.7/−33.9 reproduce exactly at cw 6/8/12, which the ruler cannot enter.** 🔑 **Every reachable case (206/206 on the grid) has cw ≥ 10 and lr 0–1, a pair of declarations that cannot both be true**: Am. 7's own *"mis-set slider"* cohort. **Ruled a third option: no reseed (Am. 7 narrowing, §116 Am. 11), and L5's 6/1 run-walk carry on every ramp session (§117 Am. 4: prescription, not peak), 0 km destination change by construction.** 🩹 Willy's reservation is recorded: if the longest run is true then the volume is false, an input-coherence question not ruled here. 🎯 McMillan: *"I will not take 26 to 64 km off a runner because a slider sat at zero."* Production: 0 plans, 0 of 63 declarations. | **TO BUILD.** 📦 §117 Am. 9 (or a §118 amendment) · no new numeric · the `INV-PLAN-WALKRUN-START-PROGRESSION` longest-run arm on non-staged plans goes `warn` → `error`, satisfied by a carried ramp, falsified with the carry removed; endpoint-parity check over the 206-row shape. Decision note: `docs/decisions/coaching-2026-11-20-getrunning-walkrun-lrhalf-01.md`. |
+| **`STAGED-RAMP-RATIO-16W-01`** | 🟢 **CORRECT WITH AMENDMENT — 2026-11-20: the WEEK COUNT yields, the RATIO stands** (§118 Am. 2, Willy: one total-build ceiling). **Re-measured LATENT, not live.** Item: 6 firings "today". Through `runEngine`: **0** across 276 + 2,445 staged plans plus ultra/masters/104-week probes, longest staged ramp **13 weeks**; production 0/2. The producer called directly with doors of 8–40 km: **546/3,840 fire**, ramps to **21 weeks / 6.72×**, the first at exactly **16 weeks, 4.17×**. `checkpointPlacement` leaves `rampWeeks` uncapped. **Ruled:** no base-build ramp, staged or §118, builds past `MAX_BASE_BUILD_RATIO` from its start; surplus runway **holds** at the reached volume, §3 continuing. 🎯 McMillan's condition adopted: the checkpoint is not moved earlier and the race block is not lengthened. The checker stays independent and `error`. | **TO BUILD.** 📦 §118 Am. 2 note · no new numeric · a producer-direct test (HM, `cw 1`, door 25, runway 32: 16 w / 4.17× today) must return ≤ 4.0, falsified against today's producer. ⚠️ The 2026-11-12 grid that produced 6 firings was never committed and could not be re-run. Decision note: `docs/decisions/coaching-2026-11-20-staged-ramp-ratio-16w-01.md`. |
+| **`WALKRUN-DELOAD-CLAIM-01`** | 🟢 **CORRECT WITH AMENDMENT — 2026-11-20. The hold IS the deload; the adjective is false.** The walk-run start's deload repeats L2; in **216/216** grid plans its sessions are byte-identical to the week before, and its theme reads *"An easier week, on purpose."* (unrendered). The claims runners CAN see key on `type: 'deload'` — the Plan card's `· deload` and Today's rest-day *"Deload week… This is the week your body catches up."* — **both true of a hold.** **L1 (2026-10-25) stands**: dropping a level would force L1 → L3, which `INV-PLAN-WALKRUN-START-PROGRESSION` forbids. 🩹 Willy: *"Do not let the sentence promise less load than the week carries."* **No surface may claim the week is easier, lighter, shorter or less; it may claim a deliberate repeat with no step up.** 🎯 McMillan's 70% time cut recorded for outcome evidence. Production: 0 walk-run plans. | **TO BUILD.** 📦 note on the §116 floor note's L1 · no numeric · a copy test: a `walk_run_start` deload week's `theme` carries no reduction claim, falsified against today's string. 👤 Founder writes the replacement sentence. Decision note: `docs/decisions/coaching-2026-11-20-walkrun-deload-claim-01.md`. |
+
+## 🏃 Re-sitting — `WEEK1-DELIVERED-CEILING-01`, 2026-11-20 · **⛔ INCORRECT (veto). No lever can bound a week whose easy runs are already on the floor, and per session there is nothing to bound.**
+
+Sitting: `docs/decisions/coaching-2026-11-20-week1-delivered-ceiling-01.md`. Answers the 2026-11-12 INSUFFICIENT EVIDENCE condition, re-shaped by the 2026-11-13 evidence (`npm run board:week1-bound`).
+
+| Item | Ruling |
+|---|---|
+| **`WEEK1-DELIVERED-CEILING-01`** | ⛔ **INCORRECT — extending ADR-022's delivered-ceiling levers to healthy runners at week 1 does not ship.** 📐 Re-run: **129 of 2,543** over §2 Am. 3's weekly ceiling (filed 129 of 2,539), **111 CANNOT** be bounded by trimming easy runs (0 of 111 at 5K/10K/HM). ⚠️ **The filed table's "median w1 17–25" was the ALL-plan median**; over-ceiling plans have week 1 of **13 / 5 / 14 / 18**. 🔑 **Measured with the owner (`week1Leap`), the population is 52, not 129**: 37 are declared-zero runners already on §117's run-walk, where the ratio is undefined, and 40 are steps by the owner's per-run arm. All 52 leaps come from the constructed low-base grid, none from `cohortGrid` / `targetedGrid` / charity. **128 of 129 weeks are fully duration-anchored floor-length runs (40+32+32 min); 0 of 92 cw>0 week-1 sessions exceed the declared longest run by more than 0.5 km**, and Willy's per-session arm fires on 0. Live: **5 of 36** stamped plans carry WEEK1-LEAP, every session within the declared longest run, all frozen by the live-plan policy. 🎯 McMillan: *"three half-hour easy runs is the week I would write for this person."* 📊 Seiler: *"the step ratios are arithmetic, not evidence"*, confirmed from a third direction. ⚖️ §94's precedent governs: no healthy-runner producer change without a measured benefit. 🩹⚕️ **Willy and Sims dissent on the RESIDUAL, not the ruling:** the hazard is **run frequency** (about 1 → 3 exposures at cw5 lr5), which no weekly-km lever measures. Zonna collects no current-run-frequency input, so it is a blocking data dependency, recorded and not filed. **No artifacts. Item closes.** |
+
+## 🏃 Sitting — `FOUNDATION-FLOOR-SUBKM-01`, 2026-11-20 · **⛔ MOOT AS FILED. The two rules cross only on an input no producer sends, and the producer's side was ruled in September.**
+
+Sitting: `docs/decisions/coaching-2026-11-20-foundation-floor-subkm-01.md`.
+
+| Item | Ruling |
+|---|---|
+| **`FOUNDATION-FLOOR-SUBKM-01`** | ⛔ **MOOT AS FILED — no change, item closes.** 📐 **The crossing is exact:** `INV-PLAN-FOUNDATION-BLOCK`'s volume arm fires on **0 < cw < 1.5 / 1.10 ≈ 1.36 km/week** (27 fires on 9 plans at each of cw 0.5–1.3; **0 at cw 0 and at cw ≥ 1.4**). **Reachability, measured:** the wizard ruler steps by 5; the checkpoint's OBSERVED-volume `run_walk` and `half` choices yield **0 race inputs in 450 probes** at 0.3–1.3 km/week; the pass path needs the door; `extend` builds `base_build` weeks, not `foundation`. **Production: 36 stamped plans, 0 off-ruler volumes, 0 in the band, 0 fires.** ⚠️ The item's 192 is not re-derived: its grid is unnamed. 🔑 **Not two rules in deadlock:** `FRESH-FLOOR-01` (2026-09-04, D-21) already ruled that the producer holds the session floor and exceeds the stated number slightly. Only the checker does not know. 🏃 Hutchinson: **the error-severity arm is KEPT as a tripwire**. 🩹 **Willy, binding on any future sitting:** if the band becomes reachable, the remedy is **routing to the walk-run start** (§116 floor note / §117 Am. 7), not a §57-vs-floor amendment. **No artifacts.** |
+
+## 🏃 Sitting — `LR-FINISH-WITHHELD-PRICING-01`, 2026-11-20 · **CORRECT WITH AMENDMENT. A withheld plan with no current race pace builds its long run as the finish-goal plan would. Moves 0 plans today; lands with §120 Am. 4.**
+
+**Evidence:** `scripts/board-evidence-lr-finish-withheld-pricing-01.ts` (cohortGrid + slowGoalGrid). Note: `docs/decisions/coaching-2026-11-20-lr-finish-withheld-pricing-01.md`.
+
+📐 **Re-derived:** unbenchmarked beginner peak long runs with a race-pace finish **1,728 of 2,592 HM · 576 of 1,152 MAR**, priced at **goal pace** (`5:27` / `6:03 /km` = the grid's goals). 🔴 **The item's headline is false TODAY in both halves:** withholding (§120 Am. 2) applies only to benchmarked plans, whose VDOT guide always carries MP/HM, so race-pace segments per cell are **identical withheld vs not** (HM beginner 1,728 = 1,728); and 5K/10K never read `lrSegPace` (§24b prices from the current guide), so withheld 5K/10K intermediate/experienced keep **864 of 864**. The defect exists only under **§120 Am. 4** (unbuilt, held): **2,304** peak long runs would lose the finish silently.
+
+### 🔍 Conflict scan
+§25 · §24b + Am. (beginners: no segments) · §24d · §80 · **§120 Am. 2** (a withheld plan selects as finish-goal; the precedent) · §120 Am. 4 · §47 Am. 1/3/4 (the hand-off) · `ZONES-BEGINNER-BANDS-01` (do not un-null). No contradiction.
+
+### ⚖️ Ruling
+1. Withheld + no current race pace for the distance ⇒ the long run is built **as the finish-goal plan at that distance builds it** (HM/MAR: §80 time-on-feet; 5K/10K: already §24d). Never goal pace; never un-null §24b.
+2. **0 plans today**; lands **in the same commit as §120 Am. 4**, measured with it (`measure:fitness`, `cohort:shape`).
+3. ⚡ **Recorded:** McMillan would give HM/MAR beginners §24d's negative split; Willy refuses added intensity on a beginner's peak long run. Chair: finish-goal parity. Settles on completion/injury data, none exists.
+4. ↗️ Whether §47 still governs these 2,304 runs (no `lr_segment_pace`) is `STEPBACK-SPECIFICITY-SCOPE-01`'s (b)/(c), unchanged.
+
+### 📦 Required artifacts (with §120 Am. 4's build)
+| | |
+|---|---|
+| **Principle** | §25 Amendment (or §120 Am. 4's text): withheld + unpriced ⇒ finish-goal long run, citing §120 Am. 2 |
+| **Numeric** | none: reuses the finish-goal path's config |
+| **Invariant** | a goal-withheld plan carries no long run with `lr_segment_pace` = goal pace (with `INV-PLAN-LR-SEGMENT-RECORDED` for the label half); falsified by restoring `lrSegPace = goalPace` under Am. 4 |
+
+### ↗️ SLT escalation
+None.
+
+## 🏃 Sitting — `INTENSITY-DECLARATION-FLOOR-01`, 2026-11-20 · **INCORRECT (veto). No VDOT floor and no second prompt on an upward intensity declaration; §79 Am. 3 already protects this cohort.**
+
+**Evidence:** `scripts/board-evidence-intensity-declaration-floor-01.ts` (production, read-only). Note: `docs/decisions/coaching-2026-11-20-intensity-declaration-floor-01.md`.
+
+📐 **Re-derived:** **9** structural beginners with a higher intensity level (plus 1 intermediate→experienced, 10 of 43 plans), **8 of 9** declared, widest **VDOT 16.2 → intermediate** (current MP `11:00 /km` ≈ 7:44). 🔑 **Recomputing §79 with the declaration removed, it is the CAUSE on only 3 of the 9 beginners** (VDOT 16.2 · 31.4 · no benchmark), **5 of 10** overall; a VDOT floor cannot see the unbenchmarked one. All 5 have Am. 3's re-entry window active; all 10 plans peak at **one quality session a week**.
+
+### 🔍 Conflict scan
+§79 + its 2026-09-02 amendment (upward binds intensity only) · **Am. 3** (user-raised novice gets the re-entry window: the requested protection already exists) · Am. 4 · §1 · §110 Am. 2 / §110b · 🔴 **§89 / ADR-021's "demonstrated, not self-image" governs the ONSET gate, not the intensity level** (ADR-021 l.31). A floor would contradict §79's amendment and duplicate Am. 3.
+
+### ⚖️ Ruling
+1. **No VDOT floor; no second prompt.** The wizard's recommended-level step is the prompt (McMillan).
+2. 🩹 Willy withdraws the floor (tissue axis already held: structure on the structural band, VO2max/hills withheld). ⚕️ Sims: the residual risk is fuelling, which a classification floor does not address. 🏃 Chair: *"There is no number."*
+3. **Re-open trigger:** outcome data (completion / injury / drop-out) on runners whose declaration raised intensity above §79's assessment.
+
+### 📦 Required artifacts
+None (INCORRECT).
+
+### ↗️ SLT escalation
+None.
+
+## 🏃 Sitting — `BEGINNER-TAPER-RACE-ROW-01`, 2026-11-20 · **CORRECT WITH AMENDMENT. `beginner_goal_pace_blocks` opens to the taper; the sharpener stays closed to beginners (§110b: blocks, not repeats); no new row.**
+
+**Evidence:** `scripts/board-evidence-beginner-taper-race-row-01.ts` (cohortGrid + slowGoalGrid). Note: `docs/decisions/coaching-2026-11-20-beginner-taper-race-row-01.md`.
+
+📐 **The measurement the 2026-11-12 sitting asked for:** beginner-intensity HM/MAR plans with a live goal reaching `goal_pace_sharpener` in the taper: **792 of 864 HM · 576 of 576 MAR** (cohortGrid), **30 of 30 · 20 of 20** (slow grid), so **1,418 of 1,490**. 🔑 **The derived exception is the norm for this cohort, not an edge.** Withheld plans: **0** (§120 Am. 2). 5K/10K beginners: **0** (`beginner_goal_pace_reps`, 720 each).
+
+### 🔍 Conflict scan
+🔴 **§110b, Willy's condition, "BLOCKS, NOT REPEATS … reps invite a beginner to race the recovery"**: opening the sharpener (1000 m reps, 90 s jog) contradicts it · §110b's `fitness_level_max` scoping (the blocks row already has it) · §36 (taper variety: a tempo fallback repeats; its text still says the sharpener is taper-eligible "across all distances" with no level caveat — the build's §36 note covers it) · §110 Am. 2 · §120 Am. 2 · §22 · the 2026-10-23 GOALPACE-5K-01 precedent (taper dose = build dose). No contradiction with the ruling.
+
+### ⚖️ Ruling
+1. **`beginner_goal_pace_blocks` becomes taper-eligible** (HM/MARATHON, beginner only) and replaces the sharpener there.
+2. **Opening `goal_pace_sharpener` to beginners: INCORRECT** (§110b). **A new row: unnecessary.**
+3. **Dose:** taper goal-pace minutes ≤ the row's build dose (mirrors `beginner_goal_pace_reps` 8 · 12 · 8).
+4. **Build conditions:** `verify:parity` changes confined to beginner HM/MAR live-goal plans (≈1,418 on these grids); `measure:fitness` + `cohort:shape` reported; withheld plans unchanged.
+5. **Not ruled:** whether an unbenchmarked beginner's goal pace is fit to rehearse (`GOALPACE-UNBENCHMARKED-MARATHON-01`).
+
+### 📦 Required artifacts
+| | |
+|---|---|
+| **Principle** | §110b amendment (rung 6 reaches the taper) + §36 note |
+| **Numeric** | a taper dose cell for `beginner_goal_pace_blocks` = its build dose |
+| **Invariant** | `INV-PLAN-CATALOGUE-ELIGIBLE`'s derived exception finds **no** beginner HM/MAR taper on the sharpener; falsified by removing `'taper'` from the row (the 1,418 return) |
+
+### ↗️ SLT escalation
+None. The row is already `is_free_tier: true`.
+
+## 🏃 Sittings — four single items, 2026-11-20
+
+### `DOUBLE-STRIDES-01` · **CORRECT WITH AMENDMENT**
+
+An easy run carrying §28's strides or §28 Am. 1's hill strides is an easy run for §126 and may be half of a double: strides are a coach note on a `type: 'easy'` run, structurally not quality (§28 Am. 1), and `canDouble` and the independent `CHECK-EFFECTIVE-NO-HARD-DOUBLE` already admit it, so **no prescription changes**. **Amendment (Willy):** when one half carries hill strides, the double's advice names it as the run to do first (eccentric tendon load on fresher legs); advice only, ADR-011. Measured: 403 of 2,371 live run sessions (17.0%) carry strides; 0 live doubles, ever. Artifacts with the build: §126 Am. 1 · no numeric · a `doubles.test.ts` arm pinning both predicates (not a `validatePlan` invariant: a double exists only in the effective week). Sitting: `docs/decisions/coaching-2026-11-20-double-strides-01.md`.
+
+### `HR-SAVE-UNEDITED-CONFIRMS-01` (the second half) · **CORRECT — status quo ratified**
+
+A save of the HR form while §50's floor note is on screen **confirms the max, whichever field the runner edited.** The note sits directly above the one Save button and says the value is probably a device floor and that Save confirms it; that is an informed act. Re-measured in production: the at-risk set (observed, below Tanaka, guardable age) is **2**, not the 7 recorded 2026-11-12 (unreproducible; method unrecorded); 6 ageless observed rows are outside the question under §50's 2026-11-17 amendment; 1 `user_confirmed` row sits 35 bpm under its estimate and cannot be told apart from a genuine low max. A promoted floor under-prescribes; it does not add load (Willy). ⚕️ Sims: pooled Tanaka overestimates many women's max, so a harder confirmation lands on genuine low-max runners. 🎯 **McMillan dissents:** an incidental save is not a confirmation; if the sheet is ever reworked, a touched-field flag (re-typing counts) is the shape. **Re-open:** observed-below-estimate with a guardable age > 5, or a sheet that saves the two values separately. Artifacts with the build: one sentence in §50 Asymmetry · no numeric · not a plan invariant (UI act; `hrSaveResolution.test.ts` holds the stamp) plus an arm asserting the floor line renders whenever the max is floored. Sitting: `docs/decisions/coaching-2026-11-20-hr-save-unedited-confirms-01.md`.
+
+### `INJURY-RECENCY-01` · **CORRECT WITH AMENDMENT — what each answer does, per injury (narrows 2026-11-14's "four chips" to two)**
+
+The bucket means **when it last flared up**, not onset (McMillan, Sims: the step already says "still an issue"). **Absent or skipped = current** (Willy, 2026-11-14, binding). **Within a year = current** for every chip: the previous-injury evidence is a 12-month window. **Longer ago**, per tissue, mapped only onto engine states that already exist (no cap invented):
+
+| chip | longer ago | collected? |
+|---|---|---|
+| Back | §9 Am. 3 long-run time cap lifted; any-injury gates kept | **yes** |
+| Plantar fasciitis | long-run time cap lifted; hill swap and delivered cap kept | **yes** |
+| Knee | = current (🎯 McMillan dissents: a decade-old knee costs 24 km of peak) | no |
+| Shin splints | = current (prior bone stress outlives a year; Sims) | no |
+| Achilles | = current (no tendon guard relaxed on a date) — **the "fifth" answered** | no |
+
+Measured by substitution (`Back→Hip`, `Plantar→Calf`; `scripts/board-evidence-injury-recency-01.ts`), marathon: long run **17 → 29.5 km** (intermediate), **15 → 26 km** (beginner); peak 52 → 62 (int. 20 km/wk). The 2026-11-14 "40 km/wk flips to maintenance" did not reproduce with these inputs. **Condition:** `measure:fitness` on the back/plantar cohort before shipping. Artifacts with the build: §9 Am. 3 recency clause · a declarative config table of the caps `longer_ago` lifts (no new number) · `INV-PLAN-INJURY-RECENCY-SCOPE`. Routed to 🧭 Design Board for the control on Back and Plantar only. Sitting: `docs/decisions/coaching-2026-11-20-injury-recency-01.md`.
+
+### `COACH-READ-1027-FOLLOWUPS-01` · seven claims re-measured, five survive · **1 CORRECT · 2 INSUFFICIENT EVIDENCE · 3 exempt defects · 1 settled · 1 closed**
+
+Re-measured on cohortGrid (969), the injury grid (462), a constructed injury × masters cell (462, age 58 — neither grid reaches it) and the 20 personas the read used (`scripts/board-evidence-coach-read-1027-followups-01.ts`); rates are plans with ≥1 instance.
+
+| claim | measured | ruling |
+|---|---|---|
+| deloads that do not reduce | 4.1% · injury 10.4% · beginner 10.5%; **t3 w6 equal volume passes the strict `>`**; m3 w10 +27% | ⚙️ exempt — §3's text; warn debt **92 days old** |
+| delivered ramps past §2 | DELIVERED-RAMP 18.4% · INJURY-CAP-DELIVERED 17.5% (injury) | 🔻 not raised — §2 Am. 2 frozen until outcome data |
+| long run cut harder than its deload week | **58.0%** · inj×masters **87.0%**; e1 w11 week −3%, LR −22% | ⚙️ exempt **if** §52/§9 do not explain it (not measured) — `/zona-debug` attributes first |
+| "highest volume" on a week that is not | 9.1% · injury 39.0% | ⚙️ exempt — the predicate says "so far", the code's own comment says "the plan" |
+| "step-back" on a week that is not | **1.3%** (first definition read 22.9%; corrected to §47's peak reference) | ✅ does not survive |
+| "not to chase a time" + race-pace work | **123 of 155** plans with the sentence; m4, e2 confirmed | ⚖️ **CORRECT (meaning)**: the sentence is withheld where race/goal-pace work is prescribed; the work stays (McMillan); extends CB-PLAN-REVIEW-01. Words → 👤 founder |
+| easy runs growing in the taper | 10.2% · inj×masters 23.2% | ⏸️ INSUFFICIENT EVIDENCE — mechanism unattributed; §6 Am. 2 still holds |
+| ≥5 loading weeks in a row | masters 27.5% · inj×masters 33.5%; masters' typical longest run 4 vs §3's 2 | ⏸️ INSUFFICIENT EVIDENCE on the remedy. 🔴 **Finding: §3's masters cadence carries a peak/taper exemption no principle states** — assumed by §87/§119, written only in `deloadCadence.ts`. Evidence: flagged prototype of the cadence through peak + `measure:fitness` / `cohort:shape`; then write the exemption into §3 or remove it (McMillan vs Willy/Sims recorded) |
+
+Artifacts (the finish sentence) with the build: §114 amendment · no numeric · invariant arm reading the `race_pace` **stamp**, not the label. Sitting: `docs/decisions/coaching-2026-11-20-coach-read-1027-followups-01.md`.
