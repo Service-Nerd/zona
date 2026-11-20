@@ -583,7 +583,7 @@ fi
 #     shipped-but-open. The registry row says REVERTED in its first cell. **Remove when the
 #     Coaching Board rules on §116's ramp target versus §82/§122's weekday cap and the re-fix
 #     lands, or if the item is killed.**
-_SHIPPED_AND_OPEN_OK='READINESS-SURFACE-01 STRENGTH-ENGINE-01 STEPPER-CONTROL-01 TODAY-CTA-CLEARANCE-01 NATIVE-BATCH-01 CONTRACT-COVERAGE-03 STRENGTH-ENTRY-01 BASEBUILD-DURATION-01'
+_SHIPPED_AND_OPEN_OK='READINESS-SURFACE-01 STRENGTH-ENGINE-01 STEPPER-CONTROL-01 TODAY-CTA-CLEARANCE-01 NATIVE-BATCH-01 CONTRACT-COVERAGE-03 BASEBUILD-DURATION-01'
 for id in $(comm -12 /tmp/_reg /tmp/_open); do
   case " $_SHIPPED_AND_OPEN_OK " in *" $id "*) continue ;; esac
   say "  STILL OPEN $id (has a feature-registry row)"; afail=1; fail=1

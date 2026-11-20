@@ -1757,7 +1757,8 @@ boundary needs a pinned pair, not a floating one.
 
 ---
 
-### 🔲 `BLOCKED-DAY-OVERRIDE-REPAIR-01` — seven stored moves sit on a day the runner said they cannot train 👤 **FOUNDER**
+### ✅ `BLOCKED-DAY-OVERRIDE-REPAIR-01` — **CLOSED 2026-11-20, moot: all 7 rows sit in elapsed weeks, the forward cause shipped in `99d91061`** — 7 rows / 3 runners, 0 in a week still ahead 👤 **FOUNDER**
+📐 **VALIDITY SWEEP 2026-11-20** — still 7 live rows but from **3 runners, not 4**, and `isDatePastWeek` is true for all 7. Leaving, superseding or asking changes no session still to be run. No new blocked-day override since 11-14 (`REORDER-BLOCKED-DAY-01`).
 
 Filed out of `REORDER-BLOCKED-DAY-01` (2026-11-16), which stopped the eighth and repaired none of the seven.
 **Measured:** 7 live non-superseded `session_overrides` rows, 4 runners, dated 2026-09-30 to 2026-11-14, each putting a
@@ -1869,6 +1870,7 @@ live to 2026-12-22, and the branch is what stops a lapsed grant being told "14 d
 </details>
 
 ### 🔲 `COMP-NO-IN-PRODUCT-PATH-01` — there is no way to give a runner paid access without App Store Connect and the runner's own action 💼 **SLT**
+📐 **VALIDITY SWEEP 2026-11-20** — REWRITE. The heading's premise is false: `resolveTier`'s `grant` branch (`lib/trial.ts:376`) already gives paid access with no runner action, via a hand-claimed `charity_codes` row, and the SLT ruled today to document it rather than build. **What is left is a docs task:** replace `docs/runbooks/charity-codes.md:124` ("currently **no answer**") with the SQL grant (non-TEST batch, explicit `expires_at`, "no cap enforced", plan-is-current check).
 
 ⚖️ **SAT 2026-11-20** (💼 SLT) — BUILD DIFFERENTLY, no code: Offer Codes stay primary; the fallback for a runner who won't or can't act is a SQL-claimed grant on the existing `resolveTier` `grant` branch, documented in `docs/runbooks/charity-codes.md` with a non-TEST batch, explicit expiry and a stated "no cap enforced". Option 1 is gone (redeem door deleted 11-14). `docs/decisions/slt-2026-11-20-comp-no-in-product-path-01.md`.
 
@@ -2289,7 +2291,8 @@ END of the migration, as a ratchet, not at the start.
 
 ---
 
-### 🔲 `THRESHOLD-BAND-ANCHOR-01` — the whole threshold complex shares one HR band, and it is the wrong one 🏃 **COACHING BOARD** ruled 2026-11-16 → 🧭 **DESIGN BOARD** ruled → ⚙️ build
+### ✅ `THRESHOLD-BAND-ANCHOR-01` — **CLOSED 2026-11-20, shipped as ADR-026 in `57fb016c` · `7521806e` · `9497de8e` (ANCHOR-BAND-FLIP-01)** — the remainder is `ANCHOR-BAND-MIGRATION-NOTICE-01` 🏃 **COACHING BOARD**
+📐 **VALIDITY SWEEP 2026-11-20** — a newly generated benchmarked HM plan stamps `hr_band_source: anchor` (`ruleEngine.ts:10474`) and puts every threshold row on `Zone 4 160–167 bpm` (CV `Zone 4–5 167–173`), the item's stated fix. Live plans keep the old band until asked: that is `ANCHOR-BAND-MIGRATION-NOTICE-01`.
 
 **ADR-026. Founder approved the direction 2026-11-16** ("one derived band, not five"). **Blocked on three conditions
 and on `COMPLETION-ACTIVITY-JOIN-01` landing first.**
@@ -2558,7 +2561,8 @@ fixes nobody who has already generated."*
 blank now costs the runner their HR zones rather than giving them someone else's. That is the trade to put in
 front of the founder: require the field, or accept that these runners train by feel.
 
-### 🔲 `CORPUS-DATELESS-BENCHMARK-01` — no measurement corpus can express an undated benchmark ⚙️ **NO BOARD**
+### ✅ `CORPUS-DATELESS-BENCHMARK-01` — **CLOSED 2026-11-20, premise false at filing** — `targetedGridExtra` has carried 4 undated-benchmark rows since `4be556ad` (2026-11-07) ⚙️ **NO BOARD**
+📐 **VALIDITY SWEEP 2026-11-20** — 10K time-target rows (49:30, 49:00 against a 50:00 benchmark, 40 and 55 km/week) left undated on purpose (`cohortGrid.ts:455`): 4 of 4 generate and **4 of 4 fire `INV-PLAN-VDOT-DISCOUNT-DATELESS`**, reaching `invariantLiveness` and `measure-plan-fitness`. ⚠️ `cohortGrid` is still 0 undated of 20,736 benchmarked inputs, so `cohort:shape` cannot see the shape; one cell only (intermediate 10K).
 
 **Found 2026-11-16 while shipping `BENCHMARK-DATELESS-FRESH-01`.** 📐 **`cohortGrid`: 19,872
 benchmarked plans, 0 of them dateless** (`BENCHMARKS = [undefined, { … benchmark_date: '2026-04-01' }]`),
@@ -2576,6 +2580,7 @@ traced**, so that is stated rather than claimed.
 ---
 
 ### 🔲 `GOALPACE-UNBENCHMARKED-MARATHON-01` — an unbenchmarked marathon runner has no goal-pace bound at all 🏃 **COACHING BOARD** (own sitting; the comparator is the open question)
+📐 **VALIDITY SWEEP 2026-11-20** — REWRITE. The heading is out of date: ruled 2026-11-16 (§120 Am. 4), built, reverted (`87fcffd5`), held on `STEPBACK-SPECIFICITY-SCOPE-01`, not waiting for its own sitting. **Corrected premise: an unbenchmarked time-target runner at HM OR marathon has no goal-pace bound.** Reproduced today: beginner, no benchmark, 20 km/wk, longest 10, max HR 187 → marathon 4:00:00 gets `Marathon-pace sustained 36m Zone 4–5 161–187 bpm`; HM 1:50:00 gets `HM-pace sustained 36m Zone 4–5 161–187 bpm`.
 
 **Found 2026-11-16 while discharging `BEGINNER-THRESHOLD-ELIGIBILITY-01`, and it is worse than the condition it
 replaced.** §120 Amendment 2 bounds goal-paced work at `GOAL_PACE_MAX_STRETCH_PCT` (5%) **on a benchmarked plan** and
@@ -3073,6 +3078,7 @@ the client, not at the route (ADR-003's auth boundary), so a free client can sen
 
 
 ### 🔲 `INJURY-HIP-INERT-01` — the Hip chip is collected, four runners have ticked it, and it changes nothing 🏃 **COACHING BOARD** ruled 2026-11-14, then 🧭 **DESIGN BOARD** to remove the chip *(filed 2026-11-14)*
+📐 **VALIDITY SWEEP 2026-11-20** — REWRITE. Half true: Hip changes nothing in the RUN plan, but it already changes STRENGTH load progression. `STRENGTH_CONFIG.INJURY_LOADED_MUSCLES.hip` (`82141027`, 10-18) slows `suggestLoad` steps on glute, hip and adductor lifts, and `runContext.ts:66` passes the wizard's "Hip" through, so the item's own exit condition was met before the 11-14 sitting. Reach: 0 of 4 hip runners have a strength plan (1 `strength_plans` row in total). **Corrected premise: the Hip chip has no run-plan effect, and its only effect (strength load pacing) reaches no runner today. The board must weigh that before the 12-12 removal default, which would delete a live strength input.**
 
 🧭 **Sitting:** `docs/decisions/coaching-2026-11-14-wave3-wizard-inputs.md`. Found by the measurement
 `INJURY-RECENCY-01` demanded, not by looking for it.
@@ -3673,6 +3679,8 @@ can run 30 minutes and starts the marathon page's week 1 takes the acute jump §
 `docs/decisions/coaching-2026-10-29-page7-claims.md`.
 
 ### 🔲 `STRENGTH-RELEASE-01` — open strength to paid and trial runners, behind four conditions 💼 **SLT** ruled 2026-10-29 → 🧭 **DESIGN BOARD** (lapsed trial, locked rows) → 🏃 **COACHING BOARD** (pricing words) → 👤 **FOUNDER** (phone check, charity cohort)
+📐 **VALIDITY SWEEP 2026-11-20** — REWRITE. Production: 1 strength plan, **8** completions, **4** lift logs (not 2 / 2). The guided session HAS run on the founder's phone (`STRENGTH-GUIDED-DEVICE-01`, 11-04), but all 8 completions have `started_at` null, so the checklist run in (1) is not evidenced. **Condition (2) is MET** (`started_at`, `ended_at`, `reps` exist in production). Open: (1) phone checklist, (3) `STRENGTH-ENTRY-01` item 6 (merged here), (4) lapsed-trial state. `STRENGTH_RELEASE` is still `'admin'`.
+📐 **VALIDITY SWEEP 2026-11-20** — absorbs `STRENGTH-ENTRY-01` (merged 2026-11-20): item 6 is still unbuilt (`strength_sessions_tailored` still in `OMITTED_FROM_PRICING`, no Upgrade line, no locked rows) and is word for word condition (3) of `STRENGTH-RELEASE-01`. One item tracks the release.
 
 Sitting: `docs/decisions/slt-2026-10-29-strength-release.md`. All six redesign builds shipped; production has 1 strength
 plan, 2 completions, 2 lift logs, and nothing has run on a phone. Release, in order: (1) the founder's phone check, two
@@ -5841,7 +5849,8 @@ overtraining or just tired."* **No page answers the second half** (1 guide live)
 authorised today under `RUNKED-GUIDES-01` ships, or the description stops promising it until then. Measured by the
 `RUNKED-GUIDES-01` sitting.
 
-### 🔲 `REG-GTM08-STALE-01` — the registry still describes the waitlist as the live surface ⚙️ **NO BOARD** (record correction)
+### ✅ `REG-GTM08-STALE-01` — **CLOSED 2026-11-20, MERGED into `WAITLIST-UNREACHABLE-01`** ⚙️ **NO BOARD**
+📐 **VALIDITY SWEEP 2026-11-20** — merged. the GTM-08 row (`feature-registry.md:326`) is still stale, and today's SLT ruling (point 4) already puts its correction in the waitlist retirement change.
 
 `feature-registry.md`'s GTM-08 row (*"Marketing site + waitlist"*, App Store badge *"Coming soon"* until the URL is set)
 has been stale since `f8266cf3` (2026-06-15) flipped the site to the live App Store, and the form lost its last render
@@ -6900,6 +6909,7 @@ closer to the clock when a pair is arithmetically ~60 s cheaper than the same tw
 Scripts on disk: `strength-pairing-measure.ts`, `strength-dose-delta.ts`, `strength-repeat-measure.ts`.
 
 ### 🔲 `STRENGTH-CARRY-PATTERN-01` — Blagrove's carries merge names a thing the data model does not have 🏃 **COACHING BOARD**
+📐 **VALIDITY SWEEP 2026-11-20** — REWRITE. The parking reason is false: `anti_rotation` and `lateral_core` are **both region `'core'`** (`packages/strength/catalogue.ts:189`, unchanged since `a1d28deb`), so a stride fix would never pair the carries. **Corrected premise: the carries merge needs its own build, keyed on a named exercise set per the 2026-11-12 amendment (`coaching-board-open-items-2026-11-12.md:130`); it does not depend on `STRENGTH-PAIR-STRIDE-01`.**
 
 The board ruled *"two carries back to back is ONE part, a merge not a superset"*. **There is no `carry` pattern.**
 `Pattern` is `squat | hinge | single_leg | calf | hip_abduction | plyometric | upper_push | upper_pull |
@@ -7281,7 +7291,8 @@ is already in `ops_events`.
 
 ## 🧭 PARKED 2026-10-13 — the confirm screen's two held design questions
 
-### 🔻 `MODIFY-CONFIRM-DEVICE-REVIEW-01` — B and C cannot be settled off a device *(parked 2026-10-13 by the founder, "I'm on my phone so I can't see")* 🧭 **DESIGN BOARD**
+### ✅ `MODIFY-CONFIRM-DEVICE-REVIEW-01` — **CLOSED 2026-11-20, settled off-device on 2026-10-14** — B dissolved, C shipped (`6ccd1a60`, ADJUST-JOURNEY-TYPE-01) 🧭 **DESIGN BOARD**
+📐 **VALIDITY SWEEP 2026-11-20** — both questions were answered a day after parking. B's 26/800 title and 15/600 values were conformance, shipped as a defect fix; its one real change was a regression (`design-rulings.md` ~6060). C, the stagger, ruled *SHIPS, amended* and is live (`ModifyPlanConfirm.tsx:125` `zonna-stagger`, `globals.css:1704`).
 
 **Board: 🧭 DESIGN BOARD** — this discharges an existing INSUFFICIENT EVIDENCE record
 (`design-rulings.md` → `MODIFY-CONFIRM-DIFF-01`, 2026-10-13). It is not a new question.
@@ -7349,7 +7360,8 @@ filed rather than built.
 
 ---
 
-### 🔲 `OPS-FLUID-COMPUTE-CONFIRM-01` — one dashboard check decides whether the new 300 s ceiling is real 👤 **FOUNDER** *(filed 2026-11-08, P2)*
+### ✅ `OPS-FLUID-COMPUTE-CONFIRM-01` — **CLOSED 2026-11-20, answered: Fluid compute is ENABLED** — the 300 s ceiling is real 👤 **FOUNDER**
+📐 **VALIDITY SWEEP 2026-11-20** — answerable from the machine after all: read-only `vercel api /v9/projects/<zona>` returns `resourceConfig.fluid: true`, `defaultResourceConfig.functionDefaultTimeout: 300`. The 17 `maxDuration = 300` routes and the 240 s `CALL_TIMEOUT_MS` stand as written. No `ai_call_failed` with `reason: 'timeout'` observed yet.
 
 **Vercel → project `zona` → Settings → Functions → is Fluid compute enabled?** Ten seconds, and it
 is the only thing that can answer it.
@@ -8018,7 +8030,8 @@ fixed.
 > before then; **contact is the founder's call**. `df2cc6e6`'s race was 2026-09-26, last opened 2026-07-29,
 > no subscription — no action.
 
-### 🔲 `STRENGTH-ENTRY-01` — ITEM 6 ONLY; items 1–5 shipped — strength entry points, icons, paywall and Coach *(filed 2026-10-17; items 1–5 SHIPPED 2026-10-17, item 6 OPEN)* 💼 **SLT**
+### ✅ `STRENGTH-ENTRY-01` — **CLOSED 2026-11-20, MERGED into `STRENGTH-RELEASE-01`** 💼 **SLT**
+📐 **VALIDITY SWEEP 2026-11-20** — merged. item 6 is still unbuilt (`strength_sessions_tailored` still in `OMITTED_FROM_PRICING`, no Upgrade line, no locked rows) and is word for word condition (3) of `STRENGTH-RELEASE-01`. One item tracks the release.
 
 > 🔴 **THIS ITEM WAS INVISIBLE TO THE OPEN COUNT UNTIL 2026-11-10.** The capitalised `SHIPPED` in its own
 > provenance block closed it in `scripts/lib/open-items.sh`, which matches the stamp word — while the same line
@@ -8989,6 +9002,7 @@ that cannot happen.
    `GUARD-COLOUR-KEYWORD-01`.
 
 ### 🔴 `WAITLIST-UNREACHABLE-01` — the waitlist form has NO render site; the route and the table are live *(filed 2026-11-08, P2)* 💼 **SLT** (is the waitlist a live surface?) → 🧭 **DESIGN BOARD** (where it renders)
+📐 **VALIDITY SWEEP 2026-11-20** — absorbs `REG-GTM08-STALE-01` (merged 2026-11-20): the GTM-08 row (`feature-registry.md:326`) is still stale, and today's SLT ruling (point 4) already puts its correction in the waitlist retirement change.
 
 ⚖️ **SAT 2026-11-20** (💼 SLT) — not a live surface: removed by decision 2026-06-15 and 2026-09-21, the App Store badge is live, the table holds 0 rows. RETIRE form + route + table + trigger clause together (⚙️ NO BOARD; the trigger clause and the drop ship together); the Design Board leg falls away. `docs/decisions/slt-2026-11-20-waitlist-unreachable-01.md`.
 
@@ -10145,6 +10159,7 @@ Decision note: `docs/decisions/slt-2026-10-10-basebuild-enrichment.md`.
 ---
 
 ### `ENGINE-COPY-SHARPEN-01` — the engine's own taper copy trips the engine's own check
+📐 **VALIDITY SWEEP 2026-11-20** — REWRITE. Still 20 stored weeks across 7 of 43 plans (`74bb33ef` wk 18 still among them). **Corrected premise: it is AI-enriched copy, not engine copy.** That plan's `meta.enrichment` is `"applied"`; the literal `'Taper — sharpen'` has never existed in the repo (pickaxe: 0 commits); the engine emits only `'Taper — sharpening'`, from `withQuality` (`ruleEngine.ts:4366`). The open question, whether a stride satisfies "sharpen", is still the founder's.
 👤 **FOUNDER** — ⚠️ **TAG CORRECTED 2026-11-12 to follow the 2026-10-10 RE-ROUTE.** The body has
 said 👤 FOUNDER since then and the leading glyph still said 🏃, so `open_item_boards` — which takes the
 **earliest** glyph in the line — counted it against the coaching queue for a month. Coaching Board sitting
@@ -10690,6 +10705,7 @@ the cap and the index disagree about the domain model, and that is the question 
 > numbers.
 
 ### 🏃 `RECAL-DISTANCE-REPS-01` — **RULED, VACATED AND RE-RULED THE SAME DAY: INSUFFICIENT EVIDENCE. Merged with `RECAL-MIXED-MEAN-01` as ONE build** *(filed 2026-10-09)* 🏃 **COACHING BOARD**
+📐 **VALIDITY SWEEP 2026-11-20** — absorbs `RECAL-MIXED-MEAN-01` (merged 2026-11-20): `RECAL-DISTANCE-REPS-01`'s heading already records the two as ONE build, with the same two blockers (0 recalibrations ever, 43 live / 80 archived; step lengths stored only as display strings). The 25.3% mixed-anchor share (63,420 / 250,616) moves with it.
 > 🔴 **THE BOARD'S FIRST RULING WAS MADE ON A CONTROL IT HAD NOT LOCATED, AND I GAVE IT THE
 > SUBMISSION THAT MADE THAT POSSIBLE.** It ruled *"clause 1 prevails, the distance label yields"* —
 > grow the rep length, hold the minutes. Then the label was found:
@@ -10747,7 +10763,8 @@ the cap and the index disagree about the domain model, and that is the question 
 > purpose: growing a beginner's prescribed minutes is a **load change** on the cohort whose sessions
 > are **95.8% duration-anchored**, and that cohort was not in the submission the board measured.
 
-### 🏃 `RECAL-MIXED-MEAN-01` — an over-under keeps the category band, not §85's mean *(filed 2026-10-09)* 🏃 **COACHING BOARD**
+### ✅ `RECAL-MIXED-MEAN-01` — **CLOSED 2026-11-20, MERGED into `RECAL-DISTANCE-REPS-01`** 🏃 **COACHING BOARD**
+📐 **VALIDITY SWEEP 2026-11-20** — merged. `RECAL-DISTANCE-REPS-01`'s heading already records the two as ONE build, with the same two blockers (0 recalibrations ever, 43 live / 80 archived; step lengths stored only as display strings). The 25.3% mixed-anchor share (63,420 / 250,616) moves with it.
 
 ⏸️ **NOT READY 2026-11-20** — blocked by the 2026-11-12 production gate (**0 recalibrations ever**) and by being half of one build with `RECAL-DISTANCE-REPS-01` (INSUFFICIENT EVIDENCE; step lengths still unstamped). Mixed-anchor share re-measured at **25.3%** (63,420 of 250,616, full cohortGrid) vs the item's 82 of 297. `docs/decisions/coaching-2026-11-20-recal-mixed-mean-01.md`.
 
@@ -14590,7 +14607,8 @@ but **invisible to every check** — stated plainly because the founder was not 
 option was put to him, and the alternative (keep the duration, carry the breach as declared debt)
 was not offered until afterwards. See `FOUNDATION-LR-S9-01`.
 
-#### 🔻 `STORED-PLAN-DEBT-QUEUE-01` — **36 violations on 11 live plans** (re-measured 2026-10-06), and clearing them means rewriting someone's training *(P3, filed 2026-10-04)* 👤 **FOUNDER**
+#### ✅ `STORED-PLAN-DEBT-QUEUE-01` — **CLOSED 2026-11-20, already decided: founder live-plan policy 2026-08-20 (no backfill), applied by `STORED-PLAN-DEBT-REPAIR-01` 2026-11-03; the opt-in half is `FLEET-INVALID-DEBT-02`** — debt today 327 violations on 30 of 43 plans, none silently rewritable 👤 **FOUNDER**
+📐 **VALIDITY SWEEP 2026-11-20** — today's `audit:stored`: 43 plans, 30 carrying errors, 327 violations (92 in weeks ahead, 191 elapsed, 44 plan-level). `regenRefusalReason` refuses a silent rewrite of all 18 plans with debt ahead.
 
 
 > 📐 **RE-MEASURED 2026-10-06 against the live database, after the day's engine ships. The debt GREW,
@@ -15902,7 +15920,7 @@ fails every morning for a reason nobody needs to read is a test everybody learns
 the next real failure in that file arrives pre-ignored. This repo has already recorded that a
 guard which cries wolf gets disabled, which is the same as having no guard.
 
-**State at END of 2026-11-20 — BOARD DAY: every sitting run, every hand-off sat, every finding filed** (last ship `fd44f9e5` — `BOARD-EVIDENCE-GATES-2026-11-20`, two script-hygiene gates given named exemptions for today's read-only board-evidence scripts, after the docs commits `fa149dab` (36 items analysed, 30 sat, 6 not ready), `5a9c0e09` (founder copy for six rulings), `44975700` (five findings filed), `7c8c28f5` (four follow-up sittings) and `093a633c` (three more findings filed). **818 files / 8,423 tests, ALL GREEN** at the pre-push gate; `tsc` 0; `backlog:verify` 0 with **80 open · 29 COACHING · 15 DESIGN · 18 ⚙️ NO BOARD · 9 SLT · 9 FOUNDER** (`RUNKED-COMPARE-PAGE-01` removed by the founder). No engine or app code changed today; `verify:parity` not run because nothing it measures moved.) ⚠️ **`main` was red locally from `fa149dab` until `fd44f9e5`** (the evidence scripts tripped the gates); nothing red was pushed. 🔻 Waiting on the founder: the seven engine prototypes. Follow-up copy decided on his delegation.
+**State at END of 2026-11-20 — BOARD DAY: every sitting run, every hand-off sat, every finding filed** (last ship `fd44f9e5` — `BOARD-EVIDENCE-GATES-2026-11-20`, two script-hygiene gates given named exemptions for today's read-only board-evidence scripts, after the docs commits `fa149dab` (36 items analysed, 30 sat, 6 not ready), `5a9c0e09` (founder copy for six rulings), `44975700` (five findings filed), `7c8c28f5` (four follow-up sittings) and `093a633c` (three more findings filed). **818 files / 8,423 tests, ALL GREEN** at the pre-push gate; `tsc` 0; `backlog:verify` 0 with **71 open · 27 COACHING · 14 DESIGN · 16 ⚙️ NO BOARD · 8 SLT · 6 FOUNDER** (`RUNKED-COMPARE-PAGE-01` removed by the founder). No engine or app code changed today; `verify:parity` not run because nothing it measures moved.) ⚠️ **`main` was red locally from `fa149dab` until `fd44f9e5`** (the evidence scripts tripped the gates); nothing red was pushed. 🔻 Waiting on the founder: the seven engine prototypes. Follow-up copy decided on his delegation.
 
 **Prior state block (ADR-026, ships `57fb016c`/`7521806e`/`9497de8e`) — superseded by the paragraph above; see `docs/build-log.md` for its detail.**
 
@@ -18291,6 +18309,7 @@ The magnitude of a delivered-ramp breach is now a **reported, segmented, non-gro
 ---
 
 ### 🔻 `DELIVERED-TAIL-LEVERS-01` — the healthy tail is worse than the injured one, and that is a lever count 🏃 **COACHING BOARD** *(blocked on outcome data)*
+📐 **VALIDITY SWEEP 2026-11-20** — REWRITE. Figures and attribution are out of date. Same corpus and parse as `deliveredRampTail.test.ts`: worst non-long delivered rise **injured (achilles only) 42% · healthy masters 88% · healthy standard 75%**; knee/shin fire **0 of 401**. §94 Am. 5 (2026-11-04) withdrew "that is a lever count": the injured tail is entirely achilles runners, who get no levers. **Corrected premise: the healthy and achilles tails have no lever that can act on them, while the knee/shin cohort that has ADR-022's levers fires 0 times.** Still blocked by §2 Am. 2 on outcome data.
 
 **Filed by the board 2026-10-10, deliberately not built.** ADR-022 gave injury-history runners three levers (deload re-anchored to the POST-CAP prior week; the injury peak week yields its 2nd quality to §12; easy runs trim while §52's long run never does). §94/§100 left the healthy with §100's re-anchor and §52's floor, **and those two cannot reach the floor-dominated case.**
 
@@ -19647,6 +19666,7 @@ green. Tracing why is what found the false premise. Bounding the replacement too
 now goes red on the real swap.
 
 ### 👤 `BRAND-EMDASH-LIB-01` — the half the app guard cannot reach
+📐 **VALIDITY SWEEP 2026-11-20** — REWRITE. Arm 1 is closed elsewhere: `lib/plan` joined `noEmDashApp.test.ts`'s `SURFACES` in `c1ed1256` (SITE-ENGINE-EMDASH-01), and `47c2e5c0` (EMDASH-LIB-COPY-01) fixed the regex that swallowed 43 ruleEngine offenders; the test passes 11/11. Push bodies come from guarded producers (`voiceLines.ts`, `doubles.ts`). **Corrected premise: the one unguarded runner-adjacent population is the payload literals in `app/api/push/*` routes**, which hold 1 em dash, in the admin-only `?test=1` body (`send-daily/route.ts:305`).
 
 > 🔻 **PART OF ARM 1 IS NOW DONE, and the rest is unchanged (2026-10-08,
 > `READ-EM-DASH-01`).** `manualSessionFeedback.ts` was found emitting em dashes into
