@@ -5791,6 +5791,37 @@ ungate one of three triggers · drop the weekly-report gate). ⚠️ Source-shap
 such: the route needs auth, a tier lookup and a service-role client, none of which stand up under
 `environment: 'node'`.
 
+## ⚖️ FILED 2026-11-20 — three findings from the follow-up sittings, filed on the founder's instruction
+
+Found by the 2026-11-20 follow-up sittings and held back under *"don't invent work"*; the founder then said *"file the
+observations"*. ⚠️ Each was measured once; re-derive before planning against it (an item is a snapshot).
+
+### 🔲 `BENCHMARK-FREE-403-01` — a free runner fills the whole pace-update form, then reads "Subscription required" 🧭 **DESIGN BOARD** (the free state of the screen; the tier is settled by ADR-014)
+
+📐 Read from code, 2026-11-20: Me → **Benchmark** row (`components/dashboard/MeScreen.tsx:1155`) opens
+`BenchmarkUpdateScreen` with **no tier check** on the row or the screen. On submit, `/api/recalibrate-zones:41` returns
+403 `Subscription required`, and the screen prints `data.error` raw in its `InlineError` (`BenchmarkUpdateScreen.tsx:140`).
+ADR-014 makes *applying* a result PAID; that is not in question. What is missing is the free state: the runner is told
+after the work, in an API string, with no route to Upgrade. ⚠️ **Not seen on a device**, and how many free runners have
+reached it is not measured. Found by the `TUNE-UP-CALLOUT-INERT-01` SLT follow-up.
+
+### 🔲 `PLAN-NOTE-MULTIWEEK-RAMP-01` — about 29% of warned plans exceed the ramp in more than one week; the mark names one 🏃 **COACHING BOARD** (whether more than one week must be told) → 🧭 **DESIGN BOARD** (how)
+
+📐 Willy, recorded in `coaching-2026-11-20-plan-note-heavier-week-placement-01-followup.md`: **29% of warned healthy
+plans and 30% of Achilles plans** breach the ramp in more than one week. The producer names the largest rise, and the
+2026-10-28 ruling was per plan, so this is **not a defect against the ruling**. But once the calendar marks one week, the
+unmarked ones read as fine, which is a stronger implied claim than the plan tile made. Sitting sample only (cohortGrid
+stride 131); not measured on the injury grid or in production.
+
+### 🔲 `CP-90-AM3-CITATION-01` — §90 Amendment 3 cites §34 for a rule §34 does not hold ⚙️ **NO BOARD** (citation correction, no behavioural delta)
+
+`CoachingPrinciples.md` § *"§90 Amendment 3 / §34"* says *"§34 requires an accepted residual to be declared"*. §34 is
+the invariant registry clause (declared and exercised), not a residual-declaration rule. The Coaching Board's
+`PLAN-NOTE-HEAVIER-WEEK-PLACEMENT-01` follow-up made fixing it a condition of that build's §90 edit, so it closes with
+that build; filed so it is visible until then.
+
+---
+
 ## ⚖️ FILED 2026-11-20 — five findings from the board sittings' analysis, filed on the founder's instruction
 
 Found while re-measuring items for the 2026-11-20 sittings and held back under *"don't invent work"*; the founder then
