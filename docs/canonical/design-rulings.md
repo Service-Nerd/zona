@@ -6343,6 +6343,7 @@ per non-admin runner per week, before and after items 1–3.
 
 
 ## 2026-10-31 — SHARE-ICON-01 · SHIP WITH AMENDMENT (mockups approved by the founder 2026-10-31; built). Share is an icon, in the circle, under the thing it shares
+> 📌 **Scope note 2026-11-20:** Coach surface retired by SLT 2026-11-20 (`OPS-ARTIFACT-PLACEMENT-01`); pattern unchanged on the run surfaces.
 Founder: *"A share shouldn't dominate the screen and should be secondary."* Population counted: **4 share actions** (Coach
 weekly read: full-width primary; session detail, post-run, log sheet: soft pill) + 1 upgrade row that shares nothing (unchanged).
 **Amendment:** `IconButton shape="circle"`, not `bare` (Silvanto, Wroblewski: a lone glyph under a card is not a dense row).

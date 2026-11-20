@@ -3051,6 +3051,7 @@ separately (Willy: plantar has a time-on-feet mechanism, lumbar pain mostly does
 (`INJURY-RECENCY-01`).
 
 ### 🔲 `WIZARD-PAID-INPUTS-TIER-01` — "overdo" changes every plan, and free runners are never asked 💼 **SLT** (tier), then 🏃 **COACHING BOARD** (what each answer prescribes)
+⚖️ **SAT 2026-11-20** (💼 SLT, unparked by the founder) — **FREE, both questions, every answer**: `overdo`/`avoid` are caution signals (§96/§110) and never paid; the engine is tier-blind (0/300) and Modify plan already gives free runners both. `overdo` changes 100% of plans, but 96.0% of that is one long-run cue (prescription 4.0%). Route gate (a) resolved by the tier. 🏃 Coaching Board next on the `overdo` dose; 🧭 Design Board on the TeaserCard and step order (b). `docs/decisions/slt-2026-11-20-wizard-paid-inputs-tier-01.md`.
 
 ⏸️ **PARKED by the founder 2026-10-28** ("park point 2 in the backlog for now"): not to go to the SLT until he raises it.
 
@@ -5823,6 +5824,7 @@ plan-holders have runs arriving and zero `session_completions`**, 6 of them paid
 never tapping, or the run not matching a planned day are three different defects. Diagnose first; no fix is specified.
 
 ### 🔲 `SITE-ANALYTICS-OFF-01` — no marketing page can be measured 💼 **SLT** (whether to enable, cost) → ⚙️ **NO BOARD** (wiring)
+⚖️ **SAT 2026-11-20** (SLT) — **ENABLE**: Vercel Web Analytics on Pro ($0.03/1K events, no Plus add-on), **marketing routes only by allow-list**, query strings dropped, pageviews plus two scroll-depth events for `SITE-SCROLL-DEPTH-01`; privacy page updated in the same commit; 28-day review or it comes out. ⚠️ `@vercel/analytics` is not installed, so the dashboard toggle alone collects nothing. 👤 Founder flips the dashboard toggle and sets a spend notification; ⚙️ wiring follows. Note: `docs/decisions/slt-2026-11-20-site-analytics-off-01.md`.
 
 📐 Vercel Web Analytics is **not enabled** on project `zona` (the pageviews API returns 400; measured by the
 `RUNKED-COMPARE-PAGE-01` sitting), and the site has no other page analytics. **Nobody can say whether any of the 8
@@ -11384,7 +11386,9 @@ preference has nothing to prefer. **Any re-measurement must vary blocked days.**
 > honest count of *things we watch for* is **eight**. Delete the member or give it a
 > producer; either way the number on any surface is 8.
 
-### 🟡 `HK-NEVER-SYNCED-COHORT-01` — **BOTH ROOT CAUSES FIXED 2026-10-08. What remains is a RE-MEASURE, not a build** *(was P1, now P2)* 💼 SLT *(done)* · ⚙️ NO BOARD
+### ✅ `HK-NEVER-SYNCED-COHORT-01` — **CLOSED 2026-11-20, ON THE NUMBER: every one of the 13 whose phone found a run now syncs (3 of 3); the other 10 get nothing from HealthKit (5) or have not opened the app since 10-07 (5)** — ⚙️ **NO BOARD**
+
+📐 **RE-MEASURED 2026-11-20** — rebuilt from production (connected before 10-08 with no apple_health row before 10-08): the same **28 / 13**. **3 of 13 now sync** (`0a972fdf` 24 rows, `e98c3253` 6, `b96fe13a` 4) — all 3 of the cohort whose sweeps ever found a workout. **5 sweep and get `workouts_found: 0` every time** (4 real accounts + demo; 50–1,651 sweeps each): HealthKit has nothing to give, not an ingest defect. **5 have no `health_sync_swept` event ever** — not opened since the instrument shipped 10-07. `health_ingest_rejected`: 6 rows, all the 10-08 zero-distance 422, none since. Closed on the number, as the item asked. ⚠️ Does not show why the 4 zero-found accounts get nothing (permission vs no workout-writing device). Residual background `Load failed` losses belong to `HK-NATIVE-BG-INGEST-02`.
 
 > ✅ **This item's question — *why have 13 of 28 connected runners never had a run arrive?*
 > — is now ANSWERED, and the causes are shipped:**
@@ -15483,7 +15487,13 @@ build, exactly as `configPrincipleSync` fails on a stale baseline row.
 
 ## ⚖️ FILED 2026-09-28 — after the attribution / trust / adaptation sitting
 
-### ⏸️ `OPS-ARTIFACT-PLACEMENT-01` — SLT 2026-10-05: the freeze STANDS, and the CONDITION is REPLACED 💼 **SLT**
+### ✅ `OPS-ARTIFACT-PLACEMENT-01` — **CLOSED 2026-11-20, SLT FINAL: RETIRE the Coach share card** — removal build is `SHARE-01-RETIRE-01` below 💼 **SLT**
+
+⚖️ **SAT 2026-11-20** (SLT, final) — **RETIRE the Coach share card and CLOSE.** `ShareWeekButton` renders for 1 of 56 accounts (2 of 41 on 10-05). Null scores are lack of HR data, not a defect (0 of 33 null-score weeks have analysed HR); fixing the week gate would reach 2 users at most. Presses: 10 of 11 by an admin; no recorded success. The session share stays. May return only as a NEW item if HR-scored weekly reports reach ≥10 distinct metric users in a 28-day window (today 1), measured by `scripts/board-evidence-ops-artifact-placement-01.ts`. Decision note: `docs/decisions/slt-2026-11-20-ops-artifact-placement-01-final.md`.
+
+### 🔲 `SHARE-01-RETIRE-01` — remove the Coach weekly share card (the SLT's 2026-11-20 retirement) ⚙️ **NO BOARD**
+Remove `ShareWeekButton` (render site + component), `lib/share/shareWeeklyZoneCard.ts`, `app/api/og/weekly-zone-card/route.tsx`, its contract, and the `share_week_*` event names (historical rows stay). **Keep** `ShareControl`, `SaveImageButton`, the session-complete share and its OG route, the Capacitor share/filesystem plugins, `reportIsCurrent`. Mark the `SHARE-01` registry row retired 2026-11-20. Test that the session share still renders; falsify by re-adding the render site. Filed by the ruling, not invented.
+
 
 ⏸️ **NOT READY 2026-11-20** — reachability re-measured: `ShareWeekButton` renders for **1 of 37 metric users** today; scored reports in 28 days cover 2 users (1 metric). Condition unmet, unchanged since 10-05 (2 of 41). Blockers: 33/38 unsuperseded reports carry a null `zone_discipline_score`, and the report week trails the plan week for 12 of 14 report-holders. Evidence: `scripts/board-evidence-slt-2026-11-20.ts`.
 
@@ -15890,7 +15900,7 @@ fails every morning for a reason nobody needs to read is a test everybody learns
 the next real failure in that file arrives pre-ignored. This repo has already recorded that a
 guard which cries wolf gets disabled, which is the same as having no guard.
 
-**State at END of 2026-11-20 — BOARD DAY: every sitting run, every hand-off sat, every finding filed** (last ship `fd44f9e5` — `BOARD-EVIDENCE-GATES-2026-11-20`, two script-hygiene gates given named exemptions for today's read-only board-evidence scripts, after the docs commits `fa149dab` (36 items analysed, 30 sat, 6 not ready), `5a9c0e09` (founder copy for six rulings), `44975700` (five findings filed), `7c8c28f5` (four follow-up sittings) and `093a633c` (three more findings filed). **818 files / 8,423 tests, ALL GREEN** at the pre-push gate; `tsc` 0; `backlog:verify` 0 with **81 open · 29 COACHING · 15 DESIGN · 17 ⚙️ NO BOARD · 11 SLT · 9 FOUNDER** (`RUNKED-COMPARE-PAGE-01` removed by the founder). No engine or app code changed today; `verify:parity` not run because nothing it measures moved.) ⚠️ **`main` was red locally from `fa149dab` until `fd44f9e5`** (the evidence scripts tripped the gates); nothing red was pushed. 🔻 Waiting on the founder: the seven engine prototypes. Follow-up copy decided on his delegation.
+**State at END of 2026-11-20 — BOARD DAY: every sitting run, every hand-off sat, every finding filed** (last ship `fd44f9e5` — `BOARD-EVIDENCE-GATES-2026-11-20`, two script-hygiene gates given named exemptions for today's read-only board-evidence scripts, after the docs commits `fa149dab` (36 items analysed, 30 sat, 6 not ready), `5a9c0e09` (founder copy for six rulings), `44975700` (five findings filed), `7c8c28f5` (four follow-up sittings) and `093a633c` (three more findings filed). **818 files / 8,423 tests, ALL GREEN** at the pre-push gate; `tsc` 0; `backlog:verify` 0 with **80 open · 29 COACHING · 15 DESIGN · 18 ⚙️ NO BOARD · 9 SLT · 9 FOUNDER** (`RUNKED-COMPARE-PAGE-01` removed by the founder). No engine or app code changed today; `verify:parity` not run because nothing it measures moved.) ⚠️ **`main` was red locally from `fa149dab` until `fd44f9e5`** (the evidence scripts tripped the gates); nothing red was pushed. 🔻 Waiting on the founder: the seven engine prototypes. Follow-up copy decided on his delegation.
 
 **Prior state block (ADR-026, ships `57fb016c`/`7521806e`/`9497de8e`) — superseded by the paragraph above; see `docs/build-log.md` for its detail.**
 
