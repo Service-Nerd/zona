@@ -6849,3 +6849,19 @@ Discharges the 2026-11-16 CANNOT RULE: the Coaching Board ruled the bucket meani
 | **Subtitle and field note rewritten** | 👤 **FOUNDER** | *"still an issue / still show up"* contradicts *over a year ago* and tells the target runner not to tick (Sims 11-14, McMillan's *last flare-up*) |
 
 Pattern `ui-patterns.md` § Wizard step inventory (`injuries` row) · predicate in `lib/plan/` · check: chip × distance × goal, shown ⇔ cap binds, payload only for shown follow-ups; falsified by adding Knee, showing at 10K, posting a hidden answer. Gated on the Coaching Board's `measure:fitness` condition. ⛔ Veto: none. ⚠️ Not rendered or seen on a device; HM+ share where the cap actually binds not measured; maintenance path not measured. Note: `docs/decisions/design-2026-11-20-injury-recency-01-followup.md`.
+
+## 2026-11-20 — `WIZARD-PAID-INPUTS-TIER-01` (b) · 🟢 SHIP WITH AMENDMENT. One wizard for every tier; the upsell card goes
+
+| Ruling | |
+|---|---|
+| **The free sequence is the paid sequence** (`hard-sessions`, `terrain` after `weekday-ceiling`/`strength`, before `injuries`; no reorder) | 🟢 **SHIP**: tier shows in the wizard only as a locked distance tile, never as a missing step or an inline upsell |
+| **`TeaserCard` deleted, no replacement** | 🟢 **SHIP**, unanimous. Its three nouns: two now free, and *"training style"* asked by no step at ANY tier. Recorded yield: `upgrade_view` source `wizard` = 2 events / 1 runner of 19 in all, and that source cannot tell the card from the locked tile. Unlock copy may not return to a step that asks no paid question |
+| **Terrain keeps its own step** | 🟢 **SHIP WITH AMENDMENT**: its words say what it does (one effort-leads note; sessions unchanged on 0 of 1,924). *"Speed-focused"* and *"Adapt pace targets"* go. Modify plan's *"Changes the sessions the plan picks"* becomes *"Adds a note on pacing off-road. Your sessions stay the same."* |
+
+📐 **The cost lands on rebuilders, not onboarding:** every new runner is on the reverse trial and already walks the
+17-step paid flow; only a lapsed rebuild was 15. **Collins lost** deleting the terrain step (with Fried's SLT
+instinct): it would change onboarding for everyone on no evidence, and the AI reads trail vs mixed separately.
+Reopen on a measured drop-off at that step. `hard-sessions` card copy beyond the *"Rein"* typo waits for the Coaching
+Board. Check (build): `lib/ui/wizardInjuryFree.test.ts` (sequence identical at both tiers; no TeaserCard) +
+`modifyPlan.test.ts` terrain arm. Note: `docs/decisions/design-2026-11-20-wizard-paid-inputs-tier-01.md`. Not walked on
+a device.

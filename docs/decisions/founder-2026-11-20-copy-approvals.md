@@ -43,3 +43,12 @@ dashes; no `%`; a week line never says *"In week N"*.
 **Checked:** the action half matches `lib/plan/loadResidualNote.ts`'s existing sentence, so the week card and the plan
 tile give the same instruction. The injury line names the injury history, the Coaching Board's binding condition.
 *"Last flare up"* is the meaning the Coaching Board ruled (McMillan, Sims).
+
+## `WIZARD-PAID-INPUTS-TIER-01` — decided by the assistant on the founder's delegation
+
+| Item | Surface | Words |
+|---|---|---|
+| Design follow-up | Wizard + Modify plan terrain, overdo card | As proposed in `design-2026-11-20-wizard-paid-inputs-tier-01.md`: terrain subtitle *Road, trail, or a bit of both. Off-road, effort leads and pace is a guide.* · Road *Pavement, track, mostly flat.* · Trail *Off-road, hills, rough ground. Effort leads, not pace.* · Mixed *Some of each. Off-road, effort leads, not pace.* · Modify plan *Adds a note on pacing off-road. Your sessions stay the same.* · Overdo *Rein me in. I know I'll push too hard if I can.* |
+| Coaching follow-up (§40c) | Plan note, `love` × injury history | *You like the hard sessions. With your injury history, the plan keeps them at the standard amount.* |
+
+**Checked:** no em dashes; the §40c line says why the answer had no effect, which is what §40c requires, and claims no outcome.
