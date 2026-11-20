@@ -6,6 +6,14 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-11-20 — ENGINE-PROTOTYPE-RULINGS-2026-11-20 · a prototype answers the question a sitting could not
+
+**Dev.** Seven engine items had been sat and sent back as "needs a prototype". Each got a flagged, branch-only prototype in its own worktree, measured baseline against option, then one Coaching Board sitting on the numbers. Nothing merged; the notes, register rows and backlog lines are the deliverable. Worktree isolation blocked the agents writing notes into main, so each was copied across.
+
+**Product.** Three of the seven items' own proposed fixes were wrong: the S9 floor fix would have made a stated distance less true, Achilles' "hold easy" was arithmetically impossible under V1, and step-back's option (c) failed the fitness gate. The prototypes are what showed it.
+
+**The honest bit.** Two of my own evidence scripts failed `tsc` and two gates at the pre-push hook, again. Same class as this morning's `fd44f9e5`. Also two rulings independently claimed "§116 Am. 13"; renumbered at filing.
+
 ## 2026-11-20 — BOARD-EVIDENCE-GATES-2026-11-20 · a sitting's evidence scripts are code too
 
 **Shipped:** two script-hygiene gates gained named exemptions for six read-only board-evidence scripts, and one gate's `size === 0` arm now checks the thing its own message demanded, a removal condition on every exemption.
