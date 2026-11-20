@@ -5786,6 +5786,53 @@ ungate one of three triggers · drop the weekly-report gate). ⚠️ Source-shap
 such: the route needs auth, a tier lookup and a service-role client, none of which stand up under
 `environment: 'node'`.
 
+## ⚖️ FILED 2026-11-20 — five findings from the board sittings' analysis, filed on the founder's instruction
+
+Found while re-measuring items for the 2026-11-20 sittings and held back under *"don't invent work"*; the founder then
+said *"file the findings you didn't file"*. ⚠️ Each figure was measured once, by the sitting that found it; re-derive it
+before planning against it (an item is a snapshot).
+
+### 🔲 `STEP4-RUNS-NO-COMPLETIONS-01` — runs arrive and are never logged ⚙️ **NO BOARD** (investigation, `/zona-debug`)
+
+📐 From `SESSION-JOURNEY-01`'s re-measure (`scripts/board-evidence-slt-2026-11-20.ts`): **12 `v_metric_users`
+plan-holders have runs arriving and zero `session_completions`**, 6 of them paid or trial and running every week
+(271 metric activity rows since 10-08 against 43 completion rows). The SLT ruled the journey's break is **step 4**
+(run → logged session), not demand. **Why those runs never link is not measured** — auto-match not firing, the runner
+never tapping, or the run not matching a planned day are three different defects. Diagnose first; no fix is specified.
+
+### 🔲 `SITE-ANALYTICS-OFF-01` — no marketing page can be measured 💼 **SLT** (whether to enable, cost) → ⚙️ **NO BOARD** (wiring)
+
+📐 Vercel Web Analytics is **not enabled** on project `zona` (the pageviews API returns 400; measured by the
+`RUNKED-COMPARE-PAGE-01` sitting), and the site has no other page analytics. **Nobody can say whether any of the 8
+comparison pages, the guide or the 9 plan pages is read.** Fried's 2026-09-21 "one guide, then wait a fortnight" rule
+taught nothing for that reason, and `SITE-SCROLL-DEPTH-01` is blocked on the same absence. ⚠️ Any analytics must
+respect the SLT's no-consent-screen ruling (cookieless only) — that is part of the SLT's question.
+
+### 🔲 `GUIDES-HUB-PROMISE-01` — `/guides` promises a guide that does not exist 👤 **FOUNDER** (the words, if they change)
+
+📐 `GUIDE_HUB` in `lib/marketing/articles.ts:1236` publishes *"…how slow easy should feel, and whether you are
+overtraining or just tired."* **No page answers the second half** (1 guide live). Two ways to close it: the guide the SLT
+authorised today under `RUNKED-GUIDES-01` ships, or the description stops promising it until then. Measured by the
+`RUNKED-GUIDES-01` sitting.
+
+### 🔲 `REG-GTM08-STALE-01` — the registry still describes the waitlist as the live surface ⚙️ **NO BOARD** (record correction)
+
+`feature-registry.md`'s GTM-08 row (*"Marketing site + waitlist"*, App Store badge *"Coming soon"* until the URL is set)
+has been stale since `f8266cf3` (2026-06-15) flipped the site to the live App Store, and the form lost its last render
+site on 2026-09-21. **Closes with `WAITLIST-UNREACHABLE-01`'s retirement build**, which the SLT ruled must correct
+this row; filed separately so the stale record is visible until then.
+
+### 🔲 `API-WEEKLY-KM-UNBOUNDED-01` — the plan API accepts volumes the wizard cannot send ⚙️ **NO BOARD** (input contract); 🏃 **COACHING BOARD** only if a remedy changes what a real runner is prescribed
+
+📐 `/api/generate-plan` accepts any non-negative `current_weekly_km`; **only the wizard's ruler (steps of 5) keeps
+values on the grid** (found by the `FOUNDATION-FLOOR-SUBKM-01` sitting). So a non-app client can reach states every
+sitting today measured as unreachable — the §57 foundation-floor crossing at 0 < cw < 1.36, and the `cw 2/6/8`
+cases two items were filed on. 🔑 **Related, same seam:** the wizard accepts `longest_recent_run_km` below
+`current_weekly_km ÷ 7`, a pair that cannot both be true (`GETRUNNING-WALKRUN-LRHALF-01`'s 206 reachable cases);
+Willy and McMillan both want it checked before generation. The question is the input contract, not a prescription.
+
+---
+
 ## ⚖️ FILED 2026-11-13 — `ENGINE-BASEBUILD-UNVALIDATED-01`, found in Wave 1 and never recorded
 
 ### ✅ `ENGINE-BASEBUILD-UNVALIDATED-01` — SHIPPED 2026-11-15 (§116 Amendment 12). The branch validates, and the invariant it would have thrown was unsatisfiable
