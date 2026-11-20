@@ -301,7 +301,62 @@ flowchart LR
     </tbody>
   </table></div>
 
-  <h2>9. Decisions needed from you</h2>
+  <h2>9. Senior review: changes in v1.1</h2>
+  <div class="prose"><p>This section reviews v1 as an application and API developer would, against our own principles (D-01–D-22, M/N rules, INV-CFG, INV-COACH, INV-CLASS, GOV, ADR-003/006/011/012/013/016/020) and the engine's own history. Where v1 proposed something new that already exists, the plan now extends the existing owner.</p></div>
+
+  <h3>9a. Reuse, so we don't build the same thing twice</h3>
+  <div class="scroll"><table>
+    <thead><tr><th>v1 proposed</th><th>Already exists</th><th>v1.1 decision</th></tr></thead>
+    <tbody>
+      <tr><td>A new Engine API contract</td><td><code>docs/contracts/engine.md</code> (ENGINE-CONTRACT-01), <code>runEngine</code> as the single entry (ENGINE-ENTRY-01, shipped), refusal names, the clock section</td><td><b>Extend</b> <code>engine.md</code> to v2. Don't write a second contract.</td></tr>
+      <tr><td>Rule catalogue holding numbers</td><td><code>GENERATION_CONFIG</code> (245 keys) is the numeric owner (INV-CFG-001); <code>CoachingPrinciples.md</code> owns meaning</td><td>A rule entry <b>references</b> its § and config key. It never copies a value (D-08).</td></tr>
+      <tr><td>A new verifier</td><td><code>validatePlan</code> (171 codes), <code>plan-invariants.md</code>, liveness harness, <code>validateStrengthPlan</code></td><td><b>Refactor</b> the existing invariants into rule predicates. Keep every code id, so the registry, liveness and baselines carry over.</td></tr>
+      <tr><td>Scorecard v2</td><td><code>review:coaching</code> (7 steps), <code>audit:plans</code>, <code>measure:fitness</code>, <code>cohort:shape</code>, <code>verify:parity</code></td><td><b>Compose</b> them into one command with one baseline file. Add the new predicates and note-truth checks as new steps; replace none of them.</td></tr>
+      <tr><td>Defect events</td><td><code>recordOpsEvent</code> / <code>ops_events</code> (N-015), daily integrity probe</td><td>A finding is an <code>ops_events</code> kind with the rule id. No new table until volume needs one.</td></tr>
+      <tr><td>Auto-created backlog items</td><td><code>backlog.md</code> with gates (<code>backlog:verify</code>, board tags)</td><td><b>Changed:</b> auto-writing markdown is fragile. Findings go to a generated <b>defect register</b> (<code>docs/ops/defect-register.md</code>, rebuilt by a script); <code>backlog:verify</code> fails while an unruled rule id is open.</td></tr>
+      <tr><td>Single owners for derived quantities</td><td><code>sessionKm</code>, <code>sessionRole</code>, <code>deloadCadence</code>, <code>lib/format.ts</code>, <code>loadResidualNote</code> accessor</td><td>Keep all of them. They become L3's metrics owner, used by the planner and the verifier alike.</td></tr>
+      <tr><td>Wait for a second consumer before extracting</td><td>Architect's position recorded 2026-10-14</td><td>Still holds: B7 is a package first, a separate deploy only when a second consumer exists or the founder decides.</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>9b. Improvements to the design</h3>
+  <div class="scroll"><table>
+    <thead><tr><th>Area</th><th>v1 gap</th><th>v1.1</th></tr></thead>
+    <tbody>
+      <tr><td>Verifier independence</td><td>"Independent code" was ambiguous. If the planner and verifier compute weekly km differently, we get false findings; if they share a buggy derivation, we get blind spots (the plyo case).</td><td>Two kinds of shared code are allowed: the rule data and the <b>metrics owner</b>, which is tested against hand-computed fixtures. Predicates are never shared with construction logic, and the planner never calls a predicate to make a plan look valid.</td></tr>
+      <tr><td>Versioning</td><td>Version was mentioned without saying what is versioned</td><td>Every plan is stamped with <code>engine_version</code>, <code>rules_version</code> (a catalogue hash), <code>as_of</code> and <code>input_hash</code>. The nightly verifier separates "defect at creation" from "rule changed since", so a doctrine change never reads as a regression.</td></tr>
+      <tr><td>Latency and AI</td><td>The generate path takes 28–35 s today</td><td>The rule plan returns synchronously. Enrichment is a separate async job, called by the route (ADR-006 unchanged, persistence stays outside the engine). Shadow runs execute after the response, in <code>waitUntil</code>, so they add no latency for the runner.</td></tr>
+      <tr><td>Error model</td><td>Refusal-as-result named, taxonomy not</td><td>A typed result: <code>ok</code> / <code>refused</code> {code, reason, levers[]} / <code>invalid_input</code> {field, why}. A 422 maps to refused, a 400 to invalid input, and a 500 is reserved for engine faults (which also emit a finding). The four current refusal names map to codes.</td></tr>
+      <tr><td>Consumers</td><td>Screens read raw <code>meta</code> keys (118, 8 cast-only)</td><td>A <b>plan read model</b>: typed accessors are the only way screens, prompts and push read a plan, so v1 and v2 plans differ in one place. This extends the <code>loadResidualNote</code> pattern.</td></tr>
+      <tr><td>Planner complexity</td><td>"Constraint solver" could become over-engineering (the Sensible principle)</td><td><b>Deterministic, priority-ordered placement</b>: a fixed order of hard rules, then soft rules, then preferences, each stage working within the room the earlier stages left. No external solver library. When a rule cannot be met, it is recorded as a Decision with its lever rather than silently relaxed.</td></tr>
+      <tr><td>Adaptation</td><td>Not specified in v1</td><td><code>/adapt</code> returns a proposed plan <b>plus a diff</b> and its ADR-012 magnitude. The app decides whether to auto-apply or confirm. ADR-012 and ADR-013 are unchanged.</td></tr>
+      <tr><td>Flags and rollback</td><td>Cut-over "behind a flag"</td><td>One flag per plan kind, readable at runtime, plus a global kill switch back to v1 and a shadow-diff dashboard. Each cut-over is an explicit, recorded founder or Coaching Board sign-off.</td></tr>
+      <tr><td>Governance hooks</td><td>The new rule catalogue would bypass <code>coaching-guard</code></td><td>The catalogue file joins the doctrine file list (INV-COACH-001). The three-artifacts rule (INV-COACH-002) becomes: § + config key + rule entry with predicate.</td></tr>
+      <tr><td>Doc drift</td><td>The inventory found stale docs</td><td>Part of B1. <code>architecture.md</code> still says Gist, AI generator and dark mode. The principles skill itself still says Gist, theme toggle and red intervals. The engine and strength contracts carry stale counts. CLAUDE.md has 4 stale claims. Fixed in the same commit as the contract (D-11, GOV-001).</td></tr>
+      <tr><td>Tier</td><td>Not explicit</td><td>The engine stays <b>tier-blind</b>: measured 0 of 300 differences today. Tier is resolved at the route (ADR-003). Paid richness belongs to L6 and the app, never to the prescription.</td></tr>
+      <tr><td>Save path</td><td>The background chain writes <code>plan_json</code> with a direct update, bypassing <code>savePlanForUser</code></td><td>Hotfix list: every plan write goes through the one save owner (D-08, N-015).</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>9c. New principles to document (proposed, land in ADR-027 and the principles skill on approval)</h3>
+  <div class="scroll"><table>
+    <thead><tr><th>ID</th><th>Principle</th><th>Mechanical check</th></tr></thead>
+    <tbody>
+      <tr><td class="mono">ARCH-ENG-001</td><td>Layers depend downward only. Nothing mutates the plan after L3 except L6 copy, and L6 output is re-verified.</td><td>Import-graph gate (extends ENGINE-PURITY-GATE)</td></tr>
+      <tr><td class="mono">ARCH-ENG-002</td><td>Canonical truth registry: profile, rules, delivered plan, decisions, findings. Each has one owner, listed in <code>docs/canonical/engine-truths.md</code>.</td><td>A test fails if a second writer appears</td></tr>
+      <tr><td class="mono">ARCH-ENG-003</td><td>A rule references its § and its config key and never copies a value.</td><td>Catalogue lint: no numeric literals; every § and key must exist</td></tr>
+      <tr><td class="mono">ARCH-ENG-004</td><td>Derived quantities (weekly km, contacts, minutes) have one metrics owner, shared by the planner and verifier and tested against hand fixtures.</td><td>Fixture suite; ban on inline re-derivation (like <code>sessionKm</code>)</td></tr>
+      <tr><td class="mono">ARCH-ENG-005</td><td>Determinism: the engine reads no wall clock. <code>as_of</code> is required. Output is stamped with versions and the input hash.</td><td>A gate bans <code>new Date()</code>/<code>Date.now()</code> in the engine; a same-input/same-output test</td></tr>
+      <tr><td class="mono">ARCH-ENG-006</td><td>A refusal is a result, never a throw, with a typed code and levers.</td><td>Contract test over the error taxonomy</td></tr>
+      <tr><td class="mono">ARCH-ENG-007</td><td>Every corpus row must be producible by a product path.</td><td>A corpus gate validates rows against the wizard's input schema (generalises <code>corpusProductionShape</code>)</td></tr>
+      <tr><td class="mono">ARCH-ENG-008</td><td>Never worse: Scorecard v2 is a ratchet, and a cut-over needs shadow parity plus a recorded sign-off.</td><td>CI baseline compare; cut-over checklist</td></tr>
+      <tr><td class="mono">ARCH-ENG-009</td><td>A runner-facing note is generated only from Decision records.</td><td>Note-truth checks; no note string outside L4</td></tr>
+      <tr><td class="mono">ARCH-ENG-010</td><td>Consumers read plans through the read model only.</td><td>Gate: no <code>plan.meta.&lt;key&gt;</code> access outside the accessors</td></tr>
+      <tr><td class="mono">ARCH-ENG-011</td><td>Every finding is an event with a rule id. An open rule id with no ruling blocks <code>backlog:verify</code>.</td><td>Register script + gate</td></tr>
+    </tbody>
+  </table></div>
+
+  <h2>10. Decisions needed from you</h2>
   <div class="grid g2">
     <div class="card"><h4>1. Approve this architecture</h4><p>Layers L1–L6, the canonical models, the scorecard as the bar.</p></div>
     <div class="card"><h4>2. Freeze the current engine</h4><p>Only the runner-harm hotfix list is fixed in the current engine.</p></div>

@@ -35,3 +35,50 @@ The coaching doctrine is unchanged. Rulings become L2 entries.
   - automatic regeneration of eligible live plans.
 - The current engine is frozen except for a list of hotfixes for defects that harm runners.
 - The build order is B0–B8, as set out in the HLD.
+
+## v1.1 senior review (2026-11-20)
+
+### Reuse: extend these owners, do not duplicate them
+- `docs/contracts/engine.md` becomes the v2 contract. `runEngine` remains the entry.
+- Rule entries reference `CoachingPrinciples.md` § numbers and `GENERATION_CONFIG` keys. They never copy a value.
+- The current invariants are refactored into rule predicates and keep their code ids.
+- Scorecard v2 composes the existing harnesses: `review:coaching`, `audit:plans`, `measure:fitness`, `cohort:shape` and `verify:parity`.
+- Findings are recorded as `ops_events`.
+- The defect register is a generated file. It is gated by `backlog:verify`; nothing auto-writes `backlog.md`.
+- The single owners stay: `sessionKm`, `sessionRole`, `deloadCadence`, `lib/format.ts` and the accessors.
+- The engine is extracted as a package first. It gets its own deployment only once a second consumer exists (the 2026-10-14 position).
+
+### Design changes
+- **Shared code between planner and verifier:** the two may share only the rule data and the fixture-tested metrics owner.
+- **Version stamps:** every plan carries `engine_version`, `rules_version`, `as_of` and `input_hash`.
+- **Latency:** the rule plan is returned synchronously. Enrichment and shadow runs are async, after the response.
+- **Typed results:** `ok`, `refused` (code, reason, levers) or `invalid_input`.
+- **Plan read model:** consumers read plans only through accessors.
+- **Placement:** deterministic and priority-ordered. No solver library.
+- **`/adapt`:** returns a diff plus its ADR-012 magnitude.
+- **Cut-overs:** a flag per plan kind and a kill switch. Every cut-over has a recorded sign-off.
+- **Doctrine file:** the rule catalogue joins the coaching-guard doctrine list. INV-COACH-002 becomes § + config key + rule entry.
+- **Doc-drift fixes in B1:**
+  - `architecture.md`
+  - the principles skill
+  - the engine and strength contract counts
+  - 4 claims in `CLAUDE.md`
+- **Tier:** the engine stays tier-blind (ADR-003).
+- **Hotfix:** every plan write goes through `savePlanForUser`.
+
+### New principles (proposed)
+| ID | Principle |
+|---|---|
+| ARCH-ENG-001 | Layers depend downward only. Nothing mutates the plan after L3, except L6 copy, which is re-verified |
+| ARCH-ENG-002 | A canonical truth registry (`docs/canonical/engine-truths.md`): one owner per truth |
+| ARCH-ENG-003 | A rule references its § and its config key, and never copies a value |
+| ARCH-ENG-004 | One metrics owner for derived quantities, tested against hand fixtures |
+| ARCH-ENG-005 | Determinism: no wall-clock read inside the engine; `as_of` is required; outputs are stamped |
+| ARCH-ENG-006 | A refusal is a typed result, never a throw |
+| ARCH-ENG-007 | Every corpus row must be producible by a product path |
+| ARCH-ENG-008 | Never worse: a Scorecard v2 ratchet, shadow parity, and a recorded sign-off for every cut-over |
+| ARCH-ENG-009 | Notes are generated only from Decision records |
+| ARCH-ENG-010 | Consumers read plans only through the read model |
+| ARCH-ENG-011 | Every finding is an event with a rule id. An open, unruled rule id blocks `backlog:verify` |
+
+Each principle ships with its mechanical check (listed in the HLD, section 9c) during the B-phase that introduces it.

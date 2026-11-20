@@ -616,3 +616,26 @@ Under HK-SOR, the deciding question is **"does HealthKit have HR samples for the
 **Hard consequence**: iPhone-only runners (no Apple Watch, no chest strap) get no HR-based coaching even with Strava connected. Strava's Apple Health write does not include the HR stream. Apple controls what Strava writes; we don't reach back to Strava's API to compensate. This is a doctrine-driven trade.
 
 Every ⚠️ or ❌ cell must have a corresponding UI state with a one-line explanation and a specific action the user can take. Never a generic "connect Strava" prompt — connecting Strava does not solve the no-HR case.
+
+
+---
+
+## 18. Engine Service Principles (PROPOSED: ADR-027, pending founder approval)
+
+**Authority:** `docs/architecture/ADR-027-coaching-engine-service.md` and its HLD. These principles bind once ADR-027 is accepted. Until then, read them as the direction the engine work is heading.
+
+| ID | Principle |
+|---|---|
+| ARCH-ENG-001 | Layers depend downward only (L1 Profile, L2 Rules, L3 Planner, L4 Explanation, L5 Verifier, L6 Enrichment). Nothing mutates the plan after L3, except L6 copy, which is re-verified |
+| ARCH-ENG-002 | Canonical truth registry. Profile, rules, delivered plan, decisions and findings each have one owner (`docs/canonical/engine-truths.md`) |
+| ARCH-ENG-003 | A rule entry references its CoachingPrinciples § and its `GENERATION_CONFIG` key. It never copies a value |
+| ARCH-ENG-004 | One metrics owner for derived quantities. The planner and the verifier share it, and it is tested against hand fixtures |
+| ARCH-ENG-005 | The engine reads no wall clock. `as_of` is required. Plans are stamped with `engine_version`, `rules_version`, `as_of` and `input_hash` |
+| ARCH-ENG-006 | A refusal is a typed result (`ok` / `refused` / `invalid_input`), never a throw |
+| ARCH-ENG-007 | Every test-corpus row must be producible by a product path |
+| ARCH-ENG-008 | Never worse: the Scorecard v2 ratchet applies, and every cut-over needs shadow parity plus a recorded sign-off |
+| ARCH-ENG-009 | A runner-facing note is generated only from Decision records |
+| ARCH-ENG-010 | Consumers read plans through the plan read model, never through raw `meta` keys |
+| ARCH-ENG-011 | Every finding is an event with a rule id. An unruled rule id blocks `backlog:verify` |
+
+⚠️ **This skill is itself stale in places** (found 2026-11-20): it still describes Gist plan storage, a theme-toggle journey test, a red `--s-inter`, and N-004 "no modals" without the destructive-confirmation exception. These are corrected in ADR-027 B1.
