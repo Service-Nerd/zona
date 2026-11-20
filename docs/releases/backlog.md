@@ -3096,6 +3096,7 @@ used changes what they are asked, so the step is the Design Board's.**
 ⚖️ **SAT 2026-11-20** (🏃 Coaching Board) — **CORRECT WITH AMENDMENT**: the per-injury mapping exists. Bucket = last flare-up; within a year = current; longer ago lifts **only the long-run time cap, for Back and Plantar**; Knee, Shin and Achilles do not vary and are not collected (🎯 McMillan dissents on Knee). Condition: `measure:fitness` on the back/plantar cohort. 🧭 Design Board can now rule the control (two chips). `docs/decisions/coaching-2026-11-20-injury-recency-01.md`.
 
 ⚖️ **FOLLOW-UP SAT 2026-11-20** (🧭 Design Board) — **SHIP WITH AMENDMENT, NOT BUILT**: an inline follow-up, two answers, shown only for Back/Plantar at half marathon or longer (the cap never binds at 5K/10K; 2 of 43 live plans affected). Optional, absent = current. 👤 founder for the words, including the *still an issue* subtitle and field note. Gated on the Coaching Board's `measure:fitness` condition. `docs/decisions/design-2026-11-20-injury-recency-01-followup.md`.
+👤 **COPY DECIDED 2026-11-20** (founder delegated the words) — in `docs/decisions/founder-2026-11-20-copy-approvals.md` § Follow-up copy; lands with the build.
 
 🔴 **RE-TAGGED 2026-11-16. The Design Board sat and could not rule** (`design-rulings.md`, same date). The heading
 used to read *"COLLECT IT, FOR FOUR CHIPS. Now 🧭 DESIGN BOARD for the control"*, which reads as ready. It is not.
@@ -3227,6 +3228,7 @@ reinstate the hole.
 
 ⚖️ **SAT 2026-11-20** (🧭 Design Board) — encoding **SHIP WITH AMENDMENT (5)**: a muted eyebrow mark on both calendar renderings, a one-line action on the WeekCard, the week identity on Today through `weekIdentity` (free tier included). **The rank is still not ruled.** Mockups → 👤 founder, then a device. `docs/decisions/design-2026-11-20-plan-note-heavier-week-placement-01.md`.
 ⚖️ **FOLLOW-UP SAT 2026-11-20** (🏃 Coaching Board) — **(1) CORRECT WITH AMENDMENT:** week N discharges the 10-28 binding for every tier, FREE included, if the WeekCard line declares the residual in words (injury scope names the injury history; words 👤 founder's). **(2)** After the ship, the tile may not displace an untold fact, which leaves dead last or goes; that choice is 🧭 Design's, post-ship. `docs/decisions/coaching-2026-11-20-plan-note-heavier-week-placement-01-followup.md`.
+👤 **COPY DECIDED 2026-11-20** (founder delegated the words) — in `docs/decisions/founder-2026-11-20-copy-approvals.md` § Follow-up copy; lands with the build.
 
 🧭 **Sitting:** `docs/decisions/design-2026-11-14-heavier-week-placement.md`.
 
@@ -3630,27 +3632,11 @@ amber for warnings"* (`ux-principles.md`, CLAUDE.md). Seen in `docs/investigatio
 Fix: the amber warning shade through `hueText` for the words, and move `loadRatioContext` to a shared owner so the verdict
 can be reused. Reaches 2 runners today (see `RUNKED-LOAD-VIEW-01`), so small but real; do it before or with that item.
 
-### 🔲 `RUNKED-COMPARE-PAGE-01` — a comparison page answering the gamified running apps 💼 **SLT** (build order) → 👤 **FOUNDER** (copy; naming a competitor) → 🏃 **COACHING BOARD** (claims only)
-
-⚖️ **SAT 2026-11-20** (💼 SLT) — BUILD as one catalogue entry answering the **category** ("gamified running apps"), linked to and from page 1's no-streaks argument; next comparison page, ahead of any second guide. 👤 Founder decides naming and page 9 vs extending page 1; claims through the claims gate. Re-measured: **8 comparison pages live, not 7**. `docs/decisions/slt-2026-11-20-runked-compare-page-01.md`.
-
-⚠️ **RE-TAGGED 2026-11-12, Coaching Board sitting:** *"this board owns only the **claims**, which the
-existing claims gate already checks."* The decisions in front of it — whether to build a comparison page at
-all, in what order, and whether to name a competitor — are the SLT's and the founder's. The board tag stays
-last and narrow rather than being removed, because a page arguing that streaks cannot tell you to rest IS a
-physiology claim (the W-03 precedent).
-
-Runked's game rewards more running (streaks, chests, leagues); our argument is that an app built on streaks cannot tell
-you to rest. **Crossover:** the comparison series (7 live, page 8 pending), `ArticlePage`, `COMPETITOR_FACTS` (every
-competitor price owned and dated), the price and page-claims gates. **Default: one catalogue entry + shim**; whether it
-is page 8 or a ninth is the founder's call. Runked's facts (price, no free tier, iPhone only) enter `COMPETITOR_FACTS`
-with a verification date. Plan gate applies.
-
 ### 🔲 `RUNKED-GUIDES-01` — easy-running guides on the searches Runked owns 💼 **SLT** (build order) → 👤 **FOUNDER** (reads) → 🏃 **COACHING BOARD** (claims only)
 
 ⚖️ **SAT 2026-11-20** (💼 SLT) — BUILD DIFFERENTLY, no series: guide 1 gains outbound links to pages 6 and 8, then ONE guide, "am I overtraining or just tired" (§2/§3), which the live `/guides` meta description already promises; after `RUNKED-COMPARE-PAGE-01`. Zone 2 / recovery-pace guides not authorised (covered); 80/20 deferred (INV-COACH-004). `docs/decisions/slt-2026-11-20-runked-guides-01.md`.
 
-⚠️ **RE-TAGGED 2026-11-12, Coaching Board sitting** — same reasoning as `RUNKED-COMPARE-PAGE-01` above:
+⚠️ **RE-TAGGED 2026-11-12, Coaching Board sitting** — same reasoning as the (since removed) `RUNKED-COMPARE-PAGE-01`:
 whether to write 66 guides' worth of content is a build-order decision, not a coaching one. Each guide's
 claims remain this board's, via the claims gate.
 
@@ -15903,7 +15889,7 @@ fails every morning for a reason nobody needs to read is a test everybody learns
 the next real failure in that file arrives pre-ignored. This repo has already recorded that a
 guard which cries wolf gets disabled, which is the same as having no guard.
 
-**State at END of 2026-11-20 — BOARD DAY: every sitting run, every hand-off sat, every finding filed** (last ship `fd44f9e5` — `BOARD-EVIDENCE-GATES-2026-11-20`, two script-hygiene gates given named exemptions for today's read-only board-evidence scripts, after the docs commits `fa149dab` (36 items analysed, 30 sat, 6 not ready), `5a9c0e09` (founder copy for six rulings), `44975700` (five findings filed), `7c8c28f5` (four follow-up sittings) and `093a633c` (three more findings filed). **818 files / 8,423 tests, ALL GREEN** at the pre-push gate; `tsc` 0; `backlog:verify` 0 with **83 open · 29 COACHING · 15 DESIGN · 18 ⚙️ NO BOARD · 12 SLT · 9 FOUNDER**. No engine or app code changed today; `verify:parity` not run because nothing it measures moved.) ⚠️ **`main` was red locally from `fa149dab` until `fd44f9e5`** (the evidence scripts tripped the gates); nothing red was pushed. 🔻 Waiting on the founder: copy for the injury-recency follow-up and the heavier-week declaration; the seven engine prototypes; the Runked page; birth-year 5.1.1.
+**State at END of 2026-11-20 — BOARD DAY: every sitting run, every hand-off sat, every finding filed** (last ship `fd44f9e5` — `BOARD-EVIDENCE-GATES-2026-11-20`, two script-hygiene gates given named exemptions for today's read-only board-evidence scripts, after the docs commits `fa149dab` (36 items analysed, 30 sat, 6 not ready), `5a9c0e09` (founder copy for six rulings), `44975700` (five findings filed), `7c8c28f5` (four follow-up sittings) and `093a633c` (three more findings filed). **818 files / 8,423 tests, ALL GREEN** at the pre-push gate; `tsc` 0; `backlog:verify` 0 with **82 open · 29 COACHING · 15 DESIGN · 18 ⚙️ NO BOARD · 11 SLT · 9 FOUNDER** (`RUNKED-COMPARE-PAGE-01` removed by the founder). No engine or app code changed today; `verify:parity` not run because nothing it measures moved.) ⚠️ **`main` was red locally from `fa149dab` until `fd44f9e5`** (the evidence scripts tripped the gates); nothing red was pushed. 🔻 Waiting on the founder: the seven engine prototypes. Follow-up copy decided on his delegation.
 
 **Prior state block (ADR-026, ships `57fb016c`/`7521806e`/`9497de8e`) — superseded by the paragraph above; see `docs/build-log.md` for its detail.**
 

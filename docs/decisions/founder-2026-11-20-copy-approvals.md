@@ -25,3 +25,21 @@ The benchmark consequence line follows `INV-PLAN-VDOT-DISCOUNT-DATELESS` (an und
 - The tune-up line ships only if the 💼 SLT approves the surface (Design Board 2026-11-20).
 - The birth-year decline does not change App Store 5.1.1's reading ("the declaration is required, the year is not").
 - Each build re-checks its line against the code it renders beside; a copy claim that stops being true is a defect.
+
+## Follow-up copy — decided by the assistant on the founder's delegation, 2026-11-20
+
+The founder: *"I told you to sort the words."* Drafted to the follow-up sittings' conditions, filed as decided. No em
+dashes; no `%`; a week line never says *"In week N"*.
+
+| Item | Surface | Copy |
+|---|---|---|
+| `INJURY-RECENCY-01` | injuries step subtitle (replaces *"Old injuries that still show up. Skip if you're clean."*, which told the old-injury runners this follow-up is for not to tick) | *Anything you've had trouble with, even if it's settled. Skip if there's nothing.* |
+| `INJURY-RECENCY-01` | field note (replaces *"Select any that are still an issue…"*) | *Tick any you've had. We'll shape the plan around them.* |
+| `INJURY-RECENCY-01` | follow-up label, Back / Plantar fasciitis at HM or longer only | **When did it last flare up?** |
+| `INJURY-RECENCY-01` | the two answers (unanswered = the first) | **In the last year** · **More than a year ago** |
+| `PLAN-NOTE-HEAVIER-WEEK-PLACEMENT-01` | WeekCard line, healthy scope | *This week rises more than we normally allow. Keep the easy days easy, and move the long run rather than shorten it if the week goes badly.* |
+| `PLAN-NOTE-HEAVIER-WEEK-PLACEMENT-01` | WeekCard line, injury scope (`non_long`) | *This week rises more than your injury history would normally allow. Keep the easy days easy, and move the long run rather than shorten it if the week goes badly.* |
+
+**Checked:** the action half matches `lib/plan/loadResidualNote.ts`'s existing sentence, so the week card and the plan
+tile give the same instruction. The injury line names the injury history, the Coaching Board's binding condition.
+*"Last flare up"* is the meaning the Coaching Board ruled (McMillan, Sims).
