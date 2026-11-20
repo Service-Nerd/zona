@@ -1293,6 +1293,7 @@ Successors: `ACHILLES-QUALITY-ONSET-01` 🏃, `GRID-NO-MENOPAUSAL-TENDON-01` ⚕
 ---
 
 ### 🔴 `ACHILLES-QUALITY-ONSET-01` — ramp the quality ONSET for tendon histories, with easy volume HELD *(filed 2026-11-04)* 🏃 **COACHING BOARD** (INSUFFICIENT EVIDENCE — needs `measure:fitness`)
+⚖️ **RULED 2026-11-20 on a prototype** (🏃 Coaching Board) — **CORRECT WITH AMENDMENT**: the first quality week of an achilles history holds the long run (N=1, `TENDON_ONSET_LONG_RUN_HOLD_WEEKS`), not the easy runs; §100 re-anchor carried through the next deload, 0 new bounceback warns; 'hold easy' and 'dose' INCORRECT (V1 makes hold impossible without a +26.9% onset jump and 96 plans losing quality km; dose inert). Per-run easy shrinkage 384 → 0, quality untouched. Prototype branch `proto/achilles-quality-onset-01` (not merged). **READY TO BUILD.** `docs/decisions/coaching-2026-11-20-achilles-quality-onset-01-prototype.md`.
 
 From the sitting above. Three seats want it; it changes what the engine prescribes and the sitting had no fitness
 numbers, so it was **not ruled**.
@@ -2581,6 +2582,7 @@ traced**, so that is stated rather than claimed.
 ---
 
 ### 🔲 `GOALPACE-UNBENCHMARKED-MARATHON-01` — an unbenchmarked marathon runner has no goal-pace bound at all 🏃 **COACHING BOARD** (own sitting; the comparator is the open question)
+⚖️ **RULED 2026-11-20 on a prototype** (🏃 Coaching Board) — **UNBLOCKED** by §47 Am. 5 (`STEPBACK-SPECIFICITY-SCOPE-01`, option b). §120 Am. 4 re-applied on top: 207 of 207 unbenchmarked beginner HM/marathon step-backs kept, 0 refusal flips, minutes median −0.77%. Conditions as ruled 11-16: ship §44 Am. 2's widened gap arm (886 of 886 withheld plans must name the gap); re-baseline both harnesses with the km-ruler reason (maintenance +0.4pp, 10K +1.5pp; neverBuilds 14.2→14.6 / 9.4→9.6); `INV-PLAN-UNBENCHMARKED-GOAL-BOUNDED` with `basis`. HM in scope. Build after §47 Am. 5 in the same release. ⚠️ The 11-16 Am. 4 code is not recoverable from git; the build re-implements it. **READY TO BUILD.** `docs/decisions/coaching-2026-11-20-stepback-specificity-scope-01-prototype.md`.
 📐 **VALIDITY SWEEP 2026-11-20** — REWRITE. The heading is out of date: ruled 2026-11-16 (§120 Am. 4), built, reverted (`87fcffd5`), held on `STEPBACK-SPECIFICITY-SCOPE-01`, not waiting for its own sitting. **Corrected premise: an unbenchmarked time-target runner at HM OR marathon has no goal-pace bound.** Reproduced today: beginner, no benchmark, 20 km/wk, longest 10, max HR 187 → marathon 4:00:00 gets `Marathon-pace sustained 36m Zone 4–5 161–187 bpm`; HM 1:50:00 gets `HM-pace sustained 36m Zone 4–5 161–187 bpm`.
 
 **Found 2026-11-16 while discharging `BEGINNER-THRESHOLD-ELIGIBILITY-01`, and it is worse than the condition it
@@ -2609,6 +2611,7 @@ comparator is the question, and `NO-RUNNER-TURNED-AWAY-01` forbids answering it 
 ---
 
 ### 🔲 `STEPBACK-SPECIFICITY-SCOPE-01` — should §47 require race-pace specificity at all? 🏃 **COACHING BOARD** (the chair's scope call) · **BLOCKS `GOALPACE-UNBENCHMARKED-MARATHON-01`**
+⚖️ **RULED 2026-11-20 on a prototype** (🏃 Coaching Board) — **CORRECT WITH AMENDMENT, option (b)**: §47 Am. 5, time-target plans step back without needing race pace. +494 of 5,678 sampled plans, 0 new errors, `cohort:shape` and `measure:fitness` unmoved; (c) fails the fitness gate on the injury cohort. Unblocks `GOALPACE-UNBENCHMARKED-MARATHON-01` (same release, after this). Prototype branch `proto/stepback-specificity-scope-01` (not merged). **READY TO BUILD.** `docs/decisions/coaching-2026-11-20-stepback-specificity-scope-01-prototype.md`.
 
 **Part 2 of the 2026-11-16 `STEPBACK-TRIGGER-STRUCTURAL-01` sitting; part 1 shipped the same day.** §47's
 principle says a peak long run *"includes race-pace segments"*. 🩹 Willy's position is that this describes
@@ -2773,6 +2776,7 @@ removed).
 ---
 
 ### 🔲 `S9-QUALITY-FLOOR-REACH-01` — ONE path left, and it needs a prototype not a count 🏃 **COACHING BOARD**
+⚖️ **RULED 2026-11-20 on a prototype** (🏃 Coaching Board) — path (2): the OR-floor fix (A) is VETOED. It reaches only 432 `hill_reps` sessions and shortens no running (0 durations changed); 99.2% of lifts are inert because structured rows never read the budget. The real defect is hill distance being the weekly budget, so §40b Am. 5 derives it from the session's moving structure, with `INV-PLAN-EFFORT-DISTANCE-FITS-DURATION` (377 → 0). Conditions: `cohort:shape` stated, PEAK-IN-PEAK residual declared per plan. Paths (1) and (3) stand as ruled on 11-15. Prototype branch `proto/s9-quality-floor-reach-01` (not merged). **READY TO BUILD.** `docs/decisions/coaching-2026-11-20-s9-quality-floor-reach-01-prototype.md`.
 
 🔴 **RE-MEASURED AND RULED 2026-11-15** (`docs/decisions/coaching-2026-11-15-wave5-delivered-volume.md`),
 on 45,936 served plans. **Two of the three paths are not what the item says they are.**
@@ -2817,6 +2821,7 @@ until its entry is removed, and a sixth builder that skips it fails at once.
 ---
 
 ### 🔲 `BASEBUILD-NO-LONG-RUN-01` — the base-build block has no long run, so §9, §52 and §106 all reach nothing 🏃 **COACHING BOARD**
+⚖️ **RULED 2026-11-20 on a prototype** (🏃 Coaching Board) — **CORRECT WITH AMENDMENT, option B**: the base-build ramp has a designated long run and the long run bounds the week (identical-run plans 33.3% → 0; longest session max 88.6 → 43.4 km); §116 Am. 13 + `BASE_BUILD_LONG_RUN_STEP_MAX_KM` (1.5, renamed from the producer's week-1 constant) + `INV-PLAN-ONRAMP-LONG-RUN`; conditions: base-build measurement gate, new plans only, wider staged sample, **lands before `BASEBUILD-DURATION-01`** (that ruling's §116 Am. 13 becomes Am. 14). Prototype branch `proto/basebuild-no-long-run-01` (not merged). **READY TO BUILD.** `docs/decisions/coaching-2026-11-20-basebuild-no-long-run-01-prototype.md`.
 
 **Filed 2026-11-15 by the board as §116 Amendment 12's stated residual**
 (`docs/decisions/coaching-2026-11-15-wave5-delivered-volume.md`). It is the hazard the unsatisfiable
@@ -3050,6 +3055,7 @@ the maintenance enricher writes session `coach_notes` and a weekly debrief only.
 
 
 ### 🔲 `LONG-RUN-CAP-INJURY-VALUE-01` — is 120 minutes the right long-run ceiling for a back or plantar history? 🏃 **COACHING BOARD**
+⚖️ **RULED 2026-11-20 on a prototype** (🏃 Coaching Board) — **CORRECT WITH AMENDMENT**: back and plantar split; Plantar fasciitis keeps 120 min (time-on-feet mechanism); Back moves to §9's HM cap, 135 (half-marathon back plans match the healthy twin, maintenance 74.2% → 47.2%; marathon LR 16.0 → 17.9 km). The 10-28 share-warning objection does not survive a healthy-twin comparison (1,701 lifted vs 1,727 with no chip). *Longer ago* still lifts both. Condition: `measure:fitness` on a back/plantar overlay. Prototype branch `proto/long-run-cap-injury-value-01` (not merged). `docs/decisions/coaching-2026-11-20-long-run-cap-injury-value-01-prototype.md`. **READY TO BUILD.**
 
 Ratified AS IS on 2026-10-28 (§9 Am. 3) with the value INSUFFICIENT EVIDENCE. Marathon mean peak long run 15.7 km with
 the history, 25.1 km without. **Reopens on:** a prototype in which the week grows with a raised long run (every raise
@@ -3079,7 +3085,8 @@ the client, not at the route (ADR-003's auth boundary), so a free client can sen
 "Unlock more personalisation" card now sits mid-flow (on the weekday step) with the injuries step after it (Design Board).
 
 
-### 🔲 `INJURY-HIP-INERT-01` — the Hip chip is collected, four runners have ticked it, and it changes nothing 🏃 **COACHING BOARD** ruled 2026-11-14, then 🧭 **DESIGN BOARD** to remove the chip *(filed 2026-11-14)*
+### 🔲 `INJURY-HIP-INERT-01` — KEEP the Hip chip (ruled 2026-11-20; the 12-12 removal default is vacated) 🏃 **COACHING BOARD** ruled 2026-11-20
+⚖️ **RULED 2026-11-20** (🏃 Coaching Board) — **CORRECT: KEEP**. 🔴 The premise was false, and so was this morning's validity-sweep line below: Hip changes the run prescription on 285 of 1,728 grid plans (16.5%) via the any-injury gates (§89 onset veto, §47), plus S14 strength pacing on 47 of 89 lifts. The 12-12 removal default is vacated and the 🧭 Design Board removal step withdrawn; no new run rule. §89 amendment + S14 sentence + chip-effect test; no numeric. READY TO BUILD. `docs/decisions/coaching-2026-11-20-injury-hip-inert-01.md`.
 📐 **VALIDITY SWEEP 2026-11-20** — REWRITE. Half true: Hip changes nothing in the RUN plan, but it already changes STRENGTH load progression. `STRENGTH_CONFIG.INJURY_LOADED_MUSCLES.hip` (`82141027`, 10-18) slows `suggestLoad` steps on glute, hip and adductor lifts, and `runContext.ts:66` passes the wizard's "Hip" through, so the item's own exit condition was met before the 11-14 sitting. Reach: 0 of 4 hip runners have a strength plan (1 `strength_plans` row in total). **Corrected premise: the Hip chip has no run-plan effect, and its only effect (strength load pacing) reaches no runner today. The board must weigh that before the 12-12 removal default, which would delete a live strength input.**
 
 🧭 **Sitting:** `docs/decisions/coaching-2026-11-14-wave3-wizard-inputs.md`. Found by the measurement
@@ -5805,6 +5812,7 @@ after the work, in an API string, with no route to Upgrade. ⚠️ **Not seen on
 reached it is not measured. Found by the `TUNE-UP-CALLOUT-INERT-01` SLT follow-up.
 
 ### 🔲 `PLAN-NOTE-MULTIWEEK-RAMP-01` — about 29% of warned plans exceed the ramp in more than one week; the mark names one 🏃 **COACHING BOARD** (whether more than one week must be told) → 🧭 **DESIGN BOARD** (how)
+⚖️ **RULED 2026-11-20** (🏃 Coaching Board) — **CORRECT**: every warned week is declared on that week, each with its own scope (29.2% / 29.7% reproduced; the left-out weeks average 0.86 of the named rise; 23 Achilles plans name the smaller week). Producer stamps `load_residual_weeks`; §90 Am.3 + set-equality test; no numeric; builds with PLACEMENT-01. Coaching side READY TO BUILD; 🧭 Design Board rules the multi-mark encoding first. `docs/decisions/coaching-2026-11-20-plan-note-multiweek-ramp-01.md`.
 
 📐 Willy, recorded in `coaching-2026-11-20-plan-note-heavier-week-placement-01-followup.md`: **29% of warned healthy
 plans and 30% of Achilles plans** breach the ramp in more than one week. The producer names the largest rise, and the
@@ -11184,6 +11192,7 @@ the gap so widening a corpus fails loudly and the arm gets replaced by a floor. 
 > outranked — `TRIGGER-BACKTEST-02` (masking analysis) is stubbed and not built.
 
 ### 🔴 `BASEBUILD-DURATION-01` — the base-build ramp ignores the runner's weekday budget 🏃 **COACHING BOARD** *(re-filed 2026-11-11 after a SECOND build and revert — read this before touching it)*
+⚖️ **RULED 2026-11-20 on a prototype** (🏃 Coaching Board) — **CORRECT WITH AMENDMENT**: build option A (the three b85d3e4f parts); §116 Am. 13 lets a ramp hold at the stated budget (proven from the plan); new outcome `budget_cannot_climb` = placed block never climbs, refusing 8 of 1,081 (0.7%, all 3-day weekend-blocked); option C vetoed. Conditions: curve consumers read placed volume, §52 share 0, sequence with BASEBUILD-NO-LONG-RUN-01. ⚠️ What the 8 receive is escalated to the SLT/founder (NO-RUNNER-TURNED-AWAY-01). Prototype branch `proto/basebuild-duration-01` (not merged). **READY TO BUILD** once that is answered. `docs/decisions/coaching-2026-11-20-basebuild-duration-01-prototype.md`.
 
 ⏸️ **NOT READY 2026-11-20** — the board cannot rule the fourth `assessOnRamp` outcome without its refused cohort, and no read-only path produces one: today's ramp is uncapped, and the only capped producer (`b85d3e4f`) is 194 commits behind with the on-ramp code changed 157 lines since. Needs a branch-only prototype of the three reusable parts on `HEAD` plus a candidate predicate, swept with blocked days and absent budgets varied. Live: 4 base-build runners, **2 with no weekday budget**, all 4 blocking one weekend day. `docs/decisions/coaching-2026-11-20-basebuild-duration-01.md`.
 
@@ -18989,6 +18998,7 @@ quality now prescribes some. Baseline lowered to lock it in.
 ## ⚖️ FILED 2026-09-22 SHIPPING §120 — two items, one of them a principle DEADLOCK
 
 ### 🏃 `WEEKDAY-OVERRUN-BOUND-01` — is +187% over a stated weekday cap still "don't shrink to fit"? **NOW CARRIES `SESSION-WEEK-SHARE-01` TOO (merged 2026-10-11)** 🏃 **COACHING BOARD**
+⚖️ **RULED 2026-11-20 on a prototype** (🏃 Coaching Board) — **CORRECT WITH AMENDMENT**: re-select within the category where a row fits (560 → 124 past tolerance, `measure:fitness` −2.2pp, no category change); drop, strict and cross-category are INCORRECT; no share bound (max 43.2%; `SESSION-WEEK-SHARE-01` half closed); worst case stays declared. Conditions C1–C5. Prototype branch `proto/weekday-overrun-bound-01` (not merged). **READY TO BUILD.** `docs/decisions/coaching-2026-11-20-weekday-overrun-bound-01-prototype.md`.
 
 ⏸️ **NOT READY 2026-11-20** — population re-measured (560 sessions past tolerance, was 675; all at a 30-minute cap; worst +177%). A bound's cost (what the selector substitutes, quality lost, `measure:fitness`) needs a prototype selector, which is engine code. `docs/decisions/coaching-2026-11-20-weekday-overrun-bound-01.md`.
 > ⚖️ **MERGED 2026-10-11.** `SESSION-WEEK-SHARE-01` was measured, Willy withdrew the frequency half
