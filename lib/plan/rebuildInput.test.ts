@@ -84,6 +84,8 @@ const READ_ONLY: Record<string, string> = {
   'scripts/board-evidence-basebuild-handover.ts': 'board evidence: prints, writes nothing',
   'scripts/board-evidence-basebuild-rebuild.ts': 'board evidence: prints, writes nothing',
   'scripts/_tmp-catch.ts': 'scratch read',
+  'scripts/board-evidence-injury-recency-01.ts': 'board evidence (2026-11-20 sitting): prints, writes nothing',
+  'scripts/board-evidence-week1-delivered-ceiling-01.ts': 'board evidence (2026-11-20 sitting): prints, writes nothing',
   'scripts/sync-plan-corpus.ts': 'writes the local fixture corpus, never a stored plan',
 }
 function walk(dir: string): string[] {
