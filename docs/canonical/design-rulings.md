@@ -6832,3 +6832,19 @@ Mockups to 👤 founder before build; device/simulator before merge (Wroblewski'
 | **If the SLT declines** | ⚖️ **BINDING** | `INV-PLAN-TUNE-UP-CALLOUT` and §32's claim are amended (🏃). Never an enforcement recorded on a field nobody reads |
 
 💼 Worth-the-surface handed to the SLT, not sat. Pattern `ui-patterns.md` § 10b (guidance line + precedence, shared with `PLAN-NOTE-HEAVIER-WEEK-PLACEMENT-01` — author it once) · check: on its WeekCard when Now/Next, never on a strip, on Today, or on a `load_residual_week` week; falsified both ways. ⚠️ Not seen on a device. Note: `docs/decisions/design-2026-11-20-tune-up-callout-inert-01.md`.
+
+## 🧭 2026-11-20 — `INJURY-RECENCY-01` (follow-up): the recency control, only where it changes the plan · **SHIP WITH AMENDMENT** · NOT BUILT
+
+Discharges the 2026-11-16 CANNOT RULE: the Coaching Board ruled the bucket meaning this morning (last flare-up; absent = current; `longer_ago` lifts the long-run time cap for Back and Plantar only). 📐 **Re-derived: that cap never binds below the half marathon** (`longRunTimeCap` takes the 120-min injury ceiling only when lower: 5K 70/90 · 10K 120 · HM 135 · marathon 210), so at 5K/10K every answer is engine-identical. Live: **5 of 43 plans carry Back or Plantar, three of them 5K; 2 would see an answer that changes anything** (`scripts/board-evidence-injury-recency-01-followup.ts`).
+
+| Decision | Status | Why |
+|---|---|---|
+| **Inline follow-up under the chip row, one per qualifying chip** | 🟢 **SHIP** | SLT 2026-10-28's shape; no step, no modal (`WIZARD-WEEKDAY-CONFIRM-01 (a)`) |
+| **Shown only where the answer changes the plan** (Back/Plantar AND a race where the cap binds) | 🟢 **SHIP (amendment)** | The 11-16 inert-field test, per distance. Visibility is an **engine-owned predicate** (the `dayCountVerdict` precedent), never a chip or distance list in the component |
+| **Two answers, not three** | 🟢 **SHIP (amendment)** | 🎪 Collins: `current` and `within a year` are engine-identical; McMillan's "kitchen" argued against a date, which two answers also pass |
+| **`Chip` single-select + `FieldLabel`, no colour, nothing pre-selected; untouched stored as absent (= current)** | 🟢 **SHIP** | Training-age precedent; `PROFILE-BIRTH-YEAR-REQUIRED-01`; Willy's binding default |
+| **Optional, no gate on Continue** | 🟡 **SHIP** | 📱 Wroblewski: absence is the safe default. 🎓 **Sierra lost, recorded**; returns with a measured absent rate |
+| **Untick clears; a hidden follow-up never posts; draft restore drops orphans** | 🟢 **SHIP** | 📱 Wroblewski |
+| **Subtitle and field note rewritten** | 👤 **FOUNDER** | *"still an issue / still show up"* contradicts *over a year ago* and tells the target runner not to tick (Sims 11-14, McMillan's *last flare-up*) |
+
+Pattern `ui-patterns.md` § Wizard step inventory (`injuries` row) · predicate in `lib/plan/` · check: chip × distance × goal, shown ⇔ cap binds, payload only for shown follow-ups; falsified by adding Knee, showing at 10K, posting a hidden answer. Gated on the Coaching Board's `measure:fitness` condition. ⛔ Veto: none. ⚠️ Not rendered or seen on a device; HM+ share where the cap actually binds not measured; maintenance path not measured. Note: `docs/decisions/design-2026-11-20-injury-recency-01-followup.md`.

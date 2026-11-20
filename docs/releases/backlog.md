@@ -2715,6 +2715,8 @@ silently too.
 
 ⚖️ **SAT 2026-11-20** (🧭 Design Board) — **SHIP WITH AMENDMENT (4), conditional on 💼 SLT.** One `--ink-2` line on the tune-up week's WeekCard (Now/Next only); not on strips or Today; the ramp warning wins when both fall in one week (13 of 58 engine plans → 🏃); copy → 👤. If the SLT declines, §32 and the invariant are amended. `docs/decisions/design-2026-11-20-tune-up-callout-inert-01.md`.
 👤 **COPY APPROVED 2026-11-20** by the founder — the words are in `docs/decisions/founder-2026-11-20-copy-approvals.md`; they land with the build.
+⚖️ **FOLLOW-UP SAT 2026-11-20** (💼 SLT) — **BUILD, FREE: the one line only; no result-entry follow-up** (a *check, not a race* effort is not a recalibration input; applying a result stays PAID per ADR-014; `TT-FREE-BENCHMARK-01` not reopened). Build with or after `PLAN-NOTE-HEAVIER-WEEK-PLACEMENT-01` (one slot, one precedence constant). §32 amendment (b) not triggered. `docs/decisions/slt-2026-11-20-tune-up-callout-inert-01-followup.md`.
+⚖️ **FOLLOW-UP SAT 2026-11-20** (🏃 Coaching Board) — **CORRECT WITH AMENDMENT:** the tune-up is never offered on a ramp-flagged week; it moves to the latest clean non-deload build week (one week earlier on 26 of 26 collisions) or is omitted. 13 of 58 reproduces; the wider set is 18 of 304; 0 live. Conditions: measure the injury grid; parity shows sessions identical. §32 Am. 1 + invariant arm land with the build. `docs/decisions/coaching-2026-11-20-tune-up-callout-inert-01-followup.md`.
 
 📐 **Found 2026-11-16 measuring `RACE-NOTES-INERT-01`; it is the sibling field in the same `weeks.push` block.**
 `week.tune_up_callout` (*"Optional: drop a parkrun PB or local 5K this week. Use the result as a fitness check, not a
@@ -3093,6 +3095,8 @@ used changes what they are asked, so the step is the Design Board's.**
 
 ⚖️ **SAT 2026-11-20** (🏃 Coaching Board) — **CORRECT WITH AMENDMENT**: the per-injury mapping exists. Bucket = last flare-up; within a year = current; longer ago lifts **only the long-run time cap, for Back and Plantar**; Knee, Shin and Achilles do not vary and are not collected (🎯 McMillan dissents on Knee). Condition: `measure:fitness` on the back/plantar cohort. 🧭 Design Board can now rule the control (two chips). `docs/decisions/coaching-2026-11-20-injury-recency-01.md`.
 
+⚖️ **FOLLOW-UP SAT 2026-11-20** (🧭 Design Board) — **SHIP WITH AMENDMENT, NOT BUILT**: an inline follow-up, two answers, shown only for Back/Plantar at half marathon or longer (the cap never binds at 5K/10K; 2 of 43 live plans affected). Optional, absent = current. 👤 founder for the words, including the *still an issue* subtitle and field note. Gated on the Coaching Board's `measure:fitness` condition. `docs/decisions/design-2026-11-20-injury-recency-01-followup.md`.
+
 🔴 **RE-TAGGED 2026-11-16. The Design Board sat and could not rule** (`design-rulings.md`, same date). The heading
 used to read *"COLLECT IT, FOR FOUR CHIPS. Now 🧭 DESIGN BOARD for the control"*, which reads as ready. It is not.
 
@@ -3222,6 +3226,7 @@ reinstate the hole.
 ### 🔲 `PLAN-NOTE-HEAVIER-WEEK-PLACEMENT-01` — **MEASURED AND RULED 2026-11-14; STILL OPEN, AND THE SEQUENCE IS NOW FIXED** 🧭 **DESIGN BOARD** (encoding), then build
 
 ⚖️ **SAT 2026-11-20** (🧭 Design Board) — encoding **SHIP WITH AMENDMENT (5)**: a muted eyebrow mark on both calendar renderings, a one-line action on the WeekCard, the week identity on Today through `weekIdentity` (free tier included). **The rank is still not ruled.** Mockups → 👤 founder, then a device. `docs/decisions/design-2026-11-20-plan-note-heavier-week-placement-01.md`.
+⚖️ **FOLLOW-UP SAT 2026-11-20** (🏃 Coaching Board) — **(1) CORRECT WITH AMENDMENT:** week N discharges the 10-28 binding for every tier, FREE included, if the WeekCard line declares the residual in words (injury scope names the injury history; words 👤 founder's). **(2)** After the ship, the tile may not displace an untold fact, which leaves dead last or goes; that choice is 🧭 Design's, post-ship. `docs/decisions/coaching-2026-11-20-plan-note-heavier-week-placement-01-followup.md`.
 
 🧭 **Sitting:** `docs/decisions/design-2026-11-14-heavier-week-placement.md`.
 
