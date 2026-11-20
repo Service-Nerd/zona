@@ -1,0 +1,311 @@
+<title>Coaching Engine Service HLD</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: a single reading column (architecture document), with a wide layer stack and diagrams that scroll in their own frames */
+:root{
+  --bg:#F3F0EB; --surface:#FFFFFF; --inset:#EDE9E1; --ink:#1A1A1A; --ink2:#3D3A36; --mute:#6D6963;
+  --line:rgba(26,26,26,.10); --moss:#6B8E6B; --moss-wash:rgba(107,142,107,.12); --warn:#B8853A; --warn-wash:rgba(184,133,58,.12);
+  --danger:#B84545; --danger-wash:rgba(184,69,69,.10); --slate:#5A6578;
+  --f-ui:"Inter",system-ui,-apple-system,Segoe UI,sans-serif; --f-mono:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#17181A; --surface:#202124; --inset:#2A2B2F; --ink:#ECEAE6; --ink2:#CFCBC4; --mute:#9C978F;
+  --line:rgba(236,234,230,.12); --moss:#8DB28D; --moss-wash:rgba(141,178,141,.14); --warn:#D6A45A; --warn-wash:rgba(214,164,90,.14);
+  --danger:#E07B7B; --danger-wash:rgba(224,123,123,.12); --slate:#9AA6BA; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#17181A; --surface:#202124; --inset:#2A2B2F; --ink:#ECEAE6; --ink2:#CFCBC4; --mute:#9C978F;
+  --line:rgba(236,234,230,.12); --moss:#8DB28D; --moss-wash:rgba(141,178,141,.14); --warn:#D6A45A; --warn-wash:rgba(214,164,90,.14);
+  --danger:#E07B7B; --danger-wash:rgba(224,123,123,.12); --slate:#9AA6BA; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-ui);font-size:15px;line-height:1.6;margin:0}
+.wrap{max-width:1040px;margin:0 auto;padding-block:40px 80px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.prose{max-width:720px}
+h1{font-size:34px;line-height:1.15;letter-spacing:-.02em;margin:0 0 8px;text-wrap:balance}
+h2{font-size:22px;letter-spacing:-.01em;margin:56px 0 12px;text-wrap:balance;padding-top:14px;border-top:1px solid var(--line)}
+h3{font-size:16px;margin:28px 0 8px}
+p{margin:0 0 12px;color:var(--ink2)}
+.eyebrow{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--mute);font-weight:600}
+.lede{font-size:17px;color:var(--ink2);max-width:720px}
+code,.mono{font-family:var(--f-mono);font-size:.86em}
+code{background:var(--inset);padding:1px 5px;border-radius:4px}
+.meta{display:flex;flex-wrap:wrap;gap:8px;margin:16px 0 0}
+.pill{font-size:12px;padding:3px 9px;border-radius:999px;background:var(--inset);color:var(--ink2);font-weight:500}
+.pill.moss{background:var(--moss-wash);color:var(--moss)}
+.pill.warn{background:var(--warn-wash);color:var(--warn)}
+.pill.danger{background:var(--danger-wash);color:var(--danger)}
+.grid{display:grid;gap:12px}
+.g3{grid-template-columns:repeat(auto-fit,minmax(220px,1fr))}
+.g2{grid-template-columns:repeat(auto-fit,minmax(300px,1fr))}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:16px;min-width:0}
+.card h4{margin:0 0 6px;font-size:14px}
+.card p{font-size:14px;margin:0}
+.num{font-size:26px;font-weight:700;font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+.num small{font-size:13px;font-weight:500;color:var(--mute);margin-left:4px}
+.lbl{font-size:13px;color:var(--mute)}
+ul{margin:0 0 12px;padding-left:20px;color:var(--ink2)}
+li{margin:3px 0}
+.scroll{overflow-x:auto;border:1px solid var(--line);border-radius:10px;background:var(--surface)}
+table{border-collapse:collapse;width:100%;font-size:13.5px;min-width:640px}
+th,td{text-align:left;padding:9px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:12px;letter-spacing:.04em;text-transform:uppercase;color:var(--mute);font-weight:600;background:var(--inset)}
+tr:last-child td{border-bottom:0}
+td .mono{white-space:nowrap}
+/* layer stack */
+.stack{display:flex;flex-direction:column;gap:8px}
+.layer{display:grid;grid-template-columns:64px 1fr;gap:0;background:var(--surface);border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.layer .tag{background:var(--inset);display:flex;align-items:center;justify-content:center;font-family:var(--f-mono);font-weight:600;font-size:13px;color:var(--ink2)}
+.layer .body{padding:12px 14px;min-width:0}
+.layer .title{font-weight:600;font-size:15px}
+.layer .desc{font-size:13.5px;color:var(--ink2);margin-top:2px}
+.layer .truth{display:inline-block;margin-top:6px;font-size:12px;font-weight:600;color:var(--moss);background:var(--moss-wash);padding:2px 8px;border-radius:6px}
+.layer.edge .tag{background:var(--warn-wash);color:var(--warn)}
+.layer.core .tag{background:var(--moss-wash);color:var(--moss)}
+.side{display:grid;grid-template-columns:1fr 260px;gap:12px}
+@media (max-width:760px){.side{grid-template-columns:1fr}}
+.diagram{padding:12px}
+pre.mermaid{margin:0;background:transparent;font-size:13px}
+.phase{display:grid;grid-template-columns:56px 1fr;gap:14px;padding:14px 0;border-bottom:1px solid var(--line)}
+.phase:last-child{border-bottom:0}
+.phase .id{font-family:var(--f-mono);font-weight:600;color:var(--moss);font-size:14px;padding-top:2px}
+.phase h4{margin:0 0 4px;font-size:15px}
+.phase p{font-size:14px;margin:0 0 6px}
+.gate{font-size:13px;color:var(--ink2);background:var(--inset);border-radius:6px;padding:6px 10px;margin-top:6px}
+.gate b{color:var(--ink)}
+.callout{border-left:3px solid var(--warn);background:var(--warn-wash);padding:12px 14px;border-radius:0 8px 8px 0;margin:12px 0;color:var(--ink2);font-size:14px}
+.callout.moss{border-color:var(--moss);background:var(--moss-wash)}
+a{color:var(--moss)}
+:focus-visible{outline:2px solid var(--moss);outline-offset:2px}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+
+<div class="wrap">
+  <div class="eyebrow">Zonna · Architecture · HLD v1 · 2026-11-20</div>
+  <h1>Coaching Engine Service</h1>
+  <p class="lede">The coaching engine becomes one callable service with a defined contract, built as layers, where each fact has exactly one owner. We measure it against today's engine before any runner sees it, and every defect it produces is caught, recorded and turned into a regression test automatically.</p>
+  <div class="meta">
+    <span class="pill warn">Proposal: needs founder approval</span>
+    <span class="pill">Run engine + strength engine</span>
+    <span class="pill">Doctrine unchanged: the code changes, not the principles</span>
+  </div>
+
+  <h2>1. What we are trying to achieve</h2>
+  <div class="grid g3">
+    <div class="card"><h4>Plans we are happy with</h4><p>0 hard-rule violations, 0 findings in every real-defect class, every note true about its own plan.</p></div>
+    <div class="card"><h4>Never worse</h4><p>Nothing ships unless it beats today's engine on a fixed scorecard, on production-shaped inputs.</p></div>
+    <div class="card"><h4>A callable service</h4><p>One versioned contract that the app, the website and any future client call the same way.</p></div>
+    <div class="card"><h4>Canonical truths</h4><p>Runner profile, rules, the delivered plan and its explanations, each owned in exactly one place.</p></div>
+    <div class="card"><h4>Defects caught automatically</h4><p>Every plan is checked when it is generated and again each night. Every failure becomes a recorded defect and a test case.</p></div>
+    <div class="card"><h4>Explainable</h4><p>Every number in a plan can say which rule set it, and every note is generated from that record.</p></div>
+  </div>
+
+  <h2>2. Where we are today (measured)</h2>
+  <div class="prose">
+    <p>The coaching rules themselves are sound and heavily ratified. The defects come from how those rules are applied: by several builders that each apply them separately, and by later passes that reshape the plan after the rules have been checked.</p>
+  </div>
+  <div class="grid g3" style="margin:14px 0">
+    <div class="card"><div class="num">10,773<small>lines</small></div><div class="lbl"><code>ruleEngine.ts</code>, including one 3,745-line function with 26 post-pass sites</div></div>
+    <div class="card"><div class="num">12+<small>builders</small></div><div class="lbl">race, foundation, get-running, staged, walk-run, maintenance, 2 recalibrations, post-race reshape, adjustment, modify, regen, strength</div></div>
+    <div class="card"><div class="num">33<small>inputs</small></div><div class="lbl">23 sent by the wizard; 2 have no writer at all; 1 is set only by test corpora</div></div>
+    <div class="card"><div class="num">118<small>meta fields</small></div><div class="lbl">61 schema-checked; 16 notes; 5 written that nothing reads</div></div>
+    <div class="card"><div class="num">2,878<small>objections</small></div><div class="lbl">coach-objection findings, accepted as baseline debt until today's triage</div></div>
+    <div class="card"><div class="num">~46<small>new classes</small></div><div class="lbl">found today across 5 slices, all from the same 5 structural causes</div></div>
+  </div>
+
+  <div class="scroll diagram">
+<pre class="mermaid">
+flowchart LR
+  W[Wizard / Modify / Adjust] --> R["Route orchestrator<br/>generate-plan: 806 lines,<br/>18 engine imports"]
+  R --> E[runEngine]
+  E --> P1[Race engine]
+  E --> P2[Foundation]
+  E --> P3[Get-running / base-build]
+  E --> P4[Staged / walk-run]
+  E --> P5[Maintenance block]
+  P1 --> C["Volume CURVE<br/>§2 §3 §12 enforced here"]
+  C --> PL[Placement + 26 post-passes<br/>reshape sessions, no re-check]
+  P2 & P3 & P4 & P5 --> PL
+  PL --> N["Note fallback chains<br/>read other facts"]
+  N --> V["validatePlan<br/>171 invariants,<br/>some share producer logic"]
+  V --> S[("plans.plan_json<br/>one save path skips checks")]
+  S --> U[Screens / AI prompts / push / strength bridge / website]
+</pre>
+  </div>
+
+  <h3>The five structural causes behind every defect class found</h3>
+  <div class="scroll"><table>
+    <thead><tr><th>#</th><th>Cause</th><th>What it produces (examples measured today)</th></tr></thead>
+    <tbody>
+      <tr><td>1</td><td>Each builder applies the rules itself</td><td>Base-build ramp ignores injury caps (425/541 knee/shin). Starting volume is computed twice (1,219/1,828 foundation→week-1 drops). Strength ignores blocked days (100% of affected plans). Maintenance block has no pace or HR.</td></tr>
+      <tr><td>2</td><td>Rules are enforced on a target curve, then the sessions are reshaped</td><td>52% of weeks miss their own curve. Shallow or inverted deloads, binge weeks, undelivered tapers, flat curves, the four delivered-ramp warns.</td></tr>
+      <tr><td>3</td><td>Notes are written separately from the sessions</td><td>"No hard sessions" on plans with time trials; "gains from quality" with no quality (2,560); "holds your fitness" on plans that cut; wrong cause named; contradicting notes.</td></tr>
+      <tr><td>4</td><td>Checks share the producer's logic; test corpora are not production-shaped</td><td>Plyo check repeats the dose miscount. Taper-depth check skips. Envelope races always fall on Monday. No corpus has 2, 6 or 7 days, or a missing age (16 of 56 live runners).</td></tr>
+      <tr><td>5</td><td>Input layer inconsistent with the engine</td><td>Wizard level recommendation ignores the benchmark (166/300 become "declared upward"). Weeks to race are off by one. Documented fields are never sent.</td></tr>
+    </tbody>
+  </table></div>
+
+  <h2>3. Target architecture: layered service</h2>
+  <div class="prose"><p>Every request passes through the same layers in the same order. Each layer owns one kind of truth and may only read the layers below it. There are no post-passes: if a layer finds a problem, it is resolved inside that layer or the request is refused with a reason.</p></div>
+
+  <div class="side" style="margin-top:14px">
+    <div class="stack">
+      <div class="layer edge"><div class="tag">API</div><div class="body"><div class="title">Engine API (versioned contract)</div><div class="desc"><code>POST /v1/plans</code> · <code>/v1/plans/{id}/adapt</code> · <code>/v1/checkpoint</code> · <code>/v1/strength</code>. A refusal is returned as a result, not thrown. Every call states its <code>as_of</code> date, so the same request always gives the same plan.</div></div></div>
+      <div class="layer core"><div class="tag">L1</div><div class="body"><div class="title">Profile: input normalisation</div><div class="desc">Wizard answers → one <b>RunnerProfile</b>: assessed vs declared level, VDOT with its date, effective starting km, <b>capacity per day</b> (time × pace), injuries as constraint tags, one weeks-to-race counter, explicit "age unknown".</div><span class="truth">Canonical truth: who the runner is</span></div></div>
+      <div class="layer core"><div class="tag">L2</div><div class="body"><div class="title">Doctrine: the rule catalogue</div><div class="desc">Every principle is a data entry: id, §, scope, kind (hard / soft / prefer), parameter from <code>GENERATION_CONFIG</code>, explanation template. Session catalogue and plan signatures live here.</div><span class="truth">Canonical truth: what we believe</span></div></div>
+      <div class="layer core"><div class="tag">L3</div><div class="body"><div class="title">Planner: block → week → session</div><div class="desc"><b>Block planner</b> composes phases (foundation, base-build, staged, build, peak, taper, race, recovery, maintenance). This replaces the separate builders. <b>Week planner</b> sets volume within capacity. <b>Session placer</b> sizes and places sessions under every rule at once, and is the single owner of delivered volume. <b>Strength placement</b> uses the same week and availability model.</div><span class="truth">Canonical truth: the delivered plan</span></div></div>
+      <div class="layer core"><div class="tag">L4</div><div class="body"><div class="title">Explanation</div><div class="desc">Each planner decision writes a record: what it set, which rule bound it, and the runner's lever. Notes are generated from these records only, so they cannot contradict the sessions.</div><span class="truth">Canonical truth: why</span></div></div>
+      <div class="layer core"><div class="tag">L5</div><div class="body"><div class="title">Verifier (independent)</div><div class="desc">It evaluates the L2 catalogue over the output with its own code, never the planner's, and adds the quality auditor and note-truth checks. A plan with an error never leaves the service.</div><span class="truth">Canonical truth: is it right</span></div></div>
+      <div class="layer edge"><div class="tag">L6</div><div class="body"><div class="title">Enrichment (optional AI)</div><div class="desc">Voice and coaching copy only. It cannot change a number. Its output is re-verified, and the rule output is returned unchanged if it fails (ADR-006 kept).</div></div></div>
+    </div>
+    <div class="card">
+      <h4>Stays outside the service</h4>
+      <ul style="font-size:13.5px">
+        <li>Auth and tier resolution (ADR-003)</li>
+        <li>Persistence, archive, supersede</li>
+        <li>Screens, push, weekly reports</li>
+        <li>Activity ingest (HealthKit SOR)</li>
+        <li>AI chat and coach notes</li>
+      </ul>
+      <h4 style="margin-top:14px">Moves into the service</h4>
+      <ul style="font-size:13.5px">
+        <li>All 12+ builders, as planner configurations</li>
+        <li>Strength engine (same profile and week model)</li>
+        <li>Validation, as the verifier</li>
+        <li>Note writing, as explanation</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>Request flow</h3>
+  <div class="scroll diagram">
+<pre class="mermaid">
+flowchart LR
+  A[App / Website / future client] -->|"request + as_of"| API[Engine API]
+  API --> L1["L1 RunnerProfile"]
+  L1 --> L3B["L3 Block planner<br/>phases"]
+  L2[("L2 Rule catalogue<br/>§ → rule")] -.-> L3B
+  L3B --> L3W["Week planner<br/>volume within capacity"]
+  L2 -.-> L3W
+  L3W --> L3S["Session placer<br/>one owner of delivered volume"]
+  L2 -.-> L3S
+  L3S --> L4["L4 Explanation<br/>decision records → notes"]
+  L4 --> L5{"L5 Verifier<br/>independent code"}
+  L2 -.-> L5
+  L5 -->|pass| OUT["Plan v2 + explanations<br/>+ scorecard stamp"]
+  L5 -->|fail| REF["Refusal with reason<br/>+ defect event"]
+  OUT --> L6["L6 Enrichment, optional"]
+  L6 --> L5
+</pre>
+  </div>
+
+  <h3>The canonical models</h3>
+  <div class="scroll"><table>
+    <thead><tr><th>Model</th><th>Owner</th><th>Replaces today's</th></tr></thead>
+    <tbody>
+      <tr><td><b>RunnerProfile</b></td><td>L1</td><td>Assessment scattered across <code>resolveLevels</code>, <code>vdotFor</code>, <code>effectiveStartKm</code>, <code>effectiveBaseline</code>, <code>recommendFitnessLevel</code>, <code>validatePrepTime</code></td></tr>
+      <tr><td><b>Rule</b> (id, §, scope, kind, param, explain)</td><td>L2</td><td>245 config keys + 171 invariants + 50 strength codes held in three shapes</td></tr>
+      <tr><td><b>WeekCapacity</b></td><td>L1 → L3</td><td>Nothing; the curve never knew the time budget</td></tr>
+      <tr><td><b>Plan v2</b> (strict schema)</td><td>L3</td><td>Plan with 118 meta fields, of which 61 are checked, plus cast-only keys</td></tr>
+      <tr><td><b>Decision</b> (what, value, bound-by rule, lever)</td><td>L3 → L4</td><td>16 hand-written note fields and fallback chains</td></tr>
+      <tr><td><b>Finding</b> (rule id, severity, plan, input hash)</td><td>L5</td><td>Invariant violations logged to the console in production</td></tr>
+    </tbody>
+  </table></div>
+
+  <h2>4. Benchmark: how "never worse" is proved</h2>
+  <div class="grid g2">
+    <div class="card">
+      <h4>The golden corpus (built first)</h4>
+      <ul style="font-size:14px">
+        <li>Generated from the wizard's own answer space, so it matches what production sends</li>
+        <li>Every variant: 2–7 days, blocked weekends, caps, every injury chip and combination, age missing, every race weekday</li>
+        <li>Plus the live stored inputs (anonymised), the personas, and every defect fixture ever found</li>
+        <li>A gate refuses any corpus row the product could not produce</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>Scorecard v2 (one number set)</h4>
+      <ul style="font-size:14px">
+        <li>Hard-rule errors: must be 0</li>
+        <li>Each FIX objection class: count, target 0</li>
+        <li>Note truth: % of notes whose claim holds, target 100%</li>
+        <li>Fit rate (envelope), fitness build, specificity: no worse than today</li>
+        <li>Plan-level diff vs today: every change explained by a named rule</li>
+      </ul>
+    </div>
+  </div>
+  <div class="callout moss"><b>Rule of the build:</b> the current engine is measured on this scorecard first. That baseline is the bar. A planner configuration replaces the old path only when it scores at least as well on every line and better on its target classes, in shadow mode, on real requests.</div>
+
+  <h2>5. Defects captured and remediated automatically</h2>
+  <div class="scroll diagram">
+<pre class="mermaid">
+flowchart LR
+  G[Every generation] --> V{Verifier}
+  NIGHT[Nightly: every stored plan] --> V
+  V -->|finding| EV["Defect event<br/>rule id + input + plan"]
+  EV --> REG[("Defect register<br/>grouped by rule id")]
+  REG -->|"new rule id"| ITEM["Backlog item auto-created<br/>with sample plans"]
+  REG --> FIX["Input added to the golden corpus<br/>as a permanent regression case"]
+  V -->|"stored plan, no runs logged"| REGEN["Auto-regenerate (W8 policy)<br/>then re-verify"]
+  V -->|"stored plan, runs logged"| FLAG["Flag + keep plan<br/>(Aug-20 policy)"]
+  FIX --> CI["CI ratchet:<br/>scorecard may only improve"]
+</pre>
+  </div>
+  <div class="prose">
+    <p><b>Automatic:</b> detection, recording, grouping, the backlog item, the regression test case, the CI ratchet, regenerating eligible live plans, and refusing to ship an error plan.</p>
+    <p><b>Still a decision:</b> changing a rule. A new failure class goes to the Coaching Board, and its fix lands in the L2 catalogue. Because rules are data with one evaluator, a rule fix applies to every plan kind at once.</p>
+  </div>
+
+  <h2>6. Where today's open work goes</h2>
+  <div class="scroll"><table>
+    <thead><tr><th>Layer</th><th>Absorbs (no separate patch needed)</th></tr></thead>
+    <tbody>
+      <tr><td>L1 Profile</td><td>VDOT-blind wizard recommendation · prep-weeks off by one · two owners of starting volume · DECLARED-LEVEL-PEAK-FLOOR · unsent fresh-return field · age-absent handling · API-WEEKLY-KM-UNBOUNDED · BENCHMARK-DATE / BIRTH-YEAR semantics</td></tr>
+      <tr><td>L2 Rules</td><td>All 29 ruled items become catalogue entries with their § (S9 Am. 5, §47 Am. 4, §81 Am. 3, §116 Am. 13–15, §9 Am. 3a/3b, §89, §6 Am. 3, §3 Am. 2, S10 Am. 6–7 …) · DOCTRINE-NUMBERING</td></tr>
+      <tr><td>L3 Planner</td><td>DELIVERED-VOLUME-OWNER · PLACEMENT-BELOW-CURRENT · binge weeks · shallow/inverted deloads · undelivered tapers · base-build long run, duration and injury caps · staged ratio hold · foundation-to-week-1 drop · maintenance-block days, floors and pace · easy-run oversize · run-walk on quality · race-week stacking · weekday overrun · S9 hill distance · strength pairing, carries, blocked days, day off, deload busier</td></tr>
+      <tr><td>L4 Explanation</td><td>NOTE-NAMES-BINDING-CONSTRAINT · LOPSIDED-ALWAYS-DECLARED · heavier-week and multi-week marks (data source) · every false-note class found today (about 15)</td></tr>
+      <tr><td>L5 Verifier</td><td>AUDIT-REDEFINE · production-shaped corpora · checks that shared producer logic (plyo contacts, taper depth) · note-truth checks · liveness</td></tr>
+      <tr><td>Coaching Board</td><td>New doctrine questions found today, ruled during build phase B3 (below): time trials for injured runners · HM/MAR goal-pace dose · 2-day plans · easy-run ceiling · penultimate-week long run · slow-goal beginners · strength day off, bodyweight heavy, experience ladder · §39 race-week scope</td></tr>
+      <tr><td>Stays in the app</td><td>Heavier-week UI (mockups M1–M8) · tune-up line · wizard inputs (birth year, benchmark date) · strength release · ANCHOR-BAND notice</td></tr>
+    </tbody>
+  </table></div>
+
+  <h2>7. Context: how others do it, and where we differ</h2>
+  <div class="prose">
+    <p>Template-led apps (Runna, Nike Run Club, Garmin's race plans) pick a template and adapt paces. Daily-suggestion systems (Garmin's suggested workouts, Athletica) re-plan each day from load and readiness. Coach platforms (TrainingPeaks, Final Surge) leave the rules to a human. Zonna's position is restraint: zone discipline the runner can see and trust. That makes explainability a product requirement. The constraint-based planner with decision records (L3 + L4) is what lets every "why" be true. A service contract with explicit <code>as_of</code> and versioning is also what a future B2B or partner use would need.</p>
+  </div>
+
+  <h2>8. Build and migration plan</h2>
+  <div class="callout"><b>Freeze:</b> no more patches to the current engine, except a short hotfix list of defects that can harm a runner today: run-walk on a maximal time trial, base-build ramps ignoring injury caps, per-side plyo dose. Each hotfix is regression-tested. Everything else goes into the new layers.</div>
+  <div class="card">
+    <div class="phase"><div class="id">B0</div><div><h4>Measure first</h4><p>Build the golden corpus and Scorecard v2, including today's ~46 predicates and note-truth checks. Baseline the current engine on it. Wire the verifier into production generation as observe-only, so defects start being recorded now.</p><div class="gate"><b>Exit:</b> baseline scorecard committed; production findings flowing; the corpus gate falsified.</div></div></div>
+    <div class="phase"><div class="id">B1</div><div><h4>Contracts and canonical models</h4><p>Engine API v2 (request and response, refusal as a result, <code>as_of</code>, version), RunnerProfile, Rule schema, strict Plan v2 with a v1 adapter so screens keep working, Decision and Finding.</p><div class="gate"><b>Exit:</b> contracts reviewed; v1↔v2 adapter round-trips every stored plan.</div></div></div>
+    <div class="phase"><div class="id">B2</div><div><h4>L1 Profile, adopted by the current engine first</h4><p>One normaliser replaces scattered assessment. This alone removes the input-layer defect classes, and it is low risk because the planner does not change.</p><div class="gate"><b>Exit:</b> scorecard ≥ baseline; every plan diff explained; Coaching Board on any prescription change.</div></div></div>
+    <div class="phase"><div class="id">B3</div><div><h4>L2 catalogue + L5 verifier</h4><p>Port config + invariants + strength codes into rules, each tracing to a §. The independent verifier replaces <code>validatePlan</code> as the gate. New doctrine questions are ruled here and land as rules.</p><div class="gate"><b>Exit:</b> the verifier finds every known defect class on the current engine (falsified class by class); 0 false positives on the golden corpus.</div></div></div>
+    <div class="phase"><div class="id">B4</div><div><h4>L3 planner, one plan kind at a time (strangler)</h4><p>Order: 5K/10K race → HM → marathon → foundation and base-build and get-running → staged and walk-run → maintenance and recovery → ultra → adapt/modify/recalibrate. Each runs in shadow beside the old path on real requests before cut-over.</p><div class="gate"><b>Exit per kind:</b> ≥ baseline on every scorecard line; target classes at 0; shadow diff explained; Coaching Board sign-off; then traffic is switched behind a flag, with rollback.</div></div></div>
+    <div class="phase"><div class="id">B5</div><div><h4>L4 explanations</h4><p>Notes generated from decision records. The fallback chains are retired per plan kind as it cuts over. Copy is written on the founder's delegation; Design Board for any surface change.</p><div class="gate"><b>Exit:</b> note truth 100% on the golden corpus.</div></div></div>
+    <div class="phase"><div class="id">B6</div><div><h4>Strength on the shared model</h4><p>Strength reads RunnerProfile and the week model: blocked days, day off, and the run load in the same week. The pairing, carry and dose rulings land as rules.</p><div class="gate"><b>Exit:</b> strength scorecard ≥ baseline; release conditions met (founder phone check).</div></div></div>
+    <div class="phase"><div class="id">B7</div><div><h4>Service extraction</h4><p>The engine is deployed as its own versioned service behind the contract (a package first, then a separate deployment), and the app calls it through one adapter. The 806-line route becomes a thin caller.</p><div class="gate"><b>Exit:</b> app, website and scripts all call the API; there are no direct engine imports (gated).</div></div></div>
+    <div class="phase"><div class="id">B8</div><div><h4>Live-plan migration</h4><p>Regenerate plans for runners with no logged runs (founder 2026-11-20). Others keep their plan under the v1 adapter, verified nightly. Retire the old engine once no traffic and no stored plan needs it.</p><div class="gate"><b>Exit:</b> old engine deleted; nightly verifier green; defect register empty or ruled.</div></div></div>
+  </div>
+
+  <h3>Risks and how they are contained</h3>
+  <div class="scroll"><table>
+    <thead><tr><th>Risk</th><th>Containment</th></tr></thead>
+    <tbody>
+      <tr><td>A rewrite produces worse plans</td><td>Scorecard baseline first; shadow mode; cut-over per plan kind behind a flag; rollback; Coaching Board on every prescription delta</td></tr>
+      <tr><td>Ratified doctrine lost in translation</td><td>Every rule traces to its §; the verifier must reproduce today's invariants before the planner changes</td></tr>
+      <tr><td>The new checks share the new planner's mistakes</td><td>The verifier is separate code over rule data; each class is falsified by deliberately breaking plans</td></tr>
+      <tr><td>Corpus blind spots again</td><td>Corpus generated from the wizard schema; rows the product cannot produce are refused; production findings feed fixtures</td></tr>
+      <tr><td>Stored v1 plans break screens</td><td>A v1 adapter, round-trip tested on every stored plan</td></tr>
+      <tr><td>Scope creep and long build</td><td>The strangler order delivers value per plan kind; the freeze stops parallel patching</td></tr>
+    </tbody>
+  </table></div>
+
+  <h2>9. Decisions needed from you</h2>
+  <div class="grid g2">
+    <div class="card"><h4>1. Approve this architecture</h4><p>Layers L1–L6, the canonical models, the scorecard as the bar.</p></div>
+    <div class="card"><h4>2. Freeze the current engine</h4><p>Only the runner-harm hotfix list is fixed in the current engine.</p></div>
+    <div class="card"><h4>3. Hosting</h4><p>Package inside this repo first, a separate deployment at B7 (recommended), or a separate service from day one.</p></div>
+    <div class="card"><h4>4. Start with B0</h4><p>Measurement first: the golden corpus, Scorecard v2, and the observe-only verifier in production.</p></div>
+  </div>
+</div>
