@@ -233,3 +233,11 @@ day, so it reads 94.6% → 94.6% by construction.
   placement, before any change).
 - The race engine duration-anchors beginners with no benchmark (CLAUDE.md, SESSION-KM), while the ramp declines for
   the same runner. Two answers to "is a pace derivable?"
+
+
+## 👤 Founder decision, 2026-11-20 — what the refused runners receive
+
+**Option A.** A runner whose placed base-build block never climbs (`budget_cannot_climb`) gets a refusal that names the
+levers: add a training day, or raise the weekday time limit. Not a declared hold plan. The founder ruled that naming the
+levers is consistent with `NO-RUNNER-TURNED-AWAY-01`. The copy for the refusal follows the existing refusal mechanism
+and, per the founder's standing delegation, is written by the assistant at build time.
