@@ -13,7 +13,8 @@ import type { Plan, Session, GeneratorInput } from '@/types/plan'
 import type { RuleId } from '@/lib/engine/contracts/rule'
 import { RULES } from '@/lib/engine/catalogue/rules'
 import { GENERATION_CONFIG } from '@/lib/plan/generationConfig'
-import { isLongRun, isShakeout, isSecondaryQuality } from '@/lib/plan/sessionRole'
+import { isLongRun, isShakeout, isSecondaryQuality, isQualitySession, isStructuredSession } from '@/lib/plan/sessionRole'
+import { normaliseDays } from '@/lib/plan/days'
 
 export type VerifierDay = 'mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat' | 'sun'
 
@@ -45,8 +46,13 @@ const WEEKDAYS = new Set<VerifierDay>(['mon', 'tue', 'wed', 'thu', 'fri'])
 const governed = (w: Week) =>
   w.phase !== 'maintenance_restoration' && w.phase !== 'maintenance_base' && w.phase !== 'base_build'
 
+/** A week's days in the plan's OWN key order, as `validatePlan` reads them: where a rule takes "the first"
+ *  long run or race and a broken plan has two, the same one is chosen (measured: two rules disagreed in
+ *  Mon–Sun order on the all-easy and all-race mutations). */
 const daysOf = (w: Week) =>
-  DAYS.map(d => ({ day: d, session: (w.sessions as Record<string, Session | undefined>)[d] }))
+  Object.entries(w.sessions as Record<string, Session | undefined>)
+    .filter(([d]) => (DAYS as readonly string[]).includes(d))
+    .map(([d, session]) => ({ day: d as VerifierDay, session }))
 const running = (w: Week) =>
   daysOf(w).filter((x): x is { day: VerifierDay; session: Session } =>
     !!x.session && x.session.type !== 'strength' && x.session.type !== 'rest')
@@ -63,6 +69,20 @@ function floors(longest: unknown) {
   const down = (n: number) => Math.floor((n + 1e-9) / grid) * grid
   const long = down(Math.min(cfg.long, Math.max(longest, GENERATION_CONFIG.MIN_SESSION_DISTANCE_ABSOLUTE_KM)))
   return { ...cfg, long, easy: down(Math.min(cfg.easy, long / GENERATION_CONFIG.LONG_RUN_MIN_RATIO_VS_EASY)) }
+}
+
+/** The plan's own easy pace (min/km), read from its first main-week easy run with both anchors. */
+function easyMinPerKm(plan: Plan): number | null {
+  for (const w of plan.weeks) {
+    if (w.n <= 0) continue
+    for (const { session: s } of daysOf(w)) {
+      if (!s || s.type !== 'easy' || isLongRun(s)) continue
+      const mins = s.duration_mins, km = s.distance_km
+      if (mins == null || km == null || !Number.isFinite(mins) || !Number.isFinite(km) || mins <= 0 || km <= 0) continue
+      return mins / km
+    }
+  }
+  return null
 }
 
 /** §9's session-size rules do not govern the race itself, a race-week easy run, or a shakeout. */
@@ -113,6 +133,117 @@ export const PREDICATES: Partial<Record<RuleId, Predicate>> = {
     })
   },
 }
+
+/** A §82 floor hold the planner licensed: the session sits at (or under, within the held minutes) the easy floor. */
+const licensedFloorHold = (s: Session, floorKm: number) =>
+  s.floor_protected === true && (s.distance_km === floorKm
+    || (s.distance_km != null && s.distance_km < floorKm && (s.duration_mins ?? Infinity) <= GENERATION_CONFIG.EASY_FLOOR_HELD_MINS))
+
+const weekdayCap = (input: GeneratorInput, d: VerifierDay) =>
+  WEEKDAYS.has(d) ? (input.day_budgets?.[d as 'mon'] ?? input.max_weekday_mins ?? null) : null
+
+/** A plan-local date: `YYYY-MM-DD` read as local midnight, as the plan's own dates are. */
+const localDate = (iso: string) => { const [y, m, d] = iso.split('-').map(Number); return new Date(y, m - 1, d) }
+
+const BATCH_2: Partial<Record<RuleId, Predicate>> = {
+  // §9: outside race week, the long run is at least LONG_RUN_MIN_RATIO_VS_EASY × every easy run, in km…
+  'INV-PLAN-LONG-IS-LONGEST': plan => plan.weeks.filter(governed).flatMap(w => {
+    if (w.type === 'race') return []
+    const placed = running(w), long = placed.find(x => isLongRun(x.session))
+    if (long?.session.distance_km == null) return []
+    const r = GENERATION_CONFIG.LONG_RUN_MIN_RATIO_VS_EASY
+    return placed.filter(x => x.session.type === 'easy' && !isLongRun(x.session) && !isShakeout(x.session))
+      .filter(x => x.session.distance_km != null && x.session.distance_km * r > long.session.distance_km! + 0.01)
+      .map(x => ({ rule_id: 'INV-PLAN-LONG-IS-LONGEST', week: w.n, day: x.day, detail: 'easy run inverts the long-vs-easy ratio (km)' }))
+  }),
+
+  // …and in minutes, for an easy run anchored by duration alone (§9 Am. 2), with half a minute of rounding.
+  'INV-PLAN-LONG-IS-LONGEST-MINS': plan => plan.weeks.filter(governed).flatMap(w => {
+    if (w.type === 'race') return []
+    const placed = running(w), long = placed.find(x => isLongRun(x.session))
+    if (long?.session.duration_mins == null) return []
+    const r = GENERATION_CONFIG.LONG_RUN_MIN_RATIO_VS_EASY
+    return placed.filter(x => x.session.type === 'easy' && !isLongRun(x.session) && !isShakeout(x.session))
+      .filter(x => x.session.distance_km == null && x.session.duration_mins != null
+        && x.session.duration_mins * r > long.session.duration_mins! + 0.5 * r + 0.5)
+      .map(x => ({ rule_id: 'INV-PLAN-LONG-IS-LONGEST-MINS', week: w.n, day: x.day, detail: 'easy run inverts the long-vs-easy ratio (minutes)' }))
+  }),
+
+  // §18: nothing but rest or the race on a day the runner cannot train.
+  'INV-PLAN-NO-SESSIONS-ON-BLOCKED-DAYS': (plan, { input }) => {
+    const blocked = normaliseDays(input.days_cannot_train)
+    return plan.weeks.filter(governed).flatMap(w => daysOf(w)
+      .filter(x => x.session && x.session.type !== 'rest' && x.session.type !== 'race' && blocked.has(x.day))
+      .map(x => ({ rule_id: 'INV-PLAN-NO-SESSIONS-ON-BLOCKED-DAYS', week: w.n, day: x.day, detail: 'session on a blocked day' })))
+  },
+
+  // §81: an unstructured weekday run fits the time the runner gave that day, unless held at §82's floor.
+  'INV-PLAN-MAX-WEEKDAY-MINS': (plan, { input }) => {
+    if (input.max_weekday_mins == null && input.day_budgets == null) return []
+    const floor = floors(input.longest_recent_run_km).easy
+    return plan.weeks.filter(governed).flatMap(w => daysOf(w).flatMap(({ day, session: s }) => {
+      const cap = weekdayCap(input, day)
+      if (cap == null || !s?.duration_mins || isLongRun(s) || isStructuredSession(s) || licensedFloorHold(s, floor)) return []
+      return s.duration_mins > cap ? [{ rule_id: 'INV-PLAN-MAX-WEEKDAY-MINS', week: w.n, day, detail: `${s.duration_mins} min over a ${cap} min day` }] : []
+    }))
+  },
+
+  // §122: a foundation weekday run carries a duration whenever the plan's easy pace can give it one…
+  'INV-PLAN-FOUNDATION-WEEKDAY-HAS-DURATION': plan => {
+    if (easyMinPerKm(plan) == null) return []
+    return plan.weeks.filter(w => w.n <= 0).flatMap(w => daysOf(w)
+      .filter(x => WEEKDAYS.has(x.day) && x.session && x.session.type !== 'rest'
+        && x.session.distance_km != null && x.session.duration_mins == null)
+      .map(x => ({ rule_id: 'INV-PLAN-FOUNDATION-WEEKDAY-HAS-DURATION', week: w.n, day: x.day, detail: 'distance with no duration' })))
+  },
+
+  // …and fits the day's budget, unless it is the long run, structured, or held at the floor.
+  'INV-PLAN-FOUNDATION-WEEKDAY-WITHIN-BUDGET': (plan, { input }) => {
+    const paced = easyMinPerKm(plan) != null
+    const floor = floors(input.longest_recent_run_km).easy
+    return plan.weeks.filter(w => w.n <= 0).flatMap(w => daysOf(w).flatMap(({ day, session: s }) => {
+      if (!WEEKDAYS.has(day) || !s || s.type === 'rest') return []
+      if (paced && s.distance_km != null && s.duration_mins == null) return []   // HAS-DURATION's finding
+      const cap = weekdayCap(input, day)
+      if (cap == null || s.duration_mins == null || isLongRun(s) || isStructuredSession(s) || licensedFloorHold(s, floor)) return []
+      return s.duration_mins > cap ? [{ rule_id: 'INV-PLAN-FOUNDATION-WEEKDAY-WITHIN-BUDGET', week: w.n, day, detail: `${s.duration_mins} min over a ${cap} min day` }] : []
+    }))
+  },
+
+  // §12: every easy-family run (anything not rest, strength, cross-train, quality, hard or the race) has a pace.
+  'INV-PLAN-EASY-PACE-PRESENT': plan => plan.weeks.flatMap(w => daysOf(w)
+    .filter(({ session: s }) => !!s && !['rest', 'strength', 'cross-train', 'hard', 'race'].includes(s.type)
+      && !isQualitySession(s) && !(typeof s.pace_target === 'string' && s.pace_target.trim().length > 0))
+    .map(x => ({ rule_id: 'INV-PLAN-EASY-PACE-PRESENT', week: w.n, day: x.day, detail: 'no pace target' }))),
+
+  // §77: the race sits on the race date's weekday, and nothing is scheduled after it.
+  'INV-PLAN-RACE-ON-RACE-DAY': plan => {
+    const iso = plan.meta.race_date
+    const main = plan.weeks.filter(w => w.n > 0)
+    const last = main[main.length - 1]
+    if (!iso || !last?.date) return []
+    const start = localDate(last.date), race = localDate(iso)
+    const end = new Date(start); end.setDate(end.getDate() + 6)
+    if (race < start || race > end) return []   // COVERS-RACE-DATE's finding, not this rule's
+    const placed = daysOf(last).find(x => x.session?.type === 'race')
+    if (!placed) return []
+    const raceDay = DAYS[(race.getDay() + 6) % 7]
+    const out: Raw[] = []
+    if (placed.day !== raceDay) out.push({ rule_id: 'INV-PLAN-RACE-ON-RACE-DAY', week: last.n, day: placed.day, detail: `race on ${placed.day}, race date is a ${raceDay}` })
+    for (const x of daysOf(last)) {
+      if (!x.session || x.session.type === 'race' || x.session.type === 'rest') continue
+      if (DAYS.indexOf(x.day) > DAYS.indexOf(raceDay)) out.push({ rule_id: 'INV-PLAN-RACE-ON-RACE-DAY', week: last.n, day: x.day, detail: 'scheduled after the race' })
+    }
+    return out
+  },
+
+  // §80: a duration-anchored session keeps its minutes and stays duration-primary.
+  'INV-PLAN-DURATION-ANCHORED-KEEPS-MINUTES': plan => plan.weeks.filter(governed).flatMap(w => running(w)
+    .filter(({ session: s }) => s.duration_anchored
+      && (!(typeof s.duration_mins === 'number' && s.duration_mins > 0) || s.primary_metric !== 'duration'))
+    .map(x => ({ rule_id: 'INV-PLAN-DURATION-ANCHORED-KEEPS-MINUTES', week: w.n, day: x.day, detail: 'lost its minutes or its duration metric' }))),
+}
+Object.assign(PREDICATES, BATCH_2)
 
 const SEVERITY = new Map(RULES.map(r => [r.id, r.kind === 'soft' ? 'warn' as const : 'error' as const]))
 

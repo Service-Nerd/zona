@@ -19,6 +19,7 @@ const ALLOWED = new Set([
   '@/lib/plan/generationConfig',         // rule data (the numerics the rules reference)
   '@/lib/plan/sessionRole',              // the classification owner (INV-CLASS), fixture-tested
   '@/lib/plan/sessionDistance',          // the measurement owner (`sessionKm`), fixture-tested
+  '@/lib/plan/days',                     // the input-format owner (`normaliseDays`: 'monday' | 'mon'), not a derivation
 ])
 
 /** Every non-test source file under the verifier, recursively. */

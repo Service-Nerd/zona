@@ -21,12 +21,36 @@ import { verifyPlan, PORTED_RULES } from './verifyPlan'
 const clone = (p: Plan): Plan => JSON.parse(JSON.stringify(p))
 const key = (rule: string, week: number, day: string | null | undefined, sev: string) => `${rule}|${week}|${day ?? '-'}|${sev}`
 
-const tally = { rows: 0, threw: [] as string[], refused: 0, base: 0 }
+/** Breakages the shared liveness battery does not make, added for a ported rule it cannot wake. Kept here,
+ *  not in `invariantLiveness.ts`, so the liveness baseline does not move under this work. */
+const EXTRA_MUTATIONS: { name: string; apply: (p: Plan) => void }[] = [
+  { name: 'duration-anchored session loses its minutes', apply: p => {
+    for (const w of p.weeks) for (const s of Object.values(w.sessions ?? {})) {
+      if (s && s.type === 'easy') { s.duration_anchored = true; s.duration_mins = undefined; return }
+    }
+  } },
+  // The weekday-time boundary: one minute over the runner's own limit. Without it, a check loosened by a
+  // minute stayed green, because no battery mutation lands near the line (falsified 2026-11-21).
+  ...([false, true] as const).map(foundation => ({
+    name: `a ${foundation ? 'foundation' : 'main'}-week weekday easy run one minute over its limit`,
+    apply: (p: Plan) => {
+    const gi = (p.meta as { generator_input?: GeneratorInput }).generator_input
+    for (const w of p.weeks.filter(x => foundation ? x.n <= 0 : x.n > 0)) for (const d of ['mon', 'tue', 'wed', 'thu', 'fri'] as const) {
+      const cap = gi?.day_budgets?.[d] ?? gi?.max_weekday_mins
+      const s = w.sessions?.[d]
+      if (cap == null || !s || s.type !== 'easy' || s.floor_protected || !s.duration_mins) continue
+      s.duration_mins = cap + 1
+      return
+    }
+  } })),
+]
+
+const tally = { rows: 0, threw: [] as string[], refused: 0, base: 0, foundation: 0 }
 let runs: { label: string; old: { rule: string; k: string }[]; new: { rule: string; k: string }[] }[] = []
 
 beforeAll(() => {
   const cases: { label: string; plan: Plan; input: GeneratorInput }[] = []
-  for (const row of goldenSample({ perGroup: 2 })) {
+  for (const row of goldenSample({ perGroup: 8 })) {
     tally.rows++
     let o: ReturnType<typeof runEngine>
     // Under test the engine throws on its own error-severity violations. Counted, never hidden.
@@ -35,8 +59,9 @@ beforeAll(() => {
     } catch { tally.threw.push(row.id); continue }
     if (o.kind !== 'plan') { tally.refused++; continue }
     tally.base++
+    if (o.plan.weeks.some(w => w.n <= 0)) tally.foundation++
     cases.push({ label: row.id, plan: o.plan, input: row.input })
-    for (const m of MUTATIONS) {
+    for (const m of [...MUTATIONS, ...EXTRA_MUTATIONS]) {
       const p = clone(o.plan)
       try { m.apply(p) } catch { continue }
       cases.push({ label: `${row.id} / ${m.name}`, plan: p, input: row.input })
@@ -68,9 +93,11 @@ function compare(rule: string) {
 
 describe('ADR027-B3-VERIFIER — agreement with validatePlan, per ported rule', () => {
   it('the corpus produced enough REAL plans to compare, and every row is accounted for', () => {
-    // Measured 2026-11-21 at perGroup 2: 18 rows, 8 plans, 9 refusals, 1 throw. The floor is on BASE
-    // plans, because ~100 mutations of a single plan would satisfy a floor on total cases.
-    expect(tally.base, `rows ${tally.rows}, refused ${tally.refused}, threw ${tally.threw.length}`).toBeGreaterThanOrEqual(6)
+    // Measured 2026-11-21: perGroup 2 gave 8 plans and NONE with foundation weeks, so the foundation rules
+    // were compared on broken plans only. perGroup 8 gives 37 plans, 5 with foundation weeks. The floors are
+    // on BASE plans, because ~100 mutations of a single plan would satisfy a floor on total cases.
+    expect(tally.base, `rows ${tally.rows}, refused ${tally.refused}, threw ${tally.threw.length}`).toBeGreaterThanOrEqual(30)
+    expect(tally.foundation, 'valid plans with foundation weeks, which the foundation rules need').toBeGreaterThanOrEqual(3)
     expect(tally.base + tally.refused + tally.threw.length).toBe(tally.rows)
     expect(tally.threw.length, tally.threw.slice(0, 3).join(', ')).toBeLessThanOrEqual(Math.ceil(tally.rows / 10))
   })
