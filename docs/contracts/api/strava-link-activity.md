@@ -29,7 +29,7 @@ It is one of `CONTRACT-COVERAGE-01`'s declared-debt routes; that debt is now 11 
 |---|---|---|
 | 200 | `{ ok: true, mode: 'healthkit' }` | `apple_health_uuid` sent, **or** the Strava id is already on an Apple Health row (STRAVA-SOR-REVIEW-FIX-01: this used to be a false 409). Nothing is fetched from Strava; `analyse-run` is triggered on that row |
 | 200 | `{ ok: true, mode: 'enriched_healthkit' }` | `tryEnrichHealthKitRow` found a matching HealthKit row and **patched** it, then `analyse-run` is triggered on it. Until STRAVA-SOR-REVIEW-FIX-01 this path returned **without** any analysis |
-| 409 | `{ ok: false, mode: 'discarded_no_healthkit_match' }` | No HealthKit row matched. **Nothing is stored** (STRAVA-WEBHOOK-SOR-01, 2026-11-21); a `strava_activity_discarded` ops event is recorded. Until 2026-11-21 this path upserted a Strava-canonical row as `created_strava`. **Client obligation:** the completion was already saved with the Strava id, so the caller clears it through `/api/strava/unlink-activity`. Every client call goes through `lib/strava/linkActivity.ts → postLinkActivity`, which does that (gated by `linkActivity.test.ts`) |
+| 409 | `{ ok: false, mode: 'discarded_no_healthkit_match' }` | No HealthKit row matched. **Nothing is stored** (STRAVA-WEBHOOK-SOR-01, 2026-11-21); a `strava_activity_discarded` ops event is recorded. Until 2026-11-21 this path upserted a Strava-canonical row as `created_strava`. **Client obligation:** the completion was already saved with the Strava id, so the caller clears it through `/api/strava/unlink-activity`, conditional on the completion still carrying that id (`only_if_strava_activity_id`, STRAVA-SOR-REVIEW-FIX-02). Every client call goes through `lib/strava/linkActivity.ts → postLinkActivity`, which does that (gated by `linkActivity.test.ts`) |
 | 400 | `{ error: 'Strava not connected' }` | No token in `user_settings` |
 | 403 | `{ error: 'Subscription required' }` | `activity_intelligence` not allowed for the tier |
 | 422 | `{ error: 'Activity is not a run' }` | Strava returned a non-run activity |
@@ -38,9 +38,17 @@ It is one of `CONTRACT-COVERAGE-01`'s declared-debt routes; that debt is now 11 
 `mode` is the field a caller should branch on. The `analyse-run` hop is fire-and-wait with a
 `console.warn` on failure; a failed hop still returns 200.
 
+**On both 200 paths the live completion for `(week_n, session_day)` is stamped with the resolved
+`apple_health_uuid`** (STRAVA-SOR-REVIEW-FIX-02), so a completion saved from the Strava picker names its
+Apple Health run. A failed stamp is recorded as `strava_sor_write_failed` (`link_stamp_completion_uuid`)
+and does not fail the link. The `analyse-run` hop sends only the uuid, and since the same round
+`analyse-run` keys and stamps the analysis from the activity row's own ids, so a later re-analysis by
+Strava id (the post-run RPE save) updates that row rather than adding a second one.
+
 The client-side picker offers a Strava run only when `findEnrichMatch` (the merge's own matcher)
 finds an unattached Apple Health run for it among the 100 newest, so a refusal is rare rather than
-routine (`stravaRunIsLinkable`).
+routine (`stravaRunIsLinkable`). Since STRAVA-SOR-REVIEW-FIX-02 both picker filters
+(`linkableStravaRuns`) are re-applied to the raw Strava list whenever the Apple Health rows refresh.
 
 ## ✅ ADR-011 / INV-DATA-008 — resolved 2026-11-21 (STRAVA-WEBHOOK-SOR-01)
 

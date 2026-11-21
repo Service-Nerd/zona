@@ -34,9 +34,9 @@ export function plyoContacts(weekIndex: number, experience: StrengthProfile['exp
 }
 
 /**
- * The fewest sets of a jump the S10 fill step may restore: S8's start dose, in TOTAL foot contacts.
- * STRAVA-SOR-REVIEW-FIX-01: a per-side set lands twice its contacts. The bilateral-only floor (3 sets) was larger than a
- * per-side jump's whole dose (2 sets), so a dropped unilateral jump could never come back.
+ * The fewest sets of a jump the S10 fill step may restore: S8's start dose, in TOTAL foot contacts, read from the item's
+ * own fields (a per-side set lands twice its `contacts`). STRAVA-SOR-REVIEW-FIX-02: every jump's set now lands
+ * PLYO_CONTACTS_PER_SET in total, so this is 3 for both shapes, and never above a jump's own dose.
  */
 export function plyoRestoreMinSets(item: Pick<Prescription, 'contacts' | 'per_side'>): number {
   const perSet = (item.contacts ?? C.PLYO_CONTACTS_PER_SET) * (item.per_side ? 2 : 1)
@@ -57,17 +57,17 @@ export function prescribe(ex: Exercise, role: BlockRole, ctx: DoseContext): Pres
   }
   if (role === 'plyo') {
     const contacts = plyoContacts(ctx.weekIndex, ctx.profile.experience)
-    // ADR-027 hotfix 3 (S8 defect fix): S8 doses TOTAL foot contacts. A per-side set of N lands 2N, so a unilateral
-    // jump takes half the sets; the per-side count per set stays PLYO_CONTACTS_PER_SET. Before this, "5 × 10/side"
-    // was 100 contacts against S8's cap of 60, and S-PLYO-CONTACTS counted it as 50.
-    // STRAVA-SOR-REVIEW-FIX-01: rounded UP to the next whole set, never past the cap. `floor` gave a per-side jump 20
-    // contacts in the start week against S8's 30; `ceil` gives 40. A bilateral jump's target is a multiple of 10, so
-    // ceil and floor agree and its dose is unchanged.
-    const contactsPerSet = C.PLYO_CONTACTS_PER_SET * (per_side ? 2 : 1)
+    // ADR-027 hotfix 3 (S8 defect fix): S8 doses TOTAL foot contacts, in sets of PLYO_CONTACTS_PER_SET.
+    // STRAVA-SOR-REVIEW-FIX-02: a per-side set is the SAME set split across the legs, PLYO_CONTACTS_PER_SET / 2 each
+    // side, so it lands PLYO_CONTACTS_PER_SET in total and every jump takes the same sets: 30 is 3 x 5/side, exactly.
+    // The first fix halved the sets instead (20 in the start week), the second rounded up (40); both missed S8's dose.
+    // A bilateral jump is unchanged byte for byte. Every S8 dose is a multiple of PLYO_CONTACTS_PER_SET, so the total
+    // is the dose exactly (plyoPerSide.test.ts asserts both, and that PLYO_CONTACTS_PER_SET is even).
     const sets = ctx.phase === 'deload'
-      ? Math.max(1, Math.round((contacts / contactsPerSet) * C.DELOAD_SET_FACTOR))
-      : Math.max(1, Math.min(Math.ceil(contacts / contactsPerSet), Math.floor(C.PLYO_CONTACTS_MAX / contactsPerSet)))
-    return { ...base, sets, contacts: C.PLYO_CONTACTS_PER_SET, rir: null, rest_s: C.REST_S.plyo }
+      ? Math.max(1, Math.round((contacts / C.PLYO_CONTACTS_PER_SET) * C.DELOAD_SET_FACTOR))
+      : Math.max(1, Math.min(Math.ceil(contacts / C.PLYO_CONTACTS_PER_SET), Math.floor(C.PLYO_CONTACTS_MAX / C.PLYO_CONTACTS_PER_SET)))
+    const perSetContacts = per_side ? C.PLYO_CONTACTS_PER_SET / 2 : C.PLYO_CONTACTS_PER_SET
+    return { ...base, sets, contacts: perSetContacts, rir: null, rest_s: C.REST_S.plyo }
   }
   if (role === 'core') {
     const sets = scaleSets(C.CORE_SETS, ctx, role)

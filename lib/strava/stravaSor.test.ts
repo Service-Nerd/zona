@@ -13,7 +13,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { readFileSync, readdirSync, statSync } from 'fs'
 import { join, relative } from 'path'
 import { fakeDb, type FakeQuery } from './__fixtures__/fakeDb'
-import { deleteStravaActivity, enrichNewHealthKitRowFromStrava, findRowByStravaId } from './stravaSor'
+import { deleteStravaActivity, enrichNewHealthKitRowFromStrava, findRowByStravaId, STRAVA_BACKFILL } from './stravaSor'
 
 const ops: { kind: string; detail: Record<string, unknown> }[] = []
 vi.mock('@/lib/ops/recordOpsEvent', () => ({ recordOpsEvent: async (kind: string, detail: Record<string, unknown>) => { ops.push({ kind, detail }) } }))
@@ -30,16 +30,21 @@ vi.mock('@/lib/strava', async (orig) => ({
   fetchHRStreamSummary: async () => null,
   getUserHRZones: async () => ({ zone2Ceiling: 150, maxHR: 190, restingHR: 50 }),
 }))
+const limiter = { allow: true, calls: [] as unknown[][] }
+vi.mock('@/lib/security/rateLimit', () => ({ checkRateLimit: async (...a: unknown[]) => { limiter.calls.push(a); return limiter.allow } }))
+vi.mock('@/lib/coaching/autoAnalyse', () => ({ getInternalBaseUrl: () => 'https://internal.test' }))
 
-
-beforeEach(() => { ops.length = 0; strava.list.mockReset(); strava.list.mockResolvedValue([]) })
+beforeEach(() => {
+  ops.length = 0; strava.list.mockReset(); strava.list.mockResolvedValue([]); strava.detail.mockClear(); strava.token.mockClear()
+  limiter.allow = true; limiter.calls = []
+})
 
 describe('deleteStravaActivity', () => {
   const run = async (errors: Record<string, string> = {}) => {
     const db = fakeDb(q => {
       const key = `${q.table}:${q.op}`
       if (errors[key]) return { error: { message: errors[key] } }
-      if (key === 'strava_activities:select') return { data: [{ id: 'hk1', hr_bpm_histogram: { 120: 10, 160: 10 } }] }
+      if (key === 'strava_activities:select') return { data: [{ id: 'hk1', apple_health_uuid: 'HK1', hr_bpm_histogram: { 120: 10, 160: 10 } }] }
       return {}
     })
     await deleteStravaActivity(db as never, 'u1', 42)
@@ -62,19 +67,42 @@ describe('deleteStravaActivity', () => {
     expect(upd.hr_pct_z1! + upd.hr_pct_z2! + upd.hr_pct_z3! + upd.hr_pct_z4_5!).toBeCloseTo(100, 0)
     expect(upd.hr_in_zone_pct).not.toBeNull()
   })
-  it('🔴 STRAVA-SOR-REVIEW-FIX-01: nulls the mirrored id on run_analysis and session_completions', async () => {
-    const log = await run()
-    for (const t of ['run_analysis', 'session_completions']) {
-      const u = find(log, t, 'update')
-      expect(u, t).toHaveLength(1)
-      expect(u[0].filters).toEqual({ user_id: 'u1', strava_activity_id: 42, superseded_at: null })
-      expect(u[0].patch).toEqual({ strava_activity_id: null })
-    }
+  it('🔴 STRAVA-SOR-REVIEW-FIX-01: nulls the mirrored id on run_analysis (live rows only)', async () => {
+    const u = find(await run(), 'run_analysis', 'update')
+    expect(u).toHaveLength(1)
+    expect(u[0].filters).toEqual({ user_id: 'u1', strava_activity_id: 42, superseded_at: null })
+    expect(u[0].patch).toEqual({ strava_activity_id: null })
+  })
+  it('🔴 STRAVA-SOR-REVIEW-FIX-02: the completion is repointed to the Apple Health run, not left linked to nothing', async () => {
+    const u = find(await run(), 'session_completions', 'update')
+    expect(u).toHaveLength(1)
+    expect(u[0].filters).toEqual({ user_id: 'u1', strava_activity_id: 42, superseded_at: null })
+    expect(u[0].patch).toEqual({ strava_activity_id: null, apple_health_uuid: 'HK1' })
+  })
+  it('a delete with no Apple Health row just clears the id; a repoint collision still clears it, recorded', async () => {
+    const none = fakeDb(q => (q.table === 'strava_activities' && q.op === 'select' ? { data: [] } : {}))
+    await deleteStravaActivity(none as never, 'u1', 42)
+    expect(find(none.log, 'session_completions', 'update').map(q => q.patch)).toEqual([{ strava_activity_id: null }])
+    let n = 0
+    const clash = fakeDb(q => {
+      if (q.table === 'strava_activities' && q.op === 'select') return { data: [{ id: 'hk1', apple_health_uuid: 'HK1', hr_bpm_histogram: null }] }
+      if (q.table === 'session_completions' && n++ === 0) return { error: { message: 'duplicate key' } }
+      return {}
+    })
+    await deleteStravaActivity(clash as never, 'u1', 42)
+    expect(find(clash.log, 'session_completions', 'update').map(q => q.patch))
+      .toEqual([{ strava_activity_id: null, apple_health_uuid: 'HK1' }, { strava_activity_id: null }])
+    expect(ops.map(o => o.detail.stage)).toEqual(['repoint_session_completions'])
   })
   it('🔴 STRAVA-SOR-REVIEW-FIX-01: every failed query is recorded, none swallowed', async () => {
     await run({ 'strava_activities:delete': 'a', 'run_analysis:update': 'b', 'session_completions:update': 'c', 'strava_activities:update': 'd' })
     expect(ops.filter(o => o.kind === 'strava_sor_write_failed').map(o => o.detail.stage).sort())
-      .toEqual(['clear_run_analysis', 'clear_session_completions', 'delete_strava_row', 'revert_healthkit_row'])
+      .toEqual(['clear_run_analysis', 'clear_session_completions', 'delete_strava_row', 'repoint_session_completions', 'revert_healthkit_row'])
+  })
+  it('STRAVA-SOR-REVIEW-FIX-02: the row revert is written by the merge owner, not by this module', () => {
+    const src = readFileSync(join(__dirname, 'stravaSor.ts'), 'utf8')
+    expect(src).toMatch(/revertHealthKitEnrichment\(/)
+    expect(src).not.toMatch(/hr_pct_z1:/)
   })
 })
 
@@ -88,17 +116,70 @@ describe('findRowByStravaId', () => {
 })
 
 describe('enrichNewHealthKitRowFromStrava (the Strava-first race)', () => {
-  const db = (token: string | null) => fakeDb(q => {
+  const START = '2026-11-20T07:00:00Z'
+  const NOW = new Date('2026-11-20T08:30:00Z')   // 90 minutes after the run started: recent
+  type Opts = Parameters<typeof enrichNewHealthKitRowFromStrava>[3]
+  const opts = (o: Partial<Opts> = {}): Opts => ({ canAnalyse: false, now: NOW, ...o })
+  const db = (token: string | null, extra: (q: FakeQuery) => { data?: unknown } | null = () => null) => fakeDb(q => {
+    const x = extra(q); if (x) return x
     if (q.table === 'user_settings') return { data: token ? { strava_refresh_token: token } : null }
+    if (q.table === 'strava_activities' && q.op === 'select' && 'strava_activity_id' in q.filters) return { data: [] }
     if (q.table === 'strava_activities' && q.op === 'select')
-      return { data: [{ id: 'hk1', apple_health_uuid: 'HK', start_date: '2026-11-20T07:00:00Z', distance_m: 10_000, strava_activity_id: null }] }
+      return { data: [{ id: 'hk1', apple_health_uuid: 'HK', start_date: START, distance_m: 10_000, strava_activity_id: null }] }
     return {}
+  })
+
+  it('🔴 STRAVA-SOR-REVIEW-FIX-02: a first sync of 20 old runs costs Strava (and the limiter) nothing', async () => {
+    strava.list.mockResolvedValue([{ id: 99, type: 'Run', start_date: START, distance: 10_000 }])
+    const d = db('rt')
+    for (let day = 1; day <= 20; day++) {
+      const start = new Date(NOW.getTime() - day * 24 * 60 * 60 * 1000).toISOString()
+      expect(await enrichNewHealthKitRowFromStrava(d as never, 'u1', start, opts())).toBe('not_recent')
+    }
+    expect(strava.token).not.toHaveBeenCalled()
+    expect(strava.list).not.toHaveBeenCalled()
+    expect(strava.detail).not.toHaveBeenCalled()
+    expect(limiter.calls).toEqual([])
+    expect(d.log).toEqual([])
+  })
+  it('the recent window edge: at it Strava is asked, one millisecond past it is not', async () => {
+    const at = (ms: number) => new Date(new Date(START).getTime() + ms)
+    expect(await enrichNewHealthKitRowFromStrava(db('rt') as never, 'u1', START, opts({ now: at(STRAVA_BACKFILL.RECENT_WINDOW_MS) }))).toBe('no_match')
+    expect(strava.list).toHaveBeenCalledTimes(1)
+    expect(await enrichNewHealthKitRowFromStrava(db('rt') as never, 'u1', START, opts({ now: at(STRAVA_BACKFILL.RECENT_WINDOW_MS + 1) }))).toBe('not_recent')
+    expect(strava.list).toHaveBeenCalledTimes(1)
+  })
+  it('🔴 STRAVA-SOR-REVIEW-FIX-02: a listed id already attached to a row gets no detail or stream fetch', async () => {
+    strava.list.mockResolvedValue([{ id: 77, type: 'Run', start_date: START, distance: 10_000 }])
+    const d = db('rt', q => (q.table === 'strava_activities' && q.filters.strava_activity_id === 77 ? { data: [{ source: 'apple_health', apple_health_uuid: 'HK-OTHER' }] } : null))
+    expect(await enrichNewHealthKitRowFromStrava(d as never, 'u1', START, opts())).toBe('no_match')
+    expect(strava.detail).not.toHaveBeenCalled()
+  })
+  it('🔴 STRAVA-SOR-REVIEW-FIX-02: at most one backfill per runner per interval, keyed so account deletion clears it', async () => {
+    expect(await enrichNewHealthKitRowFromStrava(db('rt') as never, 'u1', START, opts())).toBe('no_match')
+    expect(limiter.calls).toEqual([['strava:backfill:u1', STRAVA_BACKFILL.PER_USER_LIMIT, STRAVA_BACKFILL.PER_USER_WINDOW_SECONDS]])
+    limiter.allow = false
+    expect(await enrichNewHealthKitRowFromStrava(db('rt') as never, 'u1', START, opts())).toBe('rate_limited')
+    expect(strava.token).toHaveBeenCalledTimes(1)
+    expect(strava.list).toHaveBeenCalledTimes(1)
+  })
+  it('🔴 STRAVA-SOR-REVIEW-FIX-02: an enriched run that already has an analysis is re-scored, scores only, paid only', async () => {
+    strava.list.mockResolvedValue([{ id: 99, type: 'Run', start_date: '2026-11-20T07:01:00Z', distance: 10_100 }])
+    const withAnalysis = () => db('rt', q => (q.table === 'run_analysis' ? { data: { week_n: 3, session_day: 'week_3_tue' } } : null))
+    const posts: { url: string; body: unknown }[] = []
+    const fetcher = (async (url: string, init: RequestInit) => { posts.push({ url, body: JSON.parse(String(init.body)) }); return new Response('{}') }) as typeof fetch
+    expect(await enrichNewHealthKitRowFromStrava(withAnalysis() as never, 'u1', START, opts({ canAnalyse: true, fetcher }))).toBe('enriched')
+    expect(posts).toEqual([{ url: 'https://internal.test/api/analyse-run', body: { apple_health_uuid: 'HK', week_n: 3, session_day: 'week_3_tue', scores_only: true } }])
+    posts.length = 0
+    await enrichNewHealthKitRowFromStrava(withAnalysis() as never, 'u1', START, opts({ canAnalyse: false, fetcher }))
+    await enrichNewHealthKitRowFromStrava(db('rt') as never, 'u1', START, opts({ canAnalyse: true, fetcher }))   // no analysis yet
+    expect(posts).toEqual([])
   })
 
   it('🔴 patches the new Apple Health row with its Strava twin and records it', async () => {
     strava.list.mockResolvedValue([{ id: 99, type: 'Run', start_date: '2026-11-20T07:01:00Z', distance: 10_100 }])
     const d = db('rt')
-    expect(await enrichNewHealthKitRowFromStrava(d as never, 'u1', '2026-11-20T07:00:00Z')).toBe('enriched')
+    expect(await enrichNewHealthKitRowFromStrava(d as never, 'u1', START, opts())).toBe('enriched')
     const patch = d.log.find(q => q.table === 'strava_activities' && q.op === 'update')
     expect(patch?.filters).toEqual({ id: 'hk1' })
     expect(patch?.patch).toMatchObject({ strava_activity_id: 99, avg_temp_c: 9 })
@@ -108,14 +189,15 @@ describe('enrichNewHealthKitRowFromStrava (the Strava-first race)', () => {
     expect(new Date(before).getTime() - new Date(after).getTime()).toBe(2 * 60 * 60 * 1000)
   })
   it('a runner with no Strava token costs nothing and records nothing', async () => {
-    expect(await enrichNewHealthKitRowFromStrava(db(null) as never, 'u1', '2026-11-20T07:00:00Z')).toBe('no_strava')
-    expect(strava.token).not.toHaveBeenCalledWith(null)
+    expect(await enrichNewHealthKitRowFromStrava(db(null) as never, 'u1', START, opts())).toBe('no_strava')
+    expect(strava.token).not.toHaveBeenCalled()
+    expect(limiter.calls).toEqual([])
     expect(ops).toEqual([])
   })
   it('no twin, and a Strava failure, are recorded and never thrown', async () => {
-    expect(await enrichNewHealthKitRowFromStrava(db('rt') as never, 'u1', '2026-11-20T07:00:00Z')).toBe('no_match')
+    expect(await enrichNewHealthKitRowFromStrava(db('rt') as never, 'u1', START, opts())).toBe('no_match')
     strava.list.mockRejectedValueOnce(new Error('strava 500'))
-    expect(await enrichNewHealthKitRowFromStrava(db('rt') as never, 'u1', '2026-11-20T07:00:00Z')).toBe('failed')
+    expect(await enrichNewHealthKitRowFromStrava(db('rt') as never, 'u1', START, opts())).toBe('failed')
     expect(ops.map(o => o.detail.result)).toEqual(['no_match', 'failed'])
   })
 })

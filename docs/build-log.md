@@ -6,6 +6,16 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-11-21 — STRAVA-SOR-REVIEW-FIX-02 · the analysis took its name from whoever asked
+
+**Dev.** `run_analysis` has two unique keys and Postgres lets NULLs through both. `analyse-run` keyed its upsert on whichever id the caller sent and wrote only that one, so a run linked from the Strava picker was analysed once by its Apple Health uuid and again, after the RPE save, by its Strava id: two live rows for one run. The activity row already knew both ids. The analysis now takes both from it and keys on the uuid. The fix is in the owner, so neither caller changed.
+
+**Dev, Strava.** The backfill that closed the Strava-first race fired on every new Apple Health row, and a first sync posts thirty days of them: a list call each, plus a detail and a stream per listed run, against a rate limit every runner shares. The race is minutes wide, so only a run started in the last six hours looks, one per runner per five minutes, and an id already on a row is skipped before its detail is fetched.
+
+**Dev, strength.** The per-side plyo dose has now been wrong three ways: 100 contacts, then 20, then 40, against a dose of 30. Each fix adjusted the set count. The fix that holds splits the set across the legs, 5 per side, so the sets are the bilateral sets and the total is the dose exactly.
+
+**The honest bit.** Two of the five important findings were in code the previous round wrote: the refused-link cleanup cleared unconditionally, and the delete revert nulled the completion's only link to its run. Both were green, because each test asserted what the new code did, not what it could break.
+
 ## 2026-11-21 — STRAVA-SOR-REVIEW-FIX-01 · the route learned to say no, and nobody was listening
 
 **Dev.** STRAVA-WEBHOOK-SOR-01 made `link-activity` answer 409 when a Strava run has no Apple Health run to patch. Correct on the server, and three client call sites read only `res.ok`. The completion had already been saved with the Strava id, so the post-run screen sat on "Reading the run" over an analysis that could never be written, and the auto-heal re-tried the link on every open. One client owner now reads the answer and clears the link through the existing unlink route. The review also found the opposite case: a Strava id already on an Apple Health row was reported as a discard, because the merge only matches an unattached row. And the enriched path had never triggered an analysis at all, which nobody had seen because the auto-heal papered over it on the next open.

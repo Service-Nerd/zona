@@ -84,7 +84,14 @@ of live reads; it was told *"two sentences"* and returned 76 words.
 
 ## Notes
 
-- Upserts to `run_analysis` table (conflict key: `user_id, strava_activity_id`).
+- Upserts to `run_analysis`, **one live row per run** (STRAVA-SOR-REVIEW-FIX-02, 2026-11-21). The activity row is
+  looked up by whichever id the request carries (the Apple Health row wins over a legacy Strava row for the same id,
+  `pickAnalysisActivity`), and the analysis takes **both** ids from that row, never the request's
+  (`lib/coaching/runAnalysisKey.ts`). Conflict key `user_id, apple_health_uuid` whenever the run has a uuid, else
+  `user_id, strava_activity_id`. A live row written earlier under the Strava id alone is adopted (given the uuid) or,
+  if the uuid already has its own row, deleted as the duplicate; superseded rows are never touched. 🔴 Before, the
+  key and the stamped id were the request's, so `link-activity` (uuid) followed by the post-run RPE save (Strava id)
+  wrote two live rows for one run. The response `analysis` carries both stamped ids.
 - AI feedback via claude-haiku (max 200 tokens). Silent fallback — row is written regardless of AI result.
 - Internal webhook path (called by Strava webhook handler): sets `tier = 'trial'` for enrichment and fires a push notification.
 - Scoring weights: HR 50%, distance 25%, pace 15%, EF 10%. See `lib/coaching/constants.ts`.

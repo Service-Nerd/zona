@@ -49,7 +49,7 @@ import { trackEvent } from '@/lib/analytics'
 import AdjustmentDiff from '@/components/shared/AdjustmentDiff'
 import ExternalLink from '@/components/shared/ExternalLink'
 import { authedFetch } from '@/lib/supabase/authedFetch'
-import { postLinkActivity, stravaRunIsLinkable } from '@/lib/strava/linkActivity'
+import { linkableStravaRuns, postLinkActivity } from '@/lib/strava/linkActivity'
 // USER-SETTINGS-UNREAD-WRITE-01 — the ONE owner of a client write to `user_settings`.
 // Eighteen hand-written copies lived here and eleven dropped their `{ error }`.
 import { writeUserSettings, updateUserSettings } from '@/lib/supabase/userSettingsWrite'
@@ -1146,6 +1146,9 @@ export default function DashboardClient() {
   const healAttemptedRef = useRef<Set<number>>(new Set())
 
   const [stravaRuns, setStravaRuns] = useState<any[] | null>(null)
+  // STRAVA-SOR-REVIEW-FIX-02 — the UNFILTERED Strava runs from boot. The picker's filters depend on the Apple Health rows,
+  // which refresh after boot (refreshHealthKitRuns), so they are re-applied to this list, never to the filtered one.
+  const rawStravaRunsRef = useRef<any[] | null>(null)
   const [stravaLoading, setStravaLoading] = useState(true)
   const [stravaConnected, setStravaConnected] = useState(false)
 
@@ -1562,9 +1565,10 @@ export default function DashboardClient() {
         .eq('user_id', user.id)
         .eq('source', 'apple_health')
         .order('start_date', { ascending: false })
-        .limit(100)
+        .limit(HK_PICKER_ROWS)
       if (hkErr) { console.error('[refreshHealthKitRuns] query failed', hkErr); return }
       if (!hkRows?.length) return
+      const matchRows = hkRows.map((r: any) => ({ start_date: r.start_date, distance_m: Number(r.distance_m ?? 0), strava_activity_id: r.strava_activity_id ?? null }))
       const newHkRuns = hkRows.map((r: any) => ({
         id:                   r.apple_health_uuid,
         source:               'apple_health' as const,
@@ -1582,16 +1586,18 @@ export default function DashboardClient() {
         max_heartrate:        r.max_hr ?? undefined,
         average_speed:        r.avg_speed ?? undefined,
       }))
-      const newHkIds = new Set(newHkRuns.map((r: any) => r.id))
+      // STRAVA-SOR-REVIEW-FIX-02 — the Strava half is re-derived from the RAW boot list against these rows, so a run
+      // that synced after boot makes its Strava twin offerable and a run just merged is not offered twice. Before, the
+      // boot-time filtered list was kept as it was. With no raw list (no Strava, or boot still loading) it is kept.
+      const raw = rawStravaRunsRef.current
+      const stravaHalf = raw ? linkableStravaRuns(raw, matchRows, HK_PICKER_ROWS) : null
       setStravaRuns(prev => {
-        if (!prev) return newHkRuns
-        // Replace any existing HK entries + keep non-HK runs (Strava)
-        const nonHk = prev.filter((r: any) => r.source !== 'apple_health')
-        // Only update if something actually changed (new UUIDs)
-        const existingHkIds = new Set(prev.filter((r: any) => r.source === 'apple_health').map((r: any) => r.id))
-        const hasNew = newHkRuns.some((r: any) => !existingHkIds.has(r.id))
-        if (!hasNew) return prev
-        return [...newHkRuns, ...nonHk]
+        if (!prev) return [...newHkRuns, ...(stravaHalf ?? [])]
+        const nonHk = stravaHalf ?? prev.filter((r: any) => r.source !== 'apple_health')
+        const next = [...newHkRuns, ...nonHk]
+        // Only update if something actually changed, so an unchanged refresh does not re-render the picker.
+        const key = (list: any[]) => list.map((r: any) => `${r.source ?? 'strava'}:${r.id}`).join('|')
+        return key(next) === key(prev) ? prev : next
       })
       // Also refresh completions — auto-match may have written a completion
       // while the app was backgrounded / while ingest was in flight.
@@ -2174,7 +2180,6 @@ export default function DashboardClient() {
         // Strava is connected — so the client-side auto-match and the manual
         // picker can see treadmill / Apple Watch runs, not just Strava runs.
         let healthKitRuns: any[] = []
-        let hkStravaIds = new Set<number>()
         // STRAVA-SOR-REVIEW-FIX-01 — the rows a Strava run could patch, so the picker offers only linkable runs.
         // `null` = the read failed, so nothing can be judged and every run is offered.
         let hkMatchRows: { start_date: string; distance_m: number; strava_activity_id: number | null }[] | null = null
@@ -2210,11 +2215,6 @@ export default function DashboardClient() {
             average_speed:        r.avg_speed ?? undefined,
           }))
           if (!hkErr) hkMatchRows = (hkRows ?? []).map((r: any) => ({ start_date: r.start_date, distance_m: Number(r.distance_m ?? 0), strava_activity_id: r.strava_activity_id ?? null }))
-          hkStravaIds = new Set(
-            (hkRows ?? [])
-              .map((r: any) => r.strava_activity_id)
-              .filter((x: any): x is number => x != null)
-          )
         } catch {}
 
         if (!data?.strava_refresh_token) { setStravaRuns(healthKitRuns); setStravaLoading(false); return }
@@ -2261,9 +2261,10 @@ export default function DashboardClient() {
         // iOS source (ADR-011).
         // STRAVA-SOR-REVIEW-FIX-01: and offer a Strava run only when an Apple Health run would take its patch. Any other
         // is refused by link-activity (Apple Health is the system of record), so offering it was offering a dead end.
-        const runs = getRuns(activities)
-          .filter((r: any) => !hkStravaIds.has(r.id))
-          .filter((r: any) => hkMatchRows == null || stravaRunIsLinkable(r, hkMatchRows, HK_PICKER_ROWS))
+        // STRAVA-SOR-REVIEW-FIX-02: the raw list is kept so refreshHealthKitRuns can re-apply both filters.
+        const rawRuns = getRuns(activities)
+        rawStravaRunsRef.current = rawRuns
+        const runs = linkableStravaRuns(rawRuns as any[], hkMatchRows, HK_PICKER_ROWS)
         setStravaRuns([...healthKitRuns, ...runs])
         setStravaConnected(true)
       // BOOT-HANG-01 — this was `} catch {}` around the WHOLE boot: any throw before setAppReady left the loading

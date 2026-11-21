@@ -104,6 +104,21 @@ export async function POST(req: NextRequest) {
     }
   }
 
+  // STRAVA-SOR-REVIEW-FIX-02 — the completion names the Apple Health run it is linked to. The client saved it with the
+  // Strava id only, so a later reader keyed by uuid (the auto-heal, the post-run screen, a Strava delete repointing the
+  // link) found no completion for this run. The LIVE row only (COMPLETION-TOMBSTONE-01).
+  const { error: completionErr } = await supabase
+    .from('session_completions')
+    .update({ apple_health_uuid: hkUuid })
+    .eq('user_id', user.id)
+    .eq('week_n', week_n)
+    .eq('session_day', session_day)
+    .is('superseded_at', null)
+  if (completionErr) {
+    console.error('[link-activity] completion uuid stamp failed', completionErr.message)
+    await recordOpsEvent('strava_sor_write_failed', { stage: 'link_stamp_completion_uuid', message: completionErr.message.slice(0, 500) }, user.id)
+  }
+
   // The analysis. The run already lives in strava_activities (written by /api/health/ingest), so all that is left is
   // to (re)trigger analyse-run, which writes the run_analysis row keyed by apple_health_uuid. Idempotent: safe even if
   // auto-match already analysed it. STRAVA-SOR-REVIEW-FIX-01: the enriched path reaches it too; it used to return

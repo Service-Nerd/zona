@@ -149,6 +149,36 @@ export async function tryEnrichHealthKitRow(
   return { enriched: true, appleHealthUuid: match.apple_health_uuid }
 }
 
+/** The name `adaptHealthKitWorkout` stores on every Apple Health run (lib/health/adapter.ts; pinned there by
+ *  activityTitle.test.ts, which is why it is not imported). */
+const HEALTHKIT_RUN_NAME = 'Run'
+
+/**
+ * STRAVA-SOR-REVIEW-FIX-02 — the reverse of `tryEnrichHealthKitRow`, in the same owner (INV-DATA-008: this file and the
+ * ingest route are the only writers of `strava_activities`). A Strava delete takes its patch off the Apple Health row:
+ * the Strava-only fields go back to null, the name to the Apple Health name, and the HR buckets to `hr`, which the
+ * caller re-derives from the row's own `hr_bpm_histogram` (Apple Health samples the merge never touches). `null` = the
+ * row had no Apple Health HR, so its buckets return to null.
+ */
+export async function revertHealthKitEnrichment(
+  supabase: any,
+  rowId: string,
+  hr: HRStreamSummary | null,
+): Promise<{ error: { message: string } | null }> {
+  const { error } = await supabase.from('strava_activities').update({
+    strava_activity_id: null, splits_metric: null, avg_temp_c: null, suffer_score: null,
+    name:                 HEALTHKIT_RUN_NAME,
+    hr_in_zone_pct:       hr?.inZonePct ?? null,
+    hr_above_ceiling_pct: hr?.abovePct ?? null,
+    hr_below_floor_pct:   hr?.belowPct ?? null,
+    hr_pct_z1:            hr?.histogram.pctZ1 ?? null,
+    hr_pct_z2:            hr?.histogram.pctZ2 ?? null,
+    hr_pct_z3:            hr?.histogram.pctZ3 ?? null,
+    hr_pct_z4_5:          hr?.histogram.pctZ4_5 ?? null,
+  }).eq('id', rowId)
+  return { error: error ?? null }
+}
+
 // ─── INGEST-DEDUP-01: HealthKit-side consolidation ──────────────────────────
 //
 // The reverse of tryEnrichHealthKitRow. That helper covers "HK row exists, then

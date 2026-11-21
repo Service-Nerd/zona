@@ -5,7 +5,7 @@
 import { describe, it, expect } from 'vitest'
 import { readFileSync } from 'fs'
 import { join } from 'path'
-import { postLinkActivity, stravaRunIsLinkable, LINK_DISCARDED_MODE } from './linkActivity'
+import { linkableStravaRuns, postLinkActivity, stravaRunIsLinkable, LINK_DISCARDED_MODE } from './linkActivity'
 
 const reply = (status: number, body: unknown) => new Response(JSON.stringify(body), { status })
 
@@ -24,7 +24,8 @@ describe('postLinkActivity', () => {
     const r = recorder(reply(409, { ok: false, mode: LINK_DISCARDED_MODE }))
     expect(await postLinkActivity(r.fetcher, BODY)).toBe('discarded')
     expect(r.calls.map(c => c.url)).toEqual(['/api/strava/link-activity', '/api/strava/unlink-activity'])
-    expect(r.calls[1].body).toEqual({ week_n: 3, session_day: 'tue' })
+    // STRAVA-SOR-REVIEW-FIX-02: conditional on the refused id, so a newer link made meanwhile survives.
+    expect(r.calls[1].body).toEqual({ week_n: 3, session_day: 'tue', only_if_strava_activity_id: 5 })
   })
   it('any other failure leaves the link alone', async () => {
     for (const res of [reply(409, { mode: 'something_else' }), reply(502, { error: 'x' }), reply(400, { error: 'Strava not connected' })]) {
@@ -64,5 +65,26 @@ describe('every client call to link-activity goes through the owner', () => {
       expect(src.includes("'/api/strava/link-activity'"), f).toBe(false)
       expect(src.includes('postLinkActivity('), f).toBe(true)
     }
+  })
+})
+
+describe('linkableStravaRuns (STRAVA-SOR-REVIEW-FIX-02: both filters, re-applied when Apple Health rows refresh)', () => {
+  const hk = (start: string, km: number, sid: number | null = null) => ({ start_date: start, distance_m: km * 1000, strava_activity_id: sid })
+  const raw = [{ id: 1, start_date: '2026-11-20T07:05:00Z', distance: 10_200 }, { id: 2, start_date: '2026-11-21T07:05:00Z', distance: 5_000 }]
+  it('🔴 a run that syncs AFTER boot makes its Strava twin offerable; a merged one stops being offered', () => {
+    const boot = [hk('2026-11-20T07:00:00Z', 10)]
+    expect(linkableStravaRuns(raw, boot, 100).map(r => r.id)).toEqual([1])
+    expect(linkableStravaRuns(raw, [...boot, hk('2026-11-21T07:00:00Z', 5)], 100).map(r => r.id)).toEqual([1, 2])
+    expect(linkableStravaRuns(raw, [hk('2026-11-20T07:00:00Z', 10, 1), hk('2026-11-21T07:00:00Z', 5)], 100).map(r => r.id)).toEqual([2])
+  })
+  it('a failed Apple Health read (null) skips the linkable filter only', () => {
+    expect(linkableStravaRuns(raw, null, 100).map(r => r.id)).toEqual([1, 2])
+  })
+  it('🔴 the dashboard re-applies it on refresh, to the RAW boot list', () => {
+    const src = readFileSync(join(process.cwd(), 'app/dashboard/DashboardClient.tsx'), 'utf8')
+    const start = src.indexOf('const refreshHealthKitRuns = useCallback')
+    const refresh = src.slice(start, src.indexOf('}, [supabase, refreshCompletions])', start))
+    expect(refresh).toMatch(/linkableStravaRuns\(raw, matchRows, HK_PICKER_ROWS\)/)
+    expect(src).toMatch(/rawStravaRunsRef\.current = rawRuns/)
   })
 })
