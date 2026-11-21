@@ -45,13 +45,12 @@
 // testable for the first time: it used to be gated by GREPPING THE ROUTE'S SOURCE,
 // because the logic was welded to a handler that needs auth and Supabase to run.
 
-import { generateRulePlan, derivedLevelsFor, type Tier } from './ruleEngine'
+import { generateRulePlan, type Tier } from './ruleEngine'
 import { composePlanWithFoundation, type ComposePlanWithFoundationResult } from './foundationCompose'
 import { enforceViolations, type Violation } from './invariants'
-import { nextMonday, formatDate, weeksBetweenLocal } from './length'
+import { nextMonday, formatDate } from './length'
 import { PrepTimeError, DaysAvailableError, InputFieldError } from './inputs'
 import { isDesignedRefusal } from './designedRefusal'
-import { effectiveStartKm } from './startVolume'
 import { BaseVolumeError } from './baseVolume'
 import { assessOnRamp, onRampEnabled } from './baseBuildOnRamp'
 import { generateStagedRacePlan, stagedRaceOf, observedCheckpointKm, observedLongestRunKm, checkpointRaceInput, probeCheckpointInput, extendedStagedPlan, runWalkFinishInput, halfSameDayInput, stagingDoorKm, longestSessionKm, raceBlockVerdict, addWeeksIso, type CheckpointOption, type CheckpointChoice } from './stagedRacePlan'
@@ -62,7 +61,9 @@ import { validateBaseBuildBlock, validateStagedRace, volumeCappedRampOf } from '
 import { generateGetRunningPlan, getRunningApplies } from './getRunningPlan'
 import { baseBuildOfferLine, baseBuildOfferTitle, baseBuildOfferWhy } from './baseBuildCopy'
 import { LongRunReadinessError } from './longRunReadiness'
-import { formatDistance, weeksUntilRaceSigned, type DistanceUnits } from '@/lib/format'
+import { formatDistance, type DistanceUnits } from '@/lib/format'
+import { buildRunnerProfile, factsFromInput } from '@/lib/engine/profile/buildRunnerProfile'
+import type { RunnerProfile } from '@/lib/engine/contracts/profile'
 import type { GeneratorInput, Plan } from '@/types/plan'
 
 /** Re-exported so the caller has ONE engine import for generate + validate. The
@@ -313,8 +314,23 @@ export interface EngineRequest {
  */
 export function runEngine(req: EngineRequest): EngineOutcome {
   const { input, tier, displayUnits } = req
-  const planStart = req.planStart ?? formatDate(nextMonday())
-  const today = req.today ?? formatDate(new Date())
+  // ONE clock read (it was two: `nextMonday()` and `new Date()`), so a request straddling midnight
+  // cannot default its plan start and its `today` from different days.
+  const clock = new Date()
+  const planStart = req.planStart ?? formatDate(nextMonday(clock))
+  const today = req.today ?? formatDate(clock)
+
+  // ADR027-B2-PROFILE — L1's profile, built ONCE, and the facts this function used to derive
+  // inline (levels, effective start km, both weeks-to-race counters) are read from it. Built from
+  // the request alone (`factsFromInput`): the route does not fetch facts yet (B2b), and the engine
+  // still prescribes from the request either way.
+  // ⚠️ `asOf: clock`, NOT `today`: the refusal telemetry this replaces measured §10's staleness ramp
+  // and `weeksUntilRaceSigned` to the wall clock even when a caller pinned `today`, and B2a changes no
+  // output. In production `today` is unpinned, so the two are the same date.
+  const profile = buildRunnerProfile(factsFromInput(input), { asOf: clock, timezone: null, planStart })
+  // `weeksBetweenLocal` returns NaN for a race date that does not parse; the profile carries that as
+  // null, and the producers below were always handed the NaN, so it is restored for them here.
+  const runway = profile.weeks_to_race.plan ?? NaN
 
   // 🔴 `accept_base_build` IS HONOURED BEFORE GENERATION, NOT INSIDE THE REFUSAL
   // CATCH, AND THE OLD PLACEMENT WAS UNSOUND (`BASEBUILD-ADJUST-REBUILD-01`).
@@ -331,9 +347,7 @@ export function runEngine(req: EngineRequest): EngineOutcome {
   // So the intent is unconditional, guarded only by whether a base build is a thing
   // this runner can have at all.
   if (req.acceptBaseBuild && getRunningApplies(input)) {
-    const { plan } = generateGetRunningPlan(
-      input, planStart, weeksBetweenLocal(planStart, input.race_date),
-    )
+    const { plan } = generateGetRunningPlan(input, planStart, runway)
     // 🔴 THIS BRANCH RETURNED WITHOUT A VALIDATOR CALL FOR THE LIFE OF THE FEATURE (§116
     // Amendment 12). The staged branch below has always validated; this one ran nothing, so the
     // plan kind built for people who cannot yet run was the one kind reaching a runner
@@ -393,14 +407,14 @@ export function runEngine(req: EngineRequest): EngineOutcome {
           kind: 'base_build', plan: staged,
           telemetry: { event: 'plan_staged_for_race', detail: {
             race_distance_km: input.race_distance_km, current_weekly_km: input.current_weekly_km,
-            effective_start_km: Math.round(effectiveStartKm(input) * 10) / 10, door_km: s.door_km,
+            effective_start_km: Math.round(profile.volume.effective_start_km.value * 10) / 10, door_km: s.door_km,
             ramp_weeks: s.checkpoint_week, race_weeks: s.race_weeks, reaches_door: s.reaches_door,
             days_available: input.days_available, goal: input.goal, training_age: input.training_age,
           } },
         }
       }
     }
-    const refusal = mapRefusal(err, input, planStart, displayUnits)
+    const refusal = mapRefusal(err, input, planStart, displayUnits, profile)
     if (refusal) return refusal
     // Not a refusal: a genuine engine fault. The caller owns the 500.
     throw err
@@ -521,7 +535,9 @@ function mapRefusal(
   input: GeneratorInput,
   planStart: string,
   displayUnits: DistanceUnits,
+  profile: RunnerProfile,
 ): Extract<EngineOutcome, { kind: 'refusal' }> | null {
+  const runway = profile.weeks_to_race.plan ?? NaN
   // §55 — critical input validation. Answered FIRST and with NO telemetry, exactly
   // as the route did: `isDesignedRefusal` is false for this, so recording it here
   // would be a new event, not a refactor.
@@ -545,32 +561,29 @@ function mapRefusal(
       rule: (err as Error).name,
       race_distance_km: input.race_distance_km,
       current_weekly_km: input.current_weekly_km,
-      effective_start_km: Math.round(effectiveStartKm(input) * 10) / 10,
+      effective_start_km: Math.round(profile.volume.effective_start_km.value * 10) / 10,
       longest_recent_run_km: input.longest_recent_run_km,
       days_available: input.days_available,
       // REFUSAL-TELEMETRY-LEVEL-01 — this used to be `input.fitness_level`, the
       // API-level STRUCTURAL override the wizard never sends, so 20 refusal events
       // carried no level at all. Both halves are recorded because they answer
       // different questions: what the runner SAID and what the engine ASSESSED, and
-      // a refusal where they disagree is the interesting one. Via `derivedLevelsFor`,
-      // the engine's own owner, so it cannot drift from what generation would use.
-      ...(() => {
-        const l = derivedLevelsFor(input)
-        return {
-          fitness_level_declared: l.declared ?? null,
-          fitness_level_assessed: l.assessedStructural,
-          fitness_level_structural: l.structural,
-          fitness_level_intensity: l.intensity,
-          fitness_level_api_override: input.fitness_level ?? null,
-        }
-      })(),
+      // a refusal where they disagree is the interesting one. Read from the profile, whose
+      // levels are `derivedLevelsFor`'s (ADR027-B2-PROFILE), so they cannot drift from what
+      // generation would use.
+      fitness_level_declared: profile.levels.declared?.value ?? null,
+      fitness_level_assessed: profile.levels.assessed_structural.value,
+      fitness_level_structural: profile.levels.structural.value,
+      fitness_level_intensity: profile.levels.intensity.value,
+      fitness_level_api_override: profile.levels.api_override?.value ?? null,
       training_age: input.training_age,
       goal: input.goal,
       // 🔴 `reason` distinguishes a hard refusal from a warning the runner could have
       // acknowledged. Without it, 12 of 20 PrepTimeError events were unusable for
       // exactly the question `PREP-ACK-NO-WRITER-01` needed answering.
       reason: (err as { reason?: unknown }).reason ?? null,
-      weeks_to_race: weeksUntilRaceSigned(input.race_date),
+      // The DISPLAY counter (`weeksUntilRaceSigned`), kept distinct from the planning one.
+      weeks_to_race: profile.weeks_to_race.display,
       // §116 — WOULD an on-ramp have been offered, and how long?
       //
       // ⚠️ RECORDED EVEN WHEN THE FLAG IS OFF, deliberately: it is the only way the
@@ -580,7 +593,7 @@ function mapRefusal(
       // any flag-gated path, because the flag governs what the RUNNER sees, never what we
       // can measure.
       ...(err instanceof BaseVolumeError ? {
-        onramp: assessOnRamp(input, err.base.min_base_km, weeksBetweenLocal(planStart, input.race_date)),
+        onramp: assessOnRamp(input, err.base.min_base_km, runway),
       } : {}),
     },
   }
@@ -629,7 +642,7 @@ function mapRefusal(
     // Costs one generation on the refusal path only. ⚠️ "Generates" is the bar, NOT the checkpoint's stricter "clean":
     // the claim is that a plan opens, not that it is the best block we could build.
     const getRunning = getRunningOffer(
-      input, planStart, weeksBetweenLocal(planStart, input.race_date), displayUnits,
+      input, planStart, runway, displayUnits,
       // 🔴 THE CHECKPOINT IS WHERE THE BASE BUILD ENDS, NOT `planStart` — code review, 2026-11-06. Passing
       // `planStart` counted the base-build weeks twice: on a 10-week runway the probe asked whether a race plan
       // generates in the 10 weeks that START today, while the base build consumes all ten of them. So the offer
@@ -647,7 +660,6 @@ function mapRefusal(
 
   // §111 — the base-build ceiling, and the only refusal that can carry an OFFER.
   if (err instanceof BaseVolumeError) {
-    const runway = weeksBetweenLocal(planStart, input.race_date)
 
     // §116's offer USED to be attached here as `onramp`, behind the flag, and nothing ever rendered it; worse, its
     // presence suppressed the base-building offer below, so switching the flag on would have left a refused runner

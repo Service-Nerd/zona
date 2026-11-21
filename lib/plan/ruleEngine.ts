@@ -197,8 +197,12 @@ export function applyVdotDiscount(rawVdot: number, b: BenchmarkInput, today: Dat
  * staleness ramp measures how long ago the runner actually ran, which is a fact
  * about the wall clock, not about the plan's anchoring. Changing it would reprice
  * every stale-benchmark plan.
+ *
+ * `now` (ADR027-B2-PROFILE): the instant the ramp is measured at. Defaults to the wall
+ * clock, so every existing caller is unchanged; L1's profile passes its own `as_of`
+ * instant so the profile reads no clock (ARCH-ENG-005).
  */
-export function vdotFor(input: Pick<GeneratorInput, 'benchmark'>): {
+export function vdotFor(input: Pick<GeneratorInput, 'benchmark'>, now: Date = new Date()): {
   vdot?: number
   /** Undiscounted — interval paces use it (§10/§19 Stance B). */
   vdotRaw?: number
@@ -207,7 +211,7 @@ export function vdotFor(input: Pick<GeneratorInput, 'benchmark'>): {
   if (!input.benchmark) return { discountPct: 0 }
   const raw = calcVDOTFromBenchmark(input.benchmark)
   if (!Number.isFinite(raw) || raw <= 0) return { discountPct: 0 }
-  const { vdot, discountPct } = applyVdotDiscount(raw, input.benchmark, new Date())
+  const { vdot, discountPct } = applyVdotDiscount(raw, input.benchmark, now)
   return { vdot, vdotRaw: raw, discountPct }
 }
 
@@ -218,8 +222,8 @@ export function vdotFor(input: Pick<GeneratorInput, 'benchmark'>): {
  *
  * It composes the two owners and adds nothing: `vdotFor` then `resolveLevels`.
  */
-export function derivedLevelsFor(input: GeneratorInput): ResolvedLevels {
-  return resolveLevels(input, vdotFor(input).vdot)
+export function derivedLevelsFor(input: GeneratorInput, now?: Date): ResolvedLevels {
+  return resolveLevels(input, vdotFor(input, now).vdot)
 }
 
 // ─── Tanaka max HR formula ────────────────────────────────────────────────────

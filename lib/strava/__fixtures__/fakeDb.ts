@@ -28,7 +28,7 @@ export function fakeDb(resolve: Resolver) {
         eq: (k: string, v: unknown) => { q.filters[k] = v; return b },
         is: (k: string, v: unknown) => { q.filters[k] = v; return b },
         match: (m: Record<string, unknown>) => { Object.assign(q.filters, m); return b },
-        gte: () => b, lte: () => b, order: () => b, limit: () => b,
+        gte: () => b, lte: () => b, lt: () => b, order: () => b, limit: () => b,
         maybeSingle: one, single: one,
         then: (ok: (v: unknown) => unknown, bad?: (e: unknown) => unknown) => run().then(ok, bad),
       }

@@ -247,6 +247,14 @@ const EXPECT_FILTERS: Record<string, Expectation> = {
    * them; they are SELECTs, and the gate is what corrected that.
    */
   'app/api/health/ingest/route.ts': false,
+
+  /**
+   * ADR027-B2-PROFILE — L1's facts fetcher reads the latest `ef_trend_pct` for the profile's
+   * observed block. PLAN-SCOPED (filtered): EF is a fitness-denominated field, which §71 Am. 1
+   * keeps from crossing a race boundary. Losing the trend across a race change is the safe side.
+   * Called by no route yet (B2b).
+   */
+  'lib/supabase/fetchRunnerFacts.ts': true,
 }
 
 describe('§71 Am. 1 — the run_analysis reader register is accurate', () => {

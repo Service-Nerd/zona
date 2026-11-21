@@ -265,13 +265,16 @@ to keep them there.
 
 **Status (2026-11-21, `ADR027-B1-CONTRACTS`):** contract written; types and schemas in
 `lib/engine/contracts/`; the v1↔v2 plan adapter and the plan read model exist. **No producer and no
-consumer uses them yet.** `runEngine` stays the entry (ADR-027 v1.1 § Reuse) and every v1 section above
+consumer uses them yet**, except `RunnerProfile`, which `runEngine` builds and reads since B2
+(`ADR027-B2-PROFILE`, § L1 below). `runEngine` stays the entry (ADR-027 v1.1 § Reuse) and every v1 section above
 is still what runs. The engine's prescription code is frozen; nothing here changes what a plan contains.
 
 | File | Owns |
 |---|---|
 | `lib/engine/contracts/result.ts` | operations, the `plans.create` request, `EngineResult`, refusal codes, HTTP mapping |
-| `lib/engine/contracts/profile.ts` | `RunnerProfile`, `WeekCapacity` (types only; L1 builds them in B2) |
+| `lib/engine/contracts/profile.ts` | `RunnerProfile` v2, `Fact`, `WeekCapacity` (built by L1 since B2; § L1 below) |
+| `lib/engine/contracts/facts.ts` | `RunnerFacts`, `ObservedAggregates`, `ResolvedAsOf`, the `AssembleRunnerFacts` type (B2) |
+| `lib/engine/profile/` | L1: `buildRunnerProfile`, `factsFromInput`, `aggregateObserved`, `resolveAsOf`, validity bounds (B2) |
 | `lib/engine/contracts/rule.ts` | `Rule` (Zod, strict), `resolveRuleConfigKey` |
 | `lib/engine/contracts/decision.ts` | `Decision`, `Lever`, `Finding` (Zod), `findingFromViolation` |
 | `lib/engine/contracts/planV2.ts` | Plan v2 (strict Zod), built by extending `lib/plan/schema.ts` |
@@ -313,8 +316,10 @@ the B-phase that serves them (B4 adapt, B6 strength); their shape is fixed here 
 - **No `tier`.** The engine is tier-blind in v2 (ADR-027 v1.1, ADR-003). ⚠️ Today it is not: it takes
   `tier`, and 4 of 31 catalogue rows are paid-only. The HLD measured 0 output differences in 300 plans; that
   is a sample, not a proof, and removing the argument is a B4 cut-over decision measured on the scorecard.
-- `input` becomes a `RunnerProfile` in L1 (B2). Today the same facts come from `resolveLevels`, `vdotFor`,
-  `effectiveStartKm`, `effectiveBaseline`, `recommendFitnessLevel` and `validatePrepTime`.
+- `input` becomes a `RunnerProfile` in L1 (B2, § L1 below). Since `ADR027-B2-PROFILE` `runEngine` builds
+  one from the request alone and reads its levels, effective start km and both weeks-to-race counters from
+  it. The remaining derivations (`effectiveBaseline`, `recommendFitnessLevel`, `validatePrepTime` and the
+  call sites inside the producers) are `ADR027-B2B-PROFILE-ADOPTION`.
 - `plan_start` and `acknowledged_days_warning` are **options, not input fields**. Today
   `acknowledged_days_warning` lives on `inputs.ts`'s internal type, and `plan_start` appears inside
   `meta.generator_input` on 29 of 123 stored rows and inside some `cohortGrid` rows.
@@ -384,7 +389,7 @@ wall clock.
 
 | Site | Kind | Note |
 |---|---|---|
-| `ruleEngine.ts` `vdotFor` → `applyVdotDiscount(…, new Date())` | **hard** | the § The clock leak above |
+| `ruleEngine.ts` `vdotFor(input, now = new Date())` | **hard** in generation | the § The clock leak above. Since B2 the instant is a parameter; generation still omits it, L1 always passes `as_of` |
 | `ruleEngine.ts` `applyRecalibration` → `applyVdotDiscount(…, new Date())` | **hard** | the same leak on the recalibration path |
 | `weekResolution.ts` `getCurrentWeek` | **hard** | read side, not generation |
 | `ruleEngine.ts` `buildRulePlanOnce` `todayOverride ?? new Date()` | default | pinned when the caller passes `today` |
@@ -401,6 +406,52 @@ omits `today`.
 staleness ramp measures (how long ago the runner actually ran). ARCH-ENG-005 keeps the measure and moves
 the read: in production `as_of` is today's date, so the price is the same, and it becomes an argument a
 support reproduction can pin. Not built in B1 (the engine is frozen); it belongs to L1 in B2.
+
+### L1: `RunnerFacts` and `RunnerProfile` v2 (B2, `ADR027-B2-PROFILE`)
+
+ADR-027 v1.2 (ARCH-ENG-013/014/019) and the data dictionary (`docs/architecture/data-dictionary-runner-facts-2026-11-21.md` § 3 A–F).
+
+**Two pure pieces and one fetcher:**
+
+| Piece | Where | Pure? |
+|---|---|---|
+| `RunnerFacts` (input + `user_settings` row + observed aggregates) | `lib/engine/contracts/facts.ts` | type |
+| `buildRunnerProfile(facts, { asOf, timezone, planStart? })` → `RunnerProfile` | `lib/engine/profile/buildRunnerProfile.ts` | yes: no clock, no I/O, never throws |
+| `aggregateObserved(rows, frame)` (windows, dedupe, validity) | `lib/engine/profile/observed.ts` | yes |
+| `resolveAsOf(instant, timezone)` | `lib/engine/profile/asOf.ts` | yes |
+| `fetchRunnerFacts(db, userId, input, now)` (implements `AssembleRunnerFacts`) | `lib/supabase/fetchRunnerFacts.ts` | **no**: reads `user_settings`, `strava_activities`, `health_daily_samples`, `session_completions`, `run_analysis`; outside the purity gate |
+
+**Profile v2 rules:**
+- Every runner fact is `{ value, source }` or `null`. Precedence `observed` > `confirmed` (a value saved in
+  Profile) > `stated` (posted with the request) > `derived` (computed by an owner). A client-computed value
+  in the request is `stated`.
+- **Derived fields delegate**: levels → `derivedLevelsFor`; VDOT → `vdotFor`; effective start →
+  `effectiveStartKm`; weeks → `weeksBetweenLocal` (`weeks_to_race.plan`) and `weeksUntilRaceSigned`
+  (`weeks_to_race.display`, the telemetry counter, kept separate); blocked days → `normaliseDays`; easy pace
+  for `capacity` → `buildPaceFromVDOT` / `buildFallbackPace`. They are computed from the request exactly as
+  the engine sees it.
+- **Age has one owner**: `user_settings.birth_year` (age at `as_of`'s year), else `date_of_birth`, else the
+  posted `age`. Resting HR: observed 7-day median > settings > request. Max HR: settings (its
+  `max_hr_source` decides observed or confirmed) > request.
+- **Validity bounds** (`lib/engine/profile/validity.ts`) turn an out-of-range carried value into `null` and
+  list it in `data_quality.nulled`. They are data-quality bounds, not coaching numerics; physiology reuses
+  §55's `INPUT_FIELD_RANGES`. A benchmark whose `time` is not a string is treated as absent, because
+  `vdotFor` throws on it.
+- **`as_of`** is resolved in the runner's IANA zone; unset, invalid or `UTC` gives `timezone_known: false`
+  and the server's local date (what the engine used before L1).
+- **`observed`** is CARRIED and read by no planner. 28-day window: logged km, longest run, run count, log
+  coverage days, RHR 7-day median, latest max HR, RPE halves, fatigue counts, latest EF trend.
+  **Prescribing from it is a pending Coaching Board ruling.**
+- **`schedule.capacity`** (minutes per day from `day_budgets` / `max_weekday_mins`; km at the easy pace) is
+  new and read by nothing yet.
+
+**Readers today:** `runEngine` only (levels, `volume.effective_start_km`, `weeks_to_race.plan`,
+`weeks_to_race.display`), built with `factsFromInput(input)`, `asOf: <its one clock read>`,
+`timezone: null`. ⚠️ `asOf` is the wall clock even when a caller pins `today`, because the refusal
+telemetry it replaced measured the staleness ramp and `weeksUntilRaceSigned` to the wall clock.
+`fetchRunnerFacts` is called by **no route** yet (B2b). Gate: `lib/engine/profile/buildRunnerProfile.test.ts`
+(equivalence over the golden corpus and a strided `cohortGrid` sample, as_of determinism, absence, purity),
+`observed.test.ts`, `lib/supabase/fetchRunnerFacts.test.ts`.
 
 ### Plan v2
 
@@ -457,8 +508,9 @@ through casts today), `restingHr`, `asPlanV2`. Each takes a v1 or a v2 plan. No 
 ### What § v2 does not prove
 
 - Nothing serves it. The request schema, result union and HTTP mapping are unexercised by any route.
-- `RunnerProfile`, `WeekCapacity`, `Rule` and `Decision` have no producer. Their shapes will be tested by
-  the B-phase that produces them, and may need to change then.
+- `Rule` and `Decision` have no producer. Their shapes will be tested by the B-phase that produces them,
+  and may need to change then. `RunnerProfile` has one (B2); its `observed` block and `capacity` have no
+  reader, and nothing has run `fetchRunnerFacts` against the live database.
 - Plan v2's `derived_set.blocks` is checked as an array only; ADR-019's step shape is not schema-checked.
 - `v1_carry` admits any undeclared week key on the adapter path. Only the corpus assertion stops a producer
   using it, and a cast-only week field written by a path the corpus does not reach would be carried silently.

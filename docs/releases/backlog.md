@@ -1791,6 +1791,51 @@ No hotfix.
 **Still owed:** a Design Board sitting on the wizard state (placement, the two-choice encoding, showing the
 consequence, iOS only), and mockups to the founder.
 
+### 🔲 `ADR027-B2B-PROFILE-ADOPTION` — the rest of L1: the route fetches facts, the remaining derivations read the profile, and three input-layer defects *(filed 2026-11-21, from `ADR027-B2-PROFILE`)* ⚙️ **NO BOARD** for the re-plumbing; 🏃 **COACHING BOARD** first for any piece that changes output (parts 3 and 4)
+
+**Order:** part 1 and part 2 are re-plumbing and need `verify:parity` IDENTICAL. Parts 3 and 4 change what a runner is
+told or built, so the Coaching Board rules before they are built.
+
+**1. Route adoption of the fetcher (⚙️).** `lib/supabase/fetchRunnerFacts.ts` exists, is unit-tested, and is called by
+no route. Wire it into `/api/generate-plan` (and the other `create` paths, ARCH-ENG-012), hand `runEngine` the facts,
+and resolve `as_of` in the runner's timezone. The engine must still prescribe from the stated facts until the board
+rules on part 4. ⚠️ `runEngine` builds its profile at the wall clock even when `today` is pinned (B2a kept the
+telemetry unchanged); align `as_of` with `today` here, and say what moves.
+
+**2. Remaining derivation call sites (⚙️).** Measured 2026-11-21 over non-test `lib/` and `app/`, comments stripped,
+definitions excluded (the profile's own calls not counted):
+- `effectiveStartKm`: **17 calls in 8 files** (8 in `stagedRacePlan.ts`; `baseBuildValidate.ts` 2, `getRunningPlan.ts` 2,
+  `baseBuildOnRamp.ts`, `baseVolume.ts`, `ruleEngine.ts`, `runWalkPlan.ts`, and the owner's own module 1 each). Was
+  19 in 9 before B2a moved `engine.ts`'s two.
+- `weeksBetweenLocal`: 9 in 5 (`envelopeMeasure.ts` 2, `inputs.ts` 2, `ruleEngine.ts` 2, `stagedRacePlan.ts` 2,
+  `length.ts` 1).
+- `vdotFor`: 4 in 2 (`ruleEngine.ts` 3, `invariants.ts` 1). `resolveLevels`: 3 in 2. `derivedLevelsFor`: 1
+  (`invariantLiveness.ts`). `effectiveBaseline`: 1 (`foundationBlock.ts`). `validatePrepTime`: 1 (`inputs.ts`).
+- `weeksUntilRaceSigned`: 2 (`lib/format.ts`'s own `weeksUntilRace`, `sessionFeedback.ts`). Display counter; it stays.
+
+**3. Input-layer defects (`docs/decisions/coaching-2026-11-20-final-plan-read.md` cause 5), each measured
+2026-11-21:**
+- **(a) Wizard level recommendation is VDOT-blind.** `GeneratePlanScreen` calls `recommendFitnessLevel` with no VDOT
+  at both sites. Predicate: benchmarked rows where the VDOT-blind recommendation differs from the VDOT-aware one.
+  **Golden corpus 51 of 1,060; live plans 2 of 21; archive 5 of 49.** The blind one is LOWER in every case (0 rows
+  where it is higher), so accepting it declares downward, which binds structure (§79). The HLD's prior figure,
+  *"166 of 300 read as an upward declaration"*, measures a different mechanism: an accepted recommendation (keyed to
+  intensity) sitting above the structural assessment. That predicate gives **golden 439 of 1,155 declared rows; live
+  3 of 35; archive 12 of 59.** Both figures are stated because they are not the same defect.
+- **(b) Prep weeks counted off by one.** `validatePrepTime` uses `weeksBetweenLocal` (floor), so a Sunday race 13
+  calendar weeks out counts as 12 and the Monday after it as 13. Predicate 1, the floor drops a partial week (every
+  non-Monday race): **golden 974 of 1,156; live 36 of 36; archive 57 of 62.** Predicate 2, the §44 status changes if
+  the race is counted to the following Monday: **golden 67 of 1,156; live 0 of 36; archive 1 of 62.**
+- **(c) A documented field is never sent.** `weeks_at_current_volume` (§29's explicit fresh-return path) has no
+  writer in `app/` or `components/`. **Sent on 0 of 1,156 golden rows, 0 of 36 live, 0 of 62 archive**, so §29 only
+  ever runs on its heuristic.
+
+**4. Prescribing from observed facts (🏃).** The profile carries an `observed` block (28-day logged km, longest run,
+RHR median, RPE and fatigue trend). Starting volume from the log is §2/§106's question and the data dictionary's
+8-of-11 finding; the board rules before the planner reads any of it.
+
+**Verify still open:** `git grep -n "fetchRunnerFacts(" -- app` returns nothing.
+
 ### 🔲 `SEC-STRAVA-SECRET-AT-REST-01` — the Strava app's client secret is stored in plain text in a user row *(filed 2026-11-21)* ⚙️ **NO BOARD** (security)
 
 **Found by** the runner-facts schema review (`docs/architecture/data-dictionary-runner-facts-2026-11-21.md` § 2.8).

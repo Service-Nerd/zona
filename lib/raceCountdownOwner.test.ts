@@ -20,7 +20,7 @@
 //   lib/coaching/prompts/sessionFeedback.ts weeks, SIGNED  AI prompt
 //   lib/plan/weekResolution.ts              weeks, round   dead: 0 consumers, deleted
 //   lib/plan/baseBuildHandover.ts           weeks, floor   handover copy, mixed frames
-//   lib/plan/engine.ts                      weeks, round   refusal telemetry
+//   lib/plan/engine.ts                      weeks, round   refusal telemetry (now via L1's profile)
 //   app/dashboard/DashboardClient.tsx x2    --             pre-parsed the date to a Date
 //   components/dashboard/OrientationScreen.tsx --          same
 //
@@ -217,7 +217,9 @@ describe('one owner for time-to-race, over the whole tree', () => {
       'lib/plan/baseBuildHandover.ts': 'calendarWeeksBetween(',
       'lib/charity/reanchor.ts': 'parseCalendarDate(',
       'lib/coaching/prompts/sessionFeedback.ts': 'weeksUntilRaceSigned(',
-      'lib/plan/engine.ts': 'weeksUntilRaceSigned(',
+      // ADR027-B2-PROFILE: the refusal telemetry's counter moved into L1's profile, which
+      // `runEngine` reads (`profile.weeks_to_race.display`). Same owner, one caller up.
+      'lib/engine/profile/buildRunnerProfile.ts': 'weeksUntilRaceSigned(',
       'lib/widget/widgetState.ts': 'daysUntilRace(',
       'app/dashboard/DashboardClient.tsx': 'daysUntilRaceSigned(',
       'components/dashboard/OrientationScreen.tsx': 'daysUntilRace(',
