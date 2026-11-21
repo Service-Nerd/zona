@@ -15,8 +15,11 @@ import { STRENGTH_CONFIG } from '@/packages/strength'
 /** Existing code ids are kept (ADR-027 v1.1): `INV-…` (validatePlan), `S-…` (strength). */
 export const RuleIdSchema = z.string().regex(/^(INV|S)-[A-Z0-9][A-Z0-9-]*$/)
 
-/** `§12`, `§116 Am. 16`, `§21b Am. 4c`, `S9 Am. 5` (StrengthPrinciples). */
-export const PrincipleRefSchema = z.string().regex(/^(§\d+[a-z]?|S\d+)( Am\. \d+[a-z]?)?$/)
+/** `§12`, `§116 Am. 16`, `§21b Am. 4c`, `S9 Am. 5` (StrengthPrinciples).
+ *  B3 step 1 (2026-11-21): also `ADR-018` for a rule that guards an architecture decision rather than a
+ *  coaching principle, and `structural` for a plan-integrity check that traces to neither (2 of 221).
+ *  Allowing both is more honest than inventing a § for them. */
+export const PrincipleRefSchema = z.string().regex(/^((§\d+[a-z]?|S\d+)( Am\. \d+[a-z]?)?|ADR-\d{3}|structural)$/)
 
 export const ConfigKeyRefSchema = z.strictObject({
   source: z.enum(['GENERATION_CONFIG', 'STRENGTH_CONFIG']),
@@ -31,16 +34,23 @@ function explainCopiesNoValue(t: string): boolean {
 export const RuleSchema = z.strictObject({
   id: RuleIdSchema,
   principle_ref: PrincipleRefSchema,
+  /** Further principles the rule also enforces (a registry row citing `§22, §5`). */
+  related_refs: z.array(PrincipleRefSchema).optional(),
   scope: z.enum(['profile', 'block', 'week', 'session', 'plan', 'note', 'strength']),
   /** hard: never violated (a refusal if it cannot be met). soft: may yield, and the
    *  yield is a Decision with a lever. prefer: placement preference. */
   kind: z.enum(['hard', 'soft', 'prefer']),
   /** The numeric this rule reads, by reference. null for a rule with no tunable. */
   config_key: ConfigKeyRefSchema.nullable(),
-  /** Runner-facing explanation, with `{placeholders}` the L4 layer fills from a Decision. */
+  /** Runner-facing explanation, with `{placeholders}` the L4 layer fills from a Decision.
+   *  NULL UNTIL B5 writes it (B3 step 1): explanations are B5's job, on the founder's copy delegation,
+   *  and 221 placeholder sentences written now would be invented copy. */
   explain: z.string().min(1).refine(explainCopiesNoValue, {
     message: 'explain copies a value: numbers come from the Decision through a {placeholder} (ARCH-ENG-003)',
-  }),
+  }).nullable(),
+  /** A severity the registry states conditionally ("error, OR warn on maintenance plans"). `kind` holds
+   *  the stricter reading; this keeps the condition until the rule's predicate is ported (B3 step 2). */
+  severity_note: z.string().min(1).optional(),
 })
 
 export type Rule = z.infer<typeof RuleSchema>

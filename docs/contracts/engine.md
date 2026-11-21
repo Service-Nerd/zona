@@ -276,6 +276,7 @@ is still what runs. The engine's prescription code is frozen; nothing here chang
 | `lib/engine/contracts/facts.ts` | `RunnerFacts`, `ObservedAggregates`, `ResolvedAsOf`, the `AssembleRunnerFacts` type (B2) |
 | `lib/engine/profile/` | L1: `buildRunnerProfile`, `factsFromInput`, `aggregateObserved`, `resolveAsOf`, validity bounds (B2) |
 | `lib/engine/contracts/rule.ts` | `Rule` (Zod, strict), `resolveRuleConfigKey` |
+| `lib/engine/catalogue/rules.ts` | `RULES`: L2, one entry per check (171 `INV-` + 50 `S-`, B3 step 1). `principle_ref` may also be `ADR-0nn` or `structural` (2 named rules); `explain` is null until B5; `severity_note` keeps a conditional severity. `catalogue.test.ts` fails on a check with no rule, a rule with no check, a § that does not exist, or a kind that disagrees with `plan-invariants.md`. Read by nothing yet |
 | `lib/engine/contracts/decision.ts` | `Decision`, `Lever`, `Finding` (Zod), `findingFromViolation` |
 | `lib/engine/contracts/planV2.ts` | Plan v2 (strict Zod), built by extending `lib/plan/schema.ts` |
 | `lib/engine/contracts/planV1V2.ts` | `toV2`, `toV1`, `parsePlanV2` |
