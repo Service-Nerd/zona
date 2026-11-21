@@ -5,7 +5,7 @@ import { secretMatches } from '@/lib/security/secrets'
 import { getStravaToken, fetchHRStreamSummary } from '@/lib/strava'
 import { tryEnrichHealthKitRow } from '@/lib/coaching/healthkitConsolidate'
 import { recordOpsEvent } from '@/lib/ops/recordOpsEvent'
-import { deleteStravaActivity } from '@/lib/coaching/stravaSor'
+import { deleteStravaActivity } from '@/lib/strava/stravaSor'
 
 // Strava webhook docs: https://developers.strava.com/docs/webhooks/
 //

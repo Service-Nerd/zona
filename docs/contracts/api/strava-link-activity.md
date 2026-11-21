@@ -44,7 +44,7 @@ and were previously indistinguishable to anyone reading only the status.
 The founder ruled: *"Apple health is sor for run data."* This route no longer writes `strava_activities`. A Strava
 activity either patches a matching Apple Health row through `tryEnrichHealthKitRow`, or is discarded with a recorded
 event. The tension this section used to record is closed. The pre-commit allowlist and the tree sweep in
-`lib/coaching/stravaSor.test.ts` both forbid the write.
+`lib/strava/stravaSor.test.ts` both forbid the write.
 
 <details><summary>The tension as it was recorded before 2026-11-21</summary>
 
