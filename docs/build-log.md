@@ -6,6 +6,15 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-11-21 — ADR027-B3-CATALOGUE · the test copied the generator, so it agreed with its mistakes
+**Shipped:** the new engine's rulebook: one entry for each of the 221 checks the old engine runs, each pointing at the coaching principle it enforces.
+**Dev learning:** I generated each rule's config key from the registry's prose and then wrote a test that the key matched the registry. Code review found two rules still pointing at the wrong tunable after the first fix, and the test was green throughout, because it ran the same parse as the generator. A checker that shares its producer's derivation can only confirm the producer. The fix was to stop claiming the key at all until the porting step reads it from the check's code.
+**Product/creator learning:** the catalogue found doctrine drift on its first run: three amendments the registry cites do not exist in CoachingPrinciples.md, and three more are filed under the wrong section. Nothing reads those references today, which is why nobody noticed.
+**AI-building learning:** I committed a top-level `await` in a test that vitest ran happily and `tsc` refused, and a commit message whose backticks ran as a shell command and dropped text. Both were caught only because I typechecked after committing rather than before.
+**The honest bit:** of my falsification mutations, two silently did nothing (an id that did not exist, a sed that did not apply), and each would have read as a pass if I had not counted the edit first.
+**Hook material:** 221 rules, 6 amendments that point nowhere, 0 config keys claimed until the code is read.
+**Postable?:** maybe
+
 ## 2026-11-21 — ADR027-B2B-PROFILE · the tests passed because the thing under test was crashing
 **Shipped:** plan generation now reads what we store about the runner (settings, recent runs, heart rate) and gives it to the engine, which carries it without using it yet.
 **Dev learning:** the first run of the route suite was 32/32 green, and every one of those arms was exercising the fallback: the test database had no `or()` or `lte()`, so the facts read threw a TypeError and the route quietly built from the request. A fallback that is also a correct outcome makes a crash look like a pass. The arm that catches it asserts the fallback event is ABSENT on a normal build.

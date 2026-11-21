@@ -1787,6 +1787,20 @@ No hotfix.
 **Still owed:** a Design Board sitting on the wizard state (placement, the two-choice encoding, showing the
 consequence, iOS only), and mockups to the founder.
 
+### 🔲 `ADR027-B3-VERIFIER` — B3 steps 2 to 4: the independent checker, the nightly live-plan run, the trigger catalogue *(filed 2026-11-21)* ⚙️ **NO BOARD** (no prescription or visible change; the founder signs off the cut-over)
+
+Step 1 shipped as `ADR027-B3-CATALOGUE` (221 rules). Remaining, in order:
+- **Step 2, the verifier (L5).** Predicates written fresh, not wrapping `validatePlan`, ported a batch at a time
+  from the hard rules. Each batch runs in watch-only mode and must agree with `validatePlan` on the golden corpus
+  before the next. Porting a rule also settles its `scope`, sets its `config_key` from the check's code, and
+  resolves its amendment reference: **6 amendments are named debt** in `catalogue.test.ts` (§40b Am. 4, §25 Am. 1
+  and §44 Am. 2 filed under another section; §39 Am. 1, §44 Am. 3 and §66 Am. 1 not in CoachingPrinciples.md).
+- **Step 3, nightly on every live plan**, observe-only (the founder chose this over an earlier start).
+- **Step 4, the trigger catalogue** (ARCH-ENG-018): adjustment thresholds move into the catalogue as data, values
+  unchanged, per §124 Am. 1.
+- **Exit (HLD):** the verifier finds every known defect class on the current engine, falsified class by class; 0
+  false positives on the golden corpus; then the founder signs off replacing `validatePlan` as the gate.
+
 ### 🔲 `ADR027-B2B-PROFILE-ADOPTION` — the rest of L1: the route fetches facts, the remaining derivations read the profile, and three input-layer defects *(filed 2026-11-21, from `ADR027-B2-PROFILE`)* ⚙️ **NO BOARD** for the re-plumbing; 🏃 **COACHING BOARD** first for any piece that changes output (parts 3 and 4)
 
 **Order:** part 1 and part 2 are re-plumbing and need `verify:parity` IDENTICAL. Parts 3 and 4 change what a runner is
