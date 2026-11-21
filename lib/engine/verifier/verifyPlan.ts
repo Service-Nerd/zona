@@ -1964,6 +1964,46 @@ const BATCH_28: Partial<Record<RuleId, Predicate>> = {
 }
 Object.assign(PREDICATES, BATCH_28)
 
+/** A row whose paced work (easy steps aside) runs at more than one anchor (§85 over-unders). */
+function rowHasMixedWorkAnchors(id: string): boolean {
+  const row = V1_SESSION_CATALOGUE.find(r => r.id === id)
+  if (!row || !isV2Structure(row.main_set_structure)) return false
+  const parsed = StructureV2Schema.safeParse(row.main_set_structure)
+  if (!parsed.success) return false
+  return new Set(parsed.data.blocks.flatMap(b => b.steps).filter(st => st.role === 'work' && st.target.kind === 'pace')
+    .map(st => (st.target as { anchor: string }).anchor).filter(a => a !== 'E')).size > 1
+}
+
+const BATCH_29: Partial<Record<RuleId, Predicate>> = {
+  // §22: on a time-goal plan whose goal pace is not withheld, second-half build/peak quality is goal-pace work (VO2,
+  // effort-governed, mixed-anchor, CV-anchored and adaptation-displaced sessions aside); and (§5) a distance whose race
+  // pace differs from interval pace has a race-specific catalogue row of its own. That second arm reads only rule data.
+  'INV-PLAN-RACE-SPECIFIC-EXPOSURE': (plan, { input, profile }) => {
+    const out: Raw[] = []
+    const timeGoal = profile.race.goal === 'time_target'
+    const expects = timeGoal && plan.meta.goal_pace_withheld == null
+    const half = Math.ceil((plan.weeks.filter(w => w.n > 0).length || plan.weeks.length) / 2)
+    for (const w of plan.weeks.filter(governed)) {
+      if (!expects || w.n < half || (w.phase !== 'build' && w.phase !== 'peak') || w.type === 'deload') continue
+      for (const { day, session: s } of running(w)) {
+        if (s.type !== 'quality' || isVo2maxSession(s, V1_SESSION_CATALOGUE)) continue
+        const row = s.catalogue_id ? V1_SESSION_CATALOGUE.find(r => r.id === s.catalogue_id) : undefined
+        if (s.catalogue_id && (isEffortGovernedRow(row ?? null) || rowHasMixedWorkAnchors(s.catalogue_id) || rowIsCvAnchored(s.catalogue_id))) continue
+        if (s.displaced_by_adaptation_window) continue
+        if (classifyStimulus(s) !== 'race_pace') out.push({ rule_id: 'INV-PLAN-RACE-SPECIFIC-EXPOSURE', week: w.n, day, detail: 'second-half quality not at goal pace' })
+      }
+    }
+    const dk = raceDistanceKey(input.race_distance_km)
+    if (timeGoal && (GENERATION_CONFIG.RACE_PACE_DISTINCT_FROM_INTERVAL_PACE as readonly string[]).includes(dk)) {
+      const all = Object.keys(GENERATION_CONFIG.INTENSITY_DISTRIBUTION).length
+      if (!V1_SESSION_CATALOGUE.some(r => r.category === 'race_specific' && (r.distance_eligibility as readonly string[]).includes(dk) && r.distance_eligibility.length < all))
+        out.push({ rule_id: 'INV-PLAN-RACE-SPECIFIC-EXPOSURE', week: PLAN, day: null, detail: `no ${dk}-specific race row` })
+    }
+    return out
+  },
+}
+Object.assign(PREDICATES, BATCH_29)
+
 const SEVERITY = new Map(RULES.map(r => [r.id, r.kind === 'soft' ? 'warn' as const : 'error' as const]))
 /** Rules the catalogue marks as conditionally severe: only these may set a finding's severity (code review, batch 20). */
 const CONDITIONAL = new Set(RULES.filter(r => r.severity_note).map(r => r.id))

@@ -739,15 +739,16 @@ const EXTRA_MUTATIONS: { name: string; apply: (p: Plan, input: GeneratorInput) =
       return true
     }] as const),
     // Second-half quality restamped onto a CV-anchored row (skipped by the ratio) or a threshold row (counted, off goal pace).
-    ...(['a CV-anchored', 'a threshold'] as const).map(kind => [`second-half quality restamped to ${kind} row off goal pace`, (p: Plan) => {
+    ...(['a CV-anchored', 'a threshold', 'an effort-governed', 'a displaced threshold'] as const).map(kind => [`second-half quality restamped to ${kind} row off goal pace`, (p: Plan) => {
       const cv = V1_SESSION_CATALOGUE.find(r => { const a = workAnchorsOf(r).filter(x => x !== 'E'); return a.length > 0 && a.every(x => x === 'CV') })
-      const id = kind === 'a CV-anchored' ? cv?.id : 'tempo_continuous'
+      const id = kind === 'a CV-anchored' ? cv?.id : kind === 'an effort-governed' ? V1_SESSION_CATALOGUE.find(r => isEffortGovernedRow(r) && r.category !== 'vo2max')?.id   // a VO2 row is skipped earlier, masking this arm
+         : 'tempo_continuous'
       if (!id || !p.meta.goal_pace_per_km) return false
       const half = Math.ceil(p.weeks.filter(w => w.n > 0).length / 2)
       let n = 0
       for (const w of p.weeks) {
         if (w.n < half || (w.phase !== 'build' && w.phase !== 'peak') || w.type === 'deload') continue
-        for (const s of Object.values(w.sessions ?? {})) if (s && s.type === 'quality') { s.catalogue_id = id; s.pace_target = '9:00'; delete s.stimulus; n++ }
+        for (const s of Object.values(w.sessions ?? {})) if (s && s.type === 'quality') { s.catalogue_id = id; s.pace_target = '9:00'; delete s.stimulus; if (kind === 'a displaced threshold') s.displaced_by_adaptation_window = true; n++ }
       }
       return n > 0
     }] as const),
@@ -858,6 +859,8 @@ const SILENT: Record<string, { rule: string; twin: string }> = {
   'every quality session removed (too little volume)': { rule: 'INV-PLAN-TIME-TARGET-QUALITY-FLOOR', twin: 'every quality session removed (loud)' },
   'two peak-level long runs in a row for an eligible runner': { rule: 'INV-PLAN-PEAK-LR-ALTERNATION', twin: 'two peak-level long runs in a row for an ineligible runner' },
   'a foundation week ramping just over the ceiling onto a deload week': { rule: 'INV-PLAN-FOUNDATION-BLOCK', twin: 'a foundation week ramping just over the ceiling onto a normal week' },
+  'second-half quality restamped to an effort-governed row off goal pace': { rule: 'INV-PLAN-RACE-SPECIFIC-EXPOSURE', twin: 'second-half quality restamped to a threshold row off goal pace' },
+  'second-half quality restamped to a displaced threshold row off goal pace': { rule: 'INV-PLAN-RACE-SPECIFIC-EXPOSURE', twin: 'second-half quality restamped to a threshold row off goal pace' },
   'second-half quality restamped to a CV-anchored row off goal pace': { rule: 'INV-PLAN-RACE-SPECIFIC-EXPOSURE-RATIO', twin: 'second-half quality restamped to a threshold row off goal pace' },
   'an onset yield exactly at its bound': { rule: 'INV-PLAN-ONSET-YIELD-BOUNDED', twin: 'an onset yield one week past its bound' },
   'a continuous goal-pace step over the cap in the halfway week itself (5K time goal)': { rule: 'INV-PLAN-GOAL-PACE-SHAPE', twin: 'a continuous goal-pace step over the cap in the week after halfway (5K time goal)' },
