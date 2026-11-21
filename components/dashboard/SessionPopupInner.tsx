@@ -40,7 +40,6 @@ import { isInLinkPool, rankLinkCandidates } from '@/lib/coaching/sessionMatch'
 import { MICRO_LABELS } from '@/components/shared/microLabels'
 import { SESSION_COLORS, getSessionColor, getSessionLabel } from '@/lib/session-types'
 import { authedFetch } from '@/lib/supabase/authedFetch'
-import { postLinkActivity } from '@/lib/strava/linkActivity'
 import { calendarDaysBetween } from '@/lib/dates'
 import { catalogueRowFor } from '@/lib/plan/catalogueLink'
 import { coachingSessionType, isLongRun } from '@/lib/plan/sessionRole'
@@ -657,10 +656,26 @@ export default function SessionPopupInner({ session, weekN, aiNotes, preloadedRu
     const actId = pendingLinkRef.current
     if (actId) {
       pendingLinkRef.current = null
-      // STRAVA-SOR-REVIEW-FIX-03 — one owner reads the answer. A Strava run with no Apple Health run is refused, and
-      // the owner then clears the link this screen already saved, so the session reads as logged and not linked.
-      void postLinkActivity(authedFetch, { strava_activity_id: actId, week_n: weekN, session_day: session.key }, 'reflect')
-        .then(outcome => { if (outcome === 'discarded') onSaved?.() })
+      ;(async () => {
+        try {
+          // Check res.ok — authedFetch resolves (not rejects) on 4xx/5xx, so a
+          // server failure must be read off the response, not the catch.
+          const res = await authedFetch('/api/strava/link-activity', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              strava_activity_id: actId,
+              week_n: weekN,
+              session_day: session.key,
+            }),
+          })
+          if (!res.ok) {
+            console.error('[reflect] link-activity failed', res.status, await res.text().catch(() => ''))
+          }
+        } catch (e) {
+          console.error('[reflect] link-activity threw', e)
+        }
+      })()
     } else if ((rpe !== null || fatigueTag !== null) && session.type !== 'rest') {
       // No activity linked — derive feedback from RPE/fatigue alone.
       // Call onSaved after the write so runAnalysisMap refreshes and the

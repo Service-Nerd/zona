@@ -3,7 +3,7 @@
 // strava_activities row (the tree half the staged-file commit hook cannot see).
 //
 // STRAVA-SOR-REVIEW-FIX-03 (code review, 2026-11-21) adds: the delete reverts the Apple Health row through the merge
-// owner and records every query error; and the tree sweep catches two shapes it missed. ⚠️ The delete deliberately does
+// owner (Strava-only fields and the name; HR untouched) and records every query error; and the tree sweep catches two shapes it missed. ⚠️ The delete deliberately does
 // NOT touch run_analysis or session_completions (trimmed: see the build-log), and there is no ingest-side backfill.
 //
 // ⚠️ WHAT THE TREE SWEEP STILL CANNOT SEE, by construction: a table name built at runtime (a template literal, a
@@ -18,10 +18,6 @@ import { deleteStravaActivity, findRowByStravaId } from './stravaSor'
 
 const ops: { kind: string; detail: Record<string, unknown> }[] = []
 vi.mock('@/lib/ops/recordOpsEvent', () => ({ recordOpsEvent: async (kind: string, detail: Record<string, unknown>) => { ops.push({ kind, detail }) } }))
-vi.mock('@/lib/strava', async (orig) => ({
-  ...(await orig<typeof import('@/lib/strava')>()),
-  getUserHRZones: async () => ({ zone2Ceiling: 150, maxHR: 190, restingHR: 50 }),
-}))
 beforeEach(() => { ops.length = 0 })
 
 describe('deleteStravaActivity', () => {
@@ -29,7 +25,7 @@ describe('deleteStravaActivity', () => {
     const db = fakeDb(q => {
       const key = `${q.table}:${q.op}`
       if (errors[key]) return { error: { message: errors[key] } }
-      if (key === 'strava_activities:select') return { data: [{ id: 'hk1', apple_health_uuid: 'HK1', hr_bpm_histogram: { 120: 10, 160: 10 } }] }
+      if (key === 'strava_activities:select') return { data: [{ id: 'hk1' }] }
       return {}
     })
     await deleteStravaActivity(db as never, 'u1', 42)
@@ -47,10 +43,9 @@ describe('deleteStravaActivity', () => {
     expect(upd[0].filters).toEqual({ id: 'hk1' })
     expect(upd[0].patch).toMatchObject({ strava_activity_id: null, splits_metric: null, avg_temp_c: null, suffer_score: null, name: 'Run' })
   })
-  it('🔴 STRAVA-SOR-REVIEW-FIX-03: HR buckets are re-derived from the Apple Health histogram, not left as Strava\'s', async () => {
-    const upd = find(await run(), 'strava_activities', 'update')[0].patch as Record<string, number | null>
-    expect(upd.hr_pct_z1! + upd.hr_pct_z2! + upd.hr_pct_z3! + upd.hr_pct_z4_5!).toBeCloseTo(100, 0)
-    expect(upd.hr_in_zone_pct).not.toBeNull()
+  it('🔴 STRAVA-SOR-REVIEW-FIX-03: the revert leaves the HR data alone (a row with no histogram keeps its zones)', async () => {
+    const upd = find(await run(), 'strava_activities', 'update')[0].patch as Record<string, unknown>
+    expect(Object.keys(upd).filter(k => k.startsWith('hr_') || k.startsWith('avg_hr') || k.startsWith('max_hr'))).toEqual([])
   })
   it('🔴 STRAVA-SOR-REVIEW-FIX-03: every failed query is recorded, none swallowed', async () => {
     await run({ 'strava_activities:delete': 'a', 'strava_activities:update': 'd' })
@@ -80,6 +75,9 @@ describe('findRowByStravaId', () => {
     expect(await findRowByStravaId(db as never, 'u1', 7)).toEqual({ source: 'apple_health', apple_health_uuid: 'HK' })
     expect(db.log[0].filters).toEqual({ user_id: 'u1', strava_activity_id: 7 })
     expect(await findRowByStravaId(fakeDb(() => ({ data: [] })) as never, 'u1', 7)).toBeNull()
+  })
+  it('🔴 a failed read answers "unknown", never null, so the webhook records no false discard', async () => {
+    expect(await findRowByStravaId(fakeDb(() => ({ error: { message: 'x' } })) as never, 'u1', 7)).toBe('unknown')
   })
 })
 

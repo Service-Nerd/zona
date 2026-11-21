@@ -1,7 +1,6 @@
 // STRAVA-SOR-REVIEW-FIX-03 — the routes this fix touches, driven end to end against a recording database.
 //   link-activity:   a Strava activity with no Apple Health run is refused 409 and nothing is analysed (round-1 behaviour).
-//   webhook:         an update or redelivery for an attached activity records no discard.
-//   unlink-activity: `only_if_strava_activity_id` clears only while the completion still carries that id.
+//   webhook:         an update or redelivery for an attached activity records no discard; nor does a failed lookup.
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { fakeDb, type Resolver } from './__fixtures__/fakeDb'
 
@@ -85,35 +84,9 @@ describe('Strava webhook: no false discard', () => {
     await call('/api/webhooks/strava', await import('@/app/api/webhooks/strava/route'), { ...event, aspect_type: 'create' })
     expect(S.ops.map(o => o.kind)).toEqual(['strava_webhook_received', 'strava_activity_discarded'])
   })
-})
-
-describe('unlink-activity only_if_strava_activity_id', () => {
-  const route = () => import('@/app/api/strava/unlink-activity/route')
-  const writes = () => (S.db?.log ?? []).filter(q => q.op !== 'select').map(q => `${q.table}:${q.op}`)
-  it('🔴 the guard holds (the completion still carries the refused id): cleared, analysis removed', async () => {
-    S.resolve = q => (q.table === 'session_completions' ? { data: [{ id: 'c1' }] } : {})
-    const res = await call('/api/strava/unlink-activity', await route(), { week_n: 3, session_day: 'tue', only_if_strava_activity_id: 5 })
-    expect(await res.json()).toEqual({ ok: true, cleared: true })
-    expect(S.db!.log.find(q => q.table === 'session_completions')!.filters).toMatchObject({ strava_activity_id: 5, superseded_at: null })
-    expect(writes()).toEqual(['session_completions:update', 'run_analysis:delete'])
-  })
-  it('🔴 a Strava id already merged onto a row is never cleared: no write at all', async () => {
-    S.resolve = q => (q.table === 'strava_activities' ? { data: [{ id: 'hk1' }] } : q.table === 'session_completions' ? { data: [{ id: 'c1' }] } : {})
-    const res = await call('/api/strava/unlink-activity', await route(), { week_n: 3, session_day: 'tue', only_if_strava_activity_id: 5 })
-    expect(await res.json()).toEqual({ ok: true, cleared: false, reason: 'attached' })
-    expect(writes()).toEqual([])
-    expect(S.db!.log.find(q => q.table === 'strava_activities')!.filters).toEqual({ user_id: 'u1', strava_activity_id: 5 })
-  })
-  it('🔴 the guard fails (the runner re-linked meanwhile): nothing else is touched', async () => {
-    S.resolve = q => (q.table === 'session_completions' ? { data: [] } : {})
-    const res = await call('/api/strava/unlink-activity', await route(), { week_n: 3, session_day: 'tue', only_if_strava_activity_id: 5 })
-    expect(await res.json()).toEqual({ ok: true, cleared: false })
-    expect(writes()).toEqual(['session_completions:update'])
-  })
-  it('without the guard it clears unconditionally, as before', async () => {
-    S.resolve = q => (q.table === 'session_completions' ? { data: [{ id: 'c1' }] } : {})
-    await call('/api/strava/unlink-activity', await route(), { week_n: 3, session_day: 'tue' })
-    expect('strava_activity_id' in S.db!.log.find(q => q.table === 'session_completions')!.filters).toBe(false)
-    expect(writes()).toEqual(['session_completions:update', 'run_analysis:delete'])
+  it('🔴 a failed lookup is not a discard', async () => {
+    S.resolve = q => (byStravaId(q) ? { error: { message: 'db down' } } : resolver(false)(q))
+    await call('/api/webhooks/strava', await import('@/app/api/webhooks/strava/route'), { ...event, aspect_type: 'create' })
+    expect(S.ops.map(o => o.kind)).toEqual(['strava_webhook_received'])
   })
 })

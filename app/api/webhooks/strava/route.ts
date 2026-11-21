@@ -77,7 +77,12 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ status: 'ignored' })
   }
   if (payload.aspect_type === 'delete') {
-    await handleActivityDelete(payload)
+    // Same 2s budget as below: the delete is three queries, so it runs after the 200.
+    waitUntil(
+      handleActivityDelete(payload).catch(err =>
+        console.error('[strava-webhook] handleActivityDelete failed', payload.object_id, err)
+      )
+    )
     return NextResponse.json({ status: 'ok' })
   }
 
@@ -157,7 +162,8 @@ async function enrichAndPersist(event: StravaEvent) {
   // STRAVA-WEBHOOK-SOR-01: Apple Health is the system of record. No matching Apple Health run -> discard, never store.
   // STRAVA-SOR-REVIEW-FIX-03: an `update` event or a redelivery finds a row ALREADY carrying this id, and the merge only
   // matches an unattached row. That is not a discard; say nothing.
-  if (!consolidation.enriched && !(await findRowByStravaId(getSupabase(), userId, activity.id))) {
+  // A failed read (`'unknown'`) is not a discard either.
+  if (!consolidation.enriched && (await findRowByStravaId(getSupabase(), userId, activity.id)) === null) {
     await recordOpsEvent('strava_activity_discarded', { reason: 'no_healthkit_match', strava_activity_id: activity.id }, userId)
   }
 }
