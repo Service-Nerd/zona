@@ -1864,6 +1864,30 @@ errors. If the row write fails, the plan has changed, but the row stays `pending
 - Make the status update conditional: `.eq('status', <read status>)`, with 0 rows treated as a conflict.
 - This folds into ADR-027 B4b's single writer if that lands first.
 
+### 🔲 `PROFILE-MISSING-FACTS-PROMPT-01` — ask once for the facts the engine is missing *(filed 2026-11-21, founder: future increment)* 🧭 **DESIGN BOARD** then 💼 **SLT** (tier)
+
+**Opportunity found during the ADR-027 build.** Since B2a the runner profile lists every fact it could not use
+(`nulled`), and `fetchRunnerFacts` knows when a runner has no timezone, no max heart rate or no recent runs. A single
+quiet prompt could fill those in.
+
+**Placed against the initial design:** **future increment.** It is a new wizard/Me prompt, and no B0–B8 stage covers
+it. Cheap any time after B2, because the list of missing facts already exists.
+
+**Before building:** measure how many live runners are missing each fact (aggregates only). The Design Board rules on
+where and when the prompt appears (one ask, never a nag). The SLT rules FREE or PAID.
+
+### 🔲 `ASSUMPTIONS-VS-REALITY-01` — show what the plan assumed about the runner beside what they actually did *(filed 2026-11-21, founder: future increment)* 🧭 **DESIGN BOARD** · 💼 **SLT** · 🏃 **COACHING BOARD** (any claim about outcomes)
+
+**Opportunity found during the ADR-027 build.** No running app shows its own assumptions. The profile records each
+fact with its source (typed in, confirmed, measured), so a view of "we built for 32 km a week; you have run 28" is
+read straight from it.
+
+**Placed against the initial design:** **future increment, after B5.** It is a new screen, which is outside B0–B8. It
+reads the L1 profile and B5's decision records, so B4 and B5 must exist first.
+
+**Before building:** the Design Board rules on the screen and its place (screen-architecture: one job per screen).
+The SLT rules on the tier. The Coaching Board rules on any sentence that interprets the gap.
+
 ### 🔲 `SEC-STRAVA-SECRET-AT-REST-01` — the Strava app's client secret is stored in plain text in a user row *(filed 2026-11-21)* ⚙️ **NO BOARD** (security)
 
 **Found by** the runner-facts schema review (`docs/architecture/data-dictionary-runner-facts-2026-11-21.md` § 2.8).
