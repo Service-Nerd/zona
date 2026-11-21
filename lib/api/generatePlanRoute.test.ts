@@ -54,10 +54,10 @@
  *   · **Not the client.** The frames are read with `readPlanStream`, the real consumer, but
  *     what `GeneratePlanScreen` does with them is its own.
  */
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { readPlanStream } from '@/lib/planStream'
 import { nextMonday, formatDate } from '@/lib/plan/length'
-import type { Plan } from '@/types/plan'
+import type { Plan, GeneratorInput } from '@/types/plan'
 
 const UID = 'u1'
 
@@ -79,6 +79,10 @@ const S = vi.hoisted(() => ({
   /** GENERATE-500-NO-TRACE-01 — a table whose reads THROW, to drive the route into its
    *  real outer catch. A fault in the I/O, not a fiction about the engine. */
   crashTable: null as string | null,
+  /** ADR027-B0-PROD-FINDINGS — every `recordPlanFindings` the route started. It runs AFTER the
+   *  response by design, so each test drains these before the store is reset for the next one;
+   *  otherwise a late `plan_findings` row lands in the NEXT test's `ops_events`. */
+  findings: [] as Promise<void>[],
 }))
 
 /**
@@ -178,6 +182,21 @@ vi.mock('@/lib/plan/freeIntro', () => ({
   generateFreeIntro: async (plan: Plan) => { S.freeIntroSaw.push(plan); return S.freeIntro },
 }))
 
+// ADR027-B0-PROD-FINDINGS — the REAL implementation (the validator and the ops write both
+// run); the wrapper only records the promise so a test can wait for work the route deliberately
+// does not await.
+vi.mock('@/lib/ops/planFindings', async (importOriginal) => {
+  const real = await importOriginal<typeof import('@/lib/ops/planFindings')>()
+  return {
+    ...real,
+    recordPlanFindings: (...a: Parameters<typeof real.recordPlanFindings>) => {
+      const p = real.recordPlanFindings(...a)
+      S.findings.push(p)
+      return p
+    },
+  }
+})
+
 vi.mock('@/lib/plan/enrich', () => ({
   enrich: async (plan: Plan) => {
     S.enrichSaw.push(plan)
@@ -225,6 +244,11 @@ async function post(payload: unknown, opts: { raw?: string; auth?: boolean } = {
 const events = () => (S.store.ops_events ?? []).map(r => String(r.kind))
 const eventDetail = (kind: string) =>
   (S.store.ops_events ?? []).find(r => r.kind === kind)?.detail as Record<string, unknown> | undefined
+
+afterEach(async () => {
+  await Promise.all(S.findings)
+  S.findings = []
+})
 
 beforeEach(() => {
   // The off-switch is set per test; never let one test's '0' leak into the next.
@@ -730,5 +754,73 @@ describe('F — the NDJSON stream, through readPlanStream', () => {
       .toBe('applied')
     expect(events()).toContain('plan_enrich_server_saved')
     expect(eventDetail('plan_enrich_server_saved')).toMatchObject({ enrichment: 'applied', tier: 'paid' })
+  })
+})
+
+// ═══ J — the verifier, observe-only, on every plan the route returns ═════════════
+describe('J — ADR027-B0-PROD-FINDINGS: one plan_findings event per generation', () => {
+  /** Waits for the route's deferred work, then returns every plan_findings row. */
+  const findingsRows = async () => {
+    await vi.waitFor(() => expect(S.findings.length).toBeGreaterThan(0))
+    await Promise.all(S.findings)
+    return (S.store.ops_events ?? []).filter(r => r.kind === 'plan_findings')
+      .map(r => r.detail as Record<string, unknown>)
+  }
+
+  it('J1 — free: exactly one event, after the response, with the validator\'s counts', async () => {
+    const res = await post(body())
+    expect(res.status).toBe(200)
+    const { plan } = await res.json() as { plan: Plan }
+    const rows = await findingsRows()
+    expect(rows).toHaveLength(1)
+    const d = rows[0]
+    expect(d.kind).toBe('race')
+    expect(d.race_distance_km).toBe(21.1)
+    expect(d.engine_version).toBe(plan.meta.generator_version)
+    expect(typeof d.errors).toBe('number')
+    expect(typeof d.warns).toBe('number')
+    const codes = d.codes as string[]
+    expect(Array.isArray(codes)).toBe(true)
+    expect(codes.length).toBeLessThanOrEqual(40)
+    expect(new Set(codes).size).toBe(codes.length)
+    // The counts are the validator's, on the plan the runner received: recomputed here from the
+    // response body with the input the route built (the body plus the profile's first name).
+    const { planFindingsDetail } = await import('@/lib/ops/planFindings')
+    const input = (plan.meta as unknown as { generator_input?: GeneratorInput }).generator_input
+    expect(input, 'the plan stores the input it was built from').toBeDefined()
+    expect(d).toEqual(planFindingsDetail(plan, input!))
+  })
+
+  it('J2 — paid stream: one event, on the FINAL plan, not delaying the final_plan frame', async () => {
+    subscribe()
+    const res = await post(body())
+    const frames: { type: string }[] = []
+    for await (const m of readPlanStream(res as unknown as Response)) frames.push(m)
+    expect(frames.map(f => f.type)).toEqual(['rule_plan', 'final_plan'])
+    const rows = await findingsRows()
+    expect(rows).toHaveLength(1)
+    expect(rows[0].race_distance_km).toBe(21.1)
+  })
+
+  it('J3 — a base-build plan is judged by its own kind (validateSavedPlan dispatches)', async () => {
+    subscribe()
+    const res = await post(body({
+      race_distance_km: 42.2, current_weekly_km: 8, longest_recent_run_km: 6,
+      days_available: 4, training_age: '<6mo', recent_quality_training: 'none',
+      race_date: raceIn(26), accept_base_build: true,
+    }))
+    expect(res.status).toBe(200)
+    await res.json()
+    const rows = await findingsRows()
+    expect(rows).toHaveLength(1)
+    expect(rows[0].kind).toBe('base_build')
+  })
+
+  it('J4 — a refusal returns no plan and records no findings', async () => {
+    const res = await post(body({ race_distance_km: 42.2, days_available: 1, race_date: raceIn(30) }))
+    expect(res.status).toBe(422)
+    await new Promise(r => setTimeout(r, 20))
+    expect(S.findings).toHaveLength(0)
+    expect(events()).not.toContain('plan_findings')
   })
 })

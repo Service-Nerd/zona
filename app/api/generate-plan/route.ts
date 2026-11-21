@@ -29,6 +29,7 @@ import { shouldServerPersist } from '@/lib/plan/enrichServerSave'
 import { generateFreeIntro } from '@/lib/plan/freeIntro'
 import { waitUntil } from '@vercel/functions'
 import { recordOpsEvent } from '@/lib/ops/recordOpsEvent'
+import { recordPlanFindings } from '@/lib/ops/planFindings'
 import { fetchWeeklyLoad } from '@/lib/coaching/weeklyActualLoad'
 import { getUserDisplayPrefs } from '@/lib/userPrefs'
 
@@ -244,7 +245,22 @@ export async function POST(req: NextRequest) {
       }, { status: 403 })
     }
 
-    if (checkpointPlan) return NextResponse.json({ plan: checkpointPlan })
+    // ADR027-B0-PROD-FINDINGS — the verifier, OBSERVE-ONLY, on every plan this route returns
+    // (ARCH-ENG-011). Handed to `waitUntil` so it outlives the response and never sits on the
+    // request path: `recordPlanFindings` yields a macrotask before it validates, and the paid
+    // stream chains it off `enrichWork` rather than awaiting it. It never throws and never
+    // touches the plan. Outside a platform context `waitUntil` throws; the promise still runs.
+    const observeFindings = (plan: Plan | Promise<Plan>, forInput: GeneratorInput) => {
+      const work = Promise.resolve(plan)
+        .then(p => recordPlanFindings(p, forInput, user.id))
+        .catch(() => { /* recordPlanFindings never rejects; this keeps `waitUntil` unrejected regardless */ })
+      try { waitUntil(work) } catch { /* no request context (dev, tests): the promise still runs */ }
+    }
+
+    if (checkpointPlan) {
+      observeFindings(checkpointPlan, input)
+      return NextResponse.json({ plan: checkpointPlan })
+    }
 
     // ── THE ENGINE, IN ONE CALL (ENGINE-ENTRY-01) ─────────────────────────
     //
@@ -286,6 +302,7 @@ export async function POST(req: NextRequest) {
     // are shaped for a race block.
     if (outcome.kind === 'base_build') {
       if (outcome.telemetry) await recordOpsEvent(outcome.telemetry.event, outcome.telemetry.detail, user.id)
+      observeFindings(outcome.plan, input)
       return NextResponse.json({ plan: outcome.plan })
     }
 
@@ -342,6 +359,7 @@ export async function POST(req: NextRequest) {
       // shape. `composePlanWithFoundation` now always returns a fresh meta, so
       // there is no longer an aliased object to stamp by mistake.
       composedRule.meta.enrichment = 'skipped'
+      observeFindings(composedRule, input)
       return NextResponse.json({ plan: composedRule })
     }
 
@@ -638,6 +656,9 @@ export async function POST(req: NextRequest) {
     } catch (e) {
       console.error('[generate-plan] waitUntil unavailable — enrichment persists only while the stream lives', e)
     }
+    // ADR027-B0-PROD-FINDINGS — on the FINAL plan (enriched, repaired, foundation re-attached),
+    // chained off the chain rather than inside it, so the `final_plan` frame never waits on it.
+    observeFindings(enrichWork, input)
 
     const stream = new ReadableStream({
       async start(controller) {

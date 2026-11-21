@@ -171,6 +171,9 @@ export type OpsEventKind =
   | 'boot_stalled'
   | 'plan_enrich_failed'        // AI enrichment silently fell back to rule-engine output (GEN-FIX-02)
   | 'plan_rule_invalid'         // a GENERATED rule plan violated its own constitution (ENRICH-ATTRIB-01)
+  // ADR027-B0-PROD-FINDINGS — one per generation, clean or not: the verifier's codes and counts
+  // on the plan the route returned (`lib/ops/planFindings.ts`). Observe-only, written after the response.
+  | 'plan_findings'
   // ENRICH-SERVER-SAVE-01 (2026-09-04) — the server's own persist of the enriched
   // plan. `_saved` is the SUCCESS case and is recorded deliberately: it is the
   // only evidence that the backstop caught a runner who closed the app, and a

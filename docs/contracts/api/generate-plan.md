@@ -556,6 +556,14 @@ If a future schema change gives the enricher reach over numerics, revisit this.
 A rule plan that arrives already invalid now writes its own `plan_rule_invalid` ops row — a separate
 and more serious signal than a failed enrichment.
 
+**ADR027-B0-PROD-FINDINGS (2026-11-21): every returned plan also writes ONE `plan_findings` row**,
+clean or not, after the response. It is the ADR-027 verifier wired as observe-only: `validateSavedPlan`
+over the plan the runner received (free JSON, the paid stream's FINAL plan, a base-build plan, a
+checkpoint plan), with `{ codes, errors, warns, kind, engine_version?, race_distance_km }`. Handed to
+`waitUntil` and chained off `enrichWork` on the stream, so neither the response nor the `final_plan`
+frame waits on it. **No request or response shape changed.** A refusal returns no plan and writes no
+row. Event contract: `ops-events.md`.
+
 ### Plan start
 The route computes the **next Monday** from the current date (local-time arithmetic, avoiding UTC
 midnight drift) and passes it to the engine. The client does not send a plan start date.
