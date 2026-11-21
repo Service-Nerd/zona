@@ -17,6 +17,8 @@ import { MUTATIONS } from '@/lib/plan/invariantLiveness'
 import type { Plan, GeneratorInput, Session } from '@/types/plan'
 import { isLongRun, isStructuredSession, isTimeTrial, isVo2maxSession, isQualitySession, classifyStimulus } from '@/lib/plan/sessionRole'
 import { V1_SESSION_CATALOGUE } from '@/lib/plan/sessionCatalogueData'
+import { isEffortGovernedRow } from '@/lib/plan/hrBand'
+import { goalPaceShapeWord } from '@/lib/plan/sessionStructureV2'
 import { sessionKmSelfPaced } from '@/lib/plan/sessionDistance'
 import { FUELLING_PRACTICE_NOTE, ULTRA_FUELLING_PREFIX } from '@/lib/plan/fuellingNotes'
 import { GENERATION_CONFIG, raceDistanceKey } from '@/lib/plan/generationConfig'
@@ -650,6 +652,27 @@ const EXTRA_MUTATIONS: { name: string; apply: (p: Plan, input: GeneratorInput) =
       }
       return false
     }],
+    // Batch 25: an effort-governed session with no pace but a goal-pace NAME (only that arm can fire).
+    ['an effort-governed session named as goal-pace work', (p: Plan) => {
+      // No corpus plan carries one, so a quality session is restamped onto the first effort-governed row.
+      const row = V1_SESSION_CATALOGUE.find(r => isEffortGovernedRow(r))
+      const s = p.weeks.flatMap(w => Object.values(w.sessions ?? {})).find(x => x && x.type === 'quality')
+      if (!row || !s) return false
+      s.catalogue_id = row.id; delete s.pace_target; s.label = 'Goal-pace hill reps'; return true
+    }],
+    // A "-pace sharpener" label is a purpose word and is skipped; the same label with a wrong shape word fires.
+    ...([['a purpose word', 'sharpener'], ['the wrong shape word', 'WRONG']] as const).map(([what, word]) => [`a renamed goal-pace label ending in ${what}`, (p: Plan) => {
+      const words = Array.from(new Set(V1_SESSION_CATALOGUE.map(r => goalPaceShapeWord(r)).filter((x): x is string => !!x)))
+      for (const w of p.weeks) for (const s of Object.values(w.sessions ?? {})) {
+        const row = s?.catalogue_id ? V1_SESSION_CATALOGUE.find(r => r.id === s.catalogue_id) : undefined
+        if (!s || !row) continue
+        const actual = (s.derived_set?.blocks?.length ? goalPaceShapeWord({ main_set_structure: { version: 2, blocks: s.derived_set.blocks } }) : null) ?? goalPaceShapeWord(row)
+        const wrong = words.find(x => x !== actual && x !== 'intervals' && x !== 'sharpener')
+        if (!actual || !wrong) continue
+        s.label = `Goal-pace ${word === 'WRONG' ? wrong : word}`; return true
+      }
+      return false
+    }] as const),
     ['meta age differing from the input', (p: Plan, i: GeneratorInput) => {
       if (typeof i.age !== 'number') return false
       ;(p.meta as unknown as Record<string, unknown>).age = i.age + 1; return true
@@ -703,6 +726,7 @@ const EXTRA_MUTATIONS: { name: string; apply: (p: Plan, input: GeneratorInput) =
 /** Breakages whose landing must be on a NAMED rule: they also wake neighbouring cap rules, so "the old report
  *  changed" would pass without the target being reached (code review, batch 14). */
 const TARGETS: Record<string, string[]> = {
+  'an effort-governed session named as goal-pace work': ['INV-PLAN-EFFORT-GOVERNED-NOT-GOAL-PACED'],
   'paced VO2max work just over the dose band': ['INV-PLAN-VO2MAX-MAIN-SET-CAP'],
   'a run-walk plan with the interval on a quality session': ['INV-PLAN-RUNWALK-PRESCRIBED'],
   'a structured weekday session just over its overrun limit, undeclared': ['INV-PLAN-STRUCTURED-OVERRUN-DECLARED'],
@@ -747,6 +771,7 @@ const SILENT: Record<string, { rule: string; twin: string }> = {
   're-entry WITH a VO2 session, note removed': { rule: 'INV-PLAN-REENTRY-OMISSION-DECLARED', twin: 're-entry with no VO2 and no note' },
   'goal below easy, WITH its note': { rule: 'INV-PLAN-GOAL-BELOW-EASY-DECLARED', twin: 'goal below easy, no note' },
   'every peak key session restamped to an ultra-specific row': { rule: 'INV-PLAN-PEAK-SPECIFICITY', twin: 'every peak key session restamped to a threshold row' },
+  'a renamed goal-pace label ending in a purpose word': { rule: 'INV-PLAN-LABEL-MATCHES-STRUCTURE', twin: 'a renamed goal-pace label ending in the wrong shape word' },
   'an onset yield exactly at its bound': { rule: 'INV-PLAN-ONSET-YIELD-BOUNDED', twin: 'an onset yield one week past its bound' },
   'a continuous goal-pace step over the cap in the halfway week itself (5K time goal)': { rule: 'INV-PLAN-GOAL-PACE-SHAPE', twin: 'a continuous goal-pace step over the cap in the week after halfway (5K time goal)' },
 }

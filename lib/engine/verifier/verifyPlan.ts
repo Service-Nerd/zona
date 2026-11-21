@@ -25,7 +25,9 @@ import { BENCHMARK_VDOT_MAX } from '@/lib/plan/benchmarkCheck'
 import { parsePaceMidpoint } from '@/lib/plan/paceParse'
 import { catalogueRowFor } from '@/lib/plan/catalogueLink'
 import { SESSION_FORMAT } from '@/lib/plan/sessionFormat'
-import { workAnchorsOf } from '@/lib/plan/sessionStructureV2'
+import { workAnchorsOf, goalPaceShapeWord } from '@/lib/plan/sessionStructureV2'
+import { isEffortGovernedRow } from '@/lib/plan/hrBand'
+import { zoneStringFromZoneKeys } from '@/lib/coaching/zoneRules'
 
 export type VerifierDay = 'mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat' | 'sun'
 
@@ -1709,6 +1711,49 @@ const BATCH_24: Partial<Record<RuleId, Predicate>> = {
   },
 }
 Object.assign(PREDICATES, BATCH_24)
+
+/** Every shape noun a catalogue row can put in a label. */
+const SHAPE_WORDS = new Set(V1_SESSION_CATALOGUE.map(r => goalPaceShapeWord(r)).filter((x): x is string => !!x))
+
+const BATCH_25: Partial<Record<RuleId, Predicate>> = {
+  // §40b Am. 4: an effort-governed session shows its row's declared zone and carries no HR band.
+  'INV-PLAN-EFFORT-GOVERNED-NO-INVENTED-BAND': plan => plan.weeks.flatMap(w => daysOf(w).flatMap(({ day, session: s }) => {
+    if (!s) return []
+    const row = catalogueRowFor(s)
+    if (!row || !isEffortGovernedRow(row)) return []
+    const declared = zoneStringFromZoneKeys(row.intensity_zones)
+    const out: Raw[] = []
+    if (declared && s.zone !== declared) out.push({ rule_id: 'INV-PLAN-EFFORT-GOVERNED-NO-INVENTED-BAND', week: w.n, day, detail: `zone ${s.zone} against ${declared}` })
+    if (typeof s.hr_target === 'string' && s.hr_target.trim().length > 0) out.push({ rule_id: 'INV-PLAN-EFFORT-GOVERNED-NO-INVENTED-BAND', week: w.n, day, detail: 'an HR target' })
+    return out
+  })),
+
+  // §40b: a session from an effort-governed row carries no pace and is not named as goal-pace work. The row is found
+  // by its stamp only (no label fallback), as validatePlan reads it.
+  'INV-PLAN-EFFORT-GOVERNED-NOT-GOAL-PACED': plan => plan.weeks.flatMap(w => daysOf(w).flatMap(({ day, session: s }) => {
+    if (!s?.catalogue_id) return []
+    const row = V1_SESSION_CATALOGUE.find(r => r.id === s.catalogue_id)
+    if (!row || !isEffortGovernedRow(row)) return []
+    const pace = typeof s.pace_target === 'string' && s.pace_target.trim().length > 0
+    return pace || /-pace /.test(s.label ?? '') ? [{ rule_id: 'INV-PLAN-EFFORT-GOVERNED-NOT-GOAL-PACED' as RuleId, week: w.n, day, detail: pace ? 'a pace target' : 'a goal-pace name' }] : []
+  })),
+
+  // §19, §53: a renamed label ending "-pace <shape>" names the shape the session delivers (its derived set, else its
+  // row). The generic word, a purpose word, and a word no row produces are skipped.
+  'INV-PLAN-LABEL-MATCHES-STRUCTURE': plan => plan.weeks.flatMap(w => daysOf(w).flatMap(({ day, session: s }) => {
+    if (!s?.catalogue_id) return []
+    const row = V1_SESSION_CATALOGUE.find(r => r.id === s.catalogue_id)
+    if (!row || s.label === row.name) return []
+    const m = /-pace ([a-z]+)$/i.exec((s.label ?? '').trim())
+    if (!m) return []
+    const claimed = m[1].toLowerCase()
+    if (claimed === 'intervals' || claimed === 'sharpener') return []
+    const delivered = s.derived_set?.blocks?.length ? goalPaceShapeWord({ main_set_structure: { version: 2, blocks: s.derived_set.blocks } }) : null
+    const actual = delivered ?? goalPaceShapeWord(row)
+    return actual && SHAPE_WORDS.has(claimed) && claimed !== actual ? [{ rule_id: 'INV-PLAN-LABEL-MATCHES-STRUCTURE' as RuleId, week: w.n, day, detail: `claims ${claimed}, is ${actual}` }] : []
+  })),
+}
+Object.assign(PREDICATES, BATCH_25)
 
 const SEVERITY = new Map(RULES.map(r => [r.id, r.kind === 'soft' ? 'warn' as const : 'error' as const]))
 /** Rules the catalogue marks as conditionally severe: only these may set a finding's severity (code review, batch 20). */
