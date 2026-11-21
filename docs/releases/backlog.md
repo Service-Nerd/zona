@@ -1822,7 +1822,9 @@ Step 1 shipped as `ADR027-B3-CATALOGUE` (221 rules). Remaining, in order:
   🔴 **Batch 9, a SAFETY hole, measured:** `EARLY-ONSET-GATED` reads `fitness_intensity_level ?? user_declared_level ??
   fitness_level`, and a beginner plan leaves the first unset, so a runner who DECLARED experienced but was assessed
   beginner passes the beginner veto (the agreement test now builds that runner: both checkers silent). Reading the
-  profile's intensity level instead catches it; ported faithfully until ruled. **Limit of the import gate:** it checks
+  profile's intensity level instead catches it; ported faithfully until ruled. **LATENT, not live harm:** the producer
+  sets early onset only when intensity is experienced AND structural is intermediate or above (`ruleEngine.ts` ~7334),
+  so an assessed beginner never gets it today; the checker would just not notice if the producer regressed. **Limit of the import gate:** it checks
   DIRECT imports only, and `sessionCatalogueData` (allowed as rule data) itself imports `workAnchorsOf` from planner
   code, so a defect there would reach both sides. **Step 3 must build
   the profile as of each plan's generation date**, because §10's staleness ramp moves the level with the clock.
