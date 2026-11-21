@@ -1808,7 +1808,8 @@ Step 1 shipped as `ADR027-B3-CATALOGUE` (221 rules). Remaining, in order:
   run on race eve passes. ✅ **Batch 3 SHIPPED 2026-11-21** (7 week/plan rules). ✅ **Batch 4 SHIPPED 2026-11-21**
   (3 rules after review; the verifier is handed the L1 profile).
   **Unblocked:** the L1 profile now carries the normalised goal (`race.goal`, with `race.goal_stated` beside it), so
-  `QUALITY-PER-WEEK` is ported and reads level and goal from the profile. **23 of 221; 198 left.** **Step 3 must build
+  `QUALITY-PER-WEEK` is ported and reads level and goal from the profile. ✅ **Batch 5 SHIPPED 2026-11-21** (3 rules).
+  **26 of 221; 195 left.** **Step 3 must build
   the profile as of each plan's generation date**, because §10's staleness ramp moves the level with the clock.
   **Self-label reads, recorded:** `PEAK-OVER-BASE` trusts the plan's own `volume_profile: 'maintenance'`.
 - **Step 3, nightly on every live plan**, observe-only (the founder chose this over an earlier start).

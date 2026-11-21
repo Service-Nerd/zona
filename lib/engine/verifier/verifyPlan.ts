@@ -16,6 +16,7 @@ import { RULES } from '@/lib/engine/catalogue/rules'
 import { GENERATION_CONFIG, raceDistanceKey } from '@/lib/plan/generationConfig'
 import { isLongRun, isShakeout, isSecondaryQuality, isQualitySession, isStructuredSession } from '@/lib/plan/sessionRole'
 import { normaliseDays } from '@/lib/plan/days'
+import { sessionKmSelfPaced } from '@/lib/plan/sessionDistance'
 
 export type VerifierDay = 'mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat' | 'sun'
 
@@ -400,6 +401,76 @@ const BATCH_4: Partial<Record<RuleId, Predicate>> = {
   },
 }
 Object.assign(PREDICATES, BATCH_4)
+
+const BATCH_5: Partial<Record<RuleId, Predicate>> = {
+  // §45 (+ Am. 2): the long run grows at most LONG_RUN_PROGRESSION_CAP_PCT, or an absolute step that tapers with
+  // the run's length, plus one rounding step. After a step-back or deload week the bar is the week BEFORE it,
+  // within a tolerance. Not across the foundation-to-main boundary, and not into race week.
+  'INV-PLAN-LR-PROGRESSION-CAP': plan => {
+    const pct = GENERATION_CONFIG.LONG_RUN_PROGRESSION_CAP_PCT / 100
+    const tol = 1 + GENERATION_CONFIG.LONG_RUN_DELOAD_STEP_BACK_TOLERANCE_PCT / 100
+    const lr = (w: Week): number | null => {
+      const s = Object.values((w.sessions ?? {}) as Record<string, Session | undefined>).find(x => !!x && isLongRun(x))
+      return s ? sessionKmSelfPaced(s) ?? null : null
+    }
+    const out: Raw[] = []
+    for (let i = 1; i < plan.weeks.length; i++) {
+      const prev = plan.weeks[i - 1], curr = plan.weeks[i]
+      if (curr.type === 'race' || (prev.phase === 'foundation' && curr.phase !== 'foundation')) continue
+      const a = lr(prev), b = lr(curr)
+      if (a == null || b == null) continue
+      const before = i >= 2 ? lr(plan.weeks[i - 2]) : null
+      const stepBack = prev.type === 'deload' || (before != null && prev.type !== 'race' && a < before - 0.01)
+      if (stepBack && before != null && b <= before * tol + 0.01) continue
+      const abs = Math.min(GENERATION_CONFIG.LONG_RUN_PROGRESSION_CAP_ABS_KM, a * GENERATION_CONFIG.LONG_RUN_ABS_STEP_MAX_PCT_OF_LR / 100)
+      const allowed = Math.max(a * pct, abs) + GENERATION_CONFIG.DISTANCE_ROUNDING_PRECISION_KM
+      if (b - a > allowed + 0.01) out.push({ rule_id: 'INV-PLAN-LR-PROGRESSION-CAP', week: curr.n, day: null, detail: `long run +${(b - a).toFixed(1)} km` })
+    }
+    return out
+  },
+
+  // §46: a time-targeted marathon or ultra peaks at or above its distance's floor (not on a maintenance profile).
+  'INV-PLAN-PEAK-VOLUME-FLOOR-LONG-RACES': (plan, { input, profile }) => {
+    if (profile.race.goal !== 'time_target' || plan.meta.volume_profile === 'maintenance') return []
+    const d = input.race_distance_km
+    const floor = d >= 40 && d <= 43 ? d * GENERATION_CONFIG.MARATHON_PEAK_VOLUME_FLOOR_RATIO
+      : d > 43 && d <= 55 ? d * GENERATION_CONFIG.ULTRA_50K_PEAK_VOLUME_FLOOR_RATIO
+      : d > 55 ? Math.min(d * GENERATION_CONFIG.ULTRA_LONG_PEAK_VOLUME_FLOOR_RATIO, GENERATION_CONFIG.ULTRA_PEAK_VOLUME_FLOOR_CAP_KM)
+      : 0
+    if (!(floor > 0)) return []
+    const peaks = plan.weeks.filter(w => w.phase === 'peak')
+    const peak = peaks.length ? Math.max(...peaks.map(w => w.weekly_km)) : 0
+    return peak + 0.01 < floor ? [{ rule_id: 'INV-PLAN-PEAK-VOLUME-FLOOR-LONG-RACES', week: PLAN, day: null, detail: `peak ${peak} km under ${Math.round(floor)} km` }] : []
+  },
+
+  // §53: across the plan (race week aside) no one quality row repeats more than its share allows; the
+  // allowance rises when the catalogue pools are too small to avoid it (the pigeonhole bound).
+  'INV-PLAN-QUALITY-VARIETY-FULL-PLAN': plan => {
+    const counts = new Map<string, number>()
+    let total = 0
+    for (const w of plan.weeks) {
+      if (w.type === 'race') continue
+      for (const s of Object.values((w.sessions ?? {}) as Record<string, Session | undefined>)) {
+        if (!s || s.type !== 'quality') continue
+        const k = (s.catalogue_id ?? s.label ?? '').trim()
+        if (!k) continue
+        counts.set(k, (counts.get(k) ?? 0) + 1); total++
+      }
+    }
+    if (!total) return []
+    const share = Math.floor(total / GENERATION_CONFIG.QUALITY_VARIETY_DENOMINATOR) + GENERATION_CONFIG.QUALITY_VARIETY_ALLOWANCE
+    const pools = plan.meta.quality_pool_sizes ?? []
+    let pigeon = 0
+    for (const size of Array.from(new Set(pools))) {
+      if (size <= 0) continue
+      pigeon = Math.max(pigeon, Math.ceil(pools.filter(x => x <= size).length / size))
+    }
+    const cap = Math.max(share, pigeon)
+    return Array.from(counts).filter(([, n]) => n > cap)
+      .map(([k, n]) => ({ rule_id: 'INV-PLAN-QUALITY-VARIETY-FULL-PLAN', week: PLAN, day: null, detail: `${k} ${n} times over ${cap}` }))
+  },
+}
+Object.assign(PREDICATES, BATCH_5)
 
 const SEVERITY = new Map(RULES.map(r => [r.id, r.kind === 'soft' ? 'warn' as const : 'error' as const]))
 

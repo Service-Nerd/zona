@@ -82,6 +82,18 @@ const EXTRA_MUTATIONS: { name: string; apply: (p: Plan, input: GeneratorInput) =
     last.phase = 'peak'; last.weekly_km = first.weekly_km
     return true
   } },
+  // §46's line: a time-targeted long race whose peak sits half a kilometre under its floor.
+  { name: 'a long-race peak half a kilometre under its floor', apply: (p, input) => {
+    const d = input.race_distance_km
+    if (input.goal !== 'time_target' || !input.target_time || d < 40) return false
+    const floor = d <= 43 ? d * GENERATION_CONFIG.MARATHON_PEAK_VOLUME_FLOOR_RATIO
+      : d <= 55 ? d * GENERATION_CONFIG.ULTRA_50K_PEAK_VOLUME_FLOOR_RATIO
+      : Math.min(d * GENERATION_CONFIG.ULTRA_LONG_PEAK_VOLUME_FLOOR_RATIO, GENERATION_CONFIG.ULTRA_PEAK_VOLUME_FLOOR_CAP_KM)
+    const peaks = p.weeks.filter(w => w.phase === 'peak')
+    if (!peaks.length || p.meta.volume_profile === 'maintenance') return false
+    for (const w of peaks) w.weekly_km = Math.round((floor - 0.5) * 10) / 10
+    return true
+  } },
   // §49's line: exactly one taper week over the cap (relabel the weeks before the taper).
   { name: 'one taper week over the cap', apply: (p, input) => {
     const cap = GENERATION_CONFIG.MAX_TAPER_PHASE_WEEKS[raceDistanceKey(input.race_distance_km) as keyof typeof GENERATION_CONFIG.MAX_TAPER_PHASE_WEEKS]
