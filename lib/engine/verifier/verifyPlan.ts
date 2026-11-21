@@ -1308,6 +1308,48 @@ const BATCH_20: Partial<Record<RuleId, Predicate>> = {
 }
 Object.assign(PREDICATES, BATCH_20)
 
+const BATCH_21: Partial<Record<RuleId, Predicate>> = {
+  // §52: no single session (of any running kind) is more than LONG_RUN_MAX_PCT_OF_WEEKLY of its week; a foundation
+  // week with under three runs is exempt. CONDITIONAL severity: warn on a maintenance profile, error otherwise.
+  'INV-PLAN-LR-MAX-WEEKLY-PCT': plan => {
+    const cap = GENERATION_CONFIG.LONG_RUN_MAX_PCT_OF_WEEKLY / 100
+    const severity = plan.meta.volume_profile === 'maintenance' ? 'warn' as const : 'error' as const
+    return plan.weeks.filter(w => w.type !== 'race' && w.type !== 'deload' && w.weekly_km > 0).flatMap(w => {
+      if (w.phase === 'foundation' && daysOf(w).filter(x => x.session && x.session.type !== 'rest' && x.session.type !== 'cross-train').length < 3) return []
+      return daysOf(w).flatMap(({ day, session: s }) => {
+        if (!s || s.type === 'strength' || s.type === 'rest') return []
+        const km = sessionKmSelfPaced(s)
+        return km != null && km / w.weekly_km > cap + 0.005
+          ? [{ rule_id: 'INV-PLAN-LR-MAX-WEEKLY-PCT' as RuleId, week: w.n, day, detail: `a session at ${Math.round((km / w.weekly_km) * 100)}% of the week`, severity }] : []
+      })
+    })
+  },
+
+  // §47 Am. 2–3: a peak step-back week (stamped, or by its legacy note) delivers less than the week before it, unless
+  // every easy run is at the floor; when the long run's §52 share floor sits above the previous week, it is a declared
+  // residual (warn), otherwise an error. Non-injury runners only. CONDITIONAL severity.
+  'INV-PLAN-PEAK-STEPBACK-VOLUME': (plan, { input }) => {
+    if ((input.injury_history ?? []).length !== 0) return []
+    const tol = GENERATION_CONFIG.DISTANCE_ROUNDING_PRECISION_KM, minEasy = GENERATION_CONFIG.MIN_SESSION_DISTANCE_KM.easy
+    const out: Raw[] = []
+    for (let i = 1; i < plan.weeks.length; i++) {
+      const w = plan.weeks[i], prev = plan.weeks[i - 1]
+      if (w.phase !== 'peak' || w.type === 'deload') continue
+      const lr = Object.values((w.sessions ?? {}) as Record<string, Session | undefined>).find(s => !!s && isLongRun(s))
+      const stepBack = w.peak_stepback === true || (lr?.coach_notes ?? []).some(n => n?.includes('Step-back week. Easy aerobic'))
+      if (!lr || !stepBack || !prev || prev.type === 'deload' || w.weekly_km <= prev.weekly_km + tol) continue
+      const easies = daysOf(w).map(x => x.session).filter((s): s is Session => !!s && s.type === 'easy' && s.role !== 'long_run')
+      if (easies.every(s => (s.distance_km != null ? s.distance_km <= minEasy + 0.01 : true))) continue
+      const floor = lr.distance_km != null && lr.distance_km > 0 ? lr.distance_km / (GENERATION_CONFIG.LONG_RUN_MAX_PCT_OF_WEEKLY / 100) : null
+      out.push(floor != null && floor > prev.weekly_km + tol
+        ? { rule_id: 'INV-PLAN-PEAK-STEPBACK-VOLUME', week: w.n, day: null, detail: '§52 share floor above the previous week', severity: 'warn' }
+        : { rule_id: 'INV-PLAN-PEAK-STEPBACK-VOLUME', week: w.n, day: null, detail: 'step-back week climbs', severity: 'error' })
+    }
+    return out
+  },
+}
+Object.assign(PREDICATES, BATCH_21)
+
 const SEVERITY = new Map(RULES.map(r => [r.id, r.kind === 'soft' ? 'warn' as const : 'error' as const]))
 /** Rules the catalogue marks as conditionally severe: only these may set a finding's severity (code review, batch 20). */
 const CONDITIONAL = new Set(RULES.filter(r => r.severity_note).map(r => r.id))

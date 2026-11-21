@@ -133,6 +133,15 @@ const EXTRA_MUTATIONS: { name: string; apply: (p: Plan, input: GeneratorInput) =
     ['no HR method', (p: Plan) => { delete p.meta.hr_zone_method; return true }],
     // Batch 8: the plan's declarations about its own limits.
     ['no compression class', (p: Plan) => { delete p.meta.compression_classification; return true }],
+    // Batch 21: the two remaining conditional rules, each severity branch.
+    ...(['build', 'maintenance'] as const).map(profile => [`a session just over the share of its week (${profile} profile)`, (p: Plan) => {
+      const w = p.weeks.find(x => x.n >= 1 && x.type !== 'race' && x.type !== 'deload' && x.weekly_km > 0)
+      const s = w && Object.values(w.sessions ?? {}).find(x => x && isLongRun(x))
+      if (!w || !s) return false
+      s.distance_km = Math.round(w.weekly_km * (GENERATION_CONFIG.LONG_RUN_MAX_PCT_OF_WEEKLY / 100 + 0.02) * 10) / 10; delete s.duration_mins
+      p.meta.volume_profile = profile; if (profile === 'maintenance') p.meta.volume_constraint_note ??= 'Held at maintenance.'
+      return true
+    }] as const),
     // Batch 20.
     ['a progressive week just past the detraining decline', (p: Plan) => {
       const prog = p.weeks.filter(w => w.n >= 1 && w.phase !== 'taper' && w.type !== 'deload' && w.badge !== 'deload' && w.type !== 'race'
@@ -572,6 +581,21 @@ const EXTRA_MUTATIONS: { name: string; apply: (p: Plan, input: GeneratorInput) =
       const rise = Math.max(before * pct / 100, GENERATION_CONFIG.DELIVERED_ABSOLUTE_FLOOR_KM + 0.5)
       p.weeks[k].weekly_km = Math.round((before + rise + lk(p.weeks[k])) * 10) / 10; return true
     }],
+    ...(['error', 'warn'] as const).map(branch => [`a climbing peak step-back week (${branch} branch)`, (p: Plan, i: GeneratorInput) => {
+      i.injury_history = []
+      const k = p.weeks.findIndex((w, j) => j > 0 && w.phase === 'peak' && w.type !== 'deload' && p.weeks[j - 1].type !== 'deload')
+      if (k < 1) return false
+      const w = p.weeks[k], prev = p.weeks[k - 1]
+      const lr = Object.values(w.sessions ?? {}).find(x => x && isLongRun(x))
+      const easy = Object.values(w.sessions ?? {}).find(x => x && x.type === 'easy' && x.role !== 'long_run')
+      if (!lr || !easy) return false
+      w.peak_stepback = true
+      w.weekly_km = prev.weekly_km + 5
+      easy.distance_km = GENERATION_CONFIG.MIN_SESSION_DISTANCE_KM.easy + 2
+      // warn: the long run's share floor sits above the previous week; error: it does not.
+      lr.distance_km = branch === 'warn' ? Math.ceil(prev.weekly_km * (GENERATION_CONFIG.LONG_RUN_MAX_PCT_OF_WEEKLY / 100) + 2) : 4
+      return true
+    }] as const),
     ['meta age differing from the input', (p: Plan, i: GeneratorInput) => {
       if (typeof i.age !== 'number') return false
       ;(p.meta as unknown as Record<string, unknown>).age = i.age + 1; return true
@@ -653,6 +677,8 @@ const STATIC_RULES = new Set<string>(['INV-PLAN-PHASE-FOCUS-REACHABLE'])
 const CONDITIONAL_PORTED: Record<string, { why: string; branches: ('warn' | 'error')[] }> = {
   'INV-PLAN-NOT-DETRAINING': { why: 'not conditional: always warn; the note is a planned promotion', branches: ['warn'] },
   'INV-PLAN-PEAK-IN-PEAK-PHASE': { why: 'warn on a maintenance profile, error otherwise (set in the predicate)', branches: ['warn', 'error'] },
+  'INV-PLAN-LR-MAX-WEEKLY-PCT': { why: 'warn on a maintenance profile, error otherwise (set in the predicate)', branches: ['warn', 'error'] },
+  'INV-PLAN-PEAK-STEPBACK-VOLUME': { why: 'warn when the §52 share floor sits above the previous week, error otherwise', branches: ['warn', 'error'] },
 }
 const hits = new Map<string, number>()
 /** Breakages that sit exactly where a rule must STAY silent, so they change nothing the old checker reports. */
