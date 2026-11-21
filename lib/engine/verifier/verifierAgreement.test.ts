@@ -752,6 +752,37 @@ const EXTRA_MUTATIONS: { name: string; apply: (p: Plan, input: GeneratorInput) =
       }
       return n > 0
     }] as const),
+    // Batch 30 (and the batch 26-28 review): the arms no corpus plan reached.
+    ['a goal-pace session with an aerobic cue', (p: Plan) => {
+      const s = p.weeks.filter(w => w.n >= 1).flatMap(w => Object.values(w.sessions ?? {})).find(x => x && x.type === 'quality')
+      if (!s) return false
+      s.label = '10K-pace intervals'; s.coach_notes = ['Boring is the point.']; return true
+    }],
+    ['a quality session labelled as aerobic work on a hard zone', (p: Plan) => {
+      const s = p.weeks.filter(w => w.n >= 1).flatMap(w => Object.values(w.sessions ?? {})).find(x => x && x.type === 'quality')
+      if (!s) return false
+      s.label = 'Aerobic intervals'; s.zone = 'Zone 4–5'; return true
+    }],
+    ['an over-under 4% faster than T pace', (p: Plan) => {
+      const vdot = p.meta.vdot_training_anchor ?? p.meta.vdot
+      const s = p.weeks.filter(w => w.n >= 1).flatMap(w => Object.values(w.sessions ?? {})).find(x => x && x.type === 'quality')
+      if (!vdot || !s) return false
+      // The old checker's Daniels inverse at 0.855 of VO2max.
+      const a = 0.000104, b = 0.182258, c = -4.60 - 0.855 * vdot
+      const t = 1000 / ((-b + Math.sqrt(b * b - 4 * a * c)) / (2 * a))
+      const mid = t * 0.96, mm = Math.floor(mid), ss = Math.round((mid - mm) * 60)
+      s.catalogue_id = 'tempo_over_under'; s.pace_target = `${mm}:${String(ss).padStart(2, '0')}`; return true
+    }],
+    // A lopsided foundation week: its long-run share arm needs three runs, so two runs stay silent.
+    ...(['three', 'two'] as const).map(n => [`a foundation week with ${n} runs, one of them most of the week`, (p: Plan) => {
+      const w = p.weeks.find(x => x.phase === 'foundation' && Object.values(x.sessions ?? {}).filter(y => y && y.type !== 'rest' && y.type !== 'cross-train').length >= 3 && x.weekly_km > 0)
+      if (!w) return false
+      const keys = (Object.keys(w.sessions) as (keyof typeof w.sessions)[]).filter(k => { const y = w.sessions[k]; return y && y.type !== 'rest' && y.type !== 'cross-train' })
+      keys.slice(n === 'two' ? 2 : 3).forEach(k => delete w.sessions[k])
+      const first = w.sessions[keys[0]]!
+      first.distance_km = Math.round(w.weekly_km * 0.9 * 10) / 10; delete first.duration_mins
+      return true
+    }] as const),
     ['meta age differing from the input', (p: Plan, i: GeneratorInput) => {
       if (typeof i.age !== 'number') return false
       ;(p.meta as unknown as Record<string, unknown>).age = i.age + 1; return true
@@ -805,6 +836,9 @@ const EXTRA_MUTATIONS: { name: string; apply: (p: Plan, input: GeneratorInput) =
 /** Breakages whose landing must be on a NAMED rule: they also wake neighbouring cap rules, so "the old report
  *  changed" would pass without the target being reached (code review, batch 14). */
 const TARGETS: Record<string, string[]> = {
+  'a goal-pace session with an aerobic cue': ['INV-PLAN-COACH-NOTES-MATCH-INTENT'],
+  'a quality session labelled as aerobic work on a hard zone': ['INV-PLAN-LABEL-MATCHES-PACE'],
+  'an over-under 4% faster than T pace': ['INV-PLAN-OVER-UNDER-MEAN-NEAR-THRESHOLD'],
   'foundation strides without the readiness gate': ['INV-PLAN-FOUNDATION-BLOCK'],
   'foundation strides with injury history': ['INV-PLAN-FOUNDATION-BLOCK'],
   'a time trial that never says to log the result': ['INV-PLAN-COACH-NOTES-MATCH-INTENT'],
@@ -862,6 +896,7 @@ const SILENT: Record<string, { rule: string; twin: string }> = {
   'second-half quality restamped to an effort-governed row off goal pace': { rule: 'INV-PLAN-RACE-SPECIFIC-EXPOSURE', twin: 'second-half quality restamped to a threshold row off goal pace' },
   'second-half quality restamped to a displaced threshold row off goal pace': { rule: 'INV-PLAN-RACE-SPECIFIC-EXPOSURE', twin: 'second-half quality restamped to a threshold row off goal pace' },
   'second-half quality restamped to a CV-anchored row off goal pace': { rule: 'INV-PLAN-RACE-SPECIFIC-EXPOSURE-RATIO', twin: 'second-half quality restamped to a threshold row off goal pace' },
+  'a foundation week with two runs, one of them most of the week': { rule: 'INV-PLAN-FOUNDATION-BLOCK', twin: 'a foundation week with three runs, one of them most of the week' },
   'an onset yield exactly at its bound': { rule: 'INV-PLAN-ONSET-YIELD-BOUNDED', twin: 'an onset yield one week past its bound' },
   'a continuous goal-pace step over the cap in the halfway week itself (5K time goal)': { rule: 'INV-PLAN-GOAL-PACE-SHAPE', twin: 'a continuous goal-pace step over the cap in the week after halfway (5K time goal)' },
 }
@@ -874,6 +909,14 @@ const downgradePairs: { label: string; week: number; unflagged: string[]; flagge
 const raceEveDays = new WeakMap<Plan, string>()
 /** Rules that make more than one independent check: each detail prefix must fire on its own. */
 const ARMS: Record<string, string[]> = {
+  // Batches 22-30's multi-arm rules (code review): each arm must fire on its own, so one going quiet is caught.
+  'INV-PLAN-COACH-NOTES-MATCH-INTENT': ['time trial lost its instruction', 'aerobic cue', 'goal-paced step called threshold'],
+  'INV-PLAN-FOUNDATION-BLOCK': ['forbidden ', 'strides without the readiness gate', 'strides with injury history', 'over the stated-volume ceiling', 'long run over its share', 'ramps over the week-to-week ceiling'],
+  'INV-PLAN-LABEL-MATCHES-PACE': ['VO2 label, not VO2 work', 'threshold label, no threshold zone', 'easy label on a quality zone', 'VO2 pace off vVO2max', 'threshold pace off T'],
+  'INV-PLAN-EFFORT-GOVERNED-NO-INVENTED-BAND': ['zone ', 'an HR target'],
+  'INV-PLAN-VO2MAX-MAIN-SET-CAP': ['over the legacy ceiling', 'outside the work band'],
+  'INV-PLAN-RUNWALK-PRESCRIBED': ['interval on a quality session', 'no interval'],
+  'INV-PLAN-EFFORT-GOVERNED-NOT-GOAL-PACED': ['a pace target', 'a goal-pace name'],
   'INV-PLAN-DELOAD-PLACEMENT': ['deload opens a phase', 'cadence:'],
   'INV-PLAN-PHASE-STRUCTURE': ['phase returns', 'phases out of order'],
   'INV-PLAN-PREP-TIME-STATUS-ANNOTATED': ['no prep_time_status', 'warned without its warning', 'warned without its alternatives'],

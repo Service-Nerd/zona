@@ -14,7 +14,7 @@ import type { RuleId } from '@/lib/engine/contracts/rule'
 import type { RunnerProfile } from '@/lib/engine/contracts/profile'
 import { RULES } from '@/lib/engine/catalogue/rules'
 import { GENERATION_CONFIG, raceDistanceKey } from '@/lib/plan/generationConfig'
-import { isLongRun, isShakeout, isSecondaryQuality, isQualitySession, isStructuredSession, isTimeTrial, isVo2maxSession, classifyStimulus, isHardEffort } from '@/lib/plan/sessionRole'
+import { isLongRun, isShakeout, isSecondaryQuality, isQualitySession, isStructuredSession, isTimeTrial, isVo2maxSession, classifyStimulus, isHardEffort, workClassFor } from '@/lib/plan/sessionRole'
 import { V1_SESSION_CATALOGUE } from '@/lib/plan/sessionCatalogueData'
 import { FUELLING_PRACTICE_NOTE, ULTRA_FUELLING_PREFIX } from '@/lib/plan/fuellingNotes'
 import { PLAN_SIGNATURES } from '@/lib/plan/planSignatures'
@@ -2003,6 +2003,170 @@ const BATCH_29: Partial<Record<RuleId, Predicate>> = {
   },
 }
 Object.assign(PREDICATES, BATCH_29)
+
+/** The old checker's own Daniels inverse (pace in min/km at a fraction of VO2max), copied: it is checker code, not
+ *  planner code. 🔻 The fractions its callers pass (0.855 T, 0.84 HM, 0.975 I, 0.97 discount) are literals there too. */
+function danielsPace(vdot: number, fraction: number): number {
+  const a = 0.000104, b = 0.182258, c = -4.60 - fraction * vdot
+  const disc = b * b - 4 * a * c
+  if (disc < 0) return 100
+  return 1000 / ((-b + Math.sqrt(disc)) / (2 * a))
+}
+
+/** What a label claims, by word. Written here: the enricher uses validatePlan's copy. */
+const labelSays = (label?: string | null) => {
+  const l = (label ?? '').toLowerCase()
+  return {
+    vo2: l.includes('vo2max') || l.includes('vo2 max'),
+    threshold: l.includes('threshold') || l.includes('tempo') || l.includes('cruise'),
+    easy: l.includes('easy') || l.includes('steady') || l.includes('aerobic') || l.includes('recovery'),
+  }
+}
+
+/** A rep-scaled v2 row's main set in minutes, from the row's steps and the session's reps and paces. */
+function pacedRepMain(s: Session): number | null {
+  const row = s.catalogue_id ? V1_SESSION_CATALOGUE.find(r => r.id === s.catalogue_id) : undefined
+  if (!row || !isV2Structure(row.main_set_structure)) return null
+  const parsed = StructureV2Schema.safeParse(row.main_set_structure)
+  if (!parsed.success || parsed.data.sizing.scaling !== 'reps') return null
+  const headline = parsePaceMidpoint(s.pace_target ?? '')
+  const derived = (s.derived_set as { blocks?: { repeat?: number; steps?: { pace?: string | null }[] }[] } | undefined)?.blocks
+  let total = 0
+  for (let bi = 0; bi < parsed.data.blocks.length; bi++) {
+    const block = parsed.data.blocks[bi]
+    const repeat = typeof block.repeat === 'number' ? block.repeat : derived?.[bi]?.steps != null ? derived?.[bi]?.repeat : undefined
+    if (typeof repeat !== 'number') return null
+    let mins = 0
+    for (let si = 0; si < block.steps.length; si++) {
+      const st = block.steps[si]
+      if (st.length.kind === 'duration') { mins += st.length.secs / 60; continue }
+      if (st.length.kind === 'distance') {
+        const p = parsePaceMidpoint(derived?.[bi]?.steps?.[si]?.pace ?? '') ?? headline
+        if (p == null) return null
+        mins += (st.length.m / 1000) * p
+        continue
+      }
+      return null
+    }
+    total += repeat * mins
+  }
+  return total
+}
+
+/** 🔻 A literal in validatePlan: the two fixed-shape threshold rows whose main set is summed from their steps. */
+const FIXED_SHAPE_ROWS = new Set(['threshold_pyramid', 'threshold_ladder'])
+
+function fixedShapeMain(s: Session): number | null {
+  if (!s.catalogue_id || !FIXED_SHAPE_ROWS.has(s.catalogue_id)) return null
+  const blocks = s.derived_set?.blocks
+  if (!blocks?.length) return null
+  let mins = 0
+  for (const b of blocks) {
+    let per = 0
+    for (const st of b.steps) {
+      const len = (st.length ?? '').trim()
+      const mmss = /^(\d+):(\d{2})$/.exec(len), unit = /^(\d+(?:\.\d+)?)\s*(min|s)\b/.exec(len)
+      const m = mmss ? +mmss[1] + +mmss[2] / 60 : unit ? (unit[2] === 's' ? +unit[1] / 60 : +unit[1]) : null
+      if (m == null) return null
+      per += m
+    }
+    mins += per * (b.repeat || 1)
+  }
+  return mins > 0 ? mins : null
+}
+
+function continuousTempoMain(s: Session): number | null {
+  if (s.catalogue_id !== 'tempo_continuous') return null
+  const ds = s.derived_set as { blocks?: { repeat?: number; steps?: { length?: string }[] }[] } | undefined
+  if (!ds?.blocks?.length) return null
+  let total = 0
+  for (const b of ds.blocks) {
+    const r = typeof b.repeat === 'number' ? b.repeat : 1
+    for (const st of b.steps ?? []) {
+      if (typeof st.length !== 'string') return null
+      const m = /^(\d+(?:\.\d+)?)\s*min$/i.exec(st.length.trim())
+      if (!m) return null
+      total += r * parseFloat(m[1])
+    }
+  }
+  return total > 0 ? total : null
+}
+
+const BATCH_30: Partial<Record<RuleId, Predicate>> = {
+  // §8: a structured session's duration is its main set plus the universal warm-up and cool-down, within the tolerance.
+  // ⚠️ The progressive tempo's expected main set is keyed by the plan's own level (self-label read), as validatePlan does.
+  'INV-PLAN-STRUCTURED-SESSION-DURATION-COHERENT': plan => {
+    const tol = GENERATION_CONFIG.MAIN_SET_ORDERING_TOLERANCE_MINS
+    const fitness = plan.meta.fitness_intensity_level ?? plan.meta.fitness_level
+    return plan.weeks.flatMap(w => daysOf(w).flatMap(({ day, session: s }) => {
+      if (!s || !s.derived_set || s.duration_mins == null) return []
+      const progressive = s.catalogue_id === 'progressive_tempo' && fitness && w.phase
+        ? ((GENERATION_CONFIG.PROGRESSIVE_TEMPO_MAIN_MINS as Record<string, Record<string, number>>)[fitness]?.[w.phase]
+          ?? (GENERATION_CONFIG.PROGRESSIVE_TEMPO_MAIN_MINS as Record<string, Record<string, number>>)[fitness]?.build ?? null)
+        : null
+      const main = pacedRepMain(s) ?? progressive ?? continuousTempoMain(s) ?? fixedShapeMain(s)
+      if (main == null) return []
+      return Math.abs(s.duration_mins - totalForMainSet(main)) > tol ? [{ rule_id: 'INV-PLAN-STRUCTURED-SESSION-DURATION-COHERENT' as RuleId, week: w.n, day, detail: `${s.duration_mins} min against ${totalForMainSet(main).toFixed(0)}` }] : []
+    }))
+  },
+
+  // §19: a quality label's claim (VO2, threshold, easy) matches the zone and the work it prescribes, and a VO2 or
+  // threshold label's pace sits near vVO2max (±5%) or T pace (±3%) for the plan's VDOT.
+  'INV-PLAN-LABEL-MATCHES-PACE': plan => plan.weeks.filter(governed).flatMap(w => running(w).flatMap(({ day, session: s }) => {
+    if (s.type !== 'quality') return []
+    const zone = (s.zone ?? '').toLowerCase()
+    if (!s.zone && (plan.meta as unknown as Record<string, unknown>).hr_derived_max == null) return []
+    const says = labelSays(s.label)
+    const cls = workClassFor(s, V1_SESSION_CATALOGUE)
+    const vo2Work = cls !== null ? cls === 'vo2max' : zone.includes('zone 4') || zone.includes('zone 5')
+    const zVo2 = zone.includes('zone 4') || zone.includes('zone 5'), zThr = zone.includes('zone 3') && !zone.includes('zone 4')
+    const out: Raw[] = []
+    const R = 'INV-PLAN-LABEL-MATCHES-PACE' as RuleId
+    if (says.vo2 && !vo2Work) out.push({ rule_id: R, week: w.n, day, detail: 'VO2 label, not VO2 work' })
+    if (says.threshold && !says.vo2 && !zThr && !zVo2) out.push({ rule_id: R, week: w.n, day, detail: 'threshold label, no threshold zone' })
+    if (says.easy && !(zone.includes('zone 1') || zone.includes('zone 2'))) out.push({ rule_id: R, week: w.n, day, detail: 'easy label on a quality zone' })
+    if (plan.meta.vdot && s.pace_target) {
+      const mid = parsePaceMidpoint(s.pace_target)
+      if (mid != null) {
+        if (says.vo2) {
+          const e = danielsPace(plan.meta.vdot, 0.975)
+          if (Math.abs(mid - e) / e > 0.05) out.push({ rule_id: R, week: w.n, day, detail: 'VO2 pace off vVO2max' })
+        } else if (says.threshold) {
+          const e = danielsPace(plan.meta.vdot_training_anchor ?? plan.meta.vdot, 0.855)
+          if (Math.abs(mid - e) / e > 0.03) out.push({ rule_id: R, week: w.n, day, detail: 'threshold pace off T' })
+        }
+      }
+    }
+    return out
+  })),
+
+  // §85: an over-under's mean pace sits 0–3% faster than T pace.
+  'INV-PLAN-OVER-UNDER-MEAN-NEAR-THRESHOLD': plan => plan.weeks.filter(governed).flatMap(w => running(w).flatMap(({ day, session: s }) => {
+    if (s.catalogue_id !== 'tempo_over_under' || !plan.meta.vdot || !s.pace_target) return []
+    const mid = parsePaceMidpoint(s.pace_target)
+    if (mid == null) return []
+    const t = danielsPace(plan.meta.vdot_training_anchor ?? plan.meta.vdot, 0.855)
+    const d = ((t - mid) / t) * 100
+    return d < 0 || d > 3 ? [{ rule_id: 'INV-PLAN-OVER-UNDER-MEAN-NEAR-THRESHOLD' as RuleId, week: w.n, day, detail: `${d.toFixed(1)}% from T` }] : []
+  })),
+
+  // §24b: on a 5K/10K time goal, a peak long run within two weeks of the taper carries no segment faster than HM pace.
+  'INV-PLAN-5K10K-LR-PACE-CAP': (plan, { input, profile }) => {
+    const dk = raceDistanceKey(input.race_distance_km)
+    if (profile.race.goal !== 'time_target' || (dk !== '5K' && dk !== '10K') || !plan.meta.vdot) return []
+    const ceiling = danielsPace(plan.meta.vdot * 0.97, 0.84)
+    const taper = plan.weeks.find(w => w.phase === 'taper')
+    return plan.weeks.flatMap(w => {
+      if (w.phase !== 'peak' || w.type === 'deload' || (taper ? taper.n - w.n : 999) > 2) return []
+      return daysOf(w).flatMap(({ day, session: s }) => {
+        if (!s || !isLongRun(s) || !s.lr_segment_pace) return []
+        const seg = parsePaceMidpoint(s.lr_segment_pace)
+        return seg != null && seg < ceiling - 0.05 ? [{ rule_id: 'INV-PLAN-5K10K-LR-PACE-CAP' as RuleId, week: w.n, day, detail: `segment ${s.lr_segment_pace}` }] : []
+      })
+    })
+  },
+}
+Object.assign(PREDICATES, BATCH_30)
 
 const SEVERITY = new Map(RULES.map(r => [r.id, r.kind === 'soft' ? 'warn' as const : 'error' as const]))
 /** Rules the catalogue marks as conditionally severe: only these may set a finding's severity (code review, batch 20). */
