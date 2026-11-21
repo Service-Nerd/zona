@@ -624,6 +624,17 @@ const EXTRA_MUTATIONS: { name: string; apply: (p: Plan, input: GeneratorInput) =
       }
       return n > 0
     }] as const),
+    // Batch 23: a run-walk plan's quality session carrying the interval (every other run carries it, so only that arm can fire).
+    ['a run-walk plan with the interval on a quality session', (p: Plan) => {
+      let q = 0
+      for (const w of p.weeks) for (const s of Object.values(w.sessions ?? {})) {
+        if (!s || s.type === 'rest' || s.type === 'cross-train' || s.type === 'strength') continue
+        if (isQualitySession(s)) { if (q++ === 0) s.run_walk_strategy = 'Run 4 min, walk 1 min'; else delete s.run_walk_strategy }
+        else s.run_walk_strategy = 'Run 4 min, walk 1 min'
+      }
+      p.meta.run_walk_prescribed = true
+      return q > 0
+    }],
     ['meta age differing from the input', (p: Plan, i: GeneratorInput) => {
       if (typeof i.age !== 'number') return false
       ;(p.meta as unknown as Record<string, unknown>).age = i.age + 1; return true

@@ -1518,6 +1518,114 @@ const BATCH_22: Partial<Record<RuleId, Predicate>> = {
 }
 Object.assign(PREDICATES, BATCH_22)
 
+const BATCH_23: Partial<Record<RuleId, Predicate>> = {
+  // §5: on a race of 21 km or less, the first VO2max session leaves VO2MAX_ONSET_MIN_ADAPTATION_WEEKS before the taper,
+  // when the plan is long enough to (and an intensity re-entry window does not cover the deadline).
+  'INV-PLAN-VO2MAX-ONSET': (plan, { input }) => {
+    const firstBuild = plan.weeks.find(w => w.phase === 'build')?.n
+    const taperStart = plan.weeks.find(w => w.phase === 'taper')?.n
+    if (firstBuild == null || taperStart == null || !(input.race_distance_km <= 21)) return []
+    const vo2 = plan.weeks.filter(w => Object.values(w.sessions ?? {}).some(s => s && s.type === 'quality' && classifyStimulus(s) === 'vo2max')).map(w => w.n)
+    if (vo2.length === 0) return []
+    const min = GENERATION_CONFIG.VO2MAX_ONSET_MIN_ADAPTATION_WEEKS
+    const deadline = plan.weeks.length - ((plan.weeks.length - taperStart) + 1) - min
+    let firstUnprotected: number | null = null
+    if (plan.meta.intensity_reentry_active) {
+      const budget = plan.meta.intensity_reentry_weeks ?? 0
+      let seen = 0
+      for (const w of plan.weeks) {
+        if (w.n < 1 || !Object.values(w.sessions ?? {}).some(s => s && s.type === 'quality')) continue
+        if (seen >= budget) { firstUnprotected = w.n; break }
+        seen++
+      }
+    }
+    const blocked = !!plan.meta.intensity_reentry_active && (firstUnprotected === null || firstUnprotected > deadline)
+    return deadline >= firstBuild && !blocked && taperStart - vo2[0] < min
+      ? [{ rule_id: 'INV-PLAN-VO2MAX-ONSET', week: vo2[0], day: null, detail: `first VO2max ${taperStart - vo2[0]} week(s) before the taper` }] : []
+  },
+
+  // §105: on a time-goal race over 30 km, marathon-pace work exists away from the long run.
+  'INV-PLAN-MARATHON-RACE-PACE-NOT-ONLY-LONG-RUN': (plan, { input, profile }) => {
+    if (!(input.race_distance_km > 30) || profile.race.goal !== 'time_target') return []
+    const rp = plan.weeks.filter(w => w.n >= 1).flatMap(w => Object.values(w.sessions ?? {}))
+      .filter((s): s is Session => !!s && s.type !== 'rest' && s.type !== 'race' && classifyStimulus(s) === 'race_pace')
+    return rp.length > 0 && rp.every(s => isLongRun(s)) ? [{ rule_id: 'INV-PLAN-MARATHON-RACE-PACE-NOT-ONLY-LONG-RUN', week: PLAN, day: null, detail: `all ${rp.length} in the long run` }] : []
+  },
+
+  // ADR-018: a quality session whose label names a catalogue row carries that row's stamp.
+  'INV-PLAN-CATALOGUE-LINK': plan => plan.weeks.flatMap(w => daysOf(w).flatMap(({ day, session: s }) =>
+    s && isQualitySession(s) && !s.catalogue_id && V1_SESSION_CATALOGUE.some(r => r.name === s.label)
+      ? [{ rule_id: 'INV-PLAN-CATALOGUE-LINK' as RuleId, week: w.n, day, detail: 'named row, no stamp' }] : [])),
+
+  // ADR-019: a session from a version-2 row carries a non-empty derived set.
+  'INV-PLAN-DERIVED-SET': plan => plan.weeks.flatMap(w => daysOf(w).flatMap(({ day, session: s }) => {
+    if (!s?.catalogue_id) return []
+    const row = V1_SESSION_CATALOGUE.find(r => r.id === s.catalogue_id)
+    const shape = row?.main_set_structure as { version?: unknown } | undefined
+    if (!shape || typeof shape !== 'object' || shape.version !== 2) return []
+    const d = s.derived_set as { blocks?: unknown[] } | undefined
+    return !d || !Array.isArray(d.blocks) || d.blocks.length === 0 ? [{ rule_id: 'INV-PLAN-DERIVED-SET' as RuleId, week: w.n, day, detail: `${row!.id} with no derived set` }] : []
+  })),
+
+  // §104: a time-goal peak does not fill two or more race-specific slots with one row while another eligible row exists.
+  // ⚠️ The level is validatePlan's four-step fallback: plan meta, then the request, then the plan's structural level.
+  'INV-PLAN-RACE-SPECIFIC-VARIETY': (plan, { input, profile }) => {
+    if (profile.race.goal !== 'time_target') return []
+    const dk = raceDistanceKey(input.race_distance_km)
+    const fitness = plan.meta.fitness_intensity_level ?? input.fitness_intensity_level ?? input.fitness_level ?? plan.meta.fitness_level
+    const R = LEVEL_RANK as Record<string, number>
+    const slots = plan.weeks.filter(w => w.phase === 'peak' && w.type !== 'race')
+      .flatMap(w => Object.values(w.sessions ?? {}).filter((s): s is Session => s != null && !!s.catalogue_id && !isLongRun(s)).map(s => ({ week: w.n, id: s.catalogue_id! })))
+      .filter(x => V1_SESSION_CATALOGUE.find(r => r.id === x.id)?.category === 'race_specific')
+    const used = new Set(slots.map(x => x.id))
+    if (!(slots.length >= 2 && used.size === 1)) return []
+    const only = Array.from(used)[0]
+    const rank = fitness ? R[fitness] : undefined
+    const alt = V1_SESSION_CATALOGUE.filter(r => r.category === 'race_specific' && r.id !== only
+      && (r.distance_eligibility as readonly string[]).includes(dk) && (r.phase_eligibility as readonly string[]).includes('peak')
+      && (r.main_set_structure as { type?: string } | undefined)?.type !== 'long_run_with_segment'
+      && (rank === undefined || (R[r.fitness_level_min] <= rank && (r.fitness_level_max == null || rank <= R[r.fitness_level_max]))))
+    return alt.length > 0 ? [{ rule_id: 'INV-PLAN-RACE-SPECIFIC-VARIETY', week: slots[0].week, day: null, detail: `${slots.length} slots, one row (${only})` }] : []
+  },
+
+  // §79: an upward level declaration never raises the peak target above the assessed level's band. ⚠️ Three
+  // self-label reads (declared, structural and target all from meta), copied.
+  'INV-PLAN-USER-LEVEL-NO-UPWARD-TONNAGE': plan => {
+    const declared = plan.meta.fitness_level_declared, structural = plan.meta.fitness_level, target = plan.meta.peak_km_target
+    const R = LEVEL_RANK as Record<string, number>
+    if (!declared || !structural || typeof target !== 'number' || !(R[declared] > R[structural])) return []
+    const band = GENERATION_CONFIG.PEAK_KM_BY_LEVEL[raceDistanceKey(plan.meta.race_distance_km ?? 0)]
+    return target > band[structural] ? [{ rule_id: 'INV-PLAN-USER-LEVEL-NO-UPWARD-TONNAGE', week: PLAN, day: null, detail: `peak target ${target} over the ${structural} band` }] : []
+  },
+
+  // §117 (Am. 3, Am. 9): on a run-walk plan every run carries the interval, except a quality session, which never does.
+  'INV-PLAN-RUNWALK-PRESCRIBED': plan => !plan.meta.run_walk_prescribed ? [] : plan.weeks.flatMap(w => daysOf(w).flatMap(({ session: s }) => {
+    if (!s || s.type === 'rest' || s.type === 'cross-train' || s.type === 'strength') return []
+    if (isQualitySession(s)) return s.run_walk_strategy ? [{ rule_id: 'INV-PLAN-RUNWALK-PRESCRIBED' as RuleId, week: w.n, day: null, detail: 'interval on a quality session' }] : []
+    return !s.run_walk_strategy ? [{ rule_id: 'INV-PLAN-RUNWALK-PRESCRIBED' as RuleId, week: w.n, day: null, detail: 'no interval' }] : []
+  })),
+
+  // §83, §44: the fastest Zone-3 quality session is not faster than the fastest Zone-4/5 one beyond the tolerance,
+  // unless the plan declares the goal beyond measured fitness with a non-comfortable difficulty band.
+  'INV-PLAN-INTENSITY-ORDERING': plan => {
+    const tol = GENERATION_CONFIG.INTENSITY_ORDERING_TOLERANCE_PCT / 100
+    let vo2: { mid: number; week: number } | null = null, thr: { mid: number; week: number } | null = null
+    for (const w of plan.weeks) for (const s of Object.values(w.sessions ?? {})) {
+      if (!s || s.type !== 'quality' || !s.pace_target) continue
+      const mid = parsePaceMidpoint(s.pace_target)
+      if (mid == null) continue
+      const z = (s.zone ?? '').toLowerCase()
+      const isVo2 = z.includes('zone 4') || z.includes('zone 5'), isThr = z.includes('zone 3') && !isVo2
+      if (isVo2 && (vo2 == null || mid < vo2.mid)) vo2 = { mid, week: w.n }
+      if (isThr && (thr == null || mid < thr.mid)) thr = { mid, week: w.n }
+    }
+    if (!vo2 || !thr || !(thr.mid < vo2.mid * (1 - tol))) return []
+    const surfaced = plan.meta.goal_beyond_measured_fitness === true && plan.meta.difficulty_band !== undefined && plan.meta.difficulty_band !== 'comfortable'
+    return surfaced ? [] : [{ rule_id: 'INV-PLAN-INTENSITY-ORDERING', week: thr.week, day: null, detail: 'threshold faster than VO2' }]
+  },
+}
+Object.assign(PREDICATES, BATCH_23)
+
 const SEVERITY = new Map(RULES.map(r => [r.id, r.kind === 'soft' ? 'warn' as const : 'error' as const]))
 /** Rules the catalogue marks as conditionally severe: only these may set a finding's severity (code review, batch 20). */
 const CONDITIONAL = new Set(RULES.filter(r => r.severity_note).map(r => r.id))
