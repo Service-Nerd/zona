@@ -16,6 +16,7 @@ import { RULES } from '@/lib/engine/catalogue/rules'
 import { GENERATION_CONFIG, raceDistanceKey } from '@/lib/plan/generationConfig'
 import { isLongRun, isShakeout, isSecondaryQuality, isQualitySession, isStructuredSession, isTimeTrial, isVo2maxSession } from '@/lib/plan/sessionRole'
 import { V1_SESSION_CATALOGUE } from '@/lib/plan/sessionCatalogueData'
+import { FUELLING_PRACTICE_NOTE, ULTRA_FUELLING_PREFIX } from '@/lib/plan/fuellingNotes'
 import { normaliseDays } from '@/lib/plan/days'
 import { sessionKmSelfPaced } from '@/lib/plan/sessionDistance'
 import { hasInjuryKeyword } from '@/lib/plan/injuryScope'
@@ -820,6 +821,84 @@ const BATCH_10: Partial<Record<RuleId, Predicate>> = {
   },
 }
 Object.assign(PREDICATES, BATCH_10)
+
+/** The placeholder vocabulary §-ruled copy must never carry, and an unresolved template token. */
+const PLACEHOLDERS = ['Target Race', 'TBD', 'undefined', 'null']
+const TOKEN_RE = /\{\{[^}]*\}\}/
+
+const BATCH_11: Partial<Record<RuleId, Predicate>> = {
+  // §42-family fuelling: the peak's longest long run (by minutes), once it is long enough, carries the fuelling note.
+  'INV-PLAN-LONG-SESSION-FUELLING-NOTE': plan => {
+    let best: Session | null = null, week = 0
+    for (const w of plan.weeks.filter(x => x.phase === 'peak')) for (const { session: s } of daysOf(w)) {
+      if (s?.role === 'long_run' && (s.duration_mins ?? 0) > (best?.duration_mins ?? 0)) { best = s; week = w.n }
+    }
+    if (!best || (best.duration_mins ?? 0) < GENERATION_CONFIG.FUELLING_PRACTICE_MIN_SESSION_MINS) return []
+    const fuelled = (best.coach_notes ?? []).some(n => !!n && (n === FUELLING_PRACTICE_NOTE || n.startsWith(ULTRA_FUELLING_PREFIX)))
+    return fuelled ? [] : [{ rule_id: 'INV-PLAN-LONG-SESSION-FUELLING-NOTE', week, day: null, detail: 'peak long session with no fuelling note' }]
+  },
+
+  // §40b: terrain that governs effort is declared with its note.
+  'INV-PLAN-TERRAIN-EFFORT-NOTE-DECLARED': plan =>
+    (GENERATION_CONFIG.TERRAIN_EFFORT_GOVERNS as readonly string[]).includes(plan.meta.terrain ?? '') && !plan.meta.terrain_effort_note
+      ? [{ rule_id: 'INV-PLAN-TERRAIN-EFFORT-NOTE-DECLARED', week: PLAN, day: null, detail: 'effort terrain with no note' }] : [],
+
+  // §79/§29: a returning or fresh-return plan carries the returning-runner note.
+  'INV-PLAN-RETURNING-RUNNER-NOTE-PRESENT': plan =>
+    (plan.meta.returning_runner_allowance_active || plan.meta.fresh_return_active) && !plan.meta.returning_runner_note
+      ? [{ rule_id: 'INV-PLAN-RETURNING-RUNNER-NOTE-PRESENT', week: PLAN, day: null, detail: 'returning plan with no note' }] : [],
+
+  // No placeholder or unresolved token reaches the runner: meta prose, week labels and themes, session labels and
+  // notes (a coach note is exempt from the token arm only). One finding per text per arm.
+  'INV-PLAN-NO-PLACEHOLDER-COPY': plan => {
+    const scan: [string, string | undefined][] = []
+    const m = plan.meta as unknown as Meta
+    for (const k of Object.keys(m)) {
+      if (k !== 'coach_intro' && k !== 'plan_intro' && k !== 'notes' && k !== 'race_name' && k !== 'confidence_risks' && !k.endsWith('_note')) continue
+      if (typeof m[k] === 'string') { scan.push([`meta.${k}`, m[k] as string]); continue }
+      if (Array.isArray(m[k])) (m[k] as unknown[]).forEach((v, i) => { if (typeof v === 'string') scan.push([`meta.${k}[${i}]`, v]) })
+    }
+    for (const w of plan.weeks) {
+      scan.push([`w${w.n}.label`, w.label]); scan.push([`w${w.n}.theme`, w.theme])
+      for (const { day, session: s } of daysOf(w)) {
+        if (!s) continue
+        scan.push([`w${w.n}.${day}.label`, s.label])
+        for (const n of s.coach_notes ?? []) scan.push([`w${w.n}.${day}.coach_note`, n])
+      }
+    }
+    const out: Raw[] = []
+    for (const [where, text] of scan) {
+      if (!text) continue
+      if (!where.endsWith('.coach_note') && TOKEN_RE.test(text)) out.push({ rule_id: 'INV-PLAN-NO-PLACEHOLDER-COPY', week: PLAN, day: null, detail: `token in ${where}` })
+      const hit = PLACEHOLDERS.find(ph => text.includes(ph))
+      if (hit) out.push({ rule_id: 'INV-PLAN-NO-PLACEHOLDER-COPY', week: PLAN, day: null, detail: `placeholder in ${where}` })
+    }
+    return out
+  },
+
+  // §79: a re-entry omission note names its cause, and only a returning runner is told they are coming back.
+  'INV-PLAN-REENTRY-NOTE-MATCHES-CAUSE': plan => {
+    const note = plan.meta.intensity_reentry_omission_note
+    if (!note) return []
+    const cause = plan.meta.intensity_reentry_cause
+    if (!cause) return [{ rule_id: 'INV-PLAN-REENTRY-NOTE-MATCHES-CAUSE', week: PLAN, day: null, detail: 'note with no cause' }]
+    return cause !== 'returning' && /coming back/i.test(note)
+      ? [{ rule_id: 'INV-PLAN-REENTRY-NOTE-MATCHES-CAUSE', week: PLAN, day: null, detail: 'coming-back wording for a non-returning cause' }] : []
+  },
+
+  // §26: a race's opening-pace note names RACE_OPENING_FRACTION of the race distance, within half a kilometre.
+  'INV-PLAN-RACE-NOTE-SCALES': plan => plan.weeks.flatMap(w => daysOf(w).flatMap(({ session: s }) => {
+    if (!s || s.type !== 'race') return []
+    const note = (s.coach_notes ?? []).find(n => typeof n === 'string' && /First [\d.]+ km/.test(n))
+    if (!note) return []
+    const stated = Number(/First ([\d.]+) km/.exec(note)?.[1])
+    const km = s.distance_km ?? plan.meta.race_distance_km
+    if (!Number.isFinite(stated) || !km) return []
+    return Math.abs(stated - km * GENERATION_CONFIG.RACE_OPENING_FRACTION) > 0.5
+      ? [{ rule_id: 'INV-PLAN-RACE-NOTE-SCALES' as RuleId, week: w.n, day: null, detail: `opening note says ${stated} km` }] : []
+  })),
+}
+Object.assign(PREDICATES, BATCH_11)
 
 const SEVERITY = new Map(RULES.map(r => [r.id, r.kind === 'soft' ? 'warn' as const : 'error' as const]))
 

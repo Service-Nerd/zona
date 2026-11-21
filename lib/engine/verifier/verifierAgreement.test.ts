@@ -18,6 +18,7 @@ import type { Plan, GeneratorInput, Session } from '@/types/plan'
 import { isLongRun, isStructuredSession, isTimeTrial, isVo2maxSession } from '@/lib/plan/sessionRole'
 import { V1_SESSION_CATALOGUE } from '@/lib/plan/sessionCatalogueData'
 import { sessionKmSelfPaced } from '@/lib/plan/sessionDistance'
+import { FUELLING_PRACTICE_NOTE, ULTRA_FUELLING_PREFIX } from '@/lib/plan/fuellingNotes'
 import { GENERATION_CONFIG, raceDistanceKey } from '@/lib/plan/generationConfig'
 import { hasInjuryKeyword } from '@/lib/plan/injuryScope'
 import { BENCHMARK_VDOT_MAX } from '@/lib/plan/benchmarkCheck'
@@ -132,6 +133,38 @@ const EXTRA_MUTATIONS: { name: string; apply: (p: Plan, input: GeneratorInput) =
     ['no HR method', (p: Plan) => { delete p.meta.hr_zone_method; return true }],
     // Batch 8: the plan's declarations about its own limits.
     ['no compression class', (p: Plan) => { delete p.meta.compression_classification; return true }],
+    // Batch 11: notes and copy.
+    ['the peak long session stripped of its fuelling note', (p: Plan) => {
+      let n = 0
+      for (const w of p.weeks.filter(x => x.phase === 'peak')) for (const s of Object.values(w.sessions ?? {}))
+        if (s?.role === 'long_run' && s.coach_notes) {
+          s.coach_notes = s.coach_notes.filter(x => !!x && x !== FUELLING_PRACTICE_NOTE && !x.startsWith(ULTRA_FUELLING_PREFIX)) as typeof s.coach_notes; n++
+        }
+      return n > 0
+    }],
+    ['a peak long session at exactly the fuelling line, no note', (p: Plan) => {
+      const ws = p.weeks.filter(x => x.phase === 'peak'); let n = 0
+      for (const w of ws) for (const s of Object.values(w.sessions ?? {})) if (s?.role === 'long_run') {
+        s.duration_mins = GENERATION_CONFIG.FUELLING_PRACTICE_MIN_SESSION_MINS; delete s.coach_notes; n++
+      }
+      return n > 0
+    }],
+    ['effort terrain with no note', (p: Plan) => { p.meta.terrain = GENERATION_CONFIG.TERRAIN_EFFORT_GOVERNS[0] as never; delete p.meta.terrain_effort_note; return true }],
+    ['a returning plan with no note', (p: Plan) => { p.meta.fresh_return_active = true; delete p.meta.returning_runner_note; return true }],
+    ['an unresolved token in a week label', (p: Plan) => { const w = p.weeks.find(x => x.n > 0); if (!w) return false; w.label = 'Week {{n}}'; return true }],
+    ['a placeholder word in the intro', (p: Plan) => { p.meta.coach_intro = 'Ready for Target Race?'; return true }],
+    ['a re-entry note with no cause', (p: Plan) => { p.meta.intensity_reentry_omission_note = 'held back'; delete p.meta.intensity_reentry_cause; return true }],
+    ['coming-back wording for a non-returning cause', (p: Plan) => {
+      p.meta.intensity_reentry_omission_note = 'Coming back carefully'; p.meta.intensity_reentry_cause = 'injury' as never; return true
+    }],
+    ['a race opening note just past its tolerance', (p: Plan) => {
+      for (const w of p.weeks) for (const s of Object.values(w.sessions ?? {})) if (s?.type === 'race') {
+        const km = s.distance_km ?? p.meta.race_distance_km
+        if (!km) return false
+        s.coach_notes = [`First ${Math.round((km * GENERATION_CONFIG.RACE_OPENING_FRACTION + 0.6) * 10) / 10} km steady`]; return true
+      }
+      return false
+    }],
     // Batch 10.
     ['a Zone 2-3 build or peak long run with no segment pace', (p: Plan) => {
       for (const w of p.weeks.filter(x => (x.phase === 'build' || x.phase === 'peak') && x.type !== 'deload'))
@@ -364,6 +397,8 @@ const ARMS: Record<string, string[]> = {
   'INV-PLAN-COMPRESSION-CLASSIFICATION': ['no compression_classification', 'class disagrees', 'constrained class reads comfortable'],
   'INV-PLAN-COMPRESSION-SPLIT': ['split flags not both stated', 'compressed is not the OR'],
   'INV-PLAN-SHORT-OPENING-BLOCK-DECLARED': ['stamped short block with no note', 'note with no stamp'],
+  'INV-PLAN-NO-PLACEHOLDER-COPY': ['token in', 'placeholder in'],
+  'INV-PLAN-REENTRY-NOTE-MATCHES-CAUSE': ['note with no cause', 'coming-back wording'],
 }
 
 const tally = { rows: 0, threw: [] as string[], refused: 0, base: 0, foundation: 0, foundationCapped: 0 }
