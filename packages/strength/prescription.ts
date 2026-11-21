@@ -33,16 +33,6 @@ export function plyoContacts(weekIndex: number, experience: StrengthProfile['exp
   return Math.min(C.PLYO_CONTACTS_MAX, C.PLYO_CONTACTS_START + steps * C.PLYO_CONTACTS_STEP)
 }
 
-/**
- * The fewest sets of a jump the S10 fill step may restore: S8's start dose, in TOTAL foot contacts.
- * STRAVA-SOR-REVIEW-FIX-01: a per-side set lands twice its contacts. The bilateral-only floor (3 sets) was larger than a
- * per-side jump's whole dose (2 sets), so a dropped unilateral jump could never come back.
- */
-export function plyoRestoreMinSets(item: Pick<Prescription, 'contacts' | 'per_side'>): number {
-  const perSet = (item.contacts ?? C.PLYO_CONTACTS_PER_SET) * (item.per_side ? 2 : 1)
-  return Math.ceil(C.PLYO_CONTACTS_START / perSet)
-}
-
 export function prescribe(ex: Exercise, role: BlockRole, ctx: DoseContext): Prescription {
   const per_side = ex.unilateral
   const base = { exercise_id: ex.id, per_side }
@@ -60,13 +50,8 @@ export function prescribe(ex: Exercise, role: BlockRole, ctx: DoseContext): Pres
     // ADR-027 hotfix 3 (S8 defect fix): S8 doses TOTAL foot contacts. A per-side set of N lands 2N, so a unilateral
     // jump takes half the sets; the per-side count per set stays PLYO_CONTACTS_PER_SET. Before this, "5 × 10/side"
     // was 100 contacts against S8's cap of 60, and S-PLYO-CONTACTS counted it as 50.
-    // STRAVA-SOR-REVIEW-FIX-01: rounded UP to the next whole set, never past the cap. `floor` gave a per-side jump 20
-    // contacts in the start week against S8's 30; `ceil` gives 40. A bilateral jump's target is a multiple of 10, so
-    // ceil and floor agree and its dose is unchanged.
     const contactsPerSet = C.PLYO_CONTACTS_PER_SET * (per_side ? 2 : 1)
-    const sets = ctx.phase === 'deload'
-      ? Math.max(1, Math.round((contacts / contactsPerSet) * C.DELOAD_SET_FACTOR))
-      : Math.max(1, Math.min(Math.ceil(contacts / contactsPerSet), Math.floor(C.PLYO_CONTACTS_MAX / contactsPerSet)))
+    const sets = ctx.phase === 'deload' ? Math.max(1, Math.round((contacts / contactsPerSet) * C.DELOAD_SET_FACTOR)) : Math.max(1, Math.floor(contacts / contactsPerSet))
     return { ...base, sets, contacts: C.PLYO_CONTACTS_PER_SET, rir: null, rest_s: C.REST_S.plyo }
   }
   if (role === 'core') {

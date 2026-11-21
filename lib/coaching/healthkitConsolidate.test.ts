@@ -187,8 +187,7 @@ describe('INV-DATA-008: tryEnrichHealthKitRow discards Strava with no HK match',
  * so temp/splits were null for the entire HK-canonical population.
  */
 describe('DS-08: tryEnrichHealthKitRow patches temp + splits onto the canonical row', () => {
-  // STRAVA-SOR-REVIEW-FIX-01: `start_date` is selected now, because findEnrichMatch checks the window itself.
-  const matchRow = { id: 'r1', apple_health_uuid: 'HK1', start_date: '2026-06-23T17:49:55.000Z', distance_m: 8025, strava_activity_id: null }
+  const matchRow = { id: 'r1', apple_health_uuid: 'HK1', distance_m: 8025, strava_activity_id: null }
 
   // Capturing stub: select chain returns the match; update captures the patch on
   // the strava_activities table. `.eq()` returns an awaitable that also chains,

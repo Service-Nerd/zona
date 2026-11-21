@@ -342,8 +342,6 @@ export type OpsEventKind =
   | 'strava_subscription_missing'   // no subscription, or one pointing at a stale/redirecting URL
   | 'strava_webhook_silent'         // subscription exists but has stopped delivering
   | 'strava_activity_discarded'     // STRAVA-WEBHOOK-SOR-01: no matching Apple Health run, so not stored (ADR-011)
-  | 'strava_healthkit_backfill'     // STRAVA-SOR-REVIEW-FIX-01: a new Apple Health run looked up its Strava twin (result in detail)
-  | 'strava_sor_write_failed'       // STRAVA-SOR-REVIEW-FIX-01: a Strava delete's clean-up query returned an error
   // OPS-AI-OWNER-01 (2026-09-20) — every Anthropic call, through the single
   // owner `lib/ai/callAnthropic.ts`.
   //

@@ -42,35 +42,9 @@ interface ConsolidateResult {
 const MATCH_WINDOW_MS = 15 * 60 * 1000
 const DIST_TOLERANCE  = 0.15  // ±15%
 
-/** An Apple Health row a Strava activity could patch, in the shape both the server and the picker hold. */
-export interface EnrichCandidate {
-  start_date:         string
-  distance_m:         number
-  strava_activity_id: number | null
-}
-
-/**
- * STRAVA-SOR-REVIEW-FIX-01 — the single owner of "which Apple Health row would this Strava activity patch?".
- * Pure, so the link picker can ask the same question before offering a Strava run the server would refuse.
- * Only an UNATTACHED row matches: one that already carries a Strava id has been patched by that activity or claimed
- * by another.
- */
-export function findEnrichMatch<T extends EnrichCandidate>(
-  activity: Pick<MatchableStravaActivity, 'start_date' | 'distance'>,
-  candidates: readonly T[],
-): T | undefined {
-  const stravaStart = new Date(activity.start_date).getTime()
-  const distMin     = activity.distance * (1 - DIST_TOLERANCE)
-  const distMax     = activity.distance * (1 + DIST_TOLERANCE)
-  return candidates.find(r =>
-    Math.abs(new Date(r.start_date).getTime() - stravaStart) <= MATCH_WINDOW_MS &&
-    Number(r.distance_m) >= distMin && Number(r.distance_m) <= distMax && r.strava_activity_id == null
-  )
-}
-
 /** Try to attach a Strava activity to an existing HealthKit-sourced row.
- *  Returns `{ enriched: false }` when no HK row matches. Apple Health is the system of record (ADR-011,
- *  STRAVA-WEBHOOK-SOR-01): the caller then DISCARDS the activity and never stores it. */
+ *  Returns `{ enriched: false }` when no HK row matches — the caller
+ *  should then proceed with their own create-Strava-row flow. */
 export async function tryEnrichHealthKitRow(
   supabase: any,
   userId: string,
@@ -78,19 +52,24 @@ export async function tryEnrichHealthKitRow(
   hrSummary: HRStreamSummary | null,
 ): Promise<ConsolidateResult> {
   const stravaStart = new Date(activity.start_date).getTime()
+  const distMin     = activity.distance * (1 - DIST_TOLERANCE)
+  const distMax     = activity.distance * (1 + DIST_TOLERANCE)
 
   const { data: candidates } = await supabase
     .from('strava_activities')
-    .select('id, apple_health_uuid, start_date, distance_m, strava_activity_id')
+    .select('id, apple_health_uuid, distance_m, strava_activity_id')
     .eq('user_id', userId)
     .eq('source', 'apple_health')
     .gte('start_date', new Date(stravaStart - MATCH_WINDOW_MS).toISOString())
     .lte('start_date', new Date(stravaStart + MATCH_WINDOW_MS).toISOString())
     .order('start_date', { ascending: true })
 
-  // Only unattached HK rows match (see findEnrichMatch). An attached row means this activity already patched it or
-  // another claimed it; the caller decides what that means, and never stores the activity as Strava.
-  const match = findEnrichMatch(activity, (candidates ?? []) as (EnrichCandidate & { id: string; apple_health_uuid: string })[])
+  // Only match unattached HK rows — if `strava_activity_id` is already set,
+  // either we already enriched this row or another Strava activity claimed
+  // it. In both cases, fall through and let the caller upsert as Strava.
+  const match = (candidates ?? []).find((r: any) =>
+    r.distance_m >= distMin && r.distance_m <= distMax && r.strava_activity_id == null
+  )
   if (!match) return { enriched: false }
 
   const patch: Record<string, unknown> = {
