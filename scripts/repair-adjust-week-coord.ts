@@ -94,7 +94,8 @@ async function main() {
   check('run_analysis', anRes)
   const anClash = await db.from('run_analysis').select('id').eq('user_id', uid).is('superseded_at', null).eq('week_n', -3).in('session_day', ['mon', 'wed'])
   check('run_analysis clash', anClash)
-  if ((anClash.data ?? []).length) refuse('a week -3 analysis already exists for mon/wed; re-keying would collide')
+  // Only a collision when there is something to move: after step 3 the moved rows ARE the week -3 ones.
+  if ((anRes.data ?? []).length && (anClash.data ?? []).length) refuse('a week -3 analysis already exists for mon/wed; re-keying would collide')
   console.log(`step 3: analyses to re-key 1 → -3: ${(anRes.data ?? []).length}`)
   const compRes = await db.from('session_completions').select('id, session_day, apple_health_uuid, created_at').eq('user_id', uid).is('superseded_at', null).eq('week_n', 1).in('session_day', ['mon', 'wed']).lt('created_at', '2026-11-16')
   check('session_completions', compRes)
@@ -103,6 +104,23 @@ async function main() {
   const comps = (compRes.data ?? []).filter(c => !c.apple_health_uuid && (twins.data ?? []).some(t => t.session_day === c.session_day))
   if (comps.length !== (compRes.data ?? []).length) refuse('a week-1 completion has a run attached or no week -3 twin; decide it by hand')
   console.log(`step 4: run-less duplicate completions to supersede: ${comps.length}`)
+
+  // ── Step 5: a SECOND runner (ref c572d7a479). A "Life got busy" skip written 2026-11-21 13:20 UTC,
+  // 21 minutes before the fix was pushed, while they were in n=-3 (Mon 11-16). The missed-session prompt
+  // stored it at n=1 (Mon 12-07). No row at (-3, mon), no adjustment followed it: re-key only.
+  const other = (plansRes.data ?? []).find(p => ref(p.user_id) === 'c572d7a479')
+  const skipRes = other
+    ? await db.from('session_completions').select('id').eq('user_id', other.user_id).is('superseded_at', null)
+        .eq('week_n', 1).eq('session_day', 'mon').eq('status', 'skipped').lt('created_at', '2026-11-22')
+    : { data: [], error: null }
+  check('second runner skip', skipRes as any)
+  const skipClash = other
+    ? await db.from('session_completions').select('id').eq('user_id', other.user_id).is('superseded_at', null).eq('week_n', -3).eq('session_day', 'mon')
+    : { data: [], error: null }
+  check('second runner clash', skipClash as any)
+  const skips = skipRes.data ?? []
+  if (skips.length && (skipClash.data ?? []).length) refuse('second runner already has a (-3, mon) completion; decide by hand')
+  console.log(`step 5: second runner's misplaced skip to re-key 1 → -3: ${skips.length}`)
 
   if (!APPLY) { console.log('\nDRY RUN — nothing written. Re-run with --apply.'); return }
 
@@ -127,6 +145,8 @@ async function main() {
   const now = new Date().toISOString()
   for (const c of comps) check('session_completions supersede', await db.from('session_completions').update({ superseded_at: now }).eq('id', c.id).is('superseded_at', null))
   if (comps.length) console.log(`wrote step 4 (${comps.length})`)
+  for (const s of skips) check('second runner re-key', await db.from('session_completions').update({ week_n: -3 }).eq('id', s.id).eq('week_n', 1))
+  if (skips.length) console.log(`wrote step 5 (${skips.length})`)
   console.log('\nDone. Verify: npx tsx --env-file=.env.local scripts/measure-adjust-week-coord.ts')
 }
 main().catch(e => { console.error(e?.message ?? e); process.exit(1) })
