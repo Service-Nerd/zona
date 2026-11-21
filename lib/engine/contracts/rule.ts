@@ -50,7 +50,9 @@ export const RuleSchema = z.strictObject({
   }).nullable(),
   /** A severity the registry states conditionally ("error, OR warn on maintenance plans"). `kind` holds
    *  the stricter reading; this keeps the condition until the rule's predicate is ported (B3 step 2). */
-  severity_note: z.string().min(1).optional(),
+  severity_note: z.string().min(1).refine(explainCopiesNoValue, {
+    message: 'severity_note copies a value: it names the condition, never a threshold (ARCH-ENG-003)',
+  }).optional(),
 })
 
 export type Rule = z.infer<typeof RuleSchema>
