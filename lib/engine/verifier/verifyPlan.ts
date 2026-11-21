@@ -424,7 +424,13 @@ const BATCH_5: Partial<Record<RuleId, Predicate>> = {
       if (stepBack && before != null && b <= before * tol + 0.01) continue
       const abs = Math.min(GENERATION_CONFIG.LONG_RUN_PROGRESSION_CAP_ABS_KM, a * GENERATION_CONFIG.LONG_RUN_ABS_STEP_MAX_PCT_OF_LR / 100)
       const allowed = Math.max(a * pct, abs) + GENERATION_CONFIG.DISTANCE_ROUNDING_PRECISION_KM
-      if (b - a > allowed + 0.01) out.push({ rule_id: 'INV-PLAN-LR-PROGRESSION-CAP', week: curr.n, day: null, detail: `long run +${(b - a).toFixed(1)} km` })
+      if (b - a <= allowed + 0.01) continue
+      // Name the arm that BOUND (DUNCAN-RESIDUAL-LOAD-01): a small miss over the step-back allowance once read
+      // as a +59% spike because the raw week-on-week jump was reported instead.
+      const detail = stepBack && before != null
+        ? `long run ${b} km over the step-back allowance of ${(before * tol).toFixed(2)} km by ${(b - before * tol).toFixed(2)} km`
+        : `long run +${(b - a).toFixed(1)} km over an allowed +${allowed.toFixed(1)} km`
+      out.push({ rule_id: 'INV-PLAN-LR-PROGRESSION-CAP', week: curr.n, day: null, detail })
     }
     return out
   },
@@ -439,6 +445,10 @@ const BATCH_5: Partial<Record<RuleId, Predicate>> = {
       : 0
     if (!(floor > 0)) return []
     const peaks = plan.weeks.filter(w => w.phase === 'peak')
+    // A peak week with no usable volume cannot be checked; throwing makes verifyPlan report it UNVERIFIED
+    // (validatePlan lets the NaN pass silently, so the two differ on such a plan by design).
+    if (peaks.some(w => !Number.isFinite(w.weekly_km))) throw new Error('a peak week has no weekly_km')
+    // ⚠️ Reads the plan's own weekly_km, not the placed sessions (ADR-022's divergence); recorded.
     const peak = peaks.length ? Math.max(...peaks.map(w => w.weekly_km)) : 0
     return peak + 0.01 < floor ? [{ rule_id: 'INV-PLAN-PEAK-VOLUME-FLOOR-LONG-RACES', week: PLAN, day: null, detail: `peak ${peak} km under ${Math.round(floor)} km` }] : []
   },

@@ -1811,7 +1811,11 @@ Step 1 shipped as `ADR027-B3-CATALOGUE` (221 rules). Remaining, in order:
   `QUALITY-PER-WEEK` is ported and reads level and goal from the profile. ✅ **Batch 5 SHIPPED 2026-11-21** (3 rules).
   **26 of 221; 195 left.** **Step 3 must build
   the profile as of each plan's generation date**, because §10's staleness ramp moves the level with the clock.
-  **Self-label reads, recorded:** `PEAK-OVER-BASE` trusts the plan's own `volume_profile: 'maintenance'`.
+  **Self-label reads, recorded:** `PEAK-OVER-BASE` trusts the plan's own `volume_profile: 'maintenance'`;
+  `PEAK-VOLUME-FLOOR-LONG-RACES` reads each peak week's own `weekly_km`, not the placed sessions (ADR-022's
+  divergence), so a peak whose label meets the floor while its sessions do not passes.
+  **Batch 5 raised (pre-existing, not changed):** `QUALITY-VARIETY-FULL-PLAN` counts no race-week quality but takes
+  every `quality_pool_sizes` entry for its pigeonhole bound; if the producer stamps race-week picks, the cap rises.
 - **Step 3, nightly on every live plan**, observe-only (the founder chose this over an earlier start).
 - **Step 4, the trigger catalogue** (ARCH-ENG-018): adjustment thresholds move into the catalogue as data, values
   unchanged, per §124 Am. 1.
