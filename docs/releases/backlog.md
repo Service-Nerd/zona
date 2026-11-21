@@ -1714,27 +1714,6 @@ refused from this machine in any case. Filed as `BLOCKED-DAY-OVERRIDE-REPAIR-01`
 
 ---
 
-### 🔲 `WATCHED-SIGNALS-DISCLOSURE-01` — the Profile disclosure states a load rule the engine does not use, and a change that changes nothing is announced *(filed 2026-11-21)* ⚙️ **NO BOARD** (defect restoring documented intent; copy on the founder's delegation)
-
-**The false disclosure:**
-- `lib/coaching/watchedSignals.ts:89-94`, shown on `PlanAdjustmentsScreen`, tells runners the load trigger is
-  `LOAD_RATIO.flag` (1.4×) and *"Two weeks running at that ratio, not one."*
-- The engine trims silently at `watch` (1.3×) after ONE week. `flag` decides nothing in the trigger path, because
-  ADR-012's magnitude rule is the only decision point.
-
-**The empty announcement:**
-- Every auto-applied row writes an inbox row titled `BRAND` *"Plan's been shifted."*
-- That includes `shadow_load`, whose before and after sessions are identical.
-
-**The dead helper:** `isShadowLoadTriggered` (`lib/coaching/loadCalc.ts:58`) has 0 callers.
-
-**Fix:**
-- The disclosure states what the engine does.
-- An empty diff writes no "shifted" row.
-- Delete the dead helper.
-
-Source: `docs/decisions/boards-2026-11-21-triggers-on-run-arrival.md` (build order step 0).
-
 ### 🔲 `TRIGGERS-ON-RUN-ARRIVAL-01` — evaluate reshape triggers when a run is analysed; one run, one moment *(filed 2026-11-21)* 🏃 **COACHING BOARD** · 🧭 **DESIGN BOARD** · 💼 **SLT** (all three ruled)
 
 ⚖️ **RULED 2026-11-21** (`docs/decisions/boards-2026-11-21-triggers-on-run-arrival.md`; register rows in
@@ -1757,7 +1736,7 @@ Source: `docs/decisions/boards-2026-11-21-triggers-on-run-arrival.md` (build ord
   - FREE gets only the `shadow_load` observation as a line on Today, with no push.
 
 **Build order, inside ADR-027:**
-1. `WATCHED-SIGNALS-DISCLOSURE-01`.
+1. `WATCHED-SIGNALS-DISCLOSURE-01`. ✅ shipped `4e9fe313`.
 2. `ADJUST-WEEK-COORD-01`.
 3. B2: the timezone owner.
 4. B3: the trigger catalogue.

@@ -6,6 +6,15 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-11-21 — WATCHED-SIGNALS-DISCLOSURE-01 · the test checked the screen against the constant the screen chose
+**Shipped:** Profile's "what we watch" now says the load trigger is 1.3× after one week, which is what the engine does, and a change that changes nothing no longer arrives as "Plan's been shifted."
+**Dev learning:** `watchedSignals.test.ts` asserted the figure equalled `LOAD_RATIO.flag`, the same constant the screen used. A test that copies the producer's choice cannot catch the producer choosing wrong. The new arm parses the figure the runner reads and runs `checkAdjustmentTriggers` at that ratio and 0.01 below it. Second gotcha: the route fixture plan starts next Monday, so runs dated today fall outside every plan week and are dropped before the trigger sees them; four runs at the same instant also dedupe to one.
+**Product/creator learning:** the board's ruling says the trim should eventually ask at 1.4× two weeks running. The old screen described that future rule as if it were live. A disclosure is a claim about today's engine, so it changes again when the engine does.
+**AI-building learning:** I re-measured the item before building and its premise held, but the `requiresConfirmation` comment in the builder still claimed `flag` decided something; ADR-012 had made it dead code months ago and the comment and the contract both kept saying otherwise.
+**The honest bit:** I deleted a gitignored scratch script (`scripts/.tmp/willy.ts`) that called the dead helper, without checking it first. It was board evidence, not product code, but it is gone.
+**Hook material:** 1 of 5 "Plan's been shifted." messages in production announced a plan that had not changed at all.
+**Postable?:** maybe
+
 ## 2026-11-21 — ADR027-B2-PROFILE · the profile was written from the code, and the data said what it was missing
 
 **Dev.** L1 is two pure pieces and a reader. `RunnerFacts` is the snapshot (the request, the settings row, and 28-day aggregates of the run log, health samples, completions and analyses). `buildRunnerProfile` turns it into `RunnerProfile` v2, where every fact is `{ value, source }` or null and every derived field calls the function that owned it before: `derivedLevelsFor`, `vdotFor`, `effectiveStartKm`, `weeksBetweenLocal`, `weeksUntilRaceSigned`. `runEngine` now builds one profile per call and reads its levels, effective start and both weeks counters from it. Parity came back identical, because the engine still prescribes from the request exactly as before. The fetcher that fills the snapshot from the database is written and tested against the fake client, and nothing calls it yet.
