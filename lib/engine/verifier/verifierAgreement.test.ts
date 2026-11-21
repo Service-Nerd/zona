@@ -19,6 +19,7 @@ import { isLongRun, isStructuredSession } from '@/lib/plan/sessionRole'
 import { GENERATION_CONFIG, raceDistanceKey } from '@/lib/plan/generationConfig'
 import { RULES } from '@/lib/engine/catalogue/rules'
 import { verifyPlan, PORTED_RULES } from './verifyPlan'
+import { buildRunnerProfile, factsFromInput } from '@/lib/engine/profile/buildRunnerProfile'
 
 const clone = (p: Plan): Plan => JSON.parse(JSON.stringify(p))
 const key = (rule: string, week: number, day: string | null | undefined, sev: string) => `${rule}|${week}|${day ?? '-'}|${sev}`
@@ -121,7 +122,7 @@ const tally = { rows: 0, threw: [] as string[], refused: 0, base: 0, foundation:
 let runs: { label: string; eve: string | null; old: { rule: string; k: string }[]; new: { rule: string; k: string; detail: string }[] }[] = []
 
 beforeAll(() => {
-  const cases: { label: string; plan: Plan; input: GeneratorInput }[] = []
+  const cases: { label: string; plan: Plan; input: GeneratorInput; asOf: string; planStart: string }[] = []
   for (const row of goldenSample({ perGroup: 8 })) {
     tally.rows++
     let o: ReturnType<typeof runEngine>
@@ -135,18 +136,18 @@ beforeAll(() => {
       tally.foundation++
       if (row.input.day_budgets || row.input.max_weekday_mins != null) tally.foundationCapped++
     }
-    cases.push({ label: row.id, plan: o.plan, input: row.input })
+    cases.push({ label: row.id, plan: o.plan, input: row.input, asOf: row.asOf, planStart: row.planStart })
     for (const m of MUTATIONS) {
       const p = clone(o.plan)
       try { m.apply(p) } catch { continue }
-      cases.push({ label: `${row.id} / ${m.name}`, plan: p, input: row.input })
+      cases.push({ label: `${row.id} / ${m.name}`, plan: p, input: row.input, asOf: row.asOf, planStart: row.planStart })
     }
     for (const m of EXTRA_MUTATIONS) {
       const p = clone(o.plan)
       const input = JSON.parse(JSON.stringify(row.input)) as GeneratorInput
       if (!m.apply(p, input)) continue
       hits.set(m.name, (hits.get(m.name) ?? 0) + 1)
-      cases.push({ label: `${row.id} / ${m.name}`, plan: p, input })
+      cases.push({ label: `${row.id} / ${m.name}`, plan: p, input, asOf: row.asOf, planStart: row.planStart })
     }
   }
   runs = cases.flatMap(c => {
@@ -157,7 +158,7 @@ beforeAll(() => {
     return [{ label: c.label,
       old: old.map(v => ({ rule: v.code, k: key(v.code, v.week, v.day, v.severity) })),
       eve: raceEveDays.get(c.plan) ?? null,
-      new: verifyPlan(c.plan, { input: c.input }).map(f => ({ rule: f.rule_id as string, k: key(f.rule_id, f.week, f.day, f.severity), detail: f.detail })) }]
+      new: verifyPlan(c.plan, { input: c.input, profile: buildRunnerProfile(factsFromInput(c.input), { asOf: c.asOf, timezone: null, planStart: c.planStart }) }).map(f => ({ rule: f.rule_id as string, k: key(f.rule_id, f.week, f.day, f.severity), detail: f.detail })) }]
   })
 }, 120_000)
 

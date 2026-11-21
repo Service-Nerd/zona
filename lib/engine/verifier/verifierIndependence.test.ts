@@ -15,6 +15,7 @@ const DIR = join(process.cwd(), 'lib/engine/verifier')
 const ALLOWED = new Set([
   '@/types/plan',                        // types only
   '@/lib/engine/contracts/rule',         // the rule contract
+  '@/lib/engine/contracts/profile',      // L1's output type: the runner, as the verifier must read them
   '@/lib/engine/catalogue/rules',        // rule data
   '@/lib/plan/generationConfig',         // rule data (the numerics the rules reference)
   '@/lib/plan/sessionRole',              // the classification owner (INV-CLASS), fixture-tested

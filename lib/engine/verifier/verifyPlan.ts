@@ -11,6 +11,7 @@
 
 import type { Plan, Session, GeneratorInput } from '@/types/plan'
 import type { RuleId } from '@/lib/engine/contracts/rule'
+import type { RunnerProfile } from '@/lib/engine/contracts/profile'
 import { RULES } from '@/lib/engine/catalogue/rules'
 import { GENERATION_CONFIG, raceDistanceKey } from '@/lib/plan/generationConfig'
 import { isLongRun, isShakeout, isSecondaryQuality, isQualitySession, isStructuredSession } from '@/lib/plan/sessionRole'
@@ -33,6 +34,9 @@ export interface VerifyContext {
    *  the goal). A goal-dependent rule must not be ported until the normalised goal reaches the verifier
    *  as data (the L1 profile is the intended carrier). */
   input: GeneratorInput
+  /** L1's view of the runner (B3 batch 4). A rule that needs the runner's LEVEL reads it here, never from
+   *  the plan's own `meta`: checking a plan against the label the plan gave itself is circular. */
+  profile: RunnerProfile
 }
 
 type Week = Plan['weeks'][number]
@@ -338,6 +342,56 @@ const BATCH_3: Partial<Record<RuleId, Predicate>> = {
   },
 }
 Object.assign(PREDICATES, BATCH_3)
+
+const BATCH_4: Partial<Record<RuleId, Predicate>> = {
+  // §8 (+ §110): quality sessions per week stay under the runner's INTENSITY level's ceiling. A beginner with
+  // a time goal has its own small ceiling (the weekly-volume arm of that rule does not apply here).
+  'INV-PLAN-QUALITY-PER-WEEK': (plan, { input, profile }) => {
+    const level = profile.levels.intensity.value
+    const goal = plan.meta.generator_input?.goal ?? input.goal
+    const max = level === 'beginner' && goal === 'time_target'
+      ? GENERATION_CONFIG.BEGINNER_TIME_TARGET_QUALITY_PER_WEEK_MAX
+      : GENERATION_CONFIG.QUALITY_SESSIONS_PER_WEEK_MAX[level]
+    return plan.weeks.filter(governed).flatMap(w => {
+      const n = running(w).filter(x => x.session.type === 'quality').length
+      return n > max ? [{ rule_id: 'INV-PLAN-QUALITY-PER-WEEK', week: w.n, day: null, detail: `${n} quality sessions over a ceiling of ${max}` }] : []
+    })
+  },
+
+  // §9/§10/§113: in weeks 1 and 2 the long run stays within a multiple of the runner's longest recent run
+  // (never below the long-run floor).
+  'INV-PLAN-WEEK-1-2-LONG-CAP': (plan, { input }) => {
+    const longest = input.longest_recent_run_km
+    if (typeof longest !== 'number') return []
+    const cap = Math.max(longest * GENERATION_CONFIG.WEEK_1_2_LONG_RUN_CAP_MULTIPLIER, floors(longest).long)
+    return plan.weeks.filter(w => governed(w) && w.n > 0 && w.n <= 2).flatMap(w => {
+      const long = running(w).find(x => isLongRun(x.session))
+      return long && long.session.distance_km != null && long.session.distance_km > cap + 0.01
+        ? [{ rule_id: 'INV-PLAN-WEEK-1-2-LONG-CAP', week: w.n, day: long.day, detail: `long run over ${cap.toFixed(1)} km` }] : []
+    })
+  },
+
+  // §23: peak volume is at least PEAK_OVER_BASE_RATIO of week 1's, unless the plan is a maintenance profile.
+  'INV-PLAN-PEAK-OVER-BASE': plan => {
+    const w1 = (plan.weeks.find(w => w.phase !== 'foundation') ?? plan.weeks[0])?.weekly_km ?? 0
+    const peaks = plan.weeks.filter(w => w.phase === 'peak')
+    if (!(w1 > 0) || !peaks.length || plan.meta.volume_profile === 'maintenance') return []
+    const ratio = Math.max(...peaks.map(w => w.weekly_km)) / w1
+    return ratio < GENERATION_CONFIG.PEAK_OVER_BASE_RATIO
+      ? [{ rule_id: 'INV-PLAN-PEAK-OVER-BASE', week: PLAN, day: null, detail: `peak at ${Math.round(ratio * 100)}% of week 1` }] : []
+  },
+
+  // §8/§9: a second quality session needs MIN_TRAINING_DAYS_FOR_SECOND_QUALITY training days.
+  'INV-PLAN-SECOND-QUALITY-MIN-DAYS': (plan, { input }) => {
+    const days = Math.min(input.days_available ?? 7, GENERATION_CONFIG.MAX_TRAINING_DAYS_PER_WEEK)
+    if (days >= GENERATION_CONFIG.MIN_TRAINING_DAYS_FOR_SECOND_QUALITY) return []
+    return plan.weeks.flatMap(w => {
+      const n = daysOf(w).filter(x => x.session?.type === 'quality').length
+      return n > 1 ? [{ rule_id: 'INV-PLAN-SECOND-QUALITY-MIN-DAYS', week: w.n, day: null, detail: `${n} quality sessions on a ${days}-day week` }] : []
+    })
+  },
+}
+Object.assign(PREDICATES, BATCH_4)
 
 const SEVERITY = new Map(RULES.map(r => [r.id, r.kind === 'soft' ? 'warn' as const : 'error' as const]))
 
