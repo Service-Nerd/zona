@@ -1809,7 +1809,7 @@ Step 1 shipped as `ADR027-B3-CATALOGUE` (221 rules). Remaining, in order:
   (3 rules after review; the verifier is handed the L1 profile).
   **Unblocked:** the L1 profile now carries the normalised goal (`race.goal`, with `race.goal_stated` beside it), so
   `QUALITY-PER-WEEK` is ported and reads level and goal from the profile. ✅ **Batch 5 SHIPPED 2026-11-21** (3 rules). ✅ **Batch 6 SHIPPED 2026-11-21** (3 rules; injury
-  caps through `hasInjuryKeyword`, name-scoped in the import gate). ✅ **Batch 7 SHIPPED 2026-11-21** (8 self-statement rules). ✅ **Batch 8** (6 declaration rules). **43 of 221; 178 left.** **Held:**
+  caps through `hasInjuryKeyword`, name-scoped in the import gate). ✅ **Batch 7 SHIPPED 2026-11-21** (8 self-statement rules). ✅ **Batch 8** (6 declaration rules). ✅ **Batch 9** (6 onset/declaration rules). **49 of 221; 172 left.** **Held:**
   `RACE-SPECIFIC-LONG-RUN` falls back to label matching for legacy plans, which the pre-commit hook forbids; it waits
   for a ruling on whether the legacy arm is still needed.
   **Batch 7 raised:** `NO-INVENTED-AGE` runs inside `validatePlan`'s per-week loop, so one finding is reported once per

@@ -29,6 +29,7 @@ const ALLOWED_NAMES: Record<string, string[]> = {
   '@/lib/plan/days': ['normaliseDays'],               // input format ('monday' | 'mon')
   '@/lib/plan/injuryScope': ['hasInjuryKeyword'],      // matches a runner's injury chips to a keyword (input format)
   '@/lib/plan/benchmarkCheck': ['BENCHMARK_VDOT_MAX'], // a human ceiling: rule data
+  '@/lib/plan/sessionCatalogueData': ['V1_SESSION_CATALOGUE'], // the session catalogue: rule data
 }
 
 /** Every non-test source file under the verifier, recursively. */

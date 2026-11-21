@@ -14,7 +14,8 @@ import type { RuleId } from '@/lib/engine/contracts/rule'
 import type { RunnerProfile } from '@/lib/engine/contracts/profile'
 import { RULES } from '@/lib/engine/catalogue/rules'
 import { GENERATION_CONFIG, raceDistanceKey } from '@/lib/plan/generationConfig'
-import { isLongRun, isShakeout, isSecondaryQuality, isQualitySession, isStructuredSession, isTimeTrial } from '@/lib/plan/sessionRole'
+import { isLongRun, isShakeout, isSecondaryQuality, isQualitySession, isStructuredSession, isTimeTrial, isVo2maxSession } from '@/lib/plan/sessionRole'
+import { V1_SESSION_CATALOGUE } from '@/lib/plan/sessionCatalogueData'
 import { normaliseDays } from '@/lib/plan/days'
 import { sessionKmSelfPaced } from '@/lib/plan/sessionDistance'
 import { hasInjuryKeyword } from '@/lib/plan/injuryScope'
@@ -685,6 +686,61 @@ const BATCH_8: Partial<Record<RuleId, Predicate>> = {
   },
 }
 Object.assign(PREDICATES, BATCH_8)
+
+const BATCH_9: Partial<Record<RuleId, Predicate>> = {
+  // §89: early quality onset only for a ready runner: no injury, regular recent quality, a deep training age, and
+  // an intensity level above beginner. One finding however many conditions fail.
+  'INV-PLAN-EARLY-ONSET-GATED': (plan, { input, profile }) => {
+    if (!plan.meta.early_quality_onset) return []
+    const deep = input.training_age === '2-5yr' || input.training_age === '5yr+'
+    const fails = (input.injury_history ?? []).length > 0 || input.recent_quality_training !== 'regular'
+      || !deep || profile.levels.intensity.value === 'beginner'
+    return fails ? [{ rule_id: 'INV-PLAN-EARLY-ONSET-GATED', week: PLAN, day: null, detail: 'early onset for a runner who is not ready' }] : []
+  },
+
+  // §96: a runner who overdoes hard sessions never gets early onset.
+  'INV-PLAN-OVERDO-BRAKE': (plan, { input }) => plan.meta.early_quality_onset && input.hard_session_relationship === 'overdo'
+    ? [{ rule_id: 'INV-PLAN-OVERDO-BRAKE', week: PLAN, day: null, detail: 'early onset for an overdo runner' }] : [],
+
+  // §91: base weeks (plus foundation credit) meet the floor; a gated early onset at a short distance has its own.
+  'INV-PLAN-ONRAMP-FLOOR': (plan, { input }) => {
+    const ramp = plan.weeks.filter(w => w.n >= 1 && w.phase === 'base').length + (plan.meta.foundation_weeks_planned ?? 0)
+    const short = plan.meta.early_quality_onset
+      && (GENERATION_CONFIG.ONSET_SHORT_ONRAMP_DISTANCES as readonly string[]).includes(raceDistanceKey(input.race_distance_km))
+    const floor = short ? GENERATION_CONFIG.MIN_ONRAMP_WEEKS_GATED : GENERATION_CONFIG.MIN_BASE_WEEKS_FLOOR
+    return ramp < floor ? [{ rule_id: 'INV-PLAN-ONRAMP-FLOOR', week: PLAN, day: null, detail: `${ramp} on-ramp weeks under ${floor}` }] : []
+  },
+
+  // §119 Am. 1: a short opening block is stamped exactly when it is noted, and never one without the other.
+  'INV-PLAN-SHORT-OPENING-BLOCK-DECLARED': plan => {
+    const stamp = plan.meta.short_opening_block_weeks
+    const has = Array.isArray(stamp) && stamp.length > 0
+    const note = typeof plan.meta.short_opening_block_note === 'string' && plan.meta.short_opening_block_note.length > 0
+    if (has === note) return []
+    return [{ rule_id: 'INV-PLAN-SHORT-OPENING-BLOCK-DECLARED', week: has ? (stamp![0] as number) : PLAN, day: null,
+      detail: has ? 'stamped short block with no note' : 'note with no stamp' }]
+  },
+
+  // §24 Am. 1: a time-targeted half or marathon never declares a long-run floor miss that is only a rounding step.
+  'INV-PLAN-LR-FLOOR-NOT-ROUNDING': (plan, { input, profile }) => {
+    const key = raceDistanceKey(input.race_distance_km)
+    if (profile.race.goal !== 'time_target' || (key !== 'HM' && key !== 'MARATHON')) return []
+    const m = /Peak long run ([\d.]+) km is below the ([\d.]+) km floor/.exec(plan.meta.volume_constraint_note ?? '')
+    if (!m) return []
+    const short = Number(m[2]) - Number(m[1])
+    return Number.isFinite(short) && short > 0 && short < GENERATION_CONFIG.DISTANCE_ROUNDING_PRECISION_KM - 0.05
+      ? [{ rule_id: 'INV-PLAN-LR-FLOOR-NOT-ROUNDING', week: PLAN, day: null, detail: `a ${short.toFixed(2)} km miss declared` }] : []
+  },
+
+  // §79: an intensity re-entry with no VO2 session in the plan says why.
+  'INV-PLAN-REENTRY-OMISSION-DECLARED': plan => {
+    if (!plan.meta.intensity_reentry_active) return []
+    const vo2 = plan.weeks.some(w => w.n >= 1 && daysOf(w).some(x => x.session && x.session.type === 'quality' && isVo2maxSession(x.session, V1_SESSION_CATALOGUE)))
+    return !vo2 && !plan.meta.intensity_reentry_omission_note
+      ? [{ rule_id: 'INV-PLAN-REENTRY-OMISSION-DECLARED', week: PLAN, day: null, detail: 're-entry with no VO2 session and no note' }] : []
+  },
+}
+Object.assign(PREDICATES, BATCH_9)
 
 const SEVERITY = new Map(RULES.map(r => [r.id, r.kind === 'soft' ? 'warn' as const : 'error' as const]))
 

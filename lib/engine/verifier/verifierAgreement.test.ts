@@ -130,6 +130,25 @@ const EXTRA_MUTATIONS: { name: string; apply: (p: Plan, input: GeneratorInput) =
     ['no HR method', (p: Plan) => { delete p.meta.hr_zone_method; return true }],
     // Batch 8: the plan's declarations about its own limits.
     ['no compression class', (p: Plan) => { delete p.meta.compression_classification; return true }],
+    // Batch 9.
+    ['a short block stamped, no note', (p: Plan) => { p.meta.short_opening_block_weeks = [3]; delete p.meta.short_opening_block_note; return true }],
+    ['a short-block note, no stamp', (p: Plan) => { delete p.meta.short_opening_block_weeks; p.meta.short_opening_block_note = 'short'; return true }],
+    ['re-entry with no VO2 and no note', (p: Plan) => {
+      p.meta.intensity_reentry_active = true; delete p.meta.intensity_reentry_omission_note
+      for (const w of p.weeks) for (const s of Object.values(w.sessions ?? {})) if (s && s.type === 'quality') s.type = 'easy'
+      return true
+    }],
+    ['a long-run floor miss half a rounding step, declared', (p: Plan) => {
+      const step = GENERATION_CONFIG.DISTANCE_ROUNDING_PRECISION_KM
+      p.meta.volume_constraint_note = `Peak long run 20 km is below the ${20 + step / 2} km floor`; return true
+    }],
+    ['on-ramp one week under the floor', (p: Plan) => {
+      const base = p.weeks.filter(w => w.n >= 1 && w.phase === 'base')
+      const need = GENERATION_CONFIG.MIN_BASE_WEEKS_FLOOR - 1 - (p.meta.foundation_weeks_planned ?? 0)
+      if (p.meta.early_quality_onset || base.length <= need || need < 0) return false
+      for (const w of base.slice(need)) w.phase = 'build'
+      return true
+    }],
     ['optimal class on a compressed plan', (p: Plan) => { p.meta.compression_classification = 'optimal'; p.meta.time_compressed = true; return true }],
     ['split flags missing (time)', (p: Plan) => { delete p.meta.time_compressed; return true }],
     ['split flags missing (volume)', (p: Plan) => { delete p.meta.volume_constrained; return true }],
@@ -191,6 +210,26 @@ const EXTRA_MUTATIONS: { name: string; apply: (p: Plan, input: GeneratorInput) =
       i.current_weekly_km = GENERATION_CONFIG.HEURISTIC_FRESH_RETURN_WEEKLY_KM - 1
       i.longest_recent_run_km = GENERATION_CONFIG.HEURISTIC_FRESH_RETURN_LONG_RUN_KM - 1
       return true
+    }],
+    // EARLY-ONSET-GATED: each readiness condition failing ALONE, on a plan that claims early onset.
+    ...([
+      ['an injury', (i: GeneratorInput) => { i.injury_history = ['knee'] }],
+      ['irregular recent quality', (i: GeneratorInput) => { i.recent_quality_training = 'none' as GeneratorInput['recent_quality_training'] }],
+      ['a shallow training age', (i: GeneratorInput) => { i.training_age = '6-18mo' }],
+    ] as const).map(([why, f]) => [`early onset with ${why}`, (p: Plan, i: GeneratorInput) => {
+      i.injury_history = []; i.recent_quality_training = 'regular'; i.training_age = '5yr+'; f(i)
+      p.meta.early_quality_onset = true; return true
+    }] as const),
+    // …and the fourth condition: a BEGINNER who is otherwise ready (only rows whose level stays beginner).
+    ['early onset for an otherwise-ready beginner', (p: Plan, i: GeneratorInput) => {
+      i.injury_history = []; i.recent_quality_training = 'regular'; i.training_age = '5yr+'
+      const lvl = buildRunnerProfile(factsFromInput(i), { asOf: GOLDEN_AS_OF, timezone: null }).levels.intensity.value
+      // A beginner plan leaves fitness_intensity_level unset; validatePlan falls back to fitness_level (measured: 8 of 8).
+      if (lvl !== 'beginner' || (p.meta.fitness_intensity_level ?? p.meta.fitness_level) !== 'beginner') return false
+      p.meta.early_quality_onset = true; return true
+    }],
+    ['early onset for an overdo runner', (p: Plan, i: GeneratorInput) => {
+      i.hard_session_relationship = 'overdo'; p.meta.early_quality_onset = true; return true
     }],
     ['meta age differing from the input', (p: Plan, i: GeneratorInput) => {
       if (typeof i.age !== 'number') return false
@@ -257,6 +296,7 @@ const ARMS: Record<string, string[]> = {
   'INV-PLAN-RECALIBRATION-HAS-SESSION': ['listed week does not exist', 'no time trial'],
   'INV-PLAN-COMPRESSION-CLASSIFICATION': ['no compression_classification', 'class disagrees', 'constrained class reads comfortable'],
   'INV-PLAN-COMPRESSION-SPLIT': ['split flags not both stated', 'compressed is not the OR'],
+  'INV-PLAN-SHORT-OPENING-BLOCK-DECLARED': ['stamped short block with no note', 'note with no stamp'],
 }
 
 const tally = { rows: 0, threw: [] as string[], refused: 0, base: 0, foundation: 0, foundationCapped: 0 }
