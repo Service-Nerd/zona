@@ -1795,6 +1795,13 @@ Step 1 shipped as `ADR027-B3-CATALOGUE` (221 rules). Remaining, in order:
   before the next. Porting a rule also settles its `scope`, sets its `config_key` from the check's code, and
   resolves its amendment reference: **6 amendments are named debt** in `catalogue.test.ts` (§40b Am. 4, §25 Am. 1
   and §44 Am. 2 filed under another section; §39 Am. 1, §44 Am. 3 and §66 Am. 1 not in CoachingPrinciples.md).
+- ✅ **Step 2 batch 1 SHIPPED 2026-11-21** (3 rules: `WEEK-HAS-REST-DAY`, `EMPTY-SESSION`, `MIN-SESSION-SIZE`).
+  `lib/engine/verifier/verifyPlan.ts`; the import gate allows only the contracts, the catalogue, the config,
+  `sessionRole` and `sessionDistance`; `verifierAgreement.test.ts` compares finding for finding with
+  `validatePlan` on golden-corpus plans and every liveness mutation of them. **218 rules left.**
+  **Raised, not changed (ported faithfully):** `validatePlan` checks `EMPTY-SESSION` inside the size loop, so an
+  empty race-week shakeout or race-week easy run passes. Probably a blind spot; needs a ruling before the
+  verifier diverges.
 - **Step 3, nightly on every live plan**, observe-only (the founder chose this over an earlier start).
 - **Step 4, the trigger catalogue** (ARCH-ENG-018): adjustment thresholds move into the catalogue as data, values
   unchanged, per §124 Am. 1.

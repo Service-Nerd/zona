@@ -47,12 +47,14 @@ export const FindingSchema = z.strictObject({
 })
 export type Finding = z.infer<typeof FindingSchema>
 
-/** `Violation.week` uses 0 for plan-level checks. */
+/** `Violation.week` uses 0 for plan-level checks. A NEGATIVE week is a foundation week (n <= 0, ADR-020)
+ *  and keeps its number: this mapped every `week <= 0` to null until B3 step 2, so a finding on a
+ *  foundation week lost its week, the ARCH-ENG-015 class. No live week has n = 0. */
 export function findingFromViolation(v: Violation, inputHash: string | null): Finding {
   return FindingSchema.parse({
     rule_id: v.code,
     severity: v.severity,
-    week: v.week > 0 ? v.week : null,
+    week: v.week === 0 ? null : v.week,
     detail: v.message,
     input_hash: inputHash,
   })
