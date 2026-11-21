@@ -14,8 +14,8 @@ import type { RuleId } from '@/lib/engine/contracts/rule'
 import type { RunnerProfile } from '@/lib/engine/contracts/profile'
 import { RULES } from '@/lib/engine/catalogue/rules'
 import { GENERATION_CONFIG, raceDistanceKey } from '@/lib/plan/generationConfig'
-import { isLongRun, isShakeout, isSecondaryQuality, isQualitySession, isStructuredSession } from '@/lib/plan/sessionRole'
-import { normaliseDays } from '@/lib/plan/days'
+import { isLongRun, isShakeout, isSecondaryQuality, isQualitySession, isStructuredSession, isTimeTrial } from '@/lib/plan/sessionRole'
+import { normaliseDays, dayGap } from '@/lib/plan/days'
 import { sessionKmSelfPaced } from '@/lib/plan/sessionDistance'
 import { hasInjuryKeyword } from '@/lib/plan/injuryScope'
 import { BENCHMARK_VDOT_MAX } from '@/lib/plan/benchmarkCheck'
@@ -532,6 +532,87 @@ const BATCH_6: Partial<Record<RuleId, Predicate>> = {
   },
 }
 Object.assign(PREDICATES, BATCH_6)
+
+type Meta = Record<string, unknown>
+
+const BATCH_7: Partial<Record<RuleId, Predicate>> = {
+  // §44: every plan states its prep-time status, and a warned plan states its warning and alternatives.
+  'INV-PLAN-PREP-TIME-STATUS-ANNOTATED': plan => {
+    const m = plan.meta
+    const out: Raw[] = []
+    if (!m.prep_time_status) out.push({ rule_id: 'INV-PLAN-PREP-TIME-STATUS-ANNOTATED', week: PLAN, day: null, detail: 'no prep_time_status' })
+    if (m.prep_time_status === 'warned' && (!m.prep_time_warning || !m.prep_time_alternatives))
+      out.push({ rule_id: 'INV-PLAN-PREP-TIME-STATUS-ANNOTATED', week: PLAN, day: null, detail: 'warned without its warning or alternatives' })
+    return out
+  },
+
+  // §44: every plan states its difficulty band…
+  'INV-PLAN-DIFFICULTY-ANNOTATED': plan => plan.meta.difficulty_band ? []
+    : [{ rule_id: 'INV-PLAN-DIFFICULTY-ANNOTATED', week: PLAN, day: null, detail: 'no difficulty_band' }],
+
+  // …and never reads easier than its own warnings: warned means very demanding; input-constrained or a declared
+  // shortfall means not comfortable.
+  'INV-PLAN-DIFFICULTY-NEVER-FRONTS-UNSAFE': plan => {
+    const m = plan.meta
+    if (!m.difficulty_band) return []
+    const out: Raw[] = []
+    const f = (detail: string) => out.push({ rule_id: 'INV-PLAN-DIFFICULTY-NEVER-FRONTS-UNSAFE', week: PLAN, day: null, detail })
+    if (m.prep_time_status === 'warned' && m.difficulty_band !== 'very_demanding') f('warned plan not very demanding')
+    if (m.compression_classification === 'constrained_by_inputs' && m.difficulty_band === 'comfortable') f('constrained plan reads comfortable')
+    if ([m.long_run_shortfall_note, m.peak_shortfall_note, m.volume_shortfall_note].some(Boolean) && m.difficulty_band === 'comfortable') f('shortfall declared, reads comfortable')
+    return out
+  },
+
+  // §50 Am.: the plan's age is the one it was built with, never invented, and a plan built with no age says so.
+  // ⚠️ PORTED FAITHFULLY, INCLUDING A DUPLICATION: validatePlan runs this inside its per-week loop, so it raises
+  // the same finding once per governed week, all at the first week's n. Raised, not changed.
+  'INV-PLAN-NO-INVENTED-AGE': (plan, { input }) => {
+    const age = input.age, meta = plan.meta as unknown as Meta
+    const has = typeof age === 'number' && Number.isFinite(age)
+    const week = plan.weeks[0]?.n ?? 1
+    const once: Raw[] = []
+    if (has && meta.age != null && meta.age !== age) once.push({ rule_id: 'INV-PLAN-NO-INVENTED-AGE', week, day: null, detail: 'meta age differs from the input' })
+    if (!has && meta.age != null) once.push({ rule_id: 'INV-PLAN-NO-INVENTED-AGE', week, day: null, detail: 'meta age with no input age' })
+    if (!has && !meta.hr_assumption_note) once.push({ rule_id: 'INV-PLAN-NO-INVENTED-AGE', week, day: null, detail: 'no age and no assumption note' })
+    return plan.weeks.filter(governed).flatMap(() => once)
+  },
+
+  // §50: the plan names its HR method, and any method but Karvonen carries an assumption note.
+  'INV-PLAN-HR-ASSUMPTIONS-SURFACED': plan => {
+    const method = plan.meta.hr_zone_method
+    if (!method) return [{ rule_id: 'INV-PLAN-HR-ASSUMPTIONS-SURFACED', week: PLAN, day: null, detail: 'no hr_zone_method' }]
+    return method !== 'karvonen' && !plan.meta.hr_assumption_note
+      ? [{ rule_id: 'INV-PLAN-HR-ASSUMPTIONS-SURFACED', week: PLAN, day: null, detail: `${method} with no assumption note` }] : []
+  },
+
+  // §50: a max HR below the age estimate is a floor unless the runner confirmed it.
+  'INV-PLAN-MAX-HR-NOT-BELOW-ESTIMATE-FLOOR': plan => {
+    const { hr_derived_max: d, hr_estimated_max: e, hr_max_source: src } = plan.meta
+    return typeof d === 'number' && typeof e === 'number' && d < e && src !== 'user_confirmed'
+      ? [{ rule_id: 'INV-PLAN-MAX-HR-NOT-BELOW-ESTIMATE-FLOOR', week: PLAN, day: null, detail: `${d} below the ${e} estimate` }] : []
+  },
+
+  // §78: every listed recalibration week exists and holds a time trial.
+  'INV-PLAN-RECALIBRATION-HAS-SESSION': plan => (plan.meta.recalibration_weeks ?? []).flatMap(n => {
+    const w = plan.weeks.find(x => x.n === n)
+    if (!w) return [{ rule_id: 'INV-PLAN-RECALIBRATION-HAS-SESSION', week: n, day: null, detail: 'listed week does not exist' }]
+    return daysOf(w).some(x => x.session && isTimeTrial(x.session)) ? []
+      : [{ rule_id: 'INV-PLAN-RECALIBRATION-HAS-SESSION', week: n, day: null, detail: 'no time trial' }]
+  }),
+
+  // §78 Am. 2 / §7: a time trial sits at least the configured number of days from the long run.
+  'INV-PLAN-TT-LONG-RUN-SPACING': plan => {
+    const min = GENERATION_CONFIG.RECALIBRATION_TIME_TRIAL.min_gap_days_from_long_run
+    return plan.weeks.flatMap(w => {
+      const entries = daysOf(w)
+      const long = entries.find(x => !!x.session && isLongRun(x.session))
+      if (!long) return []
+      return entries.filter(x => x.session && isTimeTrial(x.session) && dayGap(x.day as never, long.day as never) < min)
+        .map(() => ({ rule_id: 'INV-PLAN-TT-LONG-RUN-SPACING', week: w.n, day: null, detail: 'time trial beside the long run' }))
+    })
+  },
+}
+Object.assign(PREDICATES, BATCH_7)
 
 const SEVERITY = new Map(RULES.map(r => [r.id, r.kind === 'soft' ? 'warn' as const : 'error' as const]))
 

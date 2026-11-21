@@ -20,12 +20,13 @@ const ALLOWED = new Set([
   '@/lib/plan/generationConfig',         // rule data (the numerics the rules reference)
   '@/lib/plan/sessionRole',              // the classification owner (INV-CLASS), fixture-tested
   '@/lib/plan/sessionDistance',          // the measurement owner (`sessionKm`), fixture-tested
-  '@/lib/plan/days',                     // the input-format owner (`normaliseDays`: 'monday' | 'mon'), not a derivation
 ])
 
 /** A planner module that also holds rule data or an input-format owner: only the NAMED exports may be
  *  imported, so the rest of the module (construction logic) stays out of reach. */
 const ALLOWED_NAMES: Record<string, string[]> = {
+  // days.ts also owns the long-run day choice (construction), so only these two (batch 7 narrowed it):
+  '@/lib/plan/days': ['normaliseDays', 'dayGap'],     // input format ('monday' | 'mon') and day arithmetic
   '@/lib/plan/injuryScope': ['hasInjuryKeyword'],      // matches a runner's injury chips to a keyword (input format)
   '@/lib/plan/benchmarkCheck': ['BENCHMARK_VDOT_MAX'], // a human ceiling: rule data
 }

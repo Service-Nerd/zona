@@ -15,7 +15,7 @@ import { runEngine } from '@/lib/plan/engine'
 import { validatePlan } from '@/lib/plan/invariants'
 import { MUTATIONS } from '@/lib/plan/invariantLiveness'
 import type { Plan, GeneratorInput, Session } from '@/types/plan'
-import { isLongRun, isStructuredSession } from '@/lib/plan/sessionRole'
+import { isLongRun, isStructuredSession, isTimeTrial } from '@/lib/plan/sessionRole'
 import { GENERATION_CONFIG, raceDistanceKey } from '@/lib/plan/generationConfig'
 import { hasInjuryKeyword } from '@/lib/plan/injuryScope'
 import { BENCHMARK_VDOT_MAX } from '@/lib/plan/benchmarkCheck'
@@ -111,6 +111,37 @@ const EXTRA_MUTATIONS: { name: string; apply: (p: Plan, input: GeneratorInput) =
     (p.meta as { vdot?: number }).vdot = BENCHMARK_VDOT_MAX + 0.5
     return true
   } },
+  // The plan's statements about itself (§44, §50, §78): one breakage per check, so each arm is woken.
+  ...([
+    ['prep warned without its warning', (p: Plan) => { p.meta.prep_time_status = 'warned'; delete p.meta.prep_time_warning; return true }],
+    ['warned plan reading demanding', (p: Plan) => { p.meta.prep_time_status = 'warned'; p.meta.difficulty_band = 'demanding'; return true }],
+    ['constrained plan reading comfortable', (p: Plan) => { p.meta.compression_classification = 'constrained_by_inputs'; p.meta.difficulty_band = 'comfortable'; return true }],
+    ['shortfall declared, reading comfortable', (p: Plan) => { p.meta.long_run_shortfall_note = 'short'; p.meta.difficulty_band = 'comfortable'; return true }],
+    ['no HR method', (p: Plan) => { delete p.meta.hr_zone_method; return true }],
+    ['a max HR one beat under the age estimate, unconfirmed', (p: Plan) => {
+      if (typeof p.meta.hr_estimated_max !== 'number') return false
+      p.meta.hr_derived_max = p.meta.hr_estimated_max - 1; p.meta.hr_max_source = 'observed'; return true
+    }],
+    ['a non-Karvonen method with no note', (p: Plan) => { p.meta.hr_zone_method = 'percent_of_max'; delete p.meta.hr_assumption_note; return true }],
+    ['a recalibration week that does not exist', (p: Plan) => { p.meta.recalibration_weeks = [999]; return true }],
+    ['a recalibration week with no time trial', (p: Plan) => {
+      const w = p.weeks.find(x => x.n > 0 && !Object.values(x.sessions ?? {}).some(s => s && isTimeTrial(s)))
+      if (!w) return false
+      p.meta.recalibration_weeks = [w.n]; return true
+    }],
+  ] as const).map(([name, f]) => ({ name, apply: (p: Plan) => f(p) })),
+  ...([
+    ['meta age differing from the input', (p: Plan, i: GeneratorInput) => {
+      if (typeof i.age !== 'number') return false
+      ;(p.meta as unknown as Record<string, unknown>).age = i.age + 1; return true
+    }],
+    ['meta age with no input age', (p: Plan, i: GeneratorInput) => {
+      delete (i as { age?: number }).age; (p.meta as unknown as Record<string, unknown>).age = 40; return true
+    }],
+    ['no age and no assumption note', (p: Plan, i: GeneratorInput) => {
+      delete (i as { age?: number }).age; delete p.meta.hr_assumption_note; return true
+    }],
+  ] as const).map(([name, f]) => ({ name, apply: (p: Plan, i: GeneratorInput) => f(p, i) })),
   // §49's line: exactly one taper week over the cap (relabel the weeks before the taper).
   { name: 'one taper week over the cap', apply: (p, input) => {
     const cap = GENERATION_CONFIG.MAX_TAPER_PHASE_WEEKS[raceDistanceKey(input.race_distance_km) as keyof typeof GENERATION_CONFIG.MAX_TAPER_PHASE_WEEKS]
@@ -158,6 +189,11 @@ const raceEveDays = new WeakMap<Plan, string>()
 const ARMS: Record<string, string[]> = {
   'INV-PLAN-DELOAD-PLACEMENT': ['deload opens a phase', 'deloads, cadence calls for'],
   'INV-PLAN-PHASE-STRUCTURE': ['phase returns', 'phases out of order'],
+  'INV-PLAN-PREP-TIME-STATUS-ANNOTATED': ['no prep_time_status', 'warned without'],
+  'INV-PLAN-DIFFICULTY-NEVER-FRONTS-UNSAFE': ['warned plan not very demanding', 'constrained plan reads comfortable', 'shortfall declared'],
+  'INV-PLAN-NO-INVENTED-AGE': ['meta age differs', 'meta age with no input age', 'no age and no assumption note'],
+  'INV-PLAN-HR-ASSUMPTIONS-SURFACED': ['no hr_zone_method', 'with no assumption note'],
+  'INV-PLAN-RECALIBRATION-HAS-SESSION': ['listed week does not exist', 'no time trial'],
 }
 
 const tally = { rows: 0, threw: [] as string[], refused: 0, base: 0, foundation: 0, foundationCapped: 0 }
