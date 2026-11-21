@@ -21,6 +21,7 @@ const S = vi.hoisted(() => ({
   events: [] as { kind: string; detail: Record<string, unknown> }[],
   adjustment: null as Record<string, unknown> | null,
   readError: null as string | null,
+  failWrite: null as string | null,
 }))
 
 vi.mock('@/lib/supabase/getUserFromRequest', () => ({ getUserFromRequest: async () => ({ id: 'u1' }) }))
@@ -50,7 +51,7 @@ vi.mock('@supabase/supabase-js', () => ({
           : { data: { plan_json: { meta: {}, weeks: [{ n: 3, sessions: {} }] } }, error: null },
         update: (row: Record<string, unknown>) => {
           S.updates.push({ table, row })
-          return { eq: async () => ({ error: null }) }
+          return { eq: async () => ({ error: S.failWrite === table ? { message: 'boom' } : null }) }
         },
       })
       return q
@@ -64,7 +65,7 @@ const SESSIONS_BEFORE = [REST, REST, REST, { type: 'quality', label: 'Tempo' }, 
 const SESSIONS_AFTER  = [REST, REST, REST, { type: 'easy', label: 'Easy run' }, REST, REST, REST]
 
 beforeEach(() => {
-  S.saveThrows = false; S.saved = 0; S.updates = []; S.events = []; S.readError = null
+  S.saveThrows = false; S.saved = 0; S.updates = []; S.events = []; S.readError = null; S.failWrite = null
   S.adjustment = { id: 'a1', user_id: 'u1', status: 'pending', week_n: 3, sessions_after: SESSIONS_AFTER, sessions_before: SESSIONS_BEFORE }
 })
 
@@ -139,3 +140,24 @@ for (const [route, status] of [['confirm-adjustment', 'confirmed'], ['revert-adj
     })
   })
 }
+
+describe('ADJUST-WEEK-COORD-01 code review — week-not-found writes', () => {
+  it('🔴 revert: a failed row write is 500 and the Me flag is NOT touched', async () => {
+    S.adjustment = { ...S.adjustment, week_n: 6 }; S.failWrite = 'plan_adjustments'
+    const res = await call('revert-adjustment')
+    expect(res.status).toBe(500)
+    expect(S.updates.map(u => u.table)).toEqual(['plan_adjustments'])
+    expect(S.events.map(e => e.kind)).toEqual(['adjustment_week_not_found'])
+  })
+  it('revert: a failed flag write still resolves (200) and is recorded', async () => {
+    S.adjustment = { ...S.adjustment, week_n: 6 }; S.failWrite = 'user_settings'
+    const res = await call('revert-adjustment')
+    expect(res.status).toBe(200)
+    expect(S.events[0].detail).toMatchObject({ flag_error: 'boom' })
+  })
+  it('confirm: a missing week is recorded', async () => {
+    S.adjustment = { ...S.adjustment, week_n: 6 }
+    await call('confirm-adjustment')
+    expect(S.events.map(e => e.kind)).toEqual(['adjustment_week_not_found'])
+  })
+})

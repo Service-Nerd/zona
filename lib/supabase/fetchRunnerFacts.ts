@@ -58,8 +58,8 @@ export async function fetchRunnerFacts(db: Db, userId: string, input: GeneratorI
     db.from('strava_activities')
       .select('start_date')
       // the first RUN, not the first activity (`isRun`'s own two columns): a walk logged first
-      // would date the run log's coverage too early, and so would a 0 m "run" (code review 2026-11-21)
-      .eq('user_id', userId).or('activity_type.eq.Run,sport_type.eq.Run').gt('distance_m', 0)
+      // would date the run log's coverage too early, and so would a 0 m "run"; a typed treadmill distance counts, as in `runDistance` (code review 2026-11-21)
+      .eq('user_id', userId).or('activity_type.eq.Run,sport_type.eq.Run').or('distance_m.gt.0,reported_distance_m.gt.0')
       .order('start_date', { ascending: true }).limit(1),
     db.from('health_daily_samples')
       .select('sample_date, rhr_bpm')

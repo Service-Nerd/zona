@@ -78,17 +78,21 @@ export async function POST(req: NextRequest) {
   // clear the card and no new adjustment could be made (code review, 2026-11-21).
   if (!week) {
     const nowIso = new Date().toISOString()
-    // Code review round 2: flag FIRST, row LAST. Only the row decides whether a retry can succeed:
-    // a failed row write leaves it pending, so 500 is honest and the retry works; a failed flag
-    // write is recorded and the resolution stands, because a retry would meet "Already reverted".
+    // Code review rounds 2-3: the ROW decides whether a retry can succeed, so it is written first.
+    // A failed row write → 500 with nothing else touched (the row stays pending, the retry works,
+    // Me still agrees with the card). The flag is written only after; its failure is recorded and
+    // the resolution stands, because a retry would meet "Already reverted".
+    const rowRes = await serviceSupabase.from('plan_adjustments').update({ status: 'reverted', reverted_at: nowIso }).eq('id', adjustment_id)
+    if (rowRes?.error) {
+      await recordOpsEvent('adjustment_week_not_found', { route: 'revert-adjustment', week_n: weekN, row_error: rowRes.error.message }, user.id)
+      return NextResponse.json({ error: 'Could not resolve this change' }, { status: 500 })
+    }
     const flagRes = await serviceSupabase.from('user_settings')
       .update({ last_adjustment_check_at: nowIso, last_adjustment_check_found_change: false })
       .eq('id', user.id)
-    const rowRes = await serviceSupabase.from('plan_adjustments').update({ status: 'reverted', reverted_at: nowIso }).eq('id', adjustment_id)
     await recordOpsEvent('adjustment_week_not_found', {
-      route: 'revert-adjustment', week_n: weekN, row_error: rowRes?.error?.message ?? null, flag_error: flagRes?.error?.message ?? null,
+      route: 'revert-adjustment', week_n: weekN, row_error: null, flag_error: flagRes?.error?.message ?? null,
     }, user.id)
-    if (rowRes?.error) return NextResponse.json({ error: 'Could not resolve this change' }, { status: 500 })
     return NextResponse.json({ plan, reason: 'week_not_found' })
   }
   // READINESS-WRONG-DAY-01 — only the days that changed, and never a malformed row.

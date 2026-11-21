@@ -28,7 +28,8 @@ export function fakeDb(resolve: Resolver) {
         eq: (k: string, v: unknown) => { q.filters[k] = v; return b },
         is: (k: string, v: unknown) => { q.filters[k] = v; return b },
         match: (m: Record<string, unknown>) => { Object.assign(q.filters, m); return b },
-        or: (expr: string) => { q.filters['@or'] = expr; return b },
+        // repeated .or() calls are ANDed by PostgREST, so each is recorded in order
+        or: (expr: string) => { q.filters['@or'] = [...((q.filters['@or'] as string[]) ?? []), expr]; return b },
         gt: (k: string, v: unknown) => { q.filters[`${k}>`] = v; return b },
         gte: () => b, lte: () => b, lt: () => b, order: () => b, limit: () => b,
         maybeSingle: one, single: one,
