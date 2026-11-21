@@ -17,6 +17,13 @@ it specific, no polish. The content system adds the voice.
 **Dev.** I built the golden corpus from the wizard's own option lists and its own week→input function, and wrote one predicate that says why a row could not have come from the wizard. Then I ran that predicate over the five corpora that every coaching harness uses. **Every row of all five failed it.** No row sets the long-run day. Day counts don't match the rest days. Rows send `injury_history: []` where the wizard sends no field. Some carry fields the wizard never posts. The production findings event means real generations now report their rule codes, instead of writing only to `console.error`.
 
 **The honest bit.** This is ADR-027's cause 4, measured. "The test corpora don't match what the app sends" was a finding about one field on 2026-11-03. It turns out to be true of every row we have. Each harness was green on plans no runner can get.
+## 2026-11-21 — ADR027-B0-SCORECARD · one table, one baseline, and the read's predicates kept
+
+**Dev.** `npm run scorecard` runs the seven `review:coaching` steps, `cohort:shape` and `verify:strength` side by side, each as its owner runs it, and adds the final plan read's predicates as one step. The read's five scratch batteries held more variants than classes; 56 were kept, one owner each, with a § and a source. Every line sits in one baseline file. It fails on anything worse, including a line it could not measure.
+
+**Product.** The current engine is now a number on each defect class: 711 plans say "no hard sessions" and carry a time trial, 844 say the runner's volume is "already where this distance wants it" while cutting it. A rewrite has to beat those numbers. Matching them is not enough.
+
+**The honest bit.** What not to port mattered as much as what to port. One read predicate counted §81's licensed weekday overruns as defects, and it would have baselined 1,782 ruled-correct plans as debt. Seven predicates read 0 on these corpora. Two are the shipped hotfixes, and only one of those was planted and shown to fire; the other five are unproven.
 
 ## 2026-11-20 — RUNWALK-QUALITY-HOTFIX-01 · the rule said "every session", and "every" had grown
 

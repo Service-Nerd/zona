@@ -29,7 +29,7 @@ import { spawnSync } from 'node:child_process'
 
 const FAST = process.argv.includes('--fast')
 
-interface Step {
+export interface Step {
   id: string
   question: string           // the question this step, and only this step, answers
   cmd: string
@@ -42,7 +42,7 @@ interface Step {
  *  case should be loud before anything else runs), then the population measures,
  *  then the corpus sweeps. A sweep failure after a generation failure tells you
  *  nothing you did not already know. */
-const STEPS: Step[] = [
+export const STEPS: Step[] = [
   {
     id: 'round',
     question: 'Does every canonical case and persona still generate a valid plan?',
@@ -107,62 +107,69 @@ const STEPS: Step[] = [
   },
 ]
 
-const line = (s: string, n: number) => s.length > n ? s.slice(0, n - 1) + '…' : s.padEnd(n)
+// ADR027-B0-SCORECARD: `npm run scorecard` imports STEPS (the one list of steps and the
+// question each answers) rather than keeping a second copy, so the protocol below runs
+// only when this file is the entry point.
+if (process.argv[1]?.includes('review-coaching')) main()
 
-console.log(`\n══ COACHING MEASUREMENT PROTOCOL ══  ${new Date().toISOString().slice(0, 10)}${FAST ? '  (--fast)' : ''}\n`)
-console.log('Doctrine: docs/canonical/coaching-measurement.md\n')
+function main(): void {
+  const line = (s: string, n: number) => s.length > n ? s.slice(0, n - 1) + '…' : s.padEnd(n)
 
-interface Result { step: Step; code: number; headline: string; skipped?: boolean }
-const results: Result[] = []
+  console.log(`\n══ COACHING MEASUREMENT PROTOCOL ══  ${new Date().toISOString().slice(0, 10)}${FAST ? '  (--fast)' : ''}\n`)
+  console.log('Doctrine: docs/canonical/coaching-measurement.md\n')
 
-for (const step of STEPS) {
-  if (FAST && step.slow) { results.push({ step, code: 0, headline: 'skipped (--fast)', skipped: true }); continue }
-  process.stdout.write(`→ ${step.id} … `)
-  const r = spawnSync(step.cmd, { shell: true, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 })
-  const out = `${r.stdout ?? ''}\n${r.stderr ?? ''}`
-  const code = r.status ?? 2
-  let headline = ''
-  try { headline = step.headline(out) } catch { headline = '' }
-  results.push({ step, code, headline: headline || (code === 0 ? 'ok' : 'see output') })
-  console.log(code === 0 ? 'ok' : `EXIT ${code}`)
-  // A failing step prints its own diagnosis. Swallowing it to keep the
-  // scorecard tidy would make this command less useful than running them by
-  // hand, which is the only reason anyone would stop using it.
-  if (code !== 0) console.log(out.split('\n').slice(-25).join('\n'))
+  interface Result { step: Step; code: number; headline: string; skipped?: boolean }
+  const results: Result[] = []
+
+  for (const step of STEPS) {
+    if (FAST && step.slow) { results.push({ step, code: 0, headline: 'skipped (--fast)', skipped: true }); continue }
+    process.stdout.write(`→ ${step.id} … `)
+    const r = spawnSync(step.cmd, { shell: true, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 })
+    const out = `${r.stdout ?? ''}\n${r.stderr ?? ''}`
+    const code = r.status ?? 2
+    let headline = ''
+    try { headline = step.headline(out) } catch { headline = '' }
+    results.push({ step, code, headline: headline || (code === 0 ? 'ok' : 'see output') })
+    console.log(code === 0 ? 'ok' : `EXIT ${code}`)
+    // A failing step prints its own diagnosis. Swallowing it to keep the
+    // scorecard tidy would make this command less useful than running them by
+    // hand, which is the only reason anyone would stop using it.
+    if (code !== 0) console.log(out.split('\n').slice(-25).join('\n'))
+  }
+
+  console.log(`\n${'─'.repeat(100)}`)
+  console.log(`${line('STEP', 12)}│ ${line('THE QUESTION IT ANSWERS', 58)}│ RESULT`)
+  console.log(`${'─'.repeat(100)}`)
+  for (const r of results) {
+    const mark = r.skipped ? '·' : r.code === 0 ? '✓' : '✗'
+    console.log(`${mark} ${line(r.step.id, 10)}│ ${line(r.step.question, 58)}│ ${r.headline}`)
+  }
+  console.log(`${'─'.repeat(100)}`)
+
+  // ⚠️ THE NEGATIVE SPACE IS PART OF THE OUTPUT, NOT A README FOOTNOTE.
+  // Every completion claim in this repo carries one line saying what it does not
+  // prove. A scorecard that prints only green ticks is how "all clear" comes to
+  // mean "the things this script looks at are fine" without anyone noticing the
+  // difference.
+  console.log(`
+  ⚠️  WHAT NONE OF THESE CAN SEE
+      · Nothing has run on a device. Every number here is a generated plan.
+      · Nothing measures whether a §118 get-running plan builds the runner WELL,
+        only that it validates (§118 chair's known gap, still open).
+      · Coach objections are measured on plans WITHOUT a foundation block
+        (HARNESS-COMPOSE-GAP-01) — the error-severity half is covered, this is not.
+      · The population weights are ASSUMPTIONS with written reasons, not
+        observations. Real refusals are recorded in production (plan_refused_by_design)
+        and NONE of these steps reads them: the population here is synthetic.
+      · A green run means no measured rate moved. It does not mean the engine
+        improved, and a rate that moves because a DEFINITION moved is a correction,
+        never an improvement (ZERO-REJECTION-SERVED-01).`)
+
+  const failed = results.filter(r => !r.skipped && r.code !== 0)
+  if (failed.length) {
+    console.log(`\n✗ ${failed.length} step(s) failed or moved: ${failed.map(f => f.step.id).join(', ')}`)
+    console.log('  A move is not automatically wrong. It is automatically something to DECLARE.')
+    process.exit(failed.some(f => f.code === 2) ? 2 : 1)
+  }
+  console.log('\n✓ every step passed; no measured rate moved.')
 }
-
-console.log(`\n${'─'.repeat(100)}`)
-console.log(`${line('STEP', 12)}│ ${line('THE QUESTION IT ANSWERS', 58)}│ RESULT`)
-console.log(`${'─'.repeat(100)}`)
-for (const r of results) {
-  const mark = r.skipped ? '·' : r.code === 0 ? '✓' : '✗'
-  console.log(`${mark} ${line(r.step.id, 10)}│ ${line(r.step.question, 58)}│ ${r.headline}`)
-}
-console.log(`${'─'.repeat(100)}`)
-
-// ⚠️ THE NEGATIVE SPACE IS PART OF THE OUTPUT, NOT A README FOOTNOTE.
-// Every completion claim in this repo carries one line saying what it does not
-// prove. A scorecard that prints only green ticks is how "all clear" comes to
-// mean "the things this script looks at are fine" without anyone noticing the
-// difference.
-console.log(`
-⚠️  WHAT NONE OF THESE CAN SEE
-    · Nothing has run on a device. Every number here is a generated plan.
-    · Nothing measures whether a §118 get-running plan builds the runner WELL,
-      only that it validates (§118 chair's known gap, still open).
-    · Coach objections are measured on plans WITHOUT a foundation block
-      (HARNESS-COMPOSE-GAP-01) — the error-severity half is covered, this is not.
-    · The population weights are ASSUMPTIONS with written reasons, not
-      observations. Real refusals are recorded in production (plan_refused_by_design)
-      and NONE of these steps reads them: the population here is synthetic.
-    · A green run means no measured rate moved. It does not mean the engine
-      improved, and a rate that moves because a DEFINITION moved is a correction,
-      never an improvement (ZERO-REJECTION-SERVED-01).`)
-
-const failed = results.filter(r => !r.skipped && r.code !== 0)
-if (failed.length) {
-  console.log(`\n✗ ${failed.length} step(s) failed or moved: ${failed.map(f => f.step.id).join(', ')}`)
-  console.log('  A move is not automatically wrong. It is automatically something to DECLARE.')
-  process.exit(failed.some(f => f.code === 2) ? 2 : 1)
-}
-console.log('\n✓ every step passed; no measured rate moved.')

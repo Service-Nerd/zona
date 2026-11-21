@@ -32,6 +32,7 @@
     "purge:users": "tsx scripts/purge-users.ts",
     "cohort:shape": "tsx scripts/cohort-shape.ts",
     "review:coaching": "NODE_ENV=production tsx scripts/review-coaching.ts",
+    "scorecard": "NODE_ENV=production tsx scripts/scorecard.ts",
     "review:cohort": "NODE_ENV=production tsx scripts/cohort-review.ts",
     "prepare": "git config core.hooksPath .githooks || true",
     "measure:fitness": "tsx scripts/measure-plan-fitness.ts",

@@ -1,0 +1,3363 @@
+{
+ "reason": "ADR027-B0-SCORECARD: first baseline of Scorecard v2 on the current (frozen) engine at e2090264, existing corpora",
+ "written_at": "2026-11-21T00:46:11.544Z",
+ "git_head": "e2090264",
+ "modes": {
+  "full": {
+   "review.round.gate": {
+    "value": 1,
+    "better": "pass"
+   },
+   "review.foundation.gate": {
+    "value": 1,
+    "better": "pass"
+   },
+   "review.foundation.plans_with_block": {
+    "value": 231,
+    "better": "stable"
+   },
+   "review.foundation.error_violations": {
+    "value": 0,
+    "better": "zero"
+   },
+   "review.slow.gate": {
+    "value": 1,
+    "better": "pass"
+   },
+   "review.slow.plans": {
+    "value": 880,
+    "better": "stable"
+   },
+   "review.slow.unrunnable_goal_pace": {
+    "value": 0,
+    "better": "lower"
+   },
+   "review.slow.floor_breaches": {
+    "value": 0,
+    "better": "lower"
+   },
+   "review.slow.silent_overruns": {
+    "value": 0,
+    "better": "lower"
+   },
+   "review.slow.error_violations": {
+    "value": 0,
+    "better": "zero"
+   },
+   "review.envelope.gate": {
+    "value": 1,
+    "better": "pass"
+   },
+   "review.envelope.product_fit_pct": {
+    "value": 94.6,
+    "better": "higher",
+    "tol": 0.6
+   },
+   "review.envelope.fit_pct.5km": {
+    "value": 100,
+    "better": "higher",
+    "tol": 0.6
+   },
+   "review.envelope.fit_pct.10km": {
+    "value": 100,
+    "better": "higher",
+    "tol": 0.6
+   },
+   "review.envelope.fit_pct.50km": {
+    "value": 100,
+    "better": "higher",
+    "tol": 0.6
+   },
+   "review.envelope.fit_pct.100km": {
+    "value": 100,
+    "better": "higher",
+    "tol": 0.6
+   },
+   "review.envelope.fit_pct.21.1km": {
+    "value": 97.7,
+    "better": "higher",
+    "tol": 0.6
+   },
+   "review.envelope.fit_pct.42.2km": {
+    "value": 84.4,
+    "better": "higher",
+    "tol": 0.6
+   },
+   "review.cohort.gate": {
+    "value": 1,
+    "better": "pass"
+   },
+   "review.objections.gate": {
+    "value": 1,
+    "better": "pass"
+   },
+   "review.objections.total": {
+    "value": 2878,
+    "better": "lower"
+   },
+   "review.objections.BEGINNER_MARATHON_priority_one.LONG-RUN-SHORT": {
+    "value": 839,
+    "better": "lower"
+   },
+   "review.objections.BEGINNER_MARATHON_priority_one.WEEK1-LEAP": {
+    "value": 284,
+    "better": "lower"
+   },
+   "review.objections.cohortGrid.NEVER-BUILDS": {
+    "value": 1009,
+    "better": "lower"
+   },
+   "review.objections.cohortGrid.BINGE-WEEK": {
+    "value": 292,
+    "better": "lower"
+   },
+   "review.objections.cohortGrid.LONG-RUN-SHORT": {
+    "value": 56,
+    "better": "lower"
+   },
+   "review.objections.cohortGrid.BINGE-SEVERE-75": {
+    "value": 11,
+    "better": "lower"
+   },
+   "review.objections.cohortGrid.FLAT-CURVE": {
+    "value": 3,
+    "better": "lower"
+   },
+   "review.objections.targetedGrid.BINGE-WEEK": {
+    "value": 238,
+    "better": "lower"
+   },
+   "review.objections.targetedGrid.LONG-RUN-SHORT": {
+    "value": 106,
+    "better": "lower"
+   },
+   "review.objections.targetedGrid.NEVER-BUILDS": {
+    "value": 36,
+    "better": "lower"
+   },
+   "review.objections.charity_personas.LONG-RUN-SHORT": {
+    "value": 1,
+    "better": "lower"
+   },
+   "review.objections.charity_personas.BINGE-WEEK": {
+    "value": 1,
+    "better": "lower"
+   },
+   "review.objections.engine_personas.NEVER-BUILDS": {
+    "value": 1,
+    "better": "lower"
+   },
+   "review.objections.engine_personas.BINGE-WEEK": {
+    "value": 1,
+    "better": "lower"
+   },
+   "review.objections.LONG-RUN-SHORT": {
+    "value": 1002,
+    "better": "lower"
+   },
+   "review.objections.WEEK1-LEAP": {
+    "value": 284,
+    "better": "lower"
+   },
+   "review.objections.NEVER-BUILDS": {
+    "value": 1046,
+    "better": "lower"
+   },
+   "review.objections.BINGE-WEEK": {
+    "value": 532,
+    "better": "lower"
+   },
+   "review.objections.BINGE-SEVERE-75": {
+    "value": 11,
+    "better": "lower"
+   },
+   "review.objections.FLAT-CURVE": {
+    "value": 3,
+    "better": "lower"
+   },
+   "fitness.gate": {
+    "value": 1,
+    "better": "pass"
+   },
+   "fitness.CAPPED-INJURY_masters.n": {
+    "value": 3,
+    "better": "stable"
+   },
+   "fitness.CAPPED-INJURY_masters.never_builds_pct": {
+    "value": 0,
+    "better": "lower",
+    "tol": 0.01
+   },
+   "fitness.CAPPED-INJURY_masters.median_build_pct": {
+    "value": 41.2,
+    "better": "higher",
+    "tol": 5
+   },
+   "fitness.CAPPED-INJURY_masters.marathon_lr_pct": {
+    "value": 66.4,
+    "better": "higher",
+    "tol": 3
+   },
+   "fitness.CAPPED-INJURY_standard.n": {
+    "value": 3075,
+    "better": "stable"
+   },
+   "fitness.CAPPED-INJURY_standard.never_builds_pct": {
+    "value": 0,
+    "better": "lower",
+    "tol": 0.01
+   },
+   "fitness.CAPPED-INJURY_standard.median_build_pct": {
+    "value": 50,
+    "better": "higher",
+    "tol": 5
+   },
+   "fitness.CAPPED-INJURY_standard.marathon_lr_pct": {
+    "value": 61.6,
+    "better": "higher",
+    "tol": 3
+   },
+   "fitness.other_masters.n": {
+    "value": 6718,
+    "better": "stable"
+   },
+   "fitness.other_masters.never_builds_pct": {
+    "value": 14.2,
+    "better": "lower",
+    "tol": 0.01
+   },
+   "fitness.other_masters.median_build_pct": {
+    "value": 17.9,
+    "better": "higher",
+    "tol": 5
+   },
+   "fitness.other_masters.marathon_lr_pct": {
+    "value": 61.6,
+    "better": "higher",
+    "tol": 3
+   },
+   "fitness.other_standard.n": {
+    "value": 9796,
+    "better": "stable"
+   },
+   "fitness.other_standard.never_builds_pct": {
+    "value": 9.4,
+    "better": "lower",
+    "tol": 0.01
+   },
+   "fitness.other_standard.median_build_pct": {
+    "value": 40,
+    "better": "higher",
+    "tol": 5
+   },
+   "fitness.other_standard.marathon_lr_pct": {
+    "value": 66.4,
+    "better": "higher",
+    "tol": 3
+   },
+   "fitness.persona.M1.peak_lr_km": {
+    "value": 26,
+    "better": "higher",
+    "tol": 0.6
+   },
+   "fitness.persona.M2.peak_lr_km": {
+    "value": 24,
+    "better": "higher",
+    "tol": 0.6
+   },
+   "fitness.persona.M3.peak_lr_km": {
+    "value": 20,
+    "better": "higher",
+    "tol": 0.6
+   },
+   "fitness.persona.M4.peak_lr_km": {
+    "value": 29.5,
+    "better": "higher",
+    "tol": 0.6
+   },
+   "fitness.persona.M5.peak_lr_km": {
+    "value": 29.5,
+    "better": "higher",
+    "tol": 0.6
+   },
+   "fitness.persona.M1d.peak_lr_km": {
+    "value": 23,
+    "better": "higher",
+    "tol": 0.6
+   },
+   "cohort_shape.attempted": {
+    "value": 41472,
+    "better": "stable"
+   },
+   "cohort_shape.generated": {
+    "value": 39744,
+    "better": "stable"
+   },
+   "cohort_shape.refused": {
+    "value": 1728,
+    "better": "stable"
+   },
+   "cohort_shape.failed": {
+    "value": 0,
+    "better": "stable"
+   },
+   "cohort_shape.maintenancePct": {
+    "value": 55.9,
+    "better": "stable",
+    "tol": 0.5
+   },
+   "cohort_shape.constrainedByInputsPct": {
+    "value": 14.1,
+    "better": "stable",
+    "tol": 0.5
+   },
+   "cohort_shape.volumeConstrainedPct": {
+    "value": 20.7,
+    "better": "stable",
+    "tol": 0.5
+   },
+   "cohort_shape.timeCompressedPct": {
+    "value": 0,
+    "better": "stable",
+    "tol": 0.5
+   },
+   "cohort_shape.constraintNotePct": {
+    "value": 71,
+    "better": "stable",
+    "tol": 0.5
+   },
+   "cohort_shape.meanQualityPerBuildWeek": {
+    "value": 0.62,
+    "better": "stable",
+    "tol": 0.05
+   },
+   "cohort_shape.plansWithNoQualityPct": {
+    "value": 17.4,
+    "better": "stable",
+    "tol": 0.5
+   },
+   "cohort_shape.meanDeliveredPeakKm": {
+    "value": 37.24,
+    "better": "stable",
+    "tol": 0.3
+   },
+   "cohort_shape.meanPlanWeeks": {
+    "value": 14.35,
+    "better": "stable",
+    "tol": 0.05
+   },
+   "cohort_shape.earlyQualityOnsetPct": {
+    "value": 4.2,
+    "better": "stable",
+    "tol": 0.5
+   },
+   "cohort_shape.difficultyComfortablePct": {
+    "value": 24.4,
+    "better": "stable",
+    "tol": 0.5
+   },
+   "cohort_shape.maintenanceByDistance.5": {
+    "value": 55.3,
+    "better": "stable",
+    "tol": 0.5
+   },
+   "cohort_shape.maintenanceByDistance.10": {
+    "value": 51,
+    "better": "stable",
+    "tol": 0.5
+   },
+   "cohort_shape.maintenanceByDistance.21.1": {
+    "value": 47.1,
+    "better": "stable",
+    "tol": 0.5
+   },
+   "cohort_shape.maintenanceByDistance.42.2": {
+    "value": 72.9,
+    "better": "stable",
+    "tol": 0.5
+   },
+   "strength.gate": {
+    "value": 1,
+    "better": "pass"
+   },
+   "strength.plans": {
+    "value": 17568,
+    "better": "stable"
+   },
+   "strength.violations": {
+    "value": 0,
+    "better": "zero"
+   },
+   "planread.corpus.cohortGrid.cases": {
+    "value": 3000,
+    "better": "stable"
+   },
+   "planread.corpus.cohortGrid.race_plans": {
+    "value": 2882,
+    "better": "stable"
+   },
+   "planread.corpus.cohortGrid.base_build": {
+    "value": 0,
+    "better": "stable"
+   },
+   "planread.corpus.cohortGrid.refused": {
+    "value": 118,
+    "better": "stable"
+   },
+   "planread.hard.cohortGrid.thrown": {
+    "value": 0,
+    "better": "zero"
+   },
+   "planread.hard.cohortGrid.error_violations": {
+    "value": 0,
+    "better": "zero"
+   },
+   "planread.NT-NO-HARD-SESSIONS-FALSE@cohortGrid": {
+    "value": 217,
+    "better": "lower"
+   },
+   "planread.NT-GAINS-FROM-QUALITY-NONE@cohortGrid": {
+    "value": 267,
+    "better": "lower"
+   },
+   "planread.NT-HOLDS-BUT-CUTS@cohortGrid": {
+    "value": 56,
+    "better": "lower"
+   },
+   "planread.NT-AT-CEILING-BUT-CUTS@cohortGrid": {
+    "value": 773,
+    "better": "lower"
+   },
+   "planread.NT-SAYS-NOT-BUILD-BUT-BUILDS@cohortGrid": {
+    "value": 78,
+    "better": "lower"
+   },
+   "planread.NT-NOT-CHASE-WITH-GOAL-PACE@cohortGrid": {
+    "value": 345,
+    "better": "lower"
+   },
+   "planread.NT-FREQUENCY-UNDERSTATES-W1@cohortGrid": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.NT-PACE-NOTES-CONTRADICT@cohortGrid": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.NT-BENCHMARK-NOTE-WITHOUT-BENCHMARK@cohortGrid": {
+    "value": 159,
+    "better": "lower"
+   },
+   "planread.NT-FIRST-SESSION-NOTE-AFTER-W1@cohortGrid": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.NT-WALK-BREAKS-ABOVE-BAR@cohortGrid": {
+    "value": 269,
+    "better": "lower"
+   },
+   "planread.NT-DIFFICULTY-WEEKS-WRONG@cohortGrid": {
+    "value": 181,
+    "better": "lower"
+   },
+   "planread.NT-TWO-SHORTFALL-CAUSES@cohortGrid": {
+    "value": 120,
+    "better": "lower"
+   },
+   "planread.NT-RETURNING-WRONG-CAUSE@cohortGrid": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.NT-TUNE-UP-BESIDE-TT@cohortGrid": {
+    "value": 444,
+    "better": "lower"
+   },
+   "planread.NT-ZONE-LABEL-NO-ZONES@cohortGrid": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.NT-TAPER-UNDECLARED@cohortGrid": {
+    "value": 119,
+    "better": "lower"
+   },
+   "planread.NT-LOPSIDED-UNDECLARED@cohortGrid": {
+    "value": 173,
+    "better": "lower"
+   },
+   "planread.DELOAD-NOT-A-REDUCTION@cohortGrid": {
+    "value": 134,
+    "better": "lower"
+   },
+   "planread.DELOAD-SHALLOW@cohortGrid": {
+    "value": 1153,
+    "better": "lower"
+   },
+   "planread.DELOAD-HARDER-THAN-PRIOR@cohortGrid": {
+    "value": 281,
+    "better": "lower"
+   },
+   "planread.LOADING-WEEK-JUMP-30@cohortGrid": {
+    "value": 148,
+    "better": "lower"
+   },
+   "planread.LONG-RUN-STEP-OVER-5KM@cohortGrid": {
+    "value": 63,
+    "better": "lower"
+   },
+   "planread.TAPER-FIRST-WEEK-KM-AT-PEAK@cohortGrid": {
+    "value": 80,
+    "better": "lower"
+   },
+   "planread.TAPER-FIRST-WEEK-LR-AT-PEAK@cohortGrid": {
+    "value": 126,
+    "better": "lower"
+   },
+   "planread.RACE-WEEK-S39-ON-FINISH-GOAL@cohortGrid": {
+    "value": 518,
+    "better": "lower"
+   },
+   "planread.RACE-WEEK-EASY-LONGER-THAN-TAPER@cohortGrid": {
+    "value": 663,
+    "better": "lower"
+   },
+   "planread.EASY-RUN-150-MIN@cohortGrid": {
+    "value": 12,
+    "better": "lower"
+   },
+   "planread.QUALITY-LONGER-THAN-LONG-RUN@cohortGrid": {
+    "value": 204,
+    "better": "lower"
+   },
+   "planread.QUALITY-SHARE-35@cohortGrid": {
+    "value": 242,
+    "better": "lower"
+   },
+   "planread.RUN-ON-BLOCKED-DAY@cohortGrid": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.RUNS-EXCEED-DAYS@cohortGrid": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.WEEKDAY-OVERRUN-UNDECLARED@cohortGrid": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.TT-BEFORE-QUALITY-INJURED@cohortGrid": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.RUN-WALK-ON-QUALITY@cohortGrid": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.MAX-LONG-RUN-BELOW-DECLARED@cohortGrid": {
+    "value": 1516,
+    "better": "lower"
+   },
+   "planread.FIX-PEAK-CUT-UNCONSTRAINED@cohortGrid": {
+    "value": 101,
+    "better": "lower"
+   },
+   "planread.FIX-RUNWALK-LONG-RUN-BELOW-17@cohortGrid": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.FIX-LONG-RUN-SHORT-NO-RUNWALK@cohortGrid": {
+    "value": 35,
+    "better": "lower"
+   },
+   "planread.RAMP-INJURY-OVER-CAP@cohortGrid": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.RAMP-POST-DELOAD-JUMP@cohortGrid": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.RAMP-MASTERS-CADENCE@cohortGrid": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.RAMP-SESSION-OVER-2X-LONGEST@cohortGrid": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.FOUNDATION-CLIFF@cohortGrid": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.FOUNDATION-MORE-RUNS-THAN-W1@cohortGrid": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.FOUNDATION-WEEKDAY-CAP-UNSEEN@cohortGrid": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.corpus.targetedGrid.cases": {
+    "value": 1526,
+    "better": "stable"
+   },
+   "planread.corpus.targetedGrid.race_plans": {
+    "value": 1520,
+    "better": "stable"
+   },
+   "planread.corpus.targetedGrid.base_build": {
+    "value": 6,
+    "better": "stable"
+   },
+   "planread.corpus.targetedGrid.refused": {
+    "value": 0,
+    "better": "stable"
+   },
+   "planread.hard.targetedGrid.thrown": {
+    "value": 0,
+    "better": "zero"
+   },
+   "planread.hard.targetedGrid.error_violations": {
+    "value": 0,
+    "better": "zero"
+   },
+   "planread.NT-NO-HARD-SESSIONS-FALSE@targetedGrid": {
+    "value": 34,
+    "better": "lower"
+   },
+   "planread.NT-GAINS-FROM-QUALITY-NONE@targetedGrid": {
+    "value": 32,
+    "better": "lower"
+   },
+   "planread.NT-HOLDS-BUT-CUTS@targetedGrid": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.NT-AT-CEILING-BUT-CUTS@targetedGrid": {
+    "value": 32,
+    "better": "lower"
+   },
+   "planread.NT-SAYS-NOT-BUILD-BUT-BUILDS@targetedGrid": {
+    "value": 255,
+    "better": "lower"
+   },
+   "planread.NT-NOT-CHASE-WITH-GOAL-PACE@targetedGrid": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.NT-FREQUENCY-UNDERSTATES-W1@targetedGrid": {
+    "value": 180,
+    "better": "lower"
+   },
+   "planread.NT-PACE-NOTES-CONTRADICT@targetedGrid": {
+    "value": 1,
+    "better": "lower"
+   },
+   "planread.NT-BENCHMARK-NOTE-WITHOUT-BENCHMARK@targetedGrid": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.NT-FIRST-SESSION-NOTE-AFTER-W1@targetedGrid": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.NT-WALK-BREAKS-ABOVE-BAR@targetedGrid": {
+    "value": 204,
+    "better": "lower"
+   },
+   "planread.NT-DIFFICULTY-WEEKS-WRONG@targetedGrid": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.NT-TWO-SHORTFALL-CAUSES@targetedGrid": {
+    "value": 93,
+    "better": "lower"
+   },
+   "planread.NT-RETURNING-WRONG-CAUSE@targetedGrid": {
+    "value": 378,
+    "better": "lower"
+   },
+   "planread.NT-TUNE-UP-BESIDE-TT@targetedGrid": {
+    "value": 102,
+    "better": "lower"
+   },
+   "planread.NT-ZONE-LABEL-NO-ZONES@targetedGrid": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.NT-TAPER-UNDECLARED@targetedGrid": {
+    "value": 63,
+    "better": "lower"
+   },
+   "planread.NT-LOPSIDED-UNDECLARED@targetedGrid": {
+    "value": 152,
+    "better": "lower"
+   },
+   "planread.DELOAD-NOT-A-REDUCTION@targetedGrid": {
+    "value": 126,
+    "better": "lower"
+   },
+   "planread.DELOAD-SHALLOW@targetedGrid": {
+    "value": 840,
+    "better": "lower"
+   },
+   "planread.DELOAD-HARDER-THAN-PRIOR@targetedGrid": {
+    "value": 105,
+    "better": "lower"
+   },
+   "planread.LOADING-WEEK-JUMP-30@targetedGrid": {
+    "value": 37,
+    "better": "lower"
+   },
+   "planread.LONG-RUN-STEP-OVER-5KM@targetedGrid": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.TAPER-FIRST-WEEK-KM-AT-PEAK@targetedGrid": {
+    "value": 49,
+    "better": "lower"
+   },
+   "planread.TAPER-FIRST-WEEK-LR-AT-PEAK@targetedGrid": {
+    "value": 1,
+    "better": "lower"
+   },
+   "planread.RACE-WEEK-S39-ON-FINISH-GOAL@targetedGrid": {
+    "value": 1004,
+    "better": "lower"
+   },
+   "planread.RACE-WEEK-EASY-LONGER-THAN-TAPER@targetedGrid": {
+    "value": 504,
+    "better": "lower"
+   },
+   "planread.EASY-RUN-150-MIN@targetedGrid": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.QUALITY-LONGER-THAN-LONG-RUN@targetedGrid": {
+    "value": 20,
+    "better": "lower"
+   },
+   "planread.QUALITY-SHARE-35@targetedGrid": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.RUN-ON-BLOCKED-DAY@targetedGrid": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.RUNS-EXCEED-DAYS@targetedGrid": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.WEEKDAY-OVERRUN-UNDECLARED@targetedGrid": {
+    "value": 563,
+    "better": "lower"
+   },
+   "planread.TT-BEFORE-QUALITY-INJURED@targetedGrid": {
+    "value": 206,
+    "better": "lower"
+   },
+   "planread.RUN-WALK-ON-QUALITY@targetedGrid": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.MAX-LONG-RUN-BELOW-DECLARED@targetedGrid": {
+    "value": 40,
+    "better": "lower"
+   },
+   "planread.FIX-PEAK-CUT-UNCONSTRAINED@targetedGrid": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.FIX-RUNWALK-LONG-RUN-BELOW-17@targetedGrid": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.FIX-LONG-RUN-SHORT-NO-RUNWALK@targetedGrid": {
+    "value": 106,
+    "better": "lower"
+   },
+   "planread.RAMP-INJURY-OVER-CAP@targetedGrid": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.RAMP-POST-DELOAD-JUMP@targetedGrid": {
+    "value": 2,
+    "better": "lower"
+   },
+   "planread.RAMP-MASTERS-CADENCE@targetedGrid": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.RAMP-SESSION-OVER-2X-LONGEST@targetedGrid": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.FOUNDATION-CLIFF@targetedGrid": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.FOUNDATION-MORE-RUNS-THAN-W1@targetedGrid": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.FOUNDATION-WEEKDAY-CAP-UNSEEN@targetedGrid": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.corpus.slowGoalGrid.cases": {
+    "value": 960,
+    "better": "stable"
+   },
+   "planread.corpus.slowGoalGrid.race_plans": {
+    "value": 880,
+    "better": "stable"
+   },
+   "planread.corpus.slowGoalGrid.base_build": {
+    "value": 0,
+    "better": "stable"
+   },
+   "planread.corpus.slowGoalGrid.refused": {
+    "value": 80,
+    "better": "stable"
+   },
+   "planread.hard.slowGoalGrid.thrown": {
+    "value": 0,
+    "better": "zero"
+   },
+   "planread.hard.slowGoalGrid.error_violations": {
+    "value": 0,
+    "better": "zero"
+   },
+   "planread.NT-NO-HARD-SESSIONS-FALSE@slowGoalGrid": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.NT-GAINS-FROM-QUALITY-NONE@slowGoalGrid": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.NT-HOLDS-BUT-CUTS@slowGoalGrid": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.NT-AT-CEILING-BUT-CUTS@slowGoalGrid": {
+    "value": 4,
+    "better": "lower"
+   },
+   "planread.NT-SAYS-NOT-BUILD-BUT-BUILDS@slowGoalGrid": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.NT-NOT-CHASE-WITH-GOAL-PACE@slowGoalGrid": {
+    "value": 432,
+    "better": "lower"
+   },
+   "planread.NT-FREQUENCY-UNDERSTATES-W1@slowGoalGrid": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.NT-PACE-NOTES-CONTRADICT@slowGoalGrid": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.NT-BENCHMARK-NOTE-WITHOUT-BENCHMARK@slowGoalGrid": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.NT-FIRST-SESSION-NOTE-AFTER-W1@slowGoalGrid": {
+    "value": 880,
+    "better": "lower"
+   },
+   "planread.NT-WALK-BREAKS-ABOVE-BAR@slowGoalGrid": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.NT-DIFFICULTY-WEEKS-WRONG@slowGoalGrid": {
+    "value": 60,
+    "better": "lower"
+   },
+   "planread.NT-TWO-SHORTFALL-CAUSES@slowGoalGrid": {
+    "value": 120,
+    "better": "lower"
+   },
+   "planread.NT-RETURNING-WRONG-CAUSE@slowGoalGrid": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.NT-TUNE-UP-BESIDE-TT@slowGoalGrid": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.NT-ZONE-LABEL-NO-ZONES@slowGoalGrid": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.NT-TAPER-UNDECLARED@slowGoalGrid": {
+    "value": 35,
+    "better": "lower"
+   },
+   "planread.NT-LOPSIDED-UNDECLARED@slowGoalGrid": {
+    "value": 117,
+    "better": "lower"
+   },
+   "planread.DELOAD-NOT-A-REDUCTION@slowGoalGrid": {
+    "value": 4,
+    "better": "lower"
+   },
+   "planread.DELOAD-SHALLOW@slowGoalGrid": {
+    "value": 516,
+    "better": "lower"
+   },
+   "planread.DELOAD-HARDER-THAN-PRIOR@slowGoalGrid": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.LOADING-WEEK-JUMP-30@slowGoalGrid": {
+    "value": 247,
+    "better": "lower"
+   },
+   "planread.LONG-RUN-STEP-OVER-5KM@slowGoalGrid": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.TAPER-FIRST-WEEK-KM-AT-PEAK@slowGoalGrid": {
+    "value": 23,
+    "better": "lower"
+   },
+   "planread.TAPER-FIRST-WEEK-LR-AT-PEAK@slowGoalGrid": {
+    "value": 96,
+    "better": "lower"
+   },
+   "planread.RACE-WEEK-S39-ON-FINISH-GOAL@slowGoalGrid": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.RACE-WEEK-EASY-LONGER-THAN-TAPER@slowGoalGrid": {
+    "value": 160,
+    "better": "lower"
+   },
+   "planread.EASY-RUN-150-MIN@slowGoalGrid": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.QUALITY-LONGER-THAN-LONG-RUN@slowGoalGrid": {
+    "value": 30,
+    "better": "lower"
+   },
+   "planread.QUALITY-SHARE-35@slowGoalGrid": {
+    "value": 50,
+    "better": "lower"
+   },
+   "planread.RUN-ON-BLOCKED-DAY@slowGoalGrid": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.RUNS-EXCEED-DAYS@slowGoalGrid": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.WEEKDAY-OVERRUN-UNDECLARED@slowGoalGrid": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.TT-BEFORE-QUALITY-INJURED@slowGoalGrid": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.RUN-WALK-ON-QUALITY@slowGoalGrid": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.MAX-LONG-RUN-BELOW-DECLARED@slowGoalGrid": {
+    "value": 24,
+    "better": "lower"
+   },
+   "planread.FIX-PEAK-CUT-UNCONSTRAINED@slowGoalGrid": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.FIX-RUNWALK-LONG-RUN-BELOW-17@slowGoalGrid": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.FIX-LONG-RUN-SHORT-NO-RUNWALK@slowGoalGrid": {
+    "value": 160,
+    "better": "lower"
+   },
+   "planread.RAMP-INJURY-OVER-CAP@slowGoalGrid": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.RAMP-POST-DELOAD-JUMP@slowGoalGrid": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.RAMP-MASTERS-CADENCE@slowGoalGrid": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.RAMP-SESSION-OVER-2X-LONGEST@slowGoalGrid": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.FOUNDATION-CLIFF@slowGoalGrid": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.FOUNDATION-MORE-RUNS-THAN-W1@slowGoalGrid": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.FOUNDATION-WEEKDAY-CAP-UNSEEN@slowGoalGrid": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.corpus.envelope.cases": {
+    "value": 3000,
+    "better": "stable"
+   },
+   "planread.corpus.envelope.race_plans": {
+    "value": 2681,
+    "better": "stable"
+   },
+   "planread.corpus.envelope.base_build": {
+    "value": 319,
+    "better": "stable"
+   },
+   "planread.corpus.envelope.refused": {
+    "value": 0,
+    "better": "stable"
+   },
+   "planread.hard.envelope.thrown": {
+    "value": 0,
+    "better": "zero"
+   },
+   "planread.hard.envelope.error_violations": {
+    "value": 0,
+    "better": "zero"
+   },
+   "planread.NT-NO-HARD-SESSIONS-FALSE@envelope": {
+    "value": 210,
+    "better": "lower"
+   },
+   "planread.NT-GAINS-FROM-QUALITY-NONE@envelope": {
+    "value": 86,
+    "better": "lower"
+   },
+   "planread.NT-HOLDS-BUT-CUTS@envelope": {
+    "value": 14,
+    "better": "lower"
+   },
+   "planread.NT-AT-CEILING-BUT-CUTS@envelope": {
+    "value": 35,
+    "better": "lower"
+   },
+   "planread.NT-SAYS-NOT-BUILD-BUT-BUILDS@envelope": {
+    "value": 104,
+    "better": "lower"
+   },
+   "planread.NT-NOT-CHASE-WITH-GOAL-PACE@envelope": {
+    "value": 438,
+    "better": "lower"
+   },
+   "planread.NT-FREQUENCY-UNDERSTATES-W1@envelope": {
+    "value": 158,
+    "better": "lower"
+   },
+   "planread.NT-PACE-NOTES-CONTRADICT@envelope": {
+    "value": 269,
+    "better": "lower"
+   },
+   "planread.NT-BENCHMARK-NOTE-WITHOUT-BENCHMARK@envelope": {
+    "value": 189,
+    "better": "lower"
+   },
+   "planread.NT-FIRST-SESSION-NOTE-AFTER-W1@envelope": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.NT-WALK-BREAKS-ABOVE-BAR@envelope": {
+    "value": 134,
+    "better": "lower"
+   },
+   "planread.NT-DIFFICULTY-WEEKS-WRONG@envelope": {
+    "value": 300,
+    "better": "lower"
+   },
+   "planread.NT-TWO-SHORTFALL-CAUSES@envelope": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.NT-RETURNING-WRONG-CAUSE@envelope": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.NT-TUNE-UP-BESIDE-TT@envelope": {
+    "value": 200,
+    "better": "lower"
+   },
+   "planread.NT-ZONE-LABEL-NO-ZONES@envelope": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.NT-TAPER-UNDECLARED@envelope": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.NT-LOPSIDED-UNDECLARED@envelope": {
+    "value": 47,
+    "better": "lower"
+   },
+   "planread.DELOAD-NOT-A-REDUCTION@envelope": {
+    "value": 407,
+    "better": "lower"
+   },
+   "planread.DELOAD-SHALLOW@envelope": {
+    "value": 590,
+    "better": "lower"
+   },
+   "planread.DELOAD-HARDER-THAN-PRIOR@envelope": {
+    "value": 251,
+    "better": "lower"
+   },
+   "planread.LOADING-WEEK-JUMP-30@envelope": {
+    "value": 288,
+    "better": "lower"
+   },
+   "planread.LONG-RUN-STEP-OVER-5KM@envelope": {
+    "value": 265,
+    "better": "lower"
+   },
+   "planread.TAPER-FIRST-WEEK-KM-AT-PEAK@envelope": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.TAPER-FIRST-WEEK-LR-AT-PEAK@envelope": {
+    "value": 314,
+    "better": "lower"
+   },
+   "planread.RACE-WEEK-S39-ON-FINISH-GOAL@envelope": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.RACE-WEEK-EASY-LONGER-THAN-TAPER@envelope": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.EASY-RUN-150-MIN@envelope": {
+    "value": 442,
+    "better": "lower"
+   },
+   "planread.QUALITY-LONGER-THAN-LONG-RUN@envelope": {
+    "value": 269,
+    "better": "lower"
+   },
+   "planread.QUALITY-SHARE-35@envelope": {
+    "value": 310,
+    "better": "lower"
+   },
+   "planread.RUN-ON-BLOCKED-DAY@envelope": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.RUNS-EXCEED-DAYS@envelope": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.WEEKDAY-OVERRUN-UNDECLARED@envelope": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.TT-BEFORE-QUALITY-INJURED@envelope": {
+    "value": 1068,
+    "better": "lower"
+   },
+   "planread.RUN-WALK-ON-QUALITY@envelope": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.MAX-LONG-RUN-BELOW-DECLARED@envelope": {
+    "value": 93,
+    "better": "lower"
+   },
+   "planread.FIX-PEAK-CUT-UNCONSTRAINED@envelope": {
+    "value": 20,
+    "better": "lower"
+   },
+   "planread.FIX-RUNWALK-LONG-RUN-BELOW-17@envelope": {
+    "value": 14,
+    "better": "lower"
+   },
+   "planread.FIX-LONG-RUN-SHORT-NO-RUNWALK@envelope": {
+    "value": 82,
+    "better": "lower"
+   },
+   "planread.RAMP-INJURY-OVER-CAP@envelope": {
+    "value": 53,
+    "better": "lower"
+   },
+   "planread.RAMP-POST-DELOAD-JUMP@envelope": {
+    "value": 75,
+    "better": "lower"
+   },
+   "planread.RAMP-MASTERS-CADENCE@envelope": {
+    "value": 99,
+    "better": "lower"
+   },
+   "planread.RAMP-SESSION-OVER-2X-LONGEST@envelope": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.FOUNDATION-CLIFF@envelope": {
+    "value": 127,
+    "better": "lower"
+   },
+   "planread.FOUNDATION-MORE-RUNS-THAN-W1@envelope": {
+    "value": 58,
+    "better": "lower"
+   },
+   "planread.FOUNDATION-WEEKDAY-CAP-UNSEEN@envelope": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.corpus.beginnerMarathon.cases": {
+    "value": 6480,
+    "better": "stable"
+   },
+   "planread.corpus.beginnerMarathon.race_plans": {
+    "value": 3035,
+    "better": "stable"
+   },
+   "planread.corpus.beginnerMarathon.base_build": {
+    "value": 2365,
+    "better": "stable"
+   },
+   "planread.corpus.beginnerMarathon.refused": {
+    "value": 1080,
+    "better": "stable"
+   },
+   "planread.hard.beginnerMarathon.thrown": {
+    "value": 0,
+    "better": "zero"
+   },
+   "planread.hard.beginnerMarathon.error_violations": {
+    "value": 0,
+    "better": "zero"
+   },
+   "planread.NT-NO-HARD-SESSIONS-FALSE@beginnerMarathon": {
+    "value": 250,
+    "better": "lower"
+   },
+   "planread.NT-GAINS-FROM-QUALITY-NONE@beginnerMarathon": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.NT-HOLDS-BUT-CUTS@beginnerMarathon": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.NT-AT-CEILING-BUT-CUTS@beginnerMarathon": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.NT-SAYS-NOT-BUILD-BUT-BUILDS@beginnerMarathon": {
+    "value": 1179,
+    "better": "lower"
+   },
+   "planread.NT-NOT-CHASE-WITH-GOAL-PACE@beginnerMarathon": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.NT-FREQUENCY-UNDERSTATES-W1@beginnerMarathon": {
+    "value": 781,
+    "better": "lower"
+   },
+   "planread.NT-PACE-NOTES-CONTRADICT@beginnerMarathon": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.NT-BENCHMARK-NOTE-WITHOUT-BENCHMARK@beginnerMarathon": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.NT-FIRST-SESSION-NOTE-AFTER-W1@beginnerMarathon": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.NT-WALK-BREAKS-ABOVE-BAR@beginnerMarathon": {
+    "value": 202,
+    "better": "lower"
+   },
+   "planread.NT-DIFFICULTY-WEEKS-WRONG@beginnerMarathon": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.NT-TWO-SHORTFALL-CAUSES@beginnerMarathon": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.NT-RETURNING-WRONG-CAUSE@beginnerMarathon": {
+    "value": 324,
+    "better": "lower"
+   },
+   "planread.NT-TUNE-UP-BESIDE-TT@beginnerMarathon": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.NT-ZONE-LABEL-NO-ZONES@beginnerMarathon": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.NT-TAPER-UNDECLARED@beginnerMarathon": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.NT-LOPSIDED-UNDECLARED@beginnerMarathon": {
+    "value": 1908,
+    "better": "lower"
+   },
+   "planread.DELOAD-NOT-A-REDUCTION@beginnerMarathon": {
+    "value": 2192,
+    "better": "lower"
+   },
+   "planread.DELOAD-SHALLOW@beginnerMarathon": {
+    "value": 1815,
+    "better": "lower"
+   },
+   "planread.DELOAD-HARDER-THAN-PRIOR@beginnerMarathon": {
+    "value": 914,
+    "better": "lower"
+   },
+   "planread.LOADING-WEEK-JUMP-30@beginnerMarathon": {
+    "value": 937,
+    "better": "lower"
+   },
+   "planread.LONG-RUN-STEP-OVER-5KM@beginnerMarathon": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.TAPER-FIRST-WEEK-KM-AT-PEAK@beginnerMarathon": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.TAPER-FIRST-WEEK-LR-AT-PEAK@beginnerMarathon": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.RACE-WEEK-S39-ON-FINISH-GOAL@beginnerMarathon": {
+    "value": 2351,
+    "better": "lower"
+   },
+   "planread.RACE-WEEK-EASY-LONGER-THAN-TAPER@beginnerMarathon": {
+    "value": 2351,
+    "better": "lower"
+   },
+   "planread.EASY-RUN-150-MIN@beginnerMarathon": {
+    "value": 46,
+    "better": "lower"
+   },
+   "planread.QUALITY-LONGER-THAN-LONG-RUN@beginnerMarathon": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.QUALITY-SHARE-35@beginnerMarathon": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.RUN-ON-BLOCKED-DAY@beginnerMarathon": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.RUNS-EXCEED-DAYS@beginnerMarathon": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.WEEKDAY-OVERRUN-UNDECLARED@beginnerMarathon": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.TT-BEFORE-QUALITY-INJURED@beginnerMarathon": {
+    "value": 199,
+    "better": "lower"
+   },
+   "planread.RUN-WALK-ON-QUALITY@beginnerMarathon": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.MAX-LONG-RUN-BELOW-DECLARED@beginnerMarathon": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.FIX-PEAK-CUT-UNCONSTRAINED@beginnerMarathon": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.FIX-RUNWALK-LONG-RUN-BELOW-17@beginnerMarathon": {
+    "value": 448,
+    "better": "lower"
+   },
+   "planread.FIX-LONG-RUN-SHORT-NO-RUNWALK@beginnerMarathon": {
+    "value": 351,
+    "better": "lower"
+   },
+   "planread.RAMP-INJURY-OVER-CAP@beginnerMarathon": {
+    "value": 794,
+    "better": "lower"
+   },
+   "planread.RAMP-POST-DELOAD-JUMP@beginnerMarathon": {
+    "value": 1389,
+    "better": "lower"
+   },
+   "planread.RAMP-MASTERS-CADENCE@beginnerMarathon": {
+    "value": 559,
+    "better": "lower"
+   },
+   "planread.RAMP-SESSION-OVER-2X-LONGEST@beginnerMarathon": {
+    "value": 211,
+    "better": "lower"
+   },
+   "planread.FOUNDATION-CLIFF@beginnerMarathon": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.FOUNDATION-MORE-RUNS-THAN-W1@beginnerMarathon": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.FOUNDATION-WEEKDAY-CAP-UNSEEN@beginnerMarathon": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.corpus.personas.cases": {
+    "value": 21,
+    "better": "stable"
+   },
+   "planread.corpus.personas.race_plans": {
+    "value": 20,
+    "better": "stable"
+   },
+   "planread.corpus.personas.base_build": {
+    "value": 1,
+    "better": "stable"
+   },
+   "planread.corpus.personas.refused": {
+    "value": 0,
+    "better": "stable"
+   },
+   "planread.hard.personas.thrown": {
+    "value": 0,
+    "better": "zero"
+   },
+   "planread.hard.personas.error_violations": {
+    "value": 0,
+    "better": "zero"
+   },
+   "planread.NT-NO-HARD-SESSIONS-FALSE@personas": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.NT-GAINS-FROM-QUALITY-NONE@personas": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.NT-HOLDS-BUT-CUTS@personas": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.NT-AT-CEILING-BUT-CUTS@personas": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.NT-SAYS-NOT-BUILD-BUT-BUILDS@personas": {
+    "value": 3,
+    "better": "lower"
+   },
+   "planread.NT-NOT-CHASE-WITH-GOAL-PACE@personas": {
+    "value": 2,
+    "better": "lower"
+   },
+   "planread.NT-FREQUENCY-UNDERSTATES-W1@personas": {
+    "value": 2,
+    "better": "lower"
+   },
+   "planread.NT-PACE-NOTES-CONTRADICT@personas": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.NT-BENCHMARK-NOTE-WITHOUT-BENCHMARK@personas": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.NT-FIRST-SESSION-NOTE-AFTER-W1@personas": {
+    "value": 20,
+    "better": "lower"
+   },
+   "planread.NT-WALK-BREAKS-ABOVE-BAR@personas": {
+    "value": 1,
+    "better": "lower"
+   },
+   "planread.NT-DIFFICULTY-WEEKS-WRONG@personas": {
+    "value": 4,
+    "better": "lower"
+   },
+   "planread.NT-TWO-SHORTFALL-CAUSES@personas": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.NT-RETURNING-WRONG-CAUSE@personas": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.NT-TUNE-UP-BESIDE-TT@personas": {
+    "value": 1,
+    "better": "lower"
+   },
+   "planread.NT-ZONE-LABEL-NO-ZONES@personas": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.NT-TAPER-UNDECLARED@personas": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.NT-LOPSIDED-UNDECLARED@personas": {
+    "value": 4,
+    "better": "lower"
+   },
+   "planread.DELOAD-NOT-A-REDUCTION@personas": {
+    "value": 1,
+    "better": "lower"
+   },
+   "planread.DELOAD-SHALLOW@personas": {
+    "value": 7,
+    "better": "lower"
+   },
+   "planread.DELOAD-HARDER-THAN-PRIOR@personas": {
+    "value": 3,
+    "better": "lower"
+   },
+   "planread.LOADING-WEEK-JUMP-30@personas": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.LONG-RUN-STEP-OVER-5KM@personas": {
+    "value": 1,
+    "better": "lower"
+   },
+   "planread.TAPER-FIRST-WEEK-KM-AT-PEAK@personas": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.TAPER-FIRST-WEEK-LR-AT-PEAK@personas": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.RACE-WEEK-S39-ON-FINISH-GOAL@personas": {
+    "value": 7,
+    "better": "lower"
+   },
+   "planread.RACE-WEEK-EASY-LONGER-THAN-TAPER@personas": {
+    "value": 9,
+    "better": "lower"
+   },
+   "planread.EASY-RUN-150-MIN@personas": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.QUALITY-LONGER-THAN-LONG-RUN@personas": {
+    "value": 2,
+    "better": "lower"
+   },
+   "planread.QUALITY-SHARE-35@personas": {
+    "value": 2,
+    "better": "lower"
+   },
+   "planread.RUN-ON-BLOCKED-DAY@personas": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.RUNS-EXCEED-DAYS@personas": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.WEEKDAY-OVERRUN-UNDECLARED@personas": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.TT-BEFORE-QUALITY-INJURED@personas": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.RUN-WALK-ON-QUALITY@personas": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.MAX-LONG-RUN-BELOW-DECLARED@personas": {
+    "value": 1,
+    "better": "lower"
+   },
+   "planread.FIX-PEAK-CUT-UNCONSTRAINED@personas": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.FIX-RUNWALK-LONG-RUN-BELOW-17@personas": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.FIX-LONG-RUN-SHORT-NO-RUNWALK@personas": {
+    "value": 1,
+    "better": "lower"
+   },
+   "planread.RAMP-INJURY-OVER-CAP@personas": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.RAMP-POST-DELOAD-JUMP@personas": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.RAMP-MASTERS-CADENCE@personas": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.RAMP-SESSION-OVER-2X-LONGEST@personas": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.FOUNDATION-CLIFF@personas": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.FOUNDATION-MORE-RUNS-THAN-W1@personas": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.FOUNDATION-WEEKDAY-CAP-UNSEEN@personas": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.NT-NO-HARD-SESSIONS-FALSE": {
+    "value": 711,
+    "better": "lower"
+   },
+   "planread.NT-GAINS-FROM-QUALITY-NONE": {
+    "value": 385,
+    "better": "lower"
+   },
+   "planread.NT-HOLDS-BUT-CUTS": {
+    "value": 70,
+    "better": "lower"
+   },
+   "planread.NT-AT-CEILING-BUT-CUTS": {
+    "value": 844,
+    "better": "lower"
+   },
+   "planread.NT-SAYS-NOT-BUILD-BUT-BUILDS": {
+    "value": 1619,
+    "better": "lower"
+   },
+   "planread.NT-NOT-CHASE-WITH-GOAL-PACE": {
+    "value": 1217,
+    "better": "lower"
+   },
+   "planread.NT-FREQUENCY-UNDERSTATES-W1": {
+    "value": 1121,
+    "better": "lower"
+   },
+   "planread.NT-PACE-NOTES-CONTRADICT": {
+    "value": 270,
+    "better": "lower"
+   },
+   "planread.NT-BENCHMARK-NOTE-WITHOUT-BENCHMARK": {
+    "value": 348,
+    "better": "lower"
+   },
+   "planread.NT-FIRST-SESSION-NOTE-AFTER-W1": {
+    "value": 900,
+    "better": "lower"
+   },
+   "planread.NT-WALK-BREAKS-ABOVE-BAR": {
+    "value": 810,
+    "better": "lower"
+   },
+   "planread.NT-DIFFICULTY-WEEKS-WRONG": {
+    "value": 545,
+    "better": "lower"
+   },
+   "planread.NT-TWO-SHORTFALL-CAUSES": {
+    "value": 333,
+    "better": "lower"
+   },
+   "planread.NT-RETURNING-WRONG-CAUSE": {
+    "value": 702,
+    "better": "lower"
+   },
+   "planread.NT-TUNE-UP-BESIDE-TT": {
+    "value": 747,
+    "better": "lower"
+   },
+   "planread.NT-ZONE-LABEL-NO-ZONES": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.NT-TAPER-UNDECLARED": {
+    "value": 217,
+    "better": "lower"
+   },
+   "planread.NT-LOPSIDED-UNDECLARED": {
+    "value": 2401,
+    "better": "lower"
+   },
+   "planread.DELOAD-NOT-A-REDUCTION": {
+    "value": 2864,
+    "better": "lower"
+   },
+   "planread.DELOAD-SHALLOW": {
+    "value": 4921,
+    "better": "lower"
+   },
+   "planread.DELOAD-HARDER-THAN-PRIOR": {
+    "value": 1554,
+    "better": "lower"
+   },
+   "planread.LOADING-WEEK-JUMP-30": {
+    "value": 1657,
+    "better": "lower"
+   },
+   "planread.LONG-RUN-STEP-OVER-5KM": {
+    "value": 329,
+    "better": "lower"
+   },
+   "planread.TAPER-FIRST-WEEK-KM-AT-PEAK": {
+    "value": 152,
+    "better": "lower"
+   },
+   "planread.TAPER-FIRST-WEEK-LR-AT-PEAK": {
+    "value": 537,
+    "better": "lower"
+   },
+   "planread.RACE-WEEK-S39-ON-FINISH-GOAL": {
+    "value": 3880,
+    "better": "lower"
+   },
+   "planread.RACE-WEEK-EASY-LONGER-THAN-TAPER": {
+    "value": 3687,
+    "better": "lower"
+   },
+   "planread.EASY-RUN-150-MIN": {
+    "value": 500,
+    "better": "lower"
+   },
+   "planread.QUALITY-LONGER-THAN-LONG-RUN": {
+    "value": 525,
+    "better": "lower"
+   },
+   "planread.QUALITY-SHARE-35": {
+    "value": 604,
+    "better": "lower"
+   },
+   "planread.RUN-ON-BLOCKED-DAY": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.RUNS-EXCEED-DAYS": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.WEEKDAY-OVERRUN-UNDECLARED": {
+    "value": 563,
+    "better": "lower"
+   },
+   "planread.TT-BEFORE-QUALITY-INJURED": {
+    "value": 1473,
+    "better": "lower"
+   },
+   "planread.RUN-WALK-ON-QUALITY": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.MAX-LONG-RUN-BELOW-DECLARED": {
+    "value": 1674,
+    "better": "lower"
+   },
+   "planread.FIX-PEAK-CUT-UNCONSTRAINED": {
+    "value": 121,
+    "better": "lower"
+   },
+   "planread.FIX-RUNWALK-LONG-RUN-BELOW-17": {
+    "value": 462,
+    "better": "lower"
+   },
+   "planread.FIX-LONG-RUN-SHORT-NO-RUNWALK": {
+    "value": 735,
+    "better": "lower"
+   },
+   "planread.RAMP-INJURY-OVER-CAP": {
+    "value": 847,
+    "better": "lower"
+   },
+   "planread.RAMP-POST-DELOAD-JUMP": {
+    "value": 1466,
+    "better": "lower"
+   },
+   "planread.RAMP-MASTERS-CADENCE": {
+    "value": 658,
+    "better": "lower"
+   },
+   "planread.RAMP-SESSION-OVER-2X-LONGEST": {
+    "value": 211,
+    "better": "lower"
+   },
+   "planread.FOUNDATION-CLIFF": {
+    "value": 127,
+    "better": "lower"
+   },
+   "planread.FOUNDATION-MORE-RUNS-THAN-W1": {
+    "value": 58,
+    "better": "lower"
+   },
+   "planread.FOUNDATION-WEEKDAY-CAP-UNSEEN": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.corpus.strength.plans": {
+    "value": 17280,
+    "better": "stable"
+   },
+   "planread.ST-ON-BLOCKED-RUN-DAY": {
+    "value": 198,
+    "better": "lower"
+   },
+   "planread.ST-PLYO-PER-SIDE-OVER-CAP": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.ST-DELOAD-TAPER-BUSIER": {
+    "value": 2459,
+    "better": "lower"
+   },
+   "planread.ST-NO-CALF-WEEK": {
+    "value": 3654,
+    "better": "lower"
+   },
+   "planread.ST-NO-FREE-DAY": {
+    "value": 5322,
+    "better": "lower"
+   },
+   "planread.ST-BODYWEIGHT-HEAVY-5": {
+    "value": 4020,
+    "better": "lower"
+   },
+   "planread.corpus.maintenance.blocks": {
+    "value": 4320,
+    "better": "stable"
+   },
+   "planread.hard.maintenance.thrown": {
+    "value": 0,
+    "better": "zero"
+   },
+   "planread.MB-NO-PACE-NO-HR": {
+    "value": 4320,
+    "better": "lower"
+   },
+   "planread.MB-RUN-UNDER-2KM": {
+    "value": 2022,
+    "better": "lower"
+   },
+   "planread.MB-OFF-CHOSEN-DAYS": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.MB-LONG-ON-WEEKDAY": {
+    "value": 864,
+    "better": "lower"
+   }
+  },
+  "fast": {
+   "planread.corpus.cohortGrid.cases": {
+    "value": 90,
+    "better": "stable"
+   },
+   "planread.corpus.cohortGrid.race_plans": {
+    "value": 86,
+    "better": "stable"
+   },
+   "planread.corpus.cohortGrid.base_build": {
+    "value": 0,
+    "better": "stable"
+   },
+   "planread.corpus.cohortGrid.refused": {
+    "value": 4,
+    "better": "stable"
+   },
+   "planread.hard.cohortGrid.thrown": {
+    "value": 0,
+    "better": "zero"
+   },
+   "planread.hard.cohortGrid.error_violations": {
+    "value": 0,
+    "better": "zero"
+   },
+   "planread.NT-NO-HARD-SESSIONS-FALSE@cohortGrid": {
+    "value": 7,
+    "better": "lower"
+   },
+   "planread.NT-GAINS-FROM-QUALITY-NONE@cohortGrid": {
+    "value": 11,
+    "better": "lower"
+   },
+   "planread.NT-HOLDS-BUT-CUTS@cohortGrid": {
+    "value": 1,
+    "better": "lower"
+   },
+   "planread.NT-AT-CEILING-BUT-CUTS@cohortGrid": {
+    "value": 26,
+    "better": "lower"
+   },
+   "planread.NT-SAYS-NOT-BUILD-BUT-BUILDS@cohortGrid": {
+    "value": 2,
+    "better": "lower"
+   },
+   "planread.NT-NOT-CHASE-WITH-GOAL-PACE@cohortGrid": {
+    "value": 11,
+    "better": "lower"
+   },
+   "planread.NT-FREQUENCY-UNDERSTATES-W1@cohortGrid": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.NT-PACE-NOTES-CONTRADICT@cohortGrid": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.NT-BENCHMARK-NOTE-WITHOUT-BENCHMARK@cohortGrid": {
+    "value": 3,
+    "better": "lower"
+   },
+   "planread.NT-FIRST-SESSION-NOTE-AFTER-W1@cohortGrid": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.NT-WALK-BREAKS-ABOVE-BAR@cohortGrid": {
+    "value": 6,
+    "better": "lower"
+   },
+   "planread.NT-DIFFICULTY-WEEKS-WRONG@cohortGrid": {
+    "value": 5,
+    "better": "lower"
+   },
+   "planread.NT-TWO-SHORTFALL-CAUSES@cohortGrid": {
+    "value": 4,
+    "better": "lower"
+   },
+   "planread.NT-RETURNING-WRONG-CAUSE@cohortGrid": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.NT-TUNE-UP-BESIDE-TT@cohortGrid": {
+    "value": 13,
+    "better": "lower"
+   },
+   "planread.NT-ZONE-LABEL-NO-ZONES@cohortGrid": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.NT-TAPER-UNDECLARED@cohortGrid": {
+    "value": 1,
+    "better": "lower"
+   },
+   "planread.NT-LOPSIDED-UNDECLARED@cohortGrid": {
+    "value": 4,
+    "better": "lower"
+   },
+   "planread.DELOAD-NOT-A-REDUCTION@cohortGrid": {
+    "value": 1,
+    "better": "lower"
+   },
+   "planread.DELOAD-SHALLOW@cohortGrid": {
+    "value": 35,
+    "better": "lower"
+   },
+   "planread.DELOAD-HARDER-THAN-PRIOR@cohortGrid": {
+    "value": 10,
+    "better": "lower"
+   },
+   "planread.LOADING-WEEK-JUMP-30@cohortGrid": {
+    "value": 4,
+    "better": "lower"
+   },
+   "planread.LONG-RUN-STEP-OVER-5KM@cohortGrid": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.TAPER-FIRST-WEEK-KM-AT-PEAK@cohortGrid": {
+    "value": 1,
+    "better": "lower"
+   },
+   "planread.TAPER-FIRST-WEEK-LR-AT-PEAK@cohortGrid": {
+    "value": 4,
+    "better": "lower"
+   },
+   "planread.RACE-WEEK-S39-ON-FINISH-GOAL@cohortGrid": {
+    "value": 16,
+    "better": "lower"
+   },
+   "planread.RACE-WEEK-EASY-LONGER-THAN-TAPER@cohortGrid": {
+    "value": 23,
+    "better": "lower"
+   },
+   "planread.EASY-RUN-150-MIN@cohortGrid": {
+    "value": 1,
+    "better": "lower"
+   },
+   "planread.QUALITY-LONGER-THAN-LONG-RUN@cohortGrid": {
+    "value": 5,
+    "better": "lower"
+   },
+   "planread.QUALITY-SHARE-35@cohortGrid": {
+    "value": 7,
+    "better": "lower"
+   },
+   "planread.RUN-ON-BLOCKED-DAY@cohortGrid": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.RUNS-EXCEED-DAYS@cohortGrid": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.WEEKDAY-OVERRUN-UNDECLARED@cohortGrid": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.TT-BEFORE-QUALITY-INJURED@cohortGrid": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.RUN-WALK-ON-QUALITY@cohortGrid": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.MAX-LONG-RUN-BELOW-DECLARED@cohortGrid": {
+    "value": 44,
+    "better": "lower"
+   },
+   "planread.FIX-PEAK-CUT-UNCONSTRAINED@cohortGrid": {
+    "value": 4,
+    "better": "lower"
+   },
+   "planread.FIX-RUNWALK-LONG-RUN-BELOW-17@cohortGrid": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.FIX-LONG-RUN-SHORT-NO-RUNWALK@cohortGrid": {
+    "value": 1,
+    "better": "lower"
+   },
+   "planread.RAMP-INJURY-OVER-CAP@cohortGrid": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.RAMP-POST-DELOAD-JUMP@cohortGrid": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.RAMP-MASTERS-CADENCE@cohortGrid": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.RAMP-SESSION-OVER-2X-LONGEST@cohortGrid": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.FOUNDATION-CLIFF@cohortGrid": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.FOUNDATION-MORE-RUNS-THAN-W1@cohortGrid": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.FOUNDATION-WEEKDAY-CAP-UNSEEN@cohortGrid": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.corpus.targetedGrid.cases": {
+    "value": 66,
+    "better": "stable"
+   },
+   "planread.corpus.targetedGrid.race_plans": {
+    "value": 60,
+    "better": "stable"
+   },
+   "planread.corpus.targetedGrid.base_build": {
+    "value": 6,
+    "better": "stable"
+   },
+   "planread.corpus.targetedGrid.refused": {
+    "value": 0,
+    "better": "stable"
+   },
+   "planread.hard.targetedGrid.thrown": {
+    "value": 0,
+    "better": "zero"
+   },
+   "planread.hard.targetedGrid.error_violations": {
+    "value": 0,
+    "better": "zero"
+   },
+   "planread.NT-NO-HARD-SESSIONS-FALSE@targetedGrid": {
+    "value": 2,
+    "better": "lower"
+   },
+   "planread.NT-GAINS-FROM-QUALITY-NONE@targetedGrid": {
+    "value": 1,
+    "better": "lower"
+   },
+   "planread.NT-HOLDS-BUT-CUTS@targetedGrid": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.NT-AT-CEILING-BUT-CUTS@targetedGrid": {
+    "value": 1,
+    "better": "lower"
+   },
+   "planread.NT-SAYS-NOT-BUILD-BUT-BUILDS@targetedGrid": {
+    "value": 7,
+    "better": "lower"
+   },
+   "planread.NT-NOT-CHASE-WITH-GOAL-PACE@targetedGrid": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.NT-FREQUENCY-UNDERSTATES-W1@targetedGrid": {
+    "value": 11,
+    "better": "lower"
+   },
+   "planread.NT-PACE-NOTES-CONTRADICT@targetedGrid": {
+    "value": 1,
+    "better": "lower"
+   },
+   "planread.NT-BENCHMARK-NOTE-WITHOUT-BENCHMARK@targetedGrid": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.NT-FIRST-SESSION-NOTE-AFTER-W1@targetedGrid": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.NT-WALK-BREAKS-ABOVE-BAR@targetedGrid": {
+    "value": 3,
+    "better": "lower"
+   },
+   "planread.NT-DIFFICULTY-WEEKS-WRONG@targetedGrid": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.NT-TWO-SHORTFALL-CAUSES@targetedGrid": {
+    "value": 3,
+    "better": "lower"
+   },
+   "planread.NT-RETURNING-WRONG-CAUSE@targetedGrid": {
+    "value": 17,
+    "better": "lower"
+   },
+   "planread.NT-TUNE-UP-BESIDE-TT@targetedGrid": {
+    "value": 8,
+    "better": "lower"
+   },
+   "planread.NT-ZONE-LABEL-NO-ZONES@targetedGrid": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.NT-TAPER-UNDECLARED@targetedGrid": {
+    "value": 3,
+    "better": "lower"
+   },
+   "planread.NT-LOPSIDED-UNDECLARED@targetedGrid": {
+    "value": 5,
+    "better": "lower"
+   },
+   "planread.DELOAD-NOT-A-REDUCTION@targetedGrid": {
+    "value": 7,
+    "better": "lower"
+   },
+   "planread.DELOAD-SHALLOW@targetedGrid": {
+    "value": 21,
+    "better": "lower"
+   },
+   "planread.DELOAD-HARDER-THAN-PRIOR@targetedGrid": {
+    "value": 7,
+    "better": "lower"
+   },
+   "planread.LOADING-WEEK-JUMP-30@targetedGrid": {
+    "value": 8,
+    "better": "lower"
+   },
+   "planread.LONG-RUN-STEP-OVER-5KM@targetedGrid": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.TAPER-FIRST-WEEK-KM-AT-PEAK@targetedGrid": {
+    "value": 1,
+    "better": "lower"
+   },
+   "planread.TAPER-FIRST-WEEK-LR-AT-PEAK@targetedGrid": {
+    "value": 1,
+    "better": "lower"
+   },
+   "planread.RACE-WEEK-S39-ON-FINISH-GOAL@targetedGrid": {
+    "value": 32,
+    "better": "lower"
+   },
+   "planread.RACE-WEEK-EASY-LONGER-THAN-TAPER@targetedGrid": {
+    "value": 19,
+    "better": "lower"
+   },
+   "planread.EASY-RUN-150-MIN@targetedGrid": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.QUALITY-LONGER-THAN-LONG-RUN@targetedGrid": {
+    "value": 1,
+    "better": "lower"
+   },
+   "planread.QUALITY-SHARE-35@targetedGrid": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.RUN-ON-BLOCKED-DAY@targetedGrid": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.RUNS-EXCEED-DAYS@targetedGrid": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.WEEKDAY-OVERRUN-UNDECLARED@targetedGrid": {
+    "value": 14,
+    "better": "lower"
+   },
+   "planread.TT-BEFORE-QUALITY-INJURED@targetedGrid": {
+    "value": 2,
+    "better": "lower"
+   },
+   "planread.RUN-WALK-ON-QUALITY@targetedGrid": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.MAX-LONG-RUN-BELOW-DECLARED@targetedGrid": {
+    "value": 7,
+    "better": "lower"
+   },
+   "planread.FIX-PEAK-CUT-UNCONSTRAINED@targetedGrid": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.FIX-RUNWALK-LONG-RUN-BELOW-17@targetedGrid": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.FIX-LONG-RUN-SHORT-NO-RUNWALK@targetedGrid": {
+    "value": 8,
+    "better": "lower"
+   },
+   "planread.RAMP-INJURY-OVER-CAP@targetedGrid": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.RAMP-POST-DELOAD-JUMP@targetedGrid": {
+    "value": 2,
+    "better": "lower"
+   },
+   "planread.RAMP-MASTERS-CADENCE@targetedGrid": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.RAMP-SESSION-OVER-2X-LONGEST@targetedGrid": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.FOUNDATION-CLIFF@targetedGrid": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.FOUNDATION-MORE-RUNS-THAN-W1@targetedGrid": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.FOUNDATION-WEEKDAY-CAP-UNSEEN@targetedGrid": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.corpus.slowGoalGrid.cases": {
+    "value": 40,
+    "better": "stable"
+   },
+   "planread.corpus.slowGoalGrid.race_plans": {
+    "value": 37,
+    "better": "stable"
+   },
+   "planread.corpus.slowGoalGrid.base_build": {
+    "value": 0,
+    "better": "stable"
+   },
+   "planread.corpus.slowGoalGrid.refused": {
+    "value": 3,
+    "better": "stable"
+   },
+   "planread.hard.slowGoalGrid.thrown": {
+    "value": 0,
+    "better": "zero"
+   },
+   "planread.hard.slowGoalGrid.error_violations": {
+    "value": 0,
+    "better": "zero"
+   },
+   "planread.NT-NO-HARD-SESSIONS-FALSE@slowGoalGrid": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.NT-GAINS-FROM-QUALITY-NONE@slowGoalGrid": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.NT-HOLDS-BUT-CUTS@slowGoalGrid": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.NT-AT-CEILING-BUT-CUTS@slowGoalGrid": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.NT-SAYS-NOT-BUILD-BUT-BUILDS@slowGoalGrid": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.NT-NOT-CHASE-WITH-GOAL-PACE@slowGoalGrid": {
+    "value": 19,
+    "better": "lower"
+   },
+   "planread.NT-FREQUENCY-UNDERSTATES-W1@slowGoalGrid": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.NT-PACE-NOTES-CONTRADICT@slowGoalGrid": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.NT-BENCHMARK-NOTE-WITHOUT-BENCHMARK@slowGoalGrid": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.NT-FIRST-SESSION-NOTE-AFTER-W1@slowGoalGrid": {
+    "value": 37,
+    "better": "lower"
+   },
+   "planread.NT-WALK-BREAKS-ABOVE-BAR@slowGoalGrid": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.NT-DIFFICULTY-WEEKS-WRONG@slowGoalGrid": {
+    "value": 2,
+    "better": "lower"
+   },
+   "planread.NT-TWO-SHORTFALL-CAUSES@slowGoalGrid": {
+    "value": 3,
+    "better": "lower"
+   },
+   "planread.NT-RETURNING-WRONG-CAUSE@slowGoalGrid": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.NT-TUNE-UP-BESIDE-TT@slowGoalGrid": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.NT-ZONE-LABEL-NO-ZONES@slowGoalGrid": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.NT-TAPER-UNDECLARED@slowGoalGrid": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.NT-LOPSIDED-UNDECLARED@slowGoalGrid": {
+    "value": 3,
+    "better": "lower"
+   },
+   "planread.DELOAD-NOT-A-REDUCTION@slowGoalGrid": {
+    "value": 3,
+    "better": "lower"
+   },
+   "planread.DELOAD-SHALLOW@slowGoalGrid": {
+    "value": 24,
+    "better": "lower"
+   },
+   "planread.DELOAD-HARDER-THAN-PRIOR@slowGoalGrid": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.LOADING-WEEK-JUMP-30@slowGoalGrid": {
+    "value": 19,
+    "better": "lower"
+   },
+   "planread.LONG-RUN-STEP-OVER-5KM@slowGoalGrid": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.TAPER-FIRST-WEEK-KM-AT-PEAK@slowGoalGrid": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.TAPER-FIRST-WEEK-LR-AT-PEAK@slowGoalGrid": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.RACE-WEEK-S39-ON-FINISH-GOAL@slowGoalGrid": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.RACE-WEEK-EASY-LONGER-THAN-TAPER@slowGoalGrid": {
+    "value": 6,
+    "better": "lower"
+   },
+   "planread.EASY-RUN-150-MIN@slowGoalGrid": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.QUALITY-LONGER-THAN-LONG-RUN@slowGoalGrid": {
+    "value": 1,
+    "better": "lower"
+   },
+   "planread.QUALITY-SHARE-35@slowGoalGrid": {
+    "value": 4,
+    "better": "lower"
+   },
+   "planread.RUN-ON-BLOCKED-DAY@slowGoalGrid": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.RUNS-EXCEED-DAYS@slowGoalGrid": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.WEEKDAY-OVERRUN-UNDECLARED@slowGoalGrid": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.TT-BEFORE-QUALITY-INJURED@slowGoalGrid": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.RUN-WALK-ON-QUALITY@slowGoalGrid": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.MAX-LONG-RUN-BELOW-DECLARED@slowGoalGrid": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.FIX-PEAK-CUT-UNCONSTRAINED@slowGoalGrid": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.FIX-RUNWALK-LONG-RUN-BELOW-17@slowGoalGrid": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.FIX-LONG-RUN-SHORT-NO-RUNWALK@slowGoalGrid": {
+    "value": 6,
+    "better": "lower"
+   },
+   "planread.RAMP-INJURY-OVER-CAP@slowGoalGrid": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.RAMP-POST-DELOAD-JUMP@slowGoalGrid": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.RAMP-MASTERS-CADENCE@slowGoalGrid": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.RAMP-SESSION-OVER-2X-LONGEST@slowGoalGrid": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.FOUNDATION-CLIFF@slowGoalGrid": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.FOUNDATION-MORE-RUNS-THAN-W1@slowGoalGrid": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.FOUNDATION-WEEKDAY-CAP-UNSEEN@slowGoalGrid": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.corpus.envelope.cases": {
+    "value": 90,
+    "better": "stable"
+   },
+   "planread.corpus.envelope.race_plans": {
+    "value": 79,
+    "better": "stable"
+   },
+   "planread.corpus.envelope.base_build": {
+    "value": 11,
+    "better": "stable"
+   },
+   "planread.corpus.envelope.refused": {
+    "value": 0,
+    "better": "stable"
+   },
+   "planread.hard.envelope.thrown": {
+    "value": 0,
+    "better": "zero"
+   },
+   "planread.hard.envelope.error_violations": {
+    "value": 0,
+    "better": "zero"
+   },
+   "planread.NT-NO-HARD-SESSIONS-FALSE@envelope": {
+    "value": 10,
+    "better": "lower"
+   },
+   "planread.NT-GAINS-FROM-QUALITY-NONE@envelope": {
+    "value": 4,
+    "better": "lower"
+   },
+   "planread.NT-HOLDS-BUT-CUTS@envelope": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.NT-AT-CEILING-BUT-CUTS@envelope": {
+    "value": 1,
+    "better": "lower"
+   },
+   "planread.NT-SAYS-NOT-BUILD-BUT-BUILDS@envelope": {
+    "value": 3,
+    "better": "lower"
+   },
+   "planread.NT-NOT-CHASE-WITH-GOAL-PACE@envelope": {
+    "value": 10,
+    "better": "lower"
+   },
+   "planread.NT-FREQUENCY-UNDERSTATES-W1@envelope": {
+    "value": 5,
+    "better": "lower"
+   },
+   "planread.NT-PACE-NOTES-CONTRADICT@envelope": {
+    "value": 7,
+    "better": "lower"
+   },
+   "planread.NT-BENCHMARK-NOTE-WITHOUT-BENCHMARK@envelope": {
+    "value": 7,
+    "better": "lower"
+   },
+   "planread.NT-FIRST-SESSION-NOTE-AFTER-W1@envelope": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.NT-WALK-BREAKS-ABOVE-BAR@envelope": {
+    "value": 4,
+    "better": "lower"
+   },
+   "planread.NT-DIFFICULTY-WEEKS-WRONG@envelope": {
+    "value": 13,
+    "better": "lower"
+   },
+   "planread.NT-TWO-SHORTFALL-CAUSES@envelope": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.NT-RETURNING-WRONG-CAUSE@envelope": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.NT-TUNE-UP-BESIDE-TT@envelope": {
+    "value": 5,
+    "better": "lower"
+   },
+   "planread.NT-ZONE-LABEL-NO-ZONES@envelope": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.NT-TAPER-UNDECLARED@envelope": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.NT-LOPSIDED-UNDECLARED@envelope": {
+    "value": 1,
+    "better": "lower"
+   },
+   "planread.DELOAD-NOT-A-REDUCTION@envelope": {
+    "value": 11,
+    "better": "lower"
+   },
+   "planread.DELOAD-SHALLOW@envelope": {
+    "value": 15,
+    "better": "lower"
+   },
+   "planread.DELOAD-HARDER-THAN-PRIOR@envelope": {
+    "value": 6,
+    "better": "lower"
+   },
+   "planread.LOADING-WEEK-JUMP-30@envelope": {
+    "value": 6,
+    "better": "lower"
+   },
+   "planread.LONG-RUN-STEP-OVER-5KM@envelope": {
+    "value": 13,
+    "better": "lower"
+   },
+   "planread.TAPER-FIRST-WEEK-KM-AT-PEAK@envelope": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.TAPER-FIRST-WEEK-LR-AT-PEAK@envelope": {
+    "value": 8,
+    "better": "lower"
+   },
+   "planread.RACE-WEEK-S39-ON-FINISH-GOAL@envelope": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.RACE-WEEK-EASY-LONGER-THAN-TAPER@envelope": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.EASY-RUN-150-MIN@envelope": {
+    "value": 16,
+    "better": "lower"
+   },
+   "planread.QUALITY-LONGER-THAN-LONG-RUN@envelope": {
+    "value": 9,
+    "better": "lower"
+   },
+   "planread.QUALITY-SHARE-35@envelope": {
+    "value": 9,
+    "better": "lower"
+   },
+   "planread.RUN-ON-BLOCKED-DAY@envelope": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.RUNS-EXCEED-DAYS@envelope": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.WEEKDAY-OVERRUN-UNDECLARED@envelope": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.TT-BEFORE-QUALITY-INJURED@envelope": {
+    "value": 32,
+    "better": "lower"
+   },
+   "planread.RUN-WALK-ON-QUALITY@envelope": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.MAX-LONG-RUN-BELOW-DECLARED@envelope": {
+    "value": 2,
+    "better": "lower"
+   },
+   "planread.FIX-PEAK-CUT-UNCONSTRAINED@envelope": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.FIX-RUNWALK-LONG-RUN-BELOW-17@envelope": {
+    "value": 1,
+    "better": "lower"
+   },
+   "planread.FIX-LONG-RUN-SHORT-NO-RUNWALK@envelope": {
+    "value": 1,
+    "better": "lower"
+   },
+   "planread.RAMP-INJURY-OVER-CAP@envelope": {
+    "value": 1,
+    "better": "lower"
+   },
+   "planread.RAMP-POST-DELOAD-JUMP@envelope": {
+    "value": 3,
+    "better": "lower"
+   },
+   "planread.RAMP-MASTERS-CADENCE@envelope": {
+    "value": 3,
+    "better": "lower"
+   },
+   "planread.RAMP-SESSION-OVER-2X-LONGEST@envelope": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.FOUNDATION-CLIFF@envelope": {
+    "value": 3,
+    "better": "lower"
+   },
+   "planread.FOUNDATION-MORE-RUNS-THAN-W1@envelope": {
+    "value": 2,
+    "better": "lower"
+   },
+   "planread.FOUNDATION-WEEKDAY-CAP-UNSEEN@envelope": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.corpus.beginnerMarathon.cases": {
+    "value": 120,
+    "better": "stable"
+   },
+   "planread.corpus.beginnerMarathon.race_plans": {
+    "value": 60,
+    "better": "stable"
+   },
+   "planread.corpus.beginnerMarathon.base_build": {
+    "value": 48,
+    "better": "stable"
+   },
+   "planread.corpus.beginnerMarathon.refused": {
+    "value": 12,
+    "better": "stable"
+   },
+   "planread.hard.beginnerMarathon.thrown": {
+    "value": 0,
+    "better": "zero"
+   },
+   "planread.hard.beginnerMarathon.error_violations": {
+    "value": 0,
+    "better": "zero"
+   },
+   "planread.NT-NO-HARD-SESSIONS-FALSE@beginnerMarathon": {
+    "value": 3,
+    "better": "lower"
+   },
+   "planread.NT-GAINS-FROM-QUALITY-NONE@beginnerMarathon": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.NT-HOLDS-BUT-CUTS@beginnerMarathon": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.NT-AT-CEILING-BUT-CUTS@beginnerMarathon": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.NT-SAYS-NOT-BUILD-BUT-BUILDS@beginnerMarathon": {
+    "value": 17,
+    "better": "lower"
+   },
+   "planread.NT-NOT-CHASE-WITH-GOAL-PACE@beginnerMarathon": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.NT-FREQUENCY-UNDERSTATES-W1@beginnerMarathon": {
+    "value": 19,
+    "better": "lower"
+   },
+   "planread.NT-PACE-NOTES-CONTRADICT@beginnerMarathon": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.NT-BENCHMARK-NOTE-WITHOUT-BENCHMARK@beginnerMarathon": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.NT-FIRST-SESSION-NOTE-AFTER-W1@beginnerMarathon": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.NT-WALK-BREAKS-ABOVE-BAR@beginnerMarathon": {
+    "value": 1,
+    "better": "lower"
+   },
+   "planread.NT-DIFFICULTY-WEEKS-WRONG@beginnerMarathon": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.NT-TWO-SHORTFALL-CAUSES@beginnerMarathon": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.NT-RETURNING-WRONG-CAUSE@beginnerMarathon": {
+    "value": 10,
+    "better": "lower"
+   },
+   "planread.NT-TUNE-UP-BESIDE-TT@beginnerMarathon": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.NT-ZONE-LABEL-NO-ZONES@beginnerMarathon": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.NT-TAPER-UNDECLARED@beginnerMarathon": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.NT-LOPSIDED-UNDECLARED@beginnerMarathon": {
+    "value": 41,
+    "better": "lower"
+   },
+   "planread.DELOAD-NOT-A-REDUCTION@beginnerMarathon": {
+    "value": 44,
+    "better": "lower"
+   },
+   "planread.DELOAD-SHALLOW@beginnerMarathon": {
+    "value": 34,
+    "better": "lower"
+   },
+   "planread.DELOAD-HARDER-THAN-PRIOR@beginnerMarathon": {
+    "value": 20,
+    "better": "lower"
+   },
+   "planread.LOADING-WEEK-JUMP-30@beginnerMarathon": {
+    "value": 15,
+    "better": "lower"
+   },
+   "planread.LONG-RUN-STEP-OVER-5KM@beginnerMarathon": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.TAPER-FIRST-WEEK-KM-AT-PEAK@beginnerMarathon": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.TAPER-FIRST-WEEK-LR-AT-PEAK@beginnerMarathon": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.RACE-WEEK-S39-ON-FINISH-GOAL@beginnerMarathon": {
+    "value": 52,
+    "better": "lower"
+   },
+   "planread.RACE-WEEK-EASY-LONGER-THAN-TAPER@beginnerMarathon": {
+    "value": 52,
+    "better": "lower"
+   },
+   "planread.EASY-RUN-150-MIN@beginnerMarathon": {
+    "value": 1,
+    "better": "lower"
+   },
+   "planread.QUALITY-LONGER-THAN-LONG-RUN@beginnerMarathon": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.QUALITY-SHARE-35@beginnerMarathon": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.RUN-ON-BLOCKED-DAY@beginnerMarathon": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.RUNS-EXCEED-DAYS@beginnerMarathon": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.WEEKDAY-OVERRUN-UNDECLARED@beginnerMarathon": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.TT-BEFORE-QUALITY-INJURED@beginnerMarathon": {
+    "value": 3,
+    "better": "lower"
+   },
+   "planread.RUN-WALK-ON-QUALITY@beginnerMarathon": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.MAX-LONG-RUN-BELOW-DECLARED@beginnerMarathon": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.FIX-PEAK-CUT-UNCONSTRAINED@beginnerMarathon": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.FIX-RUNWALK-LONG-RUN-BELOW-17@beginnerMarathon": {
+    "value": 9,
+    "better": "lower"
+   },
+   "planread.FIX-LONG-RUN-SHORT-NO-RUNWALK@beginnerMarathon": {
+    "value": 3,
+    "better": "lower"
+   },
+   "planread.RAMP-INJURY-OVER-CAP@beginnerMarathon": {
+    "value": 13,
+    "better": "lower"
+   },
+   "planread.RAMP-POST-DELOAD-JUMP@beginnerMarathon": {
+    "value": 25,
+    "better": "lower"
+   },
+   "planread.RAMP-MASTERS-CADENCE@beginnerMarathon": {
+    "value": 16,
+    "better": "lower"
+   },
+   "planread.RAMP-SESSION-OVER-2X-LONGEST@beginnerMarathon": {
+    "value": 2,
+    "better": "lower"
+   },
+   "planread.FOUNDATION-CLIFF@beginnerMarathon": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.FOUNDATION-MORE-RUNS-THAN-W1@beginnerMarathon": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.FOUNDATION-WEEKDAY-CAP-UNSEEN@beginnerMarathon": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.corpus.personas.cases": {
+    "value": 21,
+    "better": "stable"
+   },
+   "planread.corpus.personas.race_plans": {
+    "value": 20,
+    "better": "stable"
+   },
+   "planread.corpus.personas.base_build": {
+    "value": 1,
+    "better": "stable"
+   },
+   "planread.corpus.personas.refused": {
+    "value": 0,
+    "better": "stable"
+   },
+   "planread.hard.personas.thrown": {
+    "value": 0,
+    "better": "zero"
+   },
+   "planread.hard.personas.error_violations": {
+    "value": 0,
+    "better": "zero"
+   },
+   "planread.NT-NO-HARD-SESSIONS-FALSE@personas": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.NT-GAINS-FROM-QUALITY-NONE@personas": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.NT-HOLDS-BUT-CUTS@personas": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.NT-AT-CEILING-BUT-CUTS@personas": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.NT-SAYS-NOT-BUILD-BUT-BUILDS@personas": {
+    "value": 3,
+    "better": "lower"
+   },
+   "planread.NT-NOT-CHASE-WITH-GOAL-PACE@personas": {
+    "value": 2,
+    "better": "lower"
+   },
+   "planread.NT-FREQUENCY-UNDERSTATES-W1@personas": {
+    "value": 2,
+    "better": "lower"
+   },
+   "planread.NT-PACE-NOTES-CONTRADICT@personas": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.NT-BENCHMARK-NOTE-WITHOUT-BENCHMARK@personas": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.NT-FIRST-SESSION-NOTE-AFTER-W1@personas": {
+    "value": 20,
+    "better": "lower"
+   },
+   "planread.NT-WALK-BREAKS-ABOVE-BAR@personas": {
+    "value": 1,
+    "better": "lower"
+   },
+   "planread.NT-DIFFICULTY-WEEKS-WRONG@personas": {
+    "value": 4,
+    "better": "lower"
+   },
+   "planread.NT-TWO-SHORTFALL-CAUSES@personas": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.NT-RETURNING-WRONG-CAUSE@personas": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.NT-TUNE-UP-BESIDE-TT@personas": {
+    "value": 1,
+    "better": "lower"
+   },
+   "planread.NT-ZONE-LABEL-NO-ZONES@personas": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.NT-TAPER-UNDECLARED@personas": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.NT-LOPSIDED-UNDECLARED@personas": {
+    "value": 4,
+    "better": "lower"
+   },
+   "planread.DELOAD-NOT-A-REDUCTION@personas": {
+    "value": 1,
+    "better": "lower"
+   },
+   "planread.DELOAD-SHALLOW@personas": {
+    "value": 7,
+    "better": "lower"
+   },
+   "planread.DELOAD-HARDER-THAN-PRIOR@personas": {
+    "value": 3,
+    "better": "lower"
+   },
+   "planread.LOADING-WEEK-JUMP-30@personas": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.LONG-RUN-STEP-OVER-5KM@personas": {
+    "value": 1,
+    "better": "lower"
+   },
+   "planread.TAPER-FIRST-WEEK-KM-AT-PEAK@personas": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.TAPER-FIRST-WEEK-LR-AT-PEAK@personas": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.RACE-WEEK-S39-ON-FINISH-GOAL@personas": {
+    "value": 7,
+    "better": "lower"
+   },
+   "planread.RACE-WEEK-EASY-LONGER-THAN-TAPER@personas": {
+    "value": 9,
+    "better": "lower"
+   },
+   "planread.EASY-RUN-150-MIN@personas": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.QUALITY-LONGER-THAN-LONG-RUN@personas": {
+    "value": 2,
+    "better": "lower"
+   },
+   "planread.QUALITY-SHARE-35@personas": {
+    "value": 2,
+    "better": "lower"
+   },
+   "planread.RUN-ON-BLOCKED-DAY@personas": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.RUNS-EXCEED-DAYS@personas": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.WEEKDAY-OVERRUN-UNDECLARED@personas": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.TT-BEFORE-QUALITY-INJURED@personas": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.RUN-WALK-ON-QUALITY@personas": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.MAX-LONG-RUN-BELOW-DECLARED@personas": {
+    "value": 1,
+    "better": "lower"
+   },
+   "planread.FIX-PEAK-CUT-UNCONSTRAINED@personas": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.FIX-RUNWALK-LONG-RUN-BELOW-17@personas": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.FIX-LONG-RUN-SHORT-NO-RUNWALK@personas": {
+    "value": 1,
+    "better": "lower"
+   },
+   "planread.RAMP-INJURY-OVER-CAP@personas": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.RAMP-POST-DELOAD-JUMP@personas": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.RAMP-MASTERS-CADENCE@personas": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.RAMP-SESSION-OVER-2X-LONGEST@personas": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.FOUNDATION-CLIFF@personas": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.FOUNDATION-MORE-RUNS-THAN-W1@personas": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.FOUNDATION-WEEKDAY-CAP-UNSEEN@personas": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.NT-NO-HARD-SESSIONS-FALSE": {
+    "value": 22,
+    "better": "lower"
+   },
+   "planread.NT-GAINS-FROM-QUALITY-NONE": {
+    "value": 16,
+    "better": "lower"
+   },
+   "planread.NT-HOLDS-BUT-CUTS": {
+    "value": 1,
+    "better": "lower"
+   },
+   "planread.NT-AT-CEILING-BUT-CUTS": {
+    "value": 28,
+    "better": "lower"
+   },
+   "planread.NT-SAYS-NOT-BUILD-BUT-BUILDS": {
+    "value": 32,
+    "better": "lower"
+   },
+   "planread.NT-NOT-CHASE-WITH-GOAL-PACE": {
+    "value": 42,
+    "better": "lower"
+   },
+   "planread.NT-FREQUENCY-UNDERSTATES-W1": {
+    "value": 37,
+    "better": "lower"
+   },
+   "planread.NT-PACE-NOTES-CONTRADICT": {
+    "value": 8,
+    "better": "lower"
+   },
+   "planread.NT-BENCHMARK-NOTE-WITHOUT-BENCHMARK": {
+    "value": 10,
+    "better": "lower"
+   },
+   "planread.NT-FIRST-SESSION-NOTE-AFTER-W1": {
+    "value": 57,
+    "better": "lower"
+   },
+   "planread.NT-WALK-BREAKS-ABOVE-BAR": {
+    "value": 15,
+    "better": "lower"
+   },
+   "planread.NT-DIFFICULTY-WEEKS-WRONG": {
+    "value": 24,
+    "better": "lower"
+   },
+   "planread.NT-TWO-SHORTFALL-CAUSES": {
+    "value": 10,
+    "better": "lower"
+   },
+   "planread.NT-RETURNING-WRONG-CAUSE": {
+    "value": 27,
+    "better": "lower"
+   },
+   "planread.NT-TUNE-UP-BESIDE-TT": {
+    "value": 27,
+    "better": "lower"
+   },
+   "planread.NT-ZONE-LABEL-NO-ZONES": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.NT-TAPER-UNDECLARED": {
+    "value": 4,
+    "better": "lower"
+   },
+   "planread.NT-LOPSIDED-UNDECLARED": {
+    "value": 58,
+    "better": "lower"
+   },
+   "planread.DELOAD-NOT-A-REDUCTION": {
+    "value": 67,
+    "better": "lower"
+   },
+   "planread.DELOAD-SHALLOW": {
+    "value": 136,
+    "better": "lower"
+   },
+   "planread.DELOAD-HARDER-THAN-PRIOR": {
+    "value": 46,
+    "better": "lower"
+   },
+   "planread.LOADING-WEEK-JUMP-30": {
+    "value": 52,
+    "better": "lower"
+   },
+   "planread.LONG-RUN-STEP-OVER-5KM": {
+    "value": 14,
+    "better": "lower"
+   },
+   "planread.TAPER-FIRST-WEEK-KM-AT-PEAK": {
+    "value": 2,
+    "better": "lower"
+   },
+   "planread.TAPER-FIRST-WEEK-LR-AT-PEAK": {
+    "value": 13,
+    "better": "lower"
+   },
+   "planread.RACE-WEEK-S39-ON-FINISH-GOAL": {
+    "value": 107,
+    "better": "lower"
+   },
+   "planread.RACE-WEEK-EASY-LONGER-THAN-TAPER": {
+    "value": 109,
+    "better": "lower"
+   },
+   "planread.EASY-RUN-150-MIN": {
+    "value": 18,
+    "better": "lower"
+   },
+   "planread.QUALITY-LONGER-THAN-LONG-RUN": {
+    "value": 18,
+    "better": "lower"
+   },
+   "planread.QUALITY-SHARE-35": {
+    "value": 22,
+    "better": "lower"
+   },
+   "planread.RUN-ON-BLOCKED-DAY": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.RUNS-EXCEED-DAYS": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.WEEKDAY-OVERRUN-UNDECLARED": {
+    "value": 14,
+    "better": "lower"
+   },
+   "planread.TT-BEFORE-QUALITY-INJURED": {
+    "value": 37,
+    "better": "lower"
+   },
+   "planread.RUN-WALK-ON-QUALITY": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.MAX-LONG-RUN-BELOW-DECLARED": {
+    "value": 54,
+    "better": "lower"
+   },
+   "planread.FIX-PEAK-CUT-UNCONSTRAINED": {
+    "value": 4,
+    "better": "lower"
+   },
+   "planread.FIX-RUNWALK-LONG-RUN-BELOW-17": {
+    "value": 10,
+    "better": "lower"
+   },
+   "planread.FIX-LONG-RUN-SHORT-NO-RUNWALK": {
+    "value": 20,
+    "better": "lower"
+   },
+   "planread.RAMP-INJURY-OVER-CAP": {
+    "value": 14,
+    "better": "lower"
+   },
+   "planread.RAMP-POST-DELOAD-JUMP": {
+    "value": 30,
+    "better": "lower"
+   },
+   "planread.RAMP-MASTERS-CADENCE": {
+    "value": 19,
+    "better": "lower"
+   },
+   "planread.RAMP-SESSION-OVER-2X-LONGEST": {
+    "value": 2,
+    "better": "lower"
+   },
+   "planread.FOUNDATION-CLIFF": {
+    "value": 3,
+    "better": "lower"
+   },
+   "planread.FOUNDATION-MORE-RUNS-THAN-W1": {
+    "value": 2,
+    "better": "lower"
+   },
+   "planread.FOUNDATION-WEEKDAY-CAP-UNSEEN": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.corpus.strength.plans": {
+    "value": 48,
+    "better": "stable"
+   },
+   "planread.ST-ON-BLOCKED-RUN-DAY": {
+    "value": 42,
+    "better": "lower"
+   },
+   "planread.ST-PLYO-PER-SIDE-OVER-CAP": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.ST-DELOAD-TAPER-BUSIER": {
+    "value": 3,
+    "better": "lower"
+   },
+   "planread.ST-NO-CALF-WEEK": {
+    "value": 3,
+    "better": "lower"
+   },
+   "planread.ST-NO-FREE-DAY": {
+    "value": 38,
+    "better": "lower"
+   },
+   "planread.ST-BODYWEIGHT-HEAVY-5": {
+    "value": 15,
+    "better": "lower"
+   },
+   "planread.corpus.maintenance.blocks": {
+    "value": 120,
+    "better": "stable"
+   },
+   "planread.hard.maintenance.thrown": {
+    "value": 0,
+    "better": "zero"
+   },
+   "planread.MB-NO-PACE-NO-HR": {
+    "value": 120,
+    "better": "lower"
+   },
+   "planread.MB-RUN-UNDER-2KM": {
+    "value": 31,
+    "better": "lower"
+   },
+   "planread.MB-OFF-CHOSEN-DAYS": {
+    "value": 0,
+    "better": "lower"
+   },
+   "planread.MB-LONG-ON-WEEKDAY": {
+    "value": 24,
+    "better": "lower"
+   }
+  }
+ }
+}

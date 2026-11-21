@@ -359,6 +359,26 @@ distance-level `door~ N% agg` is an aggregate and **is not the promise**.
 
 ---
 
+## 5b. Scorecard v2: the never-worse bar (ADR-027 B0, ARCH-ENG-008)
+
+`npm run scorecard` runs the seven steps above, `cohort:shape` and `verify:strength`
+concurrently, each as its owner runs it, and adds one step of its own: the **plan-read
+predicates** (`lib/scorecard/predicates/`, one owner each, with its § and source).
+These are the final plan read's defect classes (2026-11-20), the objection triage's FIX
+classes, and the NOTE-TRUTH checks: a note may not claim something false about its own plan.
+
+- **One baseline**, `lib/plan/__fixtures__/scorecardBaseline.json`, holds every line, with a
+  `full` mode (the script) and a `fast` mode (`lib/scorecard/scorecard.test.ts`, in the suite).
+- **Exit 1 if any line is worse**: a hard-rule line above 0, a FIX / NEW / NOTE-TRUTH count above
+  baseline, a rate below it past its owner's tolerance, a corpus size that moved, or a line that
+  could not be measured.
+- **Re-baseline** with `npm run scorecard -- --write --reason "<why>"`. The reason is stored in the
+  file. Section 2 applies: a count that falls because a note's wording changed is a definition move.
+- **Corpus:** the existing corpora, sampled, `fitness_level` stripped. The golden corpus plugs in
+  with `--corpus <module>#<export>` and baselines under its own mode key.
+
+---
+
 ## 6. The current numbers
 
 **Not repeated here.** They live in `docs/canonical/fit-for-purpose-rubric.md`,

@@ -196,6 +196,18 @@
       "title": "🔴 INV-PLAN-REPEATS-REPEAT is silent on every served plan",
       "ms": 1012,
       "reason": "INV-PLAN-REPEATS-REPEAT's liveness arm. A CORPUS assertion by necessity: it generates across the cohort to show the invariant is SILENT on every served plan, which is the only way to tell a working rule from a dead one — a single traced case proves neither. First baselined 2026-11-08 at 1,005 ms (0.72% of the suite); it sits just over the 1,000 ms reporting line and crosses it with ordinary noise, so expect it to come and go from this register rather than drift."
+    },
+    {
+      "file": "lib/scorecard/scorecard.test.ts",
+      "title": "no plan-read line is worse than the baseline",
+      "ms": 8317,
+      "reason": "ADR027-B0-SCORECARD's fast gate. Measured 8,317 ms in a full suite run at 1.88x rest-of-suite load (4,434 ms normalised; 4,796 ms run alone). It generates ~400 plans across six sampled corpora, places 48 strength plans and builds 120 maintenance blocks, then compares every line to the committed baseline. A smaller sample stops reaching the corpora the ratchet counts; the full population is `npm run scorecard`."
+    },
+    {
+      "file": "lib/scorecard/scorecard.test.ts",
+      "title": "a planted FALSE NOTE (\"no hard sessions\" on a plan with a time trial) fires and is WORSE",
+      "ms": 4208,
+      "reason": "ADR027-B0-SCORECARD falsification. Measured 4,208 ms in a full suite run (2,219 ms normalised; 2,365 ms run alone). It runs the plan-read step twice on the cohortGrid fast sample, clean and with the planted note, so both the predicate and the ratchet are shown to go red."
     }
   ]
 }
