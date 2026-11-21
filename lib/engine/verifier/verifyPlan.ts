@@ -24,6 +24,8 @@ import { hasInjuryKeyword, hasDeliveredCapInjury, hasVolumeCappedInjuryHistory }
 import { BENCHMARK_VDOT_MAX } from '@/lib/plan/benchmarkCheck'
 import { parsePaceMidpoint } from '@/lib/plan/paceParse'
 import { catalogueRowFor } from '@/lib/plan/catalogueLink'
+import { SESSION_FORMAT } from '@/lib/plan/sessionFormat'
+import { workAnchorsOf } from '@/lib/plan/sessionStructureV2'
 
 export type VerifierDay = 'mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat' | 'sun'
 
@@ -1518,6 +1520,11 @@ const BATCH_22: Partial<Record<RuleId, Predicate>> = {
 }
 Object.assign(PREDICATES, BATCH_22)
 
+/** validatePlan's `fitness`: the plan's intensity level, then the request's, then the request's and the plan's structural
+ *  level. ⚠️ It starts at the plan's own meta, so it is partly a self-label read. */
+const checkerFitness = (plan: Plan, input: GeneratorInput) =>
+  plan.meta.fitness_intensity_level ?? input.fitness_intensity_level ?? input.fitness_level ?? plan.meta.fitness_level
+
 const BATCH_23: Partial<Record<RuleId, Predicate>> = {
   // §5: on a race of 21 km or less, the first VO2max session leaves VO2MAX_ONSET_MIN_ADAPTATION_WEEKS before the taper,
   // when the plan is long enough to (and an intensity re-entry window does not cover the deadline).
@@ -1572,7 +1579,7 @@ const BATCH_23: Partial<Record<RuleId, Predicate>> = {
   'INV-PLAN-RACE-SPECIFIC-VARIETY': (plan, { input, profile }) => {
     if (profile.race.goal !== 'time_target') return []
     const dk = raceDistanceKey(input.race_distance_km)
-    const fitness = plan.meta.fitness_intensity_level ?? input.fitness_intensity_level ?? input.fitness_level ?? plan.meta.fitness_level
+    const fitness = checkerFitness(plan, input)
     const R = LEVEL_RANK as Record<string, number>
     const slots = plan.weeks.filter(w => w.phase === 'peak' && w.type !== 'race')
       .flatMap(w => Object.values(w.sessions ?? {}).filter((s): s is Session => s != null && !!s.catalogue_id && !isLongRun(s)).map(s => ({ week: w.n, id: s.catalogue_id! })))
@@ -1625,6 +1632,83 @@ const BATCH_23: Partial<Record<RuleId, Predicate>> = {
   },
 }
 Object.assign(PREDICATES, BATCH_23)
+
+/** A quality session's main set in minutes, from the universal format (rule data), written here rather than through the
+ *  session builder's `sessionSplit`: warm-up is the larger of its floor and its share, cool-down its share. */
+const mainSetMins = (durationMins: number) => {
+  const u = SESSION_FORMAT.UNIVERSAL
+  return Math.max(0, durationMins - Math.max(u.quality_warmup_min_mins, durationMins * u.warmup_pct / 100) - durationMins * u.cooldown_pct / 100)
+}
+
+/** A VO2max session's WORK minutes: reps of the row's first work step, by time, or by distance at the session pace. */
+function vo2WorkMins(s: Session): number | null {
+  const reps = (s.derived_set as { blocks?: { repeat?: number }[] } | undefined)?.blocks?.[0]?.repeat
+  if (typeof reps !== 'number') return null
+  const row = s.catalogue_id ? V1_SESSION_CATALOGUE.find(r => r.id === s.catalogue_id) : undefined
+  if (!row) return null
+  const len = (row.main_set_structure as { blocks?: { steps?: { role?: string; length?: { kind?: string; secs?: number; m?: number } }[] }[] })
+    .blocks?.[0]?.steps?.find(x => x.role === 'work')?.length
+  if (!len) return null
+  if (len.kind === 'duration' && typeof len.secs === 'number') return reps * (len.secs / 60)
+  if (len.kind === 'distance' && typeof len.m === 'number') {
+    const mid = parsePaceMidpoint(s.pace_target ?? '')
+    return mid == null ? null : reps * (len.m / 1000) * mid
+  }
+  return null
+}
+
+const BATCH_24: Partial<Record<RuleId, Predicate>> = {
+  // §93 Am. 1: a time-goal plan at a distance whose peak prefers race-specific work has at least one race-specific peak
+  // quality session, unless a withheld anchor leaves no eligible race-specific row at all.
+  'INV-PLAN-PEAK-RACE-SPECIFIC-REACHED': (plan, { input, profile }) => {
+    const dk = raceDistanceKey(input.race_distance_km)
+    const prefers = (GENERATION_CONFIG.TIME_TARGET_PEAK_RACE_SPECIFIC_DISTANCES as readonly string[]).includes(dk)
+    const goalWithheld = plan.meta.goal_pace_withheld != null
+    const withheld = plan.meta.hm_goal_anchor_withheld === true || goalWithheld
+    const f = checkerFitness(plan, input), R = LEVEL_RANK as Record<string, number>
+    const rank = f ? R[f] : undefined
+    const surviving = !withheld ? 1 : V1_SESSION_CATALOGUE.filter(r => r.category === 'race_specific'
+      && (r.distance_eligibility as readonly string[]).includes(dk) && (r.phase_eligibility as readonly string[]).includes('peak')
+      && (r.main_set_structure as { type?: string } | undefined)?.type !== 'long_run_with_segment'
+      && !workAnchorsOf(r).includes('HM' as never) && !(goalWithheld && workAnchorsOf(r).includes('goal' as never))
+      && (rank === undefined || (R[r.fitness_level_min] <= rank && (r.fitness_level_max == null || rank <= R[r.fitness_level_max])))).length
+    if (profile.race.goal !== 'time_target' || !prefers || (withheld && surviving === 0)) return []
+    const q = plan.weeks.filter(w => w.n >= 1 && w.phase === 'peak' && w.type !== 'deload')
+      .flatMap(w => Object.values(w.sessions ?? {}).filter((s): s is Session => s?.type === 'quality'))
+    return q.length > 0 && !q.some(s => catalogueRowFor(s, V1_SESSION_CATALOGUE)?.category === 'race_specific')
+      ? [{ rule_id: 'INV-PLAN-PEAK-RACE-SPECIFIC-REACHED', week: PLAN, day: null, detail: `0 of ${q.length} peak quality race-specific` }] : []
+  },
+
+  // §8: the plan's largest paced VO2max work never exceeds its largest tempo or race-pace main set beyond the tolerance.
+  'INV-PLAN-MAIN-SET-ORDERING': plan => {
+    const max: Record<string, { mins: number; week: number }> = {}
+    for (const w of plan.weeks) for (const s of Object.values(w.sessions ?? {})) {
+      if (!s || !isQualitySession(s)) continue
+      const stim = classifyStimulus(s)
+      if (!stim || (stim === 'vo2max' && !s.pace_target)) continue
+      const mins = stim === 'vo2max' ? (vo2WorkMins(s) ?? mainSetMins(s.duration_mins ?? 0)) : mainSetMins(s.duration_mins ?? 0)
+      if (!max[stim] || mins > max[stim].mins) max[stim] = { mins, week: w.n }
+    }
+    const vo2 = max['vo2max']
+    return (['tempo', 'race_pace'] as const).flatMap(k => vo2 && max[k] && vo2.mins > max[k].mins + GENERATION_CONFIG.MAIN_SET_ORDERING_TOLERANCE_MINS
+      ? [{ rule_id: 'INV-PLAN-MAIN-SET-ORDERING' as RuleId, week: vo2.week, day: null, detail: `VO2 over ${k}` }] : [])
+  },
+
+  // §8, §88: paced VO2max work sits inside its dose band; a session whose work cannot be counted is held to the legacy
+  // main-set ceiling instead.
+  'INV-PLAN-VO2MAX-MAIN-SET-CAP': plan => {
+    const tol = GENERATION_CONFIG.MAIN_SET_ORDERING_TOLERANCE_MINS
+    return plan.weeks.flatMap(w => daysOf(w).flatMap(({ day, session: s }) => {
+      if (!s || !isQualitySession(s) || classifyStimulus(s) !== 'vo2max' || !s.pace_target) return []
+      const work = vo2WorkMins(s)
+      const over = work == null
+        ? mainSetMins(s.duration_mins ?? 0) > GENERATION_CONFIG.VO2MAX_MAIN_SET_MAX_MINS + tol
+        : work < GENERATION_CONFIG.VO2MAX_WORK_MIN_MINS - tol || work > GENERATION_CONFIG.VO2MAX_WORK_MAX_MINS + tol
+      return over ? [{ rule_id: 'INV-PLAN-VO2MAX-MAIN-SET-CAP' as RuleId, week: w.n, day, detail: work == null ? 'over the legacy ceiling' : 'outside the work band' }] : []
+    }))
+  },
+}
+Object.assign(PREDICATES, BATCH_24)
 
 const SEVERITY = new Map(RULES.map(r => [r.id, r.kind === 'soft' ? 'warn' as const : 'error' as const]))
 /** Rules the catalogue marks as conditionally severe: only these may set a finding's severity (code review, batch 20). */

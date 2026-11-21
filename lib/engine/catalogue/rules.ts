@@ -48,7 +48,7 @@ export const RULES: readonly Rule[] = [
   { id: 'INV-PLAN-DERIVED-SET', principle_ref: 'ADR-019', scope: 'session', kind: 'hard', config_key: null, explain: null },
   { id: 'INV-PLAN-CATALOGUE-LINK', principle_ref: 'ADR-018', scope: 'session', kind: 'hard', config_key: null, explain: null },
   { id: 'INV-PLAN-MAIN-SET-ORDERING', principle_ref: '§8', scope: 'week', kind: 'hard', config_key: null, explain: null },
-  { id: 'INV-PLAN-VO2MAX-MAIN-SET-CAP', principle_ref: '§8', scope: 'session', kind: 'hard', config_key: null, explain: null },
+  { id: 'INV-PLAN-VO2MAX-MAIN-SET-CAP', principle_ref: '§8', related_refs: ['§88'], scope: 'session', kind: 'hard', config_key: null, explain: null },
   { id: 'INV-PLAN-REPEATS-REPEAT', principle_ref: '§19 Am. 2', scope: 'session', kind: 'hard', config_key: null, explain: null },
   { id: 'INV-PLAN-RACE-SPECIFIC-RACE-SHARE', principle_ref: '§19 Am. 2', scope: 'session', kind: 'hard', config_key: null, explain: null },
   { id: 'INV-PLAN-STRUCTURED-SESSION-DURATION-COHERENT', principle_ref: '§8', scope: 'week', kind: 'hard', config_key: null, explain: null },

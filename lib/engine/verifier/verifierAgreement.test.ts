@@ -15,7 +15,7 @@ import { runEngine } from '@/lib/plan/engine'
 import { validatePlan } from '@/lib/plan/invariants'
 import { MUTATIONS } from '@/lib/plan/invariantLiveness'
 import type { Plan, GeneratorInput, Session } from '@/types/plan'
-import { isLongRun, isStructuredSession, isTimeTrial, isVo2maxSession, isQualitySession } from '@/lib/plan/sessionRole'
+import { isLongRun, isStructuredSession, isTimeTrial, isVo2maxSession, isQualitySession, classifyStimulus } from '@/lib/plan/sessionRole'
 import { V1_SESSION_CATALOGUE } from '@/lib/plan/sessionCatalogueData'
 import { sessionKmSelfPaced } from '@/lib/plan/sessionDistance'
 import { FUELLING_PRACTICE_NOTE, ULTRA_FUELLING_PREFIX } from '@/lib/plan/fuellingNotes'
@@ -635,6 +635,21 @@ const EXTRA_MUTATIONS: { name: string; apply: (p: Plan, input: GeneratorInput) =
       p.meta.run_walk_prescribed = true
       return q > 0
     }],
+    // Batch 24: paced VO2max work just over its dose band (no corpus plan reaches the upper edge).
+    ['paced VO2max work just over the dose band', (p: Plan) => {
+      for (const w of p.weeks) for (const s of Object.values(w.sessions ?? {})) {
+        if (!s || !isQualitySession(s) || classifyStimulus(s) !== 'vo2max' || !s.pace_target) continue
+        const row = V1_SESSION_CATALOGUE.find(r => r.id === s.catalogue_id)
+        const len = (row?.main_set_structure as { blocks?: { steps?: { role?: string; length?: { kind?: string; secs?: number } }[] }[] } | undefined)
+          ?.blocks?.[0]?.steps?.find(x => x.role === 'work')?.length
+        const first = (s.derived_set as { blocks?: { repeat?: number }[] } | undefined)?.blocks?.[0]
+        if (len?.kind !== 'duration' || typeof len.secs !== 'number' || !first || typeof first.repeat !== 'number') continue
+        const over = GENERATION_CONFIG.VO2MAX_WORK_MAX_MINS + GENERATION_CONFIG.MAIN_SET_ORDERING_TOLERANCE_MINS
+        first.repeat = Math.floor(over / (len.secs / 60)) + 1
+        return true
+      }
+      return false
+    }],
     ['meta age differing from the input', (p: Plan, i: GeneratorInput) => {
       if (typeof i.age !== 'number') return false
       ;(p.meta as unknown as Record<string, unknown>).age = i.age + 1; return true
@@ -688,6 +703,8 @@ const EXTRA_MUTATIONS: { name: string; apply: (p: Plan, input: GeneratorInput) =
 /** Breakages whose landing must be on a NAMED rule: they also wake neighbouring cap rules, so "the old report
  *  changed" would pass without the target being reached (code review, batch 14). */
 const TARGETS: Record<string, string[]> = {
+  'paced VO2max work just over the dose band': ['INV-PLAN-VO2MAX-MAIN-SET-CAP'],
+  'a run-walk plan with the interval on a quality session': ['INV-PLAN-RUNWALK-PRESCRIBED'],
   'a structured weekday session just over its overrun limit, undeclared': ['INV-PLAN-STRUCTURED-OVERRUN-DECLARED'],
   'an easy weekday run one minute over budget, no note': ['INV-PLAN-WEEKDAY-OVERRUN-DECLARED'],
   'a race week a kilometre and a bit over the peak': ['INV-PLAN-RACE-NOT-VOLUME'],

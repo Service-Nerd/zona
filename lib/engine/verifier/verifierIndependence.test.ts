@@ -34,6 +34,8 @@ const ALLOWED_NAMES: Record<string, string[]> = {
   '@/lib/plan/planSignatures': ['PLAN_SIGNATURES'],  // per-distance plan shape: rule data
   '@/lib/plan/paceParse': ['parsePaceMidpoint'],       // input format: a pace string to min/km, fixture-tested
   '@/lib/plan/catalogueLink': ['catalogueRowFor'],     // ADR-018's session-to-row join (the stamped id), fixture-tested
+  '@/lib/plan/sessionFormat': ['SESSION_FORMAT'],      // the universal session format: rule data (the split is derived here)
+  '@/lib/plan/sessionStructureV2': ['workAnchorsOf'],  // reads a catalogue row's work-step anchors: rule data
 }
 
 /** Every non-test source file under the verifier, recursively. */
