@@ -96,8 +96,14 @@ export interface ProposedAdjustment {
 }
 
 export interface AdjustmentCheckInput {
+  /** The current week's KEY, `week.n` (ADJUST-WEEK-COORD-01). Negative in a foundation block. */
   currentWeekN:     number
+  /** The final week's KEY, so `totalWeeks - currentWeekN` is weeks remaining in ONE coordinate. */
   totalWeeks:       number
+  /** How many weeks the runner is into the plan, counting from 1 (the 1-based POSITION). Read
+   *  only by the fitness-signal "plan is established" gate, which counts weeks trained, not a
+   *  key. Absent → `currentWeekN`, which equals it on every plan without foundation weeks. */
+  weeksIntoPlan?:   number
   currentWeekSessions: Session[]
   /** Runs matched to a prescribed session (LOG-OFFPLAN-01). Drives the ratio. */
   linkedKm:         number
@@ -333,7 +339,7 @@ export function checkAdjustmentTriggers(input: AdjustmentCheckInput): ProposedAd
   if (
     input.recentQualityAnalyses &&
     input.recentQualityAnalyses.length >= FITNESS_SIGNAL_SESSION_THRESHOLD &&
-    input.currentWeekN >= FITNESS_SIGNAL_MIN_PLAN_WEEKS
+    (input.weeksIntoPlan ?? input.currentWeekN) >= FITNESS_SIGNAL_MIN_PLAN_WEEKS
   ) {
     const fitness = buildFitnessSignalAdjustment(input)
     if (fitness) return fitness

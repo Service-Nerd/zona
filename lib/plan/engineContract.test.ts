@@ -250,13 +250,15 @@ describe('ENGINE-CONTRACT-01 — the contract matches the engine', () => {
     expect(
       symbols,
       'adjust-plan reaches a new symbol through the `@/lib/plan` barrel. Decide which ' +
-      'it is: `getCurrentWeekIndex` is engine and is here out of NECESSITY (it scopes ' +
+      'it is: `getCurrentWeekN` is engine and is here out of NECESSITY (it scopes ' +
       'the route\'s own queries); `savePlanForUser` is persistence and belongs to the ' +
       'caller. Anything else is engine surface re-entering the route while the headline ' +
       'count stays at five.',
       // PLANS-SINGLE-NOT-MAYBE-01 (2026-10-16): `readPlanJson` joins as the READ twin of
       // `savePlanForUser` — persistence, the caller's, not engine surface.
-    ).toEqual(['getCurrentWeekIndex', 'readPlanJson', 'savePlanForUser'])
+      // ADJUST-WEEK-COORD-01 (2026-11-21): `getCurrentWeekN` REPLACES `getCurrentWeekIndex`, same
+      // necessity: the position + 1 it was used for keyed the adjustment on the wrong week.
+    ).toEqual(['getCurrentWeekN', 'readPlanJson', 'savePlanForUser'])
 
     // generate-plan has none, and that is a FACT about it rather than an
     // accident: it reaches the engine through `lib/plan/engine.ts` only.

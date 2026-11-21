@@ -66,6 +66,59 @@ export function getCurrentWeekIndex(weeks: Plan['weeks']): number {
 }
 
 /**
+ * ADJUST-WEEK-COORD-01 / ARCH-ENG-015 — ONE WEEK COORDINATE, AND THIS IS ITS OWNER.
+ *
+ * A plan week has two numbers and they are only equal by accident: its array POSITION and
+ * its key `week.n`. Every table keyed by week (`plan_adjustments`, `run_analysis`,
+ * `session_completions`, `session_overrides`, the weekly-load map) is keyed by `week.n`.
+ * They diverge on a plan with foundation weeks (n = -3..0 prepended, ADR-020) and on a
+ * standalone maintenance plan (n continues at 26+, ADR-013).
+ *
+ * `getCurrentWeekIndex(weeks) + 1` was written as a key in five places. On a foundation
+ * plan it names a week several weeks LATER than the runner's, and measured 2026-11-21 all
+ * four adjustments on the seven shifted live plans were written there.
+ *
+ * - {@link weekNAt} / {@link getCurrentWeekN}: the KEY. Use for every query, filter, write
+ *   and lookup.
+ * - {@link getCurrentWeekOrdinal}: the 1-based POSITION, for "W4 of 11" display only.
+ *
+ * `lib/plan/weekCoordinate.test.ts` fails the build on a position written as a key
+ * outside this file.
+ */
+export function weekNAt(weeks: Plan['weeks'], idx: number): number {
+  const n = (weeks[idx] as { n?: number } | undefined)?.n
+  // Legacy pre-`n` plans only, where position == n by construction.
+  return typeof n === 'number' ? n : idx + 1
+}
+
+/** The current week's KEY (`week.n`). See {@link weekNAt}. */
+export function getCurrentWeekN(weeks: Plan['weeks']): number {
+  return weekNAt(weeks, getCurrentWeekIndex(weeks))
+}
+
+/** The current week's 1-based POSITION, for display ("W4 of 11"). Never a key. */
+export function getCurrentWeekOrdinal(weeks: Plan['weeks']): number {
+  return getCurrentWeekIndex(weeks) + 1
+}
+
+/** The final week's KEY, so "weeks remaining" is `lastWeekN - currentWeekN` in ONE coordinate. */
+export function lastWeekN(weeks: Plan['weeks']): number {
+  return weeks.length === 0 ? 0 : weekNAt(weeks, weeks.length - 1)
+}
+
+/**
+ * The array index of the week keyed `n`, or -1. Positional fallback ONLY for a legacy week
+ * that carries no `n` (where position == n); a stale key that no week carries is -1, never
+ * whichever week happens to sit at that position.
+ */
+export function weekIndexOfN(weeks: Plan['weeks'], n: number): number {
+  const idx = weeks.findIndex(w => (w as { n?: number }).n === n)
+  if (idx >= 0) return idx
+  const legacy = weeks[n - 1] as { n?: number } | undefined
+  return legacy && typeof legacy.n !== 'number' ? n - 1 : -1
+}
+
+/**
  * Find the plan-week index whose 7-day window contains the given calendar
  * date. Used by activity-matching paths so a Sunday-night run ingested on
  * Monday morning is matched against last week's plan (where it belongs),
@@ -145,7 +198,10 @@ export function isDatePastWeek(week: Plan['weeks'][number], date: Date): boolean
  * (pre-`n` legacy plans, where position == n anyway).
  */
 export function findWeekByN(weeks: Plan['weeks'], n: number): Plan['weeks'][number] | undefined {
-  return weeks.find(w => (w as any).n === n) ?? weeks[n - 1]
+  // ADJUST-WEEK-COORD-01 — the fallback used to be `?? weeks[n - 1]` for ANY miss, so a key
+  // no week carries resolved to whatever sat at that position. Legacy-only now, as documented.
+  const idx = weekIndexOfN(weeks, n)
+  return idx >= 0 ? weeks[idx] : undefined
 }
 
 /**

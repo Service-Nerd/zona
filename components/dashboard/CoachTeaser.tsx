@@ -14,7 +14,7 @@ import type { KitReceipt } from '@/lib/coaching/kitReceipts'
 import { COACH_RECEIPT_WINDOW_DAYS } from '@/lib/coaching/constants'
 import { EASY_SHARE_BARS } from '@/components/shared/EasyShare'
 import type { EffortRun } from '@/lib/coaching/runEffort'
-import { getCurrentWeekIndex } from '@/lib/plan'
+import { getCurrentWeekOrdinal } from '@/lib/plan/weekResolution'
 import { authedFetch } from '@/lib/supabase/authedFetch'
 import type { Plan } from '@/types/plan'
 import { useEffect, useState } from 'react'
@@ -43,7 +43,7 @@ export default function CoachTeaser({ plan, firstName, onUpgrade, receipts = [],
   /** False for a paid runner who lands here without a current week. */
   showUpgrade?: boolean
 }) {
-  const weekNum    = getCurrentWeekIndex(plan.weeks) + 1
+  const weekNum    = getCurrentWeekOrdinal(plan.weeks)
   const totalWeeks = plan.weeks.length
 
   // KIT-TASTE-01 — pull-on-view fetch of this week's free insight. Fetched even when receipts exist, because the

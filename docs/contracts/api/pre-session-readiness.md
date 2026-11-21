@@ -99,3 +99,7 @@ of 94 Supabase warnings in a day. **A database error is now logged and the route
 `isQualityOrLong` now reads `isQualityType` from `lib/plan/sessionRole.ts` instead of a hand-written list. The answer
 is identical for every label this route sees (it reads a `coachingSessionType` label, which already names the long run
 `'long'`). No shape change.
+
+## Week coordinate — ADJUST-WEEK-COORD-01 (2026-11-21)
+
+`totalWeeks` handed to the trigger check is the final week's `n` (`lastWeekN`), the coordinate `currentWeekN: week.n` is in. It was `plan.weeks.length`, which on a foundation plan is larger by the foundation block and made taper protection see more weeks left than there are. The owner is `lib/plan/weekResolution.ts` (`getCurrentWeekN`, `weekNAt`, `findWeekByN`, `weekIndexOfN`, `lastWeekN`; `getCurrentWeekOrdinal` for display only), and `lib/plan/weekCoordinate.test.ts` fails the build on a position written as a key (ARCH-ENG-015).

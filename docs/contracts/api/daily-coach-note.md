@@ -152,3 +152,7 @@ rather than inheriting a platform default that has changed twice. The reasoning,
 durations and the client-side `AbortSignal` timeout are owned by
 **`docs/contracts/api/ai-route-duration.md`** and are referenced, never restated here: fourteen
 copies of one number is how the number drifts (`OPS-FN-DURATION-01`, 2026-11-08).
+
+## Week coordinate — ADJUST-WEEK-COORD-01 (2026-11-21)
+
+The overrides filter for today's slot is keyed by `week.n` (`weekNAt`), and completions resolve their week with `findWeekByN`, not `plan.weeks[week_n - 1]`. The prompt's *"week 4/11"* is unchanged: it is the ordinal (`getCurrentWeekOrdinal`), named apart. The owner is `lib/plan/weekResolution.ts` (`getCurrentWeekN`, `weekNAt`, `findWeekByN`, `weekIndexOfN`, `lastWeekN`; `getCurrentWeekOrdinal` for display only), and `lib/plan/weekCoordinate.test.ts` fails the build on a position written as a key (ARCH-ENG-015).

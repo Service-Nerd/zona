@@ -19,6 +19,7 @@ import { GENERATION_CONFIG, raceDistanceKey } from '@/lib/plan/generationConfig'
 import { isLongRun, isHardEffort } from '@/lib/plan/sessionRole'
 import { sessionFloorsFor, type SessionFloors } from '@/lib/plan/sessionFloors'
 import { scaleSessionAnchors } from '@/lib/plan/scaleSessionAnchors'
+import { findWeekByN, weekNAt } from '@/lib/plan/weekResolution'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -164,9 +165,10 @@ export function computeTaperRecalibration(
   const topValues = sorted.slice(0, topN)
   const functionalPeakKm = topValues.reduce((s, v) => s + v, 0) / topValues.length
 
-  // Planned anchor: the week immediately before the taper phase
-  const preTaperWeekIndex = taperPhase.start_week - 2  // 0-indexed
-  const plannedPreTaperKm = plan.weeks[preTaperWeekIndex]?.weekly_km ?? 0
+  // Planned anchor: the week immediately before the taper phase.
+  // ADJUST-WEEK-COORD-01 — looked up by `n`. `start_week` is a `week.n`, and this read
+  // `plan.weeks[start_week - 2]`, a foundation block's length too early on a shifted plan.
+  const plannedPreTaperKm = findWeekByN(plan.weeks, taperPhase.start_week - 1)?.weekly_km ?? 0
   if (plannedPreTaperKm <= 0) {
     return { applied: false, skipReason: 'planned pre-taper volume missing' }
   }
@@ -191,15 +193,16 @@ export function computeTaperRecalibration(
   const taperConfig = GENERATION_CONFIG.TAPER_BY_DISTANCE[distKey]
   const taperPhaseWeeks = GENERATION_CONFIG.TAPER_QUALITY_PER_WEEK[distKey].length
   const fullTaperWeeks  = Math.max(1, taperPhaseWeeks - 1)  // excludes race week
-  const totalWeeks      = plan.weeks.length
+  const lastIdx         = plan.weeks.length - 1
   const weeksModified: number[] = []
 
   const newWeeks: Week[] = plan.weeks.map((week, i) => {
-    const weekN = i + 1
+    // ADJUST-WEEK-COORD-01 — the KEY, in `start_week`'s coordinate; `weeksModified` reports it.
+    const weekN = weekNAt(plan.weeks, i)
     if (week.phase !== 'taper') return week
     // Race week (last week of plan) stays exactly as written — shakeouts are
     // volume-irrelevant and the structure is sacred (CoachingPrinciples §26).
-    if (weekN === totalWeeks) return week
+    if (i === lastIdx) return week
 
     const taperIdx = weekN - taperPhase.start_week
     const stepPct  = taperConfig.volume_reduction_pct / fullTaperWeeks

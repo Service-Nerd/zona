@@ -23,6 +23,7 @@
  */
 
 import { readPlanJson } from '@/lib/plan'
+import { findWeekByN, weekIndexOfN } from '@/lib/plan/weekResolution'
 import { getUserFromRequest } from '@/lib/supabase/getUserFromRequest'
 import { guardAiRequest } from '@/lib/ai/guardAiRequest'
 import { NextRequest, NextResponse } from 'next/server'
@@ -207,7 +208,8 @@ export async function POST(req: NextRequest) {
   if (!plan || !plan.weeks.length) {
     return NextResponse.json({ error: 'No plan found' }, { status: 404 })
   }
-  const week = plan.weeks[weekN - 1] as { sessions?: Record<string, Session>; phase?: string } | undefined
+  // ADJUST-WEEK-COORD-01 — `week_n` is a key; look the week up by it, never by position.
+  const week = findWeekByN(plan.weeks, weekN) as { sessions?: Record<string, Session>; phase?: string } | undefined
   const session = (week?.sessions?.[sessionDay] ?? null) as Session | null
   if (!session) {
     return NextResponse.json({ error: 'Session not found in plan' }, { status: 404 })
@@ -316,7 +318,7 @@ export async function POST(req: NextRequest) {
         .limit(REFRAME_TIER.PREVIOUS_SIMILAR_SCAN_ROWS)
       for (const row of priorRows ?? []) {
         if (row.week_n === weekN && row.session_day === sessionDay) continue
-        const priorWeek = plan.weeks[(row.week_n as number) - 1] as { sessions?: Record<string, Session> } | undefined
+        const priorWeek = findWeekByN(plan.weeks, row.week_n as number) as { sessions?: Record<string, Session> } | undefined
         const priorSession = priorWeek?.sessions?.[row.session_day as string]
         // §58 role axis: a long run compares against long runs, not against every
         // `type: 'easy'` session. The generator models long runs as easy, so raw
@@ -365,7 +367,8 @@ export async function POST(req: NextRequest) {
       ).length
 
       // Scheduled count = sessions in the last 4 plan weeks (approx — counts non-rest days)
-      const currentWeekIdx = weekN - 1
+      // ADJUST-WEEK-COORD-01 — the INDEX of the week keyed `weekN`, not `weekN - 1`.
+      const currentWeekIdx = weekIndexOfN(plan.weeks, weekN)
       const startIdx = Math.max(0, currentWeekIdx - 3)
       let scheduledCount = 0
       for (let i = startIdx; i <= currentWeekIdx; i++) {
@@ -391,7 +394,7 @@ export async function POST(req: NextRequest) {
       const sameRoleRpes: Array<{ rpe: number; ms: number }> = []
       for (const c of completionsList) {
         if (c.rpe == null) continue
-        const w = plan.weeks[(c.week_n as number) - 1] as { sessions?: Record<string, Session> } | undefined
+        const w = findWeekByN(plan.weeks, c.week_n as number) as { sessions?: Record<string, Session> } | undefined
         const s = w?.sessions?.[c.session_day as string]
         if (!s || coachingSessionType(s) !== sessionRole) continue
         sameRoleRpes.push({

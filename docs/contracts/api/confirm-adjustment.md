@@ -75,3 +75,7 @@ be **seven entries, Mon → Sun**, and only the days that **differ** are written
 one-session readiness shape) is refused with **`409 { error: 'This change can no longer be applied' }`** and nothing
 is saved. Before this, the write was positional, so a one-session row would have landed on Monday, and every day
 of the week was rewritten, undoing changes made since.
+
+## Week coordinate — ADJUST-WEEK-COORD-01 (2026-11-21)
+
+A row whose `week_n` no week of the live plan carries is **refused**: `409 { error: 'This change can no longer be applied', reason: 'week_not_found' }`, nothing saved, the row stays `pending`, the Me flag untouched. It used to save the unchanged plan and mark the row `confirmed`. The week is resolved by `findWeekByN`. Every client keeps the card on a non-200 (`PLAN_CHANGE_SAVE_FAILED`), and the runner can still clear it: `revert-adjustment` resolves the same row without a save. The owner is `lib/plan/weekResolution.ts` (`getCurrentWeekN`, `weekNAt`, `findWeekByN`, `weekIndexOfN`, `lastWeekN`; `getCurrentWeekOrdinal` for display only), and `lib/plan/weekCoordinate.test.ts` fails the build on a position written as a key (ARCH-ENG-015).

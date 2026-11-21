@@ -104,6 +104,7 @@ Each principle ships with its mechanical check (listed in the HLD, section 9c) d
 | 2 | Base-build ramp ignores knee/shin injury rules | ✅ `ONRAMP-INJURY-CLIMB-01`, §116 Am. 16 (Coaching Board 2026-11-21). The brief cited §2's capped bounceback, which §2 Am. 3 withdrew; the ramp now uses the race engine's rule (return to pre-deload, no higher) through one shared owner. `verify:parity` IDENTICAL on the race engine |
 | 3 | Per-side plyo dose | ✅ `STRENGTH-PLYO-PER-SIDE-01`, S8 defect fix, commit `7a6ccd06` |
 | 4 | A plan write bypasses `savePlanForUser` | ❌ **Dropped on analysis.** The direct write is the enrich backstop. `shouldServerPersist` limits it to the same generation, and the plan is re-validated by `repairEnrichedCopy` first. Routing it through `savePlanForUser` would archive a duplicate unenriched copy. B7's single engine adapter consolidates saves anyway |
+| 5 | Adjustments written to the wrong week on plans with foundation weeks | ✅ `ADJUST-WEEK-COORD-01`, ⚙️ no board (defect restoring the engine's own documented `week.n`), founder approved 2026-11-21 despite the freeze. ARCH-ENG-015 landed early: `weekResolution.ts` owns the key (`getCurrentWeekN`, `weekNAt`, `findWeekByN`, `weekIndexOfN`, `lastWeekN`), `weekCoordinate.test.ts` forbids a position as a key. Fixed in adjust-plan, the engine's read and `totalWeeks`, taper recalibration (route, client gate, anchor, step), the missed-session prompt, the orphan heal, confirm/revert (no matching week is a 409, never a confirm), pre-session readiness `totalWeeks`, the daily coach note, post-run reframe and the widget. Byte-identical on unshifted plans (1,040 cases against `4e3aa0fc`). The 4 live rows are on one plan and replaced race weeks 1–2 with foundation weeks; no exact restore source exists; repair is a founder call (`docs/runbooks/adjust-week-coord-repair.md`) |
 
 ## v1.2 data and entry-point review (2026-11-21)
 
@@ -166,7 +167,7 @@ to change one.
 | **ARCH-ENG-019** | **`as_of` is resolved in the runner's timezone, on the server.** An unset or `UTC`-default timezone is flagged `unknown`, never trusted. |
 | **ARCH-ENG-020** | **The request is schema-checked at the boundary** (the strict v2 input schema from B1), and **tier gates are applied on the server**. The client hides fields; it does not enforce. |
 
-### Hotfix 5, proposed (founder to approve; the freeze allows harm-to-runner hotfixes only)
+### Hotfix 5 (approved by the founder 2026-11-21, shipped the same day; see the hotfix table)
 `ADJUST-WEEK-COORD-01`:
 - `adjust-plan`, confirm/revert, taper recalibration and the missed-session prompt key on `week.n`.
 - Live harm: adjustments land on the wrong week for every plan with foundation weeks.

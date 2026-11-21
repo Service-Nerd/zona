@@ -76,3 +76,7 @@ be **seven entries, Mon → Sun**, and only the days that **differ** are written
 one-session readiness shape) is refused with **`409 { error: 'This change can no longer be applied' }`** and nothing
 is saved. Before this, the write was positional, so a one-session row would have landed on Monday, and every day
 of the week was rewritten, undoing changes made since.
+
+## Week coordinate — ADJUST-WEEK-COORD-01 (2026-11-21)
+
+A row whose `week_n` no week of the live plan carries is **resolved without a save**: `200 { plan, reason: 'week_not_found' }`, the row marked `reverted` and the Me flag cleared, the plan NOT written. It used to save the unchanged plan as well. "Reverted" claims the change is not in the plan, which is true when no week carries it; confirm REFUSES the same row because "confirmed" would claim the opposite. Refusing both would strand a pending row: `adjust-plan` re-serves a pending row before it runs the engine. The week is resolved by `findWeekByN`. ⚠️ The four rows misplaced before the fix still name a real (wrong) week, so a revert of one of them applies `sessions_before` to that wrong week: `docs/runbooks/adjust-week-coord-repair.md`. The owner is `lib/plan/weekResolution.ts` (`getCurrentWeekN`, `weekNAt`, `findWeekByN`, `weekIndexOfN`, `lastWeekN`; `getCurrentWeekOrdinal` for display only), and `lib/plan/weekCoordinate.test.ts` fails the build on a position written as a key (ARCH-ENG-015).

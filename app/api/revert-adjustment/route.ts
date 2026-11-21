@@ -5,6 +5,7 @@ import { createClient as createServiceClient } from '@supabase/supabase-js'
 import { getUserTier } from '@/lib/trial'
 import { isFeatureAllowed } from '@/lib/plan/canUseFeature'
 import { savePlanForUser, readPlanJson } from '@/lib/plan'
+import { findWeekByN } from '@/lib/plan/weekResolution'
 import { recordOpsEvent } from '@/lib/ops/recordOpsEvent'
 import type { Plan } from '@/types/plan'
 
@@ -66,12 +67,28 @@ export async function POST(req: NextRequest) {
   const sessionsBefore: any[] = adjustment.sessions_before
 
   const updatedPlan = JSON.parse(JSON.stringify(plan)) as Plan
-  const week        = updatedPlan.weeks.find(w => w.n === weekN)
-  if (week) {
-    // READINESS-WRONG-DAY-01 — only the days that changed, and never a malformed row.
-    const applied = applyAdjustmentDays(week, adjustment.sessions_after, sessionsBefore)
-    if (!applied.ok) return NextResponse.json({ error: 'This change can no longer be applied' }, { status: 409 })
+  const week        = findWeekByN(updatedPlan.weeks, weekN)
+  // 🔴 ADJUST-WEEK-COORD-01 — NO MATCHING WEEK: RESOLVE THE ROW, NEVER SAVE THE PLAN.
+  // With nothing on the else this used to SAVE the unchanged plan (an archive row and a write for
+  // nothing) and mark the row `reverted`. Marking it is right and is kept: "reverted" claims the
+  // change is not in the plan, and with no week carrying it, it is not. It is the asymmetric twin
+  // of confirm, which REFUSES here because "confirmed" would claim the change IS in the plan.
+  // ⚠️ Refusing both would strand a pending row for good: confirm 409, revert 409, and
+  // adjust-plan re-serves the pending row before it runs the engine, so the runner could never
+  // clear the card and no new adjustment could be made (code review, 2026-11-21).
+  if (!week) {
+    const nowIso = new Date().toISOString()
+    await Promise.all([
+      serviceSupabase.from('plan_adjustments').update({ status: 'reverted', reverted_at: nowIso }).eq('id', adjustment_id),
+      serviceSupabase.from('user_settings')
+        .update({ last_adjustment_check_at: nowIso, last_adjustment_check_found_change: false })
+        .eq('id', user.id),
+    ])
+    return NextResponse.json({ plan, reason: 'week_not_found' })
   }
+  // READINESS-WRONG-DAY-01 — only the days that changed, and never a malformed row.
+  const applied = applyAdjustmentDays(week, adjustment.sessions_after, sessionsBefore)
+  if (!applied.ok) return NextResponse.json({ error: 'This change can no longer be applied' }, { status: 409 })
 
   // Resetting last_adjustment_check_found_change here too (see same comment
   // in confirm-adjustment): reverting is the resolution of a pending change,

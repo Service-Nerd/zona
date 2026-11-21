@@ -161,8 +161,13 @@ export function computePostRaceReshape(
   const weeksAffected: number[] = []
   let sessionsModified = 0
 
-  for (let weekN = raceWeekN + 1; weekN <= windowEnd; weekN++) {
-    const weekIndex = weekN - 1
+  // ADJUST-WEEK-COORD-01 — this path is in ORDINALS (1-based positions) end to end: the client
+  // sends `raceWeekIdx + 1`, `embedRaceResult` and `injectAIEnrichment` compare `i + 1`, and
+  // `weeks_affected` is stored and read back in the same coordinate. Consistent, so left; named
+  // an ordinal here so it is not read as a `week.n` key. ADR-027 B4b moves it onto `week.n`.
+  for (let weekOrdinal = raceWeekN + 1; weekOrdinal <= windowEnd; weekOrdinal++) {
+    const weekN = weekOrdinal
+    const weekIndex = weekOrdinal - 1
     const week = reshapedWeeks[weekIndex]
     if (!week) continue
 

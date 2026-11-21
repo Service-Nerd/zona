@@ -35,3 +35,7 @@ Risk warning (always, when the route returns it) · receipts card, or with none 
 
 `app/dashboard/DashboardClient.tsx` (two sites) · `app/coach-preview/page.tsx` · `app/coach-preview/full/page.tsx` ·
 `app/copy-preview/page.tsx`.
+
+## Week ordinal — ADJUST-WEEK-COORD-01 (2026-11-21)
+
+The "W4 of 11" label reads `getCurrentWeekOrdinal` (`lib/plan/weekResolution.ts`), the display position, named apart from the week KEY `week.n`. Same value as before; no prop change.

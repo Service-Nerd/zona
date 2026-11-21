@@ -21,7 +21,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient as createServiceClient } from '@supabase/supabase-js'
 import { getUserTier } from '@/lib/trial'
 import { isFeatureAllowed } from '@/lib/plan/canUseFeature'
-import { getCurrentWeekIndex, savePlanForUser, readPlanJson } from '@/lib/plan'
+import { savePlanForUser, readPlanJson } from '@/lib/plan'
+import { getCurrentWeekN } from '@/lib/plan/weekResolution'
 import { computeTaperRecalibration } from '@/lib/plan/taperRecalibration'
 import type { Plan } from '@/types/plan'
 
@@ -49,8 +50,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ skipped: true, reason: 'no_plan' })
   }
 
-  const weekIndex  = getCurrentWeekIndex(plan.weeks)
-  const currentWeekN = weekIndex + 1
+  // ADJUST-WEEK-COORD-01 — `week.n`, the coordinate the taper phase's `start_week` is in. The
+  // array position + 1 made the entry check fire a foundation block's length too EARLY.
+  const currentWeekN = getCurrentWeekN(plan.weeks)
 
   // Load actual weekly volumes for build + peak weeks.
   // strava_activities.week_n is populated when an activity is linked to the plan.

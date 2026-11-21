@@ -241,3 +241,7 @@ one does not (§84's own graceful degradation for legacy plans). `prescribedHrCe
 
 Guarded by `components/dashboard/sessionHrDisplay.test.ts`, which also fails if any file here
 feeds `sessionHRBand` a session's type again.
+
+## Week coordinate — ADJUST-WEEK-COORD-01 (2026-11-21)
+
+The reflected week and the prior-week rows resolve by `findWeekByN`, and the four-week completion window starts from `weekIndexOfN(weeks, week_n)`, not `week_n - 1`. The owner is `lib/plan/weekResolution.ts` (`getCurrentWeekN`, `weekNAt`, `findWeekByN`, `weekIndexOfN`, `lastWeekN`; `getCurrentWeekOrdinal` for display only), and `lib/plan/weekCoordinate.test.ts` fails the build on a position written as a key (ARCH-ENG-015).

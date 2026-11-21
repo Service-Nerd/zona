@@ -61,3 +61,7 @@ CoachingPrinciples §68. ADR-006 — this is the deterministic step only; no AI 
 The `plans` row is read through `readPlanJson` (`lib/planRead.ts`), the one owner of that query. It uses
 `.maybeSingle()`, so a runner with **no plan is `null` with no error**, not the PostgREST 406 that made up 89
 of 94 Supabase warnings in a day. **A database error now answers `500 { error: 'Could not load your plan' }`.** It used to be indistinguishable from "no plan" and answered as if the runner had none.
+
+## Week coordinate — ADJUST-WEEK-COORD-01 (2026-11-21)
+
+The current week is `getCurrentWeekN` (`week.n`), the coordinate the taper phase's `start_week` is in. `computeTaperRecalibration` reads the pre-taper anchor as the week keyed `start_week - 1` and reports `weeksModified` as `week.n` values; the race week is the plan's last array entry. Before this, a plan with foundation weeks passed the entry check a foundation block's length early and anchored on the wrong week. The client gate in `DashboardClient` uses the same owner. Shapes unchanged. The owner is `lib/plan/weekResolution.ts` (`getCurrentWeekN`, `weekNAt`, `findWeekByN`, `weekIndexOfN`, `lastWeekN`; `getCurrentWeekOrdinal` for display only), and `lib/plan/weekCoordinate.test.ts` fails the build on a position written as a key (ARCH-ENG-015).

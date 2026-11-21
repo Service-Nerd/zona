@@ -332,7 +332,7 @@ one is the caller's, not an oversight:
 | `lib/coaching/prompts/athleteContext` | same |
 
 ⚠️ **Plus one the count's reader could not see: `from '@/lib/plan'` — the barrel.**
-`getCurrentWeekIndex` is engine and is here out of **necessity** (it resolves `weekN`,
+`getCurrentWeekN` (was `getCurrentWeekIndex` until ADJUST-WEEK-COORD-01) is engine and is here out of **necessity** (it resolves `weekN`,
 which scopes three of this route's own queries, so it must be known before the engine is
 called); `savePlanForUser` is persistence. So **five on the contract's reader, six
 counting the barrel**, and `engineContract.test.ts` now asserts both plus the exact
@@ -476,3 +476,7 @@ rather than inheriting a platform default that has changed twice. The reasoning,
 durations and the client-side `AbortSignal` timeout are owned by
 **`docs/contracts/api/ai-route-duration.md`** and are referenced, never restated here: fourteen
 copies of one number is how the number drifts (`OPS-FN-DURATION-01`, 2026-11-08).
+
+## Week coordinate — ADJUST-WEEK-COORD-01 (2026-11-21)
+
+`weekN` is the current week's **`week.n`** (`getCurrentWeekN`), not `getCurrentWeekIndex + 1`. It scopes the `plan_adjustments` count, is stored as the row's `week_n`, and is the week the engine reads AND writes (it now looks the week up by `n`, never `plan.weeks[weekN - 1]`). The engine's `totalWeeks` is the final week's `n`, so taper protection counts weeks remaining in one coordinate. Before this, on a plan with foundation weeks (`n <= 0`), the row and the write landed a foundation block's length LATER than the runner's week. No change for a plan whose `n` equals its position (byte-identical over 1,040 cases). Request and response shapes unchanged. The owner is `lib/plan/weekResolution.ts` (`getCurrentWeekN`, `weekNAt`, `findWeekByN`, `weekIndexOfN`, `lastWeekN`; `getCurrentWeekOrdinal` for display only), and `lib/plan/weekCoordinate.test.ts` fails the build on a position written as a key (ARCH-ENG-015).

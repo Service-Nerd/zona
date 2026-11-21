@@ -77,6 +77,7 @@ import { computeSessionDiff } from './diff/sessionDiff'
 import { validateSummaryAgainstDiff } from './diff/validateAiSummary'
 import { isLongRun, isQualitySession } from '@/lib/plan/sessionRole'
 import { orderedWeekSessions } from '@/lib/plan/weekSessions'
+import { findWeekByN, lastWeekN, weekIndexOfN } from '@/lib/plan/weekResolution'
 import { type Violation } from '@/lib/plan/invariants'
 import { validateStoredPlan } from '@/lib/plan/validateStoredPlan'
 import { classifyReshapeViolations } from './reshapeIntroduced'
@@ -316,7 +317,10 @@ export function runAdjustmentEngine(req: AdjustmentRequest): AdjustmentOutcome {
  */
 export function buildAdjustmentSignals(req: AdjustmentRequest): AdjustmentCheckInput {
   const { plan, weekN, analyses, completions, weeklyLoad } = req
-  const week = plan.weeks[weekN - 1]
+  // ADJUST-WEEK-COORD-01 — looked up by `n`, the same key `applyAdjustmentToPlan` writes. This
+  // read `plan.weeks[weekN - 1]`, so on a foundation plan the signals and the write named two
+  // different weeks.
+  const week = findWeekByN(plan.weeks, weekN)
 
   // Resolve the current training phase from plan.phases (R23+ plans only).
   const currentPhase = plan.phases
@@ -462,7 +466,13 @@ export function buildAdjustmentSignals(req: AdjustmentRequest): AdjustmentCheckI
 
   return {
     currentWeekN:  weekN,
-    totalWeeks:    plan.weeks.length,
+    // ADJUST-WEEK-COORD-01 — the final week's KEY, not the array length: `guardCheck` reads
+    // `totalWeeks - currentWeekN` as weeks remaining, and on a foundation plan the length is
+    // larger than the last `n` by the foundation block, which disarmed taper protection.
+    totalWeeks:    lastWeekN(plan.weeks),
+    // ADJUST-WEEK-COORD-01 — the fitness gate counts weeks TRAINED, which the position always
+    // measured correctly; keeping it here is what keeps the fix a coordinate change only.
+    weeksIntoPlan: weekIndexOfN(plan.weeks, weekN) + 1,
     currentWeekSessions,
     linkedKm:      thisWeek.linkedKm,
     offPlanKm:     thisWeek.offPlanKm,
@@ -498,7 +508,9 @@ function applyAdjustmentToPlan(
   nowIso: string,
 ): Plan {
   const updated = JSON.parse(JSON.stringify(plan)) as Plan
-  const week = updated.weeks.find(w => w.n === weekN)
+  // ADJUST-WEEK-COORD-01 — the SAME owner as the read in `buildAdjustmentSignals`, so the week
+  // read and the week written cannot be two answers to one key.
+  const week = findWeekByN(updated.weeks, weekN)
   if (!week) return updated
 
   const days = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'] as const

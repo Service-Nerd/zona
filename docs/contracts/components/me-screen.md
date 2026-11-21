@@ -207,3 +207,7 @@ The plan-history rows read `raceInPast` from `calendarDaysBetween(new Date(), p.
 never `new Date(p.race_date).getTime() < Date.now()`. 🔴 **That instant comparison is what it used
 to be, and `new Date('2026-12-12')` is 16:00 on the 11th in Los Angeles — so a race read as PAST
 from the afternoon before it happened.** Swept tree-wide by `lib/raceCountdownOwner.test.ts`.
+
+## Week ordinal — ADJUST-WEEK-COORD-01 (2026-11-21)
+
+The "W4 of 11" label reads `getCurrentWeekOrdinal` (`lib/plan/weekResolution.ts`), the display position, named apart from the week KEY `week.n`. Same value as before; no prop change.

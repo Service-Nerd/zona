@@ -50,7 +50,8 @@ import { createClient } from '@/lib/supabase/client'
 import { writeUserSettings } from '@/lib/supabase/userSettingsWrite'
 import { currentUserId } from '@/lib/analytics'
 import { formatDate } from '@/lib/format'
-import { getCurrentWeekIndex, readPlanJson } from '@/lib/plan'
+import { readPlanJson } from '@/lib/plan'
+import { getCurrentWeekOrdinal } from '@/lib/plan/weekResolution'
 import { Z_LAYERS } from '@/lib/ui/zLayers'
 import { useDisciplineLedger } from '@/lib/coaching/useDisciplineLedger'
 import { useEffect, useState } from 'react'
@@ -1020,8 +1021,7 @@ export default function MeScreen({ openSection, onOpenSectionConsumed, tierReaso
     : 'Free'
 
   // Plan progress for read-only training section
-  const currentWeekIndex = getCurrentWeekIndex(plan.weeks)
-  const weekNum    = currentWeekIndex + 1
+  const weekNum    = getCurrentWeekOrdinal(plan.weeks)
   const totalWeeks = plan.weeks.length
   const raceDateFormatted = plan?.meta?.race_date
     ? formatDate(plan.meta.race_date, 'long')

@@ -16,7 +16,7 @@ import { TAP_TARGET_MIN_PX } from '@/components/ui/tapTarget'
 import ModifyPlanSheet from '@/components/shared/ModifyPlanSheet'
 import ModifyPlanConfirm from '@/components/shared/ModifyPlanConfirm'
 import { canModifyPlan, type PlanEdits } from '@/lib/plan/modifyPlan'
-import { getSessionsForDate } from '@/lib/plan/weekResolution'
+import { getSessionsForDate, getCurrentWeekN, getCurrentWeekOrdinal, weekNAt } from '@/lib/plan/weekResolution'
 import { ACK_LABEL, warnKindOf, withAcknowledgement, type WarnKind } from '@/lib/plan/warnAcknowledgement'
 import { handoverState, handoverInput, handoverSeenPatch } from '@/lib/plan/baseBuildHandover'
 import { declaredVolumeEdit, stagedDisplay, stagedRaceOf, isCheckpointWeek, checkpointPassed, type CheckpointChoice } from '@/lib/plan/stagedRacePlan'
@@ -1797,7 +1797,10 @@ export default function DashboardClient() {
           const today = new Date()
           today.setHours(0, 0, 0, 0)
           const wIdx     = getCurrentWeekIndex(loadedPlan.weeks)
-          const wN       = wIdx + 1
+          // ADJUST-WEEK-COORD-01 — `week.n`: completions, overrides and the prompt's
+          // completion upsert are all keyed by it. Position + 1 queried a later week on
+          // a foundation plan, so a missed session there was never prompted.
+          const wN       = weekNAt(loadedPlan.weeks, wIdx)
           const week     = loadedPlan.weeks[wIdx]
           const thisWeekCompletions = completionsMap[wN] ?? {}
           if (week) {
@@ -2140,7 +2143,8 @@ export default function DashboardClient() {
               const lt = [...loadedPlan.weeks].reverse().find((w: any) => w.phase === 'taper')
               return ft && lt ? { start_week: ft.n } : null
             })()
-          const taperCurrentWeekN = (getCurrentWeekIndex(loadedPlan.weeks)) + 1
+          // ADJUST-WEEK-COORD-01 — `week.n`, the coordinate `start_week` is in.
+          const taperCurrentWeekN = getCurrentWeekN(loadedPlan.weeks)
           if (
             taperPhaseEntry &&
             taperCurrentWeekN === taperPhaseEntry.start_week &&
@@ -2389,7 +2393,8 @@ export default function DashboardClient() {
   useEffect(() => {
     if (!hasPaidAccess || !stravaConnected || !runAnalysisReady) return
     if (!plan?.weeks?.length) return
-    const wn       = getCurrentWeekIndex(plan.weeks) + 1
+    // ADJUST-WEEK-COORD-01 — both maps are keyed by `week.n`.
+    const wn       = getCurrentWeekN(plan.weeks)
     const comps    = allCompletions[wn] ?? {}
     const analysed = runAnalysisMap[wn] ?? {}
     const orphans  = Object.entries(comps).filter(([day, c]: [string, any]) =>
@@ -3372,7 +3377,7 @@ export default function DashboardClient() {
               // Today and Plan both take `plan` and guard internally, which is
               // why this presents as a Coach-only crash.
               if (!currentWeek) return <CoachTeaser plan={plan} firstName={firstName} onUpgrade={() => openUpgrade('coach_teaser_empty')} receipts={receipts} effortRuns={effortRuns} showUpgrade={false} />
-              const wn = (currentWeek as any)?.n ?? (getCurrentWeekIndex(plan.weeks) + 1)
+              const wn = getCurrentWeekN(plan.weeks)
               const comps = allCompletions[wn] ?? {}
               const wSessions = Object.entries((currentWeek as any).sessions ?? {})
                 .map(([day, s]: [string, any]) => ({ ...(s as any), key: day }))
@@ -5039,7 +5044,7 @@ function PlanScreen({ plan, stravaRuns, allOverrides, allCompletions, onOverride
   // maintenance plan. `weekOrdinal` is the 1-indexed array POSITION, and is the
   // only value shown to the user ("Wk 4 of 11") or fed to the PlanArc — never
   // week.n, which would render the nonsensical "Wk 29 of 11".
-  const weekNum = (plan.weeks[currentWeekIndex] as any)?.n ?? (currentWeekIndex + 1)
+  const weekNum = weekNAt(plan.weeks, currentWeekIndex)
   const weekOrdinal = currentWeekIndex + 1
   const totalWeeks = plan.weeks.length
 
@@ -5601,14 +5606,14 @@ function CoachScreen({ plan, currentWeek, runs, loadPicture = null, easyShareWee
   const [loading, setLoading]           = useState(false)
   const [error, setError]               = useState<string | null>(null)
 
-  const weekNum    = getCurrentWeekIndex(plan.weeks) + 1
+  const weekNum    = getCurrentWeekOrdinal(plan.weeks)
   const totalWeeks = plan.weeks.length
   // ADR-013: `weekNum` is the display ordinal (array position, shown as
   // "W4 of 11"). `weekKey` is the canonical week.n — the key weekly_reports,
   // phase_summaries and plan.weeks lookups use. They diverge on a standalone
   // maintenance plan (position 4 vs n 29); keying by the ordinal there reads the
   // archived race plan's rows. No-op on race plans (position == n).
-  const weekKey    = (currentWeek as any)?.n ?? weekNum
+  const weekKey    = getCurrentWeekN(plan.weeks)
   const reportIsCurrent = weeklyReport?.week_n === weekKey
   // Live score from completions (passed in from DashboardClient — requires Strava HR data).
   // Falls back to the most recent report score if no live data is available.

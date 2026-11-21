@@ -13,6 +13,7 @@ import { achievementLine } from '@/lib/coaching/goalSequencing'
 import { zoneForSessionType } from '@/lib/coaching/zoneRules'
 import { isVerifiedCompletion } from '@/lib/coaching/completionVerification'
 import { getCurrentWeekIndex, isDateWithinWeek, isPlanComplete, parseLocalDate, readPlanJson } from '@/lib/plan'
+import { findWeekByN, getCurrentWeekOrdinal, weekNAt } from '@/lib/plan/weekResolution'
 import { weeksUntilRace } from '@/lib/format'
 import { resolveEffectiveDay, slotForOriginalDay, type SessionOverride, SESSION_OVERRIDE_COLUMNS } from '@/lib/plan/effectiveSessions'
 import type { Plan } from '@/types/plan'
@@ -151,7 +152,10 @@ export async function GET(req: NextRequest) {
   }
 
   const weekIndex = getCurrentWeekIndex(plan.weeks)
-  const weekN     = weekIndex + 1
+  // ADJUST-WEEK-COORD-01 — two numbers, named apart. `weekN` is the KEY (overrides are keyed
+  // by `week.n`); `weekOrdinal` is the position the prompt prints as "week 4/11".
+  const weekN       = weekNAt(plan.weeks, weekIndex)
+  const weekOrdinal = getCurrentWeekOrdinal(plan.weeks)
   const week      = plan.weeks[weekIndex]
   if (!week) return NextResponse.json({ error: 'No current week in plan' }, { status: 404 })
 
@@ -191,7 +195,7 @@ export async function GET(req: NextRequest) {
     // session" (ADR-011 §3b Verified-Completion Rule). Select carries the
     // link ids + rpe/fatigue/avg_hr, so the helper classifies correctly.
     if (!isVerifiedCompletion(c)) return false
-    const lcWeekCheck = plan.weeks[c.week_n - 1] as any
+    const lcWeekCheck = findWeekByN(plan.weeks, c.week_n) as any
     const lcSessionCheck = lcWeekCheck?.sessions?.[c.session_day]
     if (!lcSessionCheck) return false  // skip completions whose plan session no longer exists
     return !EXCLUDED_SESSION_TYPES.includes(lcSessionCheck.type)
@@ -200,7 +204,7 @@ export async function GET(req: NextRequest) {
   let lastSession: any = null
   if (lastCompleted) {
     const noteDateMs  = new Date(noteDate + 'T00:00:00Z').getTime()
-    const lcWeek      = plan.weeks[lastCompleted.week_n - 1] as any
+    const lcWeek      = findWeekByN(plan.weeks, lastCompleted.week_n) as any
     const lcSession   = lcWeek?.sessions?.[lastCompleted.session_day] ?? null
 
     // Resolve actual run date from the linked activity (Apple Health primary, Strava secondary).
@@ -259,7 +263,7 @@ export async function GET(req: NextRequest) {
   const recentTags = completions
     .filter((c: any) => {
       if (!c.fatigue_tag) return false
-      const w = plan.weeks[c.week_n - 1] as any
+      const w = findWeekByN(plan.weeks, c.week_n) as any
       const s = w?.sessions?.[c.session_day]
       return !EXCLUDED_SESSION_TYPES.includes(s?.type)
     })
@@ -285,7 +289,7 @@ export async function GET(req: NextRequest) {
   // finish time + outcome make the line specific ("You ran 14:32 …"); it
   // degrades gracefully to "<distance> done. In the book." when no result exists.
   const raceWeekResult = (planComplete && lastSession?.type === 'race' && lastCompleted)
-    ? ((plan.weeks[lastCompleted.week_n - 1] as any)?.result_embedded ?? null)
+    ? ((findWeekByN(plan.weeks, lastCompleted.week_n) as any)?.result_embedded ?? null)
     : null
   const raceAchievement = (planComplete && lastSession?.type === 'race' && (raceWeekResult?.distance_km || plan.meta.race_distance_km))
     ? achievementLine({
@@ -310,7 +314,7 @@ export async function GET(req: NextRequest) {
     lastSession,
     weekPhase: (week as any).phase as string | null,
     deloadWeek: (week as any).badge === 'deload',
-    weekN,
+    weekN: weekOrdinal,
     totalWeeks: plan.weeks.length,
     planComplete,
     weeksToRace,

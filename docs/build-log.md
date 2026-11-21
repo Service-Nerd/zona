@@ -6,6 +6,14 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-11-21 — ADJUST-WEEK-COORD-01 · the adjustment read one week and wrote another, and the write was the whole week
+
+**Dev.** A plan week has two numbers, its position in the array and its key `week.n`, and they are only equal until a foundation block is prepended. `adjust-plan` used the position as the key. The engine read the position, the right week, and wrote the week whose `n` matched it, three weeks later. The same expression keyed taper recalibration, the missed-session prompt, the widget's overrides and the coach note's completion lookups. One owner now, and a test that fails on the four shapes a position takes when written as a key. On a plan without foundation weeks the output is byte-identical: 1,040 cases against the base commit, made to go red by moving one number.
+
+**Product.** The backlog item called the four live rows notes. Measured, they were worse: the engine writes every day of the week it was handed, so race weeks 1 and 2 of one runner's plan are now copies of foundation weeks −3 and −2 plus a drift note, on all seven days. The runner reaches week 1 on 30 November. There is no exact copy to restore: the nearest archive is an earlier generation, and today's engine no longer reproduces the plan. Both race weeks also already sit at the two-adjustments cap, and the missed-session prompt had keyed two completions and two analyses to week 1 the same way. The repair is a founder call and is written up as a hand-over.
+
+**The honest bit.** Measuring the live rows showed the actual damage, which the reading had not. "A note on the wrong week" and "a different week" are both correct descriptions of `sessions_after`. Only one of them is what the write did.
+
 ## 2026-11-21 — STRAVA-SOR-REVIEW-FIX-03 (trims STRAVA-SOR-REVIEW-FIX-01 and STRAVA-SOR-REVIEW-FIX-02, reverted unpushed) · two review rounds made the Strava fix riskier than the Strava bug
 
 **Dev.** Two rounds of code review on STRAVA-WEBHOOK-SOR-01 produced fixes that reached every runner to protect one. Round two re-keyed every `run_analysis` upsert from the activity row's ids, and `run_analysis` has full unique constraints that superseded rows also occupy, so the new key could collide with history. Both rounds added a Strava lookup to every Apple Health ingest, with a time window and a rate limit to keep it affordable. Strava is connected by the founder only. Both commits were reverted before they were pushed, and only the pieces that stay inside the Strava paths and the strength package came back: the per-side jump at S8's exact dose, no false discard in the webhook, and a scoped delete that reports its errors.

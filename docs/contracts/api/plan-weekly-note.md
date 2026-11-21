@@ -112,3 +112,7 @@ rather than inheriting a platform default that has changed twice. The reasoning,
 durations and the client-side `AbortSignal` timeout are owned by
 **`docs/contracts/api/ai-route-duration.md`** and are referenced, never restated here: fourteen
 copies of one number is how the number drifts (`OPS-FN-DURATION-01`, 2026-11-08).
+
+## Week coordinate — ADJUST-WEEK-COORD-01 (2026-11-21)
+
+`findWeekByN` (`lib/plan/weekResolution.ts`) falls back to the array position only for a legacy week with no `n`. It used to fall back for ANY miss, so a `week_n` no week carries resolved to whichever week sat at that position. That request now gets the 404 above. Measured 2026-11-21: 0 live rows in `session_completions`, `run_analysis`, `session_overrides` or `plan_adjustments` carry a `week_n` their runner's live plan lacks, so no stored key changes resolution.

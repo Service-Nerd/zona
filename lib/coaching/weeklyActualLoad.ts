@@ -46,7 +46,7 @@
 // sample size. `linkedKm` is what the cap still reads. Do not quietly switch it.
 
 import type { Plan } from '@/types/plan'
-import { getWeekIndexForDate } from '@/lib/plan/weekResolution'
+import { getWeekIndexForDate, weekNAt } from '@/lib/plan/weekResolution'
 import { DUPLICATE_ACTIVITY } from './constants'
 import { runDistance } from '@/lib/health/runDistance'
 
@@ -174,7 +174,7 @@ export function bucketLoadByPlanWeek(
     // Dropping them is the difference between 63.5% and the true 26.9%.
     if (!isInsidePlanWeek(week, row.start_date)) continue
 
-    const n   = (week as { n?: number }).n ?? idx + 1
+    const n   = weekNAt(plan.weeks, idx)
     // UNMEASURED-DISTANCE-01 (Coaching Board 2026-10-22): a runner-reported distance counts for VOLUME; counting it is
     // safer for load than counting zero (Willy). Unknown stays 0 here, as before.
     const km  = runDistance(row)?.km ?? 0

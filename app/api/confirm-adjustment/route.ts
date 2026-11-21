@@ -5,6 +5,7 @@ import { createClient as createServiceClient } from '@supabase/supabase-js'
 import { getUserTier } from '@/lib/trial'
 import { isFeatureAllowed } from '@/lib/plan/canUseFeature'
 import { savePlanForUser, readPlanJson } from '@/lib/plan'
+import { findWeekByN } from '@/lib/plan/weekResolution'
 import { recordOpsEvent } from '@/lib/ops/recordOpsEvent'
 import type { Plan } from '@/types/plan'
 
@@ -64,12 +65,17 @@ export async function POST(req: NextRequest) {
   const sessionsAfter: any[] = adjustment.sessions_after
 
   const updatedPlan = JSON.parse(JSON.stringify(plan)) as Plan
-  const week        = updatedPlan.weeks.find(w => w.n === weekN)
-  if (week) {
-    // READINESS-WRONG-DAY-01 — only the days that changed, and never a malformed row.
-    const applied = applyAdjustmentDays(week, adjustment.sessions_before, sessionsAfter)
-    if (!applied.ok) return NextResponse.json({ error: 'This change can no longer be applied' }, { status: 409 })
+  const week        = findWeekByN(updatedPlan.weeks, weekN)
+  // 🔴 ADJUST-WEEK-COORD-01 — NO MATCHING WEEK IS A REFUSAL, NOT A CONFIRMATION. This was
+  // `if (week) { … }` with nothing on the else, so a row whose week the plan no longer carries
+  // was saved unchanged and then marked `confirmed`: a change recorded as applied that was
+  // never applied anywhere. The row stays `pending`; every client keeps the card on a non-200.
+  if (!week) {
+    return NextResponse.json({ error: 'This change can no longer be applied', reason: 'week_not_found' }, { status: 409 })
   }
+  // READINESS-WRONG-DAY-01 — only the days that changed, and never a malformed row.
+  const applied = applyAdjustmentDays(week, adjustment.sessions_before, sessionsAfter)
+  if (!applied.ok) return NextResponse.json({ error: 'This change can no longer be applied' }, { status: 409 })
 
   // Resetting last_adjustment_check_found_change here too: previously this
   // route only flipped the plan_adjustments row, leaving the Me-screen flag

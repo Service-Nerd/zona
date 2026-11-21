@@ -9,6 +9,7 @@
 
 import type { Plan } from '@/types/plan'
 import { getCurrentWeekIndex } from '@/lib/plan'
+import { weekNAt } from '@/lib/plan/weekResolution'
 import { daysUntilRace } from '@/lib/format'
 import { resolveEffectiveDay, soleSession, type SessionOverride } from '@/lib/plan/effectiveSessions'
 
@@ -66,7 +67,8 @@ export function buildWidgetState(input: {
   let todayDurationMins:  number | null = null
 
   if (week) {
-    const weekN = weekIdx + 1
+    // ADJUST-WEEK-COORD-01 — overrides are keyed by `week.n`, not position.
+    const weekN = weekNAt(plan.weeks, weekIdx)
     const weekOverrides = (input.overrides ?? []).filter(o => o.week_n === weekN)
     const effective     = resolveEffectiveDay(week, weekOverrides)
     const dowKey        = DOW_KEYS[now.getDay()]

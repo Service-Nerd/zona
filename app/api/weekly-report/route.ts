@@ -16,6 +16,7 @@ import { raceKm, plannedCoveredKm, plannedCoveredKmOnDays } from '@/lib/plan/wee
 import { buildAthleteContext } from '@/lib/coaching/prompts/athleteContext'
 import { isVerifiedCompletion } from '@/lib/coaching/completionVerification'
 import { getCurrentWeekIndex, isDateWithinWeek, isDateBeforePlan, readPlanJson } from '@/lib/plan'
+import { weekNAt } from '@/lib/plan/weekResolution'
 import type { Plan } from '@/types/plan'
 import { ANTHROPIC_MODEL_DEEP } from '@/lib/ai/models'
 import { callAnthropic } from '@/lib/ai/callAnthropic'
@@ -137,7 +138,7 @@ export async function POST(req: NextRequest) {
   // restarts at 0 while week.n continues (26+); keying by position would read
   // the archived race plan's rows at that index and store the report under the
   // wrong week. No-op on race plans (position == n).
-  const weekN     = (week as any).n ?? (weekIndex + 1)
+  const weekN     = weekNAt(plan.weeks, weekIndex)
 
   // Check existing report
   const { data: existing } = await serviceSupabase

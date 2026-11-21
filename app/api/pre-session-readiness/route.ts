@@ -3,6 +3,7 @@ import { getUserFromRequest } from '@/lib/supabase/getUserFromRequest'
 import { getUserTier } from '@/lib/trial'
 import { isFeatureAllowed } from '@/lib/plan/canUseFeature'
 import { getSessionsForDate, parseLocalDate, readPlanJson } from '@/lib/plan'
+import { lastWeekN } from '@/lib/plan/weekResolution'
 import { SESSION_OVERRIDE_COLUMNS } from '@/lib/plan/effectiveSessions'
 import { orderedWeekSessions } from '@/lib/plan/weekSessions'
 import { recordOpsEvent } from '@/lib/ops/recordOpsEvent'
@@ -158,7 +159,9 @@ export async function GET(req: NextRequest) {
   // Run today's session through the engine with only the readiness signal.
   const input: AdjustmentCheckInput = {
     currentWeekN:        week.n,
-    totalWeeks:          plan.weeks.length,
+    // ADJUST-WEEK-COORD-01 — the last week's KEY, in the same coordinate as `week.n`. The
+    // array length is larger by the foundation block, which made taper protection miss.
+    totalWeeks:          lastWeekN(plan.weeks),
     // The engine's contract is the whole week, Mon → Sun (RESHAPE-FIX-WAVE1's guard). A
     // one-session list THREW here for every softening since 2026-06-26.
     currentWeekSessions: orderedWeekSessions(week),

@@ -110,6 +110,25 @@ for (const [route, status] of [['confirm-adjustment', 'confirmed'], ['revert-adj
       expect(S.updates).toEqual([])
     })
 
+    it(`🔴 ADJUST-WEEK-COORD-01 — a row whose week the plan does not carry: the plan is never saved`, async () => {
+      // The plan carries only n = 3. Before the fix both routes SAVED the unchanged plan and marked
+      // the row. Confirm now refuses ("confirmed" would claim the change is in the plan); revert
+      // resolves the row without a save ("reverted" claims it is not, which is true), so a pending
+      // row can never be stranded with both answers refused.
+      S.adjustment = { ...S.adjustment, week_n: 6 }
+      const res = await call(route)
+      expect(S.saved, 'the plan was saved for a week that does not exist').toBe(0)
+      const body = await res.json()
+      expect(body.reason).toBe('week_not_found')
+      if (route === 'confirm-adjustment') {
+        expect(res.status).toBe(409)
+        expect(S.updates, 'a row was marked confirmed for a change applied nowhere').toEqual([])
+      } else {
+        expect(res.status).toBe(200)
+        expect(S.updates.find(u => u.table === 'plan_adjustments')?.row).toMatchObject({ status: 'reverted' })
+      }
+    })
+
     it(`a successful save marks it ${status} and clears the flag, and records nothing`, async () => {
       const res = await call(route)
       expect(res.status).toBe(200)

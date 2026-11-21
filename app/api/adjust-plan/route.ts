@@ -15,7 +15,7 @@ import { fetchWeeklyLoad } from '@/lib/coaching/weeklyActualLoad'
 // model the engine may not call, and their failure must be silent.
 import { buildAdjustmentExplanationPrompt } from '@/lib/coaching/prompts/planAdjustment'
 import { buildAthleteContext } from '@/lib/coaching/prompts/athleteContext'
-import { getCurrentWeekIndex, savePlanForUser, readPlanJson } from '@/lib/plan'
+import { getCurrentWeekN, savePlanForUser, readPlanJson } from '@/lib/plan'
 import { recordOpsEvent } from '@/lib/ops/recordOpsEvent'
 import type { Plan } from '@/types/plan'
 import { ANTHROPIC_MODEL_DEEP } from '@/lib/ai/models'
@@ -143,7 +143,11 @@ export async function POST(req: NextRequest) {
   // ⚠️ RESOLVED HERE, NOT IN THE ENGINE, AND THE REASON IS NECESSITY RATHER THAN
   // DOCTRINE: `weekN` scopes three of the queries below, so it has to be known
   // before the engine can be called. It is passed in.
-  const weekN = getCurrentWeekIndex(plan.weeks) + 1
+  // 🔴 ADJUST-WEEK-COORD-01 — `week.n`, NEVER the array position. This line read
+  // `getCurrentWeekIndex(plan.weeks) + 1`: on a plan with foundation weeks (n <= 0) the
+  // engine read the runner's week and wrote the week whose n equalled the position, three
+  // weeks later on all four live rows it touched. The three queries it scopes are keyed by n.
+  const weekN = getCurrentWeekN(plan.weeks)
 
   const [analysisRes, adjustmentsThisWeekRes, existingPendingRes, completionsRes, lastResolvedAdjustmentRes] = await Promise.all([
     serviceSupabase
