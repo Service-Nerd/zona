@@ -2,40 +2,67 @@
 
 ## System Overview
 
-Zonna is a Next.js App Router application backed by Supabase,
-deployed on Vercel. Training plan data lives in a GitHub Gist
-(JSON), fetched fresh on each request. Strava provides run
-data via OAuth.
+> **Rewritten 2026-11-21 (ADR-027 B1, `ADR027-B1-DOC-DRIFT`).** The previous overview described Gist plan
+> storage, a separate AI plan generator for paid users and a dark-mode toggle. None of those is the current
+> system. **Target architecture:** `docs/architecture/ADR-027-coaching-engine-service.md` (accepted
+> 2026-11-20), which rebuilds the engine as a layered service; the current engine is frozen except the
+> ADR-027 hotfixes. This page describes what runs today.
+
+Zonna is a Next.js 14 App Router application backed by Supabase (Postgres + Auth), deployed on Vercel.
+The iOS app is a **Capacitor shell** (`capacitor.config.ts`, bundle `app.zonna.ios`) that loads the same
+Vercel-hosted app through `server.url` and layers native plugins on top (HealthKit, push, Sign in with
+Apple, RevenueCat). There is one codebase for web and iOS.
+
+- **Plans** live in the Supabase `plans` table (`plan_json`, one row per user). A legacy GitHub Gist is read
+  only as a migrate-on-read source for a runner with no `plans` row (`fetchPlanForUser` in `lib/plan.ts`;
+  contract `docs/contracts/api/plan-fetch.md`). Every plan write goes through `savePlanForUser`, which
+  validates and archives the previous plan to `plan_archive` on a race change.
+- **Generation** is one deterministic rule engine for every tier (`runEngine` in `lib/plan/engine.ts` →
+  `generateRulePlan` in `lib/plan/ruleEngine.ts`, validated by `validatePlan()` in `lib/plan/invariants.ts`).
+  AI is optional enrichment on top (ADR-006), never the generator. See § Plan Generation below.
+- **Run data:** HealthKit is the system of record on iOS (ADR-011), ingested by `/api/health/ingest` into
+  `strava_activities` (the source-agnostic activity log). Strava is an optional supplement: a Strava
+  activity first tries to patch a matching HealthKit row (`tryEnrichHealthKitRow`). ⚠️ When no row matches,
+  `app/api/webhooks/strava/route.ts` upserts a `source: 'strava'` row; ADR-011 and `CLAUDE.md` say such an
+  activity is discarded. That disagreement is recorded here, not ruled on.
+- **Theme:** a single light theme, Warm Slate (ADR-007, ADR-008). No dark mode, no `data-theme`, no toggle.
 
 ---
 
 ## Data Flow
-GitHub Gist (JSON)
-│
+```
+Supabase `plans.plan_json` ◀── savePlanForUser ◀── /api/generate-plan (runEngine → optional enrich)
+│                                               ◀── reshape / adjust / recalibrate / maintenance routes
 ▼
-Next.js Server
+DashboardClient (fetches plan, overrides and settings once; passes them down as props)
 │
-├──▶ DashboardClient (fetches overrides + settings once)
-│           │
-│           ├──▶ Session Cards
-│           ├──▶ Plan Calendar
-│           ├──▶ Plan Chart
-│           └──▶ Strava Panel
+├──▶ Today / Session / Plan / Coach / Me screens
 │
-└──▶ Supabase (user data, overrides, completions)
+HealthKit (iOS) ──▶ /api/health/ingest ──▶ strava_activities (source-agnostic activity log)
+Strava webhook  ──▶ tryEnrichHealthKitRow (patch a matching HealthKit row; no match → upsert a Strava row)
+```
+
 ---
 
 ## Key Files & Responsibilities
 
-| File/Dir                        | Responsibility                                      |
-|---------------------------------|-----------------------------------------------------|
-| `app/dashboard/DashboardClient` | Root client component; owns global state fetch      |
-| `app/login/page`                | Auth entry point                                    |
-| `components/PlanCalendar`       | Week/calendar view of training sessions             |
-| `components/PlanChart`          | Visual chart of plan structure                      |
-| `components/StravaPanel`        | Strava activity display                             |
-| `globals.css`                   | Single source of all CSS custom properties (tokens) |
-| `layout.tsx`                    | App shell                                           |
+| File/Dir | Responsibility |
+|---|---|
+| `app/dashboard/DashboardClient.tsx` | Root client component; owns the global state fetch and the screen router |
+| `app/auth/login/page.tsx` | Auth entry point (email/password, Google, Sign in with Apple) |
+| `lib/plan.ts`, `lib/planRead.ts` | Plan read (`fetchPlanForUser`, `readPlanJson`) and the single write (`savePlanForUser`) |
+| `lib/plan/engine.ts` | `runEngine`: the engine boundary every generation route calls |
+| `lib/plan/ruleEngine.ts` | Deterministic plan construction |
+| `lib/plan/invariants.ts` | `validatePlan()`: the constitutional check on every generated plan |
+| `lib/plan/enrich.ts`, `lib/plan/freeIntro.ts` | AI enrichment (paid) and the free first-plan intro line |
+| `lib/ai/callAnthropic.ts` | Single owner of every Anthropic call |
+| `lib/trial.ts` | `resolveTier`: single owner of the tier order |
+| `components/training/PlanCalendar.tsx` | Week/calendar view of training sessions |
+| `components/training/PlanChart.tsx` | Visual chart of plan structure |
+| `components/strava/StravaPanel.tsx` | Strava activity display (admin-only screen) |
+| `app/globals.css` | Single source of all CSS custom properties (tokens) |
+| `app/layout.tsx` | App shell |
+| `capacitor.config.ts`, `ios/` | Native iOS shell |
 
 ---
 
@@ -67,13 +94,12 @@ A user is active if: `status IN ('trialing', 'active') AND current_period_end > 
 ### `user_settings`
 Stores per-user preferences and configuration.
 
-```sql
--- Pending migration for profile fields:
-ALTER TABLE user_settings
-  ADD COLUMN IF NOT EXISTS first_name text,
-  ADD COLUMN IF NOT EXISTS last_name text,
-  ADD COLUMN IF NOT EXISTS email text;
-```
+Profile fields `first_name`, `last_name` and `email` are live columns (listed in
+`lib/contracts/tableColumns.ts`, which records what the table actually has).
+
+### `plans`
+One row per user: `id`, `user_id`, `plan_json` (JSONB), `created_at`, `updated_at`. The only store a
+runner's current plan is read from. Previous plans are kept in `plan_archive`.
 
 ### `session_completions`
 Tracks which sessions the user has marked complete.
@@ -86,7 +112,7 @@ Post-run reflective notes + AI reframe output (POST-RUN-REFRAME-01). Composite k
 
 ---
 
-## Plan Data Schema (GitHub Gist)
+## Plan Data Schema (`plans.plan_json`)
 
 - Format: JSON
 - Primary metric flag: `primary_metric` (distance or duration)
@@ -102,25 +128,26 @@ See `docs/architecture/ADR-002-plan-json-first.md` for the full decision record.
 
 ## Plan Generation Architecture: FREE vs PAID
 
-Plan generation uses two separate engines depending on the user's tier.
+**One engine for every tier.** `/api/generate-plan` calls `runEngine` (`lib/plan/engine.ts`), which runs the
+deterministic rule engine and `validatePlan()`. The engine is tier-blind in what it prescribes (ADR-003: the
+route is the auth boundary). The tier changes only what AI adds afterwards (ADR-006, hybrid generation):
 
-### Free tier — Rule-based engine (no AI)
+### Free tier
+- The rule plan is returned as JSON with `meta.enrichment = 'skipped'`. No enrichment.
+- **One AI call, on the runner's first plan only:** `generateFreeIntro` (`lib/plan/freeIntro.ts`) is awaited
+  when the user has no `plans` row yet and writes one short line to `meta.plan_intro` (model
+  `ANTHROPIC_MODEL`). Any failure leaves the rule plan unchanged. Later free plans make no AI call.
 
-- Deterministic algorithm: inputs → template selection + parameter filling
-- No Anthropic API calls. Zero.
-- Templates cover: 5K / 10K / HM, 8 & 12-week variants
-- Plan output is always valid JSON matching the canonical schema
-- Guard rails applied before output (see `docs/canonical/coaching-rules.md`)
+### Paid / trial tier
+- The route streams NDJSON: the rule plan first (`type: 'rule_plan'`), then the enriched plan
+  (`type: 'final_plan'`) once `enrich()` (`lib/plan/enrich.ts`) finishes. Enrichment adds voice, coaching copy
+  and a confidence assessment; it never changes the prescription.
+- Enrichment runs under `waitUntil`, so it can persist after the response ends. If it fails, the rule plan
+  stands and the failure is recorded in `meta.enrichment`.
 
-### Paid tier — AI engine (Claude API)
-
-- Calls Claude API (`claude-sonnet-4-6`) via `app/api/generate-plan/route.ts`
-- **All AI calls route through Next.js API routes only — never from the client directly**
-- Token budget scales with plan length (≤12 weeks → 12,000 tokens; ≤20 weeks → 18,000; >20 weeks → 24,000)
-- Guard rails checked server-side before the API call — invalid inputs never reach Anthropic
-- Output parsed and validated before save; stub plan returned if `ANTHROPIC_API_KEY` is absent
-
-See `docs/contracts/api/generate-plan.md` for the full route contract.
+All model calls go through `lib/ai/callAnthropic.ts`; model IDs live in `lib/ai/models.ts`.
+See `docs/contracts/api/generate-plan.md` for the full route contract and
+`docs/contracts/engine.md` for the engine boundary.
 
 ---
 
@@ -132,17 +159,13 @@ Current implementation supports two zone formulas: Karvonen (Heart Rate Reserve)
 
 ---
 
-## Gist → Supabase Plan Storage Migration
+## Plan Storage
 
-Current state: plan JSON lives in a GitHub Gist, fetched fresh on every request with `cache: 'no-store'`.
-
-ADR-002 establishes that JSON-first output makes the storage layer swappable without touching generator logic. The migration path is:
-
-1. Add a `plans` table to Supabase (schema: `user_id`, `plan_json` JSONB, `created_at`, `updated_at`)
-2. On plan save (post-generation or post-reshape), write JSON to `plans` table instead of Gist
-3. On plan fetch, read from `plans` table via API route instead of Gist URL
-
-> **TODO (product owner)**: Confirm whether the Gist → Supabase migration is in scope before or after launch. The R23 generator currently returns JSON to the client but the save step is not yet wired to Supabase. Decision needed before R0.5 / onboarding flow is built, as new users must have a plan storage target.
+Plan JSON is stored in the Supabase `plans` table. The Gist → Supabase migration described in earlier
+versions of this page is done: `fetchPlanForUser` reads `plans` first, and migrates a legacy `gist_url` or
+`user_settings.plan_json` into `plans` on first read. A failed `plans` read throws `PlanReadError` rather than
+falling through, so a legacy plan is never saved over a current one. ADR-002's JSON-first output is what made
+the storage layer swappable.
 
 ---
 
@@ -151,9 +174,9 @@ ADR-002 establishes that JSON-first output makes the storage layer swappable wit
 All calls to the Anthropic API must route through Next.js API routes (server-side). Client components must never hold or use the `ANTHROPIC_API_KEY` directly.
 
 This applies to:
-- Plan generation (`/api/generate-plan`)
-- Plan reshaping (`/api/reshape-plan` — future R20)
-- AI coaching (Coach tab — currently admin-only)
+- Plan enrichment and the free first-plan intro (`/api/generate-plan`)
+- Plan adjustment, reshaping and recalibration routes (`/api/adjust-plan`, `/api/post-race-reshape`, …)
+- Coaching surfaces (daily coach note, run analysis, weekly report, post-run reframe; Coach screen is paid/trial)
 - Any future AI feature
 
 The `ANTHROPIC_API_KEY` environment variable must remain server-only. It must not be prefixed with `NEXT_PUBLIC_`.
@@ -162,28 +185,29 @@ The `ANTHROPIC_API_KEY` environment variable must remain server-only. It must no
 
 ## Auth Flow
 
-- Supabase Auth (email/password)
+- Supabase Auth: email/password, Google OAuth and Sign in with Apple (`app/auth/login/page.tsx`)
+- On iOS, OAuth opens in `@capacitor/browser` and returns via the `app.zonna.ios://auth-callback` scheme
 - Session persisted via Supabase client
-- Strava OAuth separate — token cached in user_settings (tech debt: needs refresh logic)
+- Strava OAuth separate; tokens stored in `user_settings` and refreshed by `/api/strava/refresh`
 
 ---
 
 ## Strava Integration
 
-- Free tier
-- Garmin auto-syncs to Strava
-- OAuth token stored in Supabase
-- Known tech debt: token refresh not yet implemented
+- Optional supplement to HealthKit (ADR-011). No paid feature requires Strava
+- A Strava activity first patches a matching HealthKit row (`tryEnrichHealthKitRow`); see § System Overview for what the webhook does when none matches
+- `/api/webhooks/strava` is the only device-independent auto-link when the app is killed
+- OAuth tokens stored in Supabase `user_settings`; refresh via `/api/strava/refresh`
 - OAuth testing: Hoppscotch only (curl multi-line fails on Mac Terminal)
 
 ---
 
 ## Theme System
 
-- Single `globals.css` holds all CSS custom properties
-- Light/dark toggle via `data-theme="dark"` on `<html>` only
-- `applyTheme()` must only toggle the attribute — no `setProperty()` calls
-- Components reference tokens only — no hardcoded values
+- Single light theme, Warm Slate (ADR-007, ADR-008). No dark mode and no theme toggle
+- Single `app/globals.css` holds all CSS custom properties
+- No `data-theme` attribute and no `setProperty()` calls; `applyTheme()` no longer exists
+- Components reference tokens only — no hardcoded values (enforced by the pre-commit hook and `npm run sweep:colours`)
 
 ---
 

@@ -9,7 +9,7 @@ The single consolidated reference for all architectural principles, doctrine, in
 
 **Authority**: This skill synthesizes rules from `CLAUDE.md`, `docs/contracts/`, `docs/canonical/`, and system-specific documents. When in doubt, trace to the canonical source listed in each section.
 
-**Stack**: Next.js 14 · Supabase (Postgres + Auth) · Vercel · GitHub Gist (plan JSON) · Strava OAuth · TypeScript strict
+**Stack**: Next.js 14 · Supabase (Postgres + Auth; plan JSON in the `plans` table) · Vercel · Capacitor iOS shell · HealthKit (SOR for run data) · Strava OAuth (optional supplement) · TypeScript strict
 
 ---
 
@@ -70,8 +70,8 @@ When remediating defects or evaluating design changes:
 |---|---|
 | UI shows empty, Supabase has data | API route projection or component prop contract |
 | Session colour wrong | Design token in globals.css or session-type map |
-| Theme regression (dark mode reappearing) | ADR-008: dark mode is removed. `applyTheme()` is a no-op. Strip any `data-theme` toggling. |
-| Plan data stale | Gist fetch caching — ensure `cache: 'no-store'` |
+| Theme regression (dark mode reappearing) | ADR-008: dark mode is removed. `applyTheme()` no longer exists. Strip any `data-theme` toggling. |
+| Plan data stale | Plan is read from the Supabase `plans` table (`readPlanJson` in `lib/planRead.ts`); a legacy Gist is fetched with `cache: 'no-store'` only as a one-time migrate-on-read source |
 | Strava OAuth fails | Token exchange — check Hoppscotch flow, codes expire in ~5 min |
 | TypeScript build error on Set spread | Use `Array.from(set)` not `[...set]` |
 | Flash of wrong colour on load | Global overrides fetch not lifted to DashboardClient level |
@@ -102,7 +102,7 @@ Do not stop at one layer if the defect crosses boundaries.
 |---|---|---|
 | D-01 | Ambiguity is the enemy | Every behaviour — session types, zone calculation, free/paid gates, theme toggling — must be explicitly stated. Implicit = broken. |
 | D-02 | No assumptions | Never assume a Supabase table, column, RLS policy, or API route exists. Trace to the migration or surface it as a gap. |
-| D-03 | Versioned behaviour only | Plan JSON schema changes require explicit version handling. Never silently reinterpret old Gist shapes. |
+| D-03 | Versioned behaviour only | Plan JSON schema changes require explicit version handling. Never silently reinterpret old stored plan shapes (`plans.plan_json`, legacy Gist). |
 | D-04 | Failure is data | Errors from Supabase, Strava, or plan fetch must surface as structured UI state, not console-only. |
 | D-05 | SLC over MVP | Every feature ships complete: validation, error states, loading states, type safety, and mobile layout. No stubs. |
 | D-06 | Minimal sufficient change | Smallest fix that removes the defect at the correct boundary. Not smallest local patch. |
@@ -132,11 +132,11 @@ Every solution must be: **Maintainable, Reliable, Accurate, Sensible, Testable, 
 | Principle | Zona Meaning |
 |---|---|
 | Maintainable | Components have clear ownership. Tokens live in one place. New developers can follow the design system without archaeology. |
-| Reliable | Supabase errors, failed Gist fetches, and Strava OAuth failures degrade gracefully with visible UI state. |
+| Reliable | Supabase errors, failed plan reads, and Strava OAuth failures degrade gracefully with visible UI state. |
 | Accurate | Zone calculations, HR targets, and pace brackets produce correct results. No floating-point drift in training metrics. |
 | Sensible | Proportionate to a solo developer. No over-engineering. Each screen does one job. |
 | Testable | Critical paths (zone calculation, session type resolution, plan JSON parsing) have unit tests. Journeys have agent-browser smoke tests. |
-| Auditable | Plan JSON source (Gist commit), Supabase row timestamps, and override history are traceable. |
+| Auditable | Plan JSON source (`plans` row, `plan_archive` history), Supabase row timestamps, and override history are traceable. |
 | Consistent | Same session type → same colour, label, zone, and HR target everywhere in the app, always. |
 
 ---
@@ -164,7 +164,7 @@ Every solution must be: **Maintainable, Reliable, Accurate, Sensible, Testable, 
 | M-003 | Session type → colour/label/zone mapping lives exclusively in `session-types.ts`. |
 | M-004 | Every new feature tagged `[FREE]` or `[PAID]` in `docs/canonical/feature-registry.md` before build begins. |
 | M-005 | Supabase fetch uses `cache: 'no-store'` for plan data. |
-| M-006 | Single light theme only (ADR-008). `applyTheme()` is a no-op; do not set `data-theme` attribute. No `setProperty()` calls for theme switching. |
+| M-006 | Single light theme only (ADR-008). `applyTheme()` no longer exists; do not set `data-theme` attribute. No `setProperty()` calls for theme switching. |
 | M-007 | Global overrides fetch lives in `DashboardClient`. All child screens receive overrides as props. |
 | M-008 | Strava OAuth token exchange via Hoppscotch (POST to `https://www.strava.com/oauth/token`, `application/x-www-form-urlencoded`). Auth codes expire in ~5 min and are single-use. |
 | M-009 | All Supabase schema changes via migration files. Never manual edits to production tables. |
@@ -180,11 +180,11 @@ Every solution must be: **Maintainable, Reliable, Accurate, Sensible, Testable, 
 | N-001 | Never hardcode hex colours, font names, or spacing values in components. Use CSS custom properties only. |
 | N-002 | Never use old palette values: Ember orange `#D4501A`, warm beige `#f5f2ee`, DM Mono, DM Sans. |
 | N-003 | Never use red anywhere in the Zona UI. |
-| N-004 | Never use popups or modals. All interactions navigate to full screens with back arrow top-left. |
+| N-004 | Never use popups. All interactions navigate to full screens with back arrow top-left. Modals only for destructive confirmations (delete, disconnect), never for information (owner: `docs/canonical/ux-principles.md` § Screen Design Principles). |
 | N-005 | Never build the next release before the current one is shipped and build-checked. |
 | N-006 | Never store Strava client secret in code or environment files committed to git. Use Supabase `user_settings`. |
 | N-007 | Never use `[...set]` spread on `Set<string>` in TypeScript. Use `Array.from(set)`. |
-| N-008 | Never make `setProperty()` calls for theme colour switching. `applyTheme()` owns this via `data-theme` attribute. |
+| N-008 | Never make `setProperty()` calls for theme colour switching. There is no theme switching (ADR-008); no `data-theme` attribute is set. |
 | N-009 | Never implement free-tier features that expose paid-tier data, even partially. |
 | N-010 | Never work from a stale file snapshot. Always confirm live file state before editing. |
 | N-011 | Never create a second session colour/label/zone resolver. `session-types.ts` is the sole owner. |
@@ -201,7 +201,7 @@ Every solution must be: **Maintainable, Reliable, Accurate, Sensible, Testable, 
 |---|---|---|
 | INV-DS-001 | Token Singularity | Every colour, font, and spacing value has exactly one declaration in `globals.css`. |
 | INV-DS-002 | No Old Palette | Ember orange, warm beige, System B (navy/teal/amber), DM Mono, DM Sans, Space Grotesk do not exist anywhere in any live surface. |
-| INV-DS-003 | Single Light Theme (ADR-008) | No dark mode. `data-theme` attribute is not set. `applyTheme()` is a no-op. `[data-theme="dark"]` does not exist in `globals.css`. |
+| INV-DS-003 | Single Light Theme (ADR-008) | No dark mode. `data-theme` attribute is not set. `applyTheme()` no longer exists. `[data-theme="dark"]` does not exist in `globals.css`. |
 | INV-DS-004 | Session Colour Consistency | A session type always resolves to exactly one colour across collapsed card, expanded card, calendar, and plan chart. |
 | INV-DS-005 | No Red in Training UI | Red does not appear in training UI — use `--warn` (`#B8853A`) for coaching warnings. `--danger` (`#B84545`) is reserved for errors / destructive actions only. |
 
@@ -246,7 +246,7 @@ Every solution must be: **Maintainable, Reliable, Accurate, Sensible, Testable, 
 | `--card` | `#FFFFFF` | Card surfaces |
 | `--ink` | `#1A1A1A` | Primary text |
 | `--ink-2` | `#3D3A36` | Secondary text |
-| `--mute` | `#8A857D` | Muted / supporting text |
+| `--mute` | `#6D6963` | Muted / supporting text (darkened by `A11Y-CONTRAST-01`) |
 | `--moss` | `#6B8E6B` | Primary accent — CTA, active, completion |
 | `--warn` | `#B8853A` | Coaching warnings only |
 | `--danger` | `#B84545` | Errors only — never in training UI |
@@ -259,7 +259,7 @@ Every solution must be: **Maintainable, Reliable, Accurate, Sensible, Testable, 
 | Easy | `--s-easy` | `#3D6FB0` |
 | Long | `--s-long` | `#5E4FB0` |
 | Quality / Tempo | `--s-quality` | `#B8853A` |
-| Intervals | `--s-inter` | `#B84545` |
+| Intervals | `--s-inter` | `#D4705A` (coral, distinct from `--danger`) |
 | Race | `--s-race` | `#C86A2A` |
 | Recovery | `--s-recov` | `#4E8068` |
 | Strength | `--s-strength` | `#5A6578` |
@@ -287,9 +287,9 @@ Every solution must be: **Maintainable, Reliable, Accurate, Sensible, Testable, 
 
 | ID | Guarantee |
 |---|---|
-| INV-PLAN-001 | Plan JSON is the single source of truth for session definitions. Supabase stores overrides and completions only. |
-| INV-PLAN-002 | Plan JSON fetched from GitHub Gist with `cache: 'no-store'` on every request. |
-| INV-PLAN-003 | `SessionEntry` interface is the canonical TypeScript shape for plan sessions. Any Gist field addition requires interface update + migration of downstream consumers. |
+| INV-PLAN-001 | Plan JSON is the single source of truth for session definitions. It is stored in the Supabase `plans` table (`plan_json`, one row per user); overrides and completions live in their own tables. |
+| INV-PLAN-002 | Plan JSON is read from the `plans` table (`fetchPlanForUser` → `readPlanJson`); a failed read throws `PlanReadError`, never falls through. A legacy `gist_url` / `user_settings.plan_json` is fetched (`cache: 'no-store'`) and auto-migrated to `plans` only when no row exists. Contract: `docs/contracts/api/plan-fetch.md`. |
+| INV-PLAN-003 | `SessionEntry` interface is the canonical TypeScript shape for plan sessions. Any plan JSON field addition requires interface update + migration of downstream consumers. |
 | INV-PLAN-004 | Plan output = JSON first, never direct-to-DB. Plan creation (R23) and reshaping (R20) share the same schema and rules. |
 | INV-PLAN-005 | `primary_metric` flag determines whether distance or duration is the primary display value for a session. Both fields exist in schema. |
 | INV-PLAN-006 | Strength session stubs exist in the plan generator output from R21 onwards. Stub sessions do not carry HR targets or zone assignments. |
@@ -315,7 +315,7 @@ Every solution must be: **Maintainable, Reliable, Accurate, Sensible, Testable, 
 |---|---|
 | INV-DB-001 | All schema changes via migration files. No manual production table edits. |
 | INV-DB-002 | `user_settings` is the canonical store for: Strava client secret, zone method, profile fields (first name, last name, email). |
-| INV-DB-003 | `session_completions` stores completion events only. Session definitions live in Gist JSON. |
+| INV-DB-003 | `session_completions` stores completion events only. Session definitions live in plan JSON (`plans.plan_json`). |
 | INV-DB-004 | `session_overrides` stores per-session user overrides. Global overrides are fetched at `DashboardClient` level and passed as props. |
 | INV-DB-005 | RLS policies must be verified after every migration before marking migration complete. |
 | INV-DB-006 | Strava client secret never stored in env files committed to git. Lives in `user_settings.strava_client_secret`. |
@@ -339,7 +339,7 @@ Every solution must be: **Maintainable, Reliable, Accurate, Sensible, Testable, 
 | ID | Guarantee |
 |---|---|
 | INV-UI-001 | One job per screen. Screens do not multiplex unrelated concerns. |
-| INV-UI-002 | No popups or modals. Every interaction navigates to a full screen. Back arrow top-left always. |
+| INV-UI-002 | No popups. Every interaction navigates to a full screen. Back arrow top-left always. Modals only for destructive confirmations (delete, disconnect), never for information. |
 | INV-UI-003 | Back navigation is always top-left. No exceptions. |
 | INV-UI-004 | Empty, loading, and error states are first-class UI states, not afterthoughts. |
 | INV-UI-005 | Session card hierarchy: TOP (run type, zone, HR target, pace bracket, distance + duration) → MIDDLE (session description) → BOTTOM (why / coach notes). |
@@ -372,7 +372,7 @@ Always run journey tests before marking a release done.
 | Dashboard load | `/` | Plan weeks render, no console errors, correct colours |
 | Session expand | Tap session card | Expanded card shows correct hierarchy (type → zone → HR → description → why) |
 | Session complete | Tap complete | Completion saved to Supabase, card state updates |
-| Theme toggle | Me screen | `data-theme="dark"` toggled on `<html>`, colours switch correctly |
+| Single light theme | Any screen | No `data-theme` attribute on `<html>`; Warm Slate tokens render (ADR-008) |
 | Dist/duration toggle | Me screen | Toggle saves to user_settings, session cards update |
 | Strava connect | Me screen | OAuth redirect initiates correctly |
 
@@ -393,7 +393,7 @@ Always run journey tests before marking a release done.
 docs/
 ├── contracts/                    ← API route contracts, component prop contracts
 │   ├── api/
-│   │   ├── plan-fetch.md         ← Gist fetch contract
+│   │   ├── plan-fetch.md         ← plan read/save contract (`plans` table; Gist legacy)
 │   │   ├── session-completions.md
 │   │   ├── session-overrides.md
 │   │   ├── strava-oauth.md
@@ -406,7 +406,7 @@ docs/
 │   ├── feature-registry.md       ← Every feature with FREE/PAID tag
 │   ├── session-types.md          ← Canonical session type list, colours, zones
 │   ├── zone-rules.md             ← Zone calculation methods, HR targets
-│   ├── plan-schema.md            ← SessionEntry interface, Gist JSON shape
+│   ├── plan-schema.md            ← SessionEntry interface, plan JSON shape
 │   ├── coaching-rules.md         ← Plan generation rules, tone of voice
 │   └── adaptation-rules.md       ← Dynamic reshaping rules (R20)
 ├── architecture/                 ← Architectural decision records (ADRs)
@@ -443,9 +443,9 @@ Before implementing anything, verify ALL of these:
 5. **Is there one owner for this concern?** (No duplicate resolvers)
 6. **Does it fail visibly on error?** (Structured UI error state, not console-only)
 7. **Is the mobile layout considered?** (375px viewport)
-8. **Does it follow the screen/navigation contract?** (Full screens, back arrow top-left, no popups)
+8. **Does it follow the screen/navigation contract?** (Full screens, back arrow top-left, no popups; modals only for destructive confirmations)
 9. **Does it match Zona tone?** (Honest, calm, slightly sarcastic — never urgent, never red)
-10. **Is the dark/light theme handled correctly?** (`data-theme` on `<html>` only)
+10. **Does it stay on the single light theme?** (ADR-008: no `data-theme`, no dark variants)
 11. **Will there be a journey test for it?** (agent-browser, before release closes)
 12. **Is the contract doc updated?** (`docs/contracts/` in same commit)
 
@@ -491,7 +491,7 @@ CLAUDE.md (root doctrine, MUST/NEVER)
 
 ### 14.4 Theme Leakage
 
-**Scenario**: `setProperty()` calls used for theme colour switching, or `data-theme` toggled on a container instead of `<html>`.
+**Scenario**: `setProperty()` calls used for theme colour switching, or a `data-theme` attribute or dark variant reintroduced (ADR-008).
 **Why it matters**: Breaks cascade. Some surfaces show wrong colours.
 **Trigger rules**: `INV-DS-003`, `N-008`
 
@@ -546,7 +546,7 @@ Use these before making architectural decisions:
 |---|---|
 | `docs/canonical/session-types.md` | Session colour, label, zone, HR target resolution |
 | `docs/canonical/feature-registry.md` | Free/paid tagging before any build |
-| `docs/canonical/plan-schema.md` | SessionEntry interface, Gist JSON structure |
+| `docs/canonical/plan-schema.md` | SessionEntry interface, plan JSON structure |
 | `docs/canonical/zone-rules.md` | Zone calculation, HR ceiling, pace bracket derivation |
 | `docs/canonical/coaching-rules.md` | Plan generation rules, phase structure, progression |
 | `docs/canonical/adaptation-rules.md` | Dynamic reshaping rules (R20) |
@@ -592,7 +592,7 @@ Use these before making architectural decisions:
 | Active energy per run | Activity log | HealthKit `totalEnergyBurned` | None |
 | RPE | `session_completions` | User input only — never overridden by device data | None |
 | Fatigue tag | `session_completions` | User input only — never overridden by device data | None |
-| Plan session definitions | GitHub Gist JSON | Single source, `cache: 'no-store'` | None |
+| Plan session definitions | Supabase `plans.plan_json` | Single source; legacy Gist is a migrate-on-read source only | None |
 | HR zones | `user_settings` (computed) | User input → Karvonen → %MaxHR → Tanaka estimate | None |
 
 ### HealthKit Plugin Capability Boundaries
@@ -638,4 +638,4 @@ Every ⚠️ or ❌ cell must have a corresponding UI state with a one-line expl
 | ARCH-ENG-010 | Consumers read plans through the plan read model, never through raw `meta` keys |
 | ARCH-ENG-011 | Every finding is an event with a rule id. An unruled rule id blocks `backlog:verify` |
 
-⚠️ **This skill is itself stale in places** (found 2026-11-20): it still describes Gist plan storage, a theme-toggle journey test, a red `--s-inter`, and N-004 "no modals" without the destructive-confirmation exception. These are corrected in ADR-027 B1.
+✅ **Corrected 2026-11-21 (ADR-027 B1, `ADR027-B1-DOC-DRIFT`)**, each against the code: plan storage is the Supabase `plans` table, with the Gist a legacy migrate-on-read source (Stack line, triage row, D-03, quality table, INV-PLAN-001/002/003, INV-DB-003, data-source row, doc tree); the theme-toggle journey test is replaced by a single-light-theme check and `applyTheme()` is recorded as gone (0 references under `app/ lib/ components/`); `--s-inter` is `#D4705A` and `--mute` is `#6D6963` (both read from `app/globals.css`); N-004 and INV-UI-002 carry the destructive-confirmation exception owned by `ux-principles.md`. ⚠️ **Not corrected, because they are rules rather than facts:** N-003 *"never use red anywhere"* (CLAUDE.md allows `--danger` for form and error states) and M-005 (`cache: 'no-store'` on a Supabase read; `readPlanJson` uses supabase-js, which takes no such option). Both disagree with the code or with CLAUDE.md and are left for an owner to rule on.

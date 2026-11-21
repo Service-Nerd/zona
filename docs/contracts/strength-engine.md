@@ -57,7 +57,7 @@ catalogue cues (reviewed by the strength seat 2026-10-17). An exercise marked `n
 
 ## Guarantees (checked by `validateStrengthPlan`, each falsified in `validate.test.ts`)
 
-The `S-*` codes in `StrengthPrinciples.md` (40 as of 2026-10-17, after the start-week, jumps, peak and lower-balance fixes and `S-RECOVERY-SUBTRACT-ONLY`; count from `validate.ts`). Gates: `npm run verify:strength` (in `verify:ci`),
+The `S-*` codes: `validate.ts` emits **50** distinct codes as of 2026-11-21 (`grep -oE "code: 'S-[A-Z0-9-]+'" packages/strength/validate.ts | sort -u | wc -l`; this line said 40 from 2026-10-17). `StrengthPrinciples.md` names 49 of them: `S-PEAK-SETS` (STRENGTH-PEAK-FILL-01) is checked and falsified in `validate.test.ts` but not named in the principles. Count from `validate.ts`. Gates: `npm run verify:strength` (in `verify:ci`),
 `verify:strength:full` (266,688 plans, 2026-10-17: 0 violations).
 
 ## Recovery ease — `easeForRecovery(session): StrengthSession` (S13, STRENGTH-RECOVERY-01, 2026-10-17)

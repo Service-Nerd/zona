@@ -330,8 +330,16 @@ describe('A11Y-MOCKUP-CONTRAST-01 — mockup small text uses AA-capable tokens',
 // ⚠️ IT CHECKS THE ROWS THAT EXIST, NOT THAT EVERY TOKEN HAS A ROW. CLAUDE.md's
 // table is a curated subset by design; demanding completeness would fire on
 // every new internal token and a gate that cries wolf gets switched off.
-describe('DOC-TOKEN-DRIFT-01 — CLAUDE.md states the live hex for every token it names', () => {
-  const DOC = fs.readFileSync(path.resolve(__dirname, '../CLAUDE.md'), 'utf8')
+//
+// 🔴 ADR027-B1-DOC-DRIFT (2026-11-21): the architectural-principles SKILL carries a
+// copy of the same tables and was outside this arm's population, so it still said
+// `--mute` #8A857D and `--s-inter` #B84545 (the retired red) a month after this arm
+// shipped. Same rows, same check, second document.
+describe.each([
+  ['CLAUDE.md', '../CLAUDE.md'],
+  ['zona-architectural-principles SKILL.md', '../.claude/skills/zona-architectural-principles/SKILL.md'],
+])('DOC-TOKEN-DRIFT-01 — %s states the live hex for every token it names', (docName, rel) => {
+  const DOC = fs.readFileSync(path.resolve(__dirname, rel), 'utf8')
   const rows = Array.from(DOC.matchAll(/\|\s*`(--[a-z0-9-]+)`\s*\|\s*`(#[0-9A-Fa-f]{6})`/g))
     .map(m => [m[1], m[2].toUpperCase()] as const)
 
@@ -345,7 +353,7 @@ describe('DOC-TOKEN-DRIFT-01 — CLAUDE.md states the live hex for every token i
     for (const [name, docHex] of rows) {
       const live = token(name)?.toUpperCase()
       if (!live) continue            // a doc-only or aliased name is not this arm's business
-      if (live !== docHex) drift.push(`${name}: CLAUDE.md says ${docHex}, globals.css says ${live}`)
+      if (live !== docHex) drift.push(`${name}: ${docName} says ${docHex}, globals.css says ${live}`)
     }
     expect(drift, drift.join('\n')).toEqual([])
   })

@@ -1,6 +1,7 @@
 # ADR-016 — Date-aware plan resolution & send-gating
 
 **Status:** Accepted (2026-08-10)
+**Amendment note (2026-11-21, ADR-027 B1 doc drift):** the resolver named below as `getSessionForDate` in `lib/plan.ts` is now `getSessionsForDate(weeks, date, overrides)` in `lib/plan/weekResolution.ts` (re-exported from `lib/plan.ts`). It returns a list since ADR-025 Phase 1 (SESSION-SLOTS-01), and `[]` carries this ADR's `null`: nothing to show, do not send. `isDateBeforePlan` lives in the same file. The decision is unchanged.
 **Related:** §73 (temporal position via date-window predicates, never index math), ADR-013 (`week.n` keying), N-014 (cron windows)
 
 ## Context
