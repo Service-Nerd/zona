@@ -20,7 +20,7 @@ import { V1_SESSION_CATALOGUE } from '@/lib/plan/sessionCatalogueData'
 import { sessionKmSelfPaced } from '@/lib/plan/sessionDistance'
 import { FUELLING_PRACTICE_NOTE, ULTRA_FUELLING_PREFIX } from '@/lib/plan/fuellingNotes'
 import { GENERATION_CONFIG, raceDistanceKey } from '@/lib/plan/generationConfig'
-import { hasInjuryKeyword } from '@/lib/plan/injuryScope'
+import { hasInjuryKeyword, VOLUME_CAPPED_INJURY_KEYWORDS } from '@/lib/plan/injuryScope'
 import { BENCHMARK_VDOT_MAX } from '@/lib/plan/benchmarkCheck'
 import { RULES } from '@/lib/engine/catalogue/rules'
 import { verifyPlan, PORTED_RULES, DELIVERED_ROUNDING_TOLERANCE_PCT } from './verifyPlan'
@@ -135,7 +135,8 @@ const EXTRA_MUTATIONS: { name: string; apply: (p: Plan, input: GeneratorInput) =
     ['no compression class', (p: Plan) => { delete p.meta.compression_classification; return true }],
     // Batch 18: run-walk and the shortfall cause.
     ['a run-walk plan whose biggest session sits just under the floor', (p: Plan) => {
-      const ss = p.weeks.filter(w => w.n > 0 && w.type !== 'race' && w.type !== 'deload').flatMap(w => Object.values(w.sessions ?? {})).filter(Boolean)
+      const ss = p.weeks.filter(w => w.n > 0 && w.type !== 'race' && w.type !== 'deload').flatMap(w => Object.values(w.sessions ?? {}))
+        .filter(x => x && x.type !== 'rest' && x.type !== 'strength')
       if (!ss.length) return false
       p.meta.finish_goal_run_walk = true as never
       for (const s of ss) { s!.distance_km = Math.min(s!.distance_km ?? 99, GENERATION_CONFIG.FINISH_GOAL_RUNWALK_MIN_PEAK_LR_KM - 0.5); delete s!.duration_mins }
@@ -143,17 +144,17 @@ const EXTRA_MUTATIONS: { name: string; apply: (p: Plan, input: GeneratorInput) =
     }],
     ['run-walk with a volume-capped injury stamped', (p: Plan) => {
       p.meta.finish_goal_run_walk = true as never
-      ;(p.meta as unknown as Record<string, unknown>).injury_history = [GENERATION_CONFIG.DELIVERED_CAP_INJURIES[0]]; return true
+      p.meta.injury_history = [VOLUME_CAPPED_INJURY_KEYWORDS[0]]; return true
     }],
     ['a volume-blaming shortfall note on an injury-capped plan', (p: Plan) => {
       p.meta.long_run_shortfall_note = 'Your long run stays short: your weekly volume is what limits it.'
-      ;(p.meta as unknown as Record<string, unknown>).injury_history = [GENERATION_CONFIG.DELIVERED_CAP_INJURIES[0]]; return true
+      p.meta.injury_history = [VOLUME_CAPPED_INJURY_KEYWORDS[0]]; return true
     }],
     ['a volume-blaming shortfall note with the long run at its minute cap', (p: Plan) => {
       const km = p.meta.race_distance_km
       const s = p.weeks.filter(w => w.n >= 1 && w.type !== 'race').flatMap(w => Object.values(w.sessions ?? {})).find(x => x && isLongRun(x))
       if (typeof km !== 'number' || !s) return false
-      ;(p.meta as unknown as Record<string, unknown>).injury_history = []
+      p.meta.injury_history = []
       p.meta.long_run_shortfall_note = 'Your long run stays short: your weekly volume is what limits it.'
       s.duration_mins = GENERATION_CONFIG.LONG_RUN_CAP_MINUTES[raceDistanceKey(km)] - GENERATION_CONFIG.LONG_RUN_AT_CAP_TOLERANCE_MINS; return true
     }],

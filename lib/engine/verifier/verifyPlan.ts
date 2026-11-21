@@ -487,13 +487,15 @@ const BATCH_5: Partial<Record<RuleId, Predicate>> = {
 }
 Object.assign(PREDICATES, BATCH_5)
 
-/** §9 (+ Am. 3): the long run's minute ceiling: the race distance's cap, lowered by any injury on the profile. */
-function longCapMins(input: GeneratorInput, profile: RunnerProfile): number {
+/** §9 (+ Am. 3): the long run's minute ceiling: a race distance's cap, lowered by any injury on the profile. One
+ *  owner for every verifier rule that needs it (the race distance is passed, since one rule reads it from meta). */
+function longCapMinsFor(km: number, profile: RunnerProfile): number {
   const injuries = profile.injuries?.value ?? []
   const caps = Object.entries(GENERATION_CONFIG.LONG_RUN_CAP_MINUTES_BY_INJURY)
     .filter(([k]) => hasInjuryKeyword(injuries, k)).map(([, m]) => m as number)
-  return Math.min(GENERATION_CONFIG.LONG_RUN_CAP_MINUTES[raceDistanceKey(input.race_distance_km)], ...caps)
+  return Math.min(GENERATION_CONFIG.LONG_RUN_CAP_MINUTES[raceDistanceKey(km)], ...caps)
 }
+const longCapMins = (input: GeneratorInput, profile: RunnerProfile) => longCapMinsFor(input.race_distance_km, profile)
 
 const BATCH_6: Partial<Record<RuleId, Predicate>> = {
   // §55 Am. 1: the plan's VDOT is one a human can have.
@@ -1193,7 +1195,8 @@ const BATCH_17: Partial<Record<RuleId, Predicate>> = {
 }
 Object.assign(PREDICATES, BATCH_17)
 
-const metaInjuries = (plan: Plan) => ((plan.meta as unknown as { injury_history?: unknown[] }).injury_history ?? []).map(i => String(i).toLowerCase())
+// ⚠️ SELF-LABEL READ (recorded): the plan's stamped injury list, as validatePlan reads it, not the request's.
+const metaInjuries = (plan: Plan) => (plan.meta.injury_history ?? []).map(i => String(i).toLowerCase())
 
 const BATCH_18: Partial<Record<RuleId, Predicate>> = {
   // §117 Am. 2: a finish-goal run-walk plan's biggest main-week session reaches the floor.
@@ -1217,9 +1220,7 @@ const BATCH_18: Partial<Record<RuleId, Predicate>> = {
     const note = plan.meta.long_run_shortfall_note
     if (typeof note !== 'string' || !note.length || !note.includes('your weekly volume is what limits it')) return []
     const km = plan.meta.race_distance_km
-    const injuries = profile.injuries?.value ?? []
-    const caps = Object.entries(GENERATION_CONFIG.LONG_RUN_CAP_MINUTES_BY_INJURY).filter(([k]) => hasInjuryKeyword(injuries, k)).map(([, m]) => m as number)
-    const cap = typeof km === 'number' && km > 0 ? Math.min(GENERATION_CONFIG.LONG_RUN_CAP_MINUTES[raceDistanceKey(km)], ...caps) : 0
+    const cap = typeof km === 'number' && km > 0 ? longCapMinsFor(km, profile) : 0
     let lr = 0
     for (const w of plan.weeks.filter(x => x.n >= 1 && x.type !== 'race'))
       for (const { session: s } of daysOf(w)) if (s && isLongRun(s) && typeof s.duration_mins === 'number') lr = Math.max(lr, s.duration_mins)

@@ -1811,7 +1811,9 @@ Step 1 shipped as `ADR027-B3-CATALOGUE` (221 rules). Remaining, in order:
   `QUALITY-PER-WEEK` is ported and reads level and goal from the profile. ✅ **Batch 5 SHIPPED 2026-11-21** (3 rules). ✅ **Batch 6 SHIPPED 2026-11-21** (3 rules; injury
   caps through `hasInjuryKeyword`, name-scoped in the import gate). ✅ **Batch 7 SHIPPED 2026-11-21** (8 self-statement rules). ✅ **Batch 8** (6 declaration rules). ✅ **Batch 9** (6 onset/declaration rules). ✅ **Batch 10** (8 long-run segment and week rules). ✅ **Batch 11** (6 note rules). ✅ **Batch 12** (6 soft week rules). ✅ **Batch 13** (3 injury/re-entry rules). ✅ **Batch 14** (4 copy/overrun rules). ✅ **Batch 15** (5 rules, one STATIC). ✅ **Batch 16** (4 pace/zone rules). ✅ **Batch 17** (3 rules). ✅ **Batch 18** (3 run-walk/shortfall rules). **91 of 221.**
   **Batch 18 raised:** `RUNWALK-ADEQUATE`'s "peak" is the largest session of any kind, not the long run; the run-walk and
-  shortfall rules read the plan's stamped `meta.injury_history` rather than the request (copied faithfully).
+  shortfall rules' §12 injury arms read the plan's stamped `meta.injury_history`, not the request (the shortfall rule's
+  minute-cap arm reads the request's injuries); a plan that lost the stamp would pass. Self-label reads, copied
+  faithfully, for the board: reading the request would make the verifier stricter than `validatePlan` on purpose.
   **Batch 17 raised:** `QUALITY-EXPECTED` reads the plan's own level and matches 'achilles' in injury TEXT (copied faithfully).
   **HELD, with reasons (not ported, not dropped):** producer derivations the verifier may not share —
   `WEEKLY-KM-MATCHES-SESSIONS` (`vdotFor`, `buildPaceFromVDOT`), `DELIVERED-RAMP` and `TAPER-DELIVERED-DEPTH` (the
