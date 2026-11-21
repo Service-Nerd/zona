@@ -32,7 +32,9 @@ plan input. Speed is m/s. Every duration is in seconds, except the plan input, w
    max/resting HR, which the **client** reads from the device at submit time and posts as an input.
 2. **🔴 Declared volume is above logged volume for most runners who have a log.** 11 runners' logs cover the full
    28 days before generation:
-   - **8 of 11** declared more than 25% above what they logged: ×1.31, ×1.41, ×1.51, ×1.61, ×2.43, ×3.24, ×4.54 and
+   - **8 of 11** declared more than 25% above what they logged. ⚠️ Re-measured by the Coaching Board with run
+     de-duplication, validity bounds and per-runner counting: **11 of 15** (`STARTVOL-OBSERVED-01`). My figures below
+     are kept as first measured: ×1.31, ×1.41, ×1.51, ×1.61, ×2.43, ×3.24, ×4.54 and
      ×13.42.
    - 3 were within ±25%. None was under.
    - Longest run: declared more than 25% above the logged longest on 5 of 14.

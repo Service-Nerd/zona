@@ -1714,6 +1714,30 @@ refused from this machine in any case. Filed as `BLOCKED-DAY-OVERRIDE-REPAIR-01`
 
 ---
 
+### 🔲 `STARTVOL-OBSERVED-01` — show a runner the gap between their declared and logged volume, and let them choose *(filed 2026-11-21)* 🧭 **DESIGN BOARD** first (a new wizard state), then 🏃 **COACHING BOARD** conditions at build
+
+⚖️ **RULED 2026-11-21:** option C, CORRECT WITH AMENDMENT (`docs/decisions/coaching-2026-11-21-starting-volume-from-log.md`;
+register row in `coaching-rulings.md`). It lands in ADR-027:
+- **B2** carries the observed figures.
+- **B4** reads them in `create`.
+
+No hotfix.
+
+**Build spec:**
+- §10 amendment: "the brace is a question, not a blend".
+- Config: `OBSERVED_VOLUME_WINDOW_DAYS` 28, `OBSERVED_VOLUME_MIN_RUNS` 4, `OBSERVED_VOLUME_GAP_RATIO` 1.25 and
+  `OBSERVED_LONGEST_RUN_GAP_RATIO` 1.25.
+- `INV-PLAN-OBSERVED-GAP-RESOLVED` (error).
+- `meta.start_volume` records what was asked and answered.
+
+**Conditions before it ships:**
+- Parity IDENTICAL when no gap is shown or the declaration is kept.
+- An observed-gap corpus in `measure:fitness` / `cohort:shape`.
+- Re-run the regeneration on the B4 engine.
+
+**Still owed:** a Design Board sitting on the wizard state (placement, the two-choice encoding, showing the
+consequence, iOS only), and mockups to the founder.
+
 ### 🔲 `ADJUST-WEEK-COORD-01` — adjustments are written to the wrong week on every plan with foundation weeks *(filed 2026-11-21; proposed ADR-027 hotfix 5)* ⚙️ **NO BOARD** (defect restoring documented intent)
 
 **Mechanism:**

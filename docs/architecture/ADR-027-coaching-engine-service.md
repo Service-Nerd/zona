@@ -124,7 +124,8 @@ to change one.
    - Age, max HR and the recommended level are worked out **on the device**.
    - Paid-only fields are stripped **on the client**.
    - Declared weekly km was more than 25% above the logged volume for **8 of 11** runners whose log covers the
-     28 days before their plan.
+     28 days before their plan. Re-measured by the Coaching Board with run de-duplication and validity bounds:
+     **11 of 15** (`STARTVOL-OBSERVED-01`).
 2. **Reshapes do not go through the engine.**
    - Of fifteen paths, three run `runEngine`: modify, the base-build checkpoint and the foundation decision.
    - The rest edit plan JSON directly: adjustments, confirm/revert, readiness, benchmark and HR recalibration,

@@ -4103,3 +4103,27 @@ pre-deload and no higher (5%-capped if the 85/85 gate withdraws); growth resumes
 injury ramp. `measure:fitness` and `cohort:shape` cannot see ramps.
 
 Sitting: `docs/decisions/coaching-2026-11-21-onramp-injury-climb.md`.
+
+### `STARTVOL-OBSERVED-01` · should new plans use the logged run volume? · **A (silent substitution) INCORRECT (veto) · B (min(declared, k × logged)) INCORRECT · D (never read) INCORRECT · C (show the gap, ask) CORRECT WITH AMENDMENT · RULED, not built (lands in ADR-027 B2/B4; no hotfix)**
+
+**The evidence:**
+- Of 15 runners with ≥ 4 valid device runs in the 28 days before their plan, 11 declared > 25% above the log,
+  4 within and 0 under (ratios 0.91–15.09).
+- 7 connected runners have never had a run reach us.
+- Of 6 over-declarers followed into weeks 1–4, 2 ran at or above their declaration. The log is a floor, and neither
+  figure is the truth.
+- Regenerated: silent substitution (A) flips 4 of 15 race plans to staged base builds and cuts peak by up to 58 km.
+  A 1.25× cap (B) removes the leap off the log on 2 of 12.
+
+**The ruling:**
+- The runner is shown both figures and chooses. Nothing is pre-selected, and no plan is built until they choose.
+- It applies when ≥ 4 runs exist and declared is > 1.25× logged, for weekly volume or for the longest run.
+- An accepted log becomes observed (§29 off, C1). A kept declaration becomes confirmed.
+- The log never raises an input (§106).
+- A thin or empty log is absence, never 0 (§10 Am.).
+- Amends §10 CD-6's "tempered toward" (PV2-E).
+
+**Dissent:** Willy's week-1 hold for confirmed gaps > 2×: INSUFFICIENT EVIDENCE. Re-open at ≥ 20 runners who kept
+their declaration and then logged ≥ 4 weeks.
+
+**Sitting:** `docs/decisions/coaching-2026-11-21-starting-volume-from-log.md`.
