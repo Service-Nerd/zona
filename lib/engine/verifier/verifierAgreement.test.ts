@@ -139,6 +139,11 @@ const EXTRA_MUTATIONS: { name: string; apply: (p: Plan, input: GeneratorInput) =
       if (!s) return false
       delete s.pace_target; delete s.rpe_target; return true
     }],
+    ['a quality session with no pace and an effort of 0', (p: Plan) => {
+      const s = p.weeks.flatMap(w => Object.values(w.sessions ?? {})).find(x => x && isQualitySession(x))
+      if (!s) return false
+      delete s.pace_target; s.rpe_target = 0; return true
+    }],
     ['an anchored work step with its pace removed', (p: Plan) => {
       for (const w of p.weeks) for (const s of Object.values(w.sessions ?? {})) {
         const st = (s?.derived_set?.blocks ?? []).flatMap(b => b.steps ?? []).find(x => x.role === 'work' && x.pace_mode !== undefined)
