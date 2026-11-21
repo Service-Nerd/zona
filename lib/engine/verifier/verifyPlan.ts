@@ -1309,6 +1309,8 @@ const BATCH_20: Partial<Record<RuleId, Predicate>> = {
 Object.assign(PREDICATES, BATCH_20)
 
 const SEVERITY = new Map(RULES.map(r => [r.id, r.kind === 'soft' ? 'warn' as const : 'error' as const]))
+/** Rules the catalogue marks as conditionally severe: only these may set a finding's severity (code review, batch 20). */
+const CONDITIONAL = new Set(RULES.filter(r => r.severity_note).map(r => r.id))
 
 /** Every finding the ported predicates raise, with the severity the catalogue gives the rule. */
 export function verifyPlan(plan: Plan, ctx: VerifyContext): VerifierFinding[] {
@@ -1318,7 +1320,7 @@ export function verifyPlan(plan: Plan, ctx: VerifyContext): VerifierFinding[] {
     try { return p(plan, ctx) } catch (e) {
       return [{ rule_id: id, week: PLAN, day: null, detail: `unverified: ${e instanceof Error ? e.message : String(e)}` }]
     }
-  }).map(f => ({ ...f, severity: f.severity ?? SEVERITY.get(f.rule_id) ?? 'error' }))
+  }).map(f => ({ ...f, severity: (CONDITIONAL.has(f.rule_id) ? f.severity : undefined) ?? SEVERITY.get(f.rule_id) ?? 'error' }))
 }
 
 export const PORTED_RULES = Object.keys(PREDICATES) as RuleId[]
