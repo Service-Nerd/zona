@@ -162,7 +162,7 @@ describe('🎨 RESHAPE-MOMENT-04 — the figures are DERIVED, which is the whole
     const expected: Record<string, string> = {
       readiness_signal:     `+${READINESS.RHR_ELEVATION_BPM} bpm`,
       zone_drift:           `${ZONE_DRIFT_ABOVE_CEILING_PCT}%`,
-      acute_chronic_high:   `${LOAD_RATIO.flag}\u00d7`,
+      acute_chronic_high:   `${LOAD_RATIO.watch}\u00d7`,
       shadow_load:          `${SHADOW_LOAD_THRESHOLD_PCT}%`,
       fatigue_accumulation: `${FATIGUE_ACCUMULATION_THRESHOLD} in a row`,
       ef_decline:           `\u2212${Math.abs(EF_DECLINE_THRESHOLD_PCT)}%`,

@@ -1,6 +1,5 @@
 import {
   LOAD_RATIO,
-  SHADOW_LOAD_THRESHOLD_PCT,
 } from './constants'
 
 export interface WeekLoad {
@@ -55,15 +54,6 @@ export function shadowLoadPct(actualKm: number, plannedKm: number): number {
   return ((actualKm - plannedKm) / plannedKm) * 100
 }
 
-export function isShadowLoadTriggered(
-  recentWeeks: { actualKm: number; plannedKm: number }[],
-  consecutiveWeeksRequired = 2,
-): boolean {
-  const overloaded = recentWeeks.filter(
-    w => shadowLoadPct(w.actualKm, w.plannedKm) > SHADOW_LOAD_THRESHOLD_PCT
-  )
-  return overloaded.length >= consecutiveWeeksRequired
-}
 
 /**
  * Zone discipline score (0–100), or null when there's no signal.

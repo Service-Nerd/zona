@@ -540,6 +540,25 @@ describe('H/I — the engine proposed something', () => {
     expect(events(), 'a successful save records no failure').not.toContain('plan_save_failed')
   })
 
+  it('🔴 I3 — WATCHED-SIGNALS-DISCLOSURE-01: an auto-applied change that changes NOTHING sends no "shifted" message', async () => {
+    // `shadow_load` is an observation: its after-sessions equal its before-sessions, so it rates
+    // low and auto-applies. It used to write the inbox row "Plan's been shifted." over an
+    // unchanged plan. Off-plan runs only, so the linked-km load ratio stays below its trigger.
+    // Inside the plan's first week (the fixture plan can start next Monday, and a run outside
+    // every plan week is dropped), on distinct days so `dedupeRuns` keeps all four.
+    const wk1 = String((S.store.plans[0].plan_json as Plan).weeks[0].date).slice(0, 10)
+    for (let i = 0; i < 4; i++) S.store.strava_activities.push({
+      user_id: UID, start_date: new Date(new Date(`${wk1}T08:00:00`).getTime() + i * 86_400_000).toISOString(), distance_m: 15_000, reported_distance_m: null,
+      activity_type: 'Run', sport_type: 'Run', strava_activity_id: null, apple_health_uuid: `hk-${i}`, manual_uuid: null,
+    })
+    const res = await post({})
+    expect(res.status).toBe(200)
+    const row = adjustments()[0]
+    expect(row?.trigger_type, 'the fixture must actually reach shadow_load').toBe('shadow_load')
+    expect(row.status).toBe('auto_applied')
+    expect(S.store.notifications, 'an unchanged plan was announced as shifted').toEqual([])
+  })
+
   it('🔴 I2 — a FAILED plan save records `plan_save_failed` and does not swallow the error', async () => {
     // OPS-01: the `plan_adjustments` row is already written when the save runs, so a
     // silent failure leaves an "auto_applied" adjustment with no matching plan change —

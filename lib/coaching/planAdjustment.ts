@@ -267,8 +267,8 @@ export function checkAdjustmentTriggers(input: AdjustmentCheckInput): ProposedAd
   // 🔴 LOG-OFFPLAN-01, AND THE SPLIT IS THE RULING. Coaching Board 2026-09-27.
   //
   // `acute_chronic_high` calls buildReduceVolumeAdjustment, which TRIMS easy and
-  // long sessions ~15% and only `requiresConfirmation` at LOAD_RATIO.flag — so
-  // below that it applies silently. Clause 2 forbids an off-plan run reaching it:
+  // long sessions ~15%. Whether it asks first is ADR-012's magnitude rule, not the
+  // builder's `requiresConfirmation` (runAdjustmentEngine never reads it). Clause 2 forbids an off-plan run reaching it:
   // the runner's own extra easy run must not shrink next week without them
   // asking. The ratio therefore reads LINKED km only, exactly as before.
   //
@@ -370,6 +370,16 @@ export function guardCheck(input: AdjustmentCheckInput): boolean {
   if (weeksRemaining <= TAPER_PROTECTION_WEEKS) return false
   if (input.currentPhase === 'taper') return false
   return true
+}
+
+/**
+ * WATCHED-SIGNALS-DISCLOSURE-01 — does this proposal change any session at all?
+ * `shadow_load` copies `sessionsBefore` into `sessionsAfter` unchanged (an observation, not an
+ * adjustment), and it auto-applies because an empty diff is low magnitude. Announcing that as
+ * "Plan's been shifted." is a claim the plan contradicts.
+ */
+export function changesSessions(p: Pick<ProposedAdjustment, 'sessionsBefore' | 'sessionsAfter'>): boolean {
+  return JSON.stringify(p.sessionsBefore) !== JSON.stringify(p.sessionsAfter)
 }
 
 // ─── Builders ────────────────────────────────────────────────────────────────

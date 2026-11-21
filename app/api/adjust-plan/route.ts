@@ -9,7 +9,7 @@ import { isFeatureAllowed } from '@/lib/plan/canUseFeature'
 // ADJUST-ENGINE-ENTRY-01 — ONE engine door for the synchronous adjustment path.
 // `fetchWeeklyLoad` is the exception and is I/O, not engine: the FETCH is the
 // caller's, what the triggers read off the result is the engine's.
-import { runAdjustmentEngine, acceptAiSummary } from '@/lib/coaching/adjustmentEngine'
+import { runAdjustmentEngine, acceptAiSummary, changesSessions } from '@/lib/coaching/adjustmentEngine'
 import { fetchWeeklyLoad } from '@/lib/coaching/weeklyActualLoad'
 // The AI layer stays here (ADR-006): these two assemble runner-facing voice for a
 // model the engine may not call, and their failure must be silent.
@@ -511,7 +511,10 @@ export async function POST(req: NextRequest) {
     // and discoverable: the durable inbox row below + the Me-screen "what changed
     // this week" audit surface. Manual adjustments are the user's own change —
     // no inbox row either.
-    if (!isManual) {
+    // WATCHED-SIGNALS-DISCLOSURE-01 — and never for a change that changed nothing: a
+    // `shadow_load` observation auto-applies with identical before/after sessions, and was
+    // announced as "Plan's been shifted." (1 of the 5 such inbox rows in production, 2026-11-21).
+    if (!isManual && changesSessions(proposed)) {
       const url = '/dashboard?screen=plan'
       void recordNotification(user.id, {
         type:  'plan_adjustment',

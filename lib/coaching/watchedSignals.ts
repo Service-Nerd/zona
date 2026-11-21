@@ -88,9 +88,13 @@ export const WATCHED_SIGNALS: Record<DetectedTrigger, WatchedSignal> = {
   },
   acute_chronic_high: {
     horizon: 'week',
-    figure: `${LOAD_RATIO.flag}\u00d7`,
+    // WATCHED-SIGNALS-DISCLOSURE-01 (2026-11-21) — this quoted `LOAD_RATIO.flag` (1.4) and said
+    // "two weeks running". The trigger fires at `LOAD_RATIO.watch` after ONE week
+    // (`checkAdjustmentTriggers`), and `flag` decides nothing: ADR-012's magnitude rule is the only
+    // decision point. `planAdjustment.test.ts` now proves the figure is where the trigger fires.
+    figure: `${LOAD_RATIO.watch}\u00d7`,
     label:  'this week against your recent weeks',
-    detail: 'Two weeks running at that ratio, not one.',
+    detail: 'One week at that ratio is enough to trim your easy and long runs.',
   },
   shadow_load: {
     horizon: 'week',

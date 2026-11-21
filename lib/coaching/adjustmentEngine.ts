@@ -69,6 +69,8 @@ import {
   type AdjustmentCheckInput,
   type ProposedAdjustment,
 } from './planAdjustment'
+// WATCHED-SIGNALS-DISCLOSURE-01 — re-exported so the route keeps its one engine door.
+export { changesSessions } from './planAdjustment'
 import { computeReshapeMagnitude, type ReshapeMagnitude } from './reshapeMagnitude'
 import { recordQualityDowngrade } from './qualityDowngrade'
 import { COACHING_RULE_ENGINE_VERSION } from './constants'

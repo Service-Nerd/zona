@@ -147,6 +147,7 @@ shape is unchanged and `ReshapeScreen` needs no change.
 
 - Returns existing pending adjustment if one already exists (deduplication).
 - Auto-applied (low-risk) adjustments update the plan immediately and return `status: "auto_applied"`.
+- An auto-applied, non-manual adjustment writes the inbox row `BRAND.push.planAdjusted` ("Plan's been shifted.") **only when a session changed** (`changesSessions`). `shadow_load` is an observation with identical before/after sessions and writes no row (WATCHED-SIGNALS-DISCLOSURE-01, 2026-11-21).
 - Hard caps: max 2 adjustments/week, 3-week taper protection (bypassed for T1/T2).
 - AI explanation via claude-haiku (max 150 tokens). Silent fallback to rule-based summary.
 - Trigger priority: T1 skip → T1 reorder → guard check → T4 fatigue → T3 acute/chronic → zone drift → shadow load → EF decline → T5 RPE.
@@ -182,7 +183,7 @@ board's ruling, not an implementation detail**:
 
 | Figure | Read by | Why |
 |---|---|---|
-| `linkedKm` | **acute:chronic ratio**, `priorWeeksKm` | `acute_chronic_high` calls `buildReduceVolumeAdjustment`, which trims easy and long sessions ~15% and only `requiresConfirmation` at `LOAD_RATIO.flag` — below that it applies **silently**. **Clause 2:** a runner's own extra easy run must not shrink next week without them asking |
+| `linkedKm` | **acute:chronic ratio**, `priorWeeksKm` | `acute_chronic_high` fires at `LOAD_RATIO.watch` after one week and calls `buildReduceVolumeAdjustment`, which trims easy and long sessions ~15%. Whether it asks first is ADR-012's magnitude rule; the builder's `requiresConfirmation` is never read (WATCHED-SIGNALS-DISCLOSURE-01). **Clause 2:** a runner's own extra easy run must not shrink next week without them asking |
 | `linkedKm + offPlanKm` | **shadow load**, `total_km_actual` | **Clause 1:** actual load is a measurement of what happened, and excluding real running makes it wrong. `buildShadowLoadAdjustment` copies `sessionsBefore` into `sessionsAfter` unchanged and reports *"Flagged — no auto-change applied"* — it was already clause 2's shape |
 
 **Measured on production 2026-09-27:** of runs that happened while a plan

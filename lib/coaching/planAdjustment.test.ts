@@ -644,3 +644,31 @@ describe('READINESS-LONG-DURATION-01 — the ease scales whichever anchor the se
     expect(r.sessionsAfter[6]!.type).toBe('easy')
   })
 })
+
+// WATCHED-SIGNALS-DISCLOSURE-01 (2026-11-21). The Profile disclosure quoted LOAD_RATIO.flag and
+// "two weeks running"; the trigger fires at LOAD_RATIO.watch after ONE week. These arms bind the
+// figure the runner reads to the place the trigger actually fires, not to a constant it chose.
+describe('WATCHED-SIGNALS-DISCLOSURE-01 — the disclosed load figure is where the trigger fires', () => {
+  it('🔴 one week at the disclosed ratio fires the trim; just under it does not', async () => {
+    const { WATCHED_SIGNALS } = await import('./watchedSignals')
+    const disclosed = parseFloat(WATCHED_SIGNALS.acute_chronic_high.figure)
+    const at = checkAdjustmentTriggers({ ...baseInput(), linkedKm: 40 * disclosed, plannedKm: 40 * disclosed })
+    expect(at?.trigger.type, 'the trigger did not fire at the ratio the runner is told').toBe('acute_chronic_high')
+    expect(at?.adjustmentType).toBe('reduce_volume')
+    const under = checkAdjustmentTriggers({ ...baseInput(), linkedKm: 40 * (disclosed - 0.01), plannedKm: 40 * disclosed })
+    expect(under?.trigger.type, 'the trigger fires below the disclosed ratio').not.toBe('acute_chronic_high')
+  })
+
+  it('changesSessions: an identical before/after is not a change; any edit is', async () => {
+    const { changesSessions } = await import('./planAdjustment')
+    const s = baseInput().currentWeekSessions
+    expect(changesSessions({ sessionsBefore: s, sessionsAfter: s.map(x => ({ ...x })) })).toBe(false)
+    expect(changesSessions({ sessionsBefore: s, sessionsAfter: s.map((x, i) => (i === 0 ? { ...x, coach_notes: ['n'] } : x)) })).toBe(true)
+  })
+
+  it('🔴 shadow_load is exactly that empty diff, which is why the route must not announce it', () => {
+    const r = checkAdjustmentTriggers({ ...baseInput(), linkedKm: 40, offPlanKm: 20, plannedKm: 40 })
+    expect(r?.trigger.type).toBe('shadow_load')
+    expect(JSON.stringify(r!.sessionsAfter)).toBe(JSON.stringify(r!.sessionsBefore))
+  })
+})
