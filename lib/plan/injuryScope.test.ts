@@ -24,23 +24,28 @@ import { join } from 'node:path'
 import {
   hasInjuryKeyword, hasVolumeCappedInjuryHistory, VOLUME_CAPPED_INJURY_KEYWORDS,
 } from './injuryScope'
+import { WIZARD_INJURIES as OWNED_WIZARD_INJURIES } from './wizardOptions'
 
 /**
  * The six chips `app/dashboard/GeneratePlanScreen.tsx` offers, verbatim. Read
  * from the source rather than copied, so a seventh injury cannot be added to the
  * wizard without this test seeing it.
  */
-const WIZARD_INJURIES: string[] = (() => {
-  const src = readFileSync('app/dashboard/GeneratePlanScreen.tsx', 'utf8')
-  const m = src.match(/const INJURIES\s*=\s*\[([^\]]*)\]/)
-  if (!m) throw new Error('INJURIES list not found in GeneratePlanScreen.tsx — did it move?')
-  return m[1].split(',').map(s => s.trim().replace(/^['"]|['"]$/g, '')).filter(Boolean)
-})()
+// ADR027-B0-GOLDEN-CORPUS — the list MOVED to its owner, `lib/plan/wizardOptions.ts`, which the
+// wizard imports. Read from the owner, and assert the wizard still renders THAT list rather than
+// a local one — the two halves together are what "the screen's list" means now.
+const WIZARD_INJURIES: string[] = [...OWNED_WIZARD_INJURIES]
+const WIZARD_SRC = readFileSync('app/dashboard/GeneratePlanScreen.tsx', 'utf8')
 
 describe('the wizard list is the ground truth', () => {
   it('reads the six product values from the screen, not from a copy here', () => {
     expect(WIZARD_INJURIES).toEqual(
       ['Achilles', 'Knee', 'Back', 'Hip', 'Shin splints', 'Plantar fasciitis'])
+  })
+
+  it('the wizard renders the OWNED list, not a local copy', () => {
+    expect(WIZARD_SRC).toMatch(/const INJURIES\s*=\s*WIZARD_INJURIES\b/)
+    expect(WIZARD_SRC).toMatch(/\{INJURIES\.map\(/)
   })
 })
 

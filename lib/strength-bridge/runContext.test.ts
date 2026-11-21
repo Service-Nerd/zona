@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest'
 import type { Plan } from '@/types/plan'
 import { planToRunContext, runRoleOf, runContextSig } from './runContext'
 import { GENERATION_CONFIG } from '@/lib/plan/generationConfig'
+import { WIZARD_INJURIES } from '@/lib/plan/wizardOptions'
 import { STRENGTH_CONFIG } from '@/packages/strength'
 
 /** STRENGTH-ENGINE-01 — the bridge is the only code that knows both engines. */
@@ -61,11 +62,13 @@ describe('the strength and run engines agree on §21’s impact list', () => {
 // Every option the wizard offers must map to a strength tag. The options are read from the wizard.
 describe('every wizard injury answer reaches the strength engine', () => {
   const src = require('node:fs').readFileSync(require('node:path').join(__dirname, '..', '..', 'app', 'dashboard', 'GeneratePlanScreen.tsx'), 'utf8') as string
-  const m = /const INJURIES\s*=\s*\[([^\]]+)\]/.exec(src)
-  const options = m ? Array.from(m[1]!.matchAll(/'([^']+)'/g)).map(x => x[1]!) : []
+  // ADR027-B0-GOLDEN-CORPUS — the list moved to its owner, `lib/plan/wizardOptions.ts`, which the
+  // wizard imports; read it there and assert the wizard still renders that list.
+  const options: string[] = [...WIZARD_INJURIES]
 
   it('population: the wizard offers its injury answers', () => {
     expect(options.length).toBeGreaterThanOrEqual(6)
+    expect(src).toMatch(/const INJURIES\s*=\s*WIZARD_INJURIES\b/)
   })
 
   it.each(options.map(o => [o]))('%s maps to a strength injury tag', (o) => {

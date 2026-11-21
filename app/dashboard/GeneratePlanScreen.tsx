@@ -31,7 +31,12 @@ import { GENERATION_CONFIG, raceDistanceKey } from '@/lib/plan/generationConfig'
 import { hrGuardableAge } from '@/lib/plan/hrSaveResolution'
 import { convertDistanceString, formatDate, formatDistance, formatDuration } from '@/lib/format'
 import { renderPlanProse, planProseContext } from '@/lib/plan/renderGuidance'
-import { isPaidDistance } from '@/lib/plan/canUseFeature'
+import {
+  WIZARD_DISTANCES, WIZARD_INJURIES, MAX_WEEKDAY_CHIPS, WIZARD_DAY_BUDGET_MINS, WIZARD_TRAINING_AGES,
+  WIZARD_RECENT_QUALITY, WIZARD_HARD_SESSIONS, WIZARD_TERRAINS, WIZARD_LEVELS,
+  WIZARD_BIRTH_YEAR_AGE_MIN, WIZARD_BIRTH_YEAR_AGE_MAX,
+  type RecentQuality, type HardSessionRelationship, type WizardTerrain,
+} from '@/lib/plan/wizardOptions'
 import { PLAN_SIGNATURES } from '@/lib/plan/planSignatures'
 import PlanIntroCard from '@/components/shared/PlanIntroCard'
 import RunwayRevealCard from '@/components/shared/RunwayRevealCard'
@@ -108,14 +113,11 @@ const WIZARD_KEY = 'zona_wizard_draft'
 // The NAME stays fixed on purpose. "Marathon", "10K" and "Half" are what the
 // race is called, in every country — they are not a unit conversion, and
 // rendering "6.2M" would be wrong rather than localised.
-const DISTANCES = [
-  { label: '5K',       value: 5,    paid: isPaidDistance(5)    },
-  { label: '10K',      value: 10,   paid: isPaidDistance(10)   },
-  { label: 'Half',     value: 21.1, paid: isPaidDistance(21.1) },
-  { label: 'Marathon', value: 42.2, paid: isPaidDistance(42.2) },
-  { label: '50K',      value: 50,   paid: isPaidDistance(50)   },
-  { label: '100K',     value: 100,  paid: isPaidDistance(100)  },
-]
+//
+// ADR027-B0-GOLDEN-CORPUS — the option VALUES now live in `lib/plan/wizardOptions.ts`, because
+// the golden corpus and the wizard-shape gate read them too and a copy would drift (D-08).
+// The copy a runner reads stays below, keyed by value.
+const DISTANCES = WIZARD_DISTANCES
 
 /**
  * P-05(a) — the plan-length range on each distance tile.
@@ -159,7 +161,7 @@ const SHORT_BY_FULL: Record<string, DayKey> = {
   monday: 'mon', tuesday: 'tue', wednesday: 'wed', thursday: 'thu',
   friday: 'fri', saturday: 'sat', sunday: 'sun',
 }
-const INJURIES   = ['Achilles', 'Knee', 'Back', 'Hip', 'Shin splints', 'Plantar fasciitis']
+const INJURIES   = WIZARD_INJURIES
 
 // LEGACY — the weekly-volume + longest-run inputs are now the Ruler primitive
 // (Coaching Board 2026-08-30; see GENERATION_CONFIG.WIZARD_VOLUME_RULER). These
@@ -198,15 +200,7 @@ const LONGEST_RUN_CHIPS = [
 // `formatDuration`, the ADR-015 owner, so these read "1h 30" like every other
 // duration in the app instead of "90 min" — a third convention that survived
 // because the input screen was the one surface nobody swept.
-const MAX_WEEKDAY_CHIPS: { key: string; mins: number | undefined }[] = [
-  { key: '30',   mins: 30        },
-  { key: '45',   mins: 45        },
-  { key: '60',   mins: 60        },
-  { key: '90',   mins: 90        },
-  { key: '120',  mins: 120       },
-  { key: '180',  mins: 180       },
-  { key: 'none', mins: undefined },
-]
+// The chip list itself lives in `lib/plan/wizardOptions.ts` (ADR027-B0-GOLDEN-CORPUS).
 
 /** A chip's display text. "No limit" is a word, not a duration. */
 const weekdayChipLabel = (mins: number | undefined): string =>
@@ -232,23 +226,23 @@ const normaliseWeekdayChip = (stored: string | null): string | null =>
 // already means "same as the cap", so a per-day override is always a concrete
 // number. `DayBudgetRows` renders the label; the value is what the engine sizes to.
 // DayBudgetRows wants {value,label}; the label is derived, same owner.
-const DAY_BUDGET_OPTIONS = MAX_WEEKDAY_CHIPS
-  .filter((c): c is { key: string; mins: number } => c.mins != null)
-  .map(c => ({ value: c.mins, label: weekdayChipLabel(c.mins) }))
+const DAY_BUDGET_OPTIONS = WIZARD_DAY_BUDGET_MINS
+  .map(mins => ({ value: mins, label: weekdayChipLabel(mins) }))
 
-const TRAINING_AGE_CHIPS: { label: string; value: TrainingAge }[] = [
-  { label: '< 6 months',   value: '<6mo'   },
-  { label: '6–18 months',  value: '6-18mo' },
-  { label: '2–5 years',    value: '2-5yr'  },
-  { label: '5+ years',     value: '5yr+'   },
-]
+const TRAINING_AGE_LABEL: Record<TrainingAge, string> = {
+  '<6mo':   '< 6 months',
+  '6-18mo': '6–18 months',
+  '2-5yr':  '2–5 years',
+  '5yr+':   '5+ years',
+}
+const TRAINING_AGE_CHIPS: { label: string; value: TrainingAge }[] =
+  WIZARD_TRAINING_AGES.map(value => ({ label: TRAINING_AGE_LABEL[value], value }))
 
 // §89 — recent structured hard training. A tissue-readiness signal (what you've
 // been DOING, past-tense) — not self-image. 'regular' can start quality sooner
 // for an experienced, based, uninjured runner; every other answer keeps the full
 // base. Labels are neutral descriptions of past practice — recognition, never an
 // "unlock" (SLT framing guardrail).
-type RecentQuality = 'none' | 'occasional' | 'regular'
 // ui-patterns.md "Chip or CardSelect?" — CardSelect, on two counts: a runner can
 // pick the wrong option from the label alone (Q1), and the answer changes the
 // SHAPE of the plan rather than a number in it (Q2) — it is the demonstrated-
@@ -259,11 +253,30 @@ type RecentQuality = 'none' | 'occasional' | 'regular'
 // Labels remain neutral descriptions of PAST PRACTICE — recognition, never an
 // "unlock" (SLT framing guardrail). Nothing here names what the runner gets for
 // answering upward, and no option is phrased as a tier to qualify for.
-const RECENT_QUALITY_OPTIONS: { label: string; sub: string; value: RecentQuality }[] = [
-  { value: 'none',       label: 'Mostly easy.',    sub: 'Steady running. Nothing structured lately.' },
-  { value: 'occasional', label: 'Here and there.', sub: 'The odd session. Not a routine.' },
-  { value: 'regular',    label: 'Most weeks.',     sub: 'Intervals, hills or tempo: consistently, recently.' },
-]
+const RECENT_QUALITY_COPY: Record<RecentQuality, { label: string; sub: string }> = {
+  none:       { label: 'Mostly easy.',    sub: 'Steady running. Nothing structured lately.' },
+  occasional: { label: 'Here and there.', sub: 'The odd session. Not a routine.' },
+  regular:    { label: 'Most weeks.',     sub: 'Intervals, hills or tempo: consistently, recently.' },
+}
+const RECENT_QUALITY_OPTIONS: { label: string; sub: string; value: RecentQuality }[] =
+  WIZARD_RECENT_QUALITY.map(value => ({ value, ...RECENT_QUALITY_COPY[value] }))
+
+const HARD_SESSION_COPY: Record<HardSessionRelationship, { label: string; sub: string }> = {
+  avoid:   { label: 'Avoid them.',      sub: 'Keep it aerobic. No intervals unless absolutely necessary.' },
+  neutral: { label: 'Fine either way.', sub: 'Structure as the plan needs. No strong preference.' },
+  love:    { label: 'Bring it on.',     sub: 'More quality, more structure. I like working hard.' },
+  overdo:  { label: 'I overdo it.',     sub: 'Reign me in. I know I\'ll push too hard if I can.' },
+}
+const TERRAIN_COPY: Record<WizardTerrain, { label: string; sub: string }> = {
+  road:  { label: 'Road.',  sub: 'Pavement, tracks, flat surfaces. Speed-focused.' },
+  trail: { label: 'Trail.', sub: 'Off-road, elevation, technical terrain. Effort-focused.' },
+  mixed: { label: 'Mixed.', sub: 'Both. Adapt pace targets to the surface.' },
+}
+const LEVEL_COPY: Record<FitnessLevel, { label: string; sub: string }> = {
+  beginner:     { label: 'Building the base.', sub: 'Newer to it, or rebuilding. Easy running, no hard sessions yet.' },
+  intermediate: { label: 'Got a base.',        sub: 'Used to some hard running. Tempo and threshold in the mix.' },
+  experienced:  { label: 'The full toolkit.',  sub: 'Consistent miles, comfortable with intervals, threshold, hills.' },
+}
 
 const STEP_META: Record<WizardSubStep, { title: string; subtitle: string; optional?: boolean; eyebrow?: string; interstitial?: boolean; cta?: string }> = {
   'distance':        { title: 'How far?',              subtitle: 'Start with the finish line. Work backwards from there.' },
@@ -736,10 +749,10 @@ export default function GeneratePlanScreen({
   const [dayBudgets,     setDayBudgets]     = useState<DayBudgets>({})
 
   // ── Step 9 — Hard sessions (paid) ────────────────────────────────────────
-  const [hardSessions, setHardSessions] = useState<'avoid' | 'neutral' | 'love' | 'overdo' | null>(null)
+  const [hardSessions, setHardSessions] = useState<HardSessionRelationship | null>(null)
 
   // ── Step 10 — Terrain (paid) ──────────────────────────────────────────────
-  const [terrain, setTerrain] = useState<'road' | 'trail' | 'mixed' | null>(null)
+  const [terrain, setTerrain] = useState<WizardTerrain | null>(null)
 
   // ── Step 11 — Injuries (every tier, WIZARD-INJURY-FREE-01) ───────────────
   const [injuries, setInjuries] = useState<string[]>([])
@@ -2160,11 +2173,8 @@ export default function GeneratePlanScreen({
         const overrodeUp   = FITNESS_RANK[effective] > FITNESS_RANK[rec.level]
         const overrodeDown = FITNESS_RANK[effective] < FITNESS_RANK[rec.level]
 
-        const LEVELS: { value: FitnessLevel; label: string; sub: string }[] = [
-          { value: 'beginner',     label: 'Building the base.',   sub: 'Newer to it, or rebuilding. Easy running, no hard sessions yet.' },
-          { value: 'intermediate', label: 'Got a base.',          sub: 'Used to some hard running. Tempo and threshold in the mix.' },
-          { value: 'experienced',  label: 'The full toolkit.',    sub: 'Consistent miles, comfortable with intervals, threshold, hills.' },
-        ]
+        const LEVELS: { value: FitnessLevel; label: string; sub: string }[] =
+          WIZARD_LEVELS.map(value => ({ value, ...LEVEL_COPY[value] }))
 
         const whyLine = rec.isReturning
           ? "You've got the miles in your legs, just not this month. That's not beginner, that's coming back."
@@ -2207,7 +2217,10 @@ export default function GeneratePlanScreen({
         const currentYear = new Date().getFullYear()
         // Descending years (newest first) so the wheel opens near most birth
         // years. 14–90 = the allowable runner age range.
-        const years = Array.from({ length: 90 - 14 + 1 }, (_, i) => currentYear - 14 - i)
+        const years = Array.from(
+          { length: WIZARD_BIRTH_YEAR_AGE_MAX - WIZARD_BIRTH_YEAR_AGE_MIN + 1 },
+          (_, i) => currentYear - WIZARD_BIRTH_YEAR_AGE_MIN - i,
+        )
         // ⚠️ A THIRD INVENTED AGE LIVED HERE AND THE RUNNER WAS THE ONLY ONE WHO SAW IT. The
         // wheel rested at ~35 while a skipped step was priced at 30 (Tanaka 184 vs 187), so
         // the screen showed one age and the plan was built on another. The wheel's resting
@@ -2331,13 +2344,8 @@ export default function GeneratePlanScreen({
       case 'hard-sessions':
         return (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
-            {([
-              { value: 'avoid',   label: 'Avoid them.',    sub: 'Keep it aerobic. No intervals unless absolutely necessary.' },
-              { value: 'neutral', label: 'Fine either way.', sub: 'Structure as the plan needs. No strong preference.' },
-              { value: 'love',    label: 'Bring it on.',   sub: 'More quality, more structure. I like working hard.' },
-              { value: 'overdo',  label: 'I overdo it.',   sub: 'Reign me in. I know I\'ll push too hard if I can.' },
-            ] as const).map(o => (
-              <CardSelect key={o.value} label={o.label} sub={o.sub} active={hardSessions === o.value} onClick={() => setHardSessions(o.value)} />
+            {WIZARD_HARD_SESSIONS.map(value => (
+              <CardSelect key={value} label={HARD_SESSION_COPY[value].label} sub={HARD_SESSION_COPY[value].sub} active={hardSessions === value} onClick={() => setHardSessions(value)} />
             ))}
           </div>
         )
@@ -2346,9 +2354,9 @@ export default function GeneratePlanScreen({
       case 'terrain':
         return (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
-            <CardSelect label="Road." sub="Pavement, tracks, flat surfaces. Speed-focused." active={terrain === 'road'} onClick={() => setTerrain('road')} />
-            <CardSelect label="Trail." sub="Off-road, elevation, technical terrain. Effort-focused." active={terrain === 'trail'} onClick={() => setTerrain('trail')} />
-            <CardSelect label="Mixed." sub="Both. Adapt pace targets to the surface." active={terrain === 'mixed'} onClick={() => setTerrain('mixed')} />
+            {WIZARD_TERRAINS.map(value => (
+              <CardSelect key={value} label={TERRAIN_COPY[value].label} sub={TERRAIN_COPY[value].sub} active={terrain === value} onClick={() => setTerrain(value)} />
+            ))}
           </div>
         )
 

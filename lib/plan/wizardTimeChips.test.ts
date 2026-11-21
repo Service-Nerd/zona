@@ -17,6 +17,7 @@ import { formatDuration } from '@/lib/format'
 // gate on both.
 
 const SRC = readFileSync(join(process.cwd(), 'app/dashboard/GeneratePlanScreen.tsx'), 'utf8')
+const OWNER = readFileSync(join(process.cwd(), 'lib/plan/wizardOptions.ts'), 'utf8')
 const code = SRC.split('\n')
   .filter(l => !l.trim().startsWith('//') && !l.trim().startsWith('*'))
   .join('\n')
@@ -25,7 +26,9 @@ describe('WIZARD-TIME-CHIPS-01 — identity is stable, display is derived', () =
   it('the chips carry a KEY, not a label', () => {
     // A label is display. An identity that changes when the display changes is
     // not an identity.
-    expect(code, 'MAX_WEEKDAY_CHIPS must be keyed').toMatch(/MAX_WEEKDAY_CHIPS[\s\S]{0,400}?key:\s*'30'/)
+    // ADR027-B0-GOLDEN-CORPUS — the list moved to `lib/plan/wizardOptions.ts`; the wizard imports it.
+    expect(OWNER, 'MAX_WEEKDAY_CHIPS must be keyed').toMatch(/MAX_WEEKDAY_CHIPS[\s\S]{0,400}?key:\s*'30'/)
+    expect(code, 'the wizard must use the owned chip list').toMatch(/import \{[^}]*\bMAX_WEEKDAY_CHIPS\b[^}]*\} from '@\/lib\/plan\/wizardOptions'/)
   })
 
   it('🔴 nothing matches the selected chip by LABEL any more', () => {

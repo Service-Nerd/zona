@@ -5,9 +5,24 @@ import { cohortGrid, targetedGrid, derivedWeekdayCap } from './cohortGrid'
 import { slowGoalGrid, slowGoalDates } from './slowGoalGrid'
 import { PLAN_PERSONAS, charityInput } from './charityCohort'
 import { fullEnvelope } from './useCaseEnvelope'
-import { FITNESS_RANK } from './fitnessAssessment'
+import { FITNESS_RANK, recommendFitnessLevel } from './fitnessAssessment'
 import { derivedLevelsFor } from './ruleEngine'
 import type { GeneratorInput } from '@/types/plan'
+import {
+  goldenSample, goldenStrata, goldenSpaceSize, goldenRowAt, goldenProductionRows, gcd, strideFor,
+  GOLDEN_DEFAULT_PER_GROUP, type GoldenRow,
+} from '@/lib/corpus/goldenCorpus'
+import { wizardShapeViolations } from './wizardShape'
+import {
+  WIZARD_DISTANCES, WIZARD_INJURY_WIRE, MAX_WEEKDAY_CHIPS, WIZARD_TRAINING_AGES, WIZARD_RECENT_QUALITY,
+  WIZARD_LEVELS, WIZARD_HARD_SESSIONS, WIZARD_TERRAINS,
+} from './wizardOptions'
+
+/** A local calendar date from `YYYY-MM-DD` (not `new Date(iso)`, which is UTC midnight). */
+const isoDay = (s: string): Date => {
+  const [y, m, d] = s.split('-').map(Number)
+  return new Date(y, m - 1, d)
+}
 
 /**
  * COHORT-GRID-UNSET-LEVEL-01 — every coaching measurement corpus is shaped like a
@@ -355,4 +370,189 @@ describe('GRID-DAY-BUDGET-NO-CAP-01 — day_budgets never travels without its de
     expect(new Set(budgeted.map(r => (r as { max_weekday_mins?: number }).max_weekday_mins)))
       .toEqual(new Set([30]))
   })
+})
+
+/**
+ * ADR027-B0-GOLDEN-CORPUS — THE GENERAL FORM OF THE TWO ARMS ABOVE (ARCH-ENG-007).
+ *
+ * Both describes above are one instance each of "this corpus row could not have come from the
+ * wizard". `wizardShapeViolations` is the general check, read off `handleGenerate` and the owners
+ * it calls, and `goldenCorpus.ts` is the corpus built FROM those owners. Three arms:
+ *
+ *   1. the golden corpus is wizard-shaped: 0 violations, every row, and it is spread;
+ *   2. the predicate REFUSES what it says it refuses (planted defects, one per code that matters);
+ *   3. the EXISTING corpora, measured and declared — not fixed and not failed today.
+ *
+ * ⚠️ Arm 3 is a DECLARED BASELINE, not a pass. Every row of every existing corpus is off the
+ * wizard's shape (measured 2026-11-21, below), most for reasons no gate has looked at before:
+ * no `preferred_long_run_day`, a `days_available` that is not 7 minus the rest days, an empty
+ * `injury_history` list. ADR-027 B3 migrates the coaching harnesses onto the golden corpus;
+ * until then this pins the debt so it cannot grow silently and must be re-declared to shrink.
+ */
+describe('ADR027-B0 — the golden corpus is wizard-shaped, and the predicate is falsifiable', () => {
+  const golden = goldenSample()
+  const shape = (r: GoldenRow) => wizardShapeViolations(r.input, { tier: r.tier, today: isoDay(r.asOf) })
+
+  it('every golden wizard row passes wizardShapeViolations', () => {
+    expect(golden.length).toBe(GOLDEN_DEFAULT_PER_GROUP * 9)
+    const bad = golden.map(r => ({ id: r.id, v: shape(r) })).filter(x => x.v.length)
+    expect(bad.length, `first: ${JSON.stringify(bad[0] ?? null)}`).toBe(0)
+  })
+
+  it('no golden row sets the structural override, and every row carries the declared level', () => {
+    expect(golden.filter(r => 'fitness_level' in r.input).length).toBe(0)
+    expect(golden.every(r => r.input.user_declared_level !== undefined)).toBe(true)
+  })
+
+  it('the space is the product of its axes, too big for a number, and enumerable by index', () => {
+    const strata = goldenStrata()
+    expect(strata.length).toBe(18)   // free × 3 tiles + paid × 6 tiles, × budget none|set
+    const total = goldenSpaceSize()
+    expect(total).toBe(strata.reduce((n, s) => n + s.size, BigInt(0)))
+    expect(total > BigInt(Number.MAX_SAFE_INTEGER)).toBe(true)
+    // The first and last index decode, and one past the end refuses rather than wrapping.
+    expect(goldenRowAt(BigInt(0)).id).toBe('w:free:5:none:0')
+    expect(goldenRowAt(total - BigInt(1)).source).toBe('wizard')
+    expect(() => goldenRowAt(total)).toThrow(RangeError)
+  })
+
+  it('every stratum stride is coprime with its size — an even stride would alias', () => {
+    for (const s of goldenStrata()) {
+      expect(gcd(strideFor(s.size), s.size), `${s.tier}:${s.distanceKm}:${s.budget}`).toBe(BigInt(1))
+      // Falsifier, on the real sizes: every stratum size is even, so the naive power-of-two
+      // stride the `even-stride-aliases` lesson names would share a factor with every one.
+      expect(gcd(BigInt(32), s.size) > BigInt(1)).toBe(true)
+    }
+  })
+
+  it('the sample is deterministic', () => {
+    expect(goldenSample().map(r => r.id)).toEqual(golden.map(r => r.id))
+  })
+
+  it('the sample reaches every answer it is built from', () => {
+    const seen = <T>(f: (r: GoldenRow) => T) => new Set(golden.map(f))
+    expect(seen(r => r.input.race_distance_km)).toEqual(new Set(WIZARD_DISTANCES.map(d => d.value)))
+    expect(seen(r => r.input.days_available)).toEqual(new Set([1, 2, 3, 4, 5, 6, 7]))
+    expect(seen(r => r.input.preferred_long_run_day)).toEqual(new Set(['sat', 'sun']))
+    // Blocked weekends: both weekend days rest, so the long run defaults to a resting Sunday.
+    expect(golden.some(r => r.input.days_cannot_train?.includes('saturday')
+      && r.input.days_cannot_train?.includes('sunday'))).toBe(true)
+    expect(seen(r => r.input.max_weekday_mins)).toEqual(new Set(MAX_WEEKDAY_CHIPS.map(c => c.mins)))
+    expect(golden.some(r => r.input.day_budgets)).toBe(true)
+    expect(seen(r => r.input.age).has(undefined)).toBe(true)
+    expect(seen(r => r.input.age).size).toBeGreaterThan(60)
+    const injuries = new Set(golden.flatMap(r => r.input.injury_history ?? []))
+    expect(injuries).toEqual(new Set(WIZARD_INJURY_WIRE))
+    expect(seen(r => r.input.training_age)).toEqual(new Set([undefined, ...WIZARD_TRAINING_AGES]))
+    expect(seen(r => r.input.recent_quality_training)).toEqual(new Set([undefined, ...WIZARD_RECENT_QUALITY]))
+    expect(seen(r => r.input.user_declared_level)).toEqual(new Set(WIZARD_LEVELS))
+    expect(seen(r => r.input.hard_session_relationship)).toEqual(new Set([undefined, ...WIZARD_HARD_SESSIONS]))
+    expect(seen(r => r.input.terrain)).toEqual(new Set([undefined, ...WIZARD_TERRAINS]))
+    expect(seen(r => r.input.goal)).toEqual(new Set(['finish', 'time_target']))
+    expect(seen(r => r.foundation_choice)).toEqual(new Set(['add', 'as_is']))
+    expect(seen(r => isoDay(r.input.race_date).getDay())).toEqual(new Set([0, 1, 2, 3, 4, 5, 6]))
+    const bench = seen(r => !r.input.benchmark ? 'none'
+      : `${r.input.benchmark.type}:${r.input.benchmark.benchmark_date ? 'dated' : 'undated'}`)
+    expect(bench).toEqual(new Set(['none', 'race:dated', 'race:undated', 'tt_30min:dated', 'tt_30min:undated']))
+    // The recommendation is ACCEPTED on some rows and OVERRIDDEN on others.
+    const accepted = golden.filter(r => r.input.user_declared_level === recommendFitnessLevel(
+      r.input.current_weekly_km, r.input.longest_recent_run_km,
+      r.input.training_age === '2-5yr' || r.input.training_age === '5yr+').level).length
+    expect(accepted).toBeGreaterThan(0)
+    expect(accepted).toBeLessThan(golden.length)
+    // A free row never carries a paid-only answer or a paid distance.
+    expect(golden.filter(r => r.tier === 'free'
+      && (r.input.hard_session_relationship || r.input.terrain || r.input.race_distance_km > 21.1)).length).toBe(0)
+  })
+
+  /** The planted defects: start from a CLEAN golden row (asserted), break one thing, and the
+   *  predicate must name it. A check that only ever saw clean rows has not been shown to work. */
+  describe('the predicate refuses each planted defect', () => {
+    const base = golden.find(r => r.input.days_cannot_train && r.input.injury_history && r.tier === 'paid')!
+    const plant = (patch: Record<string, unknown>) =>
+      wizardShapeViolations({ ...base.input, ...patch }, { tier: base.tier, today: isoDay(base.asOf) }).map(v => v.code)
+
+    it('the base row is clean', () => { expect(shape(base)).toEqual([]) })
+    it('fitness_level set', () => { expect(plant({ fitness_level: 'intermediate' })).toContain('FITNESS_LEVEL_SET') })
+    it('a day split that is not 7 − rest days', () => {
+      expect(plant({ days_available: base.input.days_available + 1 })).toContain('DAY_SPLIT')
+    })
+    it('a weekly km off the ruler', () => {
+      expect(plant({ current_weekly_km: base.input.current_weekly_km + 1 })).toContain('WEEKLY_KM_OFF_RULER')
+    })
+    it('an injury spelling no chip posts', () => {
+      expect(plant({ injury_history: ['shin_splints'] })).toContain('INJURY_SPELLING')
+    })
+    it('weeks_at_current_volume set', () => {
+      expect(plant({ weeks_at_current_volume: 8 })).toContain('WEEKS_AT_VOLUME_SET')
+    })
+    it('short day names', () => { expect(plant({ days_cannot_train: ['mon'] })).toContain('REST_DAY_SPELLING') })
+    it('budgets without the cap derived from them', () => {
+      const running = (['monday', 'tuesday', 'wednesday', 'thursday', 'friday'] as const)
+        .find(d => !base.input.days_cannot_train!.includes(d))!
+      expect(plant({ day_budgets: { [running.slice(0, 3)]: 45 }, max_weekday_mins: undefined }))
+        .toContain('DAY_BUDGETS_WITHOUT_CAP')
+    })
+    it('a paid-only answer on a free row', () => {
+      expect(wizardShapeViolations({ ...base.input, hard_session_relationship: 'love' }, { tier: 'free' })
+        .map(v => v.code)).toContain('PAID_ONLY_FIELD')
+    })
+  })
+
+  /**
+   * The four production-captured inputs. They ARE product-path rows, from earlier wizard
+   * versions; one predates the week grid (`days_available` 3 beside two SHORT rest-day names, and
+   * no `user_declared_level`). Declared, so a fifth capture that is off-shape is noticed.
+   */
+  it('production rows: the declared legacy deviations, and nothing else', () => {
+    const got = Object.fromEntries(goldenProductionRows().map(r => [r.id, shape(r).map(v => v.code)]))
+    expect(got).toEqual({
+      'p:8333720c': ['MISSING_FIELD', 'REST_DAY_SPELLING', 'DAY_SPLIT'],
+      'p:731f2878': [],
+      'p:c29db5d6': [],
+      'p:e876c470': [],
+    })
+  })
+
+  /**
+   * ARM 3 — the existing corpora, measured 2026-11-21. Rows-per-code (a row counts once per code).
+   * ⚠️ EVERY row of all five is off-shape. Equality, not a ceiling: a grid edit that changes these
+   * must re-declare them here with its reason, which is how a ratchet stays honest in both
+   * directions. ADR-027 B3 migrates the harnesses; do not "fix" a grid to turn this green.
+   */
+  const EXISTING_BASELINE: Record<string, { rows: number; codes: Record<string, number> }> = {
+    cohortGrid: { rows: 41472, codes: {
+      UNKNOWN_KEY: 41472, MISSING_FIELD: 41472, DAY_SPLIT: 41472, INJURY_SHAPE: 41472, REST_DAYS_SHAPE: 13824 } },
+    targetedGrid: { rows: 6170, codes: {
+      UNKNOWN_KEY: 6170, MISSING_FIELD: 6170, REST_DAYS_SHAPE: 6170, DAY_SPLIT: 6170, INJURY_SHAPE: 1556,
+      FOUNDATION_DECISION_SET: 4608, WEEKS_AT_VOLUME_SET: 4608, INJURY_SPELLING: 4614, WEEKLY_KM_OFF_RULER: 3 } },
+    slowGoalGrid: { rows: 960, codes: {
+      UNKNOWN_KEY: 960, MISSING_FIELD: 960, TARGET_TIME_FORMAT: 300, DAY_SPLIT: 960, INJURY_SHAPE: 960,
+      TRAINING_AGE_ENUM: 960 } },
+    'charity + engine personas': { rows: 21, codes: {
+      MISSING_FIELD: 21, DAY_SPLIT: 21, WEEKS_AT_VOLUME_SET: 1, WEEKLY_KM_OFF_RULER: 3, INJURY_SHAPE: 1,
+      INJURY_SPELLING: 1, TARGET_TIME_FORMAT: 1 } },
+    useCaseEnvelope: { rows: 33792, codes: {
+      UNKNOWN_KEY: 33792, MISSING_FIELD: 33792, DAY_SPLIT: 33792, INJURY_SHAPE: 8448, INJURY_SPELLING: 8448,
+      WEEKLY_KM_OFF_RULER: 7680 } },
+  }
+
+  it('the baseline names every corpus in CORPORA, so a new corpus must declare itself', () => {
+    expect(Object.keys(EXISTING_BASELINE).sort()).toEqual(CORPORA.map(c => c.name).sort())
+  })
+
+  for (const c of CORPORA) {
+    it(`${c.name}: off-shape rows match the declared baseline (B3 migrates them)`, () => {
+      const rows = c.rows()
+      const codes: Record<string, number> = {}
+      let off = 0
+      for (const r of rows) {
+        const v = wizardShapeViolations(r)
+        if (v.length) off++
+        for (const code of Array.from(new Set(v.map(x => x.code)))) codes[code] = (codes[code] ?? 0) + 1
+      }
+      const want = EXISTING_BASELINE[c.name]
+      expect({ total: rows.length, off, codes }).toEqual({ total: want.rows, off: want.rows, codes: want.codes })
+    })
+  }
 })
