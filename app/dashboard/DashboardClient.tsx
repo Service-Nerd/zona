@@ -49,6 +49,7 @@ import { trackEvent } from '@/lib/analytics'
 import AdjustmentDiff from '@/components/shared/AdjustmentDiff'
 import ExternalLink from '@/components/shared/ExternalLink'
 import { authedFetch } from '@/lib/supabase/authedFetch'
+import { postLinkActivity, stravaRunIsLinkable } from '@/lib/strava/linkActivity'
 // USER-SETTINGS-UNREAD-WRITE-01 — the ONE owner of a client write to `user_settings`.
 // Eighteen hand-written copies lived here and eleven dropped their `{ error }`.
 import { writeUserSettings, updateUserSettings } from '@/lib/supabase/userSettingsWrite'
@@ -304,6 +305,9 @@ function todayCheckpointLine(plan: Plan | null, now: Date, units: 'km' | 'mi'): 
   const passed = checkpointPassed(plan, now)
   return passed ? checkpointPassedLine(passed.observedKm, passed.raceKm, units) : null
 }
+
+/** How many Apple Health rows the boot load reads for the picker (and judges Strava runs against). */
+const HK_PICKER_ROWS = 100
 
 export default function DashboardClient() {
   // router.replace stays inside the WKWebView — window.location.href triggers
@@ -2171,6 +2175,9 @@ export default function DashboardClient() {
         // picker can see treadmill / Apple Watch runs, not just Strava runs.
         let healthKitRuns: any[] = []
         let hkStravaIds = new Set<number>()
+        // STRAVA-SOR-REVIEW-FIX-01 — the rows a Strava run could patch, so the picker offers only linkable runs.
+        // `null` = the read failed, so nothing can be judged and every run is offered.
+        let hkMatchRows: { start_date: string; distance_m: number; strava_activity_id: number | null }[] | null = null
         try {
           // HK-ELEV-COLUMN-01 — same wrong column, same swallowed error, on the
           // INITIAL load. See refreshHealthKitRuns above.
@@ -2180,7 +2187,7 @@ export default function DashboardClient() {
             .eq('user_id', user.id)
             .eq('source', 'apple_health')
             .order('start_date', { ascending: false })
-            .limit(100)
+            .limit(HK_PICKER_ROWS)
           // Marshal each HK row into the StravaActivity-like shape the matcher,
           // picker, and saveCompletion already consume. `id` is the UUID so the
           // link path can branch on `source` to write apple_health_uuid.
@@ -2202,6 +2209,7 @@ export default function DashboardClient() {
             max_heartrate:        r.max_hr ?? undefined,
             average_speed:        r.avg_speed ?? undefined,
           }))
+          if (!hkErr) hkMatchRows = (hkRows ?? []).map((r: any) => ({ start_date: r.start_date, distance_m: Number(r.distance_m ?? 0), strava_activity_id: r.strava_activity_id ?? null }))
           hkStravaIds = new Set(
             (hkRows ?? [])
               .map((r: any) => r.strava_activity_id)
@@ -2251,7 +2259,11 @@ export default function DashboardClient() {
         // physical run, per tryEnrichHealthKitRow) so the list never shows the
         // workout twice. HealthKit runs lead — Apple Health is the primary
         // iOS source (ADR-011).
-        const runs = getRuns(activities).filter((r: any) => !hkStravaIds.has(r.id))
+        // STRAVA-SOR-REVIEW-FIX-01: and offer a Strava run only when an Apple Health run would take its patch. Any other
+        // is refused by link-activity (Apple Health is the system of record), so offering it was offering a dead end.
+        const runs = getRuns(activities)
+          .filter((r: any) => !hkStravaIds.has(r.id))
+          .filter((r: any) => hkMatchRows == null || stravaRunIsLinkable(r, hkMatchRows, HK_PICKER_ROWS))
         setStravaRuns([...healthKitRuns, ...runs])
         setStravaConnected(true)
       // BOOT-HANG-01 — this was `} catch {}` around the WHOLE boot: any throw before setAppReady left the loading
@@ -2384,8 +2396,10 @@ export default function DashboardClient() {
   // refresh, or the app backgrounding mid-call leaves a completion that has an
   // activity id but no run_analysis row — so the Coach zone rings have nothing
   // to draw, permanently and silently. Here we detect that for the current week
-  // and re-run the analysis. Idempotent (link-activity upserts) and bounded:
-  // current week only, each activity tried at most once per session.
+  // and re-run the analysis. Idempotent (link-activity only re-triggers analyse-run on the Apple Health row it
+  // resolves to; it stores nothing) and bounded: current week only, each activity tried at most once per session.
+  // STRAVA-SOR-REVIEW-FIX-01: an activity refused as having no Apple Health run has its link cleared by
+  // `postLinkActivity`, so it is no longer an orphan and is never tried again.
   useEffect(() => {
     if (!hasPaidAccess || !stravaConnected || !runAnalysisReady) return
     if (!plan?.weeks?.length) return
@@ -2405,16 +2419,8 @@ export default function DashboardClient() {
       let healed = false
       for (const [day, c] of orphans) {
         healAttemptedRef.current.add(c.strava_activity_id)
-        try {
-          // authedFetch never throws on 4xx/5xx — must check res.ok.
-          const res = await authedFetch('/api/strava/link-activity', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ strava_activity_id: c.strava_activity_id, week_n: wn, session_day: day }),
-          })
-          if (res.ok) healed = true
-          else console.warn('[auto-heal] link-activity failed', day, res.status, await res.text().catch(() => ''))
-        } catch (e) { console.warn('[auto-heal] link-activity threw', day, e) }
+        const outcome = await postLinkActivity(authedFetch, { strava_activity_id: c.strava_activity_id, week_n: wn, session_day: day }, 'auto-heal')
+        if (outcome !== 'failed') healed = true
       }
       if (healed && !cancelled) {
         await refreshRunAnalysis()
@@ -6710,7 +6716,10 @@ function getVerdictVoice(verdict: string): { accent: string; headline: string } 
 
 // Shown when polling gives up after ~40s — keeps the card slot visible
 // with a calm fallback rather than silently disappearing.
-function GaveUpCard({ onOpenCoach }: { onOpenCoach?: () => void }) {
+/** STRAVA-SOR-REVIEW-FIX-01 — what the gave-up card says when a Strava run had no Apple Health run to attach to. */
+const LINK_DISCARDED_LINE = 'No Apple Health run matches this Strava run, so it was not linked.'
+
+function GaveUpCard({ onOpenCoach, message }: { onOpenCoach?: () => void; message?: string }) {
   return (
     <div style={{
       marginTop: 'var(--space-3)',
@@ -6725,7 +6734,7 @@ function GaveUpCard({ onOpenCoach }: { onOpenCoach?: () => void }) {
         fontFamily: 'var(--font-ui)', fontSize: '13px', fontWeight: 400,
         color: 'var(--mute)', lineHeight: 1.55,
       }}>
-        Taking longer than usual. Check back in a few minutes.
+        {message ?? 'Taking longer than usual. Check back in a few minutes.'}
       </div>
     </div>
   )
@@ -7728,6 +7737,8 @@ function PostRunScreen({
   const [savingRPE, setSavingRPE]           = useState(false)
   const [pollGaveUp, setPollGaveUp]         = useState(false)
   const [linkFired, setLinkFired]           = useState(false)
+  /** STRAVA-SOR-REVIEW-FIX-01 — link-activity refused the Strava run (no Apple Health run) and the link was cleared. */
+  const [linkDiscarded, setLinkDiscarded]   = useState(false)
   /**
    * ACT-FREE-TEASE-01 (code review, 2026-11-12) — bumped when `link-activity` has written the
    * row, so the hydration effect below re-runs and the free card gets its zone split.
@@ -7873,8 +7884,8 @@ function PostRunScreen({
     // `linkSettledAt` re-runs this once `link-activity` has written the row — see its note above.
   }, [sessionDay, weekN, supabase, linkedActivity, linkSettledAt])
 
-  // Display source for the linked-activity row — prop wins when present.
-  const displayActivity = linkedActivity ?? hydratedActivity
+  // Display source for the linked-activity row — prop wins when present. A refused link shows none: it was cleared.
+  const displayActivity = linkDiscarded ? null : (linkedActivity ?? hydratedActivity)
   const isHKSource = !!pendingAppleHealthUuid || isHKCompletion
   const runTrace = useRunTrace(hkUuid, session ?? null, restingHR, maxHR, analysis?.hr_above_ceiling_pct != null ? Number(analysis.hr_above_ceiling_pct) : null)
 
@@ -7894,41 +7905,34 @@ function PostRunScreen({
     : null
 
   // ── Fire link-activity once on mount when a fresh activity is staged ──
-  // This commits the Strava → session_completions link AND triggers analyse-run
-  // server-side. Idempotent on the server (autoMatchAndAnalyse is a no-op when
-  // the link already exists), so safe even if the webhook beat us to it.
+  // The completion row is already saved; this triggers analyse-run server-side on the Apple Health run the link
+  // resolves to. Idempotent on the server, so safe even if the webhook beat us to it. Source-aware body: HealthKit
+  // links by apple_health_uuid, Strava by strava_activity_id (the route patches the matching Apple Health row).
   useEffect(() => {
-    if ((!pendingActivityId && !pendingAppleHealthUuid) || linkFired) return
+    if ((!pendingActivityId && !pendingAppleHealthUuid) || linkFired || !sessionDay) return
     setLinkFired(true)
     ;(async () => {
-      try {
-        // authedFetch never throws on 4xx/5xx — must inspect res.ok, or a
-        // server failure (e.g. a missing column) stays invisible. This used to
-        // be `.catch(()=>{})`, which swallowed exactly that.
-        // Source-aware body: HealthKit links by apple_health_uuid (row already
-        // exists), Strava links by strava_activity_id (route fetches + persists).
-        const res = await authedFetch('/api/strava/link-activity', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(
-            pendingAppleHealthUuid
-              ? { apple_health_uuid: pendingAppleHealthUuid, week_n: weekN, session_day: sessionDay }
-              : { strava_activity_id: pendingActivityId, week_n: weekN, session_day: sessionDay }
-          ),
-        })
-        if (!res.ok) {
-          console.error('[post-run] link-activity failed', res.status, await res.text().catch(() => ''))
-        } else {
-          // The row exists now. Re-run hydration so the free card can read its zone split.
-          // ⚠️ Only on success: a failed link means there is genuinely nothing to hydrate, and
-          // the card's `absent` state is then the correct answer rather than a missed one.
-          setLinkSettledAt(Date.now())
-        }
-      } catch (e) {
-        console.error('[post-run] link-activity threw', e)
+      // STRAVA-SOR-REVIEW-FIX-01 — one owner reads the answer (lib/strava/linkActivity.ts).
+      const outcome = await postLinkActivity(authedFetch,
+        pendingAppleHealthUuid
+          ? { apple_health_uuid: pendingAppleHealthUuid, week_n: weekN, session_day: sessionDay }
+          : { strava_activity_id: pendingActivityId as number, week_n: weekN, session_day: sessionDay },
+        'post-run')
+      if (outcome === 'linked') {
+        // The row exists now. Re-run hydration so the free card can read its zone split.
+        // ⚠️ Only on success: a failed link means there is genuinely nothing to hydrate, and
+        // the card's `absent` state is then the correct answer rather than a missed one.
+        setLinkSettledAt(Date.now())
+      } else if (outcome === 'discarded') {
+        // 🔴 STRAVA-SOR-REVIEW-FIX-01 — no Apple Health run, so no analysis will ever be written, and the owner has
+        // cleared the link. Stop "Reading the run" and say so on the screen's existing gave-up card.
+        setLinkDiscarded(true)
+        setPollGaveUp(true)
+        setZoneRow(null)
+        onSaved?.()
       }
     })()
-  }, [pendingActivityId, pendingAppleHealthUuid, linkFired, weekN, sessionDay])
+  }, [pendingActivityId, pendingAppleHealthUuid, linkFired, weekN, sessionDay, onSaved])
 
   // ── Poll run_analysis until it lands (mirrors SessionScreen behaviour) ──
   const isAnalysisPending = !!hasPaidAccess && !analysis && !pollGaveUp
@@ -8030,7 +8034,7 @@ function PostRunScreen({
       // Re-run analyse-run so the verdict card reflects the just-saved RPE/fatigue.
       // analyse-run is idempotent (upserts); it awaits the AI call server-side
       // and returns the updated row, so we can update state directly — no re-poll.
-      if (hasPaidAccess && sessionDay && (pendingAppleHealthUuid || pendingActivityId)) {
+      if (hasPaidAccess && sessionDay && !linkDiscarded && (pendingAppleHealthUuid || pendingActivityId)) {
         try {
           const reRes = await authedFetch('/api/analyse-run', {
             method: 'POST',
@@ -8312,7 +8316,7 @@ function PostRunScreen({
           <PendingAnalysisCard onOpenCoach={onOpenCoach} />
         )}
         {hasPaidAccess && !hrPendingState && !analysis && pollGaveUp && (
-          <GaveUpCard onOpenCoach={onOpenCoach} />
+          <GaveUpCard onOpenCoach={onOpenCoach} message={linkDiscarded ? LINK_DISCARDED_LINE : undefined} />
         )}
 
         {/* ── ACT-FREE-TEASE-01 — THE FREE RUNNER'S HALF OF THIS SPOT ─────────

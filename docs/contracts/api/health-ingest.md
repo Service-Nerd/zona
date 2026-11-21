@@ -42,6 +42,21 @@ touched (ADR-011: the device's value is the system of record). **Read only throu
 returns measured, else reported (flagged), else null. Counts for volume, load and display; **never** for a fitness estimate
 (Coaching Board 2026-10-22). Tests: `lib/health/reportDistance.test.ts`.
 
+## The Strava backfill (STRAVA-SOR-REVIEW-FIX-01, 2026-11-21)
+
+On the **first insert** of a HealthKit workout (not a re-sync, not a dedup), the route schedules
+`enrichNewHealthKitRowFromStrava(supabase, userId, startDate)` in `waitUntil`. For a runner with a Strava token it lists
+Strava runs within an hour of the start, fetches each one's detail and HR stream, and patches the first one
+`tryEnrichHealthKitRow` matches (±15 min, ±15%, unattached). It closes the Strava-first race: a webhook that arrived
+before this row existed had nothing to patch and was discarded.
+
+- Never blocks or fails the ingest response; never throws.
+- Records `strava_healthkit_backfill` with `result: 'enriched' | 'no_match' | 'failed'`; a runner with no Strava token
+  records nothing.
+- Not tier-gated, like the webhook patch it stands in for. It writes only through `tryEnrichHealthKitRow`.
+- ⚠️ It runs beside `autoMatchAndAnalyse`, not before it, so the first analysis may read Apple Health HR rather than
+  Strava's stream. That is the same order the webhook produces when Apple Health arrives first.
+
 ## Duration ceiling and the outbound hop (AI-ROUTE-HTTP-HOP-CEILING-01, 2026-11-10)
 
 `export const maxDuration = 300`, and every outbound `fetch` to an AI route carries

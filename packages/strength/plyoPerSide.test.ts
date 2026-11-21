@@ -2,7 +2,7 @@
 // Before the fix, prescribe() gave single-leg pogo 6 × 10/side at the cap (120 contacts) and S-PLYO-CONTACTS read it
 // as 60. Both directions are asserted: the dose stays within S8 for every week, and the check now sees per-side.
 import { describe, it, expect } from 'vitest'
-import { prescribe, plyoContacts } from './prescription'
+import { prescribe, plyoContacts, plyoRestoreMinSets } from './prescription'
 import { STRENGTH_CONFIG as C } from './config'
 import { CATALOGUE } from './catalogue'
 import { validateStrengthPlan } from './validate'
@@ -18,10 +18,29 @@ describe('S8 per-side plyo contacts (ADR-027 hotfix 3)', () => {
         const p = prescribe(ex, 'plyo', { profile, phase: 'build', weekIndex: wi })
         const total = (p.contacts ?? 0) * p.sets * (p.per_side ? 2 : 1)
         expect(total).toBeLessThanOrEqual(C.PLYO_CONTACTS_MAX)
-        expect(total).toBeLessThanOrEqual(Math.max(plyoContacts(wi, 'regular'), (p.contacts ?? 0) * (p.per_side ? 2 : 1)))
+        // STRAVA-SOR-REVIEW-FIX-01: never below S8's target, and never more than one set above it.
+        const target = plyoContacts(wi, 'regular')
+        const perSet = (p.contacts ?? 0) * (p.per_side ? 2 : 1)
+        expect(total).toBeGreaterThanOrEqual(Math.min(target, C.PLYO_CONTACTS_MAX))
+        expect(total - target).toBeLessThan(perSet)
       }
     })
   }
+  it('🔴 STRAVA-SOR-REVIEW-FIX-01: a per-side jump at S8\'s start dose of 30 lands 40, not 20', () => {
+    const wi = C.PLYO_MIN_WEEKS
+    expect(plyoContacts(wi, 'regular')).toBe(30)
+    const p = prescribe(byId('single_leg_pogo'), 'plyo', { profile, phase: 'build', weekIndex: wi })
+    expect(p.per_side).toBe(true)
+    expect(p.sets * (p.contacts ?? 0) * 2).toBe(40)
+  })
+  it('🔴 STRAVA-SOR-REVIEW-FIX-01: a dropped jump can always be restored at its own dose (S10 fill floor <= its sets)', () => {
+    for (const id of ['single_leg_pogo', 'lateral_bound', 'pogo_hops']) {
+      for (let wi = C.PLYO_MIN_WEEKS; wi < 40; wi++) {
+        const p = prescribe(byId(id), 'plyo', { profile, phase: 'build', weekIndex: wi })
+        expect(plyoRestoreMinSets(p), `${id} week ${wi}: ${p.sets} sets`).toBeLessThanOrEqual(p.sets)
+      }
+    }
+  })
   it('a bilateral jump is unchanged (sets = contacts / 10)', () => {
     const p = prescribe(byId('pogo_hops'), 'plyo', { profile, phase: 'build', weekIndex: 30 })
     expect(p.sets * (p.contacts ?? 0)).toBe(plyoContacts(30, 'regular'))

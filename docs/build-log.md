@@ -6,6 +6,16 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-11-21 — STRAVA-SOR-REVIEW-FIX-01 · the route learned to say no, and nobody was listening
+
+**Dev.** STRAVA-WEBHOOK-SOR-01 made `link-activity` answer 409 when a Strava run has no Apple Health run to patch. Correct on the server, and three client call sites read only `res.ok`. The completion had already been saved with the Strava id, so the post-run screen sat on "Reading the run" over an analysis that could never be written, and the auto-heal re-tried the link on every open. One client owner now reads the answer and clears the link through the existing unlink route. The review also found the opposite case: a Strava id already on an Apple Health row was reported as a discard, because the merge only matches an unattached row. And the enriched path had never triggered an analysis at all, which nobody had seen because the auto-heal papered over it on the next open.
+
+**Dev, strength.** The per-side plyo fix rounded the halved sets down, so a single-leg jump got 20 contacts in the start week against a dose of 30. Rounding up and capping keeps bilateral byte-identical (checked over a 9,720-session sweep: 864 per-side lines moved, 0 bilateral). The restore step had the same bilateral assumption one file away.
+
+**AI-building.** Three of the route tests went red against the pre-fix code only after the fetch stub answered Strava's URL. With a stub returning `{}`, the old webhook stopped at "not a run", and a test meant to catch a false discard passed for the wrong reason.
+
+**The honest bit.** The previous ship changed a status code and its contract in the same commit, and not one of its callers. A response a caller cannot act on is a change to the caller.
+
 ## 2026-11-21 — ADR027-B1-CONTRACTS · the strict schema found what the loose one had been letting through
 
 **Dev.** The v2 plan schema extends the v1 Zod objects and is strict at every level, so I could ask a question nothing could answer before: which keys does a stored plan carry? v1 declares 61 meta keys. The type declares 118. A stored plan can carry 144. The extra 26 come from places nobody had listed: 9 keys written only through casts (the inventory said 8 and missed one added that morning), 16 input fields a base-build plan gets because its producer spreads the whole input into meta (including `accept_base_build`, a request flag), and the new stamps. A retired week field is still on 118 of 123 rows, and a Design Board guard forbids any file from declaring it, so the adapter carries it in an opaque bucket instead and the test proves the engine never uses that bucket. The adapter itself is small on purpose: `schema_version`, and stamps lifted out of meta. It round-trips every stored plan and every corpus plan, and dropping one field turns the test red.

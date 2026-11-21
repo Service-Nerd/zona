@@ -11,6 +11,7 @@ import { autoMatchAndAnalyse, getInternalBaseUrl, noteRunUnmatched } from '@/lib
 import { consolidateIncomingHealthKitRow } from '@/lib/coaching/healthkitConsolidate'
 import { decideLateArrival, hrArrivalStamp } from '@/lib/coaching/lateArrivalGate'
 import { recordOpsEvent } from '@/lib/ops/recordOpsEvent'
+import { enrichNewHealthKitRowFromStrava } from '@/lib/strava/stravaSor'
 import { REPORTED_DISTANCE_M } from '@/lib/health/runDistance'
 
 // 🔴 AI-ROUTE-HTTP-HOP-CEILING-01 (2026-11-10) — THIS ROUTE AWAITS AN AI ROUTE OVER HTTP, SO IT
@@ -283,6 +284,16 @@ export async function POST(req: NextRequest) {
     await noteNative('persist_failed', { uuid: payload.uuid })
     return NextResponse.json({ error: 'Persist failed' }, { status: 500 })
   }
+
+  // STRAVA-SOR-REVIEW-FIX-01 — THE STRAVA-FIRST RACE. When Strava's webhook lands before this row exists it has nothing
+  // to patch and is discarded (STRAVA-WEBHOOK-SOR-01), so a NEW Apple Health row looks up its Strava twin once.
+  // Background and best effort: it never blocks or fails this ingest, and records its own outcome. Not tier-gated, like
+  // the webhook's patch it stands in for: the same run must end up the same row whichever arrived first.
+  if (isFirstInsert) waitUntil(
+    enrichNewHealthKitRowFromStrava(supabase, userId, payload.startDate)
+      .then(() => undefined)
+      .catch(err => console.error('[health-ingest] strava backfill failed', err))
+  )
 
   // HR just arrived for an already-linked + already-analysed session AND we're
   // still inside the fresh-coaching window — re-run analyse-run so the score

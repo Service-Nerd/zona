@@ -24,15 +24,26 @@ export async function getStravaToken(refreshToken: string): Promise<{ access_tok
   return { access_token: data.access_token, expires_at: data.expires_at ?? Math.floor(Date.now() / 1000) + 21600 }
 }
 
-export async function fetchActivities(accessToken: string, afterDate = '2026-01-01'): Promise<StravaActivity[]> {
+export async function fetchActivities(accessToken: string, afterDate = '2026-01-01', beforeDate?: string): Promise<StravaActivity[]> {
   const after = Math.floor(new Date(afterDate).getTime() / 1000)
+  // STRAVA-SOR-REVIEW-FIX-01: an optional upper bound, so a caller can ask for one run's neighbourhood.
+  const before = beforeDate ? `&before=${Math.floor(new Date(beforeDate).getTime() / 1000)}` : ''
   const res = await fetch(
-    `https://www.strava.com/api/v3/athlete/activities?after=${after}&per_page=100`,
+    `https://www.strava.com/api/v3/athlete/activities?after=${after}${before}&per_page=100`,
     { headers: { Authorization: `Bearer ${accessToken}` }, cache: 'no-store' }
   )
   const data = await res.json()
   if (!Array.isArray(data)) throw new Error('Bad Strava response')
   return data as StravaActivity[]
+}
+
+/** One activity's full detail (splits, temperature). `null` on any non-OK response. */
+export async function fetchStravaActivity(accessToken: string, activityId: number): Promise<{ status: number; activity: any | null }> {
+  const res = await fetch(
+    `https://www.strava.com/api/v3/activities/${activityId}`,
+    { headers: { Authorization: `Bearer ${accessToken}` }, cache: 'no-store' }
+  )
+  return { status: res.status, activity: res.ok ? await res.json() : null }
 }
 
 export interface HRStreamSummary {

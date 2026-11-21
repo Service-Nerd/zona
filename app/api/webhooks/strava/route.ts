@@ -2,10 +2,10 @@ import { createClient } from '@supabase/supabase-js'
 import { waitUntil } from '@vercel/functions'
 import { NextRequest, NextResponse } from 'next/server'
 import { secretMatches } from '@/lib/security/secrets'
-import { getStravaToken, fetchHRStreamSummary } from '@/lib/strava'
+import { getStravaToken, fetchHRStreamSummary, fetchStravaActivity } from '@/lib/strava'
 import { tryEnrichHealthKitRow } from '@/lib/coaching/healthkitConsolidate'
 import { recordOpsEvent } from '@/lib/ops/recordOpsEvent'
-import { deleteStravaActivity } from '@/lib/strava/stravaSor'
+import { deleteStravaActivity, findRowByStravaId } from '@/lib/strava/stravaSor'
 
 // Strava webhook docs: https://developers.strava.com/docs/webhooks/
 //
@@ -120,15 +120,11 @@ async function enrichAndPersist(event: StravaEvent) {
   const { access_token } = await getStravaToken(settings.strava_refresh_token)
 
   // Fetch full activity detail
-  const actRes = await fetch(
-    `https://www.strava.com/api/v3/activities/${event.object_id}`,
-    { headers: { Authorization: `Bearer ${access_token}` }, cache: 'no-store' }
-  )
-  if (!actRes.ok) {
-    console.error('[strava-webhook] activity fetch failed', event.object_id, actRes.status)
+  const { status, activity } = await fetchStravaActivity(access_token, event.object_id)
+  if (!activity) {
+    console.error('[strava-webhook] activity fetch failed', event.object_id, status)
     return
   }
-  const activity = await actRes.json()
 
   // Only process runs
   if (activity.type !== 'Run' && activity.sport_type !== 'Run') return
@@ -136,11 +132,10 @@ async function enrichAndPersist(event: StravaEvent) {
   // Fetch HR stream and compute zone percentages (raw stream discarded after)
   const hrSummary = await fetchHRStreamSummary(getSupabase(), access_token, event.object_id, userId)
 
-  // HealthKit-primary: if iOS already ingested this workout, enrich the HK
-  // row in place instead of inserting a Strava duplicate. Skip the auto-
-  // match path too — HK ingest already triggered analysis on the same
-  // session_completion. Falls through to the legacy create path when no HK
-  // row matches (Strava-only users, or webhook firing before HK sync).
+  // HealthKit-primary: if iOS already ingested this workout, enrich the HK row in place. No auto-match here: HK ingest
+  // already triggered analysis on the same session_completion. With no HK row the activity is discarded below
+  // (STRAVA-WEBHOOK-SOR-01); when HK arrives later, /api/health/ingest looks the Strava twin up itself
+  // (enrichNewHealthKitRowFromStrava).
   const consolidation = await tryEnrichHealthKitRow(
     getSupabase(),
     userId,
@@ -156,7 +151,9 @@ async function enrichAndPersist(event: StravaEvent) {
     hrSummary,
   )
   // STRAVA-WEBHOOK-SOR-01: Apple Health is the system of record. No matching Apple Health run -> discard, never store.
-  if (!consolidation.enriched) {
+  // STRAVA-SOR-REVIEW-FIX-01: an `update` event, a redelivery, or the ingest backfill having got there first all leave a
+  // row ALREADY carrying this id, and the merge only matches an unattached row. That is not a discard; say nothing.
+  if (!consolidation.enriched && !(await findRowByStravaId(getSupabase(), userId, activity.id))) {
     await recordOpsEvent('strava_activity_discarded', { reason: 'no_healthkit_match', strava_activity_id: activity.id }, userId)
   }
 }

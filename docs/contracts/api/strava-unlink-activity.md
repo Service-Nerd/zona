@@ -41,3 +41,7 @@ reach.
 - **Every read of `run_analysis` filters `superseded_at IS NULL`** (PLAN-WEEK-COLLISION-01),
   so this write now agrees with every reader. Enforced by the delete arm of
   `lib/supabase/liveRowWrite.test.ts`, whose population is derived from `WEEK_KEYED_TABLES`.
+- **Two callers (STRAVA-SOR-REVIEW-FIX-01, 2026-11-21).** The session screen's unlink control, and
+  `lib/strava/linkActivity.ts → postLinkActivity`, which calls it when `link-activity` answers 409
+  `discarded_no_healthkit_match`: the completion had already been saved with a Strava id that no
+  Apple Health run will take, so the link is cleared and the session reads as logged, not linked.

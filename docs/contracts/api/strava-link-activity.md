@@ -2,8 +2,9 @@
 
 **Route:** `app/api/strava/link-activity/route.ts`. Bearer-authenticated (`getUserFromRequest`),
 then tier-gated on `activity_intelligence`. Called when a runner **manually** links an activity to
-a planned session, and it exists to mirror the Strava webhook's pipeline so a hand-linked run
-produces the same `strava_activities` + `run_analysis` rows as an auto-linked one.
+a planned session. Apple Health is the system of record, so every successful path ends on an Apple
+Health row and triggers `analyse-run` with its `apple_health_uuid`; the route itself stores nothing
+(STRAVA-WEBHOOK-SOR-01, STRAVA-SOR-REVIEW-FIX-01).
 
 Written 2026-11-10 (`AI-ROUTE-HTTP-HOP-CEILING-01`) because the route changed and had no contract.
 It is one of `CONTRACT-COVERAGE-01`'s declared-debt routes; that debt is now 11 of 71.
@@ -17,27 +18,29 @@ It is one of `CONTRACT-COVERAGE-01`'s declared-debt routes; that debt is now 11 
 | Field | Required | Meaning |
 |---|---|---|
 | `week_n`, `session_day` | **yes** | The planned session being linked. `422` if either is absent |
-| `strava_activity_id` | one of | The Strava activity to pull and link |
+| `strava_activity_id` | one of | The Strava activity to link. If an Apple Health row already carries this id, that row is used with no Strava call; otherwise the activity is fetched and patched onto the matching Apple Health row |
 | `apple_health_uuid` | one of | A HealthKit row already present; links it without touching Strava |
 
-**`422`** if neither id is supplied. The two are not interchangeable: `apple_health_uuid` takes the
-HealthKit-only branch and returns immediately.
+**`422`** if neither id is supplied. `apple_health_uuid` wins when both are sent.
 
 ### Responses
 
 | Status | Body | When |
 |---|---|---|
-| 200 | `{ ok: true, mode: 'healthkit' }` | `apple_health_uuid` path — the row already exists; nothing is fetched from Strava |
-| 200 | `{ ok: true, mode: 'enriched_healthkit' }` | `tryEnrichHealthKitRow` found a matching HealthKit row and **patched** it (ADR-011's supplement path) |
-| 409 | `{ ok: false, mode: 'discarded_no_healthkit_match' }` | No HealthKit row matched. **Nothing is stored** (STRAVA-WEBHOOK-SOR-01, 2026-11-21); a `strava_activity_discarded` ops event is recorded. Until 2026-11-21 this path upserted a Strava-canonical row as `created_strava` |
+| 200 | `{ ok: true, mode: 'healthkit' }` | `apple_health_uuid` sent, **or** the Strava id is already on an Apple Health row (STRAVA-SOR-REVIEW-FIX-01: this used to be a false 409). Nothing is fetched from Strava; `analyse-run` is triggered on that row |
+| 200 | `{ ok: true, mode: 'enriched_healthkit' }` | `tryEnrichHealthKitRow` found a matching HealthKit row and **patched** it, then `analyse-run` is triggered on it. Until STRAVA-SOR-REVIEW-FIX-01 this path returned **without** any analysis |
+| 409 | `{ ok: false, mode: 'discarded_no_healthkit_match' }` | No HealthKit row matched. **Nothing is stored** (STRAVA-WEBHOOK-SOR-01, 2026-11-21); a `strava_activity_discarded` ops event is recorded. Until 2026-11-21 this path upserted a Strava-canonical row as `created_strava`. **Client obligation:** the completion was already saved with the Strava id, so the caller clears it through `/api/strava/unlink-activity`. Every client call goes through `lib/strava/linkActivity.ts → postLinkActivity`, which does that (gated by `linkActivity.test.ts`) |
 | 400 | `{ error: 'Strava not connected' }` | No token in `user_settings` |
 | 403 | `{ error: 'Subscription required' }` | `activity_intelligence` not allowed for the tier |
 | 422 | `{ error: 'Activity is not a run' }` | Strava returned a non-run activity |
 | 502 | `{ error: 'Strava activity fetch failed', status }` | Strava's own error, with its status passed through |
-| 500 | `{ error: 'Failed to persist activity' }` | The `strava_activities` upsert failed |
 
-`mode` is the field a caller should branch on: the three 200s are materially different outcomes
-and were previously indistinguishable to anyone reading only the status.
+`mode` is the field a caller should branch on. The `analyse-run` hop is fire-and-wait with a
+`console.warn` on failure; a failed hop still returns 200.
+
+The client-side picker offers a Strava run only when `findEnrichMatch` (the merge's own matcher)
+finds an unattached Apple Health run for it among the 100 newest, so a refusal is rare rather than
+routine (`stravaRunIsLinkable`).
 
 ## ✅ ADR-011 / INV-DATA-008 — resolved 2026-11-21 (STRAVA-WEBHOOK-SOR-01)
 
@@ -76,7 +79,7 @@ disagree.
 
 ## Duration ceiling and the outbound hops (AI-ROUTE-HTTP-HOP-CEILING-01, 2026-11-10)
 
-`export const maxDuration = 300`, and **both** outbound `fetch`es to `/api/analyse-run` carry
+`export const maxDuration = 300`, and the outbound `fetch` to `/api/analyse-run` (one since STRAVA-WEBHOOK-SOR-01; it was two) carries
 `signal: AbortSignal.timeout(AI_LIMITS.HOP_TIMEOUT_MS)` (30 s).
 
 🔴 **This route was missed twice over.** `OPS-FN-DURATION-01` set `maxDuration` on every route in
