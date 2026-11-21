@@ -163,3 +163,11 @@ Today it reads 2 and 2.
 - Orphans: 0 live rows in any of the four tables carry a `week_n` their runner's live plan
   lacks. So `findWeekByN` dropping its any-miss positional fallback changes nothing stored.
 - Taper recalibration: has never fired on a shifted plan.
+
+## ⚠️ Do not use the in-app "revert" on these four rows
+
+Reverting a misplaced row writes its `sessions_before` onto race week 1 or 2. Those sessions are the runner's
+**foundation** week, so the race week stays a foundation copy, just without the note. Revert does not restore
+anything here, so repair through the options above. (Code review 2026-11-21 asked for a staleness guard in
+`applyAdjustmentDays`. It would not catch these rows, because the target week does hold `sessions_after`, so it was
+not added.)

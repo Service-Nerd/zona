@@ -6893,7 +6893,7 @@ Amends this morning's `PLAN-NOTE-HEAVIER-WEEK-PLACEMENT-01` on the Coaching Boar
 
 Artifact 3 is now *"exactly the stamped weeks carry it"*: mark set = stamped set in both renderings, per-week scope sentence, Today per current stamped week, no `%`, no tune-up line on a stamped week, on the healthy grid AND an Achilles overlay; falsified by a `load_residual_week`-only render, a single scope for all weeks (red only on the overlay), and dropping the precedence. Mockups M1–M8 to 👤 founder before build, at 320 and 390pt; simulator before merge. ⛔ Veto: none. ⚠️ Not seen on a device. Note: `docs/decisions/design-2026-11-20-plan-note-multiweek-ramp-01.md`.
 
-## 2026-11-21 — `TRIGGERS-ON-RUN-ARRIVAL-01` · 🟢 SHIP WITH AMENDMENT. One run, one moment: a plan change rides the post-run push, it never adds one
+## 2026-11-21 — `TRIGGERS-ON-RUN-ARRIVAL-01` · 🟢 SHIP WITH AMENDMENT. One run, one moment: a plan change rides the post-run push, it never adds one · RULED, NOT BUILT (mockups owed first; lands in ADR-027 B4b)
 
 | Ruling | |
 |---|---|

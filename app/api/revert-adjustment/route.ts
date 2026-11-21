@@ -78,12 +78,17 @@ export async function POST(req: NextRequest) {
   // clear the card and no new adjustment could be made (code review, 2026-11-21).
   if (!week) {
     const nowIso = new Date().toISOString()
-    await Promise.all([
+    const [rowRes, flagRes] = await Promise.all([
       serviceSupabase.from('plan_adjustments').update({ status: 'reverted', reverted_at: nowIso }).eq('id', adjustment_id),
       serviceSupabase.from('user_settings')
         .update({ last_adjustment_check_at: nowIso, last_adjustment_check_found_change: false })
         .eq('id', user.id),
     ])
+    await recordOpsEvent('adjustment_week_not_found', { route: 'revert-adjustment', week_n: weekN }, user.id)
+    // Code review 2026-11-21: a failed write is not a resolution. Non-200 keeps the card, so the
+    // runner can retry rather than lose it while the row stays pending.
+    const writeErr = rowRes?.error ?? flagRes?.error
+    if (writeErr) return NextResponse.json({ error: 'Could not resolve this change' }, { status: 500 })
     return NextResponse.json({ plan, reason: 'week_not_found' })
   }
   // READINESS-WRONG-DAY-01 — only the days that changed, and never a malformed row.

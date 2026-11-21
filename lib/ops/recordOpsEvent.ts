@@ -106,6 +106,7 @@ export type OpsEventKind =
   | 'plan_generate_failed'
   | 'plan_input_refused'
 
+  | 'adjustment_week_not_found' // ADJUST-WEEK-COORD-01: confirm/revert found no week with the row's week_n
   | 'plan_save_failed'          // savePlanForUser threw on a server reshape/write path
   // STRENGTH-ENGINE-01 (2026-10-16) — the strength engine failed its own validator
   // (`_generate_failed`, nothing saved) or the strength_plans write threw.
