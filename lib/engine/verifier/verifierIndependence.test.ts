@@ -23,6 +23,13 @@ const ALLOWED = new Set([
   '@/lib/plan/days',                     // the input-format owner (`normaliseDays`: 'monday' | 'mon'), not a derivation
 ])
 
+/** A planner module that also holds rule data or an input-format owner: only the NAMED exports may be
+ *  imported, so the rest of the module (construction logic) stays out of reach. */
+const ALLOWED_NAMES: Record<string, string[]> = {
+  '@/lib/plan/injuryScope': ['hasInjuryKeyword'],      // matches a runner's injury chips to a keyword (input format)
+  '@/lib/plan/benchmarkCheck': ['BENCHMARK_VDOT_MAX'], // a human ceiling: rule data
+}
+
 /** Every non-test source file under the verifier, recursively. */
 function sources(dir = DIR): string[] {
   return readdirSync(dir, { withFileTypes: true }).flatMap(e =>
@@ -46,7 +53,16 @@ describe('ADR027-B3-VERIFIER — independence', () => {
       for (const spec of specifiers(readFileSync(f, 'utf8'))) {
         // A relative import must stay inside the verifier, where it is itself checked.
         if (spec.startsWith('.')) { if (!resolve(dirname(f), spec).startsWith(DIR)) bad.push(`${f}: ${spec}`); continue }
-        if (!ALLOWED.has(spec)) bad.push(`${f}: ${spec}`)
+        if (ALLOWED.has(spec)) continue
+        if (ALLOWED_NAMES[spec]) {
+          const src = readFileSync(f, 'utf8')
+          const m = new RegExp(`import\\s*(?:type\\s*)?\\{([^}]*)\\}\\s*from\\s*['"]${spec.replace(/[/@.]/g, c => '\\' + c)}['"]`).exec(src)
+          const names = m ? m[1].split(',').map(x => x.trim().split(/\s+as\s+/)[0]).filter(Boolean) : ['<not a named import>']
+          const extra = names.filter(n => !ALLOWED_NAMES[spec].includes(n))
+          if (extra.length) bad.push(`${f}: ${spec} { ${extra.join(', ')} }`)
+          continue
+        }
+        bad.push(`${f}: ${spec}`)
       }
     }
     expect(bad).toEqual([])

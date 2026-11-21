@@ -1808,8 +1808,10 @@ Step 1 shipped as `ADR027-B3-CATALOGUE` (221 rules). Remaining, in order:
   run on race eve passes. ✅ **Batch 3 SHIPPED 2026-11-21** (7 week/plan rules). ✅ **Batch 4 SHIPPED 2026-11-21**
   (3 rules after review; the verifier is handed the L1 profile).
   **Unblocked:** the L1 profile now carries the normalised goal (`race.goal`, with `race.goal_stated` beside it), so
-  `QUALITY-PER-WEEK` is ported and reads level and goal from the profile. ✅ **Batch 5 SHIPPED 2026-11-21** (3 rules).
-  **26 of 221; 195 left.** **Step 3 must build
+  `QUALITY-PER-WEEK` is ported and reads level and goal from the profile. ✅ **Batch 5 SHIPPED 2026-11-21** (3 rules). ✅ **Batch 6 SHIPPED 2026-11-21** (3 rules; injury
+  caps through `hasInjuryKeyword`, name-scoped in the import gate). **29 of 221; 192 left.** **Held:**
+  `RACE-SPECIFIC-LONG-RUN` falls back to label matching for legacy plans, which the pre-commit hook forbids; it waits
+  for a ruling on whether the legacy arm is still needed. **Step 3 must build
   the profile as of each plan's generation date**, because §10's staleness ramp moves the level with the clock.
   **Self-label reads, recorded:** `PEAK-OVER-BASE` trusts the plan's own `volume_profile: 'maintenance'`;
   `PEAK-VOLUME-FLOOR-LONG-RACES` reads each peak week's own `weekly_km`, not the placed sessions (ADR-022's

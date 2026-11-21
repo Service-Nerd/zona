@@ -17,6 +17,8 @@ import { GENERATION_CONFIG, raceDistanceKey } from '@/lib/plan/generationConfig'
 import { isLongRun, isShakeout, isSecondaryQuality, isQualitySession, isStructuredSession } from '@/lib/plan/sessionRole'
 import { normaliseDays } from '@/lib/plan/days'
 import { sessionKmSelfPaced } from '@/lib/plan/sessionDistance'
+import { hasInjuryKeyword } from '@/lib/plan/injuryScope'
+import { BENCHMARK_VDOT_MAX } from '@/lib/plan/benchmarkCheck'
 
 export type VerifierDay = 'mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat' | 'sun'
 
@@ -481,6 +483,55 @@ const BATCH_5: Partial<Record<RuleId, Predicate>> = {
   },
 }
 Object.assign(PREDICATES, BATCH_5)
+
+/** §9 (+ Am. 3): the long run's minute ceiling: the race distance's cap, lowered by any injury on the profile. */
+function longCapMins(input: GeneratorInput, profile: RunnerProfile): number {
+  const injuries = profile.injuries?.value ?? []
+  const caps = Object.entries(GENERATION_CONFIG.LONG_RUN_CAP_MINUTES_BY_INJURY)
+    .filter(([k]) => hasInjuryKeyword(injuries, k)).map(([, m]) => m as number)
+  return Math.min(GENERATION_CONFIG.LONG_RUN_CAP_MINUTES[raceDistanceKey(input.race_distance_km)], ...caps)
+}
+
+const BATCH_6: Partial<Record<RuleId, Predicate>> = {
+  // §55 Am. 1: the plan's VDOT is one a human can have.
+  'INV-PLAN-VDOT-PLAUSIBLE': plan => {
+    const vdot = (plan.meta as { vdot?: number }).vdot
+    return typeof vdot === 'number' && Number.isFinite(vdot) && vdot > BENCHMARK_VDOT_MAX
+      ? [{ rule_id: 'INV-PLAN-VDOT-PLAUSIBLE', week: PLAN, day: null, detail: `vdot ${vdot.toFixed(1)}` }] : []
+  },
+
+  // §9: a main-week long run stays under its minute ceiling.
+  'INV-PLAN-LONG-CAP-MINS': (plan, { input, profile }) => {
+    const cap = longCapMins(input, profile)
+    return plan.weeks.filter(w => governed(w) && w.n > 0).flatMap(w => {
+      const long = running(w).find(x => isLongRun(x.session))
+      return long?.session.duration_mins != null && long.session.duration_mins > cap
+        ? [{ rule_id: 'INV-PLAN-LONG-CAP-MINS', week: w.n, day: long.day, detail: `${long.session.duration_mins} min over ${cap}` }] : []
+    })
+  },
+
+  // §24: a time-targeted half or marathon's peak long run reaches its share of the race distance, or the
+  // minute ceiling's worth of easy running if that is lower (less one rounding step). Not on maintenance.
+  'INV-PLAN-PEAK-LR-RACE-RATIO': (plan, { input, profile }) => {
+    const key = raceDistanceKey(input.race_distance_km)
+    if (profile.race.goal !== 'time_target' || (key !== 'HM' && key !== 'MARATHON') || plan.meta.volume_profile === 'maintenance') return []
+    const peaks = plan.weeks.filter(w => w.phase === 'peak' && w.type !== 'deload')
+    if (!peaks.length) return []
+    const lrKm = peaks.map(w => {
+      const long = Object.values((w.sessions ?? {}) as Record<string, Session | undefined>).find(x => !!x && isLongRun(x))
+      if (!long) return 0
+      return long.distance_km != null ? long.distance_km : sessionKmSelfPaced(long)
+    })
+    if (lrKm.some(k => k == null)) return []
+    const peakKm = Math.max(...(lrKm as number[]))
+    const hrs = peaks[0].long_run_hrs ?? 0
+    const pace = peakKm > 0 && hrs > 0 ? (hrs * 60) / peakKm : 7
+    const capKm = longCapMins(input, profile) / Math.max(pace, 1)
+    const need = Math.min(input.race_distance_km * GENERATION_CONFIG.PEAK_LR_RATIO_VS_RACE[key], capKm) - GENERATION_CONFIG.DISTANCE_ROUNDING_PRECISION_KM
+    return peakKm + 0.01 < need ? [{ rule_id: 'INV-PLAN-PEAK-LR-RACE-RATIO', week: PLAN, day: null, detail: `peak long run ${peakKm} km under ${need.toFixed(1)} km` }] : []
+  },
+}
+Object.assign(PREDICATES, BATCH_6)
 
 const SEVERITY = new Map(RULES.map(r => [r.id, r.kind === 'soft' ? 'warn' as const : 'error' as const]))
 

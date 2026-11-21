@@ -17,6 +17,8 @@ import { MUTATIONS } from '@/lib/plan/invariantLiveness'
 import type { Plan, GeneratorInput, Session } from '@/types/plan'
 import { isLongRun, isStructuredSession } from '@/lib/plan/sessionRole'
 import { GENERATION_CONFIG, raceDistanceKey } from '@/lib/plan/generationConfig'
+import { hasInjuryKeyword } from '@/lib/plan/injuryScope'
+import { BENCHMARK_VDOT_MAX } from '@/lib/plan/benchmarkCheck'
 import { RULES } from '@/lib/engine/catalogue/rules'
 import { verifyPlan, PORTED_RULES } from './verifyPlan'
 import { buildRunnerProfile, factsFromInput } from '@/lib/engine/profile/buildRunnerProfile'
@@ -92,6 +94,21 @@ const EXTRA_MUTATIONS: { name: string; apply: (p: Plan, input: GeneratorInput) =
     const peaks = p.weeks.filter(w => w.phase === 'peak')
     if (!peaks.length || p.meta.volume_profile === 'maintenance') return false
     for (const w of peaks) w.weekly_km = Math.round((floor - 0.5) * 10) / 10
+    return true
+  } },
+  // §9's minute line: a main-week long run one minute over its (injury-lowered) cap.
+  { name: 'a long run one minute over its minute cap', apply: (p, input) => {
+    const caps = Object.entries(GENERATION_CONFIG.LONG_RUN_CAP_MINUTES_BY_INJURY)
+      .filter(([k]) => hasInjuryKeyword(input.injury_history ?? [], k)).map(([, m]) => m as number)
+    const cap = Math.min(GENERATION_CONFIG.LONG_RUN_CAP_MINUTES[raceDistanceKey(input.race_distance_km)], ...caps)
+    for (const w of p.weeks.filter(x => x.n > 0 && governedWeek(x))) for (const s of Object.values(w.sessions ?? {})) {
+      if (s && isLongRun(s)) { s.duration_mins = cap + 1; return true }
+    }
+    return false
+  } },
+  // §55 Am. 1's line: a VDOT half a point above the human ceiling.
+  { name: 'a vdot half a point over the human ceiling', apply: p => {
+    (p.meta as { vdot?: number }).vdot = BENCHMARK_VDOT_MAX + 0.5
     return true
   } },
   // §49's line: exactly one taper week over the cap (relabel the weeks before the taper).
