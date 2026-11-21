@@ -1130,6 +1130,36 @@ const BATCH_15: Partial<Record<RuleId, Predicate>> = {
 }
 Object.assign(PREDICATES, BATCH_15)
 
+type Step = Record<string, unknown>
+const workSteps = (s: Session | undefined): Step[] => {
+  const ds = (s as { derived_set?: { blocks?: Array<{ steps?: Step[] }> } } | null | undefined)?.derived_set
+  return (ds?.blocks ?? []).flatMap(b => b.steps ?? []).filter(st => st.role === 'work')
+}
+
+const BATCH_16: Partial<Record<RuleId, Predicate>> = {
+  // §19: every quality session tells the runner how hard, by a pace or an RPE.
+  'INV-PLAN-EFFORT-OR-PACE': plan => plan.weeks.flatMap(w => daysOf(w).filter(({ session: s }) => !!s && isQualitySession(s)
+    && !(typeof s.pace_target === 'string' && s.pace_target.trim().length > 0) && !(typeof s.rpe_target === 'number' && s.rpe_target > 0))
+    .map(x => ({ rule_id: 'INV-PLAN-EFFORT-OR-PACE' as RuleId, week: w.n, day: x.day, detail: 'quality with no pace and no effort' }))),
+
+  // §19: a derived WORK step authored against a pace anchor carries a resolved pace. One finding per step.
+  'INV-PLAN-DERIVED-SET-PACED': plan => plan.weeks.flatMap(w => daysOf(w).flatMap(({ session: s }) =>
+    workSteps(s).filter(st => st.pace_mode !== undefined && st.pace == null)
+      .map(() => ({ rule_id: 'INV-PLAN-DERIVED-SET-PACED' as RuleId, week: w.n, day: null, detail: 'anchored work step with no pace' })))),
+
+  // §8: a zone-described work step with no pace anchor shows its transition (an arrow), unless it is unpaced.
+  'INV-PLAN-PROGRESSION-TRANSITION-PACED': plan => plan.weeks.flatMap(w => daysOf(w).flatMap(({ session: s }) =>
+    workSteps(s).filter(st => st.pace_mode === undefined && typeof st.zone === 'string' && st.zone !== ''
+      && !(typeof st.pace === 'string' && st.pace.includes('\u2192')) && st.pace != null)
+      .map(() => ({ rule_id: 'INV-PLAN-PROGRESSION-TRANSITION-PACED' as RuleId, week: w.n, day: null, detail: 'progression step with a flat pace' })))),
+
+  // §12: an easy run (not the long run) never names a zone above 2.
+  'INV-PLAN-EASY-RUN-ZONE-CAP': plan => plan.weeks.flatMap(w => daysOf(w).filter(({ session: s }) => !!s && s.type === 'easy' && !!s.zone
+    && !isLongRun(s) && /\b[3-5]\b/.test(String(s.zone)) && !/^Z?2\b/.test(String(s.zone)))
+    .map(x => ({ rule_id: 'INV-PLAN-EASY-RUN-ZONE-CAP' as RuleId, week: w.n, day: x.day, detail: `easy run at ${x.session!.zone}` }))),
+}
+Object.assign(PREDICATES, BATCH_16)
+
 const SEVERITY = new Map(RULES.map(r => [r.id, r.kind === 'soft' ? 'warn' as const : 'error' as const]))
 
 /** Every finding the ported predicates raise, with the severity the catalogue gives the rule. */

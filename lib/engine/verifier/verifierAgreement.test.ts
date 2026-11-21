@@ -15,7 +15,7 @@ import { runEngine } from '@/lib/plan/engine'
 import { validatePlan } from '@/lib/plan/invariants'
 import { MUTATIONS } from '@/lib/plan/invariantLiveness'
 import type { Plan, GeneratorInput, Session } from '@/types/plan'
-import { isLongRun, isStructuredSession, isTimeTrial, isVo2maxSession } from '@/lib/plan/sessionRole'
+import { isLongRun, isStructuredSession, isTimeTrial, isVo2maxSession, isQualitySession } from '@/lib/plan/sessionRole'
 import { V1_SESSION_CATALOGUE } from '@/lib/plan/sessionCatalogueData'
 import { sessionKmSelfPaced } from '@/lib/plan/sessionDistance'
 import { FUELLING_PRACTICE_NOTE, ULTRA_FUELLING_PREFIX } from '@/lib/plan/fuellingNotes'
@@ -133,6 +133,31 @@ const EXTRA_MUTATIONS: { name: string; apply: (p: Plan, input: GeneratorInput) =
     ['no HR method', (p: Plan) => { delete p.meta.hr_zone_method; return true }],
     // Batch 8: the plan's declarations about its own limits.
     ['no compression class', (p: Plan) => { delete p.meta.compression_classification; return true }],
+    // Batch 16.
+    ['a quality session with no pace and no effort', (p: Plan) => {
+      const s = p.weeks.flatMap(w => Object.values(w.sessions ?? {})).find(x => x && isQualitySession(x))
+      if (!s) return false
+      delete s.pace_target; delete s.rpe_target; return true
+    }],
+    ['an anchored work step with its pace removed', (p: Plan) => {
+      for (const w of p.weeks) for (const s of Object.values(w.sessions ?? {})) {
+        const st = (s?.derived_set?.blocks ?? []).flatMap(b => b.steps ?? []).find(x => x.role === 'work' && x.pace_mode !== undefined)
+        if (st) { (st as unknown as Record<string, unknown>).pace = undefined; return true }
+      }
+      return false
+    }],
+    ['a progression step given a flat pace', (p: Plan) => {
+      for (const w of p.weeks) for (const s of Object.values(w.sessions ?? {})) {
+        const st = (s?.derived_set?.blocks ?? []).flatMap(b => b.steps ?? []).find(x => x.role === 'work' && x.pace_mode === undefined && typeof x.zone === 'string' && x.zone)
+        if (st) { (st as unknown as Record<string, unknown>).pace = '5:00/km'; return true }
+      }
+      return false
+    }],
+    ['an easy run labelled Zone 3', (p: Plan) => {
+      const s = p.weeks.flatMap(w => Object.values(w.sessions ?? {})).find(x => x && x.type === 'easy' && !isLongRun(x))
+      if (!s) return false
+      s.zone = 'Zone 3'; return true
+    }],
     // Batch 15.
     ['a withheld anchor reading comfortable', (p: Plan) => { p.meta.hm_goal_anchor_withheld = true; p.meta.difficulty_band = 'comfortable'; return true }],
     ['a withheld anchor with no note', (p: Plan) => { p.meta.hm_goal_anchor_withheld = true; p.meta.difficulty_band = 'demanding'; delete p.meta.difficulty_note; return true }],
