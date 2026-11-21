@@ -1234,7 +1234,9 @@ Object.assign(PREDICATES, BATCH_18)
 
 const BATCH_19: Partial<Record<RuleId, Predicate>> = {
   // §1: across the main plan, quality sessions are at most the distance's share of running sessions (not on a
-  // maintenance profile). Counted HERE: validatePlan's planQualityCounts is also the producer's, so not shared.
+  // maintenance profile). The COUNT is done here (planQualityCounts is the producer's too); the per-session
+  // classification still goes through isQualitySession, the shared classification owner the HLD allows, so a
+  // misclassification there is shared by both sides.
   'INV-PLAN-INTENSITY-DISTRIBUTION': (plan, { input }) => {
     const dist = GENERATION_CONFIG.INTENSITY_DISTRIBUTION[raceDistanceKey(input.race_distance_km) as keyof typeof GENERATION_CONFIG.INTENSITY_DISTRIBUTION]
     if (!dist || plan.meta.volume_profile === 'maintenance') return []

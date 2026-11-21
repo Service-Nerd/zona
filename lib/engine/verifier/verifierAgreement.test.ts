@@ -136,8 +136,17 @@ const EXTRA_MUTATIONS: { name: string; apply: (p: Plan, input: GeneratorInput) =
     // Batch 19.
     ['every main-week easy run turned into quality', (p: Plan) => {
       let n = 0
+      if (p.meta.volume_profile === 'maintenance') return false   // exempt profile: change sessions only where the rule applies
       for (const w of p.weeks.filter(x => x.n >= 1)) for (const s of Object.values(w.sessions ?? {})) if (s?.type === 'easy' && !isLongRun(s)) { s.type = 'quality'; n++ }
-      p.meta.volume_profile = 'build'; return n > 0
+      return n > 0
+    }],
+    ['segment long runs three main weeks in a row', (p: Plan) => {
+      const main = p.weeks.filter(w => w.n >= 1)
+      for (let k = 0; k + 2 < main.length; k++) {
+        const ls = main.slice(k, k + 3).map(w => Object.values(w.sessions ?? {}).find(x => x && isLongRun(x)))
+        if (ls.every(Boolean)) { for (const s of ls) s!.lr_segment_pace = '5:00/km'; return true }
+      }
+      return false
     }],
     ['a segment long run at the start of the build', (p: Plan) => {
       const b = (p.phases ?? []).find(x => x.name === 'build')
@@ -613,6 +622,7 @@ const TARGETS: Record<string, string[]> = {
   'a run-walk plan whose biggest session sits just under the floor': ['INV-PLAN-RUNWALK-ADEQUATE'],
   'every main-week easy run turned into quality': ['INV-PLAN-INTENSITY-DISTRIBUTION'],
   'a segment long run at the start of the build': ['INV-PLAN-RACE-PACE-LR-BUILD-WINDOW'],
+  'segment long runs three main weeks in a row': ['INV-PLAN-RACE-PACE-LR-BUILD-WINDOW'],
   'run-walk with a volume-capped injury stamped': ['INV-PLAN-RUNWALK-CAP-NOT-REDUCED'],
   'a volume-blaming shortfall note on an injury-capped plan': ['INV-PLAN-LR-SHORTFALL-CAUSE'],
   'a volume-blaming shortfall note with the long run at its minute cap': ['INV-PLAN-LR-SHORTFALL-CAUSE'],
