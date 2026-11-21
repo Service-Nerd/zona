@@ -225,6 +225,12 @@ afterwards is a note that does not exist.
 
 # PHASE 3 — LAND
 
+0. **CODE REVIEW BEFORE THE PUSH (founder, 2026-11-21).** Run the `code-review` skill on the wave's diff
+   (`high` unless told otherwise) once it is built and green, and fix every confirmed finding inside the wave.
+   A green suite proves the checks you wrote pass. It cannot see a check that was never written, a claim
+   that is false, or a defect in code your tests do not reach. On 2026-11-21 nothing merged under ADR-027
+   (four hotfixes, B0, B1, STRAVA-WEBHOOK-SOR-01) had been reviewed; the pre-push suite caught two defects a
+   review would have found first.
 1. **Commit.** `feat(SCOPE):` / `fix(SCOPE):` — the scope names the item, because
    `ship-record-check.py` reads the subject's scope and never the body.
 2. **The post-commit hooks fire**: `backlog-touch`, `fix-test-check`, `ship-record-check`,
