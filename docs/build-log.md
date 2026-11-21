@@ -6,6 +6,15 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-11-21 — ADR027-B2B-PROFILE · the tests passed because the thing under test was crashing
+**Shipped:** plan generation now reads what we store about the runner (settings, recent runs, heart rate) and gives it to the engine, which carries it without using it yet.
+**Dev learning:** the first run of the route suite was 32/32 green, and every one of those arms was exercising the fallback: the test database had no `or()` or `lte()`, so the facts read threw a TypeError and the route quietly built from the request. A fallback that is also a correct outcome makes a crash look like a pass. The arm that catches it asserts the fallback event is ABSENT on a normal build.
+**Product/creator learning:** groundwork that changes no plan still has a runner cost if it can fail: two review rounds were about a slow database costing someone their plan over data nothing reads yet, first through the read itself and then through the log line recording that the read had timed out.
+**AI-building learning:** I exported a constant from a Next.js route file to share it with a test; tsc and vitest both accept that, and `next build` does not, because a route may export only handlers. No local check would have said so before deploy.
+**The honest bit:** the "one clock" and timezone fixes each needed a second pass because the first tests did not actually vary the thing they claimed to (a Kiritimati timezone is the same date as UTC for ten hours a day).
+**Hook material:** 32 of 32 green, 0 of 32 testing the new path.
+**Postable?:** yes
+
 ## 2026-11-21 — WATCHED-SIGNALS-DISCLOSURE-01 · the test checked the screen against the constant the screen chose
 **Shipped:** Profile's "what we watch" now says the load trigger is 1.3× after one week, which is what the engine does, and a change that changes nothing no longer arrives as "Plan's been shifted."
 **Dev learning:** `watchedSignals.test.ts` asserted the figure equalled `LOAD_RATIO.flag`, the same constant the screen used. A test that copies the producer's choice cannot catch the producer choosing wrong. The new arm parses the figure the runner reads and runs `checkAdjustmentTriggers` at that ratio and 0.01 below it. Second gotcha: the route fixture plan starts next Monday, so runs dated today fall outside every plan week and are dropped before the trigger sees them; four runs at the same instant also dedupe to one.

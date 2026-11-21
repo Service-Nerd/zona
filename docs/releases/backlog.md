@@ -1792,7 +1792,15 @@ consequence, iOS only), and mockups to the founder.
 **Order:** part 1 and part 2 are re-plumbing and need `verify:parity` IDENTICAL. Parts 3 and 4 change what a runner is
 told or built, so the Coaching Board rules before they are built.
 
-**1. Route adoption of the fetcher (⚙️).** `lib/supabase/fetchRunnerFacts.ts` exists, is unit-tested, and is called by
+✅ **Part 1 SHIPPED 2026-11-21 as `ADR027-B2B-PROFILE`** (`b107cf82`, review fixes `5fbdacc2`, `0b185a92`):
+`/api/generate-plan` reads the facts under a 2.5 s timeout and hands them to `runEngine`; parity IDENTICAL.
+`/api/generate-plan/foundation` composes onto a stored plan and builds no profile, so it needs no adoption.
+🔻 **Part 2 is DEFERRED TO B4 (founder, 2026-11-21):** every call site is inside the frozen engine that B4's planner
+replaces, so each moves with the code that uses it rather than being re-plumbed first.
+⏳ **Part 3 goes to one Coaching Board sitting** (3c also needs the Design Board, being a new wizard question).
+Open until part 3 is ruled.
+
+**1. Route adoption of the fetcher (⚙️).** *(Shipped, see above.)* `lib/supabase/fetchRunnerFacts.ts` exists, is unit-tested, and is called by
 no route. Wire it into `/api/generate-plan` (and the other `create` paths, ARCH-ENG-012), hand `runEngine` the facts,
 and resolve `as_of` in the runner's timezone. The engine must still prescribe from the stated facts until the board
 rules on part 4. ⚠️ `runEngine` builds its profile at the wall clock even when `today` is pinned (B2a kept the
