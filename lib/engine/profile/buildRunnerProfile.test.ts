@@ -242,7 +242,7 @@ describe('ADR027-B2-PROFILE (c) — absence is null, never a default', () => {
     const c = p.schedule.capacity.value
     expect(c.days.mon).toMatchObject({ available: false, max_minutes: 40 })
     expect(c.days.wed.max_minutes).toBe(60)
-    expect(c.days.wed.max_km).toBe(Math.round((60 / c.easy_min_per_km) * 10) / 10)
+    expect(c.days.wed.max_km).toBe(Math.round((60 / c.easy_min_per_km!) * 10) / 10)
     expect(c.days.sun).toMatchObject({ available: true, max_minutes: null, max_km: null })
     expect(c.available_days).toBe(5)
     expect(c.total_minutes).toBeNull() // Sunday is available and uncapped
@@ -322,3 +322,14 @@ describe('ADR027-B2-PROFILE (d) — L1 is pure', () => {
     expect(files.filter(f => clockReadsIn(readFileSync(join(ROOT, f), 'utf8')) > 0)).toEqual([])
   })
 })
+
+describe('code review 2026-11-21: L1 never pre-empts the input validator', () => {
+  it('🔴 an out-of-enum level still reaches runEngine\'s named InputEnumError, never a TypeError', () => {
+    const bad = { race_distance_km: 10, race_date: '2027-03-01', current_weekly_km: 20, longest_recent_run_km: 8,
+      days_available: 4, training_age: '6-18mo', fitness_level: 'advanced' } as never
+    let name = ''
+    try { runEngine({ input: bad, tier: 'free' } as never) } catch (e) { name = (e as Error).constructor.name }
+    expect(name).toBe('InputEnumError')
+  })
+})
+

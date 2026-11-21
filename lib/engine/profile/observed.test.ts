@@ -14,6 +14,19 @@ const run = (date: string, km: number, extra: Partial<RunRow> = {}): RunRow => (
 const EMPTY: ObservedRows = { runs: [], first_run_at: null, health: [], completions: [], analyses: [] }
 
 describe('aggregateObserved — run log', () => {
+  it('🔴 code review: a manual log entered by distance (moving_time_s 0) counts on distance', () => {
+    const a = aggregateObserved({ ...EMPTY, runs: [run('2026-11-12', 8, { moving_time_s: 0, apple_health_uuid: null })] }, FRAME)
+    expect(a.run_log).toMatchObject({ run_count: 1, km_total: 8, excluded_rows: 0 })
+  })
+
+  it('🔴 code review: validity runs before dedupe, so a junk longer duplicate cannot hide the real run', () => {
+    const a = aggregateObserved({ ...EMPTY, runs: [
+      run('2026-11-10', 10, { moving_time_s: 3000 }),
+      run('2026-11-10', 10.05, { apple_health_uuid: 'dup', start_date: '2026-11-10T07:02:00Z', moving_time_s: 30 }),
+    ] }, FRAME)
+    expect(a.run_log).toMatchObject({ run_count: 1, km_total: 10, excluded_rows: 1 })
+  })
+
   it('sums the 28-day window, drops outside rows, keeps the longest', () => {
     const a = aggregateObserved({
       ...EMPTY, first_run_at: '2026-01-05T07:00:00Z',

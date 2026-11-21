@@ -80,7 +80,7 @@ function boundedSetting(v: unknown, b: { min: number; max: number }, name: strin
   return { value: n, source }
 }
 
-function capacityFor(input: GeneratorInput, blocked: Set<DayKey>, easyMinPerKm: number): WeekCapacity {
+function capacityFor(input: GeneratorInput, blocked: Set<DayKey>, easyMinPerKm: number | null): WeekCapacity {
   const weekday = new Set<DayKey>(['mon', 'tue', 'wed', 'thu', 'fri'])
   const days = {} as Record<DayKey, DayCapacity>
   let total = 0, uncapped = false, available = 0
@@ -92,7 +92,7 @@ function capacityFor(input: GeneratorInput, blocked: Set<DayKey>, easyMinPerKm: 
     const isAvailable = !blocked.has(day)
     days[day] = {
       day, available: isAvailable, max_minutes: mins,
-      max_km: mins === null ? null : Math.round((mins / easyMinPerKm) * 10) / 10,
+      max_km: mins === null || easyMinPerKm === null ? null : Math.round((mins / easyMinPerKm) * 10) / 10,
     }
     if (isAvailable) { available++; if (mins === null) uncapped = true; else total += mins }
   }
@@ -129,9 +129,15 @@ export function buildRunnerProfile(facts: RunnerFacts, opts: BuildProfileOptions
     : s?.max_hr_source === 'user_confirmed' ? 'confirmed' : 'stated'
 
   const blocked = normaliseDays(input.days_cannot_train)
-  const easyMinPerKm = (v.vdot !== undefined && v.vdotRaw !== undefined
-    ? buildPaceFromVDOT(v.vdot, v.vdotRaw)
-    : buildFallbackPace(l.structural)).minPerKmEasy
+  // Code review 2026-11-21: L1 runs BEFORE `validateInputFields`, so an out-of-enum level must not
+  // throw here. It would replace the named InputEnumError with an anonymous TypeError. An unknown
+  // level gives no pace (absence), and generation then refuses the input exactly as before.
+  let easyMinPerKm: number | null = null
+  try {
+    easyMinPerKm = (v.vdot !== undefined && v.vdotRaw !== undefined
+      ? buildPaceFromVDOT(v.vdot, v.vdotRaw)
+      : buildFallbackPace(l.structural)).minPerKmEasy ?? null
+  } catch { easyMinPerKm = null }
 
   const weeksPlan = weeksBetweenLocal(planStart, input.race_date)
 

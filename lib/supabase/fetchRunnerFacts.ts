@@ -57,7 +57,10 @@ export async function fetchRunnerFacts(db: Db, userId: string, input: GeneratorI
       .eq('user_id', userId).gte('start_date', fromIso).lt('start_date', toIso),
     db.from('strava_activities')
       .select('start_date')
-      .eq('user_id', userId).order('start_date', { ascending: true }).limit(1),
+      // the first RUN, not the first activity (`isRun`'s own two columns): a walk logged first
+      // would date the run log's coverage too early (code review 2026-11-21)
+      .eq('user_id', userId).or('activity_type.eq.Run,sport_type.eq.Run')
+      .order('start_date', { ascending: true }).limit(1),
     db.from('health_daily_samples')
       .select('sample_date, rhr_bpm')
       .eq('user_id', userId).gte('sample_date', formatDate(from)).lte('sample_date', formatDate(to)),

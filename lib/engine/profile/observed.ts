@@ -58,12 +58,13 @@ function median(xs: number[]): number | null {
 const mean = (xs: number[]) => (xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : null)
 
 /** A run L1 believes: a distance, a duration and a pace all inside their bounds. A run with no
- *  recorded duration is kept on distance alone (manual logs carry none). */
+ *  recorded duration is kept on distance alone: a manual log entered by distance stores
+ *  `moving_time_s: 0` (`adaptManualRun`), so 0 is "no duration", not a 0-second run. */
 function validRunKm(r: RunRow): number | null {
   const d = runDistance(r)
   const km = d ? within(d.km, VALIDITY.run_km) : null
   if (km === null) return null
-  if (r.moving_time_s === null || r.moving_time_s === undefined) return km
+  if (r.moving_time_s === null || r.moving_time_s === undefined || r.moving_time_s <= 0) return km
   const s = within(r.moving_time_s, VALIDITY.run_moving_s)
   if (s === null) return null
   return within(s / 60 / km, VALIDITY.run_pace_min_per_km) === null ? null : km
@@ -76,13 +77,16 @@ export function aggregateObserved(rows: ObservedRows, frame: ResolvedAsOf, windo
 
   // ── Run log ──
   const windowRuns = dated(rows.runs.filter(isRun), r => r.start_date).filter(r => inWindow(r.age, windowDays))
-  const deduped = new Set(dedupeRuns(windowRuns.map(r => r.x)))
-  let km = 0, longest: number | null = null, count = 0, excluded = 0
+  // Validity BEFORE dedupe (code review 2026-11-21): dedupe keeps the longer copy, and if that
+  // copy is junk the valid shorter one would already be gone.
+  let excluded = 0
+  const valid = windowRuns.filter(r => (validRunKm(r.x) === null ? (excluded++, false) : true))
+  const deduped = new Set(dedupeRuns(valid.map(r => r.x)))
+  let km = 0, longest: number | null = null, count = 0
   let latestHr: { bpm: number; date: string; at: string } | null = null
-  for (const r of windowRuns) {
+  for (const r of valid) {
     if (!deduped.has(r.x)) continue
-    const k = validRunKm(r.x)
-    if (k === null) { excluded++; continue }
+    const k = validRunKm(r.x)!
     count++; km += k; longest = longest === null ? k : Math.max(longest, k)
     const hr = within(r.x.max_hr, VALIDITY.max_hr)
     if (hr !== null && r.date && (!latestHr || r.x.start_date > latestHr.at)) latestHr = { bpm: hr, date: r.date, at: r.x.start_date }

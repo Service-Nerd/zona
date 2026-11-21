@@ -47,8 +47,9 @@ export interface WeekCapacity {
   available_days: number
   /** Sum of the available days' minutes; null if any available day is uncapped. */
   total_minutes: number | null
-  /** The easy pace the km figures were converted at. */
-  easy_min_per_km: number
+  /** The easy pace the km figures were converted at; null when the level is outside the enum
+   *  (L1 runs before input validation). */
+  easy_min_per_km: number | null
 }
 
 export interface RunnerProfile {

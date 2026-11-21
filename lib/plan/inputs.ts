@@ -527,8 +527,6 @@ export class InputFieldError extends Error {
   }
 }
 
-/** Validates the small set of inputs the engine cannot fall back on if they
- *  are nonsense values. Throws InputFieldError on the first violation. */
 /** §55's physiological ranges. Exported (ADR027-B2-PROFILE) so L1's validity bounds read
  *  these rather than holding a second copy; `validateInputFields` is still the only thing
  *  that REFUSES on them. */
@@ -538,6 +536,8 @@ export const INPUT_FIELD_RANGES = {
   max_hr:     { min: 120, max: 220 },
 } as const satisfies Record<string, InputFieldRange>
 
+/** Validates the small set of inputs the engine cannot fall back on if they
+ *  are nonsense values. Throws InputFieldError on the first violation. */
 export function validateInputFields(input: GeneratorInput): void {
   const ranges: Record<string, InputFieldRange> = INPUT_FIELD_RANGES
 
