@@ -6,6 +6,15 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-11-21 — ADR027-B3-VERIFIER · half the corpus was refusals and the test did not say so
+**Shipped:** the first three rules of the new, independent plan checker, each proven to report exactly what the old checker reports on real and deliberately broken plans.
+**Dev learning:** the agreement test reported 840 cases and looked solid. Code review measured that 9 of the 18 corpus rows were refusals, dropped without a count, so the "no false positives" half ran on 8 real plans. A big case count built from mutations of a few plans hides how few plans there are. The floor now sits on base plans and every row is accounted for.
+**Product/creator learning:** porting faithfully surfaced a likely blind spot in the old checker on the first rule that disagreed: an empty session in race week passes, because the check lives inside a loop that skips race-week runs. The new checker copies it for now so agreement means something; it is raised for a ruling.
+**AI-building learning:** an import gate that greps for `^import` is not an import gate. The review listed four ways round it (re-export, relative path, dynamic import, a subfolder) and each was a one-line change away.
+**The honest bit:** I also found that a contract I wrote in B1 turned every foundation-week finding into a plan-level one, the week-numbering class again, in code that had been reviewed.
+**Hook material:** 840 cases, 8 plans.
+**Postable?:** maybe
+
 ## 2026-11-21 — ADR027-B3-CATALOGUE · the test copied the generator, so it agreed with its mistakes
 **Shipped:** the new engine's rulebook: one entry for each of the 221 checks the old engine runs, each pointing at the coaching principle it enforces.
 **Dev learning:** I generated each rule's config key from the registry's prose and then wrote a test that the key matched the registry. Code review found two rules still pointing at the wrong tunable after the first fix, and the test was green throughout, because it ran the same parse as the generator. A checker that shares its producer's derivation can only confirm the producer. The fix was to stop claiming the key at all until the porting step reads it from the check's code.
