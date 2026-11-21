@@ -146,13 +146,6 @@ const EXTRA_MUTATIONS: { name: string; apply: (p: Plan, input: GeneratorInput) =
       s.coach_notes = [...(s.coach_notes ?? []).filter(n => !/^Final \d+% at /.test(n ?? '')), `Final ${GENERATION_CONFIG.LR_RACE_SEGMENT_PCT_MAX + 1}% at goal pace.`] as unknown as typeof s.coach_notes
       return true
     }],
-    ['a build week without quality, marked intentionally downgraded', (p: Plan) => {
-      const w = p.weeks.find(x => (x.phase === 'build' || x.phase === 'peak') && x.type !== 'deload' && x.type !== 'race'
-        && Object.values(x.sessions ?? {}).some(s => s?.type === 'quality'))
-      if (!w) return false
-      for (const s of Object.values(w.sessions ?? {})) if (s?.type === 'quality') s.type = 'easy'
-      w.quality_downgraded = true as never; return true
-    }],
     ['a build week with its quality removed', (p: Plan) => {
       const w = p.weeks.find(x => (x.phase === 'build' || x.phase === 'peak') && x.type !== 'deload' && x.type !== 'race' && !x.quality_downgraded
         && Object.values(x.sessions ?? {}).some(s => s?.type === 'quality'))
@@ -591,9 +584,11 @@ const SILENT_BY_DESIGN = new Set<string>([
   'a long-run note whose floor is BELOW its peak (no miss)',
   're-entry WITH a VO2 session, note removed',
   'goal below easy, WITH its note',
-  'a build week without quality, marked intentionally downgraded',
 ])
 const GOAL_CASE = 'rebuilt as time target with no time, plus a quality session'
+/** QUALITY-EXPECTED's downgrade exemption, as a PAIR on the same week (code review, batch 17): the unflagged twin must
+ *  fire the rule there, and the flagged one must leave both checkers silent there. Taper weeks included. */
+const downgradePairs: { label: string; week: number; unflagged: string[]; flagged: { old: string[]; new: string[] } }[] = []
 /** Where the race-eve mutation put its over-cap session, so the verifier's day can be checked against it. */
 const raceEveDays = new WeakMap<Plan, string>()
 /** Rules that make more than one independent check: each detail prefix must fire on its own. */
@@ -674,6 +669,23 @@ function build() {
           }
         }
       } catch { /* the engine refusing this variant is not a comparison */ }
+    }
+    // The downgrade pair: same build/peak/taper week, quality removed, with and without the exemption flag.
+    {
+      const pick = o.plan.weeks.find(x => (x.phase === 'build' || x.phase === 'peak' || x.phase === 'taper') && x.type !== 'deload'
+        && x.type !== 'race' && !x.quality_downgraded && Object.values(x.sessions ?? {}).some(s => s?.type === 'quality'))
+      if (pick) {
+        const strip = (pl: Plan) => { const w = pl.weeks.find(x => x.n === pick.n)!; for (const s of Object.values(w.sessions ?? {})) if (s?.type === 'quality') s.type = 'easy'; return w }
+        const un = clone(o.plan); strip(un)
+        const fl = clone(o.plan); strip(fl).quality_downgraded = { trigger: 'readiness_signal', at: '2026-11-16' }
+        const prof = buildRunnerProfile(factsFromInput(row.input), { asOf: row.asOf, timezone: null, planStart: row.planStart })
+        const at = (xs: { code?: string; rule_id?: string; week: number }[]) => xs.filter(x => (x.code ?? x.rule_id) === 'INV-PLAN-QUALITY-EXPECTED' && x.week === pick.n).map(x => String(x.week))
+        try {
+          downgradePairs.push({ label: row.id, week: pick.n,
+            unflagged: at(validatePlan(un, row.input)),
+            flagged: { old: at(validatePlan(fl, row.input)), new: at(verifyPlan(fl, { input: row.input, profile: prof })) } })
+        } catch { /* a plan the old checker cannot read is not a comparison */ }
+      }
     }
     let baseList: string[] = []
     try { baseList = validatePlan(o.plan, row.input).map(v => key(v.code, v.week, v.day, v.severity)) } catch { baseList = ['<threw>'] }
@@ -781,6 +793,12 @@ describe('ADR027-B3-VERIFIER — agreement with validatePlan, per ported rule', 
       expect(reg.unproven[r], `${r} is not 'static' in invariantLivenessBaseline.json`).toBe('static')
       expect(compare(r).fired.old, `${r} fired on a plan, so it is not static`).toBe(0)
     }
+  })
+
+  it('🔴 QUALITY-EXPECTED\'s downgrade exemption: the unflagged twin fires, the flagged week is silent in BOTH checkers', () => {
+    const meaningful = downgradePairs.filter(p => p.unflagged.length > 0)
+    expect(meaningful.length, 'no pair where the rule would have fired, so the exemption is untested').toBeGreaterThan(0)
+    for (const p of meaningful) expect({ old: p.flagged.old, new: p.flagged.new }, `${p.label} week ${p.week}`).toEqual({ old: [], new: [] })
   })
 
   it('🔴 no rule with a conditional severity is ported before its condition is a predicate', () => {
