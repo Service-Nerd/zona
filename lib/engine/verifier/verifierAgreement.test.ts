@@ -125,6 +125,25 @@ const EXTRA_MUTATIONS: { name: string; apply: (p: Plan, input: GeneratorInput) =
         p.meta[note] = 'short'; p.meta.difficulty_band = 'comfortable'; return true
       }] as const),
     ['no HR method', (p: Plan) => { delete p.meta.hr_zone_method; return true }],
+    // Batch 8: the plan's declarations about its own limits.
+    ['no compression class', (p: Plan) => { delete p.meta.compression_classification; return true }],
+    ['optimal class on a compressed plan', (p: Plan) => { p.meta.compression_classification = 'optimal'; p.meta.time_compressed = true; return true }],
+    ['split flags missing', (p: Plan) => { delete p.meta.time_compressed; return true }],
+    ['compressed disagreeing with the split', (p: Plan) => {
+      p.meta.time_compressed = false; p.meta.volume_constrained = false; p.meta.compressed = true; return true
+    }],
+    ['fresh return flipped', (p: Plan) => { p.meta.fresh_return_active = !p.meta.fresh_return_active; return true }],
+    ['uncovered runway at the note line, no note', (p: Plan) => {
+      p.meta.uncovered_runway_weeks = GENERATION_CONFIG.FOUNDATION_UNCOVERED_WEEKS_NOTE_THRESHOLD; delete p.meta.uncovered_runway_note; return true
+    }],
+    ['floor-held weeks at the line, undeclared', (p: Plan) => {
+      const weeks = p.weeks.filter(w => Object.values(w.sessions ?? {}).some(s => s?.type === 'easy'))
+      if (weeks.length < GENERATION_CONFIG.EASY_RUN_FLOOR_PROTECTION_MAINTENANCE_WEEKS) return false
+      for (const w of weeks.slice(0, GENERATION_CONFIG.EASY_RUN_FLOOR_PROTECTION_MAINTENANCE_WEEKS)) {
+        const s = Object.values(w.sessions ?? {}).find(x => x?.type === 'easy'); if (s) s.floor_protected = true
+      }
+      p.meta.volume_profile = 'build'; return true
+    }],
     ['a max HR one beat under the age estimate, unconfirmed', (p: Plan) => {
       if (typeof p.meta.hr_estimated_max !== 'number') return false
       p.meta.hr_derived_max = p.meta.hr_estimated_max - 1; p.meta.hr_max_source = 'observed'; return true
@@ -138,6 +157,13 @@ const EXTRA_MUTATIONS: { name: string; apply: (p: Plan, input: GeneratorInput) =
     }],
   ] as const).map(([name, f]) => ({ name, apply: (p: Plan) => f(p) })),
   ...([
+    ['a binding weekday cap with its cost, no shortfall note', (p: Plan, i: GeneratorInput) => {
+      if (!i.max_weekday_mins) return false
+      for (const w of p.weeks) for (const d of ['mon', 'tue', 'wed', 'thu', 'fri'] as const) {
+        const s = w.sessions?.[d]; if (s?.type === 'easy') s.duration_mins = i.day_budgets?.[d] ?? i.max_weekday_mins
+      }
+      p.meta.volume_shortfall_pct = GENERATION_CONFIG.VOLUME_SHORTFALL_NOTE_THRESHOLD_PCT; delete p.meta.volume_shortfall_note; return true
+    }],
     ['meta age differing from the input', (p: Plan, i: GeneratorInput) => {
       if (typeof i.age !== 'number') return false
       ;(p.meta as unknown as Record<string, unknown>).age = i.age + 1; return true
@@ -201,6 +227,8 @@ const ARMS: Record<string, string[]> = {
   'INV-PLAN-NO-INVENTED-AGE': ['meta age differs', 'meta age with no input age', 'no age and no assumption note'],
   'INV-PLAN-HR-ASSUMPTIONS-SURFACED': ['no hr_zone_method', 'no assumption note for'],
   'INV-PLAN-RECALIBRATION-HAS-SESSION': ['listed week does not exist', 'no time trial'],
+  'INV-PLAN-COMPRESSION-CLASSIFICATION': ['no compression_classification', 'class disagrees', 'constrained class reads comfortable'],
+  'INV-PLAN-COMPRESSION-SPLIT': ['split flags not both stated', 'compressed is not the OR'],
 }
 
 const tally = { rows: 0, threw: [] as string[], refused: 0, base: 0, foundation: 0, foundationCapped: 0 }

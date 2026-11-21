@@ -618,6 +618,74 @@ const BATCH_7: Partial<Record<RuleId, Predicate>> = {
 }
 Object.assign(PREDICATES, BATCH_7)
 
+const BATCH_8: Partial<Record<RuleId, Predicate>> = {
+  // §40c: when the weekday cap materially binds (most weekday easy runs pinned at it) and costs enough
+  // volume, the plan says so.
+  'INV-PLAN-VOLUME-SHORTFALL-DECLARED': (plan, { input }) => {
+    if (!input.max_weekday_mins) return []
+    let easy = 0, pinned = 0
+    for (const w of plan.weeks.filter(x => x.type !== 'deload' && x.type !== 'race' && x.badge !== 'deload')) {
+      for (const { day, session: s } of daysOf(w)) {
+        if (!s || s.type !== 'easy' || day === 'sat' || day === 'sun') continue
+        easy++
+        const cap = input.day_budgets?.[day as 'mon'] ?? input.max_weekday_mins
+        if ((s.duration_mins ?? 0) >= cap - 1) pinned++
+      }
+    }
+    const binding = easy > 0 && pinned / easy >= GENERATION_CONFIG.VOLUME_SHORTFALL_PINNED_SHARE
+    const costly = (plan.meta.volume_shortfall_pct ?? 0) >= GENERATION_CONFIG.VOLUME_SHORTFALL_NOTE_THRESHOLD_PCT
+    return binding && costly && !plan.meta.volume_shortfall_note
+      ? [{ rule_id: 'INV-PLAN-VOLUME-SHORTFALL-DECLARED', week: PLAN, day: null, detail: 'binding weekday cap, no shortfall note' }] : []
+  },
+
+  // §82: a plan held at the easy floor for enough weeks is a declared maintenance profile with its note.
+  'INV-PLAN-EASY-FLOOR-PROTECTION-DECLARED': plan => {
+    const held = plan.weeks.filter(w => daysOf(w).some(x => x.session?.floor_protected)).length
+    if (held < GENERATION_CONFIG.EASY_RUN_FLOOR_PROTECTION_MAINTENANCE_WEEKS) return []
+    return plan.meta.volume_profile !== 'maintenance' || !plan.meta.volume_constraint_note
+      ? [{ rule_id: 'INV-PLAN-EASY-FLOOR-PROTECTION-DECLARED', week: PLAN, day: null, detail: `${held} floor-held weeks, not declared` }] : []
+  },
+
+  // §29 / §37: the plan declares a fresh return exactly when the input says so (explicitly, or by the deep-
+  // training-age, low-volume heuristic).
+  'INV-PLAN-FRESH-RETURN-GATE': (plan, { input }) => {
+    const explicit = input.weeks_at_current_volume !== undefined && input.weeks_at_current_volume < GENERATION_CONFIG.FRESH_RETURN_WEEKS_THRESHOLD
+    const heuristic = (input.training_age === '2-5yr' || input.training_age === '5yr+')
+      && input.current_weekly_km < GENERATION_CONFIG.HEURISTIC_FRESH_RETURN_WEEKLY_KM
+      && input.longest_recent_run_km < GENERATION_CONFIG.HEURISTIC_FRESH_RETURN_LONG_RUN_KM
+    return (explicit || heuristic) !== (plan.meta.fresh_return_active === true)
+      ? [{ rule_id: 'INV-PLAN-FRESH-RETURN-GATE', week: PLAN, day: null, detail: 'fresh return declared against the inputs' }] : []
+  },
+
+  // §31: the compression class is stated, agrees with the two shortfall flags, and an input-constrained plan
+  // does not read comfortable. One finding at most, in that order.
+  'INV-PLAN-COMPRESSION-CLASSIFICATION': plan => {
+    const c = plan.meta.compression_classification
+    const short = plan.meta.time_compressed === true || plan.meta.volume_constrained === true
+    const f = (detail: string) => [{ rule_id: 'INV-PLAN-COMPRESSION-CLASSIFICATION' as RuleId, week: PLAN, day: null, detail }]
+    if (c === undefined) return f('no compression_classification')
+    if ((c === 'optimal') !== !short) return f('class disagrees with the shortfall flags')
+    if (c === 'constrained_by_inputs' && plan.meta.difficulty_band === 'comfortable') return f('constrained class reads comfortable')
+    return []
+  },
+
+  // §101: the two compression flags are both stated, and the legacy `compressed` equals their OR.
+  'INV-PLAN-COMPRESSION-SPLIT': plan => {
+    const t = plan.meta.time_compressed, v = plan.meta.volume_constrained
+    if (typeof t !== 'boolean' || typeof v !== 'boolean') return [{ rule_id: 'INV-PLAN-COMPRESSION-SPLIT', week: PLAN, day: null, detail: 'split flags not both stated' }]
+    return plan.meta.compressed !== undefined && plan.meta.compressed !== (t || v)
+      ? [{ rule_id: 'INV-PLAN-COMPRESSION-SPLIT', week: PLAN, day: null, detail: 'compressed is not the OR of the split' }] : []
+  },
+
+  // §57: enough uncovered runway before the plan is declared with its note.
+  'INV-PLAN-UNCOVERED-RUNWAY-DECLARED': plan => {
+    const u = plan.meta.uncovered_runway_weeks
+    return typeof u === 'number' && u >= GENERATION_CONFIG.FOUNDATION_UNCOVERED_WEEKS_NOTE_THRESHOLD && !plan.meta.uncovered_runway_note
+      ? [{ rule_id: 'INV-PLAN-UNCOVERED-RUNWAY-DECLARED', week: PLAN, day: null, detail: `${u} uncovered weeks, no note` }] : []
+  },
+}
+Object.assign(PREDICATES, BATCH_8)
+
 const SEVERITY = new Map(RULES.map(r => [r.id, r.kind === 'soft' ? 'warn' as const : 'error' as const]))
 
 /** Every finding the ported predicates raise, with the severity the catalogue gives the rule. */
