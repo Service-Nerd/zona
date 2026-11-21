@@ -139,6 +139,11 @@ const EXTRA_MUTATIONS: { name: string; apply: (p: Plan, input: GeneratorInput) =
       if (!s) return false
       delete s.pace_target; delete s.rpe_target; return true
     }],
+    ['a quality session with a blank pace and no effort', (p: Plan) => {
+      const s = p.weeks.flatMap(w => Object.values(w.sessions ?? {})).find(x => x && isQualitySession(x))
+      if (!s) return false
+      s.pace_target = '  '; delete s.rpe_target; return true
+    }],
     ['a quality session with no pace and an effort of 0', (p: Plan) => {
       const s = p.weeks.flatMap(w => Object.values(w.sessions ?? {})).find(x => x && isQualitySession(x))
       if (!s) return false
@@ -543,6 +548,9 @@ const TARGETS: Record<string, string[]> = {
   'a race week a kilometre and a bit over the peak': ['INV-PLAN-RACE-NOT-VOLUME'],
   'a discount off the staleness ladder': ['INV-PLAN-VDOT-STALENESS-LADDER'],
   'a dateless benchmark with a discount applied': ['INV-PLAN-VDOT-DISCOUNT-DATELESS'],
+  'a quality session with no pace and no effort': ['INV-PLAN-EFFORT-OR-PACE'],
+  'a quality session with a blank pace and no effort': ['INV-PLAN-EFFORT-OR-PACE'],
+  'a quality session with no pace and an effort of 0': ['INV-PLAN-EFFORT-OR-PACE'],
 }
 /** Rules that read only module data (the catalogue, the signatures), never the plan. */
 const STATIC_RULES = new Set<string>(['INV-PLAN-PHASE-FOCUS-REACHABLE'])
