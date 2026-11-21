@@ -1068,8 +1068,8 @@ const BATCH_14: Partial<Record<RuleId, Predicate>> = {
   // §81: an unstructured weekday run over its budget carries the overrun note, and one within it does not.
   'INV-PLAN-WEEKDAY-OVERRUN-DECLARED': (plan, { input }) => plan.weeks.filter(w => w.type !== 'race' && w.badge !== 'race').flatMap(w =>
     (['mon', 'tue', 'wed', 'thu', 'fri'] as const).flatMap(d => {
-      const s = (w.sessions as Record<string, Session | undefined>)[d]
-      const c = input.day_budgets?.[d] ?? input.max_weekday_mins
+      const s = (w.sessions as Record<string, Session | undefined> | undefined)?.[d]
+      const c = weekdayCap(input, d)
       if (!s || c == null || !s.duration_mins || s.type === 'strength' || s.type === 'rest' || s.type === 'race') return []
       const over = s.duration_mins > c
       if (over === !!s.weekday_overrun_note) return []

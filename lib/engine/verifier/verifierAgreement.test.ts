@@ -37,7 +37,7 @@ const governedWeek = (w: Plan['weeks'][number]) =>
   w.phase !== 'maintenance_restoration' && w.phase !== 'maintenance_base' && w.phase !== 'base_build'
 const checkedEasy = (s: Session | undefined) =>
   !!s && s.type === 'easy' && !isLongRun(s) && !isStructuredSession(s) && !s.floor_protected && !!s.duration_mins
-const EXTRA_MUTATIONS: { name: string; apply: (p: Plan, input: GeneratorInput) => boolean }[] = [
+const EXTRA_MUTATIONS: { name: string; apply: (p: Plan, input: GeneratorInput) => boolean; targets?: string[] }[] = [
   { name: 'duration-anchored session loses its minutes', apply: p => {
     for (const w of p.weeks.filter(governedWeek)) for (const s of Object.values(w.sessions ?? {})) {
       if (s && s.type === 'easy') { s.duration_anchored = true; s.duration_mins = undefined; return true }
@@ -138,11 +138,15 @@ const EXTRA_MUTATIONS: { name: string; apply: (p: Plan, input: GeneratorInput) =
       const n = p.weeks.filter(w => w.phase === 'taper').length
       const s = p.weeks.flatMap(w => Object.values(w.sessions ?? {})).find(x => x && x.type === 'easy')
       if (!n || !s) return false
-      s.coach_notes = [`A ${n + 1}-week taper starts soon.`]; return true
+      s.coach_notes = [...(s.coach_notes ?? []), `A ${n + 1}-week taper starts soon.`] as typeof s.coach_notes; return true
     }],
     ['goal below easy, no note', (p: Plan) => {
       const m = p.meta as { goal_below_easy_ceiling?: boolean; goal_below_easy_ceiling_note?: string }
       m.goal_below_easy_ceiling = true; delete m.goal_below_easy_ceiling_note; return true
+    }],
+    ['goal below easy, WITH its note', (p: Plan) => {
+      const m = p.meta as { goal_below_easy_ceiling?: boolean; goal_below_easy_ceiling_note?: string }
+      m.goal_below_easy_ceiling = true; m.goal_below_easy_ceiling_note = 'below easy'; return true
     }],
     // Batch 13: re-entry window.
     ['a re-entry window over every quality week', (p: Plan) => {
@@ -482,6 +486,12 @@ const EXTRA_MUTATIONS: { name: string; apply: (p: Plan, input: GeneratorInput) =
     return true
   } },
 ]
+/** Breakages whose landing must be on a NAMED rule: they also wake neighbouring cap rules, so "the old report
+ *  changed" would pass without the target being reached (code review, batch 14). */
+const TARGETS: Record<string, string[]> = {
+  'a structured weekday session just over its overrun limit, undeclared': ['INV-PLAN-STRUCTURED-OVERRUN-DECLARED'],
+  'an easy weekday run one minute over budget, no note': ['INV-PLAN-WEEKDAY-OVERRUN-DECLARED'],
+}
 const hits = new Map<string, number>()
 /** Breakages that sit exactly where a rule must STAY silent, so they change nothing the old checker reports. */
 const SILENT_BY_DESIGN = new Set<string>([
@@ -489,6 +499,7 @@ const SILENT_BY_DESIGN = new Set<string>([
   'early onset for a beginner who declared experienced',
   'a long-run note whose floor is BELOW its peak (no miss)',
   're-entry WITH a VO2 session, note removed',
+  'goal below easy, WITH its note',
 ])
 const GOAL_CASE = 'rebuilt as time target with no time, plus a quality session'
 /** Where the race-eve mutation put its over-cap session, so the verifier's day can be checked against it. */
@@ -570,12 +581,14 @@ function build() {
         }
       } catch { /* the engine refusing this variant is not a comparison */ }
     }
-    let base = ''
-    try { base = validatePlan(o.plan, row.input).map(v => key(v.code, v.week, v.day, v.severity)).sort().join(',') } catch { base = '<threw>' }
+    let baseList: string[] = []
+    try { baseList = validatePlan(o.plan, row.input).map(v => key(v.code, v.week, v.day, v.severity)) } catch { baseList = ['<threw>'] }
     for (const m of EXTRA_MUTATIONS) {
       const p = clone(o.plan)
       const input = JSON.parse(JSON.stringify(row.input)) as GeneratorInput
       if (!m.apply(p, input)) continue
+      const t = TARGETS[m.name]
+      const base = baseList.filter(k => !t || t.some(r => k.startsWith(r + '|'))).sort().join(',')
       cases.push({ label: `${row.id} / ${m.name}`, plan: p, input, asOf: row.asOf, planStart: row.planStart, extra: m.name, base })
     }
   }
@@ -588,7 +601,8 @@ function build() {
     // being compared is not enough, since a breakage that reaches no rule is compared too. Breakages built to
     // stay silent at a line (SILENT_BY_DESIGN) land when compared.
     if (c.extra) {
-      const now = old.map(v => key(v.code, v.week, v.day, v.severity)).sort().join(',')
+      const t = TARGETS[c.extra]
+      const now = old.map(v => key(v.code, v.week, v.day, v.severity)).filter(k => !t || t.some(r => k.startsWith(r + '|'))).sort().join(',')
       if (SILENT_BY_DESIGN.has(c.extra) || now !== c.base) hits.set(c.extra, (hits.get(c.extra) ?? 0) + 1)
     }
     return [{ label: c.label,
