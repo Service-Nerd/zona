@@ -578,13 +578,15 @@ const TARGETS: Record<string, string[]> = {
 const STATIC_RULES = new Set<string>(['INV-PLAN-PHASE-FOCUS-REACHABLE'])
 const hits = new Map<string, number>()
 /** Breakages that sit exactly where a rule must STAY silent, so they change nothing the old checker reports. */
-const SILENT_BY_DESIGN = new Set<string>([
-  'a gated short-distance on-ramp exactly at its (lower) floor',
-  'early onset for a beginner who declared experienced',
-  'a long-run note whose floor is BELOW its peak (no miss)',
-  're-entry WITH a VO2 session, note removed',
-  'goal below easy, WITH its note',
-])
+const SILENT: Record<string, { rule: string; twin: string }> = {
+  // each: the rule it must leave silent in BOTH checkers, and a loud twin breakage that does fire that rule
+  'a gated short-distance on-ramp exactly at its (lower) floor': { rule: 'INV-PLAN-ONRAMP-FLOOR', twin: 'on-ramp one week under the floor' },
+  'early onset for a beginner who declared experienced': { rule: 'INV-PLAN-EARLY-ONSET-GATED', twin: 'early onset for an otherwise-ready beginner' },
+  'a long-run note whose floor is BELOW its peak (no miss)': { rule: 'INV-PLAN-LR-FLOOR-NOT-ROUNDING', twin: 'a long-run floor miss half a rounding step, declared' },
+  're-entry WITH a VO2 session, note removed': { rule: 'INV-PLAN-REENTRY-OMISSION-DECLARED', twin: 're-entry with no VO2 and no note' },
+  'goal below easy, WITH its note': { rule: 'INV-PLAN-GOAL-BELOW-EASY-DECLARED', twin: 'goal below easy, no note' },
+}
+const SILENT_BY_DESIGN = new Set(Object.keys(SILENT))
 const GOAL_CASE = 'rebuilt as time target with no time, plus a quality session'
 /** QUALITY-EXPECTED's downgrade exemption, as a PAIR on the same week (code review, batch 17): the unflagged twin must
  *  fire the rule there, and the flagged one must leave both checkers silent there. Taper weeks included. */
@@ -611,7 +613,7 @@ const ARMS: Record<string, string[]> = {
 }
 
 const tally = { rows: 0, threw: [] as string[], refused: 0, base: 0, foundation: 0, foundationCapped: 0 }
-let runs: { label: string; eve: string | null; old: { rule: string; k: string }[]; new: { rule: string; k: string; detail: string }[] }[] = []
+let runs: { label: string; eve: string | null; extra: string | null; old: { rule: string; k: string }[]; new: { rule: string; k: string; detail: string }[] }[] = []
 
 beforeAll(() => {
   // ONE CLOCK (code review): the engine prices a benchmark at the real clock (§10's staleness ramp) and
@@ -714,6 +716,7 @@ function build() {
     return [{ label: c.label,
       old: old.map(v => ({ rule: v.code, k: key(v.code, v.week, v.day, v.severity) })),
       eve: raceEveDays.get(c.plan) ?? null,
+      extra: c.extra ?? null,
       new: verifyPlan(c.plan, { input: c.input, profile: buildRunnerProfile(factsFromInput(c.input), { asOf: c.asOf, timezone: null, planStart: c.planStart }) }).map(f => ({ rule: f.rule_id as string, k: key(f.rule_id, f.week, f.day, f.severity), detail: f.detail })) }]
   })
 }
@@ -799,6 +802,17 @@ describe('ADR027-B3-VERIFIER — agreement with validatePlan, per ported rule', 
     const meaningful = downgradePairs.filter(p => p.unflagged.length > 0)
     expect(meaningful.length, 'no pair where the rule would have fired, so the exemption is untested').toBeGreaterThan(0)
     for (const p of meaningful) expect({ old: p.flagged.old, new: p.flagged.new }, `${p.label} week ${p.week}`).toEqual({ old: [], new: [] })
+  })
+
+  it('🔴 every silent-by-design breakage is silent on its rule in BOTH checkers, and its loud twin fires that rule', () => {
+    const bad: string[] = []
+    for (const [name, { rule, twin }] of Object.entries(SILENT)) {
+      for (const c of runs.filter(r => r.extra === name)) {
+        if (c.old.some(x => x.rule === rule) || c.new.some(x => x.rule === rule)) bad.push(`${name}: ${rule} fired on ${c.label}`)
+      }
+      if (!runs.some(r => r.extra === twin && r.old.some(x => x.rule === rule))) bad.push(`${name}: its twin "${twin}" never fired ${rule}`)
+    }
+    expect(bad).toEqual([])
   })
 
   it('🔴 no rule with a conditional severity is ported before its condition is a predicate', () => {
