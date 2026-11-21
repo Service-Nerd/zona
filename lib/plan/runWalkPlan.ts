@@ -8,6 +8,8 @@ import { raceDistanceKey } from './generationConfig'
 // with §3's deloads, to climb from A to B' — a second copy of §2's ramp
 // arithmetic is the DELOAD-OWNER-01 shape.
 import { onRampWeeksNeeded } from './baseBuildOnRamp'
+import { isQualitySession, isTimeTrial } from './sessionRole'
+import { formatDuration } from '../format'
 
 /**
  * §117 — the finish-goal run-walk marathon.
@@ -330,9 +332,37 @@ export function runWalkStrategy(): string {
   return `Run ${run} minutes, walk ${walk}. Repeat. Take the walk break before you need it, from the first rep.`
 }
 
-/** Stamp the interval onto every running session of a §117 plan. */
+/**
+ * The §117 Am. 9 time-trial instruction: one coherent run-walk benchmark, not a maximal effort with an interval
+ * stamped beside it. Walk warm-up (`RUNWALK_WARMUP_WALK_MINS`), the trial distance at best effort keeping the
+ * interval from the first rep, easy cool-down. Copy: assistant, on the founder's delegation (2026-11-20).
+ */
+export function runWalkTimeTrialNote(distanceKm: number): string {
+  const wu = GENERATION_CONFIG.RUNWALK_WARMUP_WALK_MINS
+  const run = GENERATION_CONFIG.FINISH_GOAL_RUNWALK_RUN_MINS
+  const walk = GENERATION_CONFIG.FINISH_GOAL_RUNWALK_WALK_MINS
+  // The distance is not interpolated: a unit welded to a value must go through lib/format.ts with the reader's units
+  // (ADR-015), and the trial's distance is already on the session card. `distanceKm` is kept for the call sites.
+  void distanceKm
+  return `Walk briskly for ${formatDuration(wu)}, then run the time trial at your best effort, running ${formatDuration(run)} and walking ${formatDuration(walk)} from the first rep. Cool down easy.`
+}
+
+/**
+ * Stamp the interval onto every running session of a §117 plan.
+ *
+ * §117 Am. 9 (Coaching Board 2026-11-20, RUNWALK-QUALITY-HOTFIX-01): a QUALITY session carries no interval. Its reps
+ * and recoveries are the instruction, and the stamp was a text line that contradicted its own steps. The 5K time trial
+ * KEEPS the interval, as the race does (Am. 6), and its first note becomes the run-walk benchmark instruction so the
+ * runner reads one instruction, not two.
+ */
 export function applyRunWalk(session: Session): Session {
   if (session.type === 'rest' || session.type === 'cross-train' || session.type === 'strength') return session
+  if (isQualitySession(session)) return session
+  if (isTimeTrial(session)) {
+    const notes = [...((session.coach_notes as unknown as string[] | undefined) ?? [])]
+    notes[0] = runWalkTimeTrialNote(session.distance_km ?? 5)
+    return { ...session, run_walk_strategy: runWalkStrategy(), coach_notes: notes as unknown as Session['coach_notes'] }
+  }
   return { ...session, run_walk_strategy: runWalkStrategy() }
 }
 

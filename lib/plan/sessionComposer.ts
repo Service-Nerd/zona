@@ -209,11 +209,13 @@ export function composeSession(args: ComposeArgs): SessionStructure | null {
   // and the structure now read the same constant instead of drifting; the
   // cool-down is the universal floor, which is what "cool down easy" means.
   if (isTimeTrial(session)) {
-    const wuMins = SESSION_FORMAT.UNIVERSAL.warmup_min_duration_mins
+    // §117 Am. 9: a run-walk runner's trial is run-walked like the race. Walk warm-up, no strides.
+    const runWalk = !!session.run_walk_strategy
+    const wuMins = runWalk ? GENERATION_CONFIG.RUNWALK_WARMUP_WALK_MINS : SESSION_FORMAT.UNIVERSAL.warmup_min_duration_mins
     const cdMins = SESSION_FORMAT.COOLDOWN.min_duration_mins
     return {
-      warmup: part(wuMins, 'Z1→Z2', 'Easy build, then strides. Arrive ready, not tired.'),
-      strides: {
+      warmup: runWalk ? { ...part(wuMins, 'Z1', 'Brisk walk.'), walk: true } : part(wuMins, 'Z1→Z2', 'Easy build, then strides. Arrive ready, not tired.'),
+      strides: runWalk ? undefined : {
         count:         SESSION_FORMAT.WARMUP.strides_count,
         duration_secs: SESSION_FORMAT.WARMUP.strides_duration_seconds,
         description:   `${SESSION_FORMAT.WARMUP.strides_count}×${SESSION_FORMAT.WARMUP.strides_duration_seconds}s strides at end of warm-up.`,

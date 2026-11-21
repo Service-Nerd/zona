@@ -12291,6 +12291,46 @@ numeric: the 25% bar and the 6/1 run-walk minutes are Amendment 5's and Amendmen
 `INV-PLAN-RUNWALK-SHORTDIST-SCOPE` (`warn`) counts the unruled half-marathon band.
 
 
+
+### §117 Amendment 9 — QUALITY SESSIONS CARRY NO INTERVAL; THE TIME TRIAL IS RUN-WALKED LIKE THE RACE *(Coaching Board 2026-11-20, `RUNWALK-QUALITY-HOTFIX-01`, ADR-027 hotfix 1)*
+
+**Principle.** Am. 3 put the run-walk interval on every running session, and Am. 5 and Am. 8 widened who receives it.
+The §79 lift then gave some of those runners quality sessions, and the interval landed on them: tempo, CV intervals,
+hills, VO2 work. A quality session's reps and recoveries **are** its instruction, so **a quality session carries no
+run-walk interval**. The 5K time trial **keeps** the interval, because Am. 6 rules that the race is run-walked and §78
+Am. 2 rules that tissue outranks the measurement. It is written as **one** instruction: a brisk-walk warm-up of
+`RUNWALK_WARMUP_WALK_MINS`, no strides, then the trial distance at best effort keeping the interval from the first rep.
+
+**Measured (production input shape):**
+
+| Population | Stamped sessions |
+|---|---|
+| cohortGrid | quality on 432 plans (4,104 sessions) |
+| beginner-marathon grid | TT on 250 plans |
+| independent-longest-run probe | quality on 9,612 plans |
+| production | 0 of 43 plans |
+
+The stamp was a text line only: 0 of 400 sampled sessions drew run-walk steps, and it moved 0 minutes.
+
+**Refused.**
+- A continuous maximal TT for these runners. 🩹 Willy: *35 minutes maximal from week 3, in plans that never ask for
+  more than 6 minutes continuous.*
+- Removing quality or the TT. That would be a §9, §78 or §79 prescription change, not this fix.
+
+**Recorded.**
+- 🩹 Willy, binding: continuous quality for runners who meet Am. 5's trigger is **not ruled safe** by this amendment.
+- 🏃 Hutchinson: a run-walk 5K under-reads VDOT, so a recalibration from it errs slow.
+
+**Config.** None new (`RUNWALK_WARMUP_WALK_MINS` and the 6/1 interval are reused).
+
+**Enforced by** `INV-PLAN-RUNWALK-PRESCRIBED`, which now has two arms:
+- a **forbidden arm**: a stamped quality session is an error;
+- a **required arm**: it skips quality sessions.
+
+**Test:** `runWalkQuality.test.ts`.
+
+**Sitting:** `docs/decisions/coaching-2026-11-20-runwalk-quality-hotfix.md`.
+
 ## 118. The get-running plan — what we offer the runner no race plan can serve
 
 *(Coaching Board 2026-09-20, CORRECT WITH AMENDMENT, three amendments. Founder directive after the board twice ruled zero rejection unreachable by coaching.)*

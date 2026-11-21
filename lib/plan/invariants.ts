@@ -8189,6 +8189,22 @@ export function validatePlan(plan: Plan, rawInput: GeneratorInput): Violation[] 
         for (const [day, s] of Object.entries(w.sessions)) {
           if (!s) continue
           if (s.type === 'rest' || s.type === 'cross-train' || s.type === 'strength') continue
+          // §117 Am. 9 (2026-11-20): a quality session carries NO interval; its reps are the instruction. The forbidden
+          // arm, so a stamp that returns to quality is an error rather than a silent pass.
+          if (isQualitySession(s)) {
+            if (s.run_walk_strategy) {
+              violations.push({
+                code: 'INV-PLAN-RUNWALK-PRESCRIBED',
+                principle_ref: 'CoachingPrinciples §117 Am.9',
+                severity: 'error',
+                week: w.n,
+                message: `Run-walk plan: W${w.n} ${day} quality session ("${s.label ?? s.type}") carries a run-walk interval. §117 Am. 9 — a quality session's reps and recoveries are its instruction; the interval contradicts them.`,
+                actual: 'run_walk_strategy on a quality session',
+                expected: 'no run_walk_strategy on quality',
+              })
+            }
+            continue
+          }
           if (!s.run_walk_strategy) {
             violations.push({
               code: 'INV-PLAN-RUNWALK-PRESCRIBED',

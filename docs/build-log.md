@@ -6,6 +6,12 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-11-20 — RUNWALK-QUALITY-HOTFIX-01 · the rule said "every session", and "every" had grown
+
+**Dev.** `applyRunWalk` stamped the interval on every running session, as §117 Am. 3 said. Two later amendments widened who gets run-walk, and the §79 lift gave some of them quality sessions. So "Run 6, walk 1" landed on tempo and intervals, and on a maximal 5K. The fix is three lines at the single owner: skip quality, and rewrite the TT note. A forbidden arm makes the check catch the old behaviour, not just tolerate the new one.
+
+**The honest bit.** The final plan read said the warm-up turned into a walk on these sessions. The sitting could not reproduce that: the stamp was a text line only. The defect was real, but the description of it was wrong, which is why every finding is re-measured before it is built.
+
 ## 2026-11-20 — STRENGTH-PLYO-PER-SIDE-01 · the check repeated the dose's own miscount
 
 **Dev.** S8 caps jumps at 60 total foot contacts. `prescribe('plyo')` set sets = contacts ÷ 10 and ignored `per_side`. `S-PLYO-CONTACTS` checked `contacts × sets`, the same arithmetic. So "6 × 10/side" was 120 contacts, read as 60, and every sweep stayed green. The fix halves the sets for unilateral jumps, and the check now counts from the item's own fields.

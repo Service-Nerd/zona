@@ -4027,3 +4027,36 @@ Prototype `proto/strength-pair-stride-01` @ `659bde67` (not merged). 💪 Blagro
 
 Measured on `proto/strength-pair-stride-01` @ `659bde67` under B (545,112 sessions, the same grid as STRENGTH-PAIR-STRIDE-01). 💪 Blagrove seated. 📐 Both carries in 52,767 sessions; both standalone in **22,845** (43.3%); in the other 29,922 a carry rides with a different-region accessory (hip abduction, press, row, calf). **Merge-first (P1) INCORRECT:** breaks **15,196** cross-region supersets, more stranded items in 12,033 sessions, clock up in 12,229 and **2,622 over budget** before the trim (static; fill not re-run). **Merge-after (P2):** parts **6.52 → 5.52** where it applies, clock unchanged in **21,905**, ≤ 1 min in the 940 with unequal sets, **0 over budget**. 🩹 Willy: a longer-rest merge removes **1.025 min** of rest per session from two lifts that both load grip and trunk, so it is refused under S10's "never shorten rest"; the dose ratchet from STRENGTH-PAIR-STRIDE-01 binds and the build reports against B (16.441 / 4.966 / 2.233). Fill and trim unchanged; in-part order not ruled (block order). **Artifacts:** S10 Am. 7 · `CARRY_MEDLEY` (named id set in `STRENGTH_CONFIG`, catalogue-checked) · `S-CARRY-MEDLEY` (missing / shape / rest / precedence; recovery-exempt like `S-PAIR-STRANDED`). Builds after STRENGTH-PAIR-STRIDE-01; `recovery.ts` resets a lone carry's rest. 🧭 Hand-off: label and medley reading → Design Board. Sitting: `docs/decisions/coaching-2026-11-20-strength-carry-pattern-01.md`.
 
+
+### `RUNWALK-QUALITY-HOTFIX-01` (ADR-027 hotfix 1) · run-walk stamped on quality sessions and the 5K time trial · **CORRECT WITH AMENDMENT — §117 Am. 9: quality sessions carry no interval; the TT stays run-walked like the race, as ONE instruction**
+
+Measured on the production input shape (no `fitness_level`).
+
+**Where the stamp landed:**
+- Stamped quality: **432** `cohortGrid` plans (4,104 sessions, 7 rows), and **9,612** independent-longest-run probe plans (14 rows, VO2 and hills included).
+- Stamped TT: **250** beginner-marathon (`audit:plans`) plans and **768** probe plans.
+- Production: **0 of 43** prescribed.
+- Every quality case is a structural beginner with intensity intermediate or experienced: the §79 lift meeting Am. 5 / Am. 8.
+
+🔴 **The stamp was a text line only.** 0 of 400 sampled sessions drew a walk warm-up or run-walk steps, so it contradicted the steps and moved 0 minutes.
+
+**Options measured:**
+- **(a) Strip the stamp from quality: adopted.**
+- (b) No quality or TT for these runners: a prescription change.
+- (b′) No TT: the deload long run grows 104 → 120 min.
+- (c) Exempt the TT: refused. 🩹 Willy: 35 min maximal, continuous, from week 3 (§78 Am. 2).
+
+**Recorded positions:**
+- 🎯 McMillan: the interval on a tempo is the dare Am. 3 removed.
+- 🏃 Hutchinson, cost recorded: a run-walk 5K under-reads VDOT.
+- ⚠️ **Willy, binding record: continuous quality for runners on the Am. 5 trigger is NOT ruled safe.**
+
+**Built 2026-11-20:**
+- `applyRunWalk` skips `isQualitySession` and writes the TT's run-walk note. All four callers inherit both.
+- `composeSession` gives a run-walk TT a 5-min walk warm-up and no strides.
+- `INV-PLAN-RUNWALK-PRESCRIBED` gains a forbidden arm.
+- §117 Am. 9 is written.
+- `runWalkQuality.test.ts` added. Falsified: restoring the quality stamp makes the engine throw on a progressive tempo.
+
+Sitting: `docs/decisions/coaching-2026-11-20-runwalk-quality-hotfix.md`.
+
