@@ -27,7 +27,7 @@ const ALLOWED = new Set([
 const ALLOWED_NAMES: Record<string, string[]> = {
   // days.ts also owns placement (the long-run day, `dayGap`), so only the input parser (batch 7 review):
   '@/lib/plan/days': ['normaliseDays'],               // input format ('monday' | 'mon')
-  '@/lib/plan/injuryScope': ['hasInjuryKeyword', 'hasDeliveredCapInjury'],      // matches a runner's injury chips to a keyword (input format)
+  '@/lib/plan/injuryScope': ['hasInjuryKeyword', 'hasDeliveredCapInjury', 'hasVolumeCappedInjuryHistory'],      // matches a runner's injury chips to a keyword (input format)
   '@/lib/plan/benchmarkCheck': ['BENCHMARK_VDOT_MAX'], // a human ceiling: rule data
   '@/lib/plan/sessionCatalogueData': ['V1_SESSION_CATALOGUE'], // the session catalogue: rule data
   '@/lib/plan/fuellingNotes': ['FUELLING_PRACTICE_NOTE', 'ULTRA_FUELLING_PREFIX'], // the notes' identity strings

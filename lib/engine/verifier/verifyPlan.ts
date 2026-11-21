@@ -20,7 +20,7 @@ import { FUELLING_PRACTICE_NOTE, ULTRA_FUELLING_PREFIX } from '@/lib/plan/fuelli
 import { PLAN_SIGNATURES } from '@/lib/plan/planSignatures'
 import { normaliseDays } from '@/lib/plan/days'
 import { sessionKmSelfPaced } from '@/lib/plan/sessionDistance'
-import { hasInjuryKeyword, hasDeliveredCapInjury } from '@/lib/plan/injuryScope'
+import { hasInjuryKeyword, hasDeliveredCapInjury, hasVolumeCappedInjuryHistory } from '@/lib/plan/injuryScope'
 import { BENCHMARK_VDOT_MAX } from '@/lib/plan/benchmarkCheck'
 
 export type VerifierDay = 'mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat' | 'sun'
@@ -1192,6 +1192,44 @@ const BATCH_17: Partial<Record<RuleId, Predicate>> = {
   },
 }
 Object.assign(PREDICATES, BATCH_17)
+
+const metaInjuries = (plan: Plan) => ((plan.meta as unknown as { injury_history?: unknown[] }).injury_history ?? []).map(i => String(i).toLowerCase())
+
+const BATCH_18: Partial<Record<RuleId, Predicate>> = {
+  // §117 Am. 2: a finish-goal run-walk plan's biggest main-week session reaches the floor.
+  // ⚠️ Ported faithfully: "peak" is the largest SESSION of any kind, not the long run.
+  'INV-PLAN-RUNWALK-ADEQUATE': plan => {
+    if (!plan.meta.finish_goal_run_walk) return []
+    let peak = 0
+    for (const w of plan.weeks.filter(x => x.n > 0 && x.type !== 'race' && x.type !== 'deload'))
+      for (const { session: s } of daysOf(w)) peak = Math.max(peak, sessionKmSelfPaced(s) ?? 0)
+    return peak > 0 && peak < GENERATION_CONFIG.FINISH_GOAL_RUNWALK_MIN_PEAK_LR_KM
+      ? [{ rule_id: 'INV-PLAN-RUNWALK-ADEQUATE', week: PLAN, day: null, detail: `peak session ${peak.toFixed(1)} km` }] : []
+  },
+
+  // §117 Am. 4: run-walk is never the answer for a volume-capped injury. (Reads the plan's stamped injury list.)
+  'INV-PLAN-RUNWALK-CAP-NOT-REDUCED': plan => plan.meta.finish_goal_run_walk && hasVolumeCappedInjuryHistory(metaInjuries(plan))
+    ? [{ rule_id: 'INV-PLAN-RUNWALK-CAP-NOT-REDUCED', week: PLAN, day: null, detail: 'run-walk with a volume-capped injury' }] : [],
+
+  // §80 Am. 1: a long-run shortfall note that blames weekly volume is wrong when an injury caps the volume, and
+  // wrong when the long run already sits at its minute cap.
+  'INV-PLAN-LR-SHORTFALL-CAUSE': (plan, { profile }) => {
+    const note = plan.meta.long_run_shortfall_note
+    if (typeof note !== 'string' || !note.length || !note.includes('your weekly volume is what limits it')) return []
+    const km = plan.meta.race_distance_km
+    const injuries = profile.injuries?.value ?? []
+    const caps = Object.entries(GENERATION_CONFIG.LONG_RUN_CAP_MINUTES_BY_INJURY).filter(([k]) => hasInjuryKeyword(injuries, k)).map(([, m]) => m as number)
+    const cap = typeof km === 'number' && km > 0 ? Math.min(GENERATION_CONFIG.LONG_RUN_CAP_MINUTES[raceDistanceKey(km)], ...caps) : 0
+    let lr = 0
+    for (const w of plan.weeks.filter(x => x.n >= 1 && x.type !== 'race'))
+      for (const { session: s } of daysOf(w)) if (s && isLongRun(s) && typeof s.duration_mins === 'number') lr = Math.max(lr, s.duration_mins)
+    const out: Raw[] = []
+    if (hasVolumeCappedInjuryHistory(metaInjuries(plan))) out.push({ rule_id: 'INV-PLAN-LR-SHORTFALL-CAUSE', week: PLAN, day: null, detail: 'blames volume for an injury cap' })
+    if (cap > 0 && lr > 0 && lr + GENERATION_CONFIG.LONG_RUN_AT_CAP_TOLERANCE_MINS >= cap) out.push({ rule_id: 'INV-PLAN-LR-SHORTFALL-CAUSE', week: PLAN, day: null, detail: 'blames volume at the minute cap' })
+    return out
+  },
+}
+Object.assign(PREDICATES, BATCH_18)
 
 const SEVERITY = new Map(RULES.map(r => [r.id, r.kind === 'soft' ? 'warn' as const : 'error' as const]))
 

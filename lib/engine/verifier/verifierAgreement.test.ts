@@ -133,6 +133,30 @@ const EXTRA_MUTATIONS: { name: string; apply: (p: Plan, input: GeneratorInput) =
     ['no HR method', (p: Plan) => { delete p.meta.hr_zone_method; return true }],
     // Batch 8: the plan's declarations about its own limits.
     ['no compression class', (p: Plan) => { delete p.meta.compression_classification; return true }],
+    // Batch 18: run-walk and the shortfall cause.
+    ['a run-walk plan whose biggest session sits just under the floor', (p: Plan) => {
+      const ss = p.weeks.filter(w => w.n > 0 && w.type !== 'race' && w.type !== 'deload').flatMap(w => Object.values(w.sessions ?? {})).filter(Boolean)
+      if (!ss.length) return false
+      p.meta.finish_goal_run_walk = true as never
+      for (const s of ss) { s!.distance_km = Math.min(s!.distance_km ?? 99, GENERATION_CONFIG.FINISH_GOAL_RUNWALK_MIN_PEAK_LR_KM - 0.5); delete s!.duration_mins }
+      return true
+    }],
+    ['run-walk with a volume-capped injury stamped', (p: Plan) => {
+      p.meta.finish_goal_run_walk = true as never
+      ;(p.meta as unknown as Record<string, unknown>).injury_history = [GENERATION_CONFIG.DELIVERED_CAP_INJURIES[0]]; return true
+    }],
+    ['a volume-blaming shortfall note on an injury-capped plan', (p: Plan) => {
+      p.meta.long_run_shortfall_note = 'Your long run stays short: your weekly volume is what limits it.'
+      ;(p.meta as unknown as Record<string, unknown>).injury_history = [GENERATION_CONFIG.DELIVERED_CAP_INJURIES[0]]; return true
+    }],
+    ['a volume-blaming shortfall note with the long run at its minute cap', (p: Plan) => {
+      const km = p.meta.race_distance_km
+      const s = p.weeks.filter(w => w.n >= 1 && w.type !== 'race').flatMap(w => Object.values(w.sessions ?? {})).find(x => x && isLongRun(x))
+      if (typeof km !== 'number' || !s) return false
+      ;(p.meta as unknown as Record<string, unknown>).injury_history = []
+      p.meta.long_run_shortfall_note = 'Your long run stays short: your weekly volume is what limits it.'
+      s.duration_mins = GENERATION_CONFIG.LONG_RUN_CAP_MINUTES[raceDistanceKey(km)] - GENERATION_CONFIG.LONG_RUN_AT_CAP_TOLERANCE_MINS; return true
+    }],
     // Batch 17.
     ['a long run with no axis', (p: Plan) => {
       const s = p.weeks.flatMap(w => Object.values(w.sessions ?? {})).find(x => x && isLongRun(x))
@@ -572,6 +596,10 @@ const TARGETS: Record<string, string[]> = {
   'a quality session with a blank pace and no effort': ['INV-PLAN-EFFORT-OR-PACE'],
   'a quality session with no pace and an effort of 0': ['INV-PLAN-EFFORT-OR-PACE'],
   'a build week with its quality removed': ['INV-PLAN-QUALITY-EXPECTED'],
+  'a run-walk plan whose biggest session sits just under the floor': ['INV-PLAN-RUNWALK-ADEQUATE'],
+  'run-walk with a volume-capped injury stamped': ['INV-PLAN-RUNWALK-CAP-NOT-REDUCED'],
+  'a volume-blaming shortfall note on an injury-capped plan': ['INV-PLAN-LR-SHORTFALL-CAUSE'],
+  'a volume-blaming shortfall note with the long run at its minute cap': ['INV-PLAN-LR-SHORTFALL-CAUSE'],
   'a race-pace long run one point past the segment band': ['INV-PLAN-LR-RACE-SEGMENT-PCT'],
 }
 /** Rules that read only module data (the catalogue, the signatures), never the plan. */
@@ -610,6 +638,7 @@ const ARMS: Record<string, string[]> = {
   'INV-PLAN-WEEKDAY-OVERRUN-DECLARED': ['over budget, no note', 'note on a run within budget'],
   'INV-PLAN-GOAL-PAST-CV-DECLARED': ['withheld anchor reads comfortable', 'withheld anchor with no note'],
   'INV-PLAN-VDOT-STALENESS-LADDER': ['off the ladder:', 'dateless benchmark off the base rung'],
+  'INV-PLAN-LR-SHORTFALL-CAUSE': ['blames volume for an injury cap', 'blames volume at the minute cap'],
 }
 
 const tally = { rows: 0, threw: [] as string[], refused: 0, base: 0, foundation: 0, foundationCapped: 0 }
