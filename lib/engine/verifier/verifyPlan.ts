@@ -803,7 +803,7 @@ const BATCH_10: Partial<Record<RuleId, Predicate>> = {
       ? [{ rule_id: 'INV-PLAN-VDOT-RAW-EXCEEDS-ANCHOR', week: PLAN, day: null, detail: `raw ${vdot} below anchor ${anchor}` }] : []
   },
 
-  // §36: a taper long run is never longer than the peak's, beyond a tolerance.
+  // §6 / §9: a taper long run is never longer than the peak's, beyond a tolerance.
   'INV-PLAN-TAPER-LR-NOT-ABOVE-PEAK': plan => {
     const weeks = plan.weeks.filter(w => w.n > 0 && w.type !== 'race' && w.type !== 'deload')
     const peak = Math.max(0, ...weeks.filter(w => w.phase === 'peak').map(longKm))
@@ -812,7 +812,7 @@ const BATCH_10: Partial<Record<RuleId, Predicate>> = {
       .map(w => ({ rule_id: 'INV-PLAN-TAPER-LR-NOT-ABOVE-PEAK', week: w.n, day: null, detail: 'taper long run above the peak' }))
   },
 
-  // §38: a long enough plan points at a tune-up race somewhere.
+  // §32: a long enough plan points at a tune-up race somewhere.
   'INV-PLAN-TUNE-UP-CALLOUT': plan => {
     const main = plan.weeks.filter(w => w.n >= 1)
     return main.length >= GENERATION_CONFIG.TUNE_UP_MIN_PLAN_WEEKS && !main.some(w => !!w.tune_up_callout)
