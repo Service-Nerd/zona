@@ -53,7 +53,7 @@ describe('the stamp', () => {
 
 describe('"Changed this week"', () => {
   it('lists silent changes and CONFIRMED recovery eases, nothing else', () => {
-    expect(RECENT_CHANGES_FILTER).toBe('and(status.eq.auto_applied,trigger_type.not.in.(shadow_load)),and(status.eq.confirmed,trigger_type.eq.readiness_signal)')
+    expect(RECENT_CHANGES_FILTER).toBe('status.eq.auto_applied,and(status.eq.confirmed,trigger_type.eq.readiness_signal)')
     const src = readFileSync('app/dashboard/DashboardClient.tsx', 'utf8')
     expect(src).toMatch(/\.or\(RECENT_CHANGES_FILTER\)/)
     expect(src).not.toMatch(/\.eq\('status', 'auto_applied'\)/)

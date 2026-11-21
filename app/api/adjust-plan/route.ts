@@ -288,6 +288,25 @@ export async function POST(req: NextRequest) {
   // asserts the property directly as well.
   const { proposed, status, requiresConfirmation, updatedPlan, blockingErrors, toleratedErrors, ruleEngineVersion } = outcome
 
+  // 🔴 WATCHED-SIGNALS-DISCLOSURE-01 (2026-11-21, after two code-review rounds) — A PROPOSAL THAT
+  // CHANGES NO SESSION IS AN OBSERVATION, NOT AN ADJUSTMENT, AND IS NEVER WRITTEN AS ONE.
+  // `shadow_load` copies its sessions unchanged and rates low, so it was stored `auto_applied` and
+  // every reader of that status took it for a change: the inbox ("Plan's been shifted."), Me
+  // ("Plan tweaked", "Changed this week"), the weekly cap, the integrity probe (no save follows),
+  // the dedupe stamp and the AI continuity context. Gating each reader was tried first and leaked
+  // at four more; not writing the row closes them all with one content-based definition.
+  // Explicit runner signals (skip, reorder) are untouched: the runner asked for those.
+  if (!isExplicitSignal && !changesSessions(proposed)) {
+    await recordOpsEvent('adjustment_observation',
+      { trigger_type: proposed.trigger.type, detail: proposed.trigger.detail, week_n: weekN, manual: isManual }, user.id)
+    await recordAdjustmentCheck(serviceSupabase, user.id, false)
+    return NextResponse.json({
+      adjustment: null,
+      observation: { trigger_type: proposed.trigger.type, summary: proposed.summary },
+      message: 'No adjustment needed',
+    })
+  }
+
   // AI explanation — silent fallback to rule-based summary
   let explanationText: string = proposed.summary
   try {
@@ -487,10 +506,7 @@ export async function POST(req: NextRequest) {
 
   // For auto-applied adjustments, update the plan immediately (updatedPlan was
   // computed + constitutionally validated above).
-  // WATCHED-SIGNALS-DISCLOSURE-01 (code review) — a proposal that changes no session is an
-  // observation: the ledger keeps it, but the plan is not re-saved and the check reports no change.
-  const changed = changesSessions(proposed)
-  if (status === 'auto_applied' && changed) {
+  if (status === 'auto_applied') {
     // OPS-01: the plan_adjustments row is already written, so if this save
     // throws we'd have a recorded "auto_applied" adjustment with no matching
     // plan_json change — the exact 2026-06-26 incident. Record the failure to
@@ -514,9 +530,6 @@ export async function POST(req: NextRequest) {
     // and discoverable: the durable inbox row below + the Me-screen "what changed
     // this week" audit surface. Manual adjustments are the user's own change —
     // no inbox row either.
-    // WATCHED-SIGNALS-DISCLOSURE-01 — and never for a change that changed nothing: a
-    // `shadow_load` observation auto-applies with identical before/after sessions, and was
-    // announced as "Plan's been shifted." (1 of the 5 such inbox rows in production, 2026-11-21).
     if (!isManual) {
       const url = '/dashboard?screen=plan'
       void recordNotification(user.id, {
@@ -554,7 +567,7 @@ export async function POST(req: NextRequest) {
     })
   }
 
-  await recordAdjustmentCheck(serviceSupabase, user.id, changed)
+  await recordAdjustmentCheck(serviceSupabase, user.id, true)
   // RESHAPE-FIX-WAVE3: use the magnitude-derived value, not the builder's
   // pre-Wave-3 ad-hoc flag (kept on the proposal type for backward
   // compatibility but no longer authoritative).

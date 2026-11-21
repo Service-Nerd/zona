@@ -540,7 +540,7 @@ describe('H/I — the engine proposed something', () => {
     expect(events(), 'a successful save records no failure').not.toContain('plan_save_failed')
   })
 
-  it('🔴 I3 — WATCHED-SIGNALS-DISCLOSURE-01: an auto-applied change that changes NOTHING sends no "shifted" message', async () => {
+  it('🔴 I3 — WATCHED-SIGNALS-DISCLOSURE-01: a proposal that changes NOTHING is an observation, never written as an adjustment', async () => {
     // `shadow_load` is an observation: its after-sessions equal its before-sessions, so it rates
     // low and auto-applies. It used to write the inbox row "Plan's been shifted." over an
     // unchanged plan. Off-plan runs only, so the linked-km load ratio stays below its trigger.
@@ -554,15 +554,15 @@ describe('H/I — the engine proposed something', () => {
     const before = JSON.stringify(S.store.plans[0].plan_json)
     const res = await post({})
     expect(res.status).toBe(200)
-    const row = adjustments()[0]
-    expect(row?.trigger_type, 'the fixture must actually reach shadow_load').toBe('shadow_load')
-    expect(row.status, 'the observation is kept in the ledger').toBe('auto_applied')
-    // Every surface that would tell the runner their plan changed:
+    const body = await res.json()
+    expect(body.observation?.trigger_type, 'the fixture must actually reach shadow_load').toBe('shadow_load')
+    expect(body.adjustment, 'a no-op answers like no adjustment, so "Check now" reads clean').toBeNull()
+    // Never written as an adjustment, so no reader of `auto_applied` can take it for a change:
+    expect(adjustments(), 'ledger: cap, "Changed this week", integrity probe, AI continuity').toEqual([])
     expect(S.store.notifications, 'inbox: "Plan\'s been shifted."').toEqual([])
     expect(settings().last_adjustment_check_found_change, 'Me: "Plan tweaked"').toBe(false)
-    expect(JSON.stringify(S.store.plans[0].plan_json), 'an unchanged plan was re-saved').toBe(before)
-    const { countsTowardCap } = await import('@/lib/coaching/adjustmentLedger')
-    expect(countsTowardCap(row as { status: string; trigger_type: string }), 'it took a weekly slot').toBe(false)
+    expect(JSON.stringify(S.store.plans[0].plan_json), 'the plan was touched').toBe(before)
+    expect(events(), 'the observation is still recorded').toContain('adjustment_observation')
   })
 
   it('🔴 I2 — a FAILED plan save records `plan_save_failed` and does not swallow the error', async () => {

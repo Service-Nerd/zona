@@ -88,11 +88,3 @@ describe('ADJUST-LEDGER-DUPLICATE-01 — a re-write, not a second thing the runn
     expect(src).toMatch(/\.is\('superseded_at', null\)/)
   })
 })
-
-describe('WATCHED-SIGNALS-DISCLOSURE-01 — an observation is not a change', () => {
-  it('🔴 an auto_applied shadow_load row does not take one of the week\'s slots; a real change does', () => {
-    expect(countsTowardCap({ status: 'auto_applied', trigger_type: 'shadow_load' })).toBe(false)
-    expect(countsTowardCap({ status: 'auto_applied', trigger_type: 'acute_chronic_high' })).toBe(true)
-    expect(countsTowardCap({ status: 'auto_applied' }), 'a row read without trigger_type still counts').toBe(true)
-  })
-})
