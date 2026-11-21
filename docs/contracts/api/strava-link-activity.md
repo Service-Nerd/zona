@@ -43,9 +43,8 @@ and were previously indistinguishable to anyone reading only the status.
 ⚠️ **Known gap, deliberately left (STRAVA-SOR-REVIEW-FIX-03).** `enriched_healthkit` returns without
 triggering `analyse-run`, and a Strava id that is already on an Apple Health row (a re-link) finds no
 unattached row and is answered 409. A review round fixed both and the fix was trimmed, because it
-re-keyed `run_analysis` writes for every runner; Strava is connected by the founder only. The client
-handles the 409: the link is cleared only when no row carries the id (`unlink-activity`'s guard),
-and only then does the post-run screen say the run was not linked.
+re-keyed `run_analysis` writes for every runner; Strava is connected by the founder only. A refused link is **left as it is**
+on the completion; a client clean-up was built and trimmed because it could clear a valid link.
 
 ## ✅ ADR-011 / INV-DATA-008 — resolved 2026-11-21 (STRAVA-WEBHOOK-SOR-01)
 

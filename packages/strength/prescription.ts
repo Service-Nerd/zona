@@ -39,7 +39,8 @@ export function plyoContacts(weekIndex: number, experience: StrengthProfile['exp
  * PLYO_CONTACTS_PER_SET in total, so this is 3 for both shapes, and never above a jump's own dose.
  */
 export function plyoRestoreMinSets(item: Pick<Prescription, 'contacts' | 'per_side'>): number {
-  const perSet = (item.contacts ?? C.PLYO_CONTACTS_PER_SET) * (item.per_side ? 2 : 1)
+  // No `contacts` field (a legacy item): a set is PLYO_CONTACTS_PER_SET in total, whichever shape.
+  const perSet = item.contacts == null ? C.PLYO_CONTACTS_PER_SET : item.contacts * (item.per_side ? 2 : 1)
   return Math.ceil(C.PLYO_CONTACTS_START / perSet)
 }
 
@@ -62,10 +63,10 @@ export function prescribe(ex: Exercise, role: BlockRole, ctx: DoseContext): Pres
     // side, so it lands PLYO_CONTACTS_PER_SET in total and every jump takes the same sets: 30 is 3 x 5/side, exactly.
     // The first fix halved the sets instead (20 in the start week against S8's 30).
     // A bilateral jump is unchanged byte for byte. Every S8 dose is a multiple of PLYO_CONTACTS_PER_SET, so the total
-    // is the dose exactly (plyoPerSide.test.ts asserts both, and that PLYO_CONTACTS_PER_SET is even).
+    // is the dose exactly; `floor` keeps any future non-multiple dose at or below S8, never above it (plyoPerSide.test.ts asserts both, and that PLYO_CONTACTS_PER_SET is even).
     const sets = ctx.phase === 'deload'
       ? Math.max(1, Math.round((contacts / C.PLYO_CONTACTS_PER_SET) * C.DELOAD_SET_FACTOR))
-      : Math.max(1, Math.min(Math.ceil(contacts / C.PLYO_CONTACTS_PER_SET), Math.floor(C.PLYO_CONTACTS_MAX / C.PLYO_CONTACTS_PER_SET)))
+      : Math.max(1, Math.min(Math.floor(contacts / C.PLYO_CONTACTS_PER_SET), Math.floor(C.PLYO_CONTACTS_MAX / C.PLYO_CONTACTS_PER_SET)))
     const perSetContacts = per_side ? C.PLYO_CONTACTS_PER_SET / 2 : C.PLYO_CONTACTS_PER_SET
     return { ...base, sets, contacts: perSetContacts, rir: null, rest_s: C.REST_S.plyo }
   }

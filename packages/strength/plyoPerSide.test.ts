@@ -56,4 +56,14 @@ describe('S8 per-side plyo contacts (ADR-027 hotfix 3)', () => {
     const p = prescribe(byId('pogo_hops'), 'plyo', { profile, phase: 'build', weekIndex: 30 })
     expect(p.sets * (p.contacts ?? 0)).toBe(plyoContacts(30, 'regular'))
   })
+  it('a legacy jump with no contacts field restores to S8\'s start dose, per-side or not', () => {
+    for (const per_side of [true, false]) {
+      expect(plyoRestoreMinSets({ contacts: undefined, per_side }) * C.PLYO_CONTACTS_PER_SET).toBeGreaterThanOrEqual(C.PLYO_CONTACTS_START)
+    }
+  })
+  it('every dose, at every experience level and week, is a multiple of a set, so floor loses nothing', () => {
+    for (const exp of ['new', 'some', 'regular'] as const) for (let w = 0; w < 40; w++) {
+      expect(plyoContacts(w, exp) % C.PLYO_CONTACTS_PER_SET, `${exp} w${w}`).toBe(0)
+    }
+  })
 })

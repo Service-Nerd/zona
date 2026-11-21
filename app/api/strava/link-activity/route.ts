@@ -24,7 +24,7 @@ export const maxDuration = 300
 // STRAVA-WEBHOOK-SOR-01). An `apple_health_uuid` re-triggers analyse-run on that row. A `strava_activity_id` only
 // patches a matching, unattached Apple Health row (tryEnrichHealthKitRow) and answers `enriched_healthkit` without
 // triggering analysis itself; with no Apple Health run it is refused with 409 `discarded_no_healthkit_match`, nothing
-// is stored, and the client clears the completion's link (lib/strava/linkActivity.ts).
+// is stored, and the completion's link is left as it is (a client clean-up was trimmed, STRAVA-SOR-REVIEW-FIX-03).
 
 export async function POST(req: NextRequest) {
   const user = await getUserFromRequest(req)
