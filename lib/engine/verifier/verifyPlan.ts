@@ -52,7 +52,7 @@ const governed = (w: Week) =>
 const daysOf = (w: Week) =>
   // EVERY key, as validatePlan walks them (code review): a session stored under a non-day key is still
   // checked by the rules that iterate entries. Day-specific logic (weekdays, ordering) treats it as none.
-  Object.entries(w.sessions as Record<string, Session | undefined>)
+  Object.entries((w.sessions ?? {}) as Record<string, Session | undefined>)
     .map(([d, session]) => ({ day: d as VerifierDay, session }))
 const running = (w: Week) =>
   daysOf(w).filter((x): x is { day: VerifierDay; session: Session } =>

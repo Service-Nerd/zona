@@ -1803,7 +1803,9 @@ Step 1 shipped as `ADR027-B3-CATALOGUE` (221 rules). Remaining, in order:
   to perGroup 8 because perGroup 2 held no foundation-week plan). **12 of 221 ported; 209 left.**
   **Raised, not changed (ported faithfully):** `validatePlan` checks `EMPTY-SESSION` inside the size loop, so an
   empty race-week shakeout or race-week easy run passes. Probably a blind spot; needs a ruling before the
-  verifier diverges.
+  verifier diverges. **Batch 3 raised two more, both copied faithfully:** `NO-RACE-EVE-SESSION` never checks the
+  previous week's Sunday before a Monday race, and treats a distance-only pre-race session as 0 minutes, so a 9 km
+  run on race eve passes. ✅ **Batch 3 SHIPPED 2026-11-21** (7 week/plan rules). **19 of 221; 202 left.**
 - **Step 3, nightly on every live plan**, observe-only (the founder chose this over an earlier start).
 - **Step 4, the trigger catalogue** (ARCH-ENG-018): adjustment thresholds move into the catalogue as data, values
   unchanged, per §124 Am. 1.

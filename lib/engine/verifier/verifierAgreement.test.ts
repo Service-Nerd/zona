@@ -55,7 +55,6 @@ const EXTRA_MUTATIONS: { name: string; apply: (p: Plan, input: GeneratorInput) =
       return false
     },
   })),
-  // The race date leaves the final week: COVERS-RACE-DATE fires and RACE-ON-RACE-DAY must still be checked.
   // An INPUT breakage: the wizard cannot send a longest run above the weekly total, so no plan or plan
   // mutation reaches INV-INPUT-LONGEST-LE-WEEKLY. This one changes what both checkers are handed.
   { name: 'stated longest run above the stated week', apply: (_p, input) => {
@@ -63,12 +62,24 @@ const EXTRA_MUTATIONS: { name: string; apply: (p: Plan, input: GeneratorInput) =
     input.longest_recent_run_km = input.current_weekly_km + 1
     return true
   } },
+  // §87: a deload on the FIRST week of a phase (the 'opens a phase' arm, which nothing else wakes).
+  { name: 'a deload opens the build phase', apply: p => {
+    const i = p.weeks.findIndex((w, k) => k > 0 && w.n > 1 && w.phase === 'build' && p.weeks[k - 1].phase === 'base')
+    if (i < 0 || p.weeks[i].type === 'deload') return false
+    p.weeks[i].type = 'deload'
+    return true
+  } },
   // §49's line: exactly one taper week over the cap (relabel the weeks before the taper).
   { name: 'one taper week over the cap', apply: (p, input) => {
     const cap = GENERATION_CONFIG.MAX_TAPER_PHASE_WEEKS[raceDistanceKey(input.race_distance_km) as keyof typeof GENERATION_CONFIG.MAX_TAPER_PHASE_WEEKS]
     let n = p.weeks.filter(w => w.phase === 'taper').length
+    if (n >= cap + 1) return false                       // already over: this mutation would change nothing
     const first = p.weeks.findIndex(w => w.phase === 'taper')
-    for (let i = first - 1; i >= 0 && n < cap + 1; i--) { if (p.weeks[i].n < 1) return false; p.weeks[i].phase = 'taper'; n++ }
+    for (let i = first - 1; i >= 0 && n < cap + 1; i--) {
+      const w = p.weeks[i]
+      if (w.n < 1 || w.type === 'race' || w.type === 'deload') return false
+      w.phase = 'taper'; n++
+    }
     return first > 0 && n === cap + 1
   } },
   // §39 Am. 1's line: a session inside the protected days, one minute over the shakeout cap.
@@ -82,10 +93,12 @@ const EXTRA_MUTATIONS: { name: string; apply: (p: Plan, input: GeneratorInput) =
       const s = prior ? w.sessions[prior] : undefined
       if (!s || s.type === 'rest') continue
       s.duration_mins = GENERATION_CONFIG.RACE_WEEK_SHAKEOUT_MAX_MINS + 1
+      raceEveDays.set(p, `${w.n}|${prior}`)
       return true
     }
     return false
   } },
+  // The race date leaves the final week: COVERS-RACE-DATE fires and RACE-ON-RACE-DAY must still be checked.
   // Eight days, not seven: seven keeps the weekday, so no wrong-day finding exists to disagree about.
   { name: 'race date eight days after the plan ends', apply: p => {
     if (!p.meta.race_date) return false
@@ -96,9 +109,16 @@ const EXTRA_MUTATIONS: { name: string; apply: (p: Plan, input: GeneratorInput) =
   } },
 ]
 const hits = new Map<string, number>()
+/** Where the race-eve mutation put its over-cap session, so the verifier's day can be checked against it. */
+const raceEveDays = new WeakMap<Plan, string>()
+/** Rules that make more than one independent check: each detail prefix must fire on its own. */
+const ARMS: Record<string, string[]> = {
+  'INV-PLAN-DELOAD-PLACEMENT': ['deload opens a phase', 'deloads, cadence calls for'],
+  'INV-PLAN-PHASE-STRUCTURE': ['phase returns', 'phases out of order'],
+}
 
 const tally = { rows: 0, threw: [] as string[], refused: 0, base: 0, foundation: 0, foundationCapped: 0 }
-let runs: { label: string; old: { rule: string; k: string }[]; new: { rule: string; k: string }[] }[] = []
+let runs: { label: string; eve: string | null; old: { rule: string; k: string }[]; new: { rule: string; k: string; detail: string }[] }[] = []
 
 beforeAll(() => {
   const cases: { label: string; plan: Plan; input: GeneratorInput }[] = []
@@ -136,7 +156,8 @@ beforeAll(() => {
     try { old = validatePlan(c.plan, c.input) } catch { return [] }
     return [{ label: c.label,
       old: old.map(v => ({ rule: v.code, k: key(v.code, v.week, v.day, v.severity) })),
-      new: verifyPlan(c.plan, { input: c.input }).map(f => ({ rule: f.rule_id as string, k: key(f.rule_id, f.week, f.day, f.severity) })) }]
+      eve: raceEveDays.get(c.plan) ?? null,
+      new: verifyPlan(c.plan, { input: c.input }).map(f => ({ rule: f.rule_id as string, k: key(f.rule_id, f.week, f.day, f.severity), detail: f.detail })) }]
   })
 }, 120_000)
 
@@ -182,6 +203,28 @@ describe('ADR027-B3-VERIFIER — agreement with validatePlan, per ported rule', 
       const old = runs.flatMap(c => c.old.filter(x => x.rule === rule))
       expect(old.length, `${rule} never fired, so its exemption is unproven`).toBeGreaterThan(0)
       expect(old.every(x => x.k.split('|')[2] === '-'), `${rule}: the old checker names a day after all`).toBe(true)
+    }
+  })
+
+  it('🔴 the race-eve finding names the day the over-cap session is on, not just the week', () => {
+    let checked = 0
+    for (const c of runs) {
+      if (!c.eve) continue
+      const [wk, day] = c.eve.split('|')
+      const found = c.new.filter(x => x.rule === 'INV-PLAN-NO-RACE-EVE-SESSION' && x.k.startsWith(`INV-PLAN-NO-RACE-EVE-SESSION|${wk}|`))
+      expect(found.map(x => x.k.split('|')[2]), c.label).toContain(day)
+      checked++
+    }
+    expect(checked).toBeGreaterThan(0)
+  })
+
+  it('🔴 every arm of a multi-check rule fires on its own', () => {
+    for (const [rule, prefixes] of Object.entries(ARMS)) {
+      if (!(PORTED_RULES as string[]).includes(rule)) continue
+      for (const pre of prefixes) {
+        const n = runs.reduce((t, c) => t + c.new.filter(x => x.rule === rule && x.detail.includes(pre)).length, 0)
+        expect(n, `${rule}: "${pre}" never fires`).toBeGreaterThan(0)
+      }
     }
   })
 
