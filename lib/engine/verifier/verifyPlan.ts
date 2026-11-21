@@ -48,7 +48,9 @@ export interface VerifyContext {
 }
 
 type Week = Plan['weeks'][number]
-type Raw = Omit<VerifierFinding, 'severity'>
+/** A predicate's finding. `severity` is set only by a rule whose severity is CONDITIONAL (its catalogue entry has a
+ *  severity_note); every other rule takes the catalogue's. */
+type Raw = Omit<VerifierFinding, 'severity'> & { severity?: 'error' | 'warn' }
 type Predicate = (plan: Plan, ctx: VerifyContext) => Raw[]
 
 const DAYS: readonly VerifierDay[] = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']
@@ -1278,6 +1280,34 @@ const BATCH_19: Partial<Record<RuleId, Predicate>> = {
 }
 Object.assign(PREDICATES, BATCH_19)
 
+const BATCH_20: Partial<Record<RuleId, Predicate>> = {
+  // §106: across base/build/peak (no taper, deload or race week) no week falls more than MAX_DELIVERED_DECLINE_PCT
+  // below week 1. Always a warning today (the registry notes a planned promotion; that is not a condition).
+  'INV-PLAN-NOT-DETRAINING': plan => {
+    const prog = plan.weeks.filter(w => w.n >= 1 && w.phase !== 'taper' && !isDeloadWeek(w) && w.type !== 'race'
+      && !daysOf(w).some(x => x.session?.type === 'race'))
+    if (prog.length < 2) return []
+    const w1 = prog[0].weekly_km ?? 0, low = Math.min(...prog.map(w => w.weekly_km ?? 0))
+    if (!(w1 > 0 && low > 0)) return []
+    const pct = ((w1 - low) / w1) * 100
+    return pct > GENERATION_CONFIG.MAX_DELIVERED_DECLINE_PCT
+      ? [{ rule_id: 'INV-PLAN-NOT-DETRAINING', week: prog.find(w => (w.weekly_km ?? 0) === low)?.n ?? PLAN, day: null, detail: `${pct.toFixed(0)}% below week 1` }] : []
+  },
+
+  // §23: the peak phase reaches the plan's highest volume (within a plateau tolerance). CONDITIONAL severity: a
+  // warning on a maintenance profile, an error otherwise.
+  'INV-PLAN-PEAK-IN-PEAK-PHASE': plan => {
+    const nd = plan.weeks.filter(w => w.n > 0 && w.type !== 'race' && w.type !== 'deload')
+    const peak = nd.filter(w => w.phase === 'peak')
+    if (nd.length <= 1 || !peak.length) return []
+    const max = Math.max(...nd.map(w => w.weekly_km))
+    if (peak.some(w => w.weekly_km >= max * (1 - GENERATION_CONFIG.PEAK_INVERSION_MATERIAL_PCT / 100))) return []
+    return [{ rule_id: 'INV-PLAN-PEAK-IN-PEAK-PHASE', week: (nd.find(w => w.weekly_km === max) ?? nd[0]).n, day: null,
+      detail: 'peak phase short of the plan max', severity: plan.meta.volume_profile === 'maintenance' ? 'warn' : 'error' }]
+  },
+}
+Object.assign(PREDICATES, BATCH_20)
+
 const SEVERITY = new Map(RULES.map(r => [r.id, r.kind === 'soft' ? 'warn' as const : 'error' as const]))
 
 /** Every finding the ported predicates raise, with the severity the catalogue gives the rule. */
@@ -1288,7 +1318,7 @@ export function verifyPlan(plan: Plan, ctx: VerifyContext): VerifierFinding[] {
     try { return p(plan, ctx) } catch (e) {
       return [{ rule_id: id, week: PLAN, day: null, detail: `unverified: ${e instanceof Error ? e.message : String(e)}` }]
     }
-  }).map(f => ({ ...f, severity: SEVERITY.get(f.rule_id) ?? 'error' }))
+  }).map(f => ({ ...f, severity: f.severity ?? SEVERITY.get(f.rule_id) ?? 'error' }))
 }
 
 export const PORTED_RULES = Object.keys(PREDICATES) as RuleId[]

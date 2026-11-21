@@ -133,6 +133,18 @@ const EXTRA_MUTATIONS: { name: string; apply: (p: Plan, input: GeneratorInput) =
     ['no HR method', (p: Plan) => { delete p.meta.hr_zone_method; return true }],
     // Batch 8: the plan's declarations about its own limits.
     ['no compression class', (p: Plan) => { delete p.meta.compression_classification; return true }],
+    // Batch 20.
+    ['a progressive week just past the detraining decline', (p: Plan) => {
+      const prog = p.weeks.filter(w => w.n >= 1 && w.phase !== 'taper' && w.type !== 'deload' && w.badge !== 'deload' && w.type !== 'race')
+      if (prog.length < 3 || !(prog[0].weekly_km > 0)) return false
+      prog[2].weekly_km = Math.round(prog[0].weekly_km * (1 - GENERATION_CONFIG.MAX_DELIVERED_DECLINE_PCT / 100) * 10) / 10 - 0.5; return true
+    }],
+    ...(['build', 'maintenance'] as const).map(profile => [`a non-peak week above the peak phase (${profile} profile)`, (p: Plan) => {
+      const peak = p.weeks.filter(w => w.n > 0 && w.phase === 'peak' && w.type !== 'deload' && w.type !== 'race')
+      const other = p.weeks.find(w => w.n > 0 && w.phase === 'build' && w.type !== 'deload' && w.type !== 'race')
+      if (!peak.length || !other) return false
+      other.weekly_km = Math.max(...peak.map(w => w.weekly_km)) * 1.5; p.meta.volume_profile = profile; return true
+    }] as const),
     // Batch 19.
     ['every main-week easy run turned into quality', (p: Plan) => {
       let n = 0
@@ -623,6 +635,9 @@ const TARGETS: Record<string, string[]> = {
   'every main-week easy run turned into quality': ['INV-PLAN-INTENSITY-DISTRIBUTION'],
   'a segment long run at the start of the build': ['INV-PLAN-RACE-PACE-LR-BUILD-WINDOW'],
   'segment long runs three main weeks in a row': ['INV-PLAN-RACE-PACE-LR-BUILD-WINDOW'],
+  'a progressive week just past the detraining decline': ['INV-PLAN-NOT-DETRAINING'],
+  'a non-peak week above the peak phase (build profile)': ['INV-PLAN-PEAK-IN-PEAK-PHASE'],
+  'a non-peak week above the peak phase (maintenance profile)': ['INV-PLAN-PEAK-IN-PEAK-PHASE'],
   'run-walk with a volume-capped injury stamped': ['INV-PLAN-RUNWALK-CAP-NOT-REDUCED'],
   'a volume-blaming shortfall note on an injury-capped plan': ['INV-PLAN-LR-SHORTFALL-CAUSE'],
   'a volume-blaming shortfall note with the long run at its minute cap': ['INV-PLAN-LR-SHORTFALL-CAUSE'],
@@ -630,6 +645,10 @@ const TARGETS: Record<string, string[]> = {
 }
 /** Rules that read only module data (the catalogue, the signatures), never the plan. */
 const STATIC_RULES = new Set<string>(['INV-PLAN-PHASE-FOCUS-REACHABLE'])
+const CONDITIONAL_PORTED: Record<string, string> = {
+  'INV-PLAN-NOT-DETRAINING': 'not conditional: always warn; the note is a planned promotion',
+  'INV-PLAN-PEAK-IN-PEAK-PHASE': 'warn on a maintenance profile, error otherwise (set in the predicate)',
+}
 const hits = new Map<string, number>()
 /** Breakages that sit exactly where a rule must STAY silent, so they change nothing the old checker reports. */
 const SILENT: Record<string, { rule: string; twin: string }> = {
@@ -872,8 +891,10 @@ describe('ADR027-B3-VERIFIER — agreement with validatePlan, per ported rule', 
   })
 
   it('🔴 no rule with a conditional severity is ported before its condition is a predicate', () => {
+    // A conditional rule may be ported only once its condition is IN the predicate (it sets `severity`), named here
+    // with the condition, and the agreement key includes severity so the condition is compared.
     const conditional = new Set(RULES.filter(r => r.severity_note).map(r => r.id))
-    expect(PORTED_RULES.filter(r => conditional.has(r))).toEqual([])
+    expect(PORTED_RULES.filter(r => conditional.has(r) && !CONDITIONAL_PORTED[r])).toEqual([])
   })
 
   for (const rule of PORTED_RULES) {
