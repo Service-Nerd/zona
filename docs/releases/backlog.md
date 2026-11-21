@@ -1714,6 +1714,59 @@ refused from this machine in any case. Filed as `BLOCKED-DAY-OVERRIDE-REPAIR-01`
 
 ---
 
+### 🔲 `WATCHED-SIGNALS-DISCLOSURE-01` — the Profile disclosure states a load rule the engine does not use, and a change that changes nothing is announced *(filed 2026-11-21)* ⚙️ **NO BOARD** (defect restoring documented intent; copy on the founder's delegation)
+
+**The false disclosure:**
+- `lib/coaching/watchedSignals.ts:89-94`, shown on `PlanAdjustmentsScreen`, tells runners the load trigger is
+  `LOAD_RATIO.flag` (1.4×) and *"Two weeks running at that ratio, not one."*
+- The engine trims silently at `watch` (1.3×) after ONE week. `flag` decides nothing in the trigger path, because
+  ADR-012's magnitude rule is the only decision point.
+
+**The empty announcement:**
+- Every auto-applied row writes an inbox row titled `BRAND` *"Plan's been shifted."*
+- That includes `shadow_load`, whose before and after sessions are identical.
+
+**The dead helper:** `isShadowLoadTriggered` (`lib/coaching/loadCalc.ts:58`) has 0 callers.
+
+**Fix:**
+- The disclosure states what the engine does.
+- An empty diff writes no "shifted" row.
+- Delete the dead helper.
+
+Source: `docs/decisions/boards-2026-11-21-triggers-on-run-arrival.md` (build order step 0).
+
+### 🔲 `TRIGGERS-ON-RUN-ARRIVAL-01` — evaluate reshape triggers when a run is analysed; one run, one moment *(filed 2026-11-21)* 🏃 **COACHING BOARD** · 🧭 **DESIGN BOARD** · 💼 **SLT** (all three ruled)
+
+⚖️ **RULED 2026-11-21** (`docs/decisions/boards-2026-11-21-triggers-on-run-arrival.md`; register rows in
+`coaching-rulings.md` and `design-rulings.md`).
+
+- **Coaching:** §124 Am. 1.
+  - Triggers are evaluated on `run_analysed`, never at raw ingest.
+  - `zone_drift` needs ≥ 2 runs.
+  - `ef_decline` runs at week close.
+  - Fatigue, RPE and readiness never run on arrival.
+  - One fire per type per week.
+  - The load trim asks at 1.4× two weeks running.
+  - Literals move to `GENERATION_CONFIG.ADJUSTMENT_TRIGGERS`.
+- **Design:** one push per run, ever.
+  - The change rides the post-run push, lives on Today, and gets one post-run line.
+  - No push 21:00–07:00 local (dropped, not deferred).
+  - `NOTIFICATION_BUDGET`, through `decideAdjustmentDelivery()`.
+- **SLT:**
+  - The reshape stays PAID.
+  - FREE gets only the `shadow_load` observation as a line on Today, with no push.
+
+**Build order, inside ADR-027:**
+1. `WATCHED-SIGNALS-DISCLOSURE-01`.
+2. `ADJUST-WEEK-COORD-01`.
+3. B2: the timezone owner.
+4. B3: the trigger catalogue.
+5. B4b: the single writer, then the adjustment event and the delivery rule.
+6. The free observation.
+
+**Mockups owed to the founder before build:** the post-run line in 3 states, the Today banner, and the lock screen
+and inbox.
+
 ### 🔲 `STARTVOL-OBSERVED-01` — show a runner the gap between their declared and logged volume, and let them choose *(filed 2026-11-21)* 🧭 **DESIGN BOARD** first (a new wizard state), then 🏃 **COACHING BOARD** conditions at build
 
 ⚖️ **RULED 2026-11-21:** option C, CORRECT WITH AMENDMENT (`docs/decisions/coaching-2026-11-21-starting-volume-from-log.md`;

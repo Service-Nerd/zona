@@ -4127,3 +4127,19 @@ Sitting: `docs/decisions/coaching-2026-11-21-onramp-injury-climb.md`.
 their declaration and then logged ≥ 4 weeks.
 
 **Sitting:** `docs/decisions/coaching-2026-11-21-starting-volume-from-log.md`.
+
+### `TRIGGERS-ON-RUN-ARRIVAL-01`, 2026-11-21 · CORRECT WITH AMENDMENT (§124 Am.1). The engine looks when a run is analysed, never at raw ingest, and a single run is not a pattern
+
+ADR-027 `ARCH-ENG-018` moves trigger evaluation onto data arrival. **Measured first** (production replay at each
+analysis's own `created_at`, genuine and external: 17 events, 6 runners, 10 runner-weeks): per-run evaluation gives
+**10 fires (0.59 per run)** against **6 per-week verdicts**; **7 of 8 `zone_drift` fires rest on one run**; 3 are
+repeats in the same week. At raw ingest every `zone_drift` fire was decided by the PREVIOUS run's analysis.
+**Ruled:** evaluate on `run_analysed` (free/manual: `run_logged`, `shadow_load` only); `zone_drift` needs
+`ZONE_DRIFT_MIN_RUNS` (2); `ef_decline` at week close with `EF_DECLINE_MIN_RUNS` (2); fatigue, RPE and readiness never on
+arrival; one fire per trigger type per week; the load trim stays silent at `watch` on one week and ASKS at `flag` two weeks
+running (an ADR-012 always-high row). 🔴 **`watchedSignals` tells runners "1.4×, two weeks" while the engine trims at
+1.3× in one: the disclosure is wrong, fixed now as a defect.** Literals move into `GENERATION_CONFIG.ADJUSTMENT_TRIGGERS`;
+`SKIP_INJURY_TRIM_PCT` has no principle (debt). ⚡ Seiler 3 vs McMillan 2 on drift (chair: 2); Willy's two-week shadow
+escalation INSUFFICIENT EVIDENCE (≥10 shadow runner-weeks). Not a `validatePlan()` invariant: it governs when the engine
+acts (precedent §129); `triggerCatalogue.test.ts`. **Nothing built (ADR-027 freeze); owed to B3.** Sitting:
+`docs/decisions/boards-2026-11-21-triggers-on-run-arrival.md`.

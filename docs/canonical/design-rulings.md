@@ -6892,3 +6892,19 @@ Amends this morning's `PLAN-NOTE-HEAVIER-WEEK-PLACEMENT-01` on the Coaching Boar
 | **Plan-tile rank; its multi-week sentence** | ⏸️ **NOT RULED** / 👤 sentence decided on the founder's delegation | §6ak. 🎪 Collins: a tile naming week 9 beside a calendar marking 4, 9, 13 reads as a disagreement |
 
 Artifact 3 is now *"exactly the stamped weeks carry it"*: mark set = stamped set in both renderings, per-week scope sentence, Today per current stamped week, no `%`, no tune-up line on a stamped week, on the healthy grid AND an Achilles overlay; falsified by a `load_residual_week`-only render, a single scope for all weeks (red only on the overlay), and dropping the precedence. Mockups M1–M8 to 👤 founder before build, at 320 and 390pt; simulator before merge. ⛔ Veto: none. ⚠️ Not seen on a device. Note: `docs/decisions/design-2026-11-20-plan-note-multiweek-ramp-01.md`.
+
+## 2026-11-21 — `TRIGGERS-ON-RUN-ARRIVAL-01` · 🟢 SHIP WITH AMENDMENT. One run, one moment: a plan change rides the post-run push, it never adds one
+
+| Ruling | |
+|---|---|
+| **One push per run, ever; a trigger fired by the run's analysis sends no push of its own when the link push went** | 🟢 **SHIP** |
+| **The pending change lives on Today (`PendingAdjustmentBanner`); post-run carries one line, last, naming the cause** | 🟢 **SHIP WITH AMENDMENT** — never "just now": 23% of runs arrive the next day |
+| **At most one adjustment push per runner per week; none 21:00–07:00 local, dropped not deferred** | 🟢 **SHIP** — 10.3% of arrivals land at night; deferral needs a sender that runs again (the email trap) |
+| **An observation that changes nothing writes no "Plan's been shifted." row** | 🟢 **SHIP** — wording → founder |
+| **A full post-run card (Collins)** | 🔴 **LOST** — horizon rule and one job per screen; reopens on a device test where the line goes unseen |
+| **Confirm inside post-run (Wroblewski)** | 🔴 **LOST** — reopens if under half of pending changes are confirmed on Today within 24 h |
+
+Measured on production (read-only): 87% of posting sweeps run with the app hidden (per sweep; per-run not measured);
+2.62 runs per active runner-week; 16 of 21 recent runners can be pushed. Constant `NOTIFICATION_BUDGET`; check
+`adjustmentDelivery.test.ts` (to be falsified before trusted). Mockups owed: post-run line ×3 states, Today banner,
+lock screen/inbox. Note: `docs/decisions/boards-2026-11-21-triggers-on-run-arrival.md`. Not felt on a device.
