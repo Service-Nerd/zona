@@ -30,15 +30,14 @@ export interface VerifierFinding {
 
 export interface VerifyContext {
   /** The request the plan was built from, RAW. ⚠️ `validatePlan` first normalises it with the planner's
-   *  `coherentGoal`; the verifier may not import that. Harmless for the rules ported so far (none reads
-   *  the goal). A goal-dependent rule must not be ported until the normalised goal reaches the verifier
-   *  as data (the L1 profile is the intended carrier). */
+   *  `coherentGoal`; the verifier may not import that. A goal-dependent rule reads `profile.race.goal`
+   *  (normalised) and NEVER `input.goal`. */
   input: GeneratorInput
   /** L1's view of the runner (B3 batch 4). A rule that needs the runner's LEVEL reads it here, never from
    *  the plan's own `meta`: checking a plan against the label the plan gave itself is circular.
    *  ⚠️ BUILD IT AS OF THE PLAN'S GENERATION DATE. §10's staleness ramp makes the level depend on the instant
    *  the profile is built, so a nightly run against an old plan (step 3) must not use "now". No ported rule
-   *  reads the level yet; QUALITY-PER-WEEK waits for a normalised goal (code review, batch 4). */
+   *  reads the level: QUALITY-PER-WEEK, with the normalised goal from `profile.race.goal`. */
   profile: RunnerProfile
 }
 
@@ -347,6 +346,22 @@ const BATCH_3: Partial<Record<RuleId, Predicate>> = {
 Object.assign(PREDICATES, BATCH_3)
 
 const BATCH_4: Partial<Record<RuleId, Predicate>> = {
+  // §8 (+ §110): quality sessions per week stay under the ceiling for the runner's INTENSITY level. A
+  // beginner with a time goal has its own small ceiling. Level AND goal come from the profile: the goal as
+  // the engine normalises it (a time target with no time is a finish goal), never the plan's own meta.
+  'INV-PLAN-QUALITY-PER-WEEK': (plan, { profile }) => {
+    const level = profile.levels.intensity.value
+    const max = level === 'beginner' && profile.race.goal === 'time_target'
+      ? GENERATION_CONFIG.BEGINNER_TIME_TARGET_QUALITY_PER_WEEK_MAX
+      : GENERATION_CONFIG.QUALITY_SESSIONS_PER_WEEK_MAX[level]
+    // Unverified is never a pass: an unknown level has no ceiling to compare against.
+    if (typeof max !== 'number') throw new Error(`QUALITY-PER-WEEK: no ceiling for level ${String(level)}`)
+    return plan.weeks.filter(governed).flatMap(w => {
+      const n = running(w).filter(x => x.session.type === 'quality').length
+      return n > max ? [{ rule_id: 'INV-PLAN-QUALITY-PER-WEEK', week: w.n, day: null, detail: `${n} quality sessions over a ceiling of ${max}` }] : []
+    })
+  },
+
   // §9/§10/§113: in weeks 1 and 2 the long run stays within a multiple of the runner's longest recent run
   // (never below the long-run floor).
   'INV-PLAN-WEEK-1-2-LONG-CAP': (plan, { input }) => {

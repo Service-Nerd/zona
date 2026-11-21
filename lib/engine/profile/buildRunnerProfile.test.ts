@@ -339,3 +339,15 @@ describe('code review 2026-11-21: L1 never pre-empts the input validator', () =>
   })
 })
 
+describe('B3 — the profile carries the goal the engine plans against', () => {
+  it('🔴 a time target with no time is a finish goal; the stated goal is kept beside it', async () => {
+    const { buildRunnerProfile, factsFromInput } = await import('./buildRunnerProfile')
+    const base = { race_distance_km: 10, race_date: '2027-03-07', current_weekly_km: 25, longest_recent_run_km: 10,
+      days_available: 4, training_age: '2y+', age: 35, injury_history: [] } as never
+    const noTime = buildRunnerProfile(factsFromInput({ ...(base as object), goal: 'time_target' } as never), { asOf: '2026-11-16', timezone: null })
+    expect(noTime.race.goal).toBe('finish')
+    expect(noTime.race.goal_stated).toBe('time_target')
+    const withTime = buildRunnerProfile(factsFromInput({ ...(base as object), goal: 'time_target', target_time: '0:50:00' } as never), { asOf: '2026-11-16', timezone: null })
+    expect(withTime.race.goal).toBe('time_target')
+  })
+})

@@ -122,6 +122,7 @@ const EXTRA_MUTATIONS: { name: string; apply: (p: Plan, input: GeneratorInput) =
   } },
 ]
 const hits = new Map<string, number>()
+const GOAL_CASE = 'rebuilt as time target with no time, plus a quality session'
 /** Where the race-eve mutation put its over-cap session, so the verifier's day can be checked against it. */
 const raceEveDays = new WeakMap<Plan, string>()
 /** Rules that make more than one independent check: each detail prefix must fire on its own. */
@@ -153,6 +154,26 @@ beforeAll(() => {
       const p = clone(o.plan)
       try { m.apply(p) } catch { continue }
       cases.push({ label: `${row.id} / ${m.name}`, plan: p, input: row.input, asOf: row.asOf, planStart: row.planStart })
+    }
+    // The NORMALISED goal, on a CONSISTENT plan: rebuild from a time target with no time (the engine plans it
+    // as a finish goal), then add one quality session. Mutating the request without rebuilding made the two
+    // checkers read different runners, which tested nothing (found 2026-11-21).
+    if (row.input.goal === 'time_target' || row.input.target_time) {
+      const noTime = { ...row.input, goal: 'time_target' } as GeneratorInput
+      delete (noTime as { target_time?: string }).target_time
+      try {
+        const r = runEngine({ input: noTime, tier: row.tier, displayUnits: 'km', planStart: row.planStart, today: row.asOf })
+        if (r.kind === 'plan') {
+          const p = clone(r.plan)
+          const easy = p.weeks.filter(x => x.n > 0 && governedWeek(x)).flatMap(w => Object.values(w.sessions ?? {}))
+            .find(x => x && x.type === 'easy' && !isLongRun(x))
+          if (easy) {
+            easy.type = 'quality'
+            hits.set(GOAL_CASE, (hits.get(GOAL_CASE) ?? 0) + 1)
+            cases.push({ label: `${row.id} / ${GOAL_CASE}`, plan: p, input: noTime, asOf: row.asOf, planStart: row.planStart })
+          }
+        }
+      } catch { /* the engine refusing this variant is not a comparison */ }
     }
     for (const m of EXTRA_MUTATIONS) {
       const p = clone(o.plan)
@@ -207,6 +228,7 @@ describe('ADR027-B3-VERIFIER — agreement with validatePlan, per ported rule', 
 
   it('every extra mutation landed on a session its rule checks, in at least one plan', () => {
     for (const m of EXTRA_MUTATIONS) expect(hits.get(m.name) ?? 0, m.name).toBeGreaterThan(0)
+    expect(hits.get(GOAL_CASE) ?? 0, GOAL_CASE).toBeGreaterThan(0)
     expect(tally.base + tally.refused + tally.threw.length).toBe(tally.rows)
     expect(tally.threw.length, tally.threw.slice(0, 3).join(', ')).toBeLessThanOrEqual(Math.ceil(tally.rows / 10))
   })

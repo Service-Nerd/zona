@@ -14,6 +14,7 @@
 // a pending Coaching Board ruling (ARCH-ENG-014). The validity bounds therefore null CARRIED facts;
 // they never alter an input a derivation reads.
 
+import { coherentGoal } from '@/lib/plan/inputs'
 import type { GeneratorInput } from '@/types/plan'
 import type { RunnerFacts, SettingsFacts } from '@/lib/engine/contracts/facts'
 import type { DayCapacity, DayKey, Fact, FactSource, IsoDate, RunnerProfile, WeekCapacity } from '@/lib/engine/contracts/profile'
@@ -151,7 +152,8 @@ export function buildRunnerProfile(facts: RunnerFacts, opts: BuildProfileOptions
       distance_km: input.race_distance_km,
       date: input.race_date,
       name: input.race_name ?? null,
-      goal: input.goal,
+      goal: coherentGoal(input).goal,
+      goal_stated: input.goal,
       target_time: input.target_time ?? null,
     },
     weeks_to_race: {

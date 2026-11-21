@@ -69,7 +69,11 @@ export interface RunnerProfile {
     distance_km: number
     date: IsoDate
     name: string | null
+    /** The goal the engine plans and checks against: `coherentGoal`'s, so a time target with no time is a
+     *  finish goal. B3 (2026-11-21): this is what the verifier reads, because it may not import the normaliser. */
     goal: 'finish' | 'time_target'
+    /** The goal as the request sent it, before normalising. Kept so the difference stays visible. */
+    goal_stated: 'finish' | 'time_target'
     target_time: string | null
   }
   weeks_to_race: {
