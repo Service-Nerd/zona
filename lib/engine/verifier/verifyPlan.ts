@@ -1755,6 +1755,82 @@ const BATCH_25: Partial<Record<RuleId, Predicate>> = {
 }
 Object.assign(PREDICATES, BATCH_25)
 
+/** Can the runner's open days hold a quality session spaced from the plan's long-run day (the first one in a main
+ *  week, in the plan's key order)? Written here; the planner's placement helper is not shared. */
+function geometryHoldsQuality(plan: Plan, input: GeneratorInput): boolean {
+  const blocked = normaliseDays(input.days_cannot_train)
+  const open = DAYS.filter(d => !blocked.has(d))
+  const longDay = plan.weeks.filter(w => w.n >= 1).flatMap(w => daysOf(w)).find(x => x.session && isLongRun(x.session))?.day
+  if (longDay == null) return true
+  const min = Math.ceil(GENERATION_CONFIG.MIN_HOURS_BETWEEN_QUALITY_AND_LONG / 24)
+  const gap = (a: VerifierDay, b: VerifierDay) => { const d = Math.abs(DAYS.indexOf(a) - DAYS.indexOf(b)); return Math.min(d, 7 - d) }
+  return open.some(d => d !== longDay && gap(d, longDay) >= min)
+}
+
+/** The total session length that yields a given main set: the inverse of `mainSetMins`, from SESSION_FORMAT. */
+function totalForMainSet(main: number): number {
+  const u = SESSION_FORMAT.UNIVERSAL
+  const floored = (main + u.quality_warmup_min_mins) / (1 - u.cooldown_pct / 100)
+  return floored * u.warmup_pct / 100 > u.quality_warmup_min_mins ? main / (1 - (u.warmup_pct + u.cooldown_pct) / 100) : floored
+}
+
+/** Minutes for a closed step length ("8 min", "1:30", "90 s", "400 m", "2 km", "same as the <x>"); null when open. */
+function closedMins(raw: string, pace: number | null, siblings: { length?: string }[]): number | null {
+  const s = raw.trim()
+  const mirror = /^same as the (.+)$/i.exec(s)
+  if (mirror) {
+    const named = siblings.find(x => typeof x.length === 'string' && x.length !== s && x.length.includes(mirror[1]))
+    return closedMins(named?.length ?? mirror[1], pace, [])
+  }
+  let m = /^(\d+(?:\.\d+)?)\s*min$/i.exec(s); if (m) return parseFloat(m[1])
+  m = /^(\d+):(\d{2})$/.exec(s); if (m) return parseInt(m[1], 10) + parseInt(m[2], 10) / 60
+  m = /^(\d+)\s*s$/i.exec(s); if (m) return parseInt(m[1], 10) / 60
+  m = /^(\d+(?:\.\d+)?)\s*m$/i.exec(s); if (m) return pace == null ? null : (parseFloat(m[1]) / 1000) * pace
+  m = /^(\d+(?:\.\d+)?)\s*km$/i.exec(s); if (m) return pace == null ? null : parseFloat(m[1]) * pace
+  return null
+}
+
+const BATCH_26: Partial<Record<RuleId, Predicate>> = {
+  // §110 (§1): a non-beginner plan long enough to carry quality, with build or peak weeks, has some quality in them,
+  // when the week can hold it. ⚠️ "Beginner" is the plan's own meta (self-label read), as validatePlan reads it.
+  'INV-PLAN-QUALITY-NOT-ZERO': (plan, { input }) => {
+    const n = plan.weeks.filter(w => w.n >= 1 && (w.phase === 'build' || w.phase === 'peak')).flatMap(w => Object.values(w.sessions ?? {})).filter(s => s?.type === 'quality').length
+    const bp = plan.weeks.some(w => w.phase === 'build' || w.phase === 'peak')
+    const long = plan.weeks.filter(w => w.n >= 1).length >= GENERATION_CONFIG.QUALITY_FLOOR_MIN_PLAN_WEEKS
+    const beginner = (plan.meta.fitness_intensity_level ?? plan.meta.fitness_level) === 'beginner'
+    return !beginner && bp && long && n === 0 && geometryHoldsQuality(plan, input) ? [{ rule_id: 'INV-PLAN-QUALITY-NOT-ZERO', week: PLAN, day: null, detail: 'no quality' }] : []
+  },
+
+  // §110 Am. 2, §22: a time-goal plan that can carry quality prescribes at least one quality session. ⚠️ The goal is the
+  // plan's own stored request first, then the normalised one, as validatePlan reads it.
+  'INV-PLAN-TIME-TARGET-QUALITY-FLOOR': (plan, { input, profile }) => {
+    if ((plan.meta.generator_input?.goal ?? profile.race.goal) !== 'time_target') return []
+    const bp = plan.weeks.some(w => w.phase === 'build' || w.phase === 'peak')
+    const long = plan.weeks.filter(w => w.n >= 1).length >= GENERATION_CONFIG.QUALITY_FLOOR_MIN_PLAN_WEEKS
+    const n = plan.weeks.filter(w => w.n >= 1).flatMap(w => Object.values(w.sessions ?? {})).filter(s => s?.type === 'quality').length
+    const carry = plan.weeks.some(w => (w.weekly_km ?? 0) >= GENERATION_CONFIG.BEGINNER_QUALITY_MIN_WEEKLY_KM)
+    return bp && long && carry && n === 0 && geometryHoldsQuality(plan, input) ? [{ rule_id: 'INV-PLAN-TIME-TARGET-QUALITY-FLOOR', week: PLAN, day: null, detail: 'no quality on a time goal' }] : []
+  },
+
+  // §16, §40b: an effort-governed session's duration holds its closed work plus the universal warm-up and cool-down.
+  'INV-PLAN-EFFORT-GOVERNED-DURATION-LOWER-BOUND': plan => {
+    const tol = GENERATION_CONFIG.MAIN_SET_ORDERING_TOLERANCE_MINS
+    return plan.weeks.flatMap(w => daysOf(w).flatMap(({ day, session: s }) => {
+      if (!s?.catalogue_id || s.duration_mins == null) return []
+      const row = V1_SESSION_CATALOGUE.find(r => r.id === s.catalogue_id)
+      if (!row || !isEffortGovernedRow(row)) return []
+      const ds = s.derived_set as { blocks?: { repeat?: number; steps?: { length?: string; pace?: string | null }[] }[] } | undefined
+      if (!ds?.blocks?.length) return []
+      const pace = parsePaceMidpoint(ds.blocks.flatMap(b => b.steps ?? []).find(x => x.pace)?.pace ?? '')
+      const closed = ds.blocks.reduce((t, b) => t + (typeof b.repeat === 'number' ? b.repeat : 1)
+        * (b.steps ?? []).reduce((a, st) => a + (typeof st.length === 'string' ? (closedMins(st.length, pace, b.steps ?? []) ?? 0) : 0), 0), 0)
+      if (!(closed > 0)) return []
+      return s.duration_mins < totalForMainSet(closed) - tol ? [{ rule_id: 'INV-PLAN-EFFORT-GOVERNED-DURATION-LOWER-BOUND' as RuleId, week: w.n, day, detail: `${s.duration_mins} min under ${totalForMainSet(closed).toFixed(0)}` }] : []
+    }))
+  },
+}
+Object.assign(PREDICATES, BATCH_26)
+
 const SEVERITY = new Map(RULES.map(r => [r.id, r.kind === 'soft' ? 'warn' as const : 'error' as const]))
 /** Rules the catalogue marks as conditionally severe: only these may set a finding's severity (code review, batch 20). */
 const CONDITIONAL = new Set(RULES.filter(r => r.severity_note).map(r => r.id))

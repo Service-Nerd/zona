@@ -660,7 +660,9 @@ const EXTRA_MUTATIONS: { name: string; apply: (p: Plan, input: GeneratorInput) =
       if (!row || !s) return false
       s.catalogue_id = row.id; delete s.pace_target; s.label = 'Goal-pace hill reps'; return true
     }],
-    // A "-pace sharpener" label is a purpose word and is skipped; the same label with a wrong shape word fires.
+    // A label ending in a word no row produces stays silent; the same label with a wrong shape word fires. ⚠️ This does
+    // NOT pin the purpose-word skip: "sharpener" is not a shape word, so the known-word check silences it on its own (code
+    // review, batch 24–25). The skip is an equivalent mutant while no row produces that word.
     ...([['a purpose word', 'sharpener'], ['the wrong shape word', 'WRONG']] as const).map(([what, word]) => [`a renamed goal-pace label ending in ${what}`, (p: Plan) => {
       const words = Array.from(new Set(V1_SESSION_CATALOGUE.map(r => goalPaceShapeWord(r)).filter((x): x is string => !!x)))
       for (const w of p.weeks) for (const s of Object.values(w.sessions ?? {})) {
@@ -672,6 +674,25 @@ const EXTRA_MUTATIONS: { name: string; apply: (p: Plan, input: GeneratorInput) =
         s.label = `Goal-pace ${word === 'WRONG' ? wrong : word}`; return true
       }
       return false
+    }] as const),
+    // Batch 26: a plan with every quality session removed. Loud as it stands; silent when the open days cannot space
+    // quality from the long run, or (time goal) when no week carries enough volume for quality.
+    ...(['loud', 'no spaced day', 'too little volume'] as const).map(how => [`every quality session removed (${how})`, (p: Plan, i: GeneratorInput) => {
+      let n = 0
+      for (const w of p.weeks) for (const d of Object.keys(w.sessions ?? {}) as (keyof typeof w.sessions)[]) {
+        if (w.sessions[d]?.type === 'quality') { delete w.sessions[d]; n++ }
+      }
+      if (n === 0) return false
+      if (how === 'no spaced day') {
+        const DAYS = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'] as const
+        const ld = p.weeks.filter(w => w.n >= 1).flatMap(w => Object.entries(w.sessions ?? {})).find(([, x]) => x && isLongRun(x))?.[0]
+        if (!ld) return false
+        const min = Math.ceil(GENERATION_CONFIG.MIN_HOURS_BETWEEN_QUALITY_AND_LONG / 24)
+        const gap = (a: string) => { const x = Math.abs(DAYS.indexOf(a as never) - DAYS.indexOf(ld as never)); return Math.min(x, 7 - x) }
+        i.days_cannot_train = DAYS.filter(d => d !== ld && gap(d) >= min)
+      }
+      if (how === 'too little volume') for (const w of p.weeks) w.weekly_km = GENERATION_CONFIG.BEGINNER_QUALITY_MIN_WEEKLY_KM - 1
+      return true
     }] as const),
     ['meta age differing from the input', (p: Plan, i: GeneratorInput) => {
       if (typeof i.age !== 'number') return false
@@ -772,6 +793,8 @@ const SILENT: Record<string, { rule: string; twin: string }> = {
   'goal below easy, WITH its note': { rule: 'INV-PLAN-GOAL-BELOW-EASY-DECLARED', twin: 'goal below easy, no note' },
   'every peak key session restamped to an ultra-specific row': { rule: 'INV-PLAN-PEAK-SPECIFICITY', twin: 'every peak key session restamped to a threshold row' },
   'a renamed goal-pace label ending in a purpose word': { rule: 'INV-PLAN-LABEL-MATCHES-STRUCTURE', twin: 'a renamed goal-pace label ending in the wrong shape word' },
+  'every quality session removed (no spaced day)': { rule: 'INV-PLAN-QUALITY-NOT-ZERO', twin: 'every quality session removed (loud)' },
+  'every quality session removed (too little volume)': { rule: 'INV-PLAN-TIME-TARGET-QUALITY-FLOOR', twin: 'every quality session removed (loud)' },
   'an onset yield exactly at its bound': { rule: 'INV-PLAN-ONSET-YIELD-BOUNDED', twin: 'an onset yield one week past its bound' },
   'a continuous goal-pace step over the cap in the halfway week itself (5K time goal)': { rule: 'INV-PLAN-GOAL-PACE-SHAPE', twin: 'a continuous goal-pace step over the cap in the week after halfway (5K time goal)' },
 }
