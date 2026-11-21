@@ -50,8 +50,9 @@ const governed = (w: Week) =>
  *  long run or race and a broken plan has two, the same one is chosen (measured: two rules disagreed in
  *  Mon–Sun order on the all-easy and all-race mutations). */
 const daysOf = (w: Week) =>
+  // EVERY key, as validatePlan walks them (code review): a session stored under a non-day key is still
+  // checked by the rules that iterate entries. Day-specific logic (weekdays, ordering) treats it as none.
   Object.entries(w.sessions as Record<string, Session | undefined>)
-    .filter(([d]) => (DAYS as readonly string[]).includes(d))
     .map(([d, session]) => ({ day: d as VerifierDay, session }))
 const running = (w: Week) =>
   daysOf(w).filter((x): x is { day: VerifierDay; session: Session } =>
@@ -222,9 +223,9 @@ const BATCH_2: Partial<Record<RuleId, Predicate>> = {
     const main = plan.weeks.filter(w => w.n > 0)
     const last = main[main.length - 1]
     if (!iso || !last?.date) return []
-    const start = localDate(last.date), race = localDate(iso)
-    const end = new Date(start); end.setDate(end.getDate() + 6)
-    if (race < start || race > end) return []   // COVERS-RACE-DATE's finding, not this rule's
+    // NOT gated on the race date falling in the final week (code review): validatePlan raises COVERS-RACE-DATE
+    // for that AND still checks the weekday here, so both findings stand together.
+    const race = localDate(iso)
     const placed = daysOf(last).find(x => x.session?.type === 'race')
     if (!placed) return []
     const raceDay = DAYS[(race.getDay() + 6) % 7]

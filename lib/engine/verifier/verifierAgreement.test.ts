@@ -14,38 +14,59 @@ import { goldenSample } from '@/lib/corpus/goldenCorpus'
 import { runEngine } from '@/lib/plan/engine'
 import { validatePlan } from '@/lib/plan/invariants'
 import { MUTATIONS } from '@/lib/plan/invariantLiveness'
-import type { Plan, GeneratorInput } from '@/types/plan'
+import type { Plan, GeneratorInput, Session } from '@/types/plan'
+import { isLongRun, isStructuredSession } from '@/lib/plan/sessionRole'
 import { RULES } from '@/lib/engine/catalogue/rules'
 import { verifyPlan, PORTED_RULES } from './verifyPlan'
 
 const clone = (p: Plan): Plan => JSON.parse(JSON.stringify(p))
 const key = (rule: string, week: number, day: string | null | undefined, sev: string) => `${rule}|${week}|${day ?? '-'}|${sev}`
 
-/** Breakages the shared liveness battery does not make, added for a ported rule it cannot wake. Kept here,
- *  not in `invariantLiveness.ts`, so the liveness baseline does not move under this work. */
-const EXTRA_MUTATIONS: { name: string; apply: (p: Plan) => void }[] = [
+/** Breakages the shared liveness battery does not make, added for ported rules it cannot wake or whose
+ *  line it never reaches. Kept here, not in `invariantLiveness.ts`, so the liveness baseline does not move.
+ *  Each returns whether it changed a session the rule actually checks; `hits` counts them, and an arm
+ *  asserts every one landed somewhere, so a mutation that silently does nothing fails the file. */
+const governedWeek = (w: Plan['weeks'][number]) =>
+  w.phase !== 'maintenance_restoration' && w.phase !== 'maintenance_base' && w.phase !== 'base_build'
+const checkedEasy = (s: Session | undefined) =>
+  !!s && s.type === 'easy' && !isLongRun(s) && !isStructuredSession(s) && !s.floor_protected && !!s.duration_mins
+const EXTRA_MUTATIONS: { name: string; apply: (p: Plan, input: GeneratorInput) => boolean }[] = [
   { name: 'duration-anchored session loses its minutes', apply: p => {
-    for (const w of p.weeks) for (const s of Object.values(w.sessions ?? {})) {
-      if (s && s.type === 'easy') { s.duration_anchored = true; s.duration_mins = undefined; return }
+    for (const w of p.weeks.filter(governedWeek)) for (const s of Object.values(w.sessions ?? {})) {
+      if (s && s.type === 'easy') { s.duration_anchored = true; s.duration_mins = undefined; return true }
     }
+    return false
   } },
-  // The weekday-time boundary: one minute over the runner's own limit. Without it, a check loosened by a
+  // The weekday-time boundary: one minute over the runner's own limit. Without it a check loosened by a
   // minute stayed green, because no battery mutation lands near the line (falsified 2026-11-21).
   ...([false, true] as const).map(foundation => ({
     name: `a ${foundation ? 'foundation' : 'main'}-week weekday easy run one minute over its limit`,
-    apply: (p: Plan) => {
-    const gi = (p.meta as { generator_input?: GeneratorInput }).generator_input
-    for (const w of p.weeks.filter(x => foundation ? x.n <= 0 : x.n > 0)) for (const d of ['mon', 'tue', 'wed', 'thu', 'fri'] as const) {
-      const cap = gi?.day_budgets?.[d] ?? gi?.max_weekday_mins
-      const s = w.sessions?.[d]
-      if (cap == null || !s || s.type !== 'easy' || s.floor_protected || !s.duration_mins) continue
-      s.duration_mins = cap + 1
-      return
-    }
-  } })),
+    apply: (p: Plan, input: GeneratorInput) => {
+      for (const w of p.weeks.filter(x => governedWeek(x) && (foundation ? x.n <= 0 : x.n > 0))) {
+        for (const d of ['mon', 'tue', 'wed', 'thu', 'fri'] as const) {
+          const cap = input.day_budgets?.[d] ?? input.max_weekday_mins
+          const s = w.sessions?.[d]
+          if (cap == null || !checkedEasy(s)) continue
+          s!.duration_mins = cap + 1
+          return true
+        }
+      }
+      return false
+    },
+  })),
+  // The race date leaves the final week: COVERS-RACE-DATE fires and RACE-ON-RACE-DAY must still be checked.
+  // Eight days, not seven: seven keeps the weekday, so no wrong-day finding exists to disagree about.
+  { name: 'race date eight days after the plan ends', apply: p => {
+    if (!p.meta.race_date) return false
+    const [y, m, d] = p.meta.race_date.split('-').map(Number)
+    const next = new Date(y, m - 1, d + 8)
+    p.meta.race_date = `${next.getFullYear()}-${String(next.getMonth() + 1).padStart(2, '0')}-${String(next.getDate()).padStart(2, '0')}`
+    return true
+  } },
 ]
+const hits = new Map<string, number>()
 
-const tally = { rows: 0, threw: [] as string[], refused: 0, base: 0, foundation: 0 }
+const tally = { rows: 0, threw: [] as string[], refused: 0, base: 0, foundation: 0, foundationCapped: 0 }
 let runs: { label: string; old: { rule: string; k: string }[]; new: { rule: string; k: string }[] }[] = []
 
 beforeAll(() => {
@@ -59,11 +80,20 @@ beforeAll(() => {
     } catch { tally.threw.push(row.id); continue }
     if (o.kind !== 'plan') { tally.refused++; continue }
     tally.base++
-    if (o.plan.weeks.some(w => w.n <= 0)) tally.foundation++
+    if (o.plan.weeks.some(w => w.n <= 0)) {
+      tally.foundation++
+      if (row.input.day_budgets || row.input.max_weekday_mins != null) tally.foundationCapped++
+    }
     cases.push({ label: row.id, plan: o.plan, input: row.input })
-    for (const m of [...MUTATIONS, ...EXTRA_MUTATIONS]) {
+    for (const m of MUTATIONS) {
       const p = clone(o.plan)
       try { m.apply(p) } catch { continue }
+      cases.push({ label: `${row.id} / ${m.name}`, plan: p, input: row.input })
+    }
+    for (const m of EXTRA_MUTATIONS) {
+      const p = clone(o.plan)
+      if (!m.apply(p, row.input)) continue
+      hits.set(m.name, (hits.get(m.name) ?? 0) + 1)
       cases.push({ label: `${row.id} / ${m.name}`, plan: p, input: row.input })
     }
   }
@@ -98,6 +128,12 @@ describe('ADR027-B3-VERIFIER — agreement with validatePlan, per ported rule', 
     // on BASE plans, because ~100 mutations of a single plan would satisfy a floor on total cases.
     expect(tally.base, `rows ${tally.rows}, refused ${tally.refused}, threw ${tally.threw.length}`).toBeGreaterThanOrEqual(30)
     expect(tally.foundation, 'valid plans with foundation weeks, which the foundation rules need').toBeGreaterThanOrEqual(3)
+    // FOUNDATION-WEEKDAY-WITHIN-BUDGET runs only when the input carries a weekday limit (code review).
+    expect(tally.foundationCapped, 'foundation plans whose input has a weekday limit').toBeGreaterThanOrEqual(2)
+  })
+
+  it('every extra mutation landed on a session its rule checks, in at least one plan', () => {
+    for (const m of EXTRA_MUTATIONS) expect(hits.get(m.name) ?? 0, m.name).toBeGreaterThan(0)
     expect(tally.base + tally.refused + tally.threw.length).toBe(tally.rows)
     expect(tally.threw.length, tally.threw.slice(0, 3).join(', ')).toBeLessThanOrEqual(Math.ceil(tally.rows / 10))
   })
