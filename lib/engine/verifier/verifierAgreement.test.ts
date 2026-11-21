@@ -783,6 +783,22 @@ const EXTRA_MUTATIONS: { name: string; apply: (p: Plan, input: GeneratorInput) =
       first.distance_km = Math.round(w.weekly_km * 0.9 * 10) / 10; delete first.duration_mins
       return true
     }] as const),
+    // Batch 31: a race-week shakeout over its RPE; a fast-float VO2 session with no float, a target float, a jogged float.
+    ['a race-week shakeout over its RPE', (p: Plan) => {
+      const last = Math.max(0, ...p.weeks.map(w => w.n))
+      const s = Object.values(p.weeks.find(w => w.n === last)?.sessions ?? {}).find(x => x && x.role === 'shakeout')
+      if (!s) return false
+      s.rpe_target = 6; return true
+    }],
+    ...(['no float', 'a target float', 'a jogged float'] as const).map(kind => [`a rolling VO2 session with ${kind}`, (p: Plan) => {
+      const s = p.weeks.filter(w => w.n >= 1).flatMap(w => Object.values(w.sessions ?? {})).find(x => x && x.type === 'quality')
+      if (!s) return false
+      const work = { role: 'work', length: '1 min', pace: '4:00', pace_mode: 'target' }
+      const float = { role: 'recovery', length: '1 min', pace: '5:00', pace_mode: kind === 'a target float' ? 'target' : 'ceiling', modality: kind === 'a jogged float' ? 'jog' : 'run' }
+      s.catalogue_id = 'intervals_rolling'
+      s.derived_set = { blocks: [{ label: 'main', repeat: 6, steps: kind === 'no float' ? [work] : [work, float] }] } as unknown as Session['derived_set']
+      return true
+    }] as const),
     ['meta age differing from the input', (p: Plan, i: GeneratorInput) => {
       if (typeof i.age !== 'number') return false
       ;(p.meta as unknown as Record<string, unknown>).age = i.age + 1; return true
@@ -836,6 +852,10 @@ const EXTRA_MUTATIONS: { name: string; apply: (p: Plan, input: GeneratorInput) =
 /** Breakages whose landing must be on a NAMED rule: they also wake neighbouring cap rules, so "the old report
  *  changed" would pass without the target being reached (code review, batch 14). */
 const TARGETS: Record<string, string[]> = {
+  'a race-week shakeout over its RPE': ['INV-PLAN-RACE-WEEK-SHAKEOUT-CAP'],
+  'a rolling VO2 session with no float': ['INV-PLAN-VO2MAX-FLOAT-IS-A-CEILING'],
+  'a rolling VO2 session with a target float': ['INV-PLAN-VO2MAX-FLOAT-IS-A-CEILING'],
+  'a rolling VO2 session with a jogged float': ['INV-PLAN-VO2MAX-FLOAT-IS-A-CEILING'],
   'a goal-pace session with an aerobic cue': ['INV-PLAN-COACH-NOTES-MATCH-INTENT'],
   'a quality session labelled as aerobic work on a hard zone': ['INV-PLAN-LABEL-MATCHES-PACE'],
   'an over-under 4% faster than T pace': ['INV-PLAN-OVER-UNDER-MEAN-NEAR-THRESHOLD'],
@@ -909,6 +929,8 @@ const downgradePairs: { label: string; week: number; unflagged: string[]; flagge
 const raceEveDays = new WeakMap<Plan, string>()
 /** Rules that make more than one independent check: each detail prefix must fire on its own. */
 const ARMS: Record<string, string[]> = {
+  'INV-PLAN-RACE-WEEK-SHAKEOUT-CAP': ['shakeout over its minutes', 'shakeout over its RPE'],
+  'INV-PLAN-VO2MAX-FLOAT-IS-A-CEILING': ['no float step', 'float not a ceiling', 'float not run'],
   // Batches 22-30's multi-arm rules (code review): each arm must fire on its own, so one going quiet is caught.
   'INV-PLAN-COACH-NOTES-MATCH-INTENT': ['time trial lost its instruction', 'aerobic cue', 'goal-paced step called threshold'],
   'INV-PLAN-FOUNDATION-BLOCK': ['forbidden ', 'strides without the readiness gate', 'strides with injury history', 'over the stated-volume ceiling', 'long run over its share', 'ramps over the week-to-week ceiling'],

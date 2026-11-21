@@ -2168,6 +2168,41 @@ const BATCH_30: Partial<Record<RuleId, Predicate>> = {
 }
 Object.assign(PREDICATES, BATCH_30)
 
+/** 🔻 Literals in validatePlan, not config, copied so the two checkers agree and raised for the board: the race-week
+ *  shakeout's RPE cap, and the fast-float VO2max rows (with the one whose float must be run). */
+export const RACE_WEEK_SHAKEOUT_MAX_RPE_LITERAL = 3
+const CONTINUOUS_VO2_ROWS = new Set(['intervals_rolling', 'intervals_30_30'])
+const RUN_FLOAT_ROWS = new Set(['intervals_rolling'])
+
+const BATCH_31: Partial<Record<RuleId, Predicate>> = {
+  // §30: the race-week shakeout stays under RACE_WEEK_SHAKEOUT_MAX_MINS and an easy RPE. Race week is the plan's
+  // highest-numbered week.
+  'INV-PLAN-RACE-WEEK-SHAKEOUT-CAP': plan => {
+    const last = Math.max(0, ...plan.weeks.map(w => w.n))
+    const rw = plan.weeks.find(w => w.n === last)
+    if (!rw) return []
+    return daysOf(rw).flatMap(({ day, session: s }) => {
+      if (!s || !isShakeout(s)) return []
+      const out: Raw[] = []
+      if (s.duration_mins != null && s.duration_mins > GENERATION_CONFIG.RACE_WEEK_SHAKEOUT_MAX_MINS) out.push({ rule_id: 'INV-PLAN-RACE-WEEK-SHAKEOUT-CAP', week: rw.n, day, detail: 'shakeout over its minutes' })
+      if (s.rpe_target != null && s.rpe_target > RACE_WEEK_SHAKEOUT_MAX_RPE_LITERAL) out.push({ rule_id: 'INV-PLAN-RACE-WEEK-SHAKEOUT-CAP', week: rw.n, day, detail: 'shakeout over its RPE' })
+      return out
+    })
+  },
+
+  // §88: a fast-float VO2max session has a float step, prescribed as a ceiling, and run where the row says run.
+  'INV-PLAN-VO2MAX-FLOAT-IS-A-CEILING': plan => plan.weeks.flatMap(w => daysOf(w).flatMap(({ day, session: s }) => {
+    if (!s?.derived_set || !CONTINUOUS_VO2_ROWS.has(s.catalogue_id ?? '')) return []
+    const float = s.derived_set.blocks.flatMap(b => b.steps ?? []).find(st => st.role === 'recovery')
+    if (!float) return [{ rule_id: 'INV-PLAN-VO2MAX-FLOAT-IS-A-CEILING' as RuleId, week: w.n, day, detail: 'no float step' }]
+    const out: Raw[] = []
+    if (float.pace_mode !== 'ceiling') out.push({ rule_id: 'INV-PLAN-VO2MAX-FLOAT-IS-A-CEILING', week: w.n, day, detail: 'float not a ceiling' })
+    if (RUN_FLOAT_ROWS.has(s.catalogue_id ?? '') && float.modality !== 'run') out.push({ rule_id: 'INV-PLAN-VO2MAX-FLOAT-IS-A-CEILING', week: w.n, day, detail: 'float not run' })
+    return out
+  })),
+}
+Object.assign(PREDICATES, BATCH_31)
+
 const SEVERITY = new Map(RULES.map(r => [r.id, r.kind === 'soft' ? 'warn' as const : 'error' as const]))
 /** Rules the catalogue marks as conditionally severe: only these may set a finding's severity (code review, batch 20). */
 const CONDITIONAL = new Set(RULES.filter(r => r.severity_note).map(r => r.id))
