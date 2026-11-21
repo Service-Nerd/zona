@@ -104,3 +104,94 @@ Each principle ships with its mechanical check (listed in the HLD, section 9c) d
 | 2 | Base-build ramp ignores knee/shin injury rules | ✅ `ONRAMP-INJURY-CLIMB-01`, §116 Am. 16 (Coaching Board 2026-11-21). The brief cited §2's capped bounceback, which §2 Am. 3 withdrew; the ramp now uses the race engine's rule (return to pre-deload, no higher) through one shared owner. `verify:parity` IDENTICAL on the race engine |
 | 3 | Per-side plyo dose | ✅ `STRENGTH-PLYO-PER-SIDE-01`, S8 defect fix, commit `7a6ccd06` |
 | 4 | A plan write bypasses `savePlanForUser` | ❌ **Dropped on analysis.** The direct write is the enrich backstop. `shouldServerPersist` limits it to the same generation, and the plan is re-validated by `repairEnrichedCopy` first. Routing it through `savePlanForUser` would archive a duplicate unenriched copy. B7's single engine adapter consolidates saves anyway |
+
+## v1.2 data and entry-point review (2026-11-21)
+
+**Why:** before B2 continued, the founder asked whether the data schema had been reviewed, and whether the design
+accounted for how plans are **created**, what **reshapes** them, and what data each uses. It had not. Three read-only
+maps were made:
+- `docs/architecture/data-dictionary-runner-facts-2026-11-21.md`: every runner-fact table, measured live.
+- The creation path, end to end.
+- Every reshape path.
+
+v1.1 designed **one** entry (plan generation). Production has **eight** ways to create a plan and **fifteen** ways
+to change one.
+
+### What the maps found (each verified at the cited line or against production)
+1. **The engine reads no stored runner data at creation.**
+   - The run log, health samples, completions and analyses never reach a new plan.
+   - The server trusts the posted body, which has no schema check (`guardAiRequest.ts:47-59`).
+   - Age, max HR and the recommended level are worked out **on the device**.
+   - Paid-only fields are stripped **on the client**.
+   - Declared weekly km was more than 25% above the logged volume for **8 of 11** runners whose log covers the
+     28 days before their plan.
+2. **Reshapes do not go through the engine.**
+   - Of fifteen paths, three run `runEngine`: modify, the base-build checkpoint and the foundation decision.
+   - The rest edit plan JSON directly: adjustments, confirm/revert, readiness, benchmark and HR recalibration,
+     taper recalibration, post-race reshape, and the maintenance handoff.
+   - **Only `/api/adjust-plan` can refuse an invalid result in production.** Every other save is log-only, and is
+     skipped entirely when `meta.generator_input` is absent.
+3. **Four derivations of "current volume", three of VDOT, two of HR zones, two of readiness.** Each reshape derives
+   its own.
+4. **🔴 Two week coordinates, and a live defect.**
+   - `adjust-plan` computes `weekN` as array position + 1 (`route.ts:146`). It reads that position
+     (`adjustmentEngine.ts:319`) but writes the week whose `n` equals it (`adjustmentEngine.ts:501`).
+   - On a plan with foundation weeks (`n ≤ 0`) those are different weeks.
+   - **Measured:** 7 of 43 live plans are shifted (6 not internal). All **4** adjustments recorded on them
+     (2026-11-11 to 11-18, `zone_drift`, auto-applied) were written **3 weeks later** than the week the runner was in.
+   - They were notes, but a volume trim or session swap takes the same path.
+   - Taper recalibration and the missed-session prompt mix the same two coordinates.
+5. **Several writers, whole-row last-write-wins.**
+   - Plans are saved from the **browser** (`savePlanForUser` in `DashboardClient`).
+   - There is also a server backstop `.update` and server-side route saves.
+   - Fire-and-forget auto-applies can be overwritten by a later client save from stale state.
+   - `session_overrides` is a second, unvalidated plan layer.
+6. **The automatic triggers almost never run.** Load ratio, drift, efficiency decline, shortfall and fitness are
+   evaluated only when a runner logs a fatigue tag or RPE ≥ 8, or taps "Check now". Nothing evaluates them when a run
+   arrives.
+7. **"Today" is the server clock in its own timezone.** `user_settings.timezone` is never read, and is `UTC` for 22
+   of 56 runners.
+
+### Decisions (binding, amend v1.1)
+| ID | Decision |
+|---|---|
+| **ARCH-ENG-012** | **Two entries, one engine.** `create(request)` covers every way a plan is born: wizard, modify, staged, base-build, checkpoint, foundation decision, maintenance handoff and ops regeneration. `adapt(plan, event)` covers every way one changes. An adapt **event** is typed (`run_logged`, `session_skipped`, `session_moved`, `fatigue_reported`, `readiness_low`, `benchmark_recorded`, `hr_changed`, `race_result`, `taper_due`, `race_changed`, `foundation_decided`) and returns a **diff + ADR-012 magnitude + decisions**. A caller never edits plan JSON. |
+| **ARCH-ENG-013** | **Facts are assembled on the server, from the systems of record.** One owner, `assembleRunnerFacts(userId, as_of)`, at the route boundary. It reads `user_settings`, the run log, health samples, completions, analyses and the stored input, and hands L1 a pure snapshot. The engine stays I/O-free. A value computed on the client (age, recommended level, device HR) is a **stated** input that L1 re-derives. It is never trusted as derived. |
+| **ARCH-ENG-014** | **Every fact carries source + precedence** (`observed` > `confirmed` > `stated` > `derived`). Invalid becomes `null` through one validity bound per field. **Carrying** an observed fact is architecture. **Prescribing from it** (e.g. starting volume from the log) is a Coaching Board ruling. |
+| **ARCH-ENG-015** | **One week coordinate: `week.n`.** An array position is never used as a key to any table, event or write. Owner: the read model's `currentWeek(plan, as_of)`. A gate forbids `getCurrentWeekIndex(...) + 1` as a key. |
+| **ARCH-ENG-016** | **One writer, on the server.** Every plan write goes through one engine adapter: verify (L5), archive, persist, with an optimistic-concurrency check on the plan version. The browser never writes `plan_json`. `session_overrides` becomes an `adapt` event and stops being a parallel layer. **Supersedes hotfix 4's "dropped"**: the backstop write is retired by this, not by a patch. |
+| **ARCH-ENG-017** | **Every write is verified and can be refused in production**, on the `adjust-plan` model (refuse a *new* error-severity finding). Log-only saves end. |
+| **ARCH-ENG-018** | **Triggers are a catalogue**: event → condition → threshold (a config key, never inline) → the adapt event it raises. Triggers are evaluated **when data arrives** (ingest, analysis), not only when the runner taps something. ⚠️ Running them on data arrival changes how often runners are prompted, so the Coaching Board rules on the thresholds and the Design Board/SLT on the frequency. |
+| **ARCH-ENG-019** | **`as_of` is resolved in the runner's timezone, on the server.** An unset or `UTC`-default timezone is flagged `unknown`, never trusted. |
+| **ARCH-ENG-020** | **The request is schema-checked at the boundary** (the strict v2 input schema from B1), and **tier gates are applied on the server**. The client hides fields; it does not enforce. |
+
+### Hotfix 5, proposed (founder to approve; the freeze allows harm-to-runner hotfixes only)
+`ADJUST-WEEK-COORD-01`:
+- `adjust-plan`, confirm/revert, taper recalibration and the missed-session prompt key on `week.n`.
+- Live harm: adjustments land on the wrong week for every plan with foundation weeks.
+- ⚙️ No board (defect restoring documented intent: the engine's own type says "`week.n`, not an array index").
+- The 4 misplaced rows are notes. Their repair is a measured hand-over, not a silent rewrite.
+
+### What changes in the build order
+| Phase | v1.1 | v1.2 |
+|---|---|---|
+| B2 | L1 profile from `GeneratorInput`, adopted at `runEngine` | **`assembleRunnerFacts` + L1 profile (sources, validity, timezone, one age owner, observed block)**. Adopted at `runEngine` for creation with **parity identical**. The prescription stays on stated facts until the board rules |
+| B3 | catalogue + verifier | unchanged, plus the **trigger catalogue** (ARCH-ENG-018) as L2 data, with thresholds moved out of inline literals |
+| B4 | planner, one plan kind at a time | unchanged; `create` only |
+| **B4b (new)** | — | **`adapt`**: each reshape path moves onto an event, one at a time, highest harm first: adjustments → confirm/revert → taper → recalibration → post-race → readiness → overrides → maintenance |
+| B7 | single engine adapter consolidates saves | **brought forward to B4b's first step**: one server writer with a concurrency check, because every adapt path needs it |
+| Others | — | unchanged |
+
+### Earlier decisions this revises
+- **Hotfix 4 (dropped)** → superseded by ARCH-ENG-016.
+- **v1.1 "`/adapt` returns a diff plus its magnitude"** → now a typed event set with one owner (ARCH-ENG-012).
+- **`RunnerProfile` v1 (B1)** → revised in B2: sources, the observed block and validity, per the data dictionary § 3.
+- **"`runEngine` remains the entry"** → it remains the `create` entry. `adapt` is the second entry, not a sideline.
+- **The 2026-11-20 build plan's W8 (retro-fix live plans)** → unchanged in intent. It runs through `adapt` / `create`
+  and the one writer, never a script `.update`. The operator scripts' direct writes are listed for retirement.
+
+### Not proven by this review
+- No reshape was run against a live plan; these are read paths.
+- The double-apply of a move plus a confirmed reorder, and the stale-state overwrite, are read from the code and not
+  reproduced.
+- The volume comparison treats the log as a floor. It is not a measure of what runners actually ran.

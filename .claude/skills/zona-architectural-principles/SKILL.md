@@ -637,5 +637,14 @@ Every ⚠️ or ❌ cell must have a corresponding UI state with a one-line expl
 | ARCH-ENG-009 | A runner-facing note is generated only from Decision records |
 | ARCH-ENG-010 | Consumers read plans through the plan read model, never through raw `meta` keys |
 | ARCH-ENG-011 | Every finding is an event with a rule id. An unruled rule id blocks `backlog:verify` |
+| ARCH-ENG-012 | Two entries, one engine: `create` for every way a plan is born, `adapt(plan, event)` for every way one changes. A caller never edits plan JSON (ADR-027 v1.2) |
+| ARCH-ENG-013 | Runner facts are assembled on the server from the systems of record by one owner; client-computed values are stated inputs, re-derived |
+| ARCH-ENG-014 | Every fact carries source + precedence; invalid becomes null. Prescribing from an observed fact is a Coaching Board ruling |
+| ARCH-ENG-015 | One week coordinate, `week.n`; an array position is never a key |
+| ARCH-ENG-016 | One plan writer, on the server, with a concurrency check; the browser never writes `plan_json` |
+| ARCH-ENG-017 | Every plan write is verified and can be refused in production |
+| ARCH-ENG-018 | Reshape triggers are a catalogue with config thresholds, evaluated when data arrives |
+| ARCH-ENG-019 | `as_of` is resolved in the runner's timezone; an unset or default timezone is flagged unknown |
+| ARCH-ENG-020 | The request is schema-checked and tier-gated on the server |
 
 ✅ **Corrected 2026-11-21 (ADR-027 B1, `ADR027-B1-DOC-DRIFT`)**, each against the code: plan storage is the Supabase `plans` table, with the Gist a legacy migrate-on-read source (Stack line, triage row, D-03, quality table, INV-PLAN-001/002/003, INV-DB-003, data-source row, doc tree); the theme-toggle journey test is replaced by a single-light-theme check and `applyTheme()` is recorded as gone (0 references under `app/ lib/ components/`); `--s-inter` is `#D4705A` and `--mute` is `#6D6963` (both read from `app/globals.css`); N-004 and INV-UI-002 carry the destructive-confirmation exception owned by `ux-principles.md`. ⚠️ **Not corrected, because they are rules rather than facts:** N-003 *"never use red anywhere"* (CLAUDE.md allows `--danger` for form and error states) and M-005 (`cache: 'no-store'` on a Supabase read; `readPlanJson` uses supabase-js, which takes no such option). Both disagree with the code or with CLAUDE.md and are left for an owner to rule on.

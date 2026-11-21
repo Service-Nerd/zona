@@ -1714,6 +1714,49 @@ refused from this machine in any case. Filed as `BLOCKED-DAY-OVERRIDE-REPAIR-01`
 
 ---
 
+### 🔲 `ADJUST-WEEK-COORD-01` — adjustments are written to the wrong week on every plan with foundation weeks *(filed 2026-11-21; proposed ADR-027 hotfix 5)* ⚙️ **NO BOARD** (defect restoring documented intent)
+
+**Mechanism:**
+- `app/api/adjust-plan/route.ts:146` sets `weekN = getCurrentWeekIndex(plan.weeks) + 1`, an array position.
+- `AdjustmentRequest.weekN` is documented as *"`week.n`, not an array index"* (`lib/coaching/adjustmentEngine.ts:187`).
+- The signals read `plan.weeks[weekN - 1]` (`:319`), which is the right week.
+- `applyAdjustmentToPlan` writes `weeks.find(w => w.n === weekN)` (`:501`), which on a foundation plan (`n ≤ 0`) is a
+  later week.
+- The same position also keys the `run_analysis`, weekly-load and `plan_adjustments.week_n` reads, and those tables
+  are keyed by `week.n`.
+- Same class, by the reshape map: `recalibrate-taper` (`route.ts:52-53`, `taperRecalibration.ts:168,203`), the
+  missed-session prompt (`DashboardClient.tsx:1799-1801`), and confirm/revert, which marks a row confirmed even when
+  no week matches (`confirm-adjustment/route.ts:68-89`).
+
+**Measured, production, 2026-11-21:**
+- 7 of 43 live plans have `week.n ≠ position` (6 not internal).
+- All 4 `plan_adjustments` rows on those plans are `zone_drift`, `auto_applied`, dated 2026-11-11 to 11-18, and were
+  written **3 weeks later** than the runner's live week.
+- They were notes. A trim or swap takes the same path.
+
+**Fix:**
+- Key every one of these on `week.n` through one owner (ARCH-ENG-015).
+- Add a gate that forbids a position-derived week key.
+- The 4 rows: hand over a measured repair, never a silent rewrite.
+
+**Verify still open:** `grep -n "getCurrentWeekIndex(plan.weeks) + 1" app/api/adjust-plan/route.ts` matches.
+
+### 🔲 `SEC-STRAVA-SECRET-AT-REST-01` — the Strava app's client secret is stored in plain text in a user row *(filed 2026-11-21)* ⚙️ **NO BOARD** (security)
+
+**Found by** the runner-facts schema review (`docs/architecture/data-dictionary-runner-facts-2026-11-21.md` § 2.8).
+`user_settings.strava_client_secret` is filled on **1 of 56** rows. **Nothing in `app/ lib/ components/ scripts/`
+reads it**; the only reference is the column register `lib/contracts/tableColumns.ts`. A user row is readable by its
+owner through RLS, so this is an app secret exposed to one account and sitting in every backup.
+
+**Fix:**
+1. **Founder:** rotate the secret in the Strava developer settings, because the stored value must be treated as
+   exposed.
+2. Confirm the live secret lives only in Vercel env.
+3. Hand over the SQL: `update public.user_settings set strava_client_secret = null;`, then a migration dropping the
+   column (with `tableColumns.ts` updated in the same commit).
+
+**Verify still open:** `select count(*) from user_settings where strava_client_secret is not null` returns 1.
+
 ### 🔲 `TEST-CLOCK-CONSTRUCTED-DATE-01` — three engine tests anchor their race date to a stale literal ⚙️ **NO BOARD**
 
 📐 **Found 2026-11-16 while fixing a red `main`, and MEASURED rather than inferred.** `refusalCoherence.test.ts`
