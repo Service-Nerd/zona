@@ -133,6 +133,17 @@ const EXTRA_MUTATIONS: { name: string; apply: (p: Plan, input: GeneratorInput) =
     ['no HR method', (p: Plan) => { delete p.meta.hr_zone_method; return true }],
     // Batch 8: the plan's declarations about its own limits.
     ['no compression class', (p: Plan) => { delete p.meta.compression_classification; return true }],
+    // Batch 14: copy and overrun declarations.
+    ['a note naming the wrong taper length', (p: Plan) => {
+      const n = p.weeks.filter(w => w.phase === 'taper').length
+      const s = p.weeks.flatMap(w => Object.values(w.sessions ?? {})).find(x => x && x.type === 'easy')
+      if (!n || !s) return false
+      s.coach_notes = [`A ${n + 1}-week taper starts soon.`]; return true
+    }],
+    ['goal below easy, no note', (p: Plan) => {
+      const m = p.meta as { goal_below_easy_ceiling?: boolean; goal_below_easy_ceiling_note?: string }
+      m.goal_below_easy_ceiling = true; delete m.goal_below_easy_ceiling_note; return true
+    }],
     // Batch 13: re-entry window.
     ['a re-entry window over every quality week', (p: Plan) => {
       if (!p.weeks.some(w => w.n >= 1 && Object.values(w.sessions ?? {}).some(s => s && s.type === 'quality' && V1_SESSION_CATALOGUE.find(r => r.id === s.catalogue_id)?.category === 'vo2max'))) return false
@@ -376,6 +387,31 @@ const EXTRA_MUTATIONS: { name: string; apply: (p: Plan, input: GeneratorInput) =
       if (!w || !d) return false
       w.sessions[d] = { type: 'rest', label: 'Rest' } as never; return true
     }],
+    // Batch 14: weekday overruns against the runner's own budgets.
+    ['a structured weekday session just over its overrun limit, undeclared', (p: Plan, i: GeneratorInput) => {
+      for (const w of p.weeks.filter(x => x.type !== 'race')) for (const d of ['mon', 'tue', 'wed', 'thu', 'fri'] as const) {
+        const s = w.sessions?.[d]; const c = i.day_budgets?.[d] ?? i.max_weekday_mins
+        if (!s || c == null || isLongRun(s) || !isStructuredSession(s)) continue
+        s.duration_mins = Math.floor(c * (1 + GENERATION_CONFIG.LONG_RUN_WEEKDAY_OVERRUN_MAINTENANCE_PCT / 100)) + 1; delete s.weekday_overrun_note; return true
+      }
+      return false
+    }],
+    ['an easy weekday run one minute over budget, no note', (p: Plan, i: GeneratorInput) => {
+      for (const w of p.weeks.filter(x => x.type !== 'race' && x.badge !== 'race')) for (const d of ['mon', 'tue', 'wed', 'thu', 'fri'] as const) {
+        const s = w.sessions?.[d]; const c = i.day_budgets?.[d] ?? i.max_weekday_mins
+        if (!s || c == null || s.type !== 'easy' || isLongRun(s)) continue
+        s.duration_mins = c + 1; delete s.weekday_overrun_note; return true
+      }
+      return false
+    }],
+    ['an overrun note on a run within budget', (p: Plan, i: GeneratorInput) => {
+      for (const w of p.weeks.filter(x => x.type !== 'race' && x.badge !== 'race')) for (const d of ['mon', 'tue', 'wed', 'thu', 'fri'] as const) {
+        const s = w.sessions?.[d]; const c = i.day_budgets?.[d] ?? i.max_weekday_mins
+        if (!s || c == null || s.type !== 'easy' || !s.duration_mins || s.duration_mins > c) continue
+        s.weekday_overrun_note = 'over today'; return true
+      }
+      return false
+    }],
     // Batch 13: the delivered-cap injury rules, on a runner given a delivered-cap injury.
     ['a knee injury with a bounce-back above the pre-deload week', (p: Plan, i: GeneratorInput) => {
       const dl = (w: Plan['weeks'][number]) => w.type === 'deload' || w.badge === 'deload'
@@ -471,6 +507,7 @@ const ARMS: Record<string, string[]> = {
   'INV-PLAN-SHORT-OPENING-BLOCK-DECLARED': ['stamped short block with no note', 'note with no stamp'],
   'INV-PLAN-NO-PLACEHOLDER-COPY': ['token in', 'placeholder in'],
   'INV-PLAN-REENTRY-NOTE-MATCHES-CAUSE': ['note with no cause', 'coming-back wording'],
+  'INV-PLAN-WEEKDAY-OVERRUN-DECLARED': ['over budget, no note', 'note on a run within budget'],
 }
 
 const tally = { rows: 0, threw: [] as string[], refused: 0, base: 0, foundation: 0, foundationCapped: 0 }

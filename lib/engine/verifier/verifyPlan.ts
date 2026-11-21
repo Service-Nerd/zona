@@ -1024,6 +1024,61 @@ const BATCH_13: Partial<Record<RuleId, Predicate>> = {
 }
 Object.assign(PREDICATES, BATCH_13)
 
+const TAPER_WORDS: Record<string, number> = { one: 1, two: 2, three: 3, four: 4, five: 5 }
+
+const BATCH_14: Partial<Record<RuleId, Predicate>> = {
+  // A coach note that names the taper's length names the real one.
+  'INV-PLAN-TAPER-COPY-MATCHES-DURATION': plan => {
+    const actual = plan.weeks.filter(w => w.phase === 'taper').length
+    if (!actual) return []
+    return plan.weeks.flatMap(w => daysOf(w).flatMap(({ day, session: s }) => {
+      const m = /\b(one|two|three|four|five|\d+)[\s-]week taper\b/i.exec((s?.coach_notes ?? []).filter(Boolean).join(' '))
+      if (!m) return []
+      const stated = TAPER_WORDS[m[1].toLowerCase()] ?? Number(m[1])
+      return Number.isFinite(stated) && stated !== actual
+        ? [{ rule_id: 'INV-PLAN-TAPER-COPY-MATCHES-DURATION' as RuleId, week: w.n, day, detail: `note says ${stated}-week taper, plan has ${actual}` }] : []
+    }))
+  },
+
+  // A goal below the easy ceiling is declared with its note.
+  'INV-PLAN-GOAL-BELOW-EASY-DECLARED': plan => {
+    const m = plan.meta as { goal_below_easy_ceiling?: boolean; goal_below_easy_ceiling_note?: string }
+    return m.goal_below_easy_ceiling === true && !m.goal_below_easy_ceiling_note
+      ? [{ rule_id: 'INV-PLAN-GOAL-BELOW-EASY-DECLARED', week: PLAN, day: null, detail: 'goal below easy, no note' }] : []
+  },
+
+  // §81: the worst undeclared structured weekday session over the cap (plus the maintenance allowance) is named,
+  // once per plan.
+  'INV-PLAN-STRUCTURED-OVERRUN-DECLARED': (plan, { input }) => {
+    if (!input.max_weekday_mins && !input.day_budgets) return []
+    const cap = (d: string) => input.day_budgets?.[d as 'mon'] ?? input.max_weekday_mins
+    const limit = (d: string) => { const c = cap(d); return c != null ? c * (1 + GENERATION_CONFIG.LONG_RUN_WEEKDAY_OVERRUN_MAINTENANCE_PCT / 100) : Infinity }
+    let worst = 0, week = 0
+    for (const w of plan.weeks) {
+      if (w.type === 'race') continue
+      for (const { day, session: s } of daysOf(w)) {
+        if (!s || day === 'sat' || day === 'sun' || isLongRun(s) || !isStructuredSession(s)) continue
+        const mins = s.duration_mins ?? 0
+        if (mins > limit(day) && !s.weekday_overrun_note && mins > worst) { worst = mins; week = w.n }
+      }
+    }
+    return worst > 0 ? [{ rule_id: 'INV-PLAN-STRUCTURED-OVERRUN-DECLARED', week, day: null, detail: `${worst} min structured session over its weekday` }] : []
+  },
+
+  // §81: an unstructured weekday run over its budget carries the overrun note, and one within it does not.
+  'INV-PLAN-WEEKDAY-OVERRUN-DECLARED': (plan, { input }) => plan.weeks.filter(w => w.type !== 'race' && w.badge !== 'race').flatMap(w =>
+    (['mon', 'tue', 'wed', 'thu', 'fri'] as const).flatMap(d => {
+      const s = (w.sessions as Record<string, Session | undefined>)[d]
+      const c = input.day_budgets?.[d] ?? input.max_weekday_mins
+      if (!s || c == null || !s.duration_mins || s.type === 'strength' || s.type === 'rest' || s.type === 'race') return []
+      const over = s.duration_mins > c
+      if (over === !!s.weekday_overrun_note) return []
+      if (over && isStructuredSession(s) && !isLongRun(s)) return []
+      return [{ rule_id: 'INV-PLAN-WEEKDAY-OVERRUN-DECLARED' as RuleId, week: w.n, day: d, detail: over ? 'over budget, no note' : 'note on a run within budget' }]
+    })),
+}
+Object.assign(PREDICATES, BATCH_14)
+
 const SEVERITY = new Map(RULES.map(r => [r.id, r.kind === 'soft' ? 'warn' as const : 'error' as const]))
 
 /** Every finding the ported predicates raise, with the severity the catalogue gives the rule. */
