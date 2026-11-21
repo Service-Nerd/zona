@@ -12,7 +12,7 @@
 import type { Plan, Session, GeneratorInput } from '@/types/plan'
 import type { RuleId } from '@/lib/engine/contracts/rule'
 import { RULES } from '@/lib/engine/catalogue/rules'
-import { GENERATION_CONFIG } from '@/lib/plan/generationConfig'
+import { GENERATION_CONFIG, raceDistanceKey } from '@/lib/plan/generationConfig'
 import { isLongRun, isShakeout, isSecondaryQuality, isQualitySession, isStructuredSession } from '@/lib/plan/sessionRole'
 import { normaliseDays } from '@/lib/plan/days'
 
@@ -245,6 +245,99 @@ const BATCH_2: Partial<Record<RuleId, Predicate>> = {
     .map(x => ({ rule_id: 'INV-PLAN-DURATION-ANCHORED-KEEPS-MINUTES', week: w.n, day: x.day, detail: 'lost its minutes or its duration metric' }))),
 }
 Object.assign(PREDICATES, BATCH_2)
+
+/** Plan-level findings carry week 0, as `validatePlan` does (no live week has n = 0). */
+const PLAN = 0
+
+const BATCH_3: Partial<Record<RuleId, Predicate>> = {
+  // §18/§10: the stated longest run cannot exceed the stated week.
+  'INV-INPUT-LONGEST-LE-WEEKLY': (_plan, { input }) => {
+    const weekly = input.current_weekly_km ?? 0, longest = input.longest_recent_run_km ?? 0
+    return weekly > 0 && longest > weekly
+      ? [{ rule_id: 'INV-INPUT-LONGEST-LE-WEEKLY', week: PLAN, day: null, detail: 'longest run above the weekly total' }] : []
+  },
+
+  // §76: the final main week contains the race date.
+  'INV-PLAN-COVERS-RACE-DATE': plan => {
+    const iso = plan.meta.race_date
+    const main = plan.weeks.filter(w => w.n > 0)
+    const last = main[main.length - 1]
+    if (!iso || !last?.date) return []
+    const start = localDate(last.date), race = localDate(iso)
+    const end = new Date(start); end.setDate(end.getDate() + 6)
+    return race < start || race > end
+      ? [{ rule_id: 'INV-PLAN-COVERS-RACE-DATE', week: last.n, day: null, detail: 'final week does not contain the race date' }] : []
+  },
+
+  // §36: consecutive taper weeks (race week aside) do not repeat the same quality session at the same pace.
+  'INV-PLAN-TAPER-VARIETY': plan => {
+    const out: Raw[] = []
+    let prev: { label: string; pace: string } | null = null
+    for (const w of plan.weeks.filter(x => x.phase === 'taper' && x.type !== 'race')) {
+      const q = Object.values(w.sessions as Record<string, Session | undefined>).find(x => x?.type === 'quality')
+      if (!q) { prev = null; continue }
+      const label = q.catalogue_id ?? q.label ?? '', pace = q.pace_target ?? ''
+      if (prev && prev.label === label && prev.pace === pace) out.push({ rule_id: 'INV-PLAN-TAPER-VARIETY', week: w.n, day: null, detail: 'repeats the previous taper quality' })
+      prev = { label, pace }
+    }
+    return out
+  },
+
+  // §49: the taper (race week included) is no longer than its distance allows.
+  'INV-PLAN-TAPER-DURATION-CAP': (plan, { input }) => {
+    const cap = GENERATION_CONFIG.MAX_TAPER_PHASE_WEEKS[raceDistanceKey(input.race_distance_km) as keyof typeof GENERATION_CONFIG.MAX_TAPER_PHASE_WEEKS]
+    const n = plan.weeks.filter(w => w.phase === 'taper').length
+    return n > cap ? [{ rule_id: 'INV-PLAN-TAPER-DURATION-CAP', week: PLAN, day: null, detail: `${n} taper weeks over a cap of ${cap}` }] : []
+  },
+
+  // §39 Am. 1 / §26: in the protected days before a race, nothing longer than the shakeout cap.
+  'INV-PLAN-NO-RACE-EVE-SESSION': plan => plan.weeks.flatMap(w => {
+    const entries = daysOf(w)
+    const race = entries.find(x => x.session?.type === 'race')
+    const raceIdx = race ? DAYS.indexOf(race.day) : -1
+    if (raceIdx < 0) return []
+    return entries.filter(({ day, session: s }) => {
+      if (!s || s.type === 'rest' || s.type === 'race') return false
+      const idx = DAYS.indexOf(day)
+      if (idx < 0 || idx >= raceIdx || raceIdx - idx > GENERATION_CONFIG.RACE_EVE_PROTECTED_DAYS) return false
+      return (s.duration_mins ?? 0) > GENERATION_CONFIG.RACE_WEEK_SHAKEOUT_MAX_MINS
+    }).map(x => ({ rule_id: 'INV-PLAN-NO-RACE-EVE-SESSION', week: w.n, day: x.day, detail: 'over the shakeout cap before the race' }))
+  }),
+
+  // §4: main-week phases each form one block, in the order base, build, peak, taper.
+  'INV-PLAN-PHASE-STRUCTURE': plan => {
+    const blocks: string[] = []
+    for (const w of plan.weeks) {
+      if (w.n < 1) continue
+      const ph = w.phase ?? 'base'
+      if (blocks[blocks.length - 1] !== ph) blocks.push(ph)
+    }
+    const out: Raw[] = []
+    if (blocks.some((ph, i) => blocks.indexOf(ph) !== i)) out.push({ rule_id: 'INV-PLAN-PHASE-STRUCTURE', week: PLAN, day: null, detail: `phase returns: ${blocks.join(' > ')}` })
+    const order = ['base', 'build', 'peak', 'taper']
+    const ranks = blocks.map(ph => order.indexOf(ph)).filter(r => r >= 0)
+    if (!ranks.every((r, i) => i === 0 || r > ranks[i - 1])) out.push({ rule_id: 'INV-PLAN-PHASE-STRUCTURE', week: PLAN, day: null, detail: `phases out of order: ${blocks.join(' > ')}` })
+    return out
+  },
+
+  // §87 (with §3's cadence): no deload opens a base or build phase, and placement never yields fewer
+  // deloads than the cadence calls for. The masters cadence applies when age is absent.
+  'INV-PLAN-DELOAD-PLACEMENT': (plan, { input }) => {
+    const masters = typeof input.age !== 'number' || !Number.isFinite(input.age) || input.age >= GENERATION_CONFIG.MASTERS_AGE_THRESHOLD
+    const every = masters ? GENERATION_CONFIG.RECOVERY_WEEK_FREQUENCY_MASTERS : GENERATION_CONFIG.RECOVERY_WEEK_FREQUENCY_STANDARD
+    const phase = new Map<number, string>()
+    for (const w of plan.weeks) if (w.phase) phase.set(w.n, w.phase)
+    const inScope = (n: number) => n >= 1 && (phase.get(n) === 'base' || phase.get(n) === 'build')
+    const due = plan.weeks.filter(w => inScope(w.n) && w.n % every === 0).length
+    const deloads = plan.weeks.filter(w => w.type === 'deload')
+    const out: Raw[] = deloads
+      .filter(w => w.n > 1 && inScope(w.n) && phase.get(w.n - 1) != null && phase.get(w.n) !== phase.get(w.n - 1))
+      .map(w => ({ rule_id: 'INV-PLAN-DELOAD-PLACEMENT', week: w.n, day: null, detail: 'deload opens a phase' }))
+    if (deloads.length < due) out.push({ rule_id: 'INV-PLAN-DELOAD-PLACEMENT', week: PLAN, day: null, detail: `${deloads.length} deloads, cadence calls for ${due}` })
+    return out
+  },
+}
+Object.assign(PREDICATES, BATCH_3)
 
 const SEVERITY = new Map(RULES.map(r => [r.id, r.kind === 'soft' ? 'warn' as const : 'error' as const]))
 

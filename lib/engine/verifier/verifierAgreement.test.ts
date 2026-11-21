@@ -16,6 +16,7 @@ import { validatePlan } from '@/lib/plan/invariants'
 import { MUTATIONS } from '@/lib/plan/invariantLiveness'
 import type { Plan, GeneratorInput, Session } from '@/types/plan'
 import { isLongRun, isStructuredSession } from '@/lib/plan/sessionRole'
+import { GENERATION_CONFIG, raceDistanceKey } from '@/lib/plan/generationConfig'
 import { RULES } from '@/lib/engine/catalogue/rules'
 import { verifyPlan, PORTED_RULES } from './verifyPlan'
 
@@ -55,6 +56,36 @@ const EXTRA_MUTATIONS: { name: string; apply: (p: Plan, input: GeneratorInput) =
     },
   })),
   // The race date leaves the final week: COVERS-RACE-DATE fires and RACE-ON-RACE-DAY must still be checked.
+  // An INPUT breakage: the wizard cannot send a longest run above the weekly total, so no plan or plan
+  // mutation reaches INV-INPUT-LONGEST-LE-WEEKLY. This one changes what both checkers are handed.
+  { name: 'stated longest run above the stated week', apply: (_p, input) => {
+    if (!(input.current_weekly_km && input.current_weekly_km > 0)) return false
+    input.longest_recent_run_km = input.current_weekly_km + 1
+    return true
+  } },
+  // §49's line: exactly one taper week over the cap (relabel the weeks before the taper).
+  { name: 'one taper week over the cap', apply: (p, input) => {
+    const cap = GENERATION_CONFIG.MAX_TAPER_PHASE_WEEKS[raceDistanceKey(input.race_distance_km) as keyof typeof GENERATION_CONFIG.MAX_TAPER_PHASE_WEEKS]
+    let n = p.weeks.filter(w => w.phase === 'taper').length
+    const first = p.weeks.findIndex(w => w.phase === 'taper')
+    for (let i = first - 1; i >= 0 && n < cap + 1; i--) { if (p.weeks[i].n < 1) return false; p.weeks[i].phase = 'taper'; n++ }
+    return first > 0 && n === cap + 1
+  } },
+  // §39 Am. 1's line: a session inside the protected days, one minute over the shakeout cap.
+  { name: 'a pre-race session one minute over the shakeout cap', apply: p => {
+    for (const w of p.weeks) {
+      const keys = Object.keys(w.sessions ?? {})
+      const raceDay = keys.find(d => w.sessions[d as 'mon']?.type === 'race')
+      if (!raceDay) continue
+      const days = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']
+      const prior = days[days.indexOf(raceDay) - 1] as 'mon' | undefined
+      const s = prior ? w.sessions[prior] : undefined
+      if (!s || s.type === 'rest') continue
+      s.duration_mins = GENERATION_CONFIG.RACE_WEEK_SHAKEOUT_MAX_MINS + 1
+      return true
+    }
+    return false
+  } },
   // Eight days, not seven: seven keeps the weekday, so no wrong-day finding exists to disagree about.
   { name: 'race date eight days after the plan ends', apply: p => {
     if (!p.meta.race_date) return false
@@ -92,9 +123,10 @@ beforeAll(() => {
     }
     for (const m of EXTRA_MUTATIONS) {
       const p = clone(o.plan)
-      if (!m.apply(p, row.input)) continue
+      const input = JSON.parse(JSON.stringify(row.input)) as GeneratorInput
+      if (!m.apply(p, input)) continue
       hits.set(m.name, (hits.get(m.name) ?? 0) + 1)
-      cases.push({ label: `${row.id} / ${m.name}`, plan: p, input: row.input })
+      cases.push({ label: `${row.id} / ${m.name}`, plan: p, input })
     }
   }
   runs = cases.flatMap(c => {
@@ -108,12 +140,19 @@ beforeAll(() => {
   })
 }, 120_000)
 
+/** Rules where `validatePlan` names no day but the verifier does. The same finding at finer grain: compared
+ *  without the day, and listed so the exemption is a decision, not a drift. */
+const OLD_OMITS_DAY = new Set<string>([
+  'INV-PLAN-NO-RACE-EVE-SESSION',   // the old push carries week only; the verifier names the offending day
+])
+const dropDay = (k: string) => k.replace(/^([^|]+\|[^|]+)\|[^|]+\|/, '$1|-|')
+
 function compare(rule: string) {
   const fired = { old: 0, new: 0 }
   const diffs: string[] = []
   for (const c of runs) {
     const oldKeys = c.old.filter(x => x.rule === rule).map(x => x.k)
-    const newKeys = c.new.filter(x => x.rule === rule).map(x => x.k)
+    const newKeys = c.new.filter(x => x.rule === rule).map(x => (OLD_OMITS_DAY.has(rule) ? dropDay(x.k) : x.k))
     fired.old += oldKeys.length; fired.new += newKeys.length
     const a = [...oldKeys].sort().join(','), b = [...newKeys].sort().join(',')
     if (a !== b) diffs.push(`${c.label}: old [${a}] new [${b}]`)
@@ -136,6 +175,14 @@ describe('ADR027-B3-VERIFIER — agreement with validatePlan, per ported rule', 
     for (const m of EXTRA_MUTATIONS) expect(hits.get(m.name) ?? 0, m.name).toBeGreaterThan(0)
     expect(tally.base + tally.refused + tally.threw.length).toBe(tally.rows)
     expect(tally.threw.length, tally.threw.slice(0, 3).join(', ')).toBeLessThanOrEqual(Math.ceil(tally.rows / 10))
+  })
+
+  it('the day exemption is used only where the old checker really omits the day', () => {
+    for (const rule of Array.from(OLD_OMITS_DAY)) {
+      const old = runs.flatMap(c => c.old.filter(x => x.rule === rule))
+      expect(old.length, `${rule} never fired, so its exemption is unproven`).toBeGreaterThan(0)
+      expect(old.every(x => x.k.split('|')[2] === '-'), `${rule}: the old checker names a day after all`).toBe(true)
+    }
   })
 
   it('🔴 no rule with a conditional severity is ported before its condition is a predicate', () => {
