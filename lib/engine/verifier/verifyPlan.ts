@@ -747,6 +747,80 @@ const BATCH_9: Partial<Record<RuleId, Predicate>> = {
 }
 Object.assign(PREDICATES, BATCH_9)
 
+const longRuns = (plan: Plan, keep: (w: Week) => boolean) => plan.weeks.filter(keep).flatMap(w =>
+  daysOf(w).filter((x): x is { day: VerifierDay; session: Session } => !!x.session && isLongRun(x.session)).map(x => ({ w, ...x })))
+const longKm = (w: Week) => {
+  const s = Object.values((w.sessions ?? {}) as Record<string, Session | undefined>).find(x => !!x && isLongRun(x))
+  return s ? sessionKmSelfPaced(s) ?? 0 : 0
+}
+
+const BATCH_10: Partial<Record<RuleId, Predicate>> = {
+  // §107: a time-targeted 5K to marathon build or peak long run at "Zone 2–3" records the segment pace it implies.
+  'INV-PLAN-LR-SEGMENT-RECORDED': (plan, { input, profile }) => {
+    const key = raceDistanceKey(input.race_distance_km)
+    if (profile.race.goal !== 'time_target' || !['5K', '10K', 'HM', 'MARATHON'].includes(key)) return []
+    return longRuns(plan, w => (w.phase === 'peak' || w.phase === 'build') && w.type !== 'deload')
+      .filter(x => x.session.zone === 'Zone 2\u20133' && !x.session.lr_segment_pace)
+      .map(x => ({ rule_id: 'INV-PLAN-LR-SEGMENT-RECORDED', week: x.w.n, day: x.day, detail: 'Zone 2-3 long run with no segment pace' }))
+  },
+
+  // §24c: no race-pace segment in a 5K/10K build-phase long run.
+  'INV-PLAN-BUILD-LR-SEGMENT-CAP': (plan, { input, profile }) => {
+    const key = raceDistanceKey(input.race_distance_km)
+    if (profile.race.goal !== 'time_target' || (key !== '5K' && key !== '10K')) return []
+    return longRuns(plan, w => w.phase === 'build' && w.type !== 'deload').filter(x => x.session.lr_segment_pace)
+      .map(x => ({ rule_id: 'INV-PLAN-BUILD-LR-SEGMENT-CAP', week: x.w.n, day: x.day, detail: 'segment in a build long run' }))
+  },
+
+  // §24d: a finish goal has no race-pace segments in its long runs.
+  'INV-PLAN-FINISH-GOAL-LR-CAP': (plan, { profile }) => profile.race.goal !== 'finish' ? []
+    : longRuns(plan, () => true).filter(x => x.session.lr_segment_pace)
+      .map(x => ({ rule_id: 'INV-PLAN-FINISH-GOAL-LR-CAP', week: x.w.n, day: x.day, detail: 'segment on a finish goal' })),
+
+  // §24e: an ultra's long runs carry no pace segments.
+  'INV-PLAN-ULTRA-NO-PACE-SEGMENTS': (plan, { input }) => {
+    const key = raceDistanceKey(input.race_distance_km)
+    if (key !== '50K' && key !== '100K') return []
+    return longRuns(plan, () => true).filter(x => x.session.lr_segment_pace)
+      .map(x => ({ rule_id: 'INV-PLAN-ULTRA-NO-PACE-SEGMENTS', week: x.w.n, day: x.day, detail: 'segment in an ultra long run' }))
+  },
+
+  // §106: the delivered peak is at least PEAK_FLOOR_VS_START_RATIO of the stated start (race weeks aside).
+  'INV-PLAN-PEAK-NOT-BELOW-START': (plan, { input }) => {
+    const start = input.current_weekly_km
+    const weeks = plan.weeks.filter(w => w.phase !== 'foundation' && w.type !== 'deload' && w.type !== 'race'
+      && !daysOf(w).some(x => x.session?.type === 'race'))
+    if (!(start != null && start > 0) || !weeks.length) return []
+    const peak = Math.max(...weeks.map(w => w.weekly_km))
+    const floor = start * GENERATION_CONFIG.PEAK_FLOOR_VS_START_RATIO
+    return peak + 0.5 < floor ? [{ rule_id: 'INV-PLAN-PEAK-NOT-BELOW-START', week: PLAN, day: null, detail: `peak ${peak} km under ${floor.toFixed(1)} km` }] : []
+  },
+
+  // §20: with a benchmark, the raw VDOT is never below the training anchor (the anchor is the discounted value).
+  'INV-PLAN-VDOT-RAW-EXCEEDS-ANCHOR': (plan, { input }) => {
+    const { vdot, vdot_training_anchor: anchor } = plan.meta
+    return input.benchmark && vdot !== undefined && anchor !== undefined && vdot < anchor - 0.05
+      ? [{ rule_id: 'INV-PLAN-VDOT-RAW-EXCEEDS-ANCHOR', week: PLAN, day: null, detail: `raw ${vdot} below anchor ${anchor}` }] : []
+  },
+
+  // §36: a taper long run is never longer than the peak's, beyond a tolerance.
+  'INV-PLAN-TAPER-LR-NOT-ABOVE-PEAK': plan => {
+    const weeks = plan.weeks.filter(w => w.n > 0 && w.type !== 'race' && w.type !== 'deload')
+    const peak = Math.max(0, ...weeks.filter(w => w.phase === 'peak').map(longKm))
+    if (!(peak > 0)) return []
+    return weeks.filter(w => w.phase === 'taper' && longKm(w) > peak + GENERATION_CONFIG.TAPER_LR_VS_PEAK_TOLERANCE_KM)
+      .map(w => ({ rule_id: 'INV-PLAN-TAPER-LR-NOT-ABOVE-PEAK', week: w.n, day: null, detail: 'taper long run above the peak' }))
+  },
+
+  // §38: a long enough plan points at a tune-up race somewhere.
+  'INV-PLAN-TUNE-UP-CALLOUT': plan => {
+    const main = plan.weeks.filter(w => w.n >= 1)
+    return main.length >= GENERATION_CONFIG.TUNE_UP_MIN_PLAN_WEEKS && !main.some(w => !!w.tune_up_callout)
+      ? [{ rule_id: 'INV-PLAN-TUNE-UP-CALLOUT', week: PLAN, day: null, detail: 'no tune-up callout' }] : []
+  },
+}
+Object.assign(PREDICATES, BATCH_10)
+
 const SEVERITY = new Map(RULES.map(r => [r.id, r.kind === 'soft' ? 'warn' as const : 'error' as const]))
 
 /** Every finding the ported predicates raise, with the severity the catalogue gives the rule. */

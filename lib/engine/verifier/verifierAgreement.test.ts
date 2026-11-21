@@ -17,6 +17,7 @@ import { MUTATIONS } from '@/lib/plan/invariantLiveness'
 import type { Plan, GeneratorInput, Session } from '@/types/plan'
 import { isLongRun, isStructuredSession, isTimeTrial, isVo2maxSession } from '@/lib/plan/sessionRole'
 import { V1_SESSION_CATALOGUE } from '@/lib/plan/sessionCatalogueData'
+import { sessionKmSelfPaced } from '@/lib/plan/sessionDistance'
 import { GENERATION_CONFIG, raceDistanceKey } from '@/lib/plan/generationConfig'
 import { hasInjuryKeyword } from '@/lib/plan/injuryScope'
 import { BENCHMARK_VDOT_MAX } from '@/lib/plan/benchmarkCheck'
@@ -131,6 +132,34 @@ const EXTRA_MUTATIONS: { name: string; apply: (p: Plan, input: GeneratorInput) =
     ['no HR method', (p: Plan) => { delete p.meta.hr_zone_method; return true }],
     // Batch 8: the plan's declarations about its own limits.
     ['no compression class', (p: Plan) => { delete p.meta.compression_classification; return true }],
+    // Batch 10.
+    ['a Zone 2-3 build or peak long run with no segment pace', (p: Plan) => {
+      for (const w of p.weeks.filter(x => (x.phase === 'build' || x.phase === 'peak') && x.type !== 'deload'))
+        for (const s of Object.values(w.sessions ?? {})) if (s && isLongRun(s)) { s.zone = 'Zone 2\u20133'; delete s.lr_segment_pace; return true }
+      return false
+    }],
+    ['a segment pace on every long run', (p: Plan) => {
+      let n = 0
+      for (const w of p.weeks) for (const s of Object.values(w.sessions ?? {})) if (s && isLongRun(s)) { s.lr_segment_pace = '5:00/km'; n++ }
+      return n > 0
+    }],
+    ['no tune-up callout', (p: Plan) => { for (const w of p.weeks) delete w.tune_up_callout; return true }],
+    ['exactly the tune-up minimum of main weeks, no callout', (p: Plan) => {
+      const main = p.weeks.filter(w => w.n >= 1)
+      if (main.length < GENERATION_CONFIG.TUNE_UP_MIN_PLAN_WEEKS) return false
+      const keep = new Set(main.slice(0, GENERATION_CONFIG.TUNE_UP_MIN_PLAN_WEEKS))
+      p.weeks = p.weeks.filter(w => w.n < 1 || keep.has(w))
+      for (const w of p.weeks) delete w.tune_up_callout
+      return true
+    }],
+    ['a taper long run just over the peak', (p: Plan) => {
+      const peak = Math.max(0, ...p.weeks.filter(w => w.n > 0 && w.phase === 'peak' && w.type !== 'race' && w.type !== 'deload').map(w => {
+        const s = Object.values(w.sessions ?? {}).find(x => x && isLongRun(x)); return s ? sessionKmSelfPaced(s) ?? 0 : 0 }))
+      const w = p.weeks.find(x => x.phase === 'taper' && x.type !== 'race' && x.type !== 'deload')
+      const s = w && Object.values(w.sessions ?? {}).find(x => x && isLongRun(x))
+      if (!(peak > 0) || !s) return false
+      s.distance_km = Math.round((peak + GENERATION_CONFIG.TAPER_LR_VS_PEAK_TOLERANCE_KM + 0.1) * 10) / 10; return true
+    }],
     // Batch 9.
     ['a short block stamped, no note', (p: Plan) => { p.meta.short_opening_block_weeks = [3]; delete p.meta.short_opening_block_note; return true }],
     ['a short-block note, no stamp', (p: Plan) => { delete p.meta.short_opening_block_weeks; p.meta.short_opening_block_note = 'short'; return true }],
@@ -258,6 +287,16 @@ const EXTRA_MUTATIONS: { name: string; apply: (p: Plan, input: GeneratorInput) =
       if (keep < 0 || base.length <= keep) return false
       for (const w of base.slice(keep)) w.phase = 'build'
       return true
+    }],
+    ['a delivered peak just under the start floor', (p: Plan, i: GeneratorInput) => {
+      if (!(i.current_weekly_km && i.current_weekly_km > 0)) return false
+      const floor = i.current_weekly_km * GENERATION_CONFIG.PEAK_FLOOR_VS_START_RATIO
+      for (const w of p.weeks) if (w.phase !== 'foundation') w.weekly_km = Math.round((floor - 0.6) * 10) / 10
+      return true
+    }],
+    ['a raw VDOT just below its anchor, with a benchmark', (p: Plan, i: GeneratorInput) => {
+      if (!i.benchmark || p.meta.vdot_training_anchor === undefined) return false
+      p.meta.vdot = p.meta.vdot_training_anchor - 0.1; return true
     }],
     ['meta age differing from the input', (p: Plan, i: GeneratorInput) => {
       if (typeof i.age !== 'number') return false
