@@ -208,6 +208,12 @@
       "title": "a planted FALSE NOTE (\"no hard sessions\" on a plan with a time trial) fires and is WORSE",
       "ms": 4208,
       "reason": "ADR027-B0-SCORECARD falsification. Measured 4,208 ms in a full suite run (2,219 ms normalised; 2,365 ms run alone). It runs the plan-read step twice on the cohortGrid fast sample, clean and with the planted note, so both the predicate and the ratchet are shown to go red."
+    },
+    {
+      "file": "lib/plan/weekCoordinate.test.ts",
+      "title": "app/ lib/ components/ carry no position-derived week key outside the owner",
+      "ms": 2526,
+      "reason": "ADJUST-WEEK-COORD-01 (2026-11-21): a tree-wide source sweep for `getCurrentWeekIndex(...) + 1` used as a key, over every non-test file in app/, lib/ and components/. The cost is reading the tree, which is the point: ARCH-ENG-015's gate has to see code nobody touched. Allowed; if it grows, cache the file list rather than narrow the population."
     }
   ]
 }

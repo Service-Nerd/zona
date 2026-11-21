@@ -1798,7 +1798,9 @@ Step 1 shipped as `ADR027-B3-CATALOGUE` (221 rules). Remaining, in order:
 - ✅ **Step 2 batch 1 SHIPPED 2026-11-21** (3 rules: `WEEK-HAS-REST-DAY`, `EMPTY-SESSION`, `MIN-SESSION-SIZE`).
   `lib/engine/verifier/verifyPlan.ts`; the import gate allows only the contracts, the catalogue, the config,
   `sessionRole` and `sessionDistance`; `verifierAgreement.test.ts` compares finding for finding with
-  `validatePlan` on golden-corpus plans and every liveness mutation of them. **218 rules left.**
+  `validatePlan` on golden-corpus plans and every liveness mutation of them.
+  ✅ **Batch 2 SHIPPED 2026-11-21** (9 more session rules; boundary and race-date mutations added; corpus raised
+  to perGroup 8 because perGroup 2 held no foundation-week plan). **12 of 221 ported; 209 left.**
   **Raised, not changed (ported faithfully):** `validatePlan` checks `EMPTY-SESSION` inside the size loop, so an
   empty race-week shakeout or race-week easy run passes. Probably a blind spot; needs a ruling before the
   verifier diverges.
