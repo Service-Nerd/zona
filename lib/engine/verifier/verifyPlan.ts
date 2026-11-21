@@ -14,7 +14,7 @@ import type { RuleId } from '@/lib/engine/contracts/rule'
 import type { RunnerProfile } from '@/lib/engine/contracts/profile'
 import { RULES } from '@/lib/engine/catalogue/rules'
 import { GENERATION_CONFIG, raceDistanceKey } from '@/lib/plan/generationConfig'
-import { isLongRun, isShakeout, isSecondaryQuality, isQualitySession, isStructuredSession, isTimeTrial, isVo2maxSession, classifyStimulus } from '@/lib/plan/sessionRole'
+import { isLongRun, isShakeout, isSecondaryQuality, isQualitySession, isStructuredSession, isTimeTrial, isVo2maxSession, classifyStimulus, isHardEffort } from '@/lib/plan/sessionRole'
 import { V1_SESSION_CATALOGUE } from '@/lib/plan/sessionCatalogueData'
 import { FUELLING_PRACTICE_NOTE, ULTRA_FUELLING_PREFIX } from '@/lib/plan/fuellingNotes'
 import { PLAN_SIGNATURES } from '@/lib/plan/planSignatures'
@@ -25,7 +25,7 @@ import { BENCHMARK_VDOT_MAX } from '@/lib/plan/benchmarkCheck'
 import { parsePaceMidpoint } from '@/lib/plan/paceParse'
 import { catalogueRowFor } from '@/lib/plan/catalogueLink'
 import { SESSION_FORMAT } from '@/lib/plan/sessionFormat'
-import { workAnchorsOf, goalPaceShapeWord } from '@/lib/plan/sessionStructureV2'
+import { workAnchorsOf, goalPaceShapeWord, isV2Structure, StructureV2Schema } from '@/lib/plan/sessionStructureV2'
 import { isEffortGovernedRow } from '@/lib/plan/hrBand'
 import { zoneStringFromZoneKeys } from '@/lib/coaching/zoneRules'
 
@@ -1891,6 +1891,78 @@ const BATCH_27: Partial<Record<RuleId, Predicate>> = {
   }),
 }
 Object.assign(PREDICATES, BATCH_27)
+
+/** 🔻 A literal in validatePlan, not in config: the foundation block's week-to-week ceiling (+10%). Copied so the two
+ *  checkers agree; raised for the board (FOUNDATION_WEEKLY_INCREASE_PCT says the same today, by coincidence of value). */
+export const FOUNDATION_WEEK_TO_WEEK_LITERAL = 1.10
+
+/** A row whose paced work (easy steps aside) is all CV-anchored. */
+function rowIsCvAnchored(id: string): boolean {
+  const row = V1_SESSION_CATALOGUE.find(r => r.id === id)
+  if (!row || !isV2Structure(row.main_set_structure)) return false
+  const parsed = StructureV2Schema.safeParse(row.main_set_structure)
+  if (!parsed.success) return false
+  const anchors = new Set(parsed.data.blocks.flatMap(b => b.steps).filter(st => st.role === 'work' && st.target.kind === 'pace')
+    .map(st => (st.target as { anchor: string }).anchor).filter(a => a !== 'E'))
+  return anchors.size > 0 && Array.from(anchors).every(a => a === 'CV')
+}
+
+const BATCH_28: Partial<Record<RuleId, Predicate>> = {
+  // §57, §92: a foundation week holds no hard effort or race, no strides unless the readiness gate passed (and never
+  // with injury history), stays within the stated volume plus FOUNDATION_WEEKLY_INCREASE_PCT, keeps its longest run
+  // under FOUNDATION_LONG_RUN_MAX_PCT of the week (three runs or more), and ramps week to week by at most the literal.
+  'INV-PLAN-FOUNDATION-BLOCK': (plan, { input }) => {
+    const fws = plan.weeks.filter(w => w.phase === 'foundation')
+    const out: Raw[] = []
+    const R = 'INV-PLAN-FOUNDATION-BLOCK' as RuleId
+    for (const fw of fws) {
+      for (const { day, session: s } of daysOf(fw)) {
+        if (!s) continue
+        if (isHardEffort(s) || s.type === 'race') out.push({ rule_id: R, week: fw.n, day, detail: `forbidden ${s.type}` })
+        const notes = Array.isArray(s.coach_notes) ? s.coach_notes.join(' ') : String(s.coach_notes ?? '')
+        if (/strides/i.test(notes)) {
+          if (!plan.meta.early_quality_onset) out.push({ rule_id: R, week: fw.n, day, detail: 'strides without the readiness gate' })
+          if ((input.injury_history ?? []).length > 0) out.push({ rule_id: R, week: fw.n, day, detail: 'strides with injury history' })
+        }
+      }
+      const stated = input.current_weekly_km ?? 0
+      const ceiling = stated * (1 + GENERATION_CONFIG.FOUNDATION_WEEKLY_INCREASE_PCT / 100)
+      if (stated > 0 && fw.weekly_km > ceiling + 0.01) out.push({ rule_id: R, week: fw.n, day: null, detail: 'over the stated-volume ceiling' })
+      const runs = Object.values(fw.sessions ?? {}).filter(s => s && s.type !== 'rest' && s.type !== 'cross-train').map(s => sessionKmSelfPaced(s) ?? 0)
+      const cap = fw.weekly_km * (GENERATION_CONFIG.FOUNDATION_LONG_RUN_MAX_PCT / 100)
+      if (runs.length >= 3 && fw.weekly_km > 0 && Math.max(0, ...runs) > cap + 0.01) out.push({ rule_id: R, week: fw.n, day: null, detail: 'long run over its share' })
+    }
+    for (let i = 1; i < fws.length; i++) {
+      const prev = fws[i - 1], curr = fws[i]
+      const dl = (w: Week) => w.type === 'deload' || w.badge === 'deload'
+      if (dl(curr) || dl(prev) || !(prev.weekly_km > 0)) continue
+      if (curr.weekly_km > prev.weekly_km * FOUNDATION_WEEK_TO_WEEK_LITERAL + 0.01) out.push({ rule_id: R, week: curr.n, day: null, detail: 'ramps over the week-to-week ceiling' })
+    }
+    return out
+  },
+
+  // §22: in the second half's build and peak, at least half the non-VO2, non-CV quality sessions run within 5% of goal
+  // pace, on a time-goal plan whose goal pace is not withheld.
+  'INV-PLAN-RACE-SPECIFIC-EXPOSURE-RATIO': (plan, { profile }) => {
+    if (profile.race.goal !== 'time_target' || plan.meta.goal_pace_withheld != null || !plan.meta.goal_pace_per_km) return []
+    const goal = parsePaceMidpoint(plan.meta.goal_pace_per_km)
+    if (goal == null) return []
+    const main = plan.weeks.filter(w => w.n > 0)
+    const half = Math.ceil((main.length || plan.weeks.length) / 2)
+    let total = 0, atGoal = 0
+    for (const w of plan.weeks) {
+      if (w.n < half || (w.phase !== 'build' && w.phase !== 'peak') || w.type === 'deload') continue
+      for (const s of Object.values(w.sessions ?? {})) {
+        if (!s || s.type !== 'quality' || isVo2maxSession(s, V1_SESSION_CATALOGUE) || (s.catalogue_id && rowIsCvAnchored(s.catalogue_id))) continue
+        total++
+        const mid = s.pace_target ? parsePaceMidpoint(s.pace_target) : null
+        if (mid != null && Math.abs(mid - goal) / goal <= 0.05) atGoal++
+      }
+    }
+    return total > 0 && atGoal / total < 0.5 ? [{ rule_id: 'INV-PLAN-RACE-SPECIFIC-EXPOSURE-RATIO', week: PLAN, day: null, detail: `${atGoal} of ${total} at goal pace` }] : []
+  },
+}
+Object.assign(PREDICATES, BATCH_28)
 
 const SEVERITY = new Map(RULES.map(r => [r.id, r.kind === 'soft' ? 'warn' as const : 'error' as const]))
 /** Rules the catalogue marks as conditionally severe: only these may set a finding's severity (code review, batch 20). */

@@ -149,7 +149,7 @@ export const RULES: readonly Rule[] = [
   { id: 'INV-PLAN-HR-ASSUMPTIONS-SURFACED', principle_ref: '§50', scope: 'week', kind: 'hard', config_key: null, explain: null },
   { id: 'INV-PLAN-MAX-HR-NOT-BELOW-ESTIMATE-FLOOR', principle_ref: '§50', scope: 'week', kind: 'hard', config_key: null, explain: null },
   { id: 'INV-PLAN-USER-LEVEL-NO-UPWARD-TONNAGE', principle_ref: '§79', scope: 'week', kind: 'hard', config_key: null, explain: null },
-  { id: 'INV-PLAN-FOUNDATION-BLOCK', principle_ref: '§57', scope: 'session', kind: 'hard', config_key: null, explain: null },
+  { id: 'INV-PLAN-FOUNDATION-BLOCK', principle_ref: '§57', related_refs: ['§92'], scope: 'session', kind: 'hard', config_key: null, explain: null },
   { id: 'INV-PLAN-WEEKLY-KM-MATCHES-SESSIONS', principle_ref: '§90', related_refs: ['§40c'], scope: 'week', kind: 'soft', config_key: null, explain: null },
   { id: 'INV-PLAN-RUNWALK-PRESCRIBED', principle_ref: '§117', scope: 'week', kind: 'hard', config_key: null, explain: null },
   { id: 'INV-PLAN-RUNWALK-CAP-NOT-REDUCED', principle_ref: '§117 Am. 4', related_refs: ['§12'], scope: 'week', kind: 'hard', config_key: null, explain: null },

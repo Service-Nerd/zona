@@ -18,7 +18,7 @@ import type { Plan, GeneratorInput, Session } from '@/types/plan'
 import { isLongRun, isStructuredSession, isTimeTrial, isVo2maxSession, isQualitySession, classifyStimulus } from '@/lib/plan/sessionRole'
 import { V1_SESSION_CATALOGUE } from '@/lib/plan/sessionCatalogueData'
 import { isEffortGovernedRow } from '@/lib/plan/hrBand'
-import { goalPaceShapeWord } from '@/lib/plan/sessionStructureV2'
+import { goalPaceShapeWord, workAnchorsOf } from '@/lib/plan/sessionStructureV2'
 import { sessionKmSelfPaced } from '@/lib/plan/sessionDistance'
 import { FUELLING_PRACTICE_NOTE, ULTRA_FUELLING_PREFIX } from '@/lib/plan/fuellingNotes'
 import { GENERATION_CONFIG, raceDistanceKey } from '@/lib/plan/generationConfig'
@@ -719,6 +719,38 @@ const EXTRA_MUTATIONS: { name: string; apply: (p: Plan, input: GeneratorInput) =
       if (!s) return false
       s.label = 'VO2max intervals'; s.coach_notes = ['Boring is the point.']; return true
     }],
+    // Batch 28: foundation strides without the readiness gate, and with an injury history (gate passed).
+    ...(['without the readiness gate', 'with injury history'] as const).map(how => [`foundation strides ${how}`, (p: Plan, i: GeneratorInput) => {
+      const s = p.weeks.filter(w => w.phase === 'foundation').flatMap(w => Object.values(w.sessions ?? {})).find(x => x && x.type === 'easy')
+      if (!s) return false
+      s.coach_notes = ['Finish with 4 strides.']
+      if (how === 'with injury history') { p.meta.early_quality_onset = true as never; i.injury_history = ['knee'] }
+      else { delete p.meta.early_quality_onset; i.injury_history = [] }
+      return true
+    }] as const),
+    // A foundation week ramping just over the week-to-week ceiling; silent when that week is a deload.
+    ...(['a normal', 'a deload'] as const).map(kind => [`a foundation week ramping just over the ceiling onto ${kind} week`, (p: Plan, i: GeneratorInput) => {
+      const f = p.weeks.filter(w => w.phase === 'foundation')
+      const k = f.findIndex((w, j) => j > 0 && f[j - 1].weekly_km > 0 && w.type !== 'deload' && w.badge !== 'deload' && f[j - 1].type !== 'deload' && f[j - 1].badge !== 'deload')
+      if (k < 1) return false
+      i.current_weekly_km = 1000   // keep the stated-volume ceiling out of reach
+      f[k].weekly_km = Math.round((f[k - 1].weekly_km * 1.1 + 0.5) * 10) / 10
+      if (kind === 'a deload') f[k].type = 'deload'
+      return true
+    }] as const),
+    // Second-half quality restamped onto a CV-anchored row (skipped by the ratio) or a threshold row (counted, off goal pace).
+    ...(['a CV-anchored', 'a threshold'] as const).map(kind => [`second-half quality restamped to ${kind} row off goal pace`, (p: Plan) => {
+      const cv = V1_SESSION_CATALOGUE.find(r => { const a = workAnchorsOf(r).filter(x => x !== 'E'); return a.length > 0 && a.every(x => x === 'CV') })
+      const id = kind === 'a CV-anchored' ? cv?.id : 'tempo_continuous'
+      if (!id || !p.meta.goal_pace_per_km) return false
+      const half = Math.ceil(p.weeks.filter(w => w.n > 0).length / 2)
+      let n = 0
+      for (const w of p.weeks) {
+        if (w.n < half || (w.phase !== 'build' && w.phase !== 'peak') || w.type === 'deload') continue
+        for (const s of Object.values(w.sessions ?? {})) if (s && s.type === 'quality') { s.catalogue_id = id; s.pace_target = '9:00'; delete s.stimulus; n++ }
+      }
+      return n > 0
+    }] as const),
     ['meta age differing from the input', (p: Plan, i: GeneratorInput) => {
       if (typeof i.age !== 'number') return false
       ;(p.meta as unknown as Record<string, unknown>).age = i.age + 1; return true
@@ -772,6 +804,8 @@ const EXTRA_MUTATIONS: { name: string; apply: (p: Plan, input: GeneratorInput) =
 /** Breakages whose landing must be on a NAMED rule: they also wake neighbouring cap rules, so "the old report
  *  changed" would pass without the target being reached (code review, batch 14). */
 const TARGETS: Record<string, string[]> = {
+  'foundation strides without the readiness gate': ['INV-PLAN-FOUNDATION-BLOCK'],
+  'foundation strides with injury history': ['INV-PLAN-FOUNDATION-BLOCK'],
   'a time trial that never says to log the result': ['INV-PLAN-COACH-NOTES-MATCH-INTENT'],
   'a VO2max session with an aerobic cue': ['INV-PLAN-COACH-NOTES-MATCH-INTENT'],
   'an effort-governed session named as goal-pace work': ['INV-PLAN-EFFORT-GOVERNED-NOT-GOAL-PACED'],
@@ -823,6 +857,8 @@ const SILENT: Record<string, { rule: string; twin: string }> = {
   'every quality session removed (no spaced day)': { rule: 'INV-PLAN-QUALITY-NOT-ZERO', twin: 'every quality session removed (loud)' },
   'every quality session removed (too little volume)': { rule: 'INV-PLAN-TIME-TARGET-QUALITY-FLOOR', twin: 'every quality session removed (loud)' },
   'two peak-level long runs in a row for an eligible runner': { rule: 'INV-PLAN-PEAK-LR-ALTERNATION', twin: 'two peak-level long runs in a row for an ineligible runner' },
+  'a foundation week ramping just over the ceiling onto a deload week': { rule: 'INV-PLAN-FOUNDATION-BLOCK', twin: 'a foundation week ramping just over the ceiling onto a normal week' },
+  'second-half quality restamped to a CV-anchored row off goal pace': { rule: 'INV-PLAN-RACE-SPECIFIC-EXPOSURE-RATIO', twin: 'second-half quality restamped to a threshold row off goal pace' },
   'an onset yield exactly at its bound': { rule: 'INV-PLAN-ONSET-YIELD-BOUNDED', twin: 'an onset yield one week past its bound' },
   'a continuous goal-pace step over the cap in the halfway week itself (5K time goal)': { rule: 'INV-PLAN-GOAL-PACE-SHAPE', twin: 'a continuous goal-pace step over the cap in the week after halfway (5K time goal)' },
 }

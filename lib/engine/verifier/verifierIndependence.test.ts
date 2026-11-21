@@ -35,7 +35,7 @@ const ALLOWED_NAMES: Record<string, string[]> = {
   '@/lib/plan/paceParse': ['parsePaceMidpoint'],       // input format: a pace string to min/km, fixture-tested
   '@/lib/plan/catalogueLink': ['catalogueRowFor'],     // ADR-018's session-to-row join (the stamped id), fixture-tested
   '@/lib/plan/sessionFormat': ['SESSION_FORMAT'],      // the universal session format: rule data (the split is derived here)
-  '@/lib/plan/sessionStructureV2': ['workAnchorsOf', 'goalPaceShapeWord'], // read a catalogue row's anchors and shape noun: rule data
+  '@/lib/plan/sessionStructureV2': ['workAnchorsOf', 'goalPaceShapeWord', 'isV2Structure', 'StructureV2Schema'], // read a catalogue row's anchors and shape noun: rule data
   '@/lib/plan/hrBand': ['isEffortGovernedRow'],        // classifies a row by its targets (INV-CLASS, the builder's same test), fixture-tested
   '@/lib/coaching/zoneRules': ['zoneStringFromZoneKeys'], // the zone-string format owner (keys to "Zone 3–4")
 }
