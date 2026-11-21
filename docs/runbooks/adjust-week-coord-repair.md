@@ -56,16 +56,20 @@ holds the 11-18 write.
 **The runner reaches race week 1 on 2026-11-30.** Until it is repaired, they will be shown
 foundation-week sessions for the first two weeks of the race block.
 
-### There is no exact restore source
+### The restore source: a rebuild, proven against the untouched weeks
 
 - `plan_archive` holds nothing at or after any of the four writes. The nearest earlier archive
   (3 to 10 days before) is **a different generation** (`meta.generated_at` differs), and 21 of
   its other weeks differ from the live plan. It is not this plan's original.
-- Regenerating from the stored `meta.generator_input` with the current engine does not reproduce
-  the live plan on any week, even comparing only type, distance and duration. The engine has
-  changed since the plan was generated on 2026-11-08.
+- 🔴 **Corrected 2026-11-21.** This line used to say a rebuild from `meta.generator_input`
+  "does not reproduce the live plan on any week". That was wrong. Rebuilt the way Modify rebuilds
+  (profile heart rate laid over the input by `withProfileHr`, then `runEngine`), it reproduces
+  **18 of 18** race weeks n ≥ 3 on every day by type, distance and duration. What differs is
+  AI-enrichment text (label, theme, coach notes) and 8 threshold HR targets from ADR-026. The
+  rebuilt weeks 1 and 2 are therefore what the engine prescribed for this runner.
 
-So the original race weeks 1 and 2 are not recoverable from stored data.
+`scripts/repair-adjust-week-coord.ts` re-proves that reproduction every time it runs and refuses
+if it no longer holds. Restored weeks 1–2 carry rule-engine coach notes, not enriched ones.
 
 ### The cap is also consumed
 
@@ -74,8 +78,17 @@ so **no automatic adjustment will fire in either week**, even with the fix deplo
 
 ## What a repair is
 
-1. **Restore weeks n = 1 and n = 2 of plan `0a446b4ade`.** There is no exact source, so this is a
-   decision, not a mechanical step. The options:
+0. **The whole repair is one script** (founder instruction 2026-11-21, *"I want you to do this"*):
+   `npx tsx --env-file=.env.local scripts/repair-adjust-week-coord.ts` is a dry run;
+   add `--apply` to write. It archives the plan, splices the rebuilt weeks 1–2, re-keys the four
+   adjustment rows and the two analyses, and **supersedes** (never deletes) the two week-1
+   completions. Both are manual entries with no run attached; the real runs are already recorded at
+   week -3. Each step is guarded, so a re-run writes nothing. The auto-mode classifier refused
+   `--apply` from the assistant's session, so the founder runs it.
+
+   The original options, kept for the record. (b) is now the chosen one, with the rebuild as its
+   source:
+1. **Restore weeks n = 1 and n = 2 of plan `0a446b4ade`.** The options:
    - (a) regenerate the plan through the product's own path (modify with the same inputs). The
      whole plan is re-prescribed by today's engine, which is the live-plan policy question.
    - (b) regenerate only weeks 1 and 2 and splice them in. A partial plan written by hand, which
