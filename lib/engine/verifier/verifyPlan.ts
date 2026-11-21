@@ -968,6 +968,62 @@ const BATCH_12: Partial<Record<RuleId, Predicate>> = {
 }
 Object.assign(PREDICATES, BATCH_12)
 
+/** §90: an injury on the profile that the delivered-volume caps apply to. */
+const deliveredCapInjury = (profile: RunnerProfile) =>
+  GENERATION_CONFIG.DELIVERED_CAP_INJURIES.some(k => hasInjuryKeyword(profile.injuries?.value ?? [], k))
+/** ⚠️ A literal in validatePlan, not config: copied so the two agree, and raised with the shakeout RPE cap. */
+const DELIVERED_ROUNDING_TOLERANCE_PCT = 10
+
+const BATCH_13: Partial<Record<RuleId, Predicate>> = {
+  // §2: for a delivered-cap injury, the week after a deload never exceeds the week before the deload.
+  'INV-PLAN-BOUNCEBACK-BOUNDED': (plan, { profile }) => {
+    if (!deliveredCapInjury(profile)) return []
+    const out: Raw[] = []
+    for (let i = 2; i < plan.weeks.length; i++) {
+      const bounce = plan.weeks[i], dl = plan.weeks[i - 1], pre = plan.weeks[i - 2]
+      if (!isDeloadWeek(dl) || isDeloadWeek(bounce) || isDeloadWeek(pre) || bounce.phase === 'taper') continue
+      if (bounce.weekly_km > pre.weekly_km + 0.01) out.push({ rule_id: 'INV-PLAN-BOUNCEBACK-BOUNDED', week: bounce.n, day: null, detail: 'bounce-back above the pre-deload week' })
+    }
+    return out
+  },
+
+  // §90: for a delivered-cap injury, the non-long volume rises at most the injury cap week on week (plus a
+  // rounding tolerance and an absolute floor), deloads and taper aside.
+  'INV-PLAN-INJURY-CAP-DELIVERED': (plan, { profile }) => {
+    if (!deliveredCapInjury(profile)) return []
+    const lk = (w: Week) => {
+      const l = Object.values((w.sessions ?? {}) as Record<string, Session | undefined>).find(s => !!s && isLongRun(s))
+      return sessionKmSelfPaced(l) ?? 0
+    }
+    const out: Raw[] = []
+    for (let i = 1; i < plan.weeks.length; i++) {
+      const w = plan.weeks[i], prev = plan.weeks[i - 1]
+      if (isDeloadWeek(w) || isDeloadWeek(prev) || w.phase === 'taper') continue
+      const now = w.weekly_km - lk(w), before = prev.weekly_km - lk(prev)
+      if (before <= 0 || now <= before) continue
+      const pct = ((now - before) / before) * 100
+      if (pct > GENERATION_CONFIG.INJURY_WEEKLY_INCREASE_CAP_PCT + DELIVERED_ROUNDING_TOLERANCE_PCT && now - before > GENERATION_CONFIG.DELIVERED_ABSOLUTE_FLOOR_KM)
+        out.push({ rule_id: 'INV-PLAN-INJURY-CAP-DELIVERED', week: w.n, day: null, detail: `non-long volume +${pct.toFixed(0)}%` })
+    }
+    return out
+  },
+
+  // §79: in a re-entry's first quality weeks (its budget), no VO2 catalogue row.
+  'INV-PLAN-RETURNING-INTENSITY-REENTRY': plan => {
+    if (!plan.meta.intensity_reentry_active) return []
+    const budget = plan.meta.intensity_reentry_weeks ?? 0
+    const weeks = new Set<number>()
+    for (const w of plan.weeks) {
+      if (w.n < 1 || weeks.size >= budget) continue
+      if (daysOf(w).some(x => x.session?.type === 'quality')) weeks.add(w.n)
+    }
+    return plan.weeks.filter(w => governed(w) && weeks.has(w.n)).flatMap(w => running(w)
+      .filter(x => x.session.catalogue_id && V1_SESSION_CATALOGUE.find(r => r.id === x.session.catalogue_id)?.category === 'vo2max')
+      .map(x => ({ rule_id: 'INV-PLAN-RETURNING-INTENSITY-REENTRY' as RuleId, week: w.n, day: x.day, detail: 'VO2 session inside the re-entry window' })))
+  },
+}
+Object.assign(PREDICATES, BATCH_13)
+
 const SEVERITY = new Map(RULES.map(r => [r.id, r.kind === 'soft' ? 'warn' as const : 'error' as const]))
 
 /** Every finding the ported predicates raise, with the severity the catalogue gives the rule. */

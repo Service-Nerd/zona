@@ -133,6 +133,11 @@ const EXTRA_MUTATIONS: { name: string; apply: (p: Plan, input: GeneratorInput) =
     ['no HR method', (p: Plan) => { delete p.meta.hr_zone_method; return true }],
     // Batch 8: the plan's declarations about its own limits.
     ['no compression class', (p: Plan) => { delete p.meta.compression_classification; return true }],
+    // Batch 13: re-entry window.
+    ['a re-entry window over every quality week', (p: Plan) => {
+      if (!p.weeks.some(w => w.n >= 1 && Object.values(w.sessions ?? {}).some(s => s && s.type === 'quality' && V1_SESSION_CATALOGUE.find(r => r.id === s.catalogue_id)?.category === 'vo2max'))) return false
+      p.meta.intensity_reentry_active = true; p.meta.intensity_reentry_weeks = 99; return true
+    }],
     // Batch 12: soft week rules.
     ['a deload after one loading week', (p: Plan) => { const m = p.weeks.filter(w => w.n >= 1); if (m.length < 3) return false; m[1].type = 'deload'; return true }],
     ['a deload above the week before', (p: Plan) => {
@@ -370,6 +375,24 @@ const EXTRA_MUTATIONS: { name: string; apply: (p: Plan, input: GeneratorInput) =
       const d = w && (Object.keys(w.sessions) as (keyof typeof w.sessions)[]).find(k => { const s = w.sessions[k]; return s && s.type === 'easy' && !isLongRun(s) })
       if (!w || !d) return false
       w.sessions[d] = { type: 'rest', label: 'Rest' } as never; return true
+    }],
+    // Batch 13: the delivered-cap injury rules, on a runner given a delivered-cap injury.
+    ['a knee injury with a bounce-back above the pre-deload week', (p: Plan, i: GeneratorInput) => {
+      const k = p.weeks.findIndex((w, j) => j >= 2 && (p.weeks[j - 1].type === 'deload') && w.type !== 'deload' && p.weeks[j - 2].type !== 'deload' && w.phase !== 'taper')
+      if (k < 2) return false
+      i.injury_history = [GENERATION_CONFIG.DELIVERED_CAP_INJURIES[0]]
+      p.weeks[k].weekly_km = p.weeks[k - 2].weekly_km + 1; return true
+    }],
+    ['a knee injury with non-long volume just over the cap', (p: Plan, i: GeneratorInput) => {
+      const k = p.weeks.findIndex((w, j) => j >= 1 && w.type !== 'deload' && p.weeks[j - 1].type !== 'deload' && w.phase !== 'taper' && p.weeks[j - 1].weekly_km > 0)
+      if (k < 1) return false
+      i.injury_history = [GENERATION_CONFIG.DELIVERED_CAP_INJURIES[0]]
+      const lk = (w: Plan['weeks'][number]) => { const l = Object.values(w.sessions ?? {}).find(s => s && isLongRun(s)); return sessionKmSelfPaced(l) ?? 0 }
+      const before = p.weeks[k - 1].weekly_km - lk(p.weeks[k - 1])
+      if (before <= 0) return false
+      const pct = GENERATION_CONFIG.INJURY_WEEKLY_INCREASE_CAP_PCT + 10 + 1
+      const rise = Math.max(before * pct / 100, GENERATION_CONFIG.DELIVERED_ABSOLUTE_FLOOR_KM + 0.5)
+      p.weeks[k].weekly_km = Math.round((before + rise + lk(p.weeks[k])) * 10) / 10; return true
     }],
     ['meta age differing from the input', (p: Plan, i: GeneratorInput) => {
       if (typeof i.age !== 'number') return false
