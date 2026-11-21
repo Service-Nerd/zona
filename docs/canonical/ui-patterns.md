@@ -6644,7 +6644,7 @@ He was right, and this document already said why:**
 not, and the gap is not a matter of taste: a surface whose documented pattern is metric
 hierarchy was given prose.
 
-**What fixed it:** every row leads with its **real threshold** — `+7 bpm`, `20%`, `1.4×`,
+**What fixed it:** every row leads with its **real threshold** — `+7 bpm`, `20%`, `1.4×` (1.3× since 2026-11-21, WATCHED-SIGNALS-DISCLOSURE-01),
 `15%`, `3 in a row`, `−8%`, `3 sessions`, `82%` — at 20px/700 tabular-nums above a 12px label,
 grouped under three horizon headings using the documented `MICRO_LABELS.sectionLabel`.
 

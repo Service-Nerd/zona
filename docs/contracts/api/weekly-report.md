@@ -163,7 +163,7 @@ board's ruling, not an implementation detail**:
 
 | Figure | Read by | Why |
 |---|---|---|
-| `linkedKm` | **acute:chronic ratio**, `priorWeeksKm` | `acute_chronic_high` calls `buildReduceVolumeAdjustment`, which trims easy and long sessions ~15% and only `requiresConfirmation` at `LOAD_RATIO.flag` — below that it applies **silently**. **Clause 2:** a runner's own extra easy run must not shrink next week without them asking |
+| `linkedKm` | **acute:chronic ratio**, `priorWeeksKm` | `acute_chronic_high` calls `buildReduceVolumeAdjustment`, which trims easy and long sessions ~15% and ADR-012's magnitude rule usually applies **silently** (`LOAD_RATIO.flag` is not read by the trigger path; WATCHED-SIGNALS-DISCLOSURE-01). **Clause 2:** a runner's own extra easy run must not shrink next week without them asking |
 | `linkedKm + offPlanKm` | **shadow load**, `total_km_actual` | **Clause 1:** actual load is a measurement of what happened, and excluding real running makes it wrong. `buildShadowLoadAdjustment` copies `sessionsBefore` into `sessionsAfter` unchanged and reports *"Flagged — no auto-change applied"* — it was already clause 2's shape |
 
 **Measured on production 2026-09-27:** of runs that happened while a plan

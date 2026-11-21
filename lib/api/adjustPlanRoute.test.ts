@@ -551,12 +551,18 @@ describe('H/I — the engine proposed something', () => {
       user_id: UID, start_date: new Date(new Date(`${wk1}T08:00:00`).getTime() + i * 86_400_000).toISOString(), distance_m: 15_000, reported_distance_m: null,
       activity_type: 'Run', sport_type: 'Run', strava_activity_id: null, apple_health_uuid: `hk-${i}`, manual_uuid: null,
     })
+    const before = JSON.stringify(S.store.plans[0].plan_json)
     const res = await post({})
     expect(res.status).toBe(200)
     const row = adjustments()[0]
     expect(row?.trigger_type, 'the fixture must actually reach shadow_load').toBe('shadow_load')
-    expect(row.status).toBe('auto_applied')
-    expect(S.store.notifications, 'an unchanged plan was announced as shifted').toEqual([])
+    expect(row.status, 'the observation is kept in the ledger').toBe('auto_applied')
+    // Every surface that would tell the runner their plan changed:
+    expect(S.store.notifications, 'inbox: "Plan\'s been shifted."').toEqual([])
+    expect(settings().last_adjustment_check_found_change, 'Me: "Plan tweaked"').toBe(false)
+    expect(JSON.stringify(S.store.plans[0].plan_json), 'an unchanged plan was re-saved').toBe(before)
+    const { countsTowardCap } = await import('@/lib/coaching/adjustmentLedger')
+    expect(countsTowardCap(row as { status: string; trigger_type: string }), 'it took a weekly slot').toBe(false)
   })
 
   it('🔴 I2 — a FAILED plan save records `plan_save_failed` and does not swallow the error', async () => {

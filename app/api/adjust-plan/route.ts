@@ -487,7 +487,10 @@ export async function POST(req: NextRequest) {
 
   // For auto-applied adjustments, update the plan immediately (updatedPlan was
   // computed + constitutionally validated above).
-  if (status === 'auto_applied') {
+  // WATCHED-SIGNALS-DISCLOSURE-01 (code review) — a proposal that changes no session is an
+  // observation: the ledger keeps it, but the plan is not re-saved and the check reports no change.
+  const changed = changesSessions(proposed)
+  if (status === 'auto_applied' && changed) {
     // OPS-01: the plan_adjustments row is already written, so if this save
     // throws we'd have a recorded "auto_applied" adjustment with no matching
     // plan_json change — the exact 2026-06-26 incident. Record the failure to
@@ -514,7 +517,7 @@ export async function POST(req: NextRequest) {
     // WATCHED-SIGNALS-DISCLOSURE-01 — and never for a change that changed nothing: a
     // `shadow_load` observation auto-applies with identical before/after sessions, and was
     // announced as "Plan's been shifted." (1 of the 5 such inbox rows in production, 2026-11-21).
-    if (!isManual && changesSessions(proposed)) {
+    if (!isManual) {
       const url = '/dashboard?screen=plan'
       void recordNotification(user.id, {
         type:  'plan_adjustment',
@@ -551,7 +554,7 @@ export async function POST(req: NextRequest) {
     })
   }
 
-  await recordAdjustmentCheck(serviceSupabase, user.id, true)
+  await recordAdjustmentCheck(serviceSupabase, user.id, changed)
   // RESHAPE-FIX-WAVE3: use the magnitude-derived value, not the builder's
   // pre-Wave-3 ad-hoc flag (kept on the proposal type for backward
   // compatibility but no longer authoritative).

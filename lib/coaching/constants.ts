@@ -171,7 +171,7 @@ export const ZONE_BLOCK_VERDICT_MIN_RUNS = 3
 // Acute:chronic load ratio thresholds
 export const LOAD_RATIO = {
   watch: 1.3,
-  flag:  1.4,  // flag if >1.4 for 2 consecutive weeks
+  flag:  1.4,  // §124 Am.1's ask-first line (two weeks running), NOT YET read by the trigger path: it fires at `watch` after one week (WATCHED-SIGNALS-DISCLOSURE-01)
   // A5 (Design Board 2026-09-22) — the LOWER edge of "your recent normal".
   // It already governed what the Coach screen tells the runner ("under your
   // recent normal") and was a bare 0.8 inside a display function, invisible to

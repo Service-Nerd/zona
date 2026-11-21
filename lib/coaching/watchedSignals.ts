@@ -94,7 +94,7 @@ export const WATCHED_SIGNALS: Record<DetectedTrigger, WatchedSignal> = {
     // decision point. `planAdjustment.test.ts` now proves the figure is where the trigger fires.
     figure: `${LOAD_RATIO.watch}\u00d7`,
     label:  'this week against your recent weeks',
-    detail: 'One week at that ratio is enough to trim your easy and long runs.',
+    detail: 'Checked every week. One week over it is enough.',
   },
   shadow_load: {
     horizon: 'week',

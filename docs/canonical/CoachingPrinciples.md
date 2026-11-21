@@ -250,8 +250,9 @@ Returning to a volume held comfortably two weeks earlier is not a spike. Chronic
    not distinguish prescribed kilometres from chosen ones, and a measurement that excludes
    real running is not a measurement of load.
 2. **It never reaches the acute:chronic ratio.** That trigger calls
-   `buildReduceVolumeAdjustment`, which trims easy and long sessions ~15% and only
-   requires confirmation at `LOAD_RATIO.flag` — below that it applies silently. A runner's
+   `buildReduceVolumeAdjustment`, which trims easy and long sessions ~15%, and ADR-012's
+   magnitude rule usually applies that silently (`LOAD_RATIO.flag` is not read by the trigger
+   path; corrected 2026-11-21, WATCHED-SIGNALS-DISCLOSURE-01). A runner's
    own extra easy run must not shrink next week without them asking (McMillan, sustained:
    *"do that twice and they stop logging, and then you have lost the data and the trust"*).
 3. **For the §2 injury cohort, off-plan volume is included in the cap and the runner is

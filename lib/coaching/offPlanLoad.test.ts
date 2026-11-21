@@ -69,8 +69,8 @@ describe('CLAUSE 2 — an off-plan run raises the observation, not the adjustmen
   })
 
   it('🔴 an off-plan run cannot fire acute_chronic_high, which AUTO-TRIMS', () => {
-    // buildReduceVolumeAdjustment only requiresConfirmation at LOAD_RATIO.flag,
-    // so below that it applies silently. This is the specific harm clause 2 names.
+    // buildReduceVolumeAdjustment trims ~15% and ADR-012's magnitude rule usually applies it
+    // silently. This is the specific harm clause 2 names.
     const r = checkAdjustmentTriggers({ ...base(), offPlanKm: 24 })
     expect(r?.trigger.type).not.toBe('acute_chronic_high')
   })

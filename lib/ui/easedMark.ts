@@ -6,6 +6,7 @@
 // confirms the ease and leaves it when they revert.
 
 import type { Session } from '@/types/plan'
+import { OBSERVATION_TRIGGERS } from '@/lib/coaching/adjustmentLedger'
 
 /** The mark's words (Design Board ruling). A TEXT mark: never a colour, a tile or a count. */
 export const EASED_FOR_RECOVERY_LABEL = 'Eased for recovery'
@@ -19,5 +20,7 @@ export function isEasedForRecovery(s: Pick<Session, 'eased_for'> | { eased_for?:
  * silent `auto_applied` changes, and recovery eases the runner confirmed (READINESS-SURFACE-01).
  * A PostgREST `or` filter, owned here so the query and its test read one string.
  */
+// WATCHED-SIGNALS-DISCLOSURE-01 — an observation (`OBSERVATION_TRIGGERS`) is stored as
+// `auto_applied` but changed nothing, so it is not listed as a change.
 export const RECENT_CHANGES_FILTER =
-  'status.eq.auto_applied,and(status.eq.confirmed,trigger_type.eq.readiness_signal)'
+  `and(status.eq.auto_applied,trigger_type.not.in.(${OBSERVATION_TRIGGERS.join(',')})),and(status.eq.confirmed,trigger_type.eq.readiness_signal)`

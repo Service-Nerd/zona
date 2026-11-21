@@ -77,5 +77,15 @@ export function duplicateOf(
  */
 export const CAPPED_STATUSES = ['pending', 'confirmed', 'auto_applied'] as const
 
-export const countsTowardCap = (row: { status: string }): boolean =>
-  (CAPPED_STATUSES as readonly string[]).includes(row.status)
+/**
+ * WATCHED-SIGNALS-DISCLOSURE-01 (code review 2026-11-21) — triggers whose proposal changes no
+ * session: an OBSERVATION written to the ledger as `auto_applied` (the status CHECK constraint has
+ * no other value for it). It is not a change, so it never takes one of the week's slots and never
+ * appears under "Changed this week". `planAdjustment.test.ts` proves each one's builder returns
+ * identical before/after sessions; the route's `changesSessions` gate covers any other no-op.
+ */
+export const OBSERVATION_TRIGGERS = ['shadow_load'] as const
+
+export const countsTowardCap = (row: { status: string; trigger_type?: string | null }): boolean =>
+  (CAPPED_STATUSES as readonly string[]).includes(row.status) &&
+  !(OBSERVATION_TRIGGERS as readonly string[]).includes(row.trigger_type ?? '')
