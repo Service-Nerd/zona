@@ -1831,6 +1831,67 @@ const BATCH_26: Partial<Record<RuleId, Predicate>> = {
 }
 Object.assign(PREDICATES, BATCH_26)
 
+const BATCH_27: Partial<Record<RuleId, Predicate>> = {
+  // §47: on a half or full marathon, two consecutive peak weeks do not both carry a peak-level long run (at least the
+  // alternation share of the peak long run, with race-pace work), except once for an eligible runner. ⚠️ A long run
+  // with no segment stamp is read by its LABEL (legacy plans), as validatePlan reads it: raised, a label read.
+  'INV-PLAN-PEAK-LR-ALTERNATION': (plan, { input }) => {
+    const dk = raceDistanceKey(input.race_distance_km)
+    if (dk !== 'HM' && dk !== 'MARATHON') return []
+    const peak = plan.weeks.filter(w => w.phase === 'peak' && w.type !== 'deload')
+    if (peak.length < 2) return []
+    const lrOf = (w: Week) => Object.values(w.sessions ?? {}).find(s => !!s && isLongRun(s))
+    const max = Math.max(...peak.map(w => sessionKmSelfPaced(lrOf(w)) ?? 0))
+    const threshold = (GENERATION_CONFIG.PEAK_LR_ALTERNATION_THRESHOLD_PCT / 100) * max
+    const level = (w: Week) => {
+      const lr = lrOf(w)
+      const km = lr ? sessionKmSelfPaced(lr) : null
+      if (!lr || km == null || km + 0.01 < threshold) return false
+      if (lr.lr_segment_pace) return true
+      const l = (lr.label ?? '').toLowerCase()
+      return l.includes('pace') || l.includes(' mp') || l.startsWith('mp') || l.includes('hm-pace')
+    }
+    const eligible = input.hard_session_relationship === 'love' && (input.injury_history ?? []).length === 0 && input.training_age === '5yr+'
+    let used = false
+    const out: Raw[] = []
+    for (let i = 1; i < peak.length; i++) {
+      if (!(level(peak[i - 1]) && level(peak[i]))) continue
+      if (eligible && !used) { used = true; continue }
+      out.push({ rule_id: 'INV-PLAN-PEAK-LR-ALTERNATION', week: peak[i].n, day: null, detail: 'two peak-level long runs in a row' })
+    }
+    return out
+  },
+
+  // §78, §33: a time trial's notes say it is a measurement and to log the result; a VO2 or goal-pace quality session
+  // carries no aerobic cue; a goal-paced work step is not told it is threshold work. ⚠️ VO2 and goal pace are detected
+  // from the LABEL here, as validatePlan does: raised, a label read.
+  'INV-PLAN-COACH-NOTES-MATCH-INTENT': plan => plan.weeks.filter(governed).flatMap(w => {
+    const out: Raw[] = []
+    const placed = running(w)
+    for (const { day, session: s } of placed) {
+      if (!isTimeTrial(s)) continue
+      const notes = (s.coach_notes ?? []).join(' ').toLowerCase()
+      if (!/measurement/.test(notes) || !/log the (result|time)/.test(notes)) out.push({ rule_id: 'INV-PLAN-COACH-NOTES-MATCH-INTENT', week: w.n, day, detail: 'time trial lost its instruction' })
+    }
+    for (const { day, session: s } of placed) {
+      if (s.type !== 'quality') continue
+      const label = (s.label ?? '').toLowerCase(), notes = (s.coach_notes ?? []).join(' ').toLowerCase()
+      const hard = label.includes('vo2max') || label.includes('vo2 max') || label.includes('-pace ') || label.includes('mp ') || label.includes('mp.')
+      if (!hard) continue
+      for (const phrase of ['boring is the point', 'if it feels productive']) {
+        if (notes.includes(phrase)) out.push({ rule_id: 'INV-PLAN-COACH-NOTES-MATCH-INTENT', week: w.n, day, detail: `aerobic cue "${phrase}"` })
+      }
+    }
+    for (const { day, session: s } of placed) {
+      if (classifyStimulus(s) !== 'race_pace' || !s.derived_set) continue
+      if (s.derived_set.blocks.flatMap(b => b.steps).some(st => st.role === 'work' && st.note && /threshold|not a race pace/i.test(st.note)))
+        out.push({ rule_id: 'INV-PLAN-COACH-NOTES-MATCH-INTENT', week: w.n, day, detail: 'goal-paced step called threshold' })
+    }
+    return out
+  }),
+}
+Object.assign(PREDICATES, BATCH_27)
+
 const SEVERITY = new Map(RULES.map(r => [r.id, r.kind === 'soft' ? 'warn' as const : 'error' as const]))
 /** Rules the catalogue marks as conditionally severe: only these may set a finding's severity (code review, batch 20). */
 const CONDITIONAL = new Set(RULES.filter(r => r.severity_note).map(r => r.id))

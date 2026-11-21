@@ -694,6 +694,31 @@ const EXTRA_MUTATIONS: { name: string; apply: (p: Plan, input: GeneratorInput) =
       if (how === 'too little volume') for (const w of p.weeks) w.weekly_km = GENERATION_CONFIG.BEGINNER_QUALITY_MIN_WEEKLY_KM - 1
       return true
     }] as const),
+    // Batch 27: two consecutive peak-level long runs on a half or full marathon; silent once for an eligible runner.
+    ...(['an ineligible', 'an eligible'] as const).map(who => [`two peak-level long runs in a row for ${who} runner`, (p: Plan, i: GeneratorInput) => {
+      if (raceDistanceKey(i.race_distance_km) !== 'HM' && raceDistanceKey(i.race_distance_km) !== 'MARATHON') return false
+      const peak = p.weeks.filter(w => w.phase === 'peak' && w.type !== 'deload')
+      const lrs = peak.map(w => Object.values(w.sessions ?? {}).find(x => x && isLongRun(x)))
+      if (peak.length < 2 || lrs.some(x => !x)) return false
+      lrs.forEach((lr, k) => {
+        lr!.distance_km = k < 2 ? 30 : 5; delete lr!.duration_mins
+        if (k < 2) lr!.lr_segment_pace = '5:00'; else { delete lr!.lr_segment_pace; lr!.label = 'Long run' }
+      })
+      if (who === 'an eligible') { i.hard_session_relationship = 'love'; i.injury_history = []; i.training_age = '5yr+' }
+      else i.hard_session_relationship = 'avoid'
+      return true
+    }] as const),
+    // A time trial whose notes say measurement but not to log the result; a VO2 session with an aerobic cue.
+    ['a time trial that never says to log the result', (p: Plan) => {
+      const s = p.weeks.filter(w => w.n >= 1 && w.phase !== 'base_build').flatMap(w => Object.values(w.sessions ?? {})).find(x => x && x.type === 'quality')
+      if (!s) return false
+      s.type = 'hard'; s.coach_notes = ['A measurement, run it honestly.']; return true
+    }],
+    ['a VO2max session with an aerobic cue', (p: Plan) => {
+      const s = p.weeks.filter(w => w.n >= 1).flatMap(w => Object.values(w.sessions ?? {})).find(x => x && x.type === 'quality')
+      if (!s) return false
+      s.label = 'VO2max intervals'; s.coach_notes = ['Boring is the point.']; return true
+    }],
     ['meta age differing from the input', (p: Plan, i: GeneratorInput) => {
       if (typeof i.age !== 'number') return false
       ;(p.meta as unknown as Record<string, unknown>).age = i.age + 1; return true
@@ -747,6 +772,8 @@ const EXTRA_MUTATIONS: { name: string; apply: (p: Plan, input: GeneratorInput) =
 /** Breakages whose landing must be on a NAMED rule: they also wake neighbouring cap rules, so "the old report
  *  changed" would pass without the target being reached (code review, batch 14). */
 const TARGETS: Record<string, string[]> = {
+  'a time trial that never says to log the result': ['INV-PLAN-COACH-NOTES-MATCH-INTENT'],
+  'a VO2max session with an aerobic cue': ['INV-PLAN-COACH-NOTES-MATCH-INTENT'],
   'an effort-governed session named as goal-pace work': ['INV-PLAN-EFFORT-GOVERNED-NOT-GOAL-PACED'],
   'paced VO2max work just over the dose band': ['INV-PLAN-VO2MAX-MAIN-SET-CAP'],
   'a run-walk plan with the interval on a quality session': ['INV-PLAN-RUNWALK-PRESCRIBED'],
@@ -795,6 +822,7 @@ const SILENT: Record<string, { rule: string; twin: string }> = {
   'a renamed goal-pace label ending in a purpose word': { rule: 'INV-PLAN-LABEL-MATCHES-STRUCTURE', twin: 'a renamed goal-pace label ending in the wrong shape word' },
   'every quality session removed (no spaced day)': { rule: 'INV-PLAN-QUALITY-NOT-ZERO', twin: 'every quality session removed (loud)' },
   'every quality session removed (too little volume)': { rule: 'INV-PLAN-TIME-TARGET-QUALITY-FLOOR', twin: 'every quality session removed (loud)' },
+  'two peak-level long runs in a row for an eligible runner': { rule: 'INV-PLAN-PEAK-LR-ALTERNATION', twin: 'two peak-level long runs in a row for an ineligible runner' },
   'an onset yield exactly at its bound': { rule: 'INV-PLAN-ONSET-YIELD-BOUNDED', twin: 'an onset yield one week past its bound' },
   'a continuous goal-pace step over the cap in the halfway week itself (5K time goal)': { rule: 'INV-PLAN-GOAL-PACE-SHAPE', twin: 'a continuous goal-pace step over the cap in the week after halfway (5K time goal)' },
 }
