@@ -1,5 +1,6 @@
 import { AI_LIMITS } from '@/lib/ai/limits'
 import { getInternalBaseUrl } from '@/lib/coaching/autoAnalyse'
+import { recordOpsEvent } from '@/lib/ops/recordOpsEvent'
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient as createServiceClient } from '@supabase/supabase-js'
 import { getUserFromRequest } from '@/lib/supabase/getUserFromRequest'
@@ -126,61 +127,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: true, mode: 'enriched_healthkit' })
   }
 
-  // No HealthKit row — fall back to creating a Strava-sourced row and
-  // firing analysis. This is the path for users who haven't connected
-  // HealthKit (or whose iOS sync hasn't run yet).
-  const { error: upsertErr } = await supabase.from('strava_activities').upsert({
-    user_id:              user.id,
-    strava_activity_id:   activity.id,
-    source:               'strava',
-    activity_type:        activity.type,
-    sport_type:           activity.sport_type,
-    name:                 activity.name,
-    start_date:           activity.start_date,
-    distance_m:           activity.distance,
-    moving_time_s:        activity.moving_time,
-    elapsed_time_s:       activity.elapsed_time,
-    elevation_gain:       activity.total_elevation_gain,
-    avg_hr:               activity.average_heartrate != null ? Math.round(activity.average_heartrate) : null,
-    max_hr:               activity.max_heartrate     != null ? Math.round(activity.max_heartrate)     : null,
-    avg_speed:            activity.average_speed,
-    avg_temp_c:           activity.average_temp ?? null,
-    splits_metric:        activity.splits_metric ?? null,
-    suffer_score:         activity.suffer_score ?? null,
-    hr_in_zone_pct:       hrSummary?.inZonePct ?? null,
-    hr_above_ceiling_pct: hrSummary?.abovePct  ?? null,
-    hr_below_floor_pct:   hrSummary?.belowPct  ?? null,
-    hr_pct_z1:            hrSummary?.histogram.pctZ1   ?? null,
-    hr_pct_z2:            hrSummary?.histogram.pctZ2   ?? null,
-    hr_pct_z3:            hrSummary?.histogram.pctZ3   ?? null,
-    hr_pct_z4_5:          hrSummary?.histogram.pctZ4_5 ?? null,
-    raw_payload:          { source: 'manual_link' },
-    processed_at:         new Date().toISOString(),
-  }, { onConflict: 'user_id,strava_activity_id' })
-
-  if (upsertErr) {
-    console.error('[link-activity] strava_activities upsert failed', upsertErr.message)
-    return NextResponse.json({ error: 'Failed to persist activity' }, { status: 500 })
-  }
-
-  // The same bypass as above, in the Strava-id path. One owner (GTM-SITE-01).
-  const baseUrl = getInternalBaseUrl()
-
-  try {
-    await fetch(`${baseUrl}/api/analyse-run`, {
-      method: 'POST',
-      headers: {
-        'Content-Type':  'application/json',
-        'x-service-key': process.env.SUPABASE_SERVICE_ROLE_KEY!,
-        'x-user-id':     user.id,
-      },
-      body: JSON.stringify({ strava_activity_id, week_n, session_day }),
-      // AI-ROUTE-HTTP-HOP-CEILING-01 — bound the hop, or the CALLER is what dies.
-      signal: AbortSignal.timeout(AI_LIMITS.HOP_TIMEOUT_MS),
-    })
-  } catch (err) {
-    console.warn('[link-activity] analyse-run trigger failed', err)
-  }
-
-  return NextResponse.json({ ok: true, mode: 'created_strava' })
+  // STRAVA-WEBHOOK-SOR-01 (founder 2026-11-21, ADR-011 §3, INV-DATA-008): Apple Health is the system of record.
+  // A Strava activity with no matching Apple Health run is NOT stored. It used to be upserted as `source: 'strava'`
+  // and analysed here, the same breach as the webhook's.
+  await recordOpsEvent('strava_activity_discarded', { reason: 'no_healthkit_match', strava_activity_id, via: 'link-activity' }, user.id)
+  return NextResponse.json({ ok: false, mode: 'discarded_no_healthkit_match' }, { status: 409 })
 }

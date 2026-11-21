@@ -151,10 +151,9 @@ fi
 # Allowed (SOR ingest + patch gateway):
 #   - app/api/health/ingest/         — primary HealthKit ingest
 #   - lib/coaching/healthkitConsolidate.ts — patch helper (only .update)
-# Tolerated legacy (no new violations of doctrine here either):
-#   - app/api/webhooks/strava/       — pending retirement, see ADR-011
-#   - app/api/strava/link-activity/  — pending retirement, see ADR-011
-ALLOWED_WRITER_REGEX='^(app/api/health/ingest/|app/api/webhooks/strava/|app/api/strava/link-activity/|lib/coaching/healthkitConsolidate\.ts$)'
+# The two tolerated legacy writers (the Strava webhook and link-activity) were RETIRED by STRAVA-WEBHOOK-SOR-01
+# (2026-11-21): a Strava activity with no matching Apple Health run is now discarded, never stored.
+ALLOWED_WRITER_REGEX='^(app/api/health/ingest/|lib/coaching/healthkitConsolidate\.ts$)'
 
 STAGED_ALL_TS=$(git diff --cached --name-only --diff-filter=ACM | grep -E '\.(tsx?|jsx?)$' | grep -vE "$ALLOWED_WRITER_REGEX" || true)
 

@@ -107,7 +107,9 @@ describe('AI-ROUTE-HTTP-HOP-CEILING-01 — the hop, and the caller that waits on
     expect(aiRouteNames.size, 'no AI routes found; the import walk is broken').toBeGreaterThan(5)
     expect(aiRouteNames, 'analyse-run reaches the model and must be in the closure').toContain('analyse-run')
     expect(aiRouteNames).toContain('weekly-report')
-    expect(hops.length, 'no HTTP hops to an AI route found; the fetch reader is broken').toBeGreaterThanOrEqual(5)
+    // STRAVA-WEBHOOK-SOR-01 (2026-11-21) removed link-activity's Strava-path hop (that path no longer stores or
+    // analyses an unmatched activity), so the floor is 4, not 5.
+    expect(hops.length, 'no HTTP hops to an AI route found; the fetch reader is broken').toBeGreaterThanOrEqual(4)
   })
 
   it('🔴 the item said THREE sites — link-activity has two of the five it missed', () => {
@@ -119,7 +121,7 @@ describe('AI-ROUTE-HTTP-HOP-CEILING-01 — the hop, and the caller that waits on
       expect(files, `${f} awaits an AI route and is not in the derived population`).toContain(f)
     }
     expect(hops.filter(h => h.file === 'app/api/strava/link-activity/route.ts').length,
-      'link-activity has TWO hops and the item named neither').toBe(2)
+      'link-activity has ONE hop since STRAVA-WEBHOOK-SOR-01 removed the Strava-path analysis').toBe(1)
   })
 
   it('🔴 every hop carries an AbortSignal', () => {

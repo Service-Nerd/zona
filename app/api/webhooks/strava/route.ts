@@ -3,9 +3,9 @@ import { waitUntil } from '@vercel/functions'
 import { NextRequest, NextResponse } from 'next/server'
 import { secretMatches } from '@/lib/security/secrets'
 import { getStravaToken, fetchHRStreamSummary } from '@/lib/strava'
-import { autoMatchAndAnalyse, getInternalBaseUrl } from '@/lib/coaching/autoAnalyse'
 import { tryEnrichHealthKitRow } from '@/lib/coaching/healthkitConsolidate'
 import { recordOpsEvent } from '@/lib/ops/recordOpsEvent'
+import { deleteStravaActivity } from '@/lib/coaching/stravaSor'
 
 // Strava webhook docs: https://developers.strava.com/docs/webhooks/
 //
@@ -155,73 +155,17 @@ async function enrichAndPersist(event: StravaEvent) {
     },
     hrSummary,
   )
-  if (consolidation.enriched) return
-
-  // Upsert into strava_activities
-  const { error } = await getSupabase().from('strava_activities').upsert({
-    user_id:             userId,
-    source:              'strava',
-    strava_activity_id:  activity.id,
-    activity_type:       activity.type,
-    sport_type:          activity.sport_type,
-    name:                activity.name,
-    start_date:          activity.start_date,
-    distance_m:          activity.distance,
-    moving_time_s:       activity.moving_time,
-    elapsed_time_s:      activity.elapsed_time,
-    elevation_gain:      activity.total_elevation_gain,
-    avg_hr:              activity.average_heartrate != null ? Math.round(activity.average_heartrate) : null,
-    max_hr:              activity.max_heartrate     != null ? Math.round(activity.max_heartrate)     : null,
-    avg_speed:           activity.average_speed,
-    avg_temp_c:          activity.average_temp ?? null,
-    splits_metric:       activity.splits_metric ?? null,
-    suffer_score:        activity.suffer_score ?? null,
-    hr_in_zone_pct:      hrSummary?.inZonePct    ?? null,
-    hr_above_ceiling_pct: hrSummary?.abovePct    ?? null,
-    hr_below_floor_pct:  hrSummary?.belowPct     ?? null,
-    hr_pct_z1:           hrSummary?.histogram.pctZ1   ?? null,
-    hr_pct_z2:           hrSummary?.histogram.pctZ2   ?? null,
-    hr_pct_z3:           hrSummary?.histogram.pctZ3   ?? null,
-    hr_pct_z4_5:         hrSummary?.histogram.pctZ4_5 ?? null,
-    raw_payload:         event,
-    processed_at:        new Date().toISOString(),
-  }, { onConflict: 'user_id,strava_activity_id' })
-
-  if (error) {
-    console.error('[strava-webhook] upsert failed', error.message)
-    return
+  // STRAVA-WEBHOOK-SOR-01: Apple Health is the system of record. No matching Apple Health run -> discard, never store.
+  if (!consolidation.enriched) {
+    await recordOpsEvent('strava_activity_discarded', { reason: 'no_healthkit_match', strava_activity_id: activity.id }, userId)
   }
-
-  // Auto-match to a planned session and trigger analysis
-  await autoMatchAndAnalyse(
-    getSupabase(),
-    userId,
-    {
-      id:                   event.object_id,
-      type:                 activity.type,
-      sport_type:           activity.sport_type,
-      start_date:           activity.start_date,
-      distance:             activity.distance,
-      moving_time:          activity.moving_time,
-      elapsed_time:         activity.elapsed_time,
-      total_elevation_gain: activity.total_elevation_gain,
-      average_heartrate:    activity.average_heartrate,
-      max_heartrate:        activity.max_heartrate,
-      average_speed:        activity.average_speed,
-      name:                 activity.name,
-    },
-    { source: 'strava', stravaActivityId: event.object_id },
-    getInternalBaseUrl(),
-  )
 }
 
 async function handleActivityDelete(event: StravaEvent) {
   const userId = await resolveUserId(event.owner_id)
   if (!userId) return
-  await getSupabase()
-    .from('strava_activities')
-    .delete()
-    .match({ user_id: userId, strava_activity_id: event.object_id })
+  // STRAVA-WEBHOOK-SOR-01: never deletes an Apple Health row; clears the Strava patch on one instead.
+  await deleteStravaActivity(getSupabase(), userId, event.object_id)
 }
 
 /** Resolves Strava athlete_id → Zonna user_id via user_settings. */

@@ -20,6 +20,12 @@ it specific, no polish. The content system adds the voice.
 
 **The honest bit.** The first attempt did exactly what the brief said and the ramp went backwards: 216 of 425 knee/shin ramps ended below their start. The brief named §2's capped bounceback, and §2 Amendment 3 had withdrawn it two months earlier. The code was a faithful copy of a rule that no longer existed. Two copies of one rule, one current and one stale, was also the original defect, so the fix is the owner, not the curve.
 
+## 2026-11-21 — STRAVA-WEBHOOK-SOR-01 · the doctrine said "discarded", and two routes stored it anyway
+
+**Dev.** ADR-011 says a Strava activity with no matching Apple Health run is discarded. The webhook and `link-activity` both upserted it as `source: 'strava'`, and the commit hook allow-listed both as "pending retirement" for five months. Analysing it turned up a worse defect: a Strava delete removed the row by `strava_activity_id`, and that id is stamped on the **Apple Health** row by the merge. So deleting a run on Strava deleted the runner's system-of-record run. Both routes are now enrich-only, deletes are scoped, and a tree sweep forbids any new writer.
+
+**The honest bit.** The doc and the code disagreed for months, and the hook's own comment said so. A tolerated exception with no date is a permanent one.
+
 ## 2026-11-21 — ADR027-B0-GOLDEN-CORPUS / ADR027-B0-PROD-FINDINGS · every corpus we measured with was off the product's shape
 
 **Dev.** I built the golden corpus from the wizard's own option lists and its own week→input function, and wrote one predicate that says why a row could not have come from the wizard. Then I ran that predicate over the five corpora that every coaching harness uses. **Every row of all five failed it.** No row sets the long-run day. Day counts don't match the rest days. Rows send `injury_history: []` where the wizard sends no field. Some carry fields the wizard never posts. The production findings event means real generations now report their rule codes, instead of writing only to `console.error`.

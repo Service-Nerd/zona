@@ -29,7 +29,7 @@ HealthKit-only branch and returns immediately.
 |---|---|---|
 | 200 | `{ ok: true, mode: 'healthkit' }` | `apple_health_uuid` path — the row already exists; nothing is fetched from Strava |
 | 200 | `{ ok: true, mode: 'enriched_healthkit' }` | `tryEnrichHealthKitRow` found a matching HealthKit row and **patched** it (ADR-011's supplement path) |
-| 200 | `{ ok: true, mode: 'created_strava' }` | No HealthKit row matched, so a Strava-canonical row was upserted — see the ADR-011 note below |
+| 409 | `{ ok: false, mode: 'discarded_no_healthkit_match' }` | No HealthKit row matched. **Nothing is stored** (STRAVA-WEBHOOK-SOR-01, 2026-11-21); a `strava_activity_discarded` ops event is recorded. Until 2026-11-21 this path upserted a Strava-canonical row as `created_strava` |
 | 400 | `{ error: 'Strava not connected' }` | No token in `user_settings` |
 | 403 | `{ error: 'Subscription required' }` | `activity_intelligence` not allowed for the tier |
 | 422 | `{ error: 'Activity is not a run' }` | Strava returned a non-run activity |
@@ -39,7 +39,16 @@ HealthKit-only branch and returns immediately.
 `mode` is the field a caller should branch on: the three 200s are materially different outcomes
 and were previously indistinguishable to anyone reading only the status.
 
-## ⚠️ ADR-011 / INV-DATA-008 — the write, and a tension in the doctrine text
+## ✅ ADR-011 / INV-DATA-008 — resolved 2026-11-21 (STRAVA-WEBHOOK-SOR-01)
+
+The founder ruled: *"Apple health is sor for run data."* This route no longer writes `strava_activities`. A Strava
+activity either patches a matching Apple Health row through `tryEnrichHealthKitRow`, or is discarded with a recorded
+event. The tension this section used to record is closed. The pre-commit allowlist and the tree sweep in
+`lib/coaching/stravaSor.test.ts` both forbid the write.
+
+<details><summary>The tension as it was recorded before 2026-11-21</summary>
+
+
 
 This route **upserts `strava_activities`** (`route.ts:132`) on the `created_strava` path.
 
@@ -84,3 +93,5 @@ run-analysis on both ingest paths after 2026-09-10"*. `NEXT_PUBLIC_APP_URL` is d
 **unset**, so in production both hops resolved to a protected deployment URL — and the `catch`
 only `console.warn`s, so it reported nothing. Both now call the owner, and the gate's last arm
 fails if the hand-built form returns anywhere.
+
+</details>
