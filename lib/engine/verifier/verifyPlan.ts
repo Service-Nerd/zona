@@ -690,11 +690,16 @@ Object.assign(PREDICATES, BATCH_8)
 const BATCH_9: Partial<Record<RuleId, Predicate>> = {
   // §89: early quality onset only for a ready runner: no injury, regular recent quality, a deep training age, and
   // an intensity level above beginner. One finding however many conditions fail.
-  'INV-PLAN-EARLY-ONSET-GATED': (plan, { input, profile }) => {
+  // ⚠️ PORTED FAITHFULLY, INCLUDING A SAFETY HOLE (code review, batch 9): validatePlan reads the level as
+  // `meta.fitness_intensity_level ?? input.user_declared_level ?? meta.fitness_level`. A beginner plan leaves the
+  // first unset, so a runner who DECLARED a higher level but was assessed beginner passes the beginner veto. The
+  // profile's intensity level would catch them; that change is a ruling, raised, not made here. Self-label read.
+  'INV-PLAN-EARLY-ONSET-GATED': (plan, { input }) => {
     if (!plan.meta.early_quality_onset) return []
     const deep = input.training_age === '2-5yr' || input.training_age === '5yr+'
+    const level = plan.meta.fitness_intensity_level ?? input.user_declared_level ?? plan.meta.fitness_level
     const fails = (input.injury_history ?? []).length > 0 || input.recent_quality_training !== 'regular'
-      || !deep || profile.levels.intensity.value === 'beginner'
+      || !deep || level === 'beginner'
     return fails ? [{ rule_id: 'INV-PLAN-EARLY-ONSET-GATED', week: PLAN, day: null, detail: 'early onset for a runner who is not ready' }] : []
   },
 

@@ -15,7 +15,8 @@ import { runEngine } from '@/lib/plan/engine'
 import { validatePlan } from '@/lib/plan/invariants'
 import { MUTATIONS } from '@/lib/plan/invariantLiveness'
 import type { Plan, GeneratorInput, Session } from '@/types/plan'
-import { isLongRun, isStructuredSession, isTimeTrial } from '@/lib/plan/sessionRole'
+import { isLongRun, isStructuredSession, isTimeTrial, isVo2maxSession } from '@/lib/plan/sessionRole'
+import { V1_SESSION_CATALOGUE } from '@/lib/plan/sessionCatalogueData'
 import { GENERATION_CONFIG, raceDistanceKey } from '@/lib/plan/generationConfig'
 import { hasInjuryKeyword } from '@/lib/plan/injuryScope'
 import { BENCHMARK_VDOT_MAX } from '@/lib/plan/benchmarkCheck'
@@ -138,6 +139,14 @@ const EXTRA_MUTATIONS: { name: string; apply: (p: Plan, input: GeneratorInput) =
       for (const w of p.weeks) for (const s of Object.values(w.sessions ?? {})) if (s && s.type === 'quality') s.type = 'easy'
       return true
     }],
+    ['a long-run note whose floor is BELOW its peak (no miss)', (p: Plan) => {
+      p.meta.volume_constraint_note = 'Peak long run 20 km is below the 19.9 km floor'; return true
+    }],
+    ['re-entry WITH a VO2 session, note removed', (p: Plan) => {
+      const has = p.weeks.some(w => w.n >= 1 && Object.values(w.sessions ?? {}).some(s => s && s.type === 'quality' && isVo2maxSession(s, V1_SESSION_CATALOGUE)))
+      if (!has) return false
+      p.meta.intensity_reentry_active = true; delete p.meta.intensity_reentry_omission_note; return true
+    }],
     ['a long-run floor miss half a rounding step, declared', (p: Plan) => {
       const step = GENERATION_CONFIG.DISTANCE_ROUNDING_PRECISION_KM
       p.meta.volume_constraint_note = `Peak long run 20 km is below the ${20 + step / 2} km floor`; return true
@@ -226,10 +235,29 @@ const EXTRA_MUTATIONS: { name: string; apply: (p: Plan, input: GeneratorInput) =
       const lvl = buildRunnerProfile(factsFromInput(i), { asOf: GOLDEN_AS_OF, timezone: null }).levels.intensity.value
       // A beginner plan leaves fitness_intensity_level unset; validatePlan falls back to fitness_level (measured: 8 of 8).
       if (lvl !== 'beginner' || (p.meta.fitness_intensity_level ?? p.meta.fitness_level) !== 'beginner') return false
+      delete (i as { user_declared_level?: string }).user_declared_level
       p.meta.early_quality_onset = true; return true
+    }],
+    // The case the review named: DECLARED experienced, assessed beginner, otherwise ready. Both checkers read the
+    // declaration and stay silent (the raised safety hole); a verifier reading the profile level would fire.
+    ['early onset for a beginner who declared experienced', (p: Plan, i: GeneratorInput) => {
+      if ((p.meta.fitness_intensity_level ?? p.meta.fitness_level) !== 'beginner' || p.meta.fitness_intensity_level) return false
+      i.injury_history = []; i.recent_quality_training = 'regular'; i.training_age = '5yr+'
+      i.user_declared_level = 'experienced'; p.meta.early_quality_onset = true; return true
     }],
     ['early onset for an overdo runner', (p: Plan, i: GeneratorInput) => {
       i.hard_session_relationship = 'overdo'; p.meta.early_quality_onset = true; return true
+    }],
+    // EXACTLY at the gated floor, which sits below the plain floor: silent under the gated rule, a finding under the
+    // plain one. One week under would breach both, which is why the first cut of this stayed green when dropped.
+    ['a gated short-distance on-ramp exactly at its (lower) floor', (p: Plan, i: GeneratorInput) => {
+      if (!(GENERATION_CONFIG.ONSET_SHORT_ONRAMP_DISTANCES as readonly string[]).includes(raceDistanceKey(i.race_distance_km))) return false
+      p.meta.early_quality_onset = true
+      const base = p.weeks.filter(w => w.n >= 1 && w.phase === 'base')
+      const keep = GENERATION_CONFIG.MIN_ONRAMP_WEEKS_GATED - (p.meta.foundation_weeks_planned ?? 0)
+      if (keep < 0 || base.length <= keep) return false
+      for (const w of base.slice(keep)) w.phase = 'build'
+      return true
     }],
     ['meta age differing from the input', (p: Plan, i: GeneratorInput) => {
       if (typeof i.age !== 'number') return false
@@ -344,6 +372,11 @@ function build() {
           const p = clone(r.plan)
           const easy = p.weeks.filter(x => x.n > 0 && governedWeek(x)).flatMap(w => Object.values(w.sessions ?? {}))
             .find(x => x && x.type === 'easy' && !isLongRun(x))
+          // The rounding rule on the SAME rebuilt plan: validatePlan's time-target flag is computed from the
+          // normalised goal (invariants.ts, one function scope), so both checkers must stay silent here.
+          const noted = clone(r.plan)
+          noted.meta.volume_constraint_note = `Peak long run 20 km is below the ${20 + GENERATION_CONFIG.DISTANCE_ROUNDING_PRECISION_KM / 2} km floor`
+          cases.push({ label: `${row.id} / no-time rebuild with a rounding note`, plan: noted, input: noTime, asOf: row.asOf, planStart: row.planStart })
           if (easy) {
             easy.type = 'quality'
             // Only a BEGINNER's ceiling depends on the goal, so only a beginner case proves the goal arm.

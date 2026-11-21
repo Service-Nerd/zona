@@ -1818,7 +1818,13 @@ Step 1 shipped as `ADR027-B3-CATALOGUE` (221 rules). Remaining, in order:
   Also from batch 7's review (all copied faithfully, all for the same sitting): a warned plan with an EMPTY
   alternatives list passes (`!prep_time_alternatives` is false for `[]`); `HR-ASSUMPTIONS-SURFACED` exempts every
   Karvonen plan, including one whose max was only observed; a session stored under a non-day key gives
-  `TT-LONG-RUN-SPACING` an arbitrary gap. **Step 3 must build
+  `TT-LONG-RUN-SPACING` an arbitrary gap.
+  🔴 **Batch 9, a SAFETY hole, measured:** `EARLY-ONSET-GATED` reads `fitness_intensity_level ?? user_declared_level ??
+  fitness_level`, and a beginner plan leaves the first unset, so a runner who DECLARED experienced but was assessed
+  beginner passes the beginner veto (the agreement test now builds that runner: both checkers silent). Reading the
+  profile's intensity level instead catches it; ported faithfully until ruled. **Limit of the import gate:** it checks
+  DIRECT imports only, and `sessionCatalogueData` (allowed as rule data) itself imports `workAnchorsOf` from planner
+  code, so a defect there would reach both sides. **Step 3 must build
   the profile as of each plan's generation date**, because §10's staleness ramp moves the level with the clock.
   **Self-label reads, recorded:** `PEAK-OVER-BASE` trusts the plan's own `volume_profile: 'maintenance'`;
   `PEAK-VOLUME-FLOOR-LONG-RACES` reads each peak week's own `weekly_km`, not the placed sessions (ADR-022's
