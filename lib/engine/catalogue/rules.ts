@@ -68,7 +68,7 @@ export const RULES: readonly Rule[] = [
   { id: 'INV-PLAN-RACE-WEEK-SHARPENING', principle_ref: '§26', scope: 'session', kind: 'hard', config_key: null, explain: null },
   { id: 'INV-PLAN-RACE-SPECIFIC-EXPOSURE', principle_ref: '§22', related_refs: ['§5'], scope: 'session', kind: 'hard', config_key: null, explain: null },
   { id: 'INV-PLAN-RACE-SPECIFIC-EXPOSURE-RATIO', principle_ref: '§22', scope: 'week', kind: 'hard', config_key: null, explain: null },
-  { id: 'INV-PLAN-HEADER-PACE-MATCHES-WORK', principle_ref: '§120', related_refs: ['§85'], scope: 'week', kind: 'hard', config_key: null, explain: null },
+  { id: 'INV-PLAN-HEADER-PACE-MATCHES-WORK', principle_ref: '§120', related_refs: ['§85'], scope: 'week', kind: 'hard', config_key: null, explain: null, severity_note: 'error (warn when the header reads the goal pace)' },
   { id: 'INV-PLAN-STEP-PACE-FROM-GUIDE', principle_ref: '§125', related_refs: ['§120'], scope: 'week', kind: 'hard', config_key: null, explain: null },
   { id: 'INV-PLAN-RACE-ANCHOR-MATCHES-GOAL', principle_ref: '§120', scope: 'week', kind: 'hard', config_key: null, explain: null },
   { id: 'INV-PLAN-RACE-NOT-VOLUME', principle_ref: '§121', scope: 'week', kind: 'hard', config_key: null, explain: null },

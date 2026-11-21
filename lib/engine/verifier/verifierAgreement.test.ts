@@ -596,6 +596,34 @@ const EXTRA_MUTATIONS: { name: string; apply: (p: Plan, input: GeneratorInput) =
       lr.distance_km = branch === 'warn' ? Math.ceil(prev.weekly_km * (GENERATION_CONFIG.LONG_RUN_MAX_PCT_OF_WEEKLY / 100) + 2) : 4
       return true
     }] as const),
+    // Batch 22: the two rules no corpus plan reaches at their line.
+    ...([['one week past', 1], ['exactly at', 0]] as const).map(([at, over]) => [`an onset yield ${at} its bound`, (p: Plan) => {
+      p.meta.onset_yield = { rungs: 1, bound: 2, effective: 2 + over }; return true
+    }] as const),
+    ...([['the week after halfway', 1], ['the halfway week itself', 0]] as const).map(([at, after]) => [`a continuous goal-pace step over the cap in ${at} (5K time goal)`, (p: Plan, i: GeneratorInput) => {
+      // Only plans already in scope: widening the request would also expose the plan's own goal-pace work.
+      if (raceDistanceKey(i.race_distance_km) !== '5K' || i.goal !== 'time_target') return false
+      const half = Math.ceil(p.weeks.filter(w => w.n >= 1).length / 2)
+      const w = p.weeks.find(x => x.n === half + after && (x.phase === 'build' || x.phase === 'peak'))
+      const s = w && Object.values(w.sessions ?? {}).find(x => x && x.type === 'quality')
+      if (!s) return false
+      s.stimulus = 'race_pace'
+      s.derived_set = { blocks: [{ label: 'main', repeat: 1, steps: [{ role: 'work', pace_mode: 'target', length: `${GENERATION_CONFIG.GOAL_PACE_CONTINUOUS_MAX_MINS + 2} min` }] }] } as unknown as Session['derived_set']
+      return true
+    }] as const),
+    // An ultra-specific row counts as peak specificity: restamped to one, silent; to a threshold row, it fires.
+    ...([['an ultra-specific', 'ultra_race_sim'], ['a threshold', 'tempo_continuous']] as const).map(([what, id]) => [`every peak key session restamped to ${what} row`, (p: Plan, i: GeneratorInput) => {
+      if (i.goal !== 'time_target' || !(p.meta.race_distance_km && p.meta.race_distance_km > 6)) return false
+      let n = 0
+      for (const w of p.weeks.filter(x => x.n >= 1 && x.phase === 'peak' && x.type !== 'deload' && x.type !== 'race')) {
+        for (const s of Object.values(w.sessions ?? {})) {
+          if (!s) continue
+          if (s.type === 'quality') { s.catalogue_id = id; n++ }
+          else if (isLongRun(s)) delete s.catalogue_id
+        }
+      }
+      return n > 0
+    }] as const),
     ['meta age differing from the input', (p: Plan, i: GeneratorInput) => {
       if (typeof i.age !== 'number') return false
       ;(p.meta as unknown as Record<string, unknown>).age = i.age + 1; return true
@@ -678,6 +706,7 @@ const CONDITIONAL_PORTED: Record<string, { why: string; branches: ('warn' | 'err
   'INV-PLAN-NOT-DETRAINING': { why: 'not conditional: always warn; the note is a planned promotion', branches: ['warn'] },
   'INV-PLAN-PEAK-IN-PEAK-PHASE': { why: 'warn on a maintenance profile, error otherwise (set in the predicate)', branches: ['warn', 'error'] },
   'INV-PLAN-LR-MAX-WEEKLY-PCT': { why: 'warn on a maintenance profile, error otherwise (set in the predicate)', branches: ['warn', 'error'] },
+  'INV-PLAN-HEADER-PACE-MATCHES-WORK': { why: 'warn when the header reads the goal pace, error otherwise', branches: ['warn', 'error'] },
   'INV-PLAN-PEAK-STEPBACK-VOLUME': { why: 'warn when the §52 share floor sits above the previous week, error otherwise', branches: ['warn', 'error'] },
 }
 const hits = new Map<string, number>()
@@ -689,6 +718,9 @@ const SILENT: Record<string, { rule: string; twin: string }> = {
   'a long-run note whose floor is BELOW its peak (no miss)': { rule: 'INV-PLAN-LR-FLOOR-NOT-ROUNDING', twin: 'a long-run floor miss half a rounding step, declared' },
   're-entry WITH a VO2 session, note removed': { rule: 'INV-PLAN-REENTRY-OMISSION-DECLARED', twin: 're-entry with no VO2 and no note' },
   'goal below easy, WITH its note': { rule: 'INV-PLAN-GOAL-BELOW-EASY-DECLARED', twin: 'goal below easy, no note' },
+  'every peak key session restamped to an ultra-specific row': { rule: 'INV-PLAN-PEAK-SPECIFICITY', twin: 'every peak key session restamped to a threshold row' },
+  'an onset yield exactly at its bound': { rule: 'INV-PLAN-ONSET-YIELD-BOUNDED', twin: 'an onset yield one week past its bound' },
+  'a continuous goal-pace step over the cap in the halfway week itself (5K time goal)': { rule: 'INV-PLAN-GOAL-PACE-SHAPE', twin: 'a continuous goal-pace step over the cap in the week after halfway (5K time goal)' },
 }
 const SILENT_BY_DESIGN = new Set(Object.keys(SILENT))
 const GOAL_CASE = 'rebuilt as time target with no time, plus a quality session'

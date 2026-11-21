@@ -14,7 +14,7 @@ import type { RuleId } from '@/lib/engine/contracts/rule'
 import type { RunnerProfile } from '@/lib/engine/contracts/profile'
 import { RULES } from '@/lib/engine/catalogue/rules'
 import { GENERATION_CONFIG, raceDistanceKey } from '@/lib/plan/generationConfig'
-import { isLongRun, isShakeout, isSecondaryQuality, isQualitySession, isStructuredSession, isTimeTrial, isVo2maxSession } from '@/lib/plan/sessionRole'
+import { isLongRun, isShakeout, isSecondaryQuality, isQualitySession, isStructuredSession, isTimeTrial, isVo2maxSession, classifyStimulus } from '@/lib/plan/sessionRole'
 import { V1_SESSION_CATALOGUE } from '@/lib/plan/sessionCatalogueData'
 import { FUELLING_PRACTICE_NOTE, ULTRA_FUELLING_PREFIX } from '@/lib/plan/fuellingNotes'
 import { PLAN_SIGNATURES } from '@/lib/plan/planSignatures'
@@ -22,6 +22,8 @@ import { normaliseDays } from '@/lib/plan/days'
 import { sessionKmSelfPaced } from '@/lib/plan/sessionDistance'
 import { hasInjuryKeyword, hasDeliveredCapInjury, hasVolumeCappedInjuryHistory } from '@/lib/plan/injuryScope'
 import { BENCHMARK_VDOT_MAX } from '@/lib/plan/benchmarkCheck'
+import { parsePaceMidpoint } from '@/lib/plan/paceParse'
+import { catalogueRowFor } from '@/lib/plan/catalogueLink'
 
 export type VerifierDay = 'mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat' | 'sun'
 
@@ -1349,6 +1351,172 @@ const BATCH_21: Partial<Record<RuleId, Predicate>> = {
   },
 }
 Object.assign(PREDICATES, BATCH_21)
+
+/** A step length in minutes: `"8 min"` or `"m:ss"`; anything else is 0, as validatePlan reads it. */
+const stepMins = (len: unknown): number => {
+  const t = String(len ?? '')
+  const m = /^(\d+(?:\.\d+)?)\s*min/.exec(t)
+  if (m) return Number(m[1])
+  const c = /^(\d+):(\d{2})$/.exec(t)
+  return c ? Number(c[1]) + Number(c[2]) / 60 : 0
+}
+const LEVEL_RANK = { beginner: 0, intermediate: 1, experienced: 2 } as const
+
+/** A week's quality sessions with their day, tolerating a day that holds a list (validatePlan's goal-pace block). */
+const qualityOf = (w: Week) => daysOf(w).flatMap(({ day, session: v }) =>
+  ((Array.isArray(v) ? v : [v]) as (Session | undefined)[]).filter((s): s is Session => !!s && s.type === 'quality').map(s => ({ day, s })))
+
+const BATCH_22: Partial<Record<RuleId, Predicate>> = {
+  // §98: the onset yield ladder never walks past its ungated bound. ⚠️ A SELF-LABEL READ, ported faithfully: both
+  // numbers are the planner's own `meta.onset_yield` stamp. Raised for the board batch.
+  'INV-PLAN-ONSET-YIELD-BOUNDED': plan => {
+    const y = plan.meta.onset_yield
+    return y && y.effective > y.bound ? [{ rule_id: 'INV-PLAN-ONSET-YIELD-BOUNDED', week: PLAN, day: null, detail: `effective ${y.effective} over bound ${y.bound}` }] : []
+  },
+
+  // §7: a quality session sits at least MIN_HOURS_BETWEEN_QUALITY_AND_LONG (in whole days) from the week's first
+  // long run, counting round the week. Written here, not shared: the old helper is also the reshape path's.
+  'INV-PLAN-QUALITY-LONG-SPACING': plan => {
+    const minDays = Math.ceil(GENERATION_CONFIG.MIN_HOURS_BETWEEN_QUALITY_AND_LONG / 24)
+    return plan.weeks.filter(governed).flatMap(w => {
+      const week = DAYS.map(d => w.sessions?.[d])
+      const li = week.findIndex(s => !!s && isLongRun(s))
+      if (li < 0) return []
+      return week.flatMap((s, qi) => {
+        if (s?.type !== 'quality') return []
+        const gap = Math.min(Math.abs(qi - li), 7 - Math.abs(qi - li))
+        return gap < minDays ? [{ rule_id: 'INV-PLAN-QUALITY-LONG-SPACING' as RuleId, week: w.n, day: DAYS[qi], detail: `${gap} day(s) from the long run` }] : []
+      })
+    })
+  },
+
+  // Every placed catalogue row sits inside its distance and level eligibility, except a taper race-specific row
+  // where no race-specific taper row fits this runner at all. ⚠️ The level is the plan's own meta (self-label
+  // read), as validatePlan reads it.
+  'INV-PLAN-CATALOGUE-ELIGIBLE': (plan, { input }) => {
+    const level = (plan.meta.fitness_intensity_level ?? plan.meta.fitness_level ?? 'beginner') as keyof typeof LEVEL_RANK
+    const dk = raceDistanceKey(input.race_distance_km)
+    const R = LEVEL_RANK as Record<string, number>
+    const fits = (r: (typeof V1_SESSION_CATALOGUE)[number]) => R[r.fitness_level_min] <= R[level]
+      && (r.fitness_level_max == null || R[level] <= R[r.fitness_level_max])
+    return plan.weeks.filter(w => w.n >= 1).flatMap(w => qualityOf(w).flatMap(({ day, s }) => {
+      const row = s.catalogue_id ? V1_SESSION_CATALOGUE.find(r => r.id === s.catalogue_id) : undefined
+      if (!row) return []
+      const fitsDistance = row.distance_eligibility.includes(dk)
+      const noFittingTaperRow = w.phase === 'taper' && row.category === 'race_specific' && fitsDistance
+        && !V1_SESSION_CATALOGUE.some(r => r.category === 'race_specific' && r.phase_eligibility.includes('taper') && r.distance_eligibility.includes(dk) && fits(r))
+      return (!fitsDistance || !fits(row)) && !noFittingTaperRow
+        ? [{ rule_id: 'INV-PLAN-CATALOGUE-ELIGIBLE' as RuleId, week: w.n, day, detail: `${row.id} outside its eligibility` }] : []
+    }))
+  },
+
+  // §22 Am. 3: on a 5K time goal (or a beginner's 10K), second-half build/peak goal-pace work comes as reps, never one
+  // long continuous step; beginner goal-pace reps stay under their session total. The SCOPE reads the goal as the
+  // runner STATED it, as validatePlan does (not the normalised one), and the level is the plan's meta (self-label).
+  'INV-PLAN-GOAL-PACE-SHAPE': (plan, { input, profile }) => {
+    const level = plan.meta.fitness_intensity_level ?? plan.meta.fitness_level ?? 'beginner'
+    const dk = raceDistanceKey(input.race_distance_km)
+    const half = Math.ceil(plan.weeks.filter(w => w.n >= 1).length / 2)
+    const scope = profile.race.goal_stated === 'time_target' && (dk === '5K' || (dk === '10K' && level === 'beginner'))
+    return plan.weeks.filter(w => w.n >= 1).flatMap(w => qualityOf(w).flatMap(({ day, s }) => {
+      if (classifyStimulus(s) !== 'race_pace') return []
+      const work = (s.derived_set?.blocks ?? []).flatMap(b => (b.steps ?? []).map(st => ({ st, repeat: typeof b.repeat === 'number' ? b.repeat : 1 })))
+        .filter(x => x.st.role === 'work' && x.st.pace_mode === 'target')
+      const out: Raw[] = []
+      if (scope && w.n > half && (w.phase === 'build' || w.phase === 'peak')) {
+        const longest = Math.max(0, ...work.filter(x => x.repeat <= 1).map(x => stepMins(x.st.length)))
+        if (longest > GENERATION_CONFIG.GOAL_PACE_CONTINUOUS_MAX_MINS) out.push({ rule_id: 'INV-PLAN-GOAL-PACE-SHAPE', week: w.n, day, detail: `${longest} min continuous` })
+      }
+      if (s.catalogue_id === 'beginner_goal_pace_reps') {
+        const mins = work.reduce((n, x) => n + stepMins(x.st.length) * x.repeat, 0)
+        if (mins > GENERATION_CONFIG.BEGINNER_GOAL_PACE_MAX_SESSION_MINS) out.push({ rule_id: 'INV-PLAN-GOAL-PACE-SHAPE', week: w.n, day, detail: `${mins} min at goal pace` })
+      }
+      return out
+    }))
+  },
+
+  // §120: HM-pace reps on a time-goal plan run within 3% of the goal pace.
+  'INV-PLAN-RACE-ANCHOR-MATCHES-GOAL': (plan, { profile }) => {
+    const goal = profile.race.goal === 'time_target' && plan.meta.goal_pace_per_km ? parsePaceMidpoint(plan.meta.goal_pace_per_km) : null
+    if (goal == null) return []
+    return plan.weeks.flatMap(w => daysOf(w).flatMap(({ session: s }) => {
+      if (!s || s.catalogue_id !== 'hm_pace_intervals') return []
+      const step = s.derived_set?.blocks.flatMap(b => b.steps).find(st => st.role === 'work' && st.pace)
+      const mid = step?.pace ? parsePaceMidpoint(step.pace) : null
+      return mid != null && Math.abs(mid - goal) / goal > 0.03 ? [{ rule_id: 'INV-PLAN-RACE-ANCHOR-MATCHES-GOAL' as RuleId, week: w.n, day: null, detail: `work at ${step!.pace}` }] : []
+    }))
+  },
+
+  // §120, §85: a quality header pace is its single work pace, within 3%. CONDITIONAL severity: warn when the header
+  // is the goal pace (the goal-pace override against §85's shield, still open), error otherwise.
+  'INV-PLAN-HEADER-PACE-MATCHES-WORK': plan => {
+    const goal = plan.meta.goal_pace_per_km ? parsePaceMidpoint(plan.meta.goal_pace_per_km) : null
+    return plan.weeks.flatMap(w => daysOf(w).flatMap(({ session: s }) => {
+      if (!s || s.type !== 'quality' || !s.pace_target || !s.derived_set) return []
+      const paces = new Set(s.derived_set.blocks.flatMap(b => b.steps).filter(st => st.role === 'work' && st.pace).map(st => st.pace as string))
+      if (paces.size !== 1) return []
+      const work = parsePaceMidpoint(Array.from(paces)[0]), header = parsePaceMidpoint(s.pace_target)
+      if (work == null || header == null || Math.abs(work - header) / work <= 0.03) return []
+      const override = goal != null && Math.abs(header - goal) / goal <= 0.03
+      return [{ rule_id: 'INV-PLAN-HEADER-PACE-MATCHES-WORK' as RuleId, week: w.n, day: null, detail: `header ${s.pace_target}`, severity: override ? 'warn' as const : 'error' as const }]
+    }))
+  },
+
+  // §93 (§5): a time-goal plan over 6 km has SOME race-specific work in its peak key sessions (quality, plus any
+  // long run that is itself race-specific). ⚠️ Distance read from the plan's own meta, as validatePlan does.
+  'INV-PLAN-PEAK-SPECIFICITY': (plan, { profile }) => {
+    if (profile.race.goal !== 'time_target' || !(plan.meta.race_distance_km && plan.meta.race_distance_km > 6)) return []
+    let key = 0, specific = 0
+    for (const w of plan.weeks.filter(x => x.n >= 1 && x.phase === 'peak' && x.type !== 'deload' && x.type !== 'race')) {
+      for (const { session: s } of daysOf(w)) {
+        if (!s) continue
+        const lr = isLongRun(s)
+        if (s.type !== 'quality' && !lr) continue
+        const row = catalogueRowFor(s, V1_SESSION_CATALOGUE)
+        const isSpecific = row?.category === 'race_specific' || row?.category === 'ultra_specific'
+        if (lr && !isSpecific) continue
+        key++
+        if (isSpecific) specific++
+      }
+    }
+    return key > 0 && specific === 0 ? [{ rule_id: 'INV-PLAN-PEAK-SPECIFICITY', week: PLAN, day: null, detail: `0 of ${key} peak key sessions race-specific` }] : []
+  },
+
+  // §19 Am. 2: a rep-scaled v2 row is delivered with at least REP_ROW_MIN_REPS reps in each rep block.
+  'INV-PLAN-REPEATS-REPEAT': plan => plan.weeks.flatMap(w => daysOf(w).flatMap(({ day, session: s }) => {
+    if (!s?.derived_set) return []
+    const row = catalogueRowFor(s)
+    const shape = row?.main_set_structure as { version?: number; sizing?: { scaling?: string }; blocks?: { label?: string; repeat?: unknown }[] } | undefined
+    if (!shape || shape.version !== 2 || shape.sizing?.scaling !== 'reps') return []
+    const labels = new Set((shape.blocks ?? []).filter(b => typeof b.repeat === 'object' && b.repeat !== null).map(b => b.label))
+    return (s.derived_set.blocks ?? []).filter(b => labels.has(b.label) && typeof b.repeat === 'number' && b.repeat < GENERATION_CONFIG.REP_ROW_MIN_REPS)
+      .map(b => ({ rule_id: 'INV-PLAN-REPEATS-REPEAT' as RuleId, week: w.n, day, detail: `${b.repeat} rep` }))
+  })),
+
+  // §19 Am. 2: a race-specific v2 row priced at the rep floor runs at most RACE_SPECIFIC_MAX_RACE_SHARE of the race
+  // distance at race pace. A row whose work is not all distance-measured, or is band-sized, is not priced here.
+  'INV-PLAN-RACE-SPECIFIC-RACE-SHARE': (plan, { input }) => {
+    const cap = GENERATION_CONFIG.RACE_SPECIFIC_MAX_RACE_SHARE, raceKm = input.race_distance_km
+    if (!(raceKm > 0)) return []
+    return plan.weeks.flatMap(w => daysOf(w).flatMap(({ day, session: s }) => {
+      if (!s?.derived_set) return []
+      const row = catalogueRowFor(s)
+      if (!row || row.category !== 'race_specific') return []
+      const shape = row.main_set_structure as { version?: number; blocks?: { label?: string; steps?: { role?: string; length?: { kind?: string; m?: number } }[] }[] }
+      if (shape.version !== 2) return []
+      let km = 0
+      for (const rb of shape.blocks ?? []) {
+        const work = (rb.steps ?? []).filter(st => st.role === 'work')
+        if (work.length === 0) continue
+        const got = (s.derived_set.blocks ?? []).find(b => b.label === rb.label)
+        if (!work.every(st => st.length?.kind === 'distance') || !got || got.repeat !== GENERATION_CONFIG.REP_ROW_MIN_REPS) return []
+        km += got.repeat * work.reduce((a, st) => a + (st.length?.m ?? 0), 0) / 1000
+      }
+      return km > cap * raceKm + 1e-9 ? [{ rule_id: 'INV-PLAN-RACE-SPECIFIC-RACE-SHARE' as RuleId, week: w.n, day, detail: `${km.toFixed(1)} km at race pace` }] : []
+    }))
+  },
+}
+Object.assign(PREDICATES, BATCH_22)
 
 const SEVERITY = new Map(RULES.map(r => [r.id, r.kind === 'soft' ? 'warn' as const : 'error' as const]))
 /** Rules the catalogue marks as conditionally severe: only these may set a finding's severity (code review, batch 20). */
