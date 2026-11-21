@@ -133,6 +133,18 @@ const EXTRA_MUTATIONS: { name: string; apply: (p: Plan, input: GeneratorInput) =
     ['no HR method', (p: Plan) => { delete p.meta.hr_zone_method; return true }],
     // Batch 8: the plan's declarations about its own limits.
     ['no compression class', (p: Plan) => { delete p.meta.compression_classification; return true }],
+    // Batch 15.
+    ['a withheld anchor reading comfortable', (p: Plan) => { p.meta.hm_goal_anchor_withheld = true; p.meta.difficulty_band = 'comfortable'; return true }],
+    ['a withheld anchor with no note', (p: Plan) => { p.meta.hm_goal_anchor_withheld = true; p.meta.difficulty_band = 'demanding'; delete p.meta.difficulty_note; return true }],
+    ['a race week a kilometre and a bit over the peak', (p: Plan) => {
+      const peaks = p.weeks.filter(w => w.phase === 'peak' && w.type !== 'deload').map(w => w.weekly_km ?? 0)
+      const r = p.weeks.find(w => Object.values(w.sessions ?? {}).some(s => s?.type === 'race'))
+      if (!peaks.length || !r) return false
+      r.weekly_km = Math.max(...peaks) + 1.1; return true
+    }],
+    ['a discount off the staleness ladder', (p: Plan) => {
+      p.meta.vdot_discount_applied_pct = GENERATION_CONFIG.VDOT_CONSERVATIVE_DISCOUNT_PCT + GENERATION_CONFIG.VDOT_STALENESS_PER_4WK_PCT / 2; return true
+    }],
     // Batch 14: copy and overrun declarations.
     ['a note naming the wrong taper length', (p: Plan) => {
       const n = p.weeks.filter(w => w.phase === 'taper').length
@@ -391,6 +403,12 @@ const EXTRA_MUTATIONS: { name: string; apply: (p: Plan, input: GeneratorInput) =
       if (!w || !d) return false
       w.sessions[d] = { type: 'rest', label: 'Rest' } as never; return true
     }],
+    // Batch 15: dateless benchmarks.
+    ['a dateless benchmark with a discount applied', (p: Plan, i: GeneratorInput) => {
+      if (!i.benchmark) return false
+      delete (i.benchmark as { benchmark_date?: string }).benchmark_date
+      p.meta.vdot_discount_applied_pct = GENERATION_CONFIG.VDOT_CONSERVATIVE_DISCOUNT_PCT + GENERATION_CONFIG.VDOT_STALENESS_PER_4WK_PCT; return true
+    }],
     // Batch 14: weekday overruns against the runner's own budgets.
     ['a structured weekday session just over its overrun limit, undeclared', (p: Plan, i: GeneratorInput) => {
       for (const w of p.weeks.filter(x => x.type !== 'race')) for (const d of ['mon', 'tue', 'wed', 'thu', 'fri'] as const) {
@@ -492,6 +510,8 @@ const TARGETS: Record<string, string[]> = {
   'a structured weekday session just over its overrun limit, undeclared': ['INV-PLAN-STRUCTURED-OVERRUN-DECLARED'],
   'an easy weekday run one minute over budget, no note': ['INV-PLAN-WEEKDAY-OVERRUN-DECLARED'],
 }
+/** Rules that read only module data (the catalogue, the signatures), never the plan. */
+const STATIC_RULES = new Set<string>(['INV-PLAN-PHASE-FOCUS-REACHABLE'])
 const hits = new Map<string, number>()
 /** Breakages that sit exactly where a rule must STAY silent, so they change nothing the old checker reports. */
 const SILENT_BY_DESIGN = new Set<string>([
@@ -519,6 +539,8 @@ const ARMS: Record<string, string[]> = {
   'INV-PLAN-NO-PLACEHOLDER-COPY': ['token in', 'placeholder in'],
   'INV-PLAN-REENTRY-NOTE-MATCHES-CAUSE': ['note with no cause', 'coming-back wording'],
   'INV-PLAN-WEEKDAY-OVERRUN-DECLARED': ['over budget, no note', 'note on a run within budget'],
+  'INV-PLAN-GOAL-PAST-CV-DECLARED': ['withheld anchor reads comfortable', 'withheld anchor with no note'],
+  'INV-PLAN-VDOT-STALENESS-LADDER': ['discount', 'dateless benchmark off the base rung'],
 }
 
 const tally = { rows: 0, threw: [] as string[], refused: 0, base: 0, foundation: 0, foundationCapped: 0 }
@@ -689,7 +711,8 @@ describe('ADR027-B3-VERIFIER — agreement with validatePlan, per ported rule', 
     it(`🔴 ${rule}: same findings and severity on every valid and broken plan, and it fires`, () => {
       const { fired, diffs } = compare(rule)
       expect(diffs.slice(0, 5), `${diffs.length} disagreements`).toEqual([])
-      expect(fired.old, 'nothing in the battery wakes this rule, so agreement proves nothing').toBeGreaterThan(0)
+      // A STATIC rule reads rule data, not the plan, so no plan breakage can wake it (the liveness harness's class).
+      if (!STATIC_RULES.has(rule)) expect(fired.old, 'nothing in the battery wakes this rule, so agreement proves nothing').toBeGreaterThan(0)
     })
   }
 })

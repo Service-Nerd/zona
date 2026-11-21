@@ -1809,7 +1809,7 @@ Step 1 shipped as `ADR027-B3-CATALOGUE` (221 rules). Remaining, in order:
   (3 rules after review; the verifier is handed the L1 profile).
   **Unblocked:** the L1 profile now carries the normalised goal (`race.goal`, with `race.goal_stated` beside it), so
   `QUALITY-PER-WEEK` is ported and reads level and goal from the profile. ✅ **Batch 5 SHIPPED 2026-11-21** (3 rules). ✅ **Batch 6 SHIPPED 2026-11-21** (3 rules; injury
-  caps through `hasInjuryKeyword`, name-scoped in the import gate). ✅ **Batch 7 SHIPPED 2026-11-21** (8 self-statement rules). ✅ **Batch 8** (6 declaration rules). ✅ **Batch 9** (6 onset/declaration rules). ✅ **Batch 10** (8 long-run segment and week rules). ✅ **Batch 11** (6 note rules). ✅ **Batch 12** (6 soft week rules). ✅ **Batch 13** (3 injury/re-entry rules). ✅ **Batch 14** (4 copy/overrun rules). **76 of 221.**
+  caps through `hasInjuryKeyword`, name-scoped in the import gate). ✅ **Batch 7 SHIPPED 2026-11-21** (8 self-statement rules). ✅ **Batch 8** (6 declaration rules). ✅ **Batch 9** (6 onset/declaration rules). ✅ **Batch 10** (8 long-run segment and week rules). ✅ **Batch 11** (6 note rules). ✅ **Batch 12** (6 soft week rules). ✅ **Batch 13** (3 injury/re-entry rules). ✅ **Batch 14** (4 copy/overrun rules). ✅ **Batch 15** (5 rules, one STATIC). **81 of 221.**
   **HELD, with reasons (not ported, not dropped):** producer derivations the verifier may not share —
   `WEEKLY-KM-MATCHES-SESSIONS` (`vdotFor`, `buildPaceFromVDOT`), `DELIVERED-RAMP` and `TAPER-DELIVERED-DEPTH` (the
   planner's delivered-volume and trimmable-room helpers), `5K10K-LR-PACE-CAP` (`paceFromVdot`),

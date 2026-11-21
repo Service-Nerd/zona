@@ -31,6 +31,7 @@ const ALLOWED_NAMES: Record<string, string[]> = {
   '@/lib/plan/benchmarkCheck': ['BENCHMARK_VDOT_MAX'], // a human ceiling: rule data
   '@/lib/plan/sessionCatalogueData': ['V1_SESSION_CATALOGUE'], // the session catalogue: rule data
   '@/lib/plan/fuellingNotes': ['FUELLING_PRACTICE_NOTE', 'ULTRA_FUELLING_PREFIX'], // the notes' identity strings
+  '@/lib/plan/planSignatures': ['PLAN_SIGNATURES'],  // per-distance plan shape: rule data
 }
 
 /** Every non-test source file under the verifier, recursively. */

@@ -17,6 +17,7 @@ import { GENERATION_CONFIG, raceDistanceKey } from '@/lib/plan/generationConfig'
 import { isLongRun, isShakeout, isSecondaryQuality, isQualitySession, isStructuredSession, isTimeTrial, isVo2maxSession } from '@/lib/plan/sessionRole'
 import { V1_SESSION_CATALOGUE } from '@/lib/plan/sessionCatalogueData'
 import { FUELLING_PRACTICE_NOTE, ULTRA_FUELLING_PREFIX } from '@/lib/plan/fuellingNotes'
+import { PLAN_SIGNATURES } from '@/lib/plan/planSignatures'
 import { normaliseDays } from '@/lib/plan/days'
 import { sessionKmSelfPaced } from '@/lib/plan/sessionDistance'
 import { hasInjuryKeyword, hasDeliveredCapInjury } from '@/lib/plan/injuryScope'
@@ -1078,6 +1079,54 @@ const BATCH_14: Partial<Record<RuleId, Predicate>> = {
     })),
 }
 Object.assign(PREDICATES, BATCH_14)
+
+const BATCH_15: Partial<Record<RuleId, Predicate>> = {
+  // §10 Am.: a benchmark with no date is declared, never discounted for age.
+  'INV-PLAN-VDOT-DISCOUNT-DATELESS': (plan, { input }) =>
+    input.benchmark && !input.benchmark.benchmark_date && typeof plan.meta.vdot_discount_applied_pct === 'number'
+      ? [{ rule_id: 'INV-PLAN-VDOT-DISCOUNT-DATELESS', week: PLAN, day: null, detail: 'dateless benchmark discounted' }] : [],
+
+  // §44 Am. 2: a withheld half-marathon goal anchor makes the plan read demanding or harder, with its note.
+  'INV-PLAN-GOAL-PAST-CV-DECLARED': plan => {
+    if (plan.meta.hm_goal_anchor_withheld !== true) return []
+    const band = plan.meta.difficulty_band, note = plan.meta.difficulty_note
+    if (band === 'comfortable' || !band) return [{ rule_id: 'INV-PLAN-GOAL-PAST-CV-DECLARED', week: PLAN, day: null, detail: 'withheld anchor reads comfortable' }]
+    return typeof note !== 'string' || !note.length ? [{ rule_id: 'INV-PLAN-GOAL-PAST-CV-DECLARED', week: PLAN, day: null, detail: 'withheld anchor with no note' }] : []
+  },
+
+  // §121: a race week never carries more volume than the peak (beyond a kilometre).
+  'INV-PLAN-RACE-NOT-VOLUME': plan => {
+    const peaks = plan.weeks.filter(w => w.phase === 'peak' && w.type !== 'deload').map(w => w.weekly_km ?? 0)
+    const races = plan.weeks.filter(w => daysOf(w).some(x => x.session?.type === 'race'))
+    if (!peaks.length || !races.length) return []
+    const max = Math.max(...peaks)
+    return races.filter(w => (w.weekly_km ?? 0) > max + 1).map(w => ({ rule_id: 'INV-PLAN-RACE-NOT-VOLUME', week: w.n, day: null, detail: 'race week above the peak' }))
+  },
+
+  // §42: the applied VDOT discount sits on the staleness ladder, and a dateless benchmark gets only the base rung.
+  'INV-PLAN-VDOT-STALENESS-LADDER': (plan, { input }) => {
+    const d = plan.meta.vdot_discount_applied_pct
+    if (d == null) return []
+    const base = GENERATION_CONFIG.VDOT_CONSERVATIVE_DISCOUNT_PCT
+    const rungs: number[] = []
+    for (let x = base; x <= GENERATION_CONFIG.VDOT_STALENESS_MAX_DISCOUNT_PCT + 1e-9; x += GENERATION_CONFIG.VDOT_STALENESS_PER_4WK_PCT) rungs.push(Math.round(x * 1e6) / 1e6)
+    const out: Raw[] = []
+    if (!rungs.some(r => Math.abs(r - d) < 1e-6)) out.push({ rule_id: 'INV-PLAN-VDOT-STALENESS-LADDER', week: PLAN, day: null, detail: `discount ${d} off the ladder` })
+    if (!input.benchmark?.benchmark_date && Math.abs(d - base) > 1e-6) out.push({ rule_id: 'INV-PLAN-VDOT-STALENESS-LADDER', week: PLAN, day: null, detail: 'dateless benchmark off the base rung' })
+    return out
+  },
+
+  // §17 (STATIC: reads rule data, not the plan): every focus category of the distance's signature is reachable
+  // outside base in the catalogue.
+  'INV-PLAN-PHASE-FOCUS-REACHABLE': (_plan, { input }) => {
+    const key = raceDistanceKey(input.race_distance_km)
+    const sig = PLAN_SIGNATURES[key as keyof typeof PLAN_SIGNATURES] as { quality_categories_focus?: readonly string[] } | undefined
+    return (sig?.quality_categories_focus ?? []).filter(focus => !V1_SESSION_CATALOGUE.some(r => r.category === focus
+      && (r.distance_eligibility as readonly string[]).includes(key) && r.phase_eligibility.some(p => p !== 'base')))
+      .map(focus => ({ rule_id: 'INV-PLAN-PHASE-FOCUS-REACHABLE', week: PLAN, day: null, detail: `${focus} unreachable` }))
+  },
+}
+Object.assign(PREDICATES, BATCH_15)
 
 const SEVERITY = new Map(RULES.map(r => [r.id, r.kind === 'soft' ? 'warn' as const : 'error' as const]))
 
