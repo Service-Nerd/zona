@@ -14,9 +14,9 @@ const run = (date: string, km: number, extra: Partial<RunRow> = {}): RunRow => (
 const EMPTY: ObservedRows = { runs: [], first_run_at: null, health: [], completions: [], analyses: [] }
 
 describe('aggregateObserved — run log', () => {
-  it('🔴 code review: a manual log entered by distance (moving_time_s 0) counts on distance', () => {
-    const a = aggregateObserved({ ...EMPTY, runs: [run('2026-11-12', 8, { moving_time_s: 0, apple_health_uuid: null })] }, FRAME)
-    expect(a.run_log).toMatchObject({ run_count: 1, km_total: 8, excluded_rows: 0 })
+  it('🔴 code review round 2: a 0-second run is junk, not "no duration"', () => {
+    const a = aggregateObserved({ ...EMPTY, runs: [run('2026-11-12', 5, { moving_time_s: 0 })] }, FRAME)
+    expect(a.run_log).toMatchObject({ run_count: 0, km_total: 0, excluded_rows: 1 })
   })
 
   it('🔴 code review: validity runs before dedupe, so a junk longer duplicate cannot hide the real run', () => {

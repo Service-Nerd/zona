@@ -331,5 +331,11 @@ describe('code review 2026-11-21: L1 never pre-empts the input validator', () =>
     try { runEngine({ input: bad, tier: 'free' } as never) } catch (e) { name = (e as Error).constructor.name }
     expect(name).toBe('InputEnumError')
   })
+  it('an absent easy pace is NAMED in data_quality, never silent', () => {
+    const p = buildRunnerProfile(factsFromInput({ race_distance_km: 10, race_date: '2027-03-01', current_weekly_km: 20,
+      longest_recent_run_km: 8, days_available: 4, fitness_level: 'advanced' } as never), { asOf: new Date(2026, 10, 16), timezone: null })
+    expect(p.schedule.capacity.value.easy_min_per_km).toBeNull()
+    expect(p.data_quality.nulled).toContain('schedule.capacity.easy_min_per_km')
+  })
 })
 

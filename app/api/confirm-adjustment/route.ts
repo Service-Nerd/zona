@@ -71,6 +71,7 @@ export async function POST(req: NextRequest) {
   // was saved unchanged and then marked `confirmed`: a change recorded as applied that was
   // never applied anywhere. The row stays `pending`; every client keeps the card on a non-200.
   if (!week) {
+    await recordOpsEvent('adjustment_week_not_found', { route: 'confirm-adjustment', week_n: weekN }, user.id)
     return NextResponse.json({ error: 'This change can no longer be applied', reason: 'week_not_found' }, { status: 409 })
   }
   // READINESS-WRONG-DAY-01 — only the days that changed, and never a malformed row.

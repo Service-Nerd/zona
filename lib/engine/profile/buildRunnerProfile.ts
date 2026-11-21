@@ -20,6 +20,7 @@ import type { DayCapacity, DayKey, Fact, FactSource, IsoDate, RunnerProfile, Wee
 import { derivedLevelsFor, vdotFor, buildFallbackPace } from '@/lib/plan/ruleEngine'
 import { buildPaceFromVDOT } from '@/lib/plan/paceBands'
 import { effectiveStartKm } from '@/lib/plan/startVolume'
+import { INPUT_ENUMS } from '@/lib/plan/inputs'
 import { formatDate, nextMonday, parseDateLocal, weeksBetweenLocal } from '@/lib/plan/length'
 import { normaliseDays, DAY_ORDER } from '@/lib/plan/days'
 import { weeksUntilRaceSigned } from '@/lib/format'
@@ -132,12 +133,11 @@ export function buildRunnerProfile(facts: RunnerFacts, opts: BuildProfileOptions
   // Code review 2026-11-21: L1 runs BEFORE `validateInputFields`, so an out-of-enum level must not
   // throw here. It would replace the named InputEnumError with an anonymous TypeError. An unknown
   // level gives no pace (absence), and generation then refuses the input exactly as before.
-  let easyMinPerKm: number | null = null
-  try {
-    easyMinPerKm = (v.vdot !== undefined && v.vdotRaw !== undefined
-      ? buildPaceFromVDOT(v.vdot, v.vdotRaw)
-      : buildFallbackPace(l.structural)).minPerKmEasy ?? null
-  } catch { easyMinPerKm = null }
+  const levelKnown = INPUT_ENUMS.fitness_level.includes(l.structural)
+  const easyMinPerKm: number | null = v.vdot !== undefined && v.vdotRaw !== undefined
+    ? buildPaceFromVDOT(v.vdot, v.vdotRaw).minPerKmEasy
+    : levelKnown ? buildFallbackPace(l.structural).minPerKmEasy : null
+  if (easyMinPerKm === null) nulled.push('schedule.capacity.easy_min_per_km')
 
   const weeksPlan = weeksBetweenLocal(planStart, input.race_date)
 

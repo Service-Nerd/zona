@@ -30,7 +30,7 @@ describe('fetchRunnerFacts', () => {
       ['health_daily_samples', 'run_analysis', 'session_completions', 'strava_activities', 'strava_activities', 'user_settings'])
     for (const q of db.log) expect(q.filters[q.table === 'user_settings' ? 'id' : 'user_id']).toBe('u-1')
     // 🔴 code review: the first-run query is restricted to runs, by isRun's own two columns
-    expect(db.log.filter(q => q.table === 'strava_activities' && q.cols === 'start_date').map(q => q.filters['@or'])).toEqual(['activity_type.eq.Run,sport_type.eq.Run'])
+    expect(db.log.filter(q => q.table === 'strava_activities' && q.cols === 'start_date').map(q => [q.filters['@or'], q.filters['distance_m>']])).toEqual([['activity_type.eq.Run,sport_type.eq.Run', 0]])
     // Superseded completions and analyses are not this runner's current record.
     expect(db.log.filter(q => q.table === 'session_completions' || q.table === 'run_analysis').every(q => q.filters.superseded_at === null)).toBe(true)
     expect(db.log.every(q => q.op === 'select')).toBe(true)

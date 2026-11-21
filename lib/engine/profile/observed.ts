@@ -58,13 +58,14 @@ function median(xs: number[]): number | null {
 const mean = (xs: number[]) => (xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : null)
 
 /** A run L1 believes: a distance, a duration and a pace all inside their bounds. A run with no
- *  recorded duration is kept on distance alone: a manual log entered by distance stores
- *  `moving_time_s: 0` (`adaptManualRun`), so 0 is "no duration", not a 0-second run. */
+ *  recorded duration (null) is kept on distance alone. A 0-second duration is junk, not absence:
+ *  manual ingest refuses a run without one (`ingest/route.ts`), so no real row carries 0.
+ *  `excluded_rows` counts invalid ROWS, including a junk duplicate of a run counted via its twin. */
 function validRunKm(r: RunRow): number | null {
   const d = runDistance(r)
   const km = d ? within(d.km, VALIDITY.run_km) : null
   if (km === null) return null
-  if (r.moving_time_s === null || r.moving_time_s === undefined || r.moving_time_s <= 0) return km
+  if (r.moving_time_s === null || r.moving_time_s === undefined) return km
   const s = within(r.moving_time_s, VALIDITY.run_moving_s)
   if (s === null) return null
   return within(s / 60 / km, VALIDITY.run_pace_min_per_km) === null ? null : km
