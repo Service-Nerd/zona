@@ -54,7 +54,7 @@ export function findingFromViolation(v: Violation, inputHash: string | null): Fi
   return FindingSchema.parse({
     rule_id: v.code,
     severity: v.severity,
-    week: v.week === 0 ? null : v.week,
+    week: Number.isInteger(v.week) && v.week !== 0 ? v.week : null,
     detail: v.message,
     input_hash: inputHash,
   })

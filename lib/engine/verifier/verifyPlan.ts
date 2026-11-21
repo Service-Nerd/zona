@@ -27,7 +27,10 @@ export interface VerifierFinding {
 }
 
 export interface VerifyContext {
-  /** The request the plan was built from. */
+  /** The request the plan was built from, RAW. ⚠️ `validatePlan` first normalises it with the planner's
+   *  `coherentGoal`; the verifier may not import that. Harmless for the rules ported so far (none reads
+   *  the goal). A goal-dependent rule must not be ported until the normalised goal reaches the verifier
+   *  as data (the L1 profile is the intended carrier). */
   input: GeneratorInput
 }
 
@@ -80,7 +83,7 @@ export const PREDICATES: Partial<Record<RuleId, Predicate>> = {
   // Kept identical so agreement means something; raised for a ruling rather than changed here.
   'INV-PLAN-EMPTY-SESSION': plan => plan.weeks.filter(governed).flatMap(w =>
     running(w).filter(({ session: s }) => !sizeExempt(w, s))
-      .filter(({ session: s }) => !(s.duration_mins ?? 0) && !(s.distance_km ?? 0))
+      .filter(({ session: s }) => (s.duration_mins ?? 0) === 0 && (s.distance_km ?? 0) === 0)
       .map(({ day }) => ({ rule_id: 'INV-PLAN-EMPTY-SESSION', week: w.n, day, detail: 'zero distance and zero duration' }))),
 
   // §9 (+ Am. on minutes): a distance-anchored session meets its type's floor, unless a quality session

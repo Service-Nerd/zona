@@ -92,6 +92,7 @@ describe('Finding', () => {
     expect(findingFromViolation(v, 'h')).toEqual({ rule_id: 'INV-PLAN-TAPER', severity: 'warn', week: null, detail: 'm', input_hash: 'h' })
     expect(findingFromViolation({ ...v, week: 3 }, null).week).toBe(3)
     expect(findingFromViolation({ ...v, week: -2 }, null).week, 'a foundation week keeps its n').toBe(-2)
+    expect(findingFromViolation({ ...v, week: undefined as unknown as number }, null).week, 'a missing week is plan-level, never a throw').toBeNull()
   })
   it('refuses a finding without a rule id', () => {
     expect(FindingSchema.safeParse({ rule_id: 'taper', severity: 'warn', week: null, detail: '', input_hash: null }).success).toBe(false)

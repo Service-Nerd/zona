@@ -7,7 +7,7 @@
 // outside the list.
 import { describe, it, expect } from 'vitest'
 import { readFileSync, readdirSync } from 'node:fs'
-import { join } from 'node:path'
+import { join, resolve, dirname } from 'node:path'
 import { PORTED_RULES } from './verifyPlan'
 import { RULES } from '@/lib/engine/catalogue/rules'
 
@@ -21,7 +21,19 @@ const ALLOWED = new Set([
   '@/lib/plan/sessionDistance',          // the measurement owner (`sessionKm`), fixture-tested
 ])
 
-const sources = () => readdirSync(DIR).filter(f => f.endsWith('.ts') && !f.endsWith('.test.ts'))
+/** Every non-test source file under the verifier, recursively. */
+function sources(dir = DIR): string[] {
+  return readdirSync(dir, { withFileTypes: true }).flatMap(e =>
+    e.isDirectory() ? sources(join(dir, e.name))
+      : e.name.endsWith('.ts') && !e.name.endsWith('.test.ts') ? [join(dir, e.name)] : [])
+}
+
+/** Every module specifier a file pulls in: static and type imports, re-exports, dynamic import, require. */
+const specifiers = (src: string) => [
+  ...Array.from(src.matchAll(/^\s*(?:import|export)\b[^'"]*?\bfrom\s*['"]([^'"]+)['"]/gm), m => m[1]),
+  ...Array.from(src.matchAll(/^\s*import\s*['"]([^'"]+)['"]/gm), m => m[1]),
+  ...Array.from(src.matchAll(/\b(?:import|require)\s*\(\s*['"]([^'"]+)['"]/g), m => m[1]),
+]
 
 describe('ADR027-B3-VERIFIER — independence', () => {
   it('there is verifier source to check', () => expect(sources().length).toBeGreaterThan(0))
@@ -29,14 +41,21 @@ describe('ADR027-B3-VERIFIER — independence', () => {
   it('🔴 every verifier import is on the allowed list (never validatePlan, never a planner derivation)', () => {
     const bad: string[] = []
     for (const f of sources()) {
-      const src = readFileSync(join(DIR, f), 'utf8')
-      for (const m of Array.from(src.matchAll(/^\s*import[^'"]*['"]([^'"]+)['"]/gm))) {
-        const spec = m[1]
-        if (spec.startsWith('./')) continue          // another verifier file, itself checked here
+      for (const spec of specifiers(readFileSync(f, 'utf8'))) {
+        // A relative import must stay inside the verifier, where it is itself checked.
+        if (spec.startsWith('.')) { if (!resolve(dirname(f), spec).startsWith(DIR)) bad.push(`${f}: ${spec}`); continue }
         if (!ALLOWED.has(spec)) bad.push(`${f}: ${spec}`)
       }
     }
     expect(bad).toEqual([])
+  })
+
+  it('the specifier scan sees every form it must (falsified on a fixture string)', () => {
+    const fx = [
+      "import { a } from '@/lib/plan/invariants'", "import type { B } from '@/x'", "export { c } from '@/y'",
+      "const d = await import('@/z')", "const e = require('@/w')", "import '@/side-effect'",
+    ].join('\n')
+    expect(specifiers(fx).sort()).toEqual(['@/lib/plan/invariants', '@/side-effect', '@/w', '@/x', '@/y', '@/z'])
   })
 
   it('every ported rule is in the catalogue, so its severity comes from there', () => {
