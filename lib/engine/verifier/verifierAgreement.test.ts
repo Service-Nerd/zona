@@ -146,6 +146,13 @@ const EXTRA_MUTATIONS: { name: string; apply: (p: Plan, input: GeneratorInput) =
       s.coach_notes = [...(s.coach_notes ?? []).filter(n => !/^Final \d+% at /.test(n ?? '')), `Final ${GENERATION_CONFIG.LR_RACE_SEGMENT_PCT_MAX + 1}% at goal pace.`] as unknown as typeof s.coach_notes
       return true
     }],
+    ['a build week without quality, marked intentionally downgraded', (p: Plan) => {
+      const w = p.weeks.find(x => (x.phase === 'build' || x.phase === 'peak') && x.type !== 'deload' && x.type !== 'race'
+        && Object.values(x.sessions ?? {}).some(s => s?.type === 'quality'))
+      if (!w) return false
+      for (const s of Object.values(w.sessions ?? {})) if (s?.type === 'quality') s.type = 'easy'
+      w.quality_downgraded = true as never; return true
+    }],
     ['a build week with its quality removed', (p: Plan) => {
       const w = p.weeks.find(x => (x.phase === 'build' || x.phase === 'peak') && x.type !== 'deload' && x.type !== 'race' && !x.quality_downgraded
         && Object.values(x.sessions ?? {}).some(s => s?.type === 'quality'))
@@ -584,6 +591,7 @@ const SILENT_BY_DESIGN = new Set<string>([
   'a long-run note whose floor is BELOW its peak (no miss)',
   're-entry WITH a VO2 session, note removed',
   'goal below easy, WITH its note',
+  'a build week without quality, marked intentionally downgraded',
 ])
 const GOAL_CASE = 'rebuilt as time target with no time, plus a quality session'
 /** Where the race-eve mutation put its over-cap session, so the verifier's day can be checked against it. */
