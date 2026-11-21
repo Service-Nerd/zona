@@ -1797,8 +1797,8 @@ told or built, so the Coaching Board rules before they are built.
 `/api/generate-plan/foundation` composes onto a stored plan and builds no profile, so it needs no adoption.
 🔻 **Part 2 is DEFERRED TO B4 (founder, 2026-11-21):** every call site is inside the frozen engine that B4's planner
 replaces, so each moves with the code that uses it rather than being re-plumbed first.
-⏳ **Part 3 goes to one Coaching Board sitting** (3c also needs the Design Board, being a new wizard question).
-Open until part 3 is ruled.
+✅ **Part 3 RULED 2026-11-21** (see below); build lands in B4 after the Design Board rules on 3a's display and 3c's
+question.
 
 **1. Route adoption of the fetcher (⚙️).** *(Shipped, see above.)* `lib/supabase/fetchRunnerFacts.ts` exists, is unit-tested, and is called by
 no route. Wire it into `/api/generate-plan` (and the other `create` paths, ARCH-ENG-012), hand `runEngine` the facts,
@@ -1833,6 +1833,14 @@ definitions excluded (the profile's own calls not counted):
 - **(c) A documented field is never sent.** `weeks_at_current_volume` (§29's explicit fresh-return path) has no
   writer in `app/` or `components/`. **Sent on 0 of 1,156 golden rows, 0 of 36 live, 0 of 62 archive**, so §29 only
   ever runs on its heuristic.
+
+⚖️ **Ruled 2026-11-21, RULED not built, lands in B4, no hotfix** (`docs/decisions/coaching-2026-11-21-input-layer-defects.md`):
+- **(a) CORRECT WITH AMENDMENT:** the accepted recommendation reads the benchmark via the engine's owner. Re-measured:
+  it binds intensity only, structure on 0 of 28; 0 live exposure.
+- **(b) CORRECT WITH AMENDMENT:** a week counts when it holds a day before race day; thresholds unchanged. §44 is one
+  short on every row, not only non-Monday races.
+- **(c) CORRECT WITH AMENDMENT:** the engine uses it (declared volume only; unanswered = unknown).
+- 🧭 **The Design Board must rule on (c)'s question, and on how (a)'s changed level is shown, before build.**
 
 **4. Prescribing from observed facts (🏃).** The profile carries an `observed` block (28-day logged km, longest run,
 RHR median, RPE and fatigue trend). Starting volume from the log is §2/§106's question and the data dictionary's

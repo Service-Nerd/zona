@@ -4143,3 +4143,32 @@ running (an ADR-012 always-high row). 🔴 **`watchedSignals` tells runners "1.4
 escalation INSUFFICIENT EVIDENCE (≥10 shadow runner-weeks). Not a `validatePlan()` invariant: it governs when the engine
 acts (precedent §129); `triggerCatalogue.test.ts`. **Nothing built (ADR-027 freeze); owed to B3.** Sitting:
 `docs/decisions/boards-2026-11-21-triggers-on-run-arrival.md`.
+
+### `ADR027-B2B-PROFILE-ADOPTION` part 3 · three input-layer defects · **(a) VDOT-blind level recommendation CORRECT WITH AMENDMENT · (b) §44 counts prep weeks one short CORRECT WITH AMENDMENT · (c) §29's `weeks_at_current_volume` has no writer CORRECT WITH AMENDMENT · RULED, not built (lands in ADR-027 B4; no hotfix)**
+
+**The evidence** (re-measured 2026-11-21; golden 1,156, live 32, archive 63):
+- **(a)** Blind ≠ aware on 51 of 1,060 benchmarked golden rows, 2 of 19 live, 5 of 50 archive; blind always lower.
+  Accepted (declared = blind): **28 golden, 0 live, 0 archive**. 🔴 **Structure moves on 0 of 28 and cannot move**
+  (the blind level is never below `min(byVdot, byVolume)`); intensity drops on all 28. Of 16 generated pairs, 13
+  differ: quality 74 → 82, time trials 9 → 2.
+- **(b)** §44's count is **one below the plan's week count on every row** (1,156/1,156, 32/32, 63/63, Monday races
+  included). Status changes under the ruled count: 67 of 1,156 golden, 0 live, 0 archive.
+- **(c)** Sent on 0 rows anywhere. The heuristic flags 24 of 1,156. Upper bound if every unflagged row answered
+  < 8 weeks: start lowered on 889, §44 stricter on 132.
+
+**The ruling:**
+- **(a)** A recommendation the runner may accept reads all their evidence, benchmark included, through the engine's
+  own owner. The accepted level is the built level. An active choice is never overridden.
+- **(b)** A week counts when it holds a day before race day (`ceil(days ÷ 7)`). The thresholds do not move. One
+  owner, read by §44, the band and the runway note.
+- **(c)** The engine uses it: weeks at the **declared** volume, read only as < 8 or not. Unanswered is unknown, so
+  the heuristic governs. Not asked when volume is observed. §29's "the wizard surfaces it" and "null means
+  consolidated" are amended.
+- **No hotfix:** (a) 0 live exposure; (b) 0 live status changes; (c) needs a new question.
+
+**Dissent:** Willy would keep the floor count at `block` only; the chair ruled one count. Re-open the BLOCK THRESHOLDS
+(not the count) if `measure:fitness` on the 28 newly admitted golden rows shows a failure.
+
+**Hand-off:** 🧭 Design Board rules before build on (c)'s question and on (a)'s re-shown level.
+
+**Sitting:** `docs/decisions/coaching-2026-11-21-input-layer-defects.md`.
