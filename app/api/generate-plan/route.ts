@@ -21,6 +21,8 @@ import { getUserTier } from '@/lib/trial'
 // engine would not apply Zonna's price list. Collapsing those would drag the AI
 // layer and persistence inside the engine, which `ENGINE-PURITY-GATE-01` forbids.
 import { runEngine, evaluateCheckpoint, isBaseBuildPlan, type EngineOutcome } from '@/lib/plan/engine'
+import { fetchRunnerFacts } from '@/lib/supabase/fetchRunnerFacts'
+import type { RunnerFacts } from '@/lib/engine/contracts/facts'
 import { canGenerateDistance } from '@/lib/plan/canUseFeature'
 import { enrich, type EnrichOutcome } from '@/lib/plan/enrich'
 import { errorBaseline, statusForReason } from '@/lib/plan/enrichAttribution'
@@ -277,8 +279,22 @@ export async function POST(req: NextRequest) {
     // ⚠️ `displayUnits` IS PASSED IN, NEVER LOOKED UP (ADR-015). The engine does
     // not read a user preference; the §118 offer copy needs the unit, and a
     // distance string assembled without it is the defect ADR-015 exists to prevent.
+    // ADR027-B2B-PROFILE part 1 (ARCH-ENG-013) — the runner's stored facts, read on the server. A
+    // failed read is recorded and the plan is built from the request alone, as it always was: these
+    // facts are carried by the profile and prescribed from by nothing until B4, so a read error must
+    // never be the reason a runner gets no plan.
+    let facts: RunnerFacts | undefined
+    try {
+      const { createClient } = await import('@supabase/supabase-js')
+      const svc = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
+      facts = await fetchRunnerFacts(svc, user.id, input, new Date())
+    } catch (err) {
+      await recordOpsEvent('runner_facts_unavailable',
+        { message: (err instanceof Error ? err.message : String(err)).slice(0, 200) }, user.id)
+    }
+
     stage = 'engine'
-    const outcome: EngineOutcome = runEngine({ input, tier, acceptBaseBuild, displayUnits })
+    const outcome: EngineOutcome = runEngine({ input, tier, acceptBaseBuild, displayUnits, facts })
     stage = 'respond'
 
     if (outcome.kind === 'refusal') {

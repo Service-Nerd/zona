@@ -83,6 +83,8 @@ const S = vi.hoisted(() => ({
    *  response by design, so each test drains these before the store is reset for the next one;
    *  otherwise a late `plan_findings` row lands in the NEXT test's `ops_events`. */
   findings: [] as Promise<void>[],
+  /** ADR027-B2B-PROFILE — every request `runEngine` was handed, so an arm can see the facts. */
+  engineReqs: [] as { facts?: unknown }[],
 }))
 
 /**
@@ -113,13 +115,18 @@ function fakeTable(name: string) {
   // treats an absent column as null, as PostgREST would for a nullable one.
   const ranges: [string, 'gte' | 'lt', string][] = []
   const nulls: string[] = []
+  // ADR027-B2B-PROFILE — `fetchRunnerFacts` narrows with `lte` and two `or()` disjunctions. STRICT, like the
+  // adjust-plan double: only `col.eq.<v>` and `col.gt.<n>` terms are understood, and anything else THROWS, so a
+  // new filter cannot be silently ignored. Without these the facts read crashed in EVERY test and fell back.
+  const ors: ((r: Record<string, unknown>) => boolean)[] = []
   const sorts: [string, boolean][] = []
   let cap: number | null = null
   const matching = () => {
     const hit = rows().filter(r =>
       filters.every(([c, v]) => r[c] === v)
       && ranges.every(([c, op, v]) => op === 'gte' ? String(r[c]) >= v : String(r[c]) < v)
-      && nulls.every(c => r[c] == null))
+      && nulls.every(c => r[c] == null)
+      && ors.every(f => f(r)))
     for (const [c, asc] of [...sorts].reverse()) {
       hit.sort((a, b) => (String(a[c]) < String(b[c]) ? -1 : String(a[c]) > String(b[c]) ? 1 : 0) * (asc ? 1 : -1))
     }
@@ -143,6 +150,18 @@ function fakeTable(name: string) {
     eq: (c: string, v: unknown) => { filters.push([c, v]); return api },
     gte: (c: string, v: string) => { ranges.push([c, 'gte', v]); return api },
     lt: (c: string, v: string) => { ranges.push([c, 'lt', v]); return api },
+    lte: (c: string, v: string) => { ors.push(r => String(r[c]) <= v); return api },
+    or: (expr: string) => {
+      const terms = expr.split(',').map(t => {
+        const m = /^(\w+)\.(eq|gt)\.(.+)$/.exec(t)
+        if (!m) throw new Error(`fake or(): unsupported term ${t}`)
+        const [, c, op, v] = m
+        return op === 'eq' ? (r: Record<string, unknown>) => String(r[c]) === v
+                           : (r: Record<string, unknown>) => typeof r[c] === 'number' && (r[c] as number) > Number(v)
+      })
+      ors.push(r => terms.some(f => f(r)))
+      return api
+    },
     is: (c: string, v: unknown) => { if (v === null) nulls.push(c); return api },
     // ⚠️ A REAL SORT, not a no-op that returns `api`. `getUserTier` takes the EARLIEST read, so
     // a stub that ignored the direction would hand it whichever row the fixture happened to list
@@ -195,6 +214,12 @@ vi.mock('@/lib/ops/planFindings', async (importOriginal) => {
       return p
     },
   }
+})
+
+// ADR027-B2B-PROFILE — the REAL engine; the wrapper only records what it was handed.
+vi.mock('@/lib/plan/engine', async (importOriginal) => {
+  const real = await importOriginal<typeof import('@/lib/plan/engine')>()
+  return { ...real, runEngine: (req: Parameters<typeof real.runEngine>[0]) => { S.engineReqs.push(req); return real.runEngine(req) } }
 })
 
 vi.mock('@/lib/plan/enrich', () => ({
@@ -265,6 +290,7 @@ beforeEach(() => {
   S.gate = null
   S.enrichSaw = []
   S.freeIntroSaw = []
+  S.engineReqs = []
 })
 
 /** Hold `enrich()` until the test says go, so F14's ordering is asserted rather
@@ -822,5 +848,52 @@ describe('J — ADR027-B0-PROD-FINDINGS: one plan_findings event per generation'
     await new Promise(r => setTimeout(r, 20))
     expect(S.findings).toHaveLength(0)
     expect(events()).not.toContain('plan_findings')
+  })
+})
+
+describe('J — ADR027-B2B-PROFILE part 1: the runner\'s stored facts reach the engine, and change no plan', () => {
+  const stamp = (p: unknown) => JSON.stringify(p, (k, v) => (k === 'generated_at' ? undefined : v))
+  const planOf = async (res: Response) => {
+    const text = await res.text()
+    const first = text.trim().split('\n')[0]
+    const parsed = JSON.parse(first) as { plan?: unknown }
+    return parsed.plan
+  }
+
+  it('🔴 J1 — a normal build reads the facts on the server, including the runner\'s timezone', async () => {
+    S.store.user_settings[0].timezone = 'Europe/London'
+    S.store.strava_activities = [{ user_id: UID, start_date: new Date(Date.now() - 2 * 86_400_000).toISOString(),
+      distance_m: 8000, reported_distance_m: null, moving_time_s: 2700, max_hr: 170, activity_type: 'Run', sport_type: 'Run' }]
+    const res = await post(body())
+    expect(res.status).toBe(200)
+    await res.text()
+    expect(events(), 'the facts read failed and fell back').not.toContain('runner_facts_unavailable')
+    const facts = S.engineReqs.at(-1)?.facts as { settings?: { timezone?: string }; observed?: { run_log?: { run_count?: number } } } | undefined
+    expect(facts?.settings?.timezone).toBe('Europe/London')
+    expect(facts?.observed?.run_log?.run_count, 'the run log reached the engine').toBe(1)
+  })
+
+  it('🔴 J2 — a failed facts read is recorded and the runner STILL gets a plan', async () => {
+    S.crashTable = 'health_daily_samples'   // read by fetchRunnerFacts only
+    const res = await post(body())
+    expect(res.status).toBe(200)
+    expect(await planOf(res)).toBeTruthy()
+    expect(events()).toContain('runner_facts_unavailable')
+    expect(S.engineReqs.at(-1)?.facts, 'no facts means the request alone').toBeUndefined()
+  })
+
+  it('🔴 J3 — the plan is identical with and without the facts (carried, not prescribed from: STARTVOL-OBSERVED-01)', async () => {
+    S.store.user_settings[0].timezone = 'Europe/London'
+    S.store.user_settings[0].resting_hr = 44
+    S.store.user_settings[0].max_hr = 201
+    S.store.strava_activities = Array.from({ length: 6 }, (_, i) => ({ user_id: UID,
+      start_date: new Date(Date.now() - (i + 1) * 86_400_000).toISOString(), distance_m: 15000, reported_distance_m: null,
+      moving_time_s: 4800, max_hr: 190, activity_type: 'Run', sport_type: 'Run' }))
+    const withFacts = await planOf(await post(body()))
+    expect(events()).not.toContain('runner_facts_unavailable')
+    S.crashTable = 'health_daily_samples'
+    const without = await planOf(await post(body()))
+    expect(events()).toContain('runner_facts_unavailable')
+    expect(stamp(withFacts)).toBe(stamp(without))
   })
 })

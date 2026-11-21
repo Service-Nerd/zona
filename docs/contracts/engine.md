@@ -417,6 +417,7 @@ ADR-027 v1.2 (ARCH-ENG-013/014/019) and the data dictionary (`docs/architecture/
 |---|---|---|
 | `RunnerFacts` (input + `user_settings` row + observed aggregates) | `lib/engine/contracts/facts.ts` | type |
 | `buildRunnerProfile(facts, { asOf, timezone, planStart? })` → `RunnerProfile` | `lib/engine/profile/buildRunnerProfile.ts` | yes: no clock, no I/O, never throws |
+| `runEngine({ ..., facts? })`: `facts` is the route's `fetchRunnerFacts` result (B2b part 1). Absent means the request alone. Re-pinned to the request's `input`; its timezone resolves `as_of`. Carried only: no planner reads it before B4 | `lib/plan/engine.ts` | yes: the facts are data, read before the call |
 | `aggregateObserved(rows, frame)` (windows, dedupe, validity) | `lib/engine/profile/observed.ts` | yes |
 | `resolveAsOf(instant, timezone)` | `lib/engine/profile/asOf.ts` | yes |
 | `fetchRunnerFacts(db, userId, input, now)` (implements `AssembleRunnerFacts`) | `lib/supabase/fetchRunnerFacts.ts` | **no**: reads `user_settings`, `strava_activities`, `health_daily_samples`, `session_completions`, `run_analysis`; outside the purity gate |

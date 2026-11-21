@@ -45,6 +45,7 @@
 // testable for the first time: it used to be gated by GREPPING THE ROUTE'S SOURCE,
 // because the logic was welded to a handler that needs auth and Supabase to run.
 
+import type { RunnerFacts } from '@/lib/engine/contracts/facts'
 import { generateRulePlan, type Tier } from './ruleEngine'
 import { composePlanWithFoundation, type ComposePlanWithFoundationResult } from './foundationCompose'
 import { enforceViolations, type Violation } from './invariants'
@@ -299,6 +300,11 @@ export interface EngineRequest {
    *  the real clock when a benchmark is present, which is deliberate
    *  (`docs/contracts/engine.md` § The clock). That is now the ONLY clock leak. */
   today?: string
+  /** ADR027-B2B-PROFILE part 1 — the runner's stored facts, read by the route through
+   *  `fetchRunnerFacts`. Absent (a test, a script, or a failed read) means the request alone, exactly
+   *  as before. ⚠️ CARRIED, NOT PRESCRIBED FROM: the profile's settings and observed blocks are read by
+   *  no planner until B4 (coaching ruling STARTVOL-OBSERVED-01), so this changes no plan. */
+  facts?: RunnerFacts
 }
 
 /**
@@ -327,7 +333,11 @@ export function runEngine(req: EngineRequest): EngineOutcome {
   // ⚠️ `asOf: clock`, NOT `today`: the refusal telemetry this replaces measured §10's staleness ramp
   // and `weeksUntilRaceSigned` to the wall clock even when a caller pinned `today`, and B2a changes no
   // output. In production `today` is unpinned, so the two are the same date.
-  const profile = buildRunnerProfile(factsFromInput(input), { asOf: clock, timezone: null, planStart })
+  // B2b: the route's facts when it read them, re-pinned to THIS input (the engine prescribes from
+  // `input`, so the profile must describe the same request). `as_of` is resolved in the runner's
+  // timezone (ARCH-ENG-019); an unset zone is flagged `unknown` by `resolveAsOf`.
+  const facts = req.facts ? { ...req.facts, input } : factsFromInput(input)
+  const profile = buildRunnerProfile(facts, { asOf: clock, timezone: facts.settings?.timezone ?? null, planStart })
   // `weeksBetweenLocal` returns NaN for a race date that does not parse; the profile carries that as
   // null, and the producers below were always handed the NaN, so it is restored for them here.
   const runway = profile.weeks_to_race.plan ?? NaN

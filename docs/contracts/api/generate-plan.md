@@ -564,6 +564,20 @@ checkpoint plan), with `{ codes, errors, warns, kind, engine_version?, race_dist
 frame waits on it. **No request or response shape changed.** A refusal returns no plan and writes no
 row. Event contract: `ops-events.md`.
 
+### Runner facts (ADR027-B2B-PROFILE part 1, 2026-11-21)
+
+Before the engine runs, the route reads the runner's stored facts with `fetchRunnerFacts`
+(`lib/supabase/fetchRunnerFacts.ts`, service role): `user_settings` (birth year, date of birth, resting/max HR and
+its source, timezone) and 28-day aggregates of the run log, health samples, completions and analyses. They are handed
+to `runEngine` as `facts`, and `as_of` is resolved in the runner's timezone (ARCH-ENG-019).
+
+- **Carried, not prescribed from.** No planner reads the profile's settings or observed blocks until B4
+  (`STARTVOL-OBSERVED-01`), so the plan is identical with or without them. Route arm J3 proves it, and fails if the
+  engine starts prescribing from stored heart rate.
+- **A failed read never blocks a plan.** The route records `runner_facts_unavailable` (message only, truncated) and
+  builds from the request alone, exactly as before.
+- Request and response shapes are unchanged.
+
 ### Plan start
 The route computes the **next Monday** from the current date (local-time arithmetic, avoiding UTC
 midnight drift) and passes it to the engine. The client does not send a plan start date.
