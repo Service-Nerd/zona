@@ -900,6 +900,74 @@ const BATCH_11: Partial<Record<RuleId, Predicate>> = {
 }
 Object.assign(PREDICATES, BATCH_11)
 
+const isDeloadWeek = (w: Week) => w.type === 'deload' || w.badge === 'deload'
+
+const BATCH_12: Partial<Record<RuleId, Predicate>> = {
+  // §119: a deload follows at least MIN_LOADING_BLOCK_WEEKS of loading (race weeks do not count as loading).
+  'INV-PLAN-MIN-LOADING-BLOCK': plan => {
+    const out: Raw[] = []
+    let run = 0
+    for (const w of plan.weeks.filter(x => x.n >= 1)) {
+      if (isDeloadWeek(w)) {
+        if (run < GENERATION_CONFIG.MIN_LOADING_BLOCK_WEEKS) out.push({ rule_id: 'INV-PLAN-MIN-LOADING-BLOCK', week: w.n, day: null, detail: `deload after ${run} loading weeks` })
+        run = 0
+      } else if (w.type !== 'race') run++
+    }
+    return out
+  },
+
+  // §64-family: an ordinary week places at least the runner's declared days (capped at the volume floor).
+  'INV-PLAN-WEEK-DELIVERS-DECLARED-DAYS': (plan, { input }) => {
+    const declared = Math.min(input.days_available ?? GENERATION_CONFIG.MAX_TRAINING_DAYS_PER_WEEK,
+      GENERATION_CONFIG.MAX_TRAINING_DAYS_PER_WEEK, GENERATION_CONFIG.MIN_TRAINING_DAYS_VOLUME_FLOOR)
+    return plan.weeks.filter(w => governed(w) && w.type !== 'race' && !isDeloadWeek(w) && w.phase !== 'foundation')
+      .filter(w => running(w).length < declared)
+      .map(w => ({ rule_id: 'INV-PLAN-WEEK-DELIVERS-DECLARED-DAYS', week: w.n, day: null, detail: `${running(w).length} days placed of ${declared}` }))
+  },
+
+  // §3: a deload (not following another) carries no more volume than the week before it.
+  'INV-PLAN-DELOAD-IS-A-REDUCTION': plan => plan.weeks.slice(1).flatMap((w, k) => {
+    const prev = plan.weeks[k]
+    return isDeloadWeek(w) && !isDeloadWeek(prev) && w.weekly_km > prev.weekly_km
+      ? [{ rule_id: 'INV-PLAN-DELOAD-IS-A-REDUCTION' as RuleId, week: w.n, day: null, detail: 'deload above the week before' }] : []
+  }),
+
+  // §95: no deload in the second week of the build phase.
+  'INV-PLAN-DELOAD-PHASE-POSITION': plan => {
+    const first = new Map<string, number>()
+    for (const w of plan.weeks) { const ph = w.phase ?? 'base'; if (w.n >= 1 && !first.has(ph)) first.set(ph, w.n) }
+    return plan.weeks.filter(w => w.n >= 1 && isDeloadWeek(w) && (w.phase ?? 'base') === 'build' && first.get('build') != null
+      && w.n - first.get('build')! + 1 === 2)
+      .map(w => ({ rule_id: 'INV-PLAN-DELOAD-PHASE-POSITION', week: w.n, day: null, detail: 'deload in build week 2' }))
+  },
+
+  // §7: the week's two largest sessions sit at least the configured gap apart.
+  // ⚠️ PORTED FAITHFULLY: "size" is distance_km, else duration_mins, so km and minutes are compared; raised.
+  'INV-PLAN-LARGEST-SESSIONS-SPACED': plan => {
+    const min = Math.ceil(GENERATION_CONFIG.MIN_HOURS_BETWEEN_LARGEST_SESSIONS / 24)
+    const size = (s: Session) => (s.type === 'race' ? 0 : (s.distance_km ?? s.duration_mins ?? 0))
+    return plan.weeks.filter(w => w.n > 0 && w.type !== 'deload').flatMap(w => {
+      const placed = daysOf(w).filter(x => !!x.session && size(x.session) > 0)
+        .map(x => ({ day: x.day, size: size(x.session!) })).sort((a, b) => b.size - a.size)
+      if (placed.length < 2) return []
+      const ia = DAYS.indexOf(placed[0].day), ib = DAYS.indexOf(placed[1].day)
+      if (ia < 0 || ib < 0) return []
+      const gap = Math.min(Math.abs(ia - ib), 7 - Math.abs(ia - ib))
+      return gap < min ? [{ rule_id: 'INV-PLAN-LARGEST-SESSIONS-SPACED' as RuleId, week: w.n, day: null, detail: `largest sessions ${gap} day(s) apart` }] : []
+    })
+  },
+
+  // §23: the longest long run is not in base while later phases run shorter.
+  'INV-PLAN-LONGEST-RUN-NOT-IN-BASE': plan => {
+    const scored = plan.weeks.filter(w => w.n > 0 && w.type !== 'race' && w.type !== 'deload')
+    const top = (ph: string) => Math.max(0, ...scored.filter(w => w.phase === ph).map(longKm))
+    const base = top('base'), later = Math.max(top('build'), top('peak'), top('taper'))
+    if (!(base > 0 && later > 0 && base > later)) return []
+    return [{ rule_id: 'INV-PLAN-LONGEST-RUN-NOT-IN-BASE', week: scored.find(w => w.phase === 'base' && longKm(w) === base)?.n ?? PLAN, day: null, detail: 'longest long run is in base' }]
+  },
+}
+Object.assign(PREDICATES, BATCH_12)
+
 const SEVERITY = new Map(RULES.map(r => [r.id, r.kind === 'soft' ? 'warn' as const : 'error' as const]))
 
 /** Every finding the ported predicates raise, with the severity the catalogue gives the rule. */

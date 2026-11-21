@@ -133,6 +133,37 @@ const EXTRA_MUTATIONS: { name: string; apply: (p: Plan, input: GeneratorInput) =
     ['no HR method', (p: Plan) => { delete p.meta.hr_zone_method; return true }],
     // Batch 8: the plan's declarations about its own limits.
     ['no compression class', (p: Plan) => { delete p.meta.compression_classification; return true }],
+    // Batch 12: soft week rules.
+    ['a deload after one loading week', (p: Plan) => { const m = p.weeks.filter(w => w.n >= 1); if (m.length < 3) return false; m[1].type = 'deload'; return true }],
+    ['a normal week one running day short', (p: Plan) => {
+      const w = p.weeks.find(x => x.n >= 1 && x.type !== 'race' && x.type !== 'deload' && x.badge !== 'deload' && x.phase !== 'foundation')
+      const d = w && (Object.keys(w.sessions) as (keyof typeof w.sessions)[]).find(k => { const s = w.sessions[k]; return s && s.type === 'easy' && !isLongRun(s) })
+      if (!w || !d) return false
+      w.sessions[d] = { type: 'rest', label: 'Rest' } as never; return true
+    }],
+    ['a deload above the week before', (p: Plan) => {
+      const i = p.weeks.findIndex((w, k) => k > 0 && (w.type === 'deload' || w.badge === 'deload') && !(p.weeks[k - 1].type === 'deload'))
+      if (i < 1) return false
+      p.weeks[i].weekly_km = p.weeks[i - 1].weekly_km + 1; return true
+    }],
+    ['a deload in build week 2', (p: Plan) => {
+      const b = p.weeks.filter(w => w.n >= 1 && w.phase === 'build')
+      if (b.length < 2) return false
+      b[1].type = 'deload'; return true
+    }],
+    ['the two largest sessions on adjacent days', (p: Plan) => {
+      const w = p.weeks.find(x => x.n > 0 && x.type !== 'deload' && x.type !== 'race')
+      if (!w) return false
+      w.sessions.mon = { type: 'easy', label: 'Big', distance_km: 40 } as never
+      w.sessions.tue = { type: 'easy', label: 'Big', distance_km: 39 } as never
+      return true
+    }],
+    ['the longest long run moved into base', (p: Plan) => {
+      const w = p.weeks.find(x => x.n > 0 && x.phase === 'base' && x.type !== 'deload')
+      const s = w && Object.values(w.sessions ?? {}).find(x => x && isLongRun(x))
+      if (!s) return false
+      s.distance_km = 60; return true
+    }],
     // Batch 11: notes and copy.
     // Lands only when the peak's longest long session is over the fuelling line (the session the rule reads).
     ['the peak long session stripped of its fuelling note', (p: Plan) => {
