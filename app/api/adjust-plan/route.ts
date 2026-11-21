@@ -288,25 +288,6 @@ export async function POST(req: NextRequest) {
   // asserts the property directly as well.
   const { proposed, status, requiresConfirmation, updatedPlan, blockingErrors, toleratedErrors, ruleEngineVersion } = outcome
 
-  // 🔴 WATCHED-SIGNALS-DISCLOSURE-01 (2026-11-21, after two code-review rounds) — A PROPOSAL THAT
-  // CHANGES NO SESSION IS AN OBSERVATION, NOT AN ADJUSTMENT, AND IS NEVER WRITTEN AS ONE.
-  // `shadow_load` copies its sessions unchanged and rates low, so it was stored `auto_applied` and
-  // every reader of that status took it for a change: the inbox ("Plan's been shifted."), Me
-  // ("Plan tweaked", "Changed this week"), the weekly cap, the integrity probe (no save follows),
-  // the dedupe stamp and the AI continuity context. Gating each reader was tried first and leaked
-  // at four more; not writing the row closes them all with one content-based definition.
-  // Explicit runner signals (skip, reorder) are untouched: the runner asked for those.
-  if (!isExplicitSignal && !changesSessions(proposed)) {
-    await recordOpsEvent('adjustment_observation',
-      { trigger_type: proposed.trigger.type, detail: proposed.trigger.detail, week_n: weekN, manual: isManual }, user.id)
-    await recordAdjustmentCheck(serviceSupabase, user.id, false)
-    return NextResponse.json({
-      adjustment: null,
-      observation: { trigger_type: proposed.trigger.type, summary: proposed.summary },
-      message: 'No adjustment needed',
-    })
-  }
-
   // AI explanation — silent fallback to rule-based summary
   let explanationText: string = proposed.summary
   try {
@@ -530,7 +511,10 @@ export async function POST(req: NextRequest) {
     // and discoverable: the durable inbox row below + the Me-screen "what changed
     // this week" audit surface. Manual adjustments are the user's own change —
     // no inbox row either.
-    if (!isManual) {
+    // WATCHED-SIGNALS-DISCLOSURE-01 — and never for a change that changed nothing: a
+    // `shadow_load` observation auto-applies with identical before/after sessions, and was
+    // announced as "Plan's been shifted." (1 of the 5 such inbox rows in production, 2026-11-21).
+    if (!isManual && changesSessions(proposed)) {
       const url = '/dashboard?screen=plan'
       void recordNotification(user.id, {
         type:  'plan_adjustment',

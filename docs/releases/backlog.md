@@ -1716,6 +1716,23 @@ refused from this machine in any case. Filed as `BLOCKED-DAY-OVERRIDE-REPAIR-01`
 
 ### 🔲 `TRIGGERS-ON-RUN-ARRIVAL-01` — evaluate reshape triggers when a run is analysed; one run, one moment *(filed 2026-11-21)* 🏃 **COACHING BOARD** · 🧭 **DESIGN BOARD** · 💼 **SLT** (all three ruled)
 
+🔴 **ADDED 2026-11-21 from `WATCHED-SIGNALS-DISCLOSURE-01`'s three code-review rounds: HOW AN OBSERVATION IS STORED.**
+A proposal whose sessions do not change (`shadow_load`, `fitness_signal`) is written `auto_applied`, so every
+reader of that status takes it for a change. Today only the "Plan's been shifted." inbox row is gated
+(`changesSessions`). Still open, all measured by review, none fixed:
+- it re-saves the plan, sets `last_adjustment_check_found_change` ("Plan tweaked" on Me), takes one of the
+  week's two slots and lists under "Changed this week";
+- two fixes were tried and reverted: gating each reader by a trigger list leaked into four more readers
+  (integrity probe, dedupe stamp, manual Check now, AI continuity context); not writing the row at all
+  **killed `fitness_signal`'s benchmark CTA**, which reads the row, and made Check now say "Plan looks good"
+  over a detected signal;
+- `changesSessions` compares by `JSON.stringify`, and `buildReduceVolumeAdjustment` turns a duration-anchored
+  session's `distance_km: null` into `undefined`, so a beginner's no-op trim reads as a change;
+- that same builder never eases a duration-anchored session, so the load trim does nothing for 95.8% of a
+  beginner's sessions.
+The design question (does an observation get its own record, or a status, which needs a migration?) belongs
+here, beside the SLT's ruling that `shadow_load` becomes a FREE Today line.
+
 ⚖️ **RULED 2026-11-21** (`docs/decisions/boards-2026-11-21-triggers-on-run-arrival.md`; register rows in
 `coaching-rulings.md` and `design-rulings.md`).
 

@@ -147,7 +147,7 @@ shape is unchanged and `ReshapeScreen` needs no change.
 
 - Returns existing pending adjustment if one already exists (deduplication).
 - Auto-applied (low-risk) adjustments update the plan immediately and return `status: "auto_applied"`.
-- **A proposal that changes no session is an observation, not an adjustment** (WATCHED-SIGNALS-DISCLOSURE-01, 2026-11-21). Unless the request is an explicit skip or reorder, the route writes NO `plan_adjustments` row, saves nothing, sends nothing, stamps the check `found_change: false`, records `adjustment_observation` in `ops_events`, and returns `{ adjustment: null, observation: { trigger_type, summary }, message: 'No adjustment needed' }`. Today that is `shadow_load`, whose builder copies its sessions unchanged.
+- An auto-applied, non-manual adjustment writes the inbox row `BRAND.push.planAdjusted` ("Plan's been shifted.") **only when a session changed** (`changesSessions`) (WATCHED-SIGNALS-DISCLOSURE-01, 2026-11-21). ⚠️ A no-op proposal (`shadow_load`, `fitness_signal`) is still written `auto_applied`, re-saves the plan, sets `found_change`, counts toward the cap and lists under "Changed this week". How observations are stored is `TRIGGERS-ON-RUN-ARRIVAL-01`'s to design: `fitness_signal`'s benchmark CTA reads the row, so not writing it is not the fix.
 - Hard caps: max 2 adjustments/week, 3-week taper protection (bypassed for T1/T2).
 - AI explanation via claude-haiku (max 150 tokens). Silent fallback to rule-based summary.
 - Trigger priority: T1 skip → T1 reorder → guard check → T4 fatigue → T3 acute/chronic → zone drift → shadow load → EF decline → T5 RPE.

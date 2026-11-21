@@ -540,7 +540,7 @@ describe('H/I — the engine proposed something', () => {
     expect(events(), 'a successful save records no failure').not.toContain('plan_save_failed')
   })
 
-  it('🔴 I3 — WATCHED-SIGNALS-DISCLOSURE-01: a proposal that changes NOTHING is an observation, never written as an adjustment', async () => {
+  it('🔴 I3 — WATCHED-SIGNALS-DISCLOSURE-01: an auto-applied change that changes NOTHING sends no "shifted" message', async () => {
     // `shadow_load` is an observation: its after-sessions equal its before-sessions, so it rates
     // low and auto-applies. It used to write the inbox row "Plan's been shifted." over an
     // unchanged plan. Off-plan runs only, so the linked-km load ratio stays below its trigger.
@@ -551,18 +551,12 @@ describe('H/I — the engine proposed something', () => {
       user_id: UID, start_date: new Date(new Date(`${wk1}T08:00:00`).getTime() + i * 86_400_000).toISOString(), distance_m: 15_000, reported_distance_m: null,
       activity_type: 'Run', sport_type: 'Run', strava_activity_id: null, apple_health_uuid: `hk-${i}`, manual_uuid: null,
     })
-    const before = JSON.stringify(S.store.plans[0].plan_json)
     const res = await post({})
     expect(res.status).toBe(200)
-    const body = await res.json()
-    expect(body.observation?.trigger_type, 'the fixture must actually reach shadow_load').toBe('shadow_load')
-    expect(body.adjustment, 'a no-op answers like no adjustment, so "Check now" reads clean').toBeNull()
-    // Never written as an adjustment, so no reader of `auto_applied` can take it for a change:
-    expect(adjustments(), 'ledger: cap, "Changed this week", integrity probe, AI continuity').toEqual([])
-    expect(S.store.notifications, 'inbox: "Plan\'s been shifted."').toEqual([])
-    expect(settings().last_adjustment_check_found_change, 'Me: "Plan tweaked"').toBe(false)
-    expect(JSON.stringify(S.store.plans[0].plan_json), 'the plan was touched').toBe(before)
-    expect(events(), 'the observation is still recorded').toContain('adjustment_observation')
+    const row = adjustments()[0]
+    expect(row?.trigger_type, 'the fixture must actually reach shadow_load').toBe('shadow_load')
+    expect(row.status).toBe('auto_applied')
+    expect(S.store.notifications, 'an unchanged plan was announced as shifted').toEqual([])
   })
 
   it('🔴 I2 — a FAILED plan save records `plan_save_failed` and does not swallow the error', async () => {
