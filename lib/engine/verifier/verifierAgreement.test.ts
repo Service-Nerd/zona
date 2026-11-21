@@ -138,7 +138,8 @@ const EXTRA_MUTATIONS: { name: string; apply: (p: Plan, input: GeneratorInput) =
     ['a withheld anchor with no note', (p: Plan) => { p.meta.hm_goal_anchor_withheld = true; p.meta.difficulty_band = 'demanding'; delete p.meta.difficulty_note; return true }],
     ['a race week a kilometre and a bit over the peak', (p: Plan) => {
       const peaks = p.weeks.filter(w => w.phase === 'peak' && w.type !== 'deload').map(w => w.weekly_km ?? 0)
-      const r = p.weeks.find(w => Object.values(w.sessions ?? {}).some(s => s?.type === 'race'))
+      // A race week that is not itself a peak week, or raising it would only raise the peak.
+      const r = p.weeks.find(w => w.phase !== 'peak' && Object.values(w.sessions ?? {}).some(s => s?.type === 'race'))
       if (!peaks.length || !r) return false
       r.weekly_km = Math.max(...peaks) + 1.1; return true
     }],
@@ -509,6 +510,9 @@ const EXTRA_MUTATIONS: { name: string; apply: (p: Plan, input: GeneratorInput) =
 const TARGETS: Record<string, string[]> = {
   'a structured weekday session just over its overrun limit, undeclared': ['INV-PLAN-STRUCTURED-OVERRUN-DECLARED'],
   'an easy weekday run one minute over budget, no note': ['INV-PLAN-WEEKDAY-OVERRUN-DECLARED'],
+  'a race week a kilometre and a bit over the peak': ['INV-PLAN-RACE-NOT-VOLUME'],
+  'a discount off the staleness ladder': ['INV-PLAN-VDOT-STALENESS-LADDER'],
+  'a dateless benchmark with a discount applied': ['INV-PLAN-VDOT-DISCOUNT-DATELESS'],
 }
 /** Rules that read only module data (the catalogue, the signatures), never the plan. */
 const STATIC_RULES = new Set<string>(['INV-PLAN-PHASE-FOCUS-REACHABLE'])
@@ -540,7 +544,7 @@ const ARMS: Record<string, string[]> = {
   'INV-PLAN-REENTRY-NOTE-MATCHES-CAUSE': ['note with no cause', 'coming-back wording'],
   'INV-PLAN-WEEKDAY-OVERRUN-DECLARED': ['over budget, no note', 'note on a run within budget'],
   'INV-PLAN-GOAL-PAST-CV-DECLARED': ['withheld anchor reads comfortable', 'withheld anchor with no note'],
-  'INV-PLAN-VDOT-STALENESS-LADDER': ['discount', 'dateless benchmark off the base rung'],
+  'INV-PLAN-VDOT-STALENESS-LADDER': ['off the ladder:', 'dateless benchmark off the base rung'],
 }
 
 const tally = { rows: 0, threw: [] as string[], refused: 0, base: 0, foundation: 0, foundationCapped: 0 }
@@ -699,6 +703,15 @@ describe('ADR027-B3-VERIFIER — agreement with validatePlan, per ported rule', 
         const n = runs.reduce((t, c) => t + c.new.filter(x => x.rule === rule && x.detail.startsWith(pre)).length, 0)
         expect(n, `${rule}: "${pre}" never fires`).toBeGreaterThan(0)
       }
+    }
+  })
+
+  it('STATIC_RULES are static by the liveness harness\'s own register, and none fires on a plan', async () => {
+    const { readFileSync } = await import('node:fs')
+    const reg = JSON.parse(readFileSync('lib/plan/__fixtures__/invariantLivenessBaseline.json', 'utf8')) as { unproven: Record<string, string> }
+    for (const r of Array.from(STATIC_RULES)) {
+      expect(reg.unproven[r], `${r} is not 'static' in invariantLivenessBaseline.json`).toBe('static')
+      expect(compare(r).fired.old, `${r} fired on a plan, so it is not static`).toBe(0)
     }
   })
 

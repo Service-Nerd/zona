@@ -1107,11 +1107,13 @@ const BATCH_15: Partial<Record<RuleId, Predicate>> = {
   'INV-PLAN-VDOT-STALENESS-LADDER': (plan, { input }) => {
     const d = plan.meta.vdot_discount_applied_pct
     if (d == null) return []
-    const base = GENERATION_CONFIG.VDOT_CONSERVATIVE_DISCOUNT_PCT
+    const base = GENERATION_CONFIG.VDOT_CONSERVATIVE_DISCOUNT_PCT, step = GENERATION_CONFIG.VDOT_STALENESS_PER_4WK_PCT
+    // Guarded (code review): a zero or negative step would loop forever, and a hang cannot be caught as unverified.
+    if (!(step > 0)) throw new Error('VDOT_STALENESS_PER_4WK_PCT must be positive')
     const rungs: number[] = []
-    for (let x = base; x <= GENERATION_CONFIG.VDOT_STALENESS_MAX_DISCOUNT_PCT + 1e-9; x += GENERATION_CONFIG.VDOT_STALENESS_PER_4WK_PCT) rungs.push(Math.round(x * 1e6) / 1e6)
+    for (let k = 0, x = base; x <= GENERATION_CONFIG.VDOT_STALENESS_MAX_DISCOUNT_PCT + 1e-9; k++, x = base + k * step) rungs.push(Math.round(x * 1e6) / 1e6)
     const out: Raw[] = []
-    if (!rungs.some(r => Math.abs(r - d) < 1e-6)) out.push({ rule_id: 'INV-PLAN-VDOT-STALENESS-LADDER', week: PLAN, day: null, detail: `discount ${d} off the ladder` })
+    if (!rungs.some(r => Math.abs(r - d) < 1e-6)) out.push({ rule_id: 'INV-PLAN-VDOT-STALENESS-LADDER', week: PLAN, day: null, detail: `off the ladder: discount ${d}` })
     if (!input.benchmark?.benchmark_date && Math.abs(d - base) > 1e-6) out.push({ rule_id: 'INV-PLAN-VDOT-STALENESS-LADDER', week: PLAN, day: null, detail: 'dateless benchmark off the base rung' })
     return out
   },
