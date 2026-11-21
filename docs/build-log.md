@@ -12,6 +12,12 @@ it specific, no polish. The content system adds the voice.
 
 **The honest bit.** The first attempt did exactly what the brief said and the ramp went backwards: 216 of 425 knee/shin ramps ended below their start. The brief named §2's capped bounceback, and §2 Amendment 3 had withdrawn it two months earlier. The code was a faithful copy of a rule that no longer existed. Two copies of one rule, one current and one stale, was also the original defect, so the fix is the owner, not the curve.
 
+## 2026-11-21 — ADR027-B0-GOLDEN-CORPUS / ADR027-B0-PROD-FINDINGS · every corpus we measured with was off the product's shape
+
+**Dev.** I built the golden corpus from the wizard's own option lists and its own week→input function, and wrote one predicate that says why a row could not have come from the wizard. Then I ran that predicate over the five corpora that every coaching harness uses. **Every row of all five failed it.** No row sets the long-run day. Day counts don't match the rest days. Rows send `injury_history: []` where the wizard sends no field. Some carry fields the wizard never posts. The production findings event means real generations now report their rule codes, instead of writing only to `console.error`.
+
+**The honest bit.** This is ADR-027's cause 4, measured. "The test corpora don't match what the app sends" was a finding about one field on 2026-11-03. It turns out to be true of every row we have. Each harness was green on plans no runner can get.
+
 ## 2026-11-20 — RUNWALK-QUALITY-HOTFIX-01 · the rule said "every session", and "every" had grown
 
 **Dev.** `applyRunWalk` stamped the interval on every running session, as §117 Am. 3 said. Two later amendments widened who gets run-walk, and the §79 lift gave some of them quality sessions. So "Run 6, walk 1" landed on tempo and intervals, and on a maximal 5K. The fix is three lines at the single owner: skip quality, and rewrite the TT note. A forbidden arm makes the check catch the old behaviour, not just tolerate the new one.
