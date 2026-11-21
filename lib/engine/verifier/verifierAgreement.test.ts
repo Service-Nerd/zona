@@ -135,14 +135,8 @@ const EXTRA_MUTATIONS: { name: string; apply: (p: Plan, input: GeneratorInput) =
     ['no compression class', (p: Plan) => { delete p.meta.compression_classification; return true }],
     // Batch 12: soft week rules.
     ['a deload after one loading week', (p: Plan) => { const m = p.weeks.filter(w => w.n >= 1); if (m.length < 3) return false; m[1].type = 'deload'; return true }],
-    ['a normal week one running day short', (p: Plan) => {
-      const w = p.weeks.find(x => x.n >= 1 && x.type !== 'race' && x.type !== 'deload' && x.badge !== 'deload' && x.phase !== 'foundation')
-      const d = w && (Object.keys(w.sessions) as (keyof typeof w.sessions)[]).find(k => { const s = w.sessions[k]; return s && s.type === 'easy' && !isLongRun(s) })
-      if (!w || !d) return false
-      w.sessions[d] = { type: 'rest', label: 'Rest' } as never; return true
-    }],
     ['a deload above the week before', (p: Plan) => {
-      const i = p.weeks.findIndex((w, k) => k > 0 && (w.type === 'deload' || w.badge === 'deload') && !(p.weeks[k - 1].type === 'deload'))
+      const i = p.weeks.findIndex((w, k) => k > 0 && (w.type === 'deload' || w.badge === 'deload') && !(p.weeks[k - 1].type === 'deload' || p.weeks[k - 1].badge === 'deload'))
       if (i < 1) return false
       p.weeks[i].weekly_km = p.weeks[i - 1].weekly_km + 1; return true
     }],
@@ -154,14 +148,18 @@ const EXTRA_MUTATIONS: { name: string; apply: (p: Plan, input: GeneratorInput) =
     ['the two largest sessions on adjacent days', (p: Plan) => {
       const w = p.weeks.find(x => x.n > 0 && x.type !== 'deload' && x.type !== 'race')
       if (!w) return false
-      w.sessions.mon = { type: 'easy', label: 'Big', distance_km: 40 } as never
-      w.sessions.tue = { type: 'easy', label: 'Big', distance_km: 39 } as never
+      // Larger than any session's ranking value (km OR minutes, as the rule ranks), so this pair IS the top two.
+      const top = Math.max(0, ...Object.values(w.sessions ?? {}).map(s => (s ? (s.distance_km ?? s.duration_mins ?? 0) : 0)))
+      w.sessions.mon = { type: 'easy', label: 'Big', distance_km: top + 2 } as never
+      w.sessions.tue = { type: 'easy', label: 'Big', distance_km: top + 1 } as never
       return true
     }],
     ['the longest long run moved into base', (p: Plan) => {
       const w = p.weeks.find(x => x.n > 0 && x.phase === 'base' && x.type !== 'deload')
       const s = w && Object.values(w.sessions ?? {}).find(x => x && isLongRun(x))
-      if (!s) return false
+      const later = p.weeks.some(x => x.n > 0 && ['build', 'peak', 'taper'].includes(x.phase ?? '') && x.type !== 'deload' && x.type !== 'race'
+        && Object.values(x.sessions ?? {}).some(y => y && isLongRun(y)))
+      if (!s || !later) return false
       s.distance_km = 60; return true
     }],
     // Batch 11: notes and copy.
@@ -363,6 +361,15 @@ const EXTRA_MUTATIONS: { name: string; apply: (p: Plan, input: GeneratorInput) =
     ['a raw VDOT just below its anchor, with a benchmark', (p: Plan, i: GeneratorInput) => {
       if (!i.benchmark || p.meta.vdot_training_anchor === undefined) return false
       p.meta.vdot = p.meta.vdot_training_anchor - 0.1; return true
+    }],
+    // Lands only on a governed week whose running days EQUAL the declared floor, so one fewer breaches it.
+    ['a normal week one running day short', (p: Plan, i: GeneratorInput) => {
+      const declared = Math.min(i.days_available ?? GENERATION_CONFIG.MAX_TRAINING_DAYS_PER_WEEK, GENERATION_CONFIG.MAX_TRAINING_DAYS_PER_WEEK, GENERATION_CONFIG.MIN_TRAINING_DAYS_VOLUME_FLOOR)
+      const runs = (w: Plan['weeks'][number]) => Object.values(w.sessions ?? {}).filter(s => s && s.type !== 'rest' && s.type !== 'strength').length
+      const w = p.weeks.find(x => governedWeek(x) && x.n >= 1 && x.type !== 'race' && x.type !== 'deload' && x.badge !== 'deload' && x.phase !== 'foundation' && runs(x) === declared)
+      const d = w && (Object.keys(w.sessions) as (keyof typeof w.sessions)[]).find(k => { const s = w.sessions[k]; return s && s.type === 'easy' && !isLongRun(s) })
+      if (!w || !d) return false
+      w.sessions[d] = { type: 'rest', label: 'Rest' } as never; return true
     }],
     ['meta age differing from the input', (p: Plan, i: GeneratorInput) => {
       if (typeof i.age !== 'number') return false

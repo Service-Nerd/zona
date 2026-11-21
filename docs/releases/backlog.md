@@ -1811,7 +1811,9 @@ Step 1 shipped as `ADR027-B3-CATALOGUE` (221 rules). Remaining, in order:
   `QUALITY-PER-WEEK` is ported and reads level and goal from the profile. ✅ **Batch 5 SHIPPED 2026-11-21** (3 rules). ✅ **Batch 6 SHIPPED 2026-11-21** (3 rules; injury
   caps through `hasInjuryKeyword`, name-scoped in the import gate). ✅ **Batch 7 SHIPPED 2026-11-21** (8 self-statement rules). ✅ **Batch 8** (6 declaration rules). ✅ **Batch 9** (6 onset/declaration rules). ✅ **Batch 10** (8 long-run segment and week rules). ✅ **Batch 11** (6 note rules). ✅ **Batch 12** (6 soft week rules). **69 of 221; 152 left.**
   **Batch 12 raised:** `LARGEST-SESSIONS-SPACED` ranks sessions by `distance_km ?? duration_mins`, comparing km with
-  minutes, so a 30-minute run outranks a 10 km long run on a mixed-anchor week (copied faithfully).
+  minutes, so a 30-minute run outranks a 10 km long run on a mixed-anchor week (copied faithfully); it also skips
+  only `type: 'deload'` weeks, not badge-only ones as the other deload rules do. `LONGEST-RUN-NOT-IN-BASE` reads only
+  a week's FIRST long run and counts an unpriceable one as 0 km.
   **Held:** `5K10K-LR-PACE-CAP` needs `paceFromVdot`, the producer's own pace derivation; sharing it would hide a defect in both. **Held:**
   `RACE-SPECIFIC-LONG-RUN` falls back to label matching for legacy plans, which the pre-commit hook forbids; it waits
   for a ruling on whether the legacy arm is still needed.
