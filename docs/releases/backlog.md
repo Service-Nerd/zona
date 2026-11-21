@@ -1806,7 +1806,11 @@ Step 1 shipped as `ADR027-B3-CATALOGUE` (221 rules). Remaining, in order:
   verifier diverges. **Batch 3 raised two more, both copied faithfully:** `NO-RACE-EVE-SESSION` never checks the
   previous week's Sunday before a Monday race, and treats a distance-only pre-race session as 0 minutes, so a 9 km
   run on race eve passes. ✅ **Batch 3 SHIPPED 2026-11-21** (7 week/plan rules). ✅ **Batch 4 SHIPPED 2026-11-21**
-  (4 rules; the verifier now reads the runner's LEVEL from the L1 profile, never the plan's own meta). **23 of 221; 198 left.**
+  (3 rules after review; the verifier is handed the L1 profile). **22 of 221; 199 left.**
+  **Held back by review:** `QUALITY-PER-WEEK` needs the goal as `validatePlan` normalises it (`coherentGoal`), which
+  the verifier may not import; it waits for the normalised goal to reach it as profile data. **Step 3 must build
+  the profile as of each plan's generation date**, because §10's staleness ramp moves the level with the clock.
+  **Self-label reads, recorded:** `PEAK-OVER-BASE` trusts the plan's own `volume_profile: 'maintenance'`.
 - **Step 3, nightly on every live plan**, observe-only (the founder chose this over an earlier start).
 - **Step 4, the trigger catalogue** (ARCH-ENG-018): adjustment thresholds move into the catalogue as data, values
   unchanged, per §124 Am. 1.

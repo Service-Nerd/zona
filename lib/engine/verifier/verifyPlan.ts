@@ -35,7 +35,10 @@ export interface VerifyContext {
    *  as data (the L1 profile is the intended carrier). */
   input: GeneratorInput
   /** L1's view of the runner (B3 batch 4). A rule that needs the runner's LEVEL reads it here, never from
-   *  the plan's own `meta`: checking a plan against the label the plan gave itself is circular. */
+   *  the plan's own `meta`: checking a plan against the label the plan gave itself is circular.
+   *  ⚠️ BUILD IT AS OF THE PLAN'S GENERATION DATE. §10's staleness ramp makes the level depend on the instant
+   *  the profile is built, so a nightly run against an old plan (step 3) must not use "now". No ported rule
+   *  reads the level yet; QUALITY-PER-WEEK waits for a normalised goal (code review, batch 4). */
   profile: RunnerProfile
 }
 
@@ -344,20 +347,6 @@ const BATCH_3: Partial<Record<RuleId, Predicate>> = {
 Object.assign(PREDICATES, BATCH_3)
 
 const BATCH_4: Partial<Record<RuleId, Predicate>> = {
-  // §8 (+ §110): quality sessions per week stay under the runner's INTENSITY level's ceiling. A beginner with
-  // a time goal has its own small ceiling (the weekly-volume arm of that rule does not apply here).
-  'INV-PLAN-QUALITY-PER-WEEK': (plan, { input, profile }) => {
-    const level = profile.levels.intensity.value
-    const goal = plan.meta.generator_input?.goal ?? input.goal
-    const max = level === 'beginner' && goal === 'time_target'
-      ? GENERATION_CONFIG.BEGINNER_TIME_TARGET_QUALITY_PER_WEEK_MAX
-      : GENERATION_CONFIG.QUALITY_SESSIONS_PER_WEEK_MAX[level]
-    return plan.weeks.filter(governed).flatMap(w => {
-      const n = running(w).filter(x => x.session.type === 'quality').length
-      return n > max ? [{ rule_id: 'INV-PLAN-QUALITY-PER-WEEK', week: w.n, day: null, detail: `${n} quality sessions over a ceiling of ${max}` }] : []
-    })
-  },
-
   // §9/§10/§113: in weeks 1 and 2 the long run stays within a multiple of the runner's longest recent run
   // (never below the long-run floor).
   'INV-PLAN-WEEK-1-2-LONG-CAP': (plan, { input }) => {
@@ -372,7 +361,11 @@ const BATCH_4: Partial<Record<RuleId, Predicate>> = {
   },
 
   // §23: peak volume is at least PEAK_OVER_BASE_RATIO of week 1's, unless the plan is a maintenance profile.
+  // Only on a plan of PEAK_OVERLOAD_MIN_PLAN_WEEKS main weeks or more (code review: the first port missed it).
+  // ⚠️ Trusts the plan's own `volume_profile` label, as validatePlan does: a self-label read, recorded.
   'INV-PLAN-PEAK-OVER-BASE': plan => {
+    const total = plan.weeks.filter(w => w.n > 0).length || plan.weeks.length
+    if (total < GENERATION_CONFIG.PEAK_OVERLOAD_MIN_PLAN_WEEKS) return []
     const w1 = (plan.weeks.find(w => w.phase !== 'foundation') ?? plan.weeks[0])?.weekly_km ?? 0
     const peaks = plan.weeks.filter(w => w.phase === 'peak')
     if (!(w1 > 0) || !peaks.length || plan.meta.volume_profile === 'maintenance') return []

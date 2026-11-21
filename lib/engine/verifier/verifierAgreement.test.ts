@@ -70,6 +70,18 @@ const EXTRA_MUTATIONS: { name: string; apply: (p: Plan, input: GeneratorInput) =
     p.weeks[i].type = 'deload'
     return true
   } },
+  // §23's length gate: a plan one main week under PEAK_OVERLOAD_MIN_PLAN_WEEKS with a flat peak. The old
+  // checker is silent below the gate; a verifier without it would raise PEAK-OVER-BASE.
+  { name: 'a short plan with a flat peak', apply: p => {
+    const main = p.weeks.filter(w => w.n > 0)
+    const keep = GENERATION_CONFIG.PEAK_OVERLOAD_MIN_PLAN_WEEKS - 1
+    if (main.length <= keep) return false
+    const kept = new Set(main.slice(0, keep))
+    p.weeks = p.weeks.filter(w => w.n <= 0 || kept.has(w))
+    const last = main[keep - 1], first = main[0]
+    last.phase = 'peak'; last.weekly_km = first.weekly_km
+    return true
+  } },
   // §49's line: exactly one taper week over the cap (relabel the weeks before the taper).
   { name: 'one taper week over the cap', apply: (p, input) => {
     const cap = GENERATION_CONFIG.MAX_TAPER_PHASE_WEEKS[raceDistanceKey(input.race_distance_km) as keyof typeof GENERATION_CONFIG.MAX_TAPER_PHASE_WEEKS]
