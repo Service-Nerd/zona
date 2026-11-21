@@ -15,7 +15,7 @@ import type { RunnerProfile } from '@/lib/engine/contracts/profile'
 import { RULES } from '@/lib/engine/catalogue/rules'
 import { GENERATION_CONFIG, raceDistanceKey } from '@/lib/plan/generationConfig'
 import { isLongRun, isShakeout, isSecondaryQuality, isQualitySession, isStructuredSession, isTimeTrial } from '@/lib/plan/sessionRole'
-import { normaliseDays, dayGap } from '@/lib/plan/days'
+import { normaliseDays } from '@/lib/plan/days'
 import { sessionKmSelfPaced } from '@/lib/plan/sessionDistance'
 import { hasInjuryKeyword } from '@/lib/plan/injuryScope'
 import { BENCHMARK_VDOT_MAX } from '@/lib/plan/benchmarkCheck'
@@ -342,7 +342,7 @@ const BATCH_3: Partial<Record<RuleId, Predicate>> = {
     const out: Raw[] = deloads
       .filter(w => w.n > 1 && inScope(w.n) && phase.get(w.n - 1) != null && phase.get(w.n) !== phase.get(w.n - 1))
       .map(w => ({ rule_id: 'INV-PLAN-DELOAD-PLACEMENT', week: w.n, day: null, detail: 'deload opens a phase' }))
-    if (deloads.length < due) out.push({ rule_id: 'INV-PLAN-DELOAD-PLACEMENT', week: PLAN, day: null, detail: `${deloads.length} deloads, cadence calls for ${due}` })
+    if (deloads.length < due) out.push({ rule_id: 'INV-PLAN-DELOAD-PLACEMENT', week: PLAN, day: null, detail: `cadence: ${deloads.length} deloads, ${due} due` })
     return out
   },
 }
@@ -541,8 +541,9 @@ const BATCH_7: Partial<Record<RuleId, Predicate>> = {
     const m = plan.meta
     const out: Raw[] = []
     if (!m.prep_time_status) out.push({ rule_id: 'INV-PLAN-PREP-TIME-STATUS-ANNOTATED', week: PLAN, day: null, detail: 'no prep_time_status' })
-    if (m.prep_time_status === 'warned' && (!m.prep_time_warning || !m.prep_time_alternatives))
-      out.push({ rule_id: 'INV-PLAN-PREP-TIME-STATUS-ANNOTATED', week: PLAN, day: null, detail: 'warned without its warning or alternatives' })
+    // Two conditions, two details, so each can be shown to fire on its own (code review).
+    if (m.prep_time_status === 'warned' && !m.prep_time_warning) out.push({ rule_id: 'INV-PLAN-PREP-TIME-STATUS-ANNOTATED', week: PLAN, day: null, detail: 'warned without its warning' })
+    else if (m.prep_time_status === 'warned' && !m.prep_time_alternatives) out.push({ rule_id: 'INV-PLAN-PREP-TIME-STATUS-ANNOTATED', week: PLAN, day: null, detail: 'warned without its alternatives' })
     return out
   },
 
@@ -560,6 +561,7 @@ const BATCH_7: Partial<Record<RuleId, Predicate>> = {
     if (m.prep_time_status === 'warned' && m.difficulty_band !== 'very_demanding') f('warned plan not very demanding')
     if (m.compression_classification === 'constrained_by_inputs' && m.difficulty_band === 'comfortable') f('constrained plan reads comfortable')
     if ([m.long_run_shortfall_note, m.peak_shortfall_note, m.volume_shortfall_note].some(Boolean) && m.difficulty_band === 'comfortable') f('shortfall declared, reads comfortable')
+    // ⚠️ validatePlan checks `!prep_time_alternatives`, so an EMPTY list passes (arrays are truthy); copied, raised.
     return out
   },
 
@@ -582,7 +584,7 @@ const BATCH_7: Partial<Record<RuleId, Predicate>> = {
     const method = plan.meta.hr_zone_method
     if (!method) return [{ rule_id: 'INV-PLAN-HR-ASSUMPTIONS-SURFACED', week: PLAN, day: null, detail: 'no hr_zone_method' }]
     return method !== 'karvonen' && !plan.meta.hr_assumption_note
-      ? [{ rule_id: 'INV-PLAN-HR-ASSUMPTIONS-SURFACED', week: PLAN, day: null, detail: `${method} with no assumption note` }] : []
+      ? [{ rule_id: 'INV-PLAN-HR-ASSUMPTIONS-SURFACED', week: PLAN, day: null, detail: `no assumption note for ${method}` }] : []
   },
 
   // §50: a max HR below the age estimate is a floor unless the runner confirmed it.
@@ -607,7 +609,9 @@ const BATCH_7: Partial<Record<RuleId, Predicate>> = {
       const entries = daysOf(w)
       const long = entries.find(x => !!x.session && isLongRun(x.session))
       if (!long) return []
-      return entries.filter(x => x.session && isTimeTrial(x.session) && dayGap(x.day as never, long.day as never) < min)
+      // The circular day gap, computed HERE (code review): `dayGap` is the producer's own placement predicate.
+      const gap = (a: string, b: string) => { const d = Math.abs(DAYS.indexOf(a as VerifierDay) - DAYS.indexOf(b as VerifierDay)); return Math.min(d, 7 - d) }
+      return entries.filter(x => x.session && isTimeTrial(x.session) && gap(x.day, long.day) < min)
         .map(() => ({ rule_id: 'INV-PLAN-TT-LONG-RUN-SPACING', week: w.n, day: null, detail: 'time trial beside the long run' }))
     })
   },

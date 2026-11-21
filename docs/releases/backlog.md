@@ -1814,7 +1814,11 @@ Step 1 shipped as `ADR027-B3-CATALOGUE` (221 rules). Remaining, in order:
   for a ruling on whether the legacy arm is still needed.
   **Batch 7 raised:** `NO-INVENTED-AGE` runs inside `validatePlan`'s per-week loop, so one finding is reported once per
   week (ported faithfully). `RACE-WEEK-SHAKEOUT-CAP` is held: its RPE cap (3) is a literal in `invariants.ts`, not in
-  `GENERATION_CONFIG`, so porting it would copy a coaching number; moving it is a doctrine-file edit for the board batch. **Step 3 must build
+  `GENERATION_CONFIG`, so porting it would copy a coaching number; moving it is a doctrine-file edit for the board batch.
+  Also from batch 7's review (all copied faithfully, all for the same sitting): a warned plan with an EMPTY
+  alternatives list passes (`!prep_time_alternatives` is false for `[]`); `HR-ASSUMPTIONS-SURFACED` exempts every
+  Karvonen plan, including one whose max was only observed; a session stored under a non-day key gives
+  `TT-LONG-RUN-SPACING` an arbitrary gap. **Step 3 must build
   the profile as of each plan's generation date**, because §10's staleness ramp moves the level with the clock.
   **Self-label reads, recorded:** `PEAK-OVER-BASE` trusts the plan's own `volume_profile: 'maintenance'`;
   `PEAK-VOLUME-FLOOR-LONG-RACES` reads each peak week's own `weekly_km`, not the placed sessions (ADR-022's

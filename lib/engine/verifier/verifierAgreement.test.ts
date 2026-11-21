@@ -114,9 +114,16 @@ const EXTRA_MUTATIONS: { name: string; apply: (p: Plan, input: GeneratorInput) =
   // The plan's statements about itself (§44, §50, §78): one breakage per check, so each arm is woken.
   ...([
     ['prep warned without its warning', (p: Plan) => { p.meta.prep_time_status = 'warned'; delete p.meta.prep_time_warning; return true }],
+    ['prep warned with a warning but no alternatives', (p: Plan) => {
+      p.meta.prep_time_status = 'warned'; p.meta.prep_time_warning = 'tight'; delete p.meta.prep_time_alternatives; return true
+    }],
     ['warned plan reading demanding', (p: Plan) => { p.meta.prep_time_status = 'warned'; p.meta.difficulty_band = 'demanding'; return true }],
     ['constrained plan reading comfortable', (p: Plan) => { p.meta.compression_classification = 'constrained_by_inputs'; p.meta.difficulty_band = 'comfortable'; return true }],
-    ['shortfall declared, reading comfortable', (p: Plan) => { p.meta.long_run_shortfall_note = 'short'; p.meta.difficulty_band = 'comfortable'; return true }],
+    ...(['long_run_shortfall_note', 'peak_shortfall_note', 'volume_shortfall_note'] as const).map(note =>
+      [`${note} declared, reading comfortable`, (p: Plan) => {
+        for (const k of ['long_run_shortfall_note', 'peak_shortfall_note', 'volume_shortfall_note'] as const) delete p.meta[k]
+        p.meta[note] = 'short'; p.meta.difficulty_band = 'comfortable'; return true
+      }] as const),
     ['no HR method', (p: Plan) => { delete p.meta.hr_zone_method; return true }],
     ['a max HR one beat under the age estimate, unconfirmed', (p: Plan) => {
       if (typeof p.meta.hr_estimated_max !== 'number') return false
@@ -187,12 +194,12 @@ const GOAL_CASE = 'rebuilt as time target with no time, plus a quality session'
 const raceEveDays = new WeakMap<Plan, string>()
 /** Rules that make more than one independent check: each detail prefix must fire on its own. */
 const ARMS: Record<string, string[]> = {
-  'INV-PLAN-DELOAD-PLACEMENT': ['deload opens a phase', 'deloads, cadence calls for'],
+  'INV-PLAN-DELOAD-PLACEMENT': ['deload opens a phase', 'cadence:'],
   'INV-PLAN-PHASE-STRUCTURE': ['phase returns', 'phases out of order'],
-  'INV-PLAN-PREP-TIME-STATUS-ANNOTATED': ['no prep_time_status', 'warned without'],
+  'INV-PLAN-PREP-TIME-STATUS-ANNOTATED': ['no prep_time_status', 'warned without its warning', 'warned without its alternatives'],
   'INV-PLAN-DIFFICULTY-NEVER-FRONTS-UNSAFE': ['warned plan not very demanding', 'constrained plan reads comfortable', 'shortfall declared'],
   'INV-PLAN-NO-INVENTED-AGE': ['meta age differs', 'meta age with no input age', 'no age and no assumption note'],
-  'INV-PLAN-HR-ASSUMPTIONS-SURFACED': ['no hr_zone_method', 'with no assumption note'],
+  'INV-PLAN-HR-ASSUMPTIONS-SURFACED': ['no hr_zone_method', 'no assumption note for'],
   'INV-PLAN-RECALIBRATION-HAS-SESSION': ['listed week does not exist', 'no time trial'],
 }
 
@@ -333,7 +340,7 @@ describe('ADR027-B3-VERIFIER — agreement with validatePlan, per ported rule', 
     for (const [rule, prefixes] of Object.entries(ARMS)) {
       if (!(PORTED_RULES as string[]).includes(rule)) continue
       for (const pre of prefixes) {
-        const n = runs.reduce((t, c) => t + c.new.filter(x => x.rule === rule && x.detail.includes(pre)).length, 0)
+        const n = runs.reduce((t, c) => t + c.new.filter(x => x.rule === rule && x.detail.startsWith(pre)).length, 0)
         expect(n, `${rule}: "${pre}" never fires`).toBeGreaterThan(0)
       }
     }
