@@ -94,3 +94,13 @@ The coaching doctrine is unchanged. Rulings become L2 entries.
 | ARCH-ENG-011 | Every finding is an event with a rule id. An open, unruled rule id blocks `backlog:verify` |
 
 Each principle ships with its mechanical check (listed in the HLD, section 9c) during the B-phase that introduces it.
+
+
+## Hotfix status (2026-11-21)
+
+| # | Hotfix | Status |
+|---|---|---|
+| 1 | Run-walk on quality sessions and the maximal TT | ✅ `RUNWALK-QUALITY-HOTFIX-01`, §117 Am. 9 (Coaching Board), commit `75670759` |
+| 2 | Base-build ramp ignores knee/shin injury rules | ⏸️ **Coaching Board.** The literal rule combination (5% cap, 85% deload, capped bounceback, 4-week cadence) makes the ramp **decline** (×0.984 per cycle). D-21: the rule needs amending. Attempt saved; sitting running |
+| 3 | Per-side plyo dose | ✅ `STRENGTH-PLYO-PER-SIDE-01`, S8 defect fix, commit `7a6ccd06` |
+| 4 | A plan write bypasses `savePlanForUser` | ❌ **Dropped on analysis.** The direct write is the enrich backstop. `shouldServerPersist` limits it to the same generation, and the plan is re-validated by `repairEnrichedCopy` first. Routing it through `savePlanForUser` would archive a duplicate unenriched copy. B7's single engine adapter consolidates saves anyway |
