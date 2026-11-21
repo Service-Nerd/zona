@@ -189,7 +189,7 @@ const BATCH_2: Partial<Record<RuleId, Predicate>> = {
       .map(x => ({ rule_id: 'INV-PLAN-NO-SESSIONS-ON-BLOCKED-DAYS', week: w.n, day: x.day, detail: 'session on a blocked day' })))
   },
 
-  // §81: an unstructured weekday run fits the time the runner gave that day, unless held at §82's floor.
+  // §81: an unstructured weekday run fits the time the runner gave that day, unless held at the easy floor.
   'INV-PLAN-MAX-WEEKDAY-MINS': (plan, { input }) => {
     if (input.max_weekday_mins == null && input.day_budgets == null) return []
     const floor = floors(input.longest_recent_run_km).easy
@@ -261,7 +261,7 @@ Object.assign(PREDICATES, BATCH_2)
 const PLAN = 0
 
 const BATCH_3: Partial<Record<RuleId, Predicate>> = {
-  // §18/§10: the stated longest run cannot exceed the stated week.
+  // §18: the stated longest run cannot exceed the stated week.
   'INV-INPUT-LONGEST-LE-WEEKLY': (_plan, { input }) => {
     const weekly = input.current_weekly_km ?? 0, longest = input.longest_recent_run_km ?? 0
     return weekly > 0 && longest > weekly
@@ -301,7 +301,7 @@ const BATCH_3: Partial<Record<RuleId, Predicate>> = {
     return n > cap ? [{ rule_id: 'INV-PLAN-TAPER-DURATION-CAP', week: PLAN, day: null, detail: `${n} taper weeks over a cap of ${cap}` }] : []
   },
 
-  // §39 Am. 1 / §26: in the protected days before a race, nothing longer than the shakeout cap.
+  // §39 Am. 1: in the protected days before a race, nothing longer than the shakeout cap.
   'INV-PLAN-NO-RACE-EVE-SESSION': plan => plan.weeks.flatMap(w => {
     const entries = daysOf(w)
     const race = entries.find(x => x.session?.type === 'race')
@@ -331,7 +331,7 @@ const BATCH_3: Partial<Record<RuleId, Predicate>> = {
     return out
   },
 
-  // §87 (with §3's cadence): no deload opens a base or build phase, and placement never yields fewer
+  // §87 (with the recovery cadence): no deload opens a base or build phase, and placement never yields fewer
   // deloads than the cadence calls for. The masters cadence applies when age is absent.
   'INV-PLAN-DELOAD-PLACEMENT': (plan, { input }) => {
     const masters = typeof input.age !== 'number' || !Number.isFinite(input.age) || input.age >= GENERATION_CONFIG.MASTERS_AGE_THRESHOLD
@@ -351,7 +351,7 @@ const BATCH_3: Partial<Record<RuleId, Predicate>> = {
 Object.assign(PREDICATES, BATCH_3)
 
 const BATCH_4: Partial<Record<RuleId, Predicate>> = {
-  // §8 (+ §110): quality sessions per week stay under the ceiling for the runner's INTENSITY level. A
+  // §8: quality sessions per week stay under the ceiling for the runner's INTENSITY level. A
   // beginner with a time goal has its own small ceiling. Level AND goal come from the profile: the goal as
   // the engine normalises it (a time target with no time is a finish goal), never the plan's own meta.
   'INV-PLAN-QUALITY-PER-WEEK': (plan, { profile }) => {
@@ -827,7 +827,7 @@ const PLACEHOLDERS = ['Target Race', 'TBD', 'undefined', 'null']
 const TOKEN_RE = /\{\{[^}]*\}\}/
 
 const BATCH_11: Partial<Record<RuleId, Predicate>> = {
-  // §42-family fuelling: the peak's longest long run (by minutes), once it is long enough, carries the fuelling note.
+  // §24e: the peak's longest long run (by minutes), once it is long enough, carries the fuelling note.
   'INV-PLAN-LONG-SESSION-FUELLING-NOTE': plan => {
     let best: Session | null = null, week = 0
     for (const w of plan.weeks.filter(x => x.phase === 'peak')) for (const { session: s } of daysOf(w)) {
@@ -843,7 +843,7 @@ const BATCH_11: Partial<Record<RuleId, Predicate>> = {
     (GENERATION_CONFIG.TERRAIN_EFFORT_GOVERNS as readonly string[]).includes(plan.meta.terrain ?? '') && !plan.meta.terrain_effort_note
       ? [{ rule_id: 'INV-PLAN-TERRAIN-EFFORT-NOTE-DECLARED', week: PLAN, day: null, detail: 'effort terrain with no note' }] : [],
 
-  // §79/§29: a returning or fresh-return plan carries the returning-runner note.
+  // §51: a returning or fresh-return plan carries the returning-runner note.
   'INV-PLAN-RETURNING-RUNNER-NOTE-PRESENT': plan =>
     (plan.meta.returning_runner_allowance_active || plan.meta.fresh_return_active) && !plan.meta.returning_runner_note
       ? [{ rule_id: 'INV-PLAN-RETURNING-RUNNER-NOTE-PRESENT', week: PLAN, day: null, detail: 'returning plan with no note' }] : [],
@@ -886,7 +886,7 @@ const BATCH_11: Partial<Record<RuleId, Predicate>> = {
       ? [{ rule_id: 'INV-PLAN-REENTRY-NOTE-MATCHES-CAUSE', week: PLAN, day: null, detail: 'coming-back wording for a non-returning cause' }] : []
   },
 
-  // §26: a race's opening-pace note names RACE_OPENING_FRACTION of the race distance, within half a kilometre.
+  // §80 Am. 1: a race's opening-pace note names RACE_OPENING_FRACTION of the race distance, within half a kilometre.
   'INV-PLAN-RACE-NOTE-SCALES': plan => plan.weeks.flatMap(w => daysOf(w).flatMap(({ session: s }) => {
     if (!s || s.type !== 'race') return []
     const note = (s.coach_notes ?? []).find(n => typeof n === 'string' && /First [\d.]+ km/.test(n))

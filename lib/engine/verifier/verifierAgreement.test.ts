@@ -134,13 +134,15 @@ const EXTRA_MUTATIONS: { name: string; apply: (p: Plan, input: GeneratorInput) =
     // Batch 8: the plan's declarations about its own limits.
     ['no compression class', (p: Plan) => { delete p.meta.compression_classification; return true }],
     // Batch 11: notes and copy.
+    // Lands only when the peak's longest long session is over the fuelling line (the session the rule reads).
     ['the peak long session stripped of its fuelling note', (p: Plan) => {
-      let n = 0
+      let best: Session | null = null
       for (const w of p.weeks.filter(x => x.phase === 'peak')) for (const s of Object.values(w.sessions ?? {}))
-        if (s?.role === 'long_run' && s.coach_notes) {
-          s.coach_notes = s.coach_notes.filter(x => !!x && x !== FUELLING_PRACTICE_NOTE && !x.startsWith(ULTRA_FUELLING_PREFIX)) as typeof s.coach_notes; n++
-        }
-      return n > 0
+        if (s?.role === 'long_run' && (s.duration_mins ?? 0) > (best?.duration_mins ?? 0)) best = s
+      if (!best || (best.duration_mins ?? 0) < GENERATION_CONFIG.FUELLING_PRACTICE_MIN_SESSION_MINS || !best.coach_notes) return false
+      const b = best
+      b.coach_notes = (b.coach_notes ?? []).filter(x => !!x && x !== FUELLING_PRACTICE_NOTE && !x.startsWith(ULTRA_FUELLING_PREFIX)) as typeof b.coach_notes
+      return true
     }],
     ['a peak long session at exactly the fuelling line, no note', (p: Plan) => {
       const ws = p.weeks.filter(x => x.phase === 'peak'); let n = 0
@@ -155,12 +157,12 @@ const EXTRA_MUTATIONS: { name: string; apply: (p: Plan, input: GeneratorInput) =
     ['a placeholder word in the intro', (p: Plan) => { p.meta.coach_intro = 'Ready for Target Race?'; return true }],
     ['a re-entry note with no cause', (p: Plan) => { p.meta.intensity_reentry_omission_note = 'held back'; delete p.meta.intensity_reentry_cause; return true }],
     ['coming-back wording for a non-returning cause', (p: Plan) => {
-      p.meta.intensity_reentry_omission_note = 'Coming back carefully'; p.meta.intensity_reentry_cause = 'injury' as never; return true
+      p.meta.intensity_reentry_omission_note = 'Coming back carefully'; p.meta.intensity_reentry_cause = 'early_onset'; return true
     }],
     ['a race opening note just past its tolerance', (p: Plan) => {
       for (const w of p.weeks) for (const s of Object.values(w.sessions ?? {})) if (s?.type === 'race') {
         const km = s.distance_km ?? p.meta.race_distance_km
-        if (!km) return false
+        if (!km) continue
         s.coach_notes = [`First ${Math.round((km * GENERATION_CONFIG.RACE_OPENING_FRACTION + 0.6) * 10) / 10} km steady`]; return true
       }
       return false
