@@ -80,7 +80,7 @@ const S = vi.hoisted(() => ({
    *  real outer catch. A fault in the I/O, not a fiction about the engine. */
   crashTable: null as string | null,
   /** A table whose reads never settle, for the facts-timeout arm. */
-  stallTable: null as string | null,
+  stallTables: [] as string[],
   /** ADR027-B0-PROD-FINDINGS — every `recordPlanFindings` the route started. It runs AFTER the
    *  response by design, so each test drains these before the store is reset for the next one;
    *  otherwise a late `plan_findings` row lands in the NEXT test's `ops_events`. */
@@ -181,7 +181,7 @@ function fakeTable(name: string) {
       return Promise.resolve({ ...r, data: d?.[0] ?? null })
     },
     then: (res: (v: unknown) => unknown, rej?: (e: unknown) => unknown) =>
-      S.stallTable === name ? new Promise(() => {}) : Promise.resolve(result()).then(res, rej),
+      S.stallTables.includes(name) ? new Promise(() => {}) : Promise.resolve(result()).then(res, rej),
   }
   return api
 }
@@ -273,6 +273,7 @@ const eventDetail = (kind: string) =>
   (S.store.ops_events ?? []).find(r => r.kind === kind)?.detail as Record<string, unknown> | undefined
 
 afterEach(async () => {
+  vi.useRealTimers()
   await Promise.all(S.findings)
   S.findings = []
 })
@@ -288,7 +289,7 @@ beforeEach(() => {
   S.store.ops_events = []
   S.user = { id: UID }
   S.crashTable = null
-  S.stallTable = null
+  S.stallTables = []
   S.freeIntro = null
   S.gate = null
   S.enrichSaw = []
@@ -854,7 +855,7 @@ describe('J — ADR027-B0-PROD-FINDINGS: one plan_findings event per generation'
   })
 })
 
-describe('J — ADR027-B2B-PROFILE part 1: the runner\'s stored facts reach the engine, and change no plan', () => {
+describe('K — ADR027-B2B-PROFILE part 1: the runner\'s stored facts reach the engine, and change no plan', () => {
   const stamp = (p: unknown) => JSON.stringify(p, (k, v) => (k === 'generated_at' ? undefined : v))
   const planOf = async (res: Response) => {
     const text = await res.text()
@@ -863,7 +864,7 @@ describe('J — ADR027-B2B-PROFILE part 1: the runner\'s stored facts reach the 
     return parsed.plan
   }
 
-  it('🔴 J1 — a normal build reads the facts on the server, including the runner\'s timezone', async () => {
+  it('🔴 K1 — a normal build reads the facts on the server, including the runner\'s timezone', async () => {
     S.store.user_settings[0].timezone = 'Europe/London'
     S.store.strava_activities = [{ user_id: UID, start_date: new Date(Date.now() - 2 * 86_400_000).toISOString(),
       distance_m: 8000, reported_distance_m: null, moving_time_s: 2700, max_hr: 170, activity_type: 'Run', sport_type: 'Run' }]
@@ -874,9 +875,10 @@ describe('J — ADR027-B2B-PROFILE part 1: the runner\'s stored facts reach the 
     const facts = S.engineReqs.at(-1)?.facts as { settings?: { timezone?: string }; observed?: { run_log?: { run_count?: number } } } | undefined
     expect(facts?.settings?.timezone).toBe('Europe/London')
     expect(facts?.observed?.run_log?.run_count, 'the run log reached the engine').toBe(1)
+    expect((S.engineReqs.at(-1) as { clock?: Date }).clock, 'one clock: the engine gets the read instant').toBeInstanceOf(Date)
   })
 
-  it('🔴 J2 — a failed facts read is recorded and the runner STILL gets a plan', async () => {
+  it('🔴 K2 — a failed facts read is recorded and the runner STILL gets a plan', async () => {
     S.crashTable = 'health_daily_samples'   // read by fetchRunnerFacts only
     const res = await post(body())
     expect(res.status).toBe(200)
@@ -885,9 +887,9 @@ describe('J — ADR027-B2B-PROFILE part 1: the runner\'s stored facts reach the 
     expect(S.engineReqs.at(-1)?.facts, 'no facts means the request alone').toBeUndefined()
   })
 
-  it('🔴 J4 — a facts read that STALLS times out, is recorded, and the runner still gets a plan', async () => {
+  it('🔴 K4 — a facts read that STALLS times out, is recorded, and the runner still gets a plan', async () => {
     const { RUNNER_FACTS_TIMEOUT_MS } = await import('@/lib/supabase/fetchRunnerFacts')
-    S.stallTable = 'health_daily_samples'
+    S.stallTables = ['health_daily_samples']
     vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] })
     try {
       const pending = post(body())
@@ -895,14 +897,31 @@ describe('J — ADR027-B2B-PROFILE part 1: the runner\'s stored facts reach the 
       const res = await pending
       expect(res.status).toBe(200)
       expect(await planOf(res)).toBeTruthy()
+      await vi.runAllTimersAsync()   // drain the deferred findings work before restoring real timers
     } finally { vi.useRealTimers() }
+    expect(S.engineReqs.at(-1)?.facts, 'a timed-out read hands the engine no facts').toBeUndefined()
     expect(events()).toContain('runner_facts_unavailable')
     expect(String(eventDetail('runner_facts_unavailable')?.message)).toMatch(/timed out/)
   })
 
-  it('🔴 J3 — the plan is identical with and without the facts (carried, not prescribed from: STARTVOL-OBSERVED-01)', async () => {
-    // UTC+14, so the runner's `as_of` is a different date from the server's for most of the day.
+  it('🔴 K5 — the DATABASE stalls, so the ops log stalls too: the runner still gets a plan', async () => {
+    const { RUNNER_FACTS_TIMEOUT_MS } = await import('@/lib/supabase/fetchRunnerFacts')
+    S.stallTables = ['health_daily_samples', 'ops_events']
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] })
+    const pending = post(body())
+    await vi.advanceTimersByTimeAsync(RUNNER_FACTS_TIMEOUT_MS + 10)
+    const res = await pending
+    expect(res.status, 'the runner waited on a log write about unused data').toBe(200)
+    S.findings = []   // the deferred findings write hangs on the stalled ops table by design here
+  })
+
+  it('🔴 K3 — the plan is identical with and without the facts (carried, not prescribed from: STARTVOL-OBSERVED-01)', async () => {
+    // UTC+14 at 20:00 UTC: the runner's date is a day AHEAD of the server's, asserted rather than assumed.
+    vi.useFakeTimers({ toFake: ['Date'] })
+    vi.setSystemTime(new Date('2026-11-21T20:00:00Z'))
     S.store.user_settings[0].timezone = 'Pacific/Kiritimati'
+    const { resolveAsOf } = await import('@/lib/engine/profile/asOf')
+    expect(resolveAsOf(new Date(), 'Pacific/Kiritimati').as_of).not.toBe(new Date().toISOString().slice(0, 10))
     S.store.user_settings[0].resting_hr = 44
     S.store.user_settings[0].max_hr = 201
     S.store.strava_activities = Array.from({ length: 6 }, (_, i) => ({ user_id: UID,
@@ -913,6 +932,7 @@ describe('J — ADR027-B2B-PROFILE part 1: the runner\'s stored facts reach the 
     S.crashTable = 'health_daily_samples'
     const without = await planOf(await post(body()))
     expect(events()).toContain('runner_facts_unavailable')
+    vi.useRealTimers()
     expect(stamp(withFacts)).toBe(stamp(without))
   })
 })

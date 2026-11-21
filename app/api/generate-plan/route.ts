@@ -298,8 +298,11 @@ export async function POST(req: NextRequest) {
         facts = await Promise.race([fetchRunnerFacts(svc, user.id, input, clock), stall])
       } finally { clearTimeout(timer) }
     } catch (err) {
-      await recordOpsEvent('runner_facts_unavailable',
+      // NOT awaited (code review round 2): if the database is what stalled, this insert stalls too,
+      // and the runner would wait on a log line about data nothing uses.
+      const logged = recordOpsEvent('runner_facts_unavailable',
         { message: (err instanceof Error ? err.message : String(err)).slice(0, 200) }, user.id)
+      try { waitUntil(logged) } catch { /* no request context (tests): the promise still runs */ }
     }
 
     stage = 'engine'
