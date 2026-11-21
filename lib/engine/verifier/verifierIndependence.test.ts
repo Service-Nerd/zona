@@ -55,9 +55,15 @@ describe('ADR027-B3-VERIFIER — independence', () => {
         if (spec.startsWith('.')) { if (!resolve(dirname(f), spec).startsWith(DIR)) bad.push(`${f}: ${spec}`); continue }
         if (ALLOWED.has(spec)) continue
         if (ALLOWED_NAMES[spec]) {
-          const src = readFileSync(f, 'utf8')
-          const m = new RegExp(`import\\s*(?:type\\s*)?\\{([^}]*)\\}\\s*from\\s*['"]${spec.replace(/[/@.]/g, c => '\\' + c)}['"]`).exec(src)
-          const names = m ? m[1].split(',').map(x => x.trim().split(/\s+as\s+/)[0]).filter(Boolean) : ['<not a named import>']
+          // EVERY statement importing this module, comments stripped (code review: the first cut read only the
+          // first statement, so a second import line from the same module passed unchecked).
+          const src = readFileSync(f, 'utf8').replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/[^\n]*/g, '')
+          const esc = spec.replace(/[/@.]/g, c => '\\' + c)
+          const stmts = Array.from(src.matchAll(new RegExp(`\\bimport\\s*(?:type\\s*)?([^'";]*?)\\s*from\\s*['"]${esc}['"]`, 'g')))
+          const names = stmts.flatMap(m => {
+            const braces = /\{([^}]*)\}/.exec(m[1])
+            return braces ? braces[1].split(',').map(x => x.trim().replace(/^type\s+/, '').split(/\s+as\s+/)[0]).filter(Boolean) : ['<not a named import>']
+          })
           const extra = names.filter(n => !ALLOWED_NAMES[spec].includes(n))
           if (extra.length) bad.push(`${f}: ${spec} { ${extra.join(', ')} }`)
           continue

@@ -528,7 +528,7 @@ const BATCH_6: Partial<Record<RuleId, Predicate>> = {
     const pace = peakKm > 0 && hrs > 0 ? (hrs * 60) / peakKm : 7
     const capKm = longCapMins(input, profile) / Math.max(pace, 1)
     const need = Math.min(input.race_distance_km * GENERATION_CONFIG.PEAK_LR_RATIO_VS_RACE[key], capKm) - GENERATION_CONFIG.DISTANCE_ROUNDING_PRECISION_KM
-    return peakKm + 0.01 < need ? [{ rule_id: 'INV-PLAN-PEAK-LR-RACE-RATIO', week: PLAN, day: null, detail: `peak long run ${peakKm} km under ${need.toFixed(1)} km` }] : []
+    return peakKm + 0.01 < need ? [{ rule_id: 'INV-PLAN-PEAK-LR-RACE-RATIO', week: PLAN, day: null, detail: `peak long run ${peakKm.toFixed(1)} km under ${need.toFixed(1)} km` }] : []
   },
 }
 Object.assign(PREDICATES, BATCH_6)
