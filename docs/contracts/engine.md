@@ -447,11 +447,14 @@ ADR-027 v1.2 (ARCH-ENG-013/014/019) and the data dictionary (`docs/architecture/
 - **`schedule.capacity`** (minutes per day from `day_budgets` / `max_weekday_mins`; km at the easy pace) is
   new and read by nothing yet.
 
-**Readers today:** `runEngine` only (levels, `volume.effective_start_km`, `weeks_to_race.plan`,
-`weeks_to_race.display`), built with `factsFromInput(input)`, `asOf: <its one clock read>`,
-`timezone: null`. ⚠️ `asOf` is the wall clock even when a caller pins `today`, because the refusal
+**Readers today:** `runEngine` (levels, `volume.effective_start_km`, `weeks_to_race.plan`,
+`weeks_to_race.display`), built with the route's facts when `/api/generate-plan` read them (B2b part 1) or
+`factsFromInput(input)`, `asOf: <its one clock read>`; and **the L5 verifier** (`lib/engine/verifier`, watch-only),
+which reads `levels.intensity` and `race.goal`. **`race.goal` is `coherentGoal`'s normalised goal** (a time
+target with no time is a finish goal) and `race.goal_stated` is the request's (B3, 2026-11-21); a goal-dependent
+check reads `race.goal`, never the raw input. ⚠️ `asOf` is the wall clock even when a caller pins `today`, because the refusal
 telemetry it replaced measured the staleness ramp and `weeksUntilRaceSigned` to the wall clock.
-`fetchRunnerFacts` is called by **no route** yet (B2b). Gate: `lib/engine/profile/buildRunnerProfile.test.ts`
+`fetchRunnerFacts` is called by `/api/generate-plan` (B2b part 1). Gate: `lib/engine/profile/buildRunnerProfile.test.ts`
 (equivalence over the golden corpus and a strided `cohortGrid` sample, as_of determinism, absence, purity),
 `observed.test.ts`, `lib/supabase/fetchRunnerFacts.test.ts`.
 

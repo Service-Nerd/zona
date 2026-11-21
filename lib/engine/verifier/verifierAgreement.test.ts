@@ -9,8 +9,8 @@
 // at least once, because two checkers that both say nothing agree perfectly and prove nothing.
 //
 // ⚠️ The work runs in `beforeAll`, not at import, so its cost is billed to a test and `check:slow` sees it.
-import { describe, it, expect, beforeAll } from 'vitest'
-import { goldenSample } from '@/lib/corpus/goldenCorpus'
+import { describe, it, expect, beforeAll, vi } from 'vitest'
+import { goldenSample, GOLDEN_AS_OF } from '@/lib/corpus/goldenCorpus'
 import { runEngine } from '@/lib/plan/engine'
 import { validatePlan } from '@/lib/plan/invariants'
 import { MUTATIONS } from '@/lib/plan/invariantLiveness'
@@ -135,6 +135,15 @@ const tally = { rows: 0, threw: [] as string[], refused: 0, base: 0, foundation:
 let runs: { label: string; eve: string | null; old: { rule: string; k: string }[]; new: { rule: string; k: string; detail: string }[] }[] = []
 
 beforeAll(() => {
+  // ONE CLOCK (code review): the engine prices a benchmark at the real clock (§10's staleness ramp) and
+  // stamps the level into meta, while the verifier's profile is built at the row's asOf. Without this the
+  // comparison drifts as the calendar moves, the GOALPACE-5K-CLOCK-01 class. Date only; timers stay real.
+  vi.useFakeTimers({ toFake: ['Date'] })
+  vi.setSystemTime(new Date(`${GOLDEN_AS_OF}T12:00:00`))
+  try { build() } finally { vi.useRealTimers() }
+}, 120_000)
+
+function build() {
   const cases: { label: string; plan: Plan; input: GeneratorInput; asOf: string; planStart: string }[] = []
   for (const row of goldenSample({ perGroup: 8 })) {
     tally.rows++
@@ -169,7 +178,9 @@ beforeAll(() => {
             .find(x => x && x.type === 'easy' && !isLongRun(x))
           if (easy) {
             easy.type = 'quality'
-            hits.set(GOAL_CASE, (hits.get(GOAL_CASE) ?? 0) + 1)
+            // Only a BEGINNER's ceiling depends on the goal, so only a beginner case proves the goal arm.
+            const lvl = buildRunnerProfile(factsFromInput(noTime), { asOf: row.asOf, timezone: null, planStart: row.planStart }).levels.intensity.value
+            if (lvl === 'beginner') hits.set(GOAL_CASE, (hits.get(GOAL_CASE) ?? 0) + 1)
             cases.push({ label: `${row.id} / ${GOAL_CASE}`, plan: p, input: noTime, asOf: row.asOf, planStart: row.planStart })
           }
         }
@@ -193,7 +204,7 @@ beforeAll(() => {
       eve: raceEveDays.get(c.plan) ?? null,
       new: verifyPlan(c.plan, { input: c.input, profile: buildRunnerProfile(factsFromInput(c.input), { asOf: c.asOf, timezone: null, planStart: c.planStart }) }).map(f => ({ rule: f.rule_id as string, k: key(f.rule_id, f.week, f.day, f.severity), detail: f.detail })) }]
   })
-}, 120_000)
+}
 
 /** Rules where `validatePlan` names no day but the verifier does. The same finding at finer grain: compared
  *  without the day, and listed so the exemption is a decision, not a drift. */

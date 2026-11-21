@@ -405,8 +405,13 @@ const SEVERITY = new Map(RULES.map(r => [r.id, r.kind === 'soft' ? 'warn' as con
 
 /** Every finding the ported predicates raise, with the severity the catalogue gives the rule. */
 export function verifyPlan(plan: Plan, ctx: VerifyContext): VerifierFinding[] {
-  return Object.values(PREDICATES).flatMap(p => p!(plan, ctx))
-    .map(f => ({ ...f, severity: SEVERITY.get(f.rule_id) ?? 'error' }))
+  // Each predicate is isolated (code review): one that cannot evaluate returns an UNVERIFIED finding for
+  // its own rule, rather than ending the run and losing every other rule's findings. Never a silent pass.
+  return (Object.entries(PREDICATES) as [RuleId, Predicate][]).flatMap(([id, p]) => {
+    try { return p(plan, ctx) } catch (e) {
+      return [{ rule_id: id, week: PLAN, day: null, detail: `unverified: ${e instanceof Error ? e.message : String(e)}` }]
+    }
+  }).map(f => ({ ...f, severity: SEVERITY.get(f.rule_id) ?? 'error' }))
 }
 
 export const PORTED_RULES = Object.keys(PREDICATES) as RuleId[]

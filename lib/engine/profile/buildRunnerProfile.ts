@@ -14,14 +14,13 @@
 // a pending Coaching Board ruling (ARCH-ENG-014). The validity bounds therefore null CARRIED facts;
 // they never alter an input a derivation reads.
 
-import { coherentGoal } from '@/lib/plan/inputs'
 import type { GeneratorInput } from '@/types/plan'
 import type { RunnerFacts, SettingsFacts } from '@/lib/engine/contracts/facts'
 import type { DayCapacity, DayKey, Fact, FactSource, IsoDate, RunnerProfile, WeekCapacity } from '@/lib/engine/contracts/profile'
 import { derivedLevelsFor, vdotFor, buildFallbackPace } from '@/lib/plan/ruleEngine'
 import { buildPaceFromVDOT } from '@/lib/plan/paceBands'
 import { effectiveStartKm } from '@/lib/plan/startVolume'
-import { INPUT_ENUMS } from '@/lib/plan/inputs'
+import { coherentGoal, INPUT_ENUMS } from '@/lib/plan/inputs'
 import { formatDate, nextMonday, parseDateLocal, weeksBetweenLocal } from '@/lib/plan/length'
 import { normaliseDays, DAY_ORDER } from '@/lib/plan/days'
 import { weeksUntilRaceSigned } from '@/lib/format'
