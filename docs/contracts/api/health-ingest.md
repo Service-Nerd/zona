@@ -45,33 +45,17 @@ returns measured, else reported (flagged), else null. Counts for volume, load an
 ## The Strava backfill (STRAVA-SOR-REVIEW-FIX-01, 2026-11-21)
 
 On the **first insert** of a HealthKit workout (not a re-sync, not a dedup), the route schedules
-`enrichNewHealthKitRowFromStrava(supabase, userId, startDate, { canAnalyse })` in `waitUntil`. It closes the
-Strava-first race: a webhook that arrived before this row existed had nothing to patch and was discarded.
-
-**Bounded (STRAVA-SOR-REVIEW-FIX-02).** In this order, each cheaper than the next; the bounds are
-`STRAVA_BACKFILL` in `lib/strava/stravaSor.ts` (ops limits on Strava calls, not coaching numerics):
-
-1. A run that started more than `RECENT_WINDOW_MS` (6 h) ago returns `not_recent` with no I/O at all, so a
-   30-day first sync costs Strava nothing.
-2. No Strava token: `no_strava`, one settings read.
-3. At most `PER_USER_LIMIT` (1) backfill per runner per `PER_USER_WINDOW_SECONDS` (300 s), through
-   `checkRateLimit('strava:backfill:<uid>')` (the `%:<uuid>` key the account-deletion trigger clears). Over it:
-   `rate_limited`, recorded.
-4. One list call for Strava runs within an hour of the start; a listed id already on any row
-   (`findRowByStravaId`) is skipped **before** its detail or stream fetch; the first `tryEnrichHealthKitRow`
-   match (±15 min, ±15%, unattached) is patched.
-5. After `enriched`, when `canAnalyse` and a live `run_analysis` row exists for the uuid, `analyse-run` is
-   re-triggered with `scores_only: true`, so the numbers reflect the patch and the coach note is kept.
+`enrichNewHealthKitRowFromStrava(supabase, userId, startDate)` in `waitUntil`. For a runner with a Strava token it lists
+Strava runs within an hour of the start, fetches each one's detail and HR stream, and patches the first one
+`tryEnrichHealthKitRow` matches (±15 min, ±15%, unattached). It closes the Strava-first race: a webhook that arrived
+before this row existed had nothing to patch and was discarded.
 
 - Never blocks or fails the ingest response; never throws.
-- Records `strava_healthkit_backfill` with `result: 'enriched' | 'no_match' | 'rate_limited' | 'failed'`; `no_strava`
-  and `not_recent` record nothing.
-- The patch is not tier-gated, like the webhook patch it stands in for. It writes only through `tryEnrichHealthKitRow`.
-- ⚠️ It runs beside `autoMatchAndAnalyse`, not before it. When the analysis lands first, step 5 re-scores it; when it
-  lands after, it reads the patched row. An analysis that READ the row before the patch and WROTE after the re-score
-  check is not re-scored (not measured; a narrow window).
-- ⚠️ A second recent run synced inside the same 300 s interval does not get a backfill (`rate_limited`). The webhook
-  path still patches it if Strava's event arrives after the run is stored.
+- Records `strava_healthkit_backfill` with `result: 'enriched' | 'no_match' | 'failed'`; a runner with no Strava token
+  records nothing.
+- Not tier-gated, like the webhook patch it stands in for. It writes only through `tryEnrichHealthKitRow`.
+- ⚠️ It runs beside `autoMatchAndAnalyse`, not before it, so the first analysis may read Apple Health HR rather than
+  Strava's stream. That is the same order the webhook produces when Apple Health arrives first.
 
 ## Duration ceiling and the outbound hop (AI-ROUTE-HTTP-HOP-CEILING-01, 2026-11-10)
 

@@ -98,11 +98,6 @@ skipped one.
 11. **`hasPaidAccess` gates RICHNESS, never ACCESS** — the session card, the log action and the
     prescription render for everyone; the RPE read and the analysis are the paid additions, and
     `onUpgrade` renders only when `!hasPaidAccess` (CLAUDE.md § Free Users Are Never Abandoned).
-12. **The reflect close links through `lib/strava/linkActivity.ts → postLinkActivity`**
-    (STRAVA-SOR-REVIEW-FIX-01), never a hand-written POST. On `discarded` (no Apple Health run for the
-    Strava id) the owner has already cleared the saved link, conditionally on it still being that id
-    (STRAVA-SOR-REVIEW-FIX-02), and this component calls `onSaved` so the parent re-reads the
-    completion. No prop changed.
 12. **No hardcoded colour and no hardcoded font.** `hueText` and the session tokens own every
     accent.
 

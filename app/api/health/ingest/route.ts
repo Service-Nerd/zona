@@ -289,10 +289,8 @@ export async function POST(req: NextRequest) {
   // to patch and is discarded (STRAVA-WEBHOOK-SOR-01), so a NEW Apple Health row looks up its Strava twin once.
   // Background and best effort: it never blocks or fails this ingest, and records its own outcome. Not tier-gated, like
   // the webhook's patch it stands in for: the same run must end up the same row whichever arrived first.
-  // STRAVA-SOR-REVIEW-FIX-02: bounded inside the owner (recent runs only, one per runner per interval, no detail fetch
-  // for an id already attached), so a 30-day first sync costs Strava nothing. `canAnalyse` gates only its re-score.
   if (isFirstInsert) waitUntil(
-    enrichNewHealthKitRowFromStrava(supabase, userId, payload.startDate, { canAnalyse })
+    enrichNewHealthKitRowFromStrava(supabase, userId, payload.startDate)
       .then(() => undefined)
       .catch(err => console.error('[health-ingest] strava backfill failed', err))
   )

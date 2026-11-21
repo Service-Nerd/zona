@@ -11,12 +11,7 @@ import { isFeatureAllowed } from '@/lib/plan/canUseFeature'
 // untouched — it is the activity record, not the session link.
 //
 // Auth: bearer token (paid/trial). Tier-gated on activity_intelligence.
-// Body: { week_n: number, session_day: string, only_if_strava_activity_id?: number }
-//
-// STRAVA-SOR-REVIEW-FIX-02 — `only_if_strava_activity_id` makes the clear CONDITIONAL: it clears only while the live
-// completion still carries that Strava id, and otherwise changes nothing (`cleared: false`). The refused-link cleanup
-// (lib/strava/linkActivity.ts) sends it, because between the refusal and the unlink the runner can re-link the session
-// to another run, and an unconditional clear would wipe that newer link and its analysis.
+// Body: { week_n: number, session_day: string }
 
 export async function POST(req: NextRequest) {
   const user = await getUserFromRequest(req)
@@ -28,11 +23,10 @@ export async function POST(req: NextRequest) {
   }
 
   const body = await req.json()
-  const { week_n, session_day, only_if_strava_activity_id } = body as { week_n: number; session_day: string; only_if_strava_activity_id?: number }
+  const { week_n, session_day } = body as { week_n: number; session_day: string }
   if (week_n == null || !session_day) {
     return NextResponse.json({ error: 'week_n and session_day required' }, { status: 422 })
   }
-  const guarded = only_if_strava_activity_id != null
 
   const supabase = createServiceClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -41,7 +35,7 @@ export async function POST(req: NextRequest) {
 
   // Clear the activity references from session_completions, preserving
   // all other fields (status, rpe, fatigue_tag, coaching_flag, etc.).
-  let completionQuery = supabase
+  const { error: completionErr } = await supabase
     .from('session_completions')
     .update({
       strava_activity_id:   null,
@@ -58,15 +52,11 @@ export async function POST(req: NextRequest) {
     // new plan unlinks the previous plan's superseded row: the update succeeds,
     // reports success, and the link they wanted removed is still on screen.
     .is('superseded_at', null)
-  if (guarded) completionQuery = completionQuery.eq('strava_activity_id', only_if_strava_activity_id)
-  const { data: clearedRows, error: completionErr } = await completionQuery.select('id')
 
   if (completionErr) {
     console.error('[unlink-activity] session_completions update failed', completionErr.message)
     return NextResponse.json({ error: 'Failed to unlink activity' }, { status: 500 })
   }
-  // The guard did not hold: the completion now carries a different link (or none). Nothing else is touched.
-  if (guarded && !(clearedRows ?? []).length) return NextResponse.json({ ok: true, cleared: false })
 
   // Delete the run_analysis rows for this session (both Strava and HealthKit
   // rows, if somehow both exist). Deleting is cleaner than soft-deleting —
@@ -87,5 +77,5 @@ export async function POST(req: NextRequest) {
     // Non-fatal — completion was already cleared. Log and continue.
   }
 
-  return NextResponse.json({ ok: true, cleared: (clearedRows ?? []).length > 0 })
+  return NextResponse.json({ ok: true })
 }

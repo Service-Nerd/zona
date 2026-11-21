@@ -18,31 +18,20 @@ describe('S8 per-side plyo contacts (ADR-027 hotfix 3)', () => {
         const p = prescribe(ex, 'plyo', { profile, phase: 'build', weekIndex: wi })
         const total = (p.contacts ?? 0) * p.sets * (p.per_side ? 2 : 1)
         expect(total).toBeLessThanOrEqual(C.PLYO_CONTACTS_MAX)
-        // STRAVA-SOR-REVIEW-FIX-02: S8's dose EXACTLY, per-side and bilateral alike (it was 20, then 40, at a dose of 30).
-        if (wi >= C.PLYO_MIN_WEEKS) expect(total, `${id} week ${wi}`).toBe(plyoContacts(wi, 'regular'))
+        // STRAVA-SOR-REVIEW-FIX-01: never below S8's target, and never more than one set above it.
+        const target = plyoContacts(wi, 'regular')
+        const perSet = (p.contacts ?? 0) * (p.per_side ? 2 : 1)
+        expect(total).toBeGreaterThanOrEqual(Math.min(target, C.PLYO_CONTACTS_MAX))
+        expect(total - target).toBeLessThan(perSet)
       }
     })
   }
-  it('🔴 STRAVA-SOR-REVIEW-FIX-02: a per-side jump at S8\'s start dose of 30 is 3 x 5/side, not 40', () => {
+  it('🔴 STRAVA-SOR-REVIEW-FIX-01: a per-side jump at S8\'s start dose of 30 lands 40, not 20', () => {
     const wi = C.PLYO_MIN_WEEKS
     expect(plyoContacts(wi, 'regular')).toBe(30)
     const p = prescribe(byId('single_leg_pogo'), 'plyo', { profile, phase: 'build', weekIndex: wi })
     expect(p.per_side).toBe(true)
-    expect([p.sets, p.contacts]).toEqual([3, 5])
-    expect(p.sets * (p.contacts ?? 0) * 2).toBe(30)
-  })
-  it('PLYO_CONTACTS_PER_SET is even, so a per-side set splits it exactly (an odd value needs a ruling, not a rounding)', () => {
-    expect(C.PLYO_CONTACTS_PER_SET % 2).toBe(0)
-  })
-  it('per-side and bilateral take the same sets in every phase, including deload', () => {
-    for (const phase of ['build', 'peak', 'deload', 'base'] as const) {
-      for (let wi = C.PLYO_MIN_WEEKS; wi < 40; wi++) {
-        const uni = prescribe(byId('single_leg_pogo'), 'plyo', { profile, phase, weekIndex: wi })
-        const bi = prescribe(byId('pogo_hops'), 'plyo', { profile, phase, weekIndex: wi })
-        expect(uni.sets, `${phase} ${wi}`).toBe(bi.sets)
-        expect(uni.contacts! * 2).toBe(bi.contacts)
-      }
-    }
+    expect(p.sets * (p.contacts ?? 0) * 2).toBe(40)
   })
   it('🔴 STRAVA-SOR-REVIEW-FIX-01: a dropped jump can always be restored at its own dose (S10 fill floor <= its sets)', () => {
     for (const id of ['single_leg_pogo', 'lateral_bound', 'pogo_hops']) {

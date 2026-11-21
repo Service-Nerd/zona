@@ -29,7 +29,6 @@ import { callAnthropic } from '@/lib/ai/callAnthropic'
 import type { Plan, Session } from '@/types/plan'
 import { getUserDisplayPrefs } from '@/lib/userPrefs'
 import { createUserScopedClient } from '@/lib/supabase/userScopedClient'
-import { pickAnalysisActivity, runAnalysisKey, upsertRunAnalysis } from '@/lib/coaching/runAnalysisKey'
 
 // OPS-FN-DURATION-01 (2026-11-08) — this route can reach the model, so it states its own
 // ceiling instead of inheriting a platform default that has changed twice (60 s Hobby /
@@ -130,9 +129,7 @@ export async function POST(req: NextRequest) {
     : createUserScopedClient(req)
   if (!serviceSupabase) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  // Activity lookup uses whichever ID was provided. STRAVA-SOR-REVIEW-FIX-02: a list, not `.single()`, because a Strava
-  // id can sit on a legacy Strava row AND the Apple Health row it was merged onto; `pickAnalysisActivity` takes the
-  // Apple Health one, and the analysis below is keyed and stamped from THAT row's ids, never the request's.
+  // Activity lookup uses whichever ID was provided
   const activityQuery = serviceSupabase
     .from('strava_activities')
     .select('*')
@@ -147,7 +144,7 @@ export async function POST(req: NextRequest) {
   // doesn't quote a different ceiling than the user sees on screen.
   // priorAnalysisRes count: detects first-ever session so the prompt can frame it appropriately.
   const [activityRes, planRes, completionRes, recentActivitiesRes, settingsRes, priorAnalysisRes, recentAnalysesRes] = await Promise.all([
-    activityFiltered.limit(5),
+    activityFiltered.single(),
     readPlanJson(serviceSupabase, userId),
     // RESHAPE-FIX-WAVE2B-AUDIT: no bare-stub filter needed here — the handler
     // 422s unless a strava_activity_id or apple_health_uuid is supplied (see
@@ -191,7 +188,7 @@ export async function POST(req: NextRequest) {
       .limit(20),
   ])
 
-  const activity        = pickAnalysisActivity(activityRes.data as any[] | null) as any
+  const activity        = activityRes.data
   // PLANS-SINGLE-NOT-MAYBE-01 — this read is optional here, so a failure carries on as it did; it is now logged.
   if (planRes.error) console.error('[analyse-run] plan read failed:', planRes.error)
   const plan            = planRes.plan as Plan | null
@@ -515,7 +512,8 @@ const { units: displayUnits } = await getUserDisplayPrefs(serviceSupabase, userI
     // `type === 'long'` ended up dead everywhere. Changing the classifier is its own
     // decision and is not smuggled in here.
     session_type:          (session as any)?.type ?? null,
-    // STRAVA-SOR-REVIEW-FIX-02 — both ids come from the activity row (`analysisKey`), stamped by upsertRunAnalysis.
+    strava_activity_id:    strava_activity_id ?? null,
+    apple_health_uuid:     apple_health_uuid  ?? null,
     hr_discipline_score:   scoreResult.hrDisciplineScore,
     distance_score:        scoreResult.distanceScore,
     pace_score:            scoreResult.paceScore,
@@ -557,11 +555,12 @@ const { units: displayUnits } = await getUserDisplayPrefs(serviceSupabase, userI
     rule_engine_version:   COACHING_RULE_ENGINE_VERSION,
   }
 
-  // STRAVA-SOR-REVIEW-FIX-02 — ONE live row per run. Keyed on the activity row's Apple Health uuid whenever it has one,
-  // whichever id the caller sent; before, an Apple Health call and a Strava-id call for the same run wrote two rows.
-  const analysisKey = runAnalysisKey(activity, { apple_health_uuid, strava_activity_id })
-  Object.assign(analysisRow, { apple_health_uuid: analysisKey.apple_health_uuid, strava_activity_id: analysisKey.strava_activity_id })
-  const upsertRes = await upsertRunAnalysis(serviceSupabase, userId, analysisKey, analysisRow)
+  const conflictTarget = strava_activity_id
+    ? 'user_id,strava_activity_id'
+    : 'user_id,apple_health_uuid'
+  const upsertRes = await serviceSupabase
+    .from('run_analysis')
+    .upsert(analysisRow, { onConflict: conflictTarget })
   if (upsertRes.error) {
     console.error('[analyse-run] run_analysis upsert failed', upsertRes.error.message)
   }

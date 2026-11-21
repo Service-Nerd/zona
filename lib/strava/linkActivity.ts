@@ -36,12 +36,7 @@ export async function postLinkActivity(fetcher: Fetcher, body: LinkBody, tag = '
       const un = await fetcher('/api/strava/unlink-activity', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        // STRAVA-SOR-REVIEW-FIX-02 — only while the completion still carries THIS refused id. The runner can re-link the
-        // session between the refusal and this call, and an unconditional clear would wipe the newer link.
-        body: JSON.stringify({
-          week_n: body.week_n, session_day: body.session_day,
-          ...('strava_activity_id' in body ? { only_if_strava_activity_id: body.strava_activity_id } : {}),
-        }),
+        body: JSON.stringify({ week_n: body.week_n, session_day: body.session_day }),
       })
       if (!un.ok) console.error(`[${tag}] unlink after discard failed`, un.status)
       return 'discarded'
@@ -68,22 +63,4 @@ export function stravaRunIsLinkable(
   if (hkRows.length < limit) return false
   const oldest = Math.min(...hkRows.map(r => new Date(r.start_date).getTime()))
   return new Date(run.start_date).getTime() < oldest
-}
-
-/**
- * STRAVA-SOR-REVIEW-FIX-02 — the picker's Strava list, filtered by BOTH rules against the current Apple Health rows:
- * drop a run already merged onto an Apple Health row (it is shown once, as that row), and keep only a run some
- * unattached Apple Health run would take (`stravaRunIsLinkable`). Applied to the RAW Strava list at boot and again every
- * time the Apple Health rows refresh, so a run that syncs after boot makes its Strava twin offerable (and a run just
- * merged stops being offered twice). `hkRows: null` = the Apple Health read failed, so the linkable filter is skipped.
- */
-export function linkableStravaRuns<R extends { id: number; start_date: string; distance: number }>(
-  rawStravaRuns: readonly R[],
-  hkRows: readonly EnrichCandidate[] | null,
-  limit: number,
-): R[] {
-  const merged = new Set((hkRows ?? []).map(r => r.strava_activity_id).filter((x): x is number => x != null))
-  return rawStravaRuns
-    .filter(r => !merged.has(r.id))
-    .filter(r => hkRows == null || stravaRunIsLinkable(r, hkRows, limit))
 }

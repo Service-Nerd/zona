@@ -125,50 +125,11 @@ describe('health ingest (finding 2)', () => {
     S.resolve = resolver(false)
     const res = await call('/api/health/ingest', await import('@/app/api/health/ingest/route'), workout)
     expect(res.status).toBe(200)
-    expect(S.backfill).toEqual([[expect.anything(), 'u1', '2026-11-20T07:00:00Z', { canAnalyse: true }]])
+    expect(S.backfill).toEqual([[expect.anything(), 'u1', '2026-11-20T07:00:00Z']])
   })
   it('a re-sync of a row that already exists does not', async () => {
     S.resolve = resolver(true)
     await call('/api/health/ingest', await import('@/app/api/health/ingest/route'), workout)
     expect(S.backfill).toEqual([])
-  })
-})
-
-// STRAVA-SOR-REVIEW-FIX-02 — the second review round.
-describe('link-activity stamps the completion with its Apple Health run (finding 1)', () => {
-  const stamps = () => (S.db?.log ?? []).filter(q => q.table === 'session_completions' && q.op === 'update')
-  it('🔴 an id already on an Apple Health row: the completion gains that uuid, live row only', async () => {
-    S.resolve = q => byStravaId(q) ? { data: [{ source: 'apple_health', apple_health_uuid: 'HK-1' }] } : { data: [] }
-    await call('/api/strava/link-activity', await import('@/app/api/strava/link-activity/route'), { strava_activity_id: 42, week_n: 3, session_day: 'tue' })
-    expect(stamps().map(q => [q.patch, q.filters])).toEqual([[{ apple_health_uuid: 'HK-1' }, { user_id: 'u1', week_n: 3, session_day: 'tue', superseded_at: null }]])
-  })
-  it('a refused link stamps nothing', async () => {
-    S.resolve = q => (q.table === 'user_settings' ? { data: { strava_refresh_token: 'rt' } } : { data: [] })
-    await call('/api/strava/link-activity', await import('@/app/api/strava/link-activity/route'), { strava_activity_id: 44, week_n: 3, session_day: 'tue' })
-    expect(stamps()).toEqual([])
-  })
-})
-
-describe('unlink-activity only_if_strava_activity_id (finding 4)', () => {
-  const route = () => import('@/app/api/strava/unlink-activity/route')
-  const writes = () => (S.db?.log ?? []).filter(q => q.op !== 'select').map(q => `${q.table}:${q.op}`)
-  it('🔴 the guard holds (the completion still carries the refused id): cleared, analysis removed', async () => {
-    S.resolve = q => (q.table === 'session_completions' ? { data: [{ id: 'c1' }] } : {})
-    const res = await call('/api/strava/unlink-activity', await route(), { week_n: 3, session_day: 'tue', only_if_strava_activity_id: 5 })
-    expect(await res.json()).toEqual({ ok: true, cleared: true })
-    expect(S.db!.log.find(q => q.table === 'session_completions')!.filters).toMatchObject({ strava_activity_id: 5, superseded_at: null })
-    expect(writes()).toEqual(['session_completions:update', 'run_analysis:delete'])
-  })
-  it('🔴 the guard fails (the runner re-linked meanwhile): nothing else is touched', async () => {
-    S.resolve = q => (q.table === 'session_completions' ? { data: [] } : {})
-    const res = await call('/api/strava/unlink-activity', await route(), { week_n: 3, session_day: 'tue', only_if_strava_activity_id: 5 })
-    expect(await res.json()).toEqual({ ok: true, cleared: false })
-    expect(writes()).toEqual(['session_completions:update'])
-  })
-  it('without the guard it clears unconditionally, as before', async () => {
-    S.resolve = q => (q.table === 'session_completions' ? { data: [{ id: 'c1' }] } : {})
-    await call('/api/strava/unlink-activity', await route(), { week_n: 3, session_day: 'tue' })
-    expect('strava_activity_id' in S.db!.log.find(q => q.table === 'session_completions')!.filters).toBe(false)
-    expect(writes()).toEqual(['session_completions:update', 'run_analysis:delete'])
   })
 })

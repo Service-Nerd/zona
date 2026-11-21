@@ -129,7 +129,6 @@ type Expectation = boolean | 'mixed'
 const EXPECT_FILTERS: Record<string, Expectation> = {
   'app/api/adjust-plan/route.ts': true,
   'app/api/analyse-run/route.ts': true,
-  'lib/strava/stravaSor.ts': true,                       // STRAVA-SOR-REVIEW-FIX-02: the backfill re-score finds the LIVE analysis
   'app/api/daily-coach-note/route.ts': true,
   'app/api/discipline-ledger/route.ts': true,            // plan-scoped BY DESIGN — correct
   'app/api/email/send-trial/route.ts': false,     // see below

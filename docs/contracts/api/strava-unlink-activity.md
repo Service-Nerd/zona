@@ -13,15 +13,8 @@ the body.
 ## Request
 
 ```
-{ week_n: number, session_day: string, only_if_strava_activity_id?: number }
+{ week_n: number, session_day: string }
 ```
-
-Response: `{ ok: true, cleared: boolean }`. `cleared` is whether a live completion was cleared.
-
-**`only_if_strava_activity_id` (STRAVA-SOR-REVIEW-FIX-02, 2026-11-21)** makes the clear conditional: it
-clears only while the live completion still carries that Strava id. When it does not, nothing is
-written, the analysis is left alone, and the answer is `cleared: false`. Without it the clear is
-unconditional, as before.
 
 ## What it writes
 
@@ -52,5 +45,3 @@ reach.
   `lib/strava/linkActivity.ts → postLinkActivity`, which calls it when `link-activity` answers 409
   `discarded_no_healthkit_match`: the completion had already been saved with a Strava id that no
   Apple Health run will take, so the link is cleared and the session reads as logged, not linked.
-  Since STRAVA-SOR-REVIEW-FIX-02 that caller sends `only_if_strava_activity_id`, so a newer link the
-  runner made between the refusal and the unlink is not wiped.
