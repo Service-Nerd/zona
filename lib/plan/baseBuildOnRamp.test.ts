@@ -18,7 +18,7 @@ const input = (over: Partial<GeneratorInput> = {}): GeneratorInput => ({
 
 describe('§116 onRampCurve — §2 rate, §3 cadence', () => {
   it('climbs at §2s rate, not §57s flat ceiling — the defect this closes', () => {
-    const c = onRampCurve(10, 3)
+    const c = onRampCurve(10, 3, 'standard')
     expect(c[0]).toBe(10)
     expect(c[1]).toBeCloseTo(11, 1)
     expect(c[2]).toBeCloseTo(12.1, 1)
@@ -27,21 +27,21 @@ describe('§116 onRampCurve — §2 rate, §3 cadence', () => {
   })
 
   it('dips on §3s cadence', () => {
-    const c = onRampCurve(10, 6)
+    const c = onRampCurve(10, 6, 'standard')
     const freq = C.BASE_BUILD_ONRAMP_DELOAD_FREQUENCY
     expect(c[freq - 1]).toBeLessThan(c[freq - 2])
   })
 
   // The deload RATCHET is a defect this repo has already recorded once.
   it('resumes the climb from the build line, not from the dip', () => {
-    const c = onRampCurve(10, 6)
+    const c = onRampCurve(10, 6, 'standard')
     const freq = C.BASE_BUILD_ONRAMP_DELOAD_FREQUENCY
     expect(c[freq]).toBeGreaterThan(c[freq - 2])
   })
 
   it('never hands over on a deload week', () => {
     for (let w = 2; w <= 16; w++) {
-      const c = onRampCurve(10, w)
+      const c = onRampCurve(10, w, 'standard')
       expect(c[w - 1], `ramp of ${w} weeks ends in a dip`).toBeGreaterThanOrEqual(c[w - 2])
     }
   })
@@ -49,18 +49,18 @@ describe('§116 onRampCurve — §2 rate, §3 cadence', () => {
 
 describe('§116 onRampWeeksNeeded', () => {
   it('reaches the target and reports the shortest ramp that does', () => {
-    const w = onRampWeeksNeeded(8, 18)
+    const w = onRampWeeksNeeded(8, 18, 'standard')
     expect(w).toBeGreaterThan(0)
-    expect(onRampCurve(8, w).at(-1)!).toBeGreaterThanOrEqual(18)
-    expect(onRampCurve(8, w - 1).at(-1)!).toBeLessThan(18)
+    expect(onRampCurve(8, w, 'standard').at(-1)!).toBeGreaterThanOrEqual(18)
+    expect(onRampCurve(8, w - 1, 'standard').at(-1)!).toBeLessThan(18)
   })
 
   it('returns 0 when the runner is already there', () => {
-    expect(onRampWeeksNeeded(20, 18)).toBe(0)
+    expect(onRampWeeksNeeded(20, 18, 'standard')).toBe(0)
   })
 
   it('terminates rather than looping on an unreachable target', () => {
-    expect(onRampWeeksNeeded(1, 9999)).toBe(C.BASE_BUILD_ONRAMP_MAX_WEEKS)
+    expect(onRampWeeksNeeded(1, 9999, 'standard')).toBe(C.BASE_BUILD_ONRAMP_MAX_WEEKS)
   })
 })
 

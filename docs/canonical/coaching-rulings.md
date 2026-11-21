@@ -4060,3 +4060,46 @@ Measured on the production input shape (no `fitness_level`).
 
 Sitting: `docs/decisions/coaching-2026-11-20-runwalk-quality-hotfix.md`.
 
+
+### `ONRAMP-INJURY-CLIMB-01` (ADR-027 hotfix 2) · the base-build on-ramp ignores a knee/shin history · **CORRECT WITH AMENDMENT — §116 Am. 16: the ramp uses the race engine's own §2 / §2 Am. 2 / §2 Am. 3 combination, through ONE owner; B, C and attempt 1 INCORRECT**
+
+Sitting 2026-11-21, Willy leading. Measured on the C1 ramp grid (`planread/ramps/hf2.ts`, 11,040 inputs, production shape).
+
+**The defect:** `onRampCurve` had one rule for everyone (+10%/week, 70% deload, carried build line). Knee/shin ramps:
+**425 of 425** had an ordinary week above +5.5% (worst +10.7%), worst bounceback **+21.4%** over pre-deload.
+
+🔴 **The brief cited a withdrawn rule.** It named §2's capped bounceback ("Am. 1", RAMP-BOUNCEBACK-01); §2 Am. 3
+withdrew it on 2026-09-17. Attempt 1 built it: ×1.05³ × 0.85 = 0.984 per cycle, **216 of 425** ramps ended at or
+below their start, **0** knee/shin envelope runners reached the door.
+
+**Ruled (option A):** ordinary week ≤ 5%; deload 85% of the previous week as prescribed; the bounceback returns to
+pre-deload and no higher (5%-capped if the 85/85 gate withdraws); growth resumes at 5%. Net ×1.05² per cycle.
+- **Amendment 1:** one owner (`buildWeekCeilingKm`, `injuryBouncebackMayReturnToPreDeload`), shared by the race engine
+  and the ramp; the race engine's half gated on `verify:parity` IDENTICAL.
+- **Amendment 2:** `INV-PLAN-ONRAMP-CURVE-CLIMBS` amended for injury ramps (arm 1 allows an equal bounceback) and gains
+  arm 3 (5% / no higher than pre-deload) and arm 4 (each cycle gains).
+- **Incorrect:** B (a 90% "deload" is a trim and still fails the climb), C (returns +10.8% above pre-deload).
+
+**Recorded positions:**
+- 🩹 Willy: "Two copies of my condition is how this happened."
+- 🎯 McMillan would have shipped the ramp alone; Hutchinson ruled the shared owner in, conditional on parity.
+- ⚕️ Sims, concern not condition: the injury × masters cell is unmeasured on the ramp's 4-week cadence.
+
+**Built 2026-11-21:**
+- `deloadCadence.ts` owns the ceiling; `buildVolumeSequence` pass 2 and `onRampCurve`'s injury branch both call it.
+  `verify:parity HEAD`: **IDENTICAL, 6,210 cases**, with the new `meta.onramp_profile` stamp excluded; with it, 118
+  staged healthy rows change by that meta field only.
+- `rampProfileFor(input)` is required at all eight call sites; `generateBaseBuildPlan` stamps `meta.onramp_profile`;
+  `validateBaseBuildBlock` takes a required `volumeCappedInjury`, read from the stamp at every caller.
+- Grid after: **0** route flips, **0** healthy / other-injury plans changed, 425 knee/shin changed, worst ordinary
+  +5.0%, worst bounceback vs pre-deload 0.0%, net median **+37.1%** (min +12.9%), `reaches_door` true → false **18**
+  (knee 5, knee+other 4, shin 9). Envelope: 320 of 1,280 knee/shin reach the door; **0** violations of any arm.
+  Arm 4 is `error` because it measured 0 on both.
+- §116 Am. 16 written (13–15 are reserved); a withdrawal note sits on §2's RAMP-BOUNCEBACK-01 heading.
+- `onRampInjuryProfile.test.ts` added. Falsified by source mutation: the capped bounceback (45 red), the carried line
+  (59 red), a ramp that ignores the shared gate at 80% (1 red).
+
+**Not proven:** post-ramp readiness for the race block; delivered deloads below 80% (placement); masters cadence on an
+injury ramp. `measure:fitness` and `cohort:shape` cannot see ramps.
+
+Sitting: `docs/decisions/coaching-2026-11-21-onramp-injury-climb.md`.

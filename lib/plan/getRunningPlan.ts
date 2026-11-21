@@ -1,7 +1,7 @@
 import type { GeneratorInput, Plan } from '@/types/plan'
 import { GENERATION_CONFIG } from './generationConfig'
 import { effectiveStartKm } from './startVolume'
-import { onRampCurve, generateBaseBuildPlan, type OnRampAssessment } from './baseBuildOnRamp'
+import { onRampCurve, generateBaseBuildPlan, rampProfileFor, type OnRampAssessment } from './baseBuildOnRamp'
 import { walkRunStartApplies, walkRunStartWeeks, composeWalkRunStart } from './walkRunStart'
 import { addWeeksIso } from './stagedRacePlan'
 
@@ -147,7 +147,7 @@ export function generateGetRunningPlan(
   }
 
   const weeks = getRunningWeeks(runwayWeeks)
-  const curve = onRampCurve(startKm, weeks)
+  const curve = onRampCurve(startKm, weeks, rampProfileFor(input))
   const endsAtKm = curve[curve.length - 1]
 
   // ⚠️ REUSES `generateBaseBuildPlan` WHOLESALE. Its assessment argument is the

@@ -2,7 +2,7 @@
 import { describe, it, expect, afterEach } from 'vitest'
 import { walkRunLadder, walkRunSchedule, walkRunDays, walkRunStartWeeks } from './walkRunStart'
 import { generateStagedRacePlan, stagedRaceOf } from './stagedRacePlan'
-import { validateStagedRace, validateWalkRunStart, validateBaseBuildBlock } from './baseBuildValidate'
+import { validateStagedRace, validateWalkRunStart, validateBaseBuildBlock, volumeCappedRampOf } from './baseBuildValidate'
 import { validateStoredPlan } from './validateStoredPlan'
 import { runEngine } from './engine'
 import { composeSession } from './sessionComposer'
@@ -80,7 +80,7 @@ describe('L4 + L5 — placement and the handover to running', () => {
   })
   it('passes every validator: staged, walk-run, base-build block, stored-plan', () => {
     expect(validateStagedRace(p)).toEqual([])
-    expect(validateBaseBuildBlock(p.weeks, 6).filter(v => v.severity === 'error')).toEqual([])
+    expect(validateBaseBuildBlock(p.weeks, 6, { volumeCappedInjury: volumeCappedRampOf(p) }).filter(v => v.severity === 'error')).toEqual([])
     expect(validateStoredPlan(p).filter(v => v.severity === 'error')).toEqual([])
   })
   it('a short runway keeps the whole walk-run start and cuts the ramp; shorter still, the walk-run start alone', () => {
@@ -349,16 +349,16 @@ describe('ONRAMP-SPACING-01 — R1 spacing, R2 deloads (Coaching Board sixth sit
       const ds = days(w)
       for (let a = 0; a < ds.length; a++) for (let b = a + 1; b < ds.length; b++) expect([1, 6]).not.toContain(Math.abs(idx(ds[a]) - idx(ds[b])))
     }
-    expect(validateBaseBuildBlock(p.weeks, 10, { spaced: true }).filter(v => v.code === 'INV-PLAN-ONRAMP-SPACED')).toEqual([])
+    expect(validateBaseBuildBlock(p.weeks, 10, { spaced: true, volumeCappedInjury: volumeCappedRampOf(p) }).filter(v => v.code === 'INV-PLAN-ONRAMP-SPACED')).toEqual([])
   })
   it('🔴 the spacing check fires on Mon/Tue/Wed, and not on a week the blocked days force', () => {
     const p = JSON.parse(JSON.stringify(ramp({ days_available: 3 }))) as Plan
     const w = p.weeks[2]
     const [a, b, c] = Object.values(w.sessions).filter(s => s && s.type !== 'rest')
     w.sessions = { mon: a, tue: b, wed: c } as never
-    expect(validateBaseBuildBlock(p.weeks, 10, { spaced: true }).some(v => v.code === 'INV-PLAN-ONRAMP-SPACED')).toBe(true)
-    expect(validateBaseBuildBlock(p.weeks, 10, { spaced: true, blocked: ['thu', 'fri', 'sat', 'sun'] }).some(v => v.code === 'INV-PLAN-ONRAMP-SPACED')).toBe(false)
-    expect(validateBaseBuildBlock(p.weeks, 10, {}).some(v => v.code === 'INV-PLAN-ONRAMP-SPACED')).toBe(false)
+    expect(validateBaseBuildBlock(p.weeks, 10, { spaced: true, volumeCappedInjury: volumeCappedRampOf(p) }).some(v => v.code === 'INV-PLAN-ONRAMP-SPACED')).toBe(true)
+    expect(validateBaseBuildBlock(p.weeks, 10, { spaced: true, blocked: ['thu', 'fri', 'sat', 'sun'], volumeCappedInjury: volumeCappedRampOf(p) }).some(v => v.code === 'INV-PLAN-ONRAMP-SPACED')).toBe(false)
+    expect(validateBaseBuildBlock(p.weeks, 10, { volumeCappedInjury: volumeCappedRampOf(p) }).some(v => v.code === 'INV-PLAN-ONRAMP-SPACED')).toBe(false)
   })
   it('🔴 a deload never holds the block\'s longest run (persona D shape: 8 km/wk, 4 days)', () => {
     const p = ramp({ current_weekly_km: 8, longest_recent_run_km: 5, days_available: 4 }, 10)
@@ -368,13 +368,13 @@ describe('ONRAMP-SPACING-01 — R1 spacing, R2 deloads (Coaching Board sixth sit
       if (w.type === 'deload' && prev != null) expect(longest).toBeLessThanOrEqual(prev + 0.05)
       if (w.type !== 'deload') prev = longest
     }
-    expect(validateBaseBuildBlock(p.weeks, 8, { spaced: true }).filter(v => v.severity === 'error')).toEqual([])
+    expect(validateBaseBuildBlock(p.weeks, 8, { spaced: true, volumeCappedInjury: volumeCappedRampOf(p) }).filter(v => v.severity === 'error')).toEqual([])
   })
   it('🔴 the deload arm fires on a deload holding the longest run', () => {
     const p = JSON.parse(JSON.stringify(ramp({ current_weekly_km: 8, longest_recent_run_km: 5, days_available: 4 }, 10))) as Plan
     const d = p.weeks.find(w => w.type === 'deload')!
     runs(d)[0].distance_km = 20
-    expect(validateBaseBuildBlock(p.weeks, 8, { spaced: true }).some(v => v.code === 'INV-PLAN-ONRAMP-PER-RUN-STEP')).toBe(true)
+    expect(validateBaseBuildBlock(p.weeks, 8, { spaced: true, volumeCappedInjury: volumeCappedRampOf(p) }).some(v => v.code === 'INV-PLAN-ONRAMP-PER-RUN-STEP')).toBe(true)
   })
   it('new base-build plans carry the stamp, so the stored-plan validator holds them to R1 and R2', () => {
     expect((ramp({}).meta as unknown as Record<string, unknown>).onramp_spaced).toBe(true)

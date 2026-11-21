@@ -462,6 +462,48 @@ export function deloadVolumeFraction(volumeCappedInjury: boolean): number {
 }
 
 /**
+ * §2 Am. 3's self-withdrawing gate: may a §12-capped runner's post-deload week return to the pre-deload
+ * week? True while the injury deload is shallow enough (`INJURY_RECOVERY_WEEK_VOLUME_PCT >=
+ * INJURY_BOUNCEBACK_MIN_DELOAD_PCT`, 85 >= 85). Lower the deload and the exemption withdraws itself.
+ *
+ * ONRAMP-INJURY-CLIMB-01 (§116 Am. 16): one owner, read by the race engine's volume curve AND the
+ * base-build ramp, because Willy's condition held in one copy and was absent from the other.
+ */
+export function injuryBouncebackMayReturnToPreDeload(): boolean {
+  return GENERATION_CONFIG.INJURY_RECOVERY_WEEK_VOLUME_PCT
+    >= GENERATION_CONFIG.INJURY_BOUNCEBACK_MIN_DELOAD_PCT
+}
+
+/**
+ * The UNROUNDED ceiling on a build week, given the week before it. §2, §2 Am. 3, RAMP-BOUNCEBACK-01.
+ *
+ *   · ordinary week: `prevKm × (1 + cap)`, cap = `min(allowancePct, injuryCapPct)` for a §12-capped
+ *     runner, `allowancePct` otherwise;
+ *   · after a deload: raised to `preDeloadKm` (healthy, or injury while the §2 Am. 3 gate holds), or to
+ *     `min(preDeloadKm, prevKm × (1 + injuryCapPct))` (injury, gate withdrawn). Never above pre-deload
+ *     for an injured runner.
+ *
+ * Each caller keeps its own unit: `buildVolumeSequence` rounds to whole km, the ramp floors to 0.1 km.
+ * `injuryCapPct` undefined means no §12 cap (healthy, or a non-volume-capped history).
+ */
+export function buildWeekCeilingKm(args: {
+  prevKm: number
+  preDeloadKm: number
+  prevWasDeload: boolean
+  allowancePct: number
+  injuryCapPct: number | undefined
+}): number {
+  const { prevKm, preDeloadKm, prevWasDeload, allowancePct, injuryCapPct } = args
+  const pct = injuryCapPct != null ? Math.min(allowancePct, injuryCapPct) : allowancePct
+  const ceiling = prevKm * (1 + pct / 100)
+  if (!prevWasDeload) return ceiling
+  if (injuryCapPct != null && !injuryBouncebackMayReturnToPreDeload()) {
+    return Math.max(ceiling, Math.min(preDeloadKm, prevKm * (1 + injuryCapPct / 100)))
+  }
+  return Math.max(ceiling, preDeloadKm)
+}
+
+/**
  * DELOAD-WEEK-PREDICATE-01 — "is THIS WEEK OBJECT a deload?", one answer.
  *
  * 🔴 DELOAD-OWNER-01 one level down. This module already owns *is week N on

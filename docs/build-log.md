@@ -6,6 +6,12 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-11-21 — ONRAMP-INJURY-CLIMB-01 · the brief cited the version of the rule that had already been withdrawn
+
+**Dev.** The base-build ramp had one curve for everyone, so a knee runner got +10% weeks and a +21% return from every deload. The fix was not a new rule: the race engine already combined §2's 5% cap, the 85% injury deload and the "return to pre-deload, no higher" bounceback correctly. That ceiling now lives in one function in `deloadCadence.ts`, and both the race engine and the ramp call it. Parity came back identical on the race engine once the new meta stamp was excluded, which is the only reason the shared owner was allowed during the freeze.
+
+**The honest bit.** The first attempt did exactly what the brief said and the ramp went backwards: 216 of 425 knee/shin ramps ended below their start. The brief named §2's capped bounceback, and §2 Amendment 3 had withdrawn it two months earlier. The code was a faithful copy of a rule that no longer existed. Two copies of one rule, one current and one stale, was also the original defect, so the fix is the owner, not the curve.
+
 ## 2026-11-20 — RUNWALK-QUALITY-HOTFIX-01 · the rule said "every session", and "every" had grown
 
 **Dev.** `applyRunWalk` stamped the interval on every running session, as §117 Am. 3 said. Two later amendments widened who gets run-walk, and the §79 lift gave some of them quality sessions. So "Run 6, walk 1" landed on tempo and intervals, and on a maximal 5K. The fix is three lines at the single owner: skip quality, and rewrite the TT note. A forbidden arm makes the check catch the old behaviour, not just tolerate the new one.

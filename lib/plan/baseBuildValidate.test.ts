@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { assessOnRamp, generateBaseBuildPlan } from './baseBuildOnRamp'
-import { validateBaseBuildBlock } from './baseBuildValidate'
+import { validateBaseBuildBlock, volumeCappedRampOf } from './baseBuildValidate'
 import { GENERATION_CONFIG as C } from './generationConfig'
 import type { GeneratorInput, Week } from '@/types/plan'
 
@@ -40,7 +40,7 @@ describe('§116 — a generated on-ramp plan is valid', () => {
         for (const lvl of ['beginner', 'intermediate'] as const) {
           const { a, plan } = build({ current_weekly_km: cwk, days_available: days, fitness_level: lvl })
           if (a.outcome !== 'offered') continue
-          const v = validateBaseBuildBlock(plan.weeks, a.startKm)
+          const v = validateBaseBuildBlock(plan.weeks, a.startKm, { volumeCappedInjury: volumeCappedRampOf(plan) })
           if (v.length) bad.push(`cwk=${cwk} days=${days} ${lvl}: ${v[0].message}`)
         }
     expect(bad, bad.join('\n')).toEqual([])
@@ -52,7 +52,7 @@ describe('§116 — each board amendment, falsified', () => {
     const { a, plan } = build()
     const w = clone(plan.weeks)
     for (const x of w) x.weekly_km = w[0].weekly_km
-    const v = validateBaseBuildBlock(w, a.startKm)
+    const v = validateBaseBuildBlock(w, a.startKm, { volumeCappedInjury: volumeCappedRampOf(plan) })
     expect(v.map(x => x.code)).toContain('INV-PLAN-ONRAMP-CURVE-CLIMBS')
   })
 
@@ -60,7 +60,7 @@ describe('§116 — each board amendment, falsified', () => {
     const { a, plan } = build()
     const w = clone(plan.weeks)
     w[w.length - 1].type = 'deload'
-    expect(validateBaseBuildBlock(w, a.startKm).some(x =>
+    expect(validateBaseBuildBlock(w, a.startKm, { volumeCappedInjury: volumeCappedRampOf(plan) }).some(x =>
       /ends on a DELOAD/.test(x.message))).toBe(true)
   })
 
@@ -68,7 +68,7 @@ describe('§116 — each board amendment, falsified', () => {
     const { a, plan } = build()
     const w = clone(plan.weeks)
     ;(w[1].sessions as any).thu = { type: 'tempo', label: 'Tempo', distance_km: 6, duration_mins: 30 }
-    expect(validateBaseBuildBlock(w, a.startKm).map(x => x.code))
+    expect(validateBaseBuildBlock(w, a.startKm, { volumeCappedInjury: volumeCappedRampOf(plan) }).map(x => x.code))
       .toContain('INV-PLAN-ONRAMP-ALL-EASY')
   })
 
@@ -83,7 +83,7 @@ describe('§116 — each board amendment, falsified', () => {
     for (const s of Object.values(w[2].sessions)) {
       if (s && s.type !== 'rest') { (s as any).distance_km = 40; break }
     }
-    expect(validateBaseBuildBlock(w, a.startKm).map(x => x.code))
+    expect(validateBaseBuildBlock(w, a.startKm, { volumeCappedInjury: volumeCappedRampOf(plan) }).map(x => x.code))
       .toContain('INV-PLAN-ONRAMP-PER-RUN-STEP')
   })
 

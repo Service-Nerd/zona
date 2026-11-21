@@ -1,5 +1,7 @@
 import type { GeneratorInput, Plan, Week } from '@/types/plan'
 import { generateFoundationBlock } from './foundationBlock'
+import { hasVolumeCappedInjuryHistory } from './injuryScope'
+import { buildWeekCeilingKm, deloadVolumeFraction } from './deloadCadence'
 import { GENERATION_CONFIG } from './generationConfig'
 import { effectiveStartKm } from './startVolume'
 import { buildHRZonesWithFallback } from './hrZones'
@@ -56,6 +58,17 @@ export interface OnRampAssessment {
   startKm: number
 }
 
+export type RampProfile = 'standard' | 'volume_capped_injury'
+
+/**
+ * ONRAMP-INJURY-CLIMB-01 (§116 Am. 16) — which ramp rules apply to this runner. One owner, REQUIRED at every
+ * `onRampCurve` / `onRampWeeksNeeded` call site with no default: a defaulted profile is how a caller silently
+ * ramps a knee/shin runner on the healthy curve. The cohort is §12's own producer owner.
+ */
+export function rampProfileFor(input: Pick<GeneratorInput, 'injury_history'>): RampProfile {
+  return hasVolumeCappedInjuryHistory(input.injury_history) ? 'volume_capped_injury' : 'standard'
+}
+
 /**
  * The week-by-week volume curve: §2's rate, §3's cadence.
  *
@@ -66,9 +79,11 @@ export interface OnRampAssessment {
  *
  * Returns one entry per week, already deloaded. Index 0 is week 1 of the ramp.
  */
-export function onRampCurve(startKm: number, weeks: number): number[] {
+export function onRampCurve(startKm: number, weeks: number, profile: RampProfile): number[] {
+  const freq = GENERATION_CONFIG.BASE_BUILD_ONRAMP_DELOAD_FREQUENCY
+  if (profile === 'volume_capped_injury') return injuryRampCurve(startKm, weeks, freq)
+
   const ratePct = GENERATION_CONFIG.MAX_WEEKLY_VOLUME_INCREASE_PCT
-  const freq    = GENERATION_CONFIG.BASE_BUILD_ONRAMP_DELOAD_FREQUENCY
   const deload  = GENERATION_CONFIG.RECOVERY_WEEK_VOLUME_PCT
 
   const out: number[] = []
@@ -79,20 +94,62 @@ export function onRampCurve(startKm: number, weeks: number): number[] {
     // ⚠️ A DELOAD DIPS, IT DOES NOT RATCHET THE LINE DOWN. The build continues
     // from `carried`, so the week after a deload resumes the climb rather than
     // re-climbing ground already covered. The deload RATCHET is a defect this
-    // repo has recorded once already.
+    // repo has recorded once already. HEALTHY RUNNERS ONLY: §2 leaves the healthy
+    // bounceback unbounded (RAMP-BOUNCEBACK-01); §116 Am. 16 does not touch this branch.
     const isDeload = weekN % freq === 0 && weekN !== weeks
     out.push(floor1dp(isDeload ? carried * (deload / 100) : carried))
   }
   return out
 }
 
+/**
+ * §116 Am. 16 — a §12-capped (knee/shin) runner's ramp is the race engine's own combination of §2, §2 Am. 2 and
+ * §2 Am. 3, through the SAME owner (`buildWeekCeilingKm`):
+ *   1. an ordinary week rises at most `INJURY_WEEKLY_INCREASE_CAP_PCT` over the previous week;
+ *   2. a deload is `deloadVolumeFraction(true)` (85%) of the previous week AS PRESCRIBED, with no carried line;
+ *   3. the week after a deload returns to the pre-deload week and no higher (5%-capped instead if §2 Am. 3's
+ *      gate has withdrawn itself);
+ *   4. growth resumes at 5% from there. Net ×1.05² per 4-week cycle.
+ *
+ * ⚠️ §2 Am. 1's capped bounceback is WITHDRAWN and must not be restored: with an 85% deload it is
+ * ×1.05³ × 0.85 = 0.984 per cycle (the ruling measured 216 of 425 grid ramps ending at or below their start).
+ *
+ * The +0.1 km floor on an ordinary week is the `floor1dp` unit, not a coaching number: at 2–3 km/week, 5% floors
+ * to nothing and the ramp would sit flat. It never lifts a bounceback above pre-deload.
+ */
+function injuryRampCurve(startKm: number, weeks: number, freq: number): number[] {
+  const out: number[] = []
+  for (let i = 0; i < weeks; i++) {
+    const weekN = i + 1
+    if (i === 0) { out.push(floor1dp(startKm)); continue }
+    const prev = out[i - 1]
+    const isDeload = weekN % freq === 0 && weekN !== weeks
+    if (isDeload) { out.push(floor1dp(prev * deloadVolumeFraction(true))); continue }
+    const prevWasDeload = (weekN - 1) % freq === 0 && i >= 2
+    const preDeload = prevWasDeload ? out[i - 2] : prev
+    const ceiling = buildWeekCeilingKm({
+      prevKm: prev,
+      preDeloadKm: preDeload,
+      prevWasDeload,
+      allowancePct: GENERATION_CONFIG.MAX_WEEKLY_VOLUME_INCREASE_PCT,
+      injuryCapPct: GENERATION_CONFIG.INJURY_WEEKLY_INCREASE_CAP_PCT,
+    })
+    // `ceiling === preDeload` exactly when the bounceback returns to pre-deload: take the stored value rather than
+    // re-flooring it, so a binary-fraction artefact cannot land the return a step BELOW the week it returns to.
+    const atCeiling = prevWasDeload && ceiling === preDeload ? preDeload : floor1dp(ceiling)
+    const oneStep = Math.round(prev * 10 + 1) / 10
+    out.push(prevWasDeload ? Math.min(preDeload, Math.max(atCeiling, oneStep)) : Math.max(atCeiling, oneStep))
+  }
+  return out
+}
+
 /** How many §2-rate weeks, with §3 deloads, to climb from `startKm` to `targetKm`. */
-export function onRampWeeksNeeded(startKm: number, targetKm: number): number {
+export function onRampWeeksNeeded(startKm: number, targetKm: number, profile: RampProfile): number {
   if (startKm <= 0) return 0
   if (targetKm <= startKm) return 0
   const max = GENERATION_CONFIG.BASE_BUILD_ONRAMP_MAX_WEEKS
   for (let w = 1; w <= max; w++) {
-    const curve = onRampCurve(startKm, w)
+    const curve = onRampCurve(startKm, w, profile)
     // The HANDOVER volume is the last week, and the last week is never a
     // deload (see `isDeload` above) — the runner must hand over on the line,
     // not in a dip, or §111 re-gates them on a number they did not build to.
@@ -146,7 +203,7 @@ export function assessOnRamp(
   // was derived from moves, and it did, within hours. **Now it cannot.**
   if (startKm < GENERATION_CONFIG.BASE_BUILD_ONRAMP_MIN_START_KM) return none('below_floor')
 
-  const rampWeeks = onRampWeeksNeeded(startKm, minBaseKm)
+  const rampWeeks = onRampWeeksNeeded(startKm, minBaseKm, rampProfileFor(input))
   if (rampWeeks === 0) return none('not_needed')
 
   const remainingWeeks = runwayWeeks - rampWeeks
@@ -204,7 +261,7 @@ export function generateBaseBuildPlan(
   planStart: string,
   assessment: OnRampAssessment,
 ): Plan {
-  const weeklyKm = onRampCurve(assessment.startKm, assessment.rampWeeks)
+  const weeklyKm = onRampCurve(assessment.startKm, assessment.rampWeeks, rampProfileFor(input))
 
   // 🔴 BASEBUILD-ZONE-CEILING-01 (Coaching Board, 2026-10-10) — §84 Am.1 says
   // `hr_target` IS the prescription and `session.zone` is a label ABOUT it. Measured
@@ -304,6 +361,9 @@ export function generateBaseBuildPlan(
       base_build_onramp: true,
       // ONRAMP-SPACING-01 — built under R1 and R2, so the stored-plan validator holds it to them (new plans only).
       onramp_spaced: true,
+      // ONRAMP-INJURY-CLIMB-01 — the curve rules this ramp was built under, so the stored-plan validator holds an
+      // injury ramp to §116 Am. 16 without needing the input (an unstamped plan reads as `standard`: new plans only).
+      onramp_profile: rampProfileFor(input),
       race_name: 'Base building',
       // No race date: this plan has no start line, and a countdown against one
       // would be the plan claiming something it does not deliver.

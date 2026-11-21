@@ -2,7 +2,7 @@ import { FUELLING_PRACTICE_NOTE, ULTRA_FUELLING_PREFIX } from './fuellingNotes'
 import { generateRulePlan, derivedLevelsFor } from '@/lib/plan/ruleEngine'
 import { V1_SESSION_CATALOGUE } from '@/lib/plan/sessionCatalogueData'
 import { validatePlan, validateMaintenanceBlock, INVARIANT_CODES, type Violation } from '@/lib/plan/invariants'
-import { validateBaseBuildBlock, validateStagedRace } from '@/lib/plan/baseBuildValidate'
+import { validateBaseBuildBlock, validateStagedRace, volumeCappedRampOf } from '@/lib/plan/baseBuildValidate'
 import { generateStagedRacePlan, stagedRaceOf } from '@/lib/plan/stagedRacePlan'
 import { assessOnRamp, generateBaseBuildPlan } from '@/lib/plan/baseBuildOnRamp'
 import { generateGetRunningPlan } from '@/lib/plan/getRunningPlan'
@@ -1324,7 +1324,7 @@ export function probeLiveness(sampleSize = 64): LivenessReport {
     if (a.outcome === 'offered') {
       const base = generateBaseBuildPlan(input, '2026-10-05', a).weeks
       const checkBB = (ws: Week[], why: string) => {
-        for (const v of validateBaseBuildBlock(ws, a.startKm)) {
+        for (const v of validateBaseBuildBlock(ws, a.startKm, { volumeCappedInjury: false })) {
           if (!woken.has(v.code)) woken.set(v.code, why)
         }
       }
@@ -1426,7 +1426,7 @@ export function probeLiveness(sampleSize = 64): LivenessReport {
           const ss = Object.values(w.sessions ?? {}).filter(x => x && x.type !== 'rest')
           if (ss.length === 3) {
             w.sessions = { mon: ss[0], tue: ss[1], wed: ss[2] } as never
-            for (const v of validateBaseBuildBlock(sp.weeks, 10, { spaced: true })) if (!woken.has(v.code)) woken.set(v.code, 'ramp: three runs on consecutive days')
+            for (const v of validateBaseBuildBlock(sp.weeks, 10, { spaced: true, volumeCappedInjury: volumeCappedRampOf(sp) })) if (!woken.has(v.code)) woken.set(v.code, 'ramp: three runs on consecutive days')
           }
         }
         // Phase D — the walk-run start (a 0 km/week runner). One mutation per arm of INV-PLAN-WALKRUN-START-PROGRESSION.

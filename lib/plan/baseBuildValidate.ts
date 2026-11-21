@@ -10,6 +10,13 @@ import { prepBlockWeeks } from './inputs'
 import { walkRunStartPrescribed, walkRunStartApplies } from './walkRunStart'
 import { effectiveStartKm } from './startVolume'
 
+/** ONRAMP-INJURY-CLIMB-01 — was this ramp built under §116 Am. 16's injury rules? Read from the producer's stamp
+ *  (`generateBaseBuildPlan` writes `meta.onramp_profile`). Unstamped plans predate it and were built on the
+ *  standard curve, so they read `false`: new plans only. */
+export function volumeCappedRampOf(plan: Plan): boolean {
+  return (plan.meta as unknown as Record<string, unknown> | undefined)?.onramp_profile === 'volume_capped_injury'
+}
+
 /**
  * §116 — the base-build on-ramp's own validator.
  *
@@ -26,7 +33,10 @@ import { effectiveStartKm } from './startVolume'
 export function validateBaseBuildBlock(weeks: Week[], startKm: number,
   /** ONRAMP-SPACING-01 (R1, R2): `spaced` is the producer's stamp that the plan was built under those rules, so the two
    *  live plans built before them are not refused on save (new plans only). `blocked` is the runner's blocked days. */
-  opts: { spaced?: boolean; blocked?: readonly string[] } = {}): Violation[] {
+  /** ONRAMP-INJURY-CLIMB-01: `volumeCappedInjury` is REQUIRED (no default) and is read from the plan's own
+   *  `meta.onramp_profile` stamp (`volumeCappedRampOf`), so a validator cannot hold an injury ramp to the healthy
+   *  rules, or the reverse, by forgetting it. */
+  opts: { spaced?: boolean; blocked?: readonly string[]; volumeCappedInjury: boolean }): Violation[] {
   const v: Violation[] = []
   const ramp = weeks.filter(w => w.phase === 'base_build')
   if (ramp.length === 0) return v
@@ -58,10 +68,16 @@ export function validateBaseBuildBlock(weeks: Week[], startKm: number,
   // ⚠️ §57's invariant checks a CEILING and a flat block never breaches a
   // ceiling, which is exactly how §111's named remedy stayed impossible for a
   // year. The failure mode of a ramp is the inverse, so this is the inverse bound.
+  //
+  // §116 Am. 16 (ONRAMP-INJURY-CLIMB-01): for a §12-capped ramp, the first build week after a deload returns to
+  // the pre-deload week by rule (§2 Am. 3), so it may EQUAL it. Only that week; every other pair still climbs.
+  const km = (w: Week | undefined) => w?.weekly_km ?? 0
+  const followsDeload = (w: Week) => { const j = ramp.indexOf(w); return j > 0 && isDeload(ramp[j - 1]) }
   const build = ramp.filter(w => !isDeload(w))
   for (let i = 1; i < build.length; i++) {
     const prev = build[i - 1], curr = build[i]
-    if ((curr.weekly_km ?? 0) <= (prev.weekly_km ?? 0)) {
+    const mayEqual = opts.volumeCappedInjury && followsDeload(curr)
+    if (mayEqual ? km(curr) < km(prev) : km(curr) <= km(prev)) {
       v.push({
         code: 'INV-PLAN-ONRAMP-CURVE-CLIMBS',
         principle_ref: 'CoachingPrinciples §116',
@@ -69,7 +85,7 @@ export function validateBaseBuildBlock(weeks: Week[], startKm: number,
         week: curr.n,
         message: `Base-build W${curr.n} (${curr.weekly_km}km) does not build on W${prev.n} (${prev.weekly_km}km). A ramp that does not climb is §57's flat block wearing §116's label.`,
         actual: `${curr.weekly_km}km`,
-        expected: `> ${prev.weekly_km}km`,
+        expected: `${mayEqual ? ">=" : ">"} ${prev.weekly_km}km`,
       })
     }
   }
@@ -86,6 +102,53 @@ export function validateBaseBuildBlock(weeks: Week[], startKm: number,
       actual: 'deload',
       expected: 'a build week',
     })
+  }
+
+  // ── §116 Am. 16 (ONRAMP-INJURY-CLIMB-01) — a §12-capped ramp climbs at §2's injury rate ─────────────────
+  //
+  // Read from the plan's DELIVERED `weekly_km`, never from `onRampCurve`, so a producer that stopped calling the
+  // shared ceiling owner is still caught. Before the fix the ramp read no injury history: 425 of 425 knee/shin
+  // grid ramps had an ordinary week above +5.5% and the worst bounceback was +21.4% over its pre-deload week.
+  if (opts.volumeCappedInjury) {
+    const capPct = GENERATION_CONFIG.INJURY_WEEKLY_INCREASE_CAP_PCT
+    // One `floor1dp` step: the ramp's low-volume floor (a 5% rise at 2 km floors to nothing). A unit, not a number.
+    const ROUNDING_STEP_KM = 0.1
+    // Arm 3 (error): no ordinary week above prev × (1 + cap) + one step; no bounceback above its pre-deload week.
+    for (let j = 1; j < ramp.length; j++) {
+      const w = ramp[j], prev = ramp[j - 1]
+      if (isDeload(w)) continue
+      const bounce = isDeload(prev) && j >= 2
+      const limit = bounce ? km(ramp[j - 2]) : km(prev) * (1 + capPct / 100) + ROUNDING_STEP_KM
+      if (km(w) > limit + 1e-9) {
+        v.push({
+          code: 'INV-PLAN-ONRAMP-CURVE-CLIMBS',
+          principle_ref: 'CoachingPrinciples §116 Am. 16 (§2, §2 Am. 3)',
+          severity: 'error',
+          week: w.n,
+          message: bounce
+            ? `Base-build W${w.n} (${km(w)}km) returns from a deload ABOVE its pre-deload week W${ramp[j - 2].n} (${km(ramp[j - 2])}km). A knee/shin ramp returns to the load it carried, and no higher (§2 Am. 3).`
+            : `Base-build W${w.n} (${km(w)}km) rises more than §2's ${capPct}% injury cap over W${prev.n} (${km(prev)}km).`,
+          actual: `${km(w)}km`,
+          expected: `<= ${bounce ? km(ramp[j - 2]) : (km(prev) * (1 + capPct / 100) + ROUNDING_STEP_KM).toFixed(2)}km`,
+        })
+      }
+    }
+    // Arm 4: STUCK IS NOT (§2 Am. 3's condition). Each pre-deload week sits strictly above the previous one, which
+    // is what §2 Am. 1's capped bounceback (×1.05³ × 0.85 = 0.984 per cycle) fails.
+    const preDeloads = ramp.filter((w, j) => j + 1 < ramp.length && isDeload(ramp[j + 1]) && !isDeload(w))
+    for (let j = 1; j < preDeloads.length; j++) {
+      if (km(preDeloads[j]) <= km(preDeloads[j - 1])) {
+        v.push({
+          code: 'INV-PLAN-ONRAMP-CURVE-CLIMBS',
+          principle_ref: 'CoachingPrinciples §116 Am. 16 (§2 Am. 3)',
+          severity: 'error',
+          week: preDeloads[j].n,
+          message: `Base-build W${preDeloads[j].n} (${km(preDeloads[j])}km), the week before a deload, is not above the previous cycle's W${preDeloads[j - 1].n} (${km(preDeloads[j - 1])}km). A ramp that does not gain across a cycle is stuck, and stuck is not slow.`,
+          actual: `${km(preDeloads[j])}km`,
+          expected: `> ${km(preDeloads[j - 1])}km`,
+        })
+      }
+    }
   }
 
   // ── Amendment 2 (Willy) — THE PER-RUN STEP IS THE LOAD EVENT ───────────────

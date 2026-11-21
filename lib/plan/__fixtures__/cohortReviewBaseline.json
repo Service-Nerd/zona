@@ -11,8 +11,8 @@
     "doorPct": null,
     "objections": {
      "STAGED:CHECKPOINT-REFUSAL:PrepTimeError": 42.5,
-     "STAGED:CHECKPOINT-REFUSAL:LongRunReadinessError": 31.4,
-     "STAGED:LONG-RUN-SHORT": 20.7,
+     "STAGED:CHECKPOINT-REFUSAL:LongRunReadinessError": 37.7,
+     "STAGED:LONG-RUN-SHORT": 14.3,
      "STAGED:BINGE-WEEK": 0.1
     }
    },
@@ -24,10 +24,9 @@
     "doorPct": null,
     "objections": {
      "LONG-RUN-SHORT": 21.9,
-     "STAGED:LONG-RUN-SHORT": 17.2,
-     "STAGED:CHECKPOINT-REFUSAL:LongRunReadinessError": 15.5,
+     "STAGED:CHECKPOINT-REFUSAL:LongRunReadinessError": 16.9,
+     "STAGED:LONG-RUN-SHORT": 15.8,
      "STAGED:CHECKPOINT-REFUSAL:PrepTimeError": 12.3,
-     "STAGED:WEEK1-LEAP": 1.2,
      "STAGED:BINGE-WEEK": 0.8
     }
    },

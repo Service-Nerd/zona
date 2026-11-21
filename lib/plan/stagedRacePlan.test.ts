@@ -4,7 +4,7 @@ import { checkpointPlacement, stagingApplies, generateStagedRacePlan, stagedRace
 import { isFreshReturn } from './startVolume'
 import { week1Leap } from './planQuality'
 import { evaluateCheckpoint } from './engine'
-import { validateBaseBuildBlock, validateStagedRace } from './baseBuildValidate'
+import { validateBaseBuildBlock, validateStagedRace, volumeCappedRampOf } from './baseBuildValidate'
 import { validateStoredPlan } from './validateStoredPlan'
 import { generateRulePlan } from './ruleEngine'
 import { runEngine } from './engine'
@@ -62,7 +62,7 @@ describe('the staged plan', () => {
     expect(plan.weeks.length).toBe(staged.checkpoint_week)
     expect(plan.weeks.every(w => w.phase === 'base_build')).toBe(true)
     expect(validateStagedRace(plan)).toEqual([])
-    expect(validateBaseBuildBlock(plan.weeks, 10)).toEqual([])
+    expect(validateBaseBuildBlock(plan.weeks, 10, { volumeCappedInjury: volumeCappedRampOf(plan) })).toEqual([])
     expect(validateStoredPlan(plan).filter(v => v.severity === 'error')).toEqual([])
   })
   it('every placeable start and runway produces a valid staged plan (never ends on a deload, §116 Am. 7)', () => {
@@ -71,7 +71,7 @@ describe('the staged plan', () => {
       const race = new Date(Date.parse(`${START}T00:00:00Z`) + weeks * 7 * 864e5).toISOString().slice(0, 10)
       const p = generateStagedRacePlan(input({ current_weekly_km: km, race_date: race }), START, 12)
       if (!p) continue
-      const errs = [...validateBaseBuildBlock(p.weeks, km), ...validateStagedRace(p)].filter(v => v.severity === 'error')
+      const errs = [...validateBaseBuildBlock(p.weeks, km, { volumeCappedInjury: volumeCappedRampOf(p) }), ...validateStagedRace(p)].filter(v => v.severity === 'error')
       if (errs.length) bad.push(`${km}km/${weeks}wk: ${errs.map(e => e.code).join(',')}`)
     }
     expect(bad).toEqual([])

@@ -55,7 +55,7 @@ import { PLAN_SIGNATURES } from './planSignatures'
 import { isV2Structure, StructureV2Schema, goalPaceShapeWord, PACE_ANCHORS, type PaceAnchor, workAnchorOf, workAnchorsOf } from './sessionStructureV2'
 import { durationForMainSet, segmentPricedDistance, meetsQualityFloor } from './sessionFormat'
 import { resolveMainSet, type PaceAnchorMap } from './resolveMainSet'
-import { isDeloadWeek, computeDeloadWeeks, deloadVolumeFraction, shortOpeningBlockWeeks } from './deloadCadence'
+import { isDeloadWeek, computeDeloadWeeks, deloadVolumeFraction, shortOpeningBlockWeeks, buildWeekCeilingKm } from './deloadCadence'
 import { computeIntensityReentry } from './intensityReentry'
 import { catalogueRowFor } from './catalogueLink'
 import { plannedFoundationWeeks } from './foundationBlock'
@@ -554,11 +554,10 @@ function buildVolumeSequence(
 
     // §2's injury cap tightens its own standard allowance for knee / shin-splint history. Same pass, so
     // it compounds week on week exactly as the standard cap does.
-    const allowancePct = injuryCapPct != null
-      ? Math.min(allowanceForWeek(weekN), injuryCapPct)
-      : allowanceForWeek(weekN)
-    const cap = 1 + allowancePct / 100
-    let maxAllowed = Math.round(volumes[i - 1] * cap)
+    // ONRAMP-INJURY-CLIMB-01 — the ceiling (this cap AND the bounceback below) is `buildWeekCeilingKm`'s
+    // (deloadCadence.ts), shared with the base-build ramp; this caller keeps its whole-km rounding.
+    // Byte-identical by construction (every volume here is already a whole km, and rounding is monotone),
+    // and checked: `verify:parity` IDENTICAL.
 
     // CoachingPrinciples §2 (amended 2026-08-06 / D1) — the cap does NOT apply
     // to a post-deload bounceback. Previously it did, and the arithmetic was
@@ -573,8 +572,7 @@ function buildVolumeSequence(
     // further: growth resumes from there next week.
     const prevWeekN = weekN - 1
     const prevWasDeload = deloadWeeks.has(prevWeekN)
-    if (prevWasDeload) {
-      const preDeload = volumes[i - 2] ?? volumes[i - 1]
+    // THE BOUNCEBACK RULE, now applied inside `buildWeekCeilingKm` — its history stays here:
       // RAMP-BOUNCEBACK-01 (Coaching Board 2026-09-06, Willy-led). The bounceback
       // splits by injury status, and MEASUREMENT (not intuition) drew the line:
       //
@@ -615,16 +613,14 @@ function buildVolumeSequence(
       //
       // ⚠️ HIS CONDITION IS MECHANICAL: valid only while the cut stays shallow.
       // Lower INJURY_RECOVERY_WEEK_VOLUME_PCT and this exemption withdraws itself.
-      const injuryCutShallowEnough =
-        GENERATION_CONFIG.INJURY_RECOVERY_WEEK_VOLUME_PCT
-          >= GENERATION_CONFIG.INJURY_BOUNCEBACK_MIN_DELOAD_PCT
-      if (injuryCapPct != null && !injuryCutShallowEnough) {
-        const bounceMax = Math.round(volumes[i - 1] * (1 + injuryCapPct / 100))
-        maxAllowed = Math.max(maxAllowed, Math.min(preDeload, bounceMax))
-      } else {
-        maxAllowed = Math.max(maxAllowed, preDeload)
-      }
-    }
+      // The gate is `injuryBouncebackMayReturnToPreDeload()`, one owner read by both callers.
+    const maxAllowed = Math.round(buildWeekCeilingKm({
+      prevKm: volumes[i - 1],
+      preDeloadKm: volumes[i - 2] ?? volumes[i - 1],
+      prevWasDeload,
+      allowancePct: allowanceForWeek(weekN),
+      injuryCapPct,
+    }))
 
     if (volumes[i] > maxAllowed) {
       volumes[i] = maxAllowed

@@ -7,7 +7,7 @@ import { raceDistanceKey } from './generationConfig'
 // ⚠️ REUSED, not re-derived. It already answers 'how many 10%-capped weeks,
 // with §3's deloads, to climb from A to B' — a second copy of §2's ramp
 // arithmetic is the DELOAD-OWNER-01 shape.
-import { onRampWeeksNeeded } from './baseBuildOnRamp'
+import { onRampWeeksNeeded, rampProfileFor } from './baseBuildOnRamp'
 import { isQualitySession, isTimeTrial } from './sessionRole'
 import { formatDuration } from '../format'
 
@@ -308,7 +308,7 @@ export function runWalkApplies(input: GeneratorInput, standardPeakKm: number, pl
   // precisely the decorative-numeric failure this repo keeps recording. The
   // honest question is simply whether the ramp arithmetic fits the runway.
   if (planWeeks != null
-      && onRampWeeksNeeded(startKm, GENERATION_CONFIG.FINISH_GOAL_RUNWALK_PEAK_KM) > planWeeks) {
+      && onRampWeeksNeeded(startKm, GENERATION_CONFIG.FINISH_GOAL_RUNWALK_PEAK_KM, rampProfileFor(input)) > planWeeks) {
     return false
   }
   return true

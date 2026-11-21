@@ -26,7 +26,7 @@
 import type { Plan, GeneratorInput, Week, Session } from '@/types/plan'
 import { GENERATION_CONFIG, raceDistanceKey } from './generationConfig'
 import { raceLabelFor } from './raceLabel'
-import { generateBaseBuildPlan, onRampWeeksNeeded, onRampCurve, type OnRampAssessment } from './baseBuildOnRamp'
+import { generateBaseBuildPlan, onRampWeeksNeeded, onRampCurve, rampProfileFor, type OnRampAssessment } from './baseBuildOnRamp'
 import { effectiveStartKm } from './startVolume'
 import { prepBlockWeeks } from './inputs'
 import { weeksBetweenLocal } from './length'
@@ -85,7 +85,7 @@ export function checkpointPlacement(input: GeneratorInput, doorKm: number, runwa
   const block = prepBlockWeeks(input)
   const maxRamp = runwayWeeks - block
   if (maxRamp < 1) return null
-  const needed = onRampWeeksNeeded(startKm, doorKm)
+  const needed = onRampWeeksNeeded(startKm, doorKm, rampProfileFor(input))
   const rampWeeks = needed > 0 && needed <= maxRamp ? needed : maxRamp
   return { rampWeeks, raceWeeks: runwayWeeks - rampWeeks, reachesDoor: needed > 0 && needed <= maxRamp }
 }
@@ -251,7 +251,7 @@ export function checkpointTarget(input: GeneratorInput, planStart: string, minBa
   for (let t = from; t <= from * TARGET_MAX_MULTIPLE; t = Math.round((t + TARGET_STEP_KM) * 10) / 10) {
     const placed = checkpointPlacement(input, t, runwayWeeks, startKm)
     if (!placed || !placed.reachesDoor) return null
-    const curve = onRampCurve(startKm, placed.rampWeeks)
+    const curve = onRampCurve(startKm, placed.rampWeeks, rampProfileFor(input))
     const ramp = generateBaseBuildPlan(input, planStart, {
       outcome: 'offered', rampWeeks: placed.rampWeeks, remainingWeeks: placed.raceWeeks, targetKm: curve[curve.length - 1], startKm,
     })
@@ -275,7 +275,7 @@ export function generateStagedRacePlan(input: GeneratorInput, planStart: string,
   const doorKm = target ?? rampDoorFloor(minBaseKm, effectiveStartKm(input))
   const placed = checkpointPlacement(input, doorKm, runway)!
   const startKm = effectiveStartKm(input)
-  const curve = onRampCurve(startKm, placed.rampWeeks)
+  const curve = onRampCurve(startKm, placed.rampWeeks, rampProfileFor(input))
   const assessment: OnRampAssessment = {
     outcome: 'offered',
     rampWeeks: placed.rampWeeks,

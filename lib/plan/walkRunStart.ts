@@ -14,7 +14,7 @@
 import type { GeneratorInput, Plan, Session, Week } from '@/types/plan'
 import { GENERATION_CONFIG } from './generationConfig'
 import { DAY_ORDER, normaliseDays, spreadDays, type Day } from './days'
-import { onRampCurve, generateBaseBuildPlan } from './baseBuildOnRamp'
+import { onRampCurve, generateBaseBuildPlan, rampProfileFor } from './baseBuildOnRamp'
 import { applyRunWalk } from './runWalkPlan'
 
 export interface WalkRunLevel { run_mins: number; walk_mins: number }
@@ -212,7 +212,7 @@ export function composeWalkRunStart(
   const rampWeeks = Math.max(0, args.rampWeeks)
   // ⚠️ `max(1, …)` ONLY INSIDE THE BASE PLAN. At rampWeeks 0 the plan is the walk-run start alone, but the
   // generator still has to run: it is where the meta and the HR zones come from. Its weeks are discarded.
-  const curve = onRampCurve(startKm, Math.max(1, rampWeeks))
+  const curve = onRampCurve(startKm, Math.max(1, rampWeeks), rampProfileFor(input))
   const endsAtKm = rampWeeks > 0 ? curve[curve.length - 1] : startKm
   const base = generateBaseBuildPlan(input, args.rampStart, {
     outcome: 'offered',

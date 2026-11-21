@@ -9,7 +9,7 @@
 // error severity under NODE_ENV=test, so a wired branch throws and an unwired one returns.
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import type { GeneratorInput, Plan, Week } from '@/types/plan'
-import { validateBaseBuildBlock, validateStagedRace } from './baseBuildValidate'
+import { validateBaseBuildBlock, validateStagedRace, volumeCappedRampOf } from './baseBuildValidate'
 
 // ⚠️ The real implementation is exposed BY THE FACTORY, not by a top-level `vi.importActual`.
 // `vi.mock` is hoisted above a top-level await, so an `importActual` up there resolves to the
@@ -139,7 +139,7 @@ describe('runEngine base_build branch — the walk-run arm is paired, not skippe
   it('the block arm alone finds nothing, so the throw above is the paired arm\'s', () => {
     const { plan } = planWithABrokenWalkRunDuration()
     const startKm = Number((plan.meta as never as Record<string, unknown>).base_build_start_km ?? 0)
-    expect(validateBaseBuildBlock(plan.weeks, startKm).filter(v => v.severity === 'error')).toEqual([])
+    expect(validateBaseBuildBlock(plan.weeks, startKm, { volumeCappedInjury: volumeCappedRampOf(plan) }).filter(v => v.severity === 'error')).toEqual([])
     expect(validateStagedRace(plan).filter(v => v.severity === 'error').map(v => v.code))
       .toContain('INV-PLAN-WALKRUN-START-PROGRESSION')
   })

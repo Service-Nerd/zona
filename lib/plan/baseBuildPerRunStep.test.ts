@@ -15,7 +15,7 @@
 // Every case here mutates a valid plan and asserts WHICH arm fires, in both directions.
 import { describe, it, expect } from 'vitest'
 import { assessOnRamp, generateBaseBuildPlan } from './baseBuildOnRamp'
-import { validateBaseBuildBlock } from './baseBuildValidate'
+import { validateBaseBuildBlock, volumeCappedRampOf } from './baseBuildValidate'
 import { GENERATION_CONFIG as C } from './generationConfig'
 import type { GeneratorInput, Week, Session } from '@/types/plan'
 import { sessionKmSelfPaced } from './sessionDistance'
@@ -35,7 +35,7 @@ const build = (over: Partial<GeneratorInput> = {}) => {
 }
 const clone = (w: Week[]) => JSON.parse(JSON.stringify(w)) as Week[]
 const codes = (w: Week[], startKm: number) =>
-  validateBaseBuildBlock(w, startKm).filter(v => v.severity === 'error').map(v => v.code)
+  validateBaseBuildBlock(w, startKm, { volumeCappedInjury: false }).filter(v => v.severity === 'error').map(v => v.code)
 
 /** Set every run in week index `i` to `km`, so the week's LONGEST run is `km`. */
 function setWeekRuns(weeks: Week[], i: number, km: number) {
@@ -83,7 +83,7 @@ describe('§116 Am. 12 — the build-week per-run step is §45\'s ratio', () => 
     const i = firstComparableIndex(w)
     setWeekRuns(w, i - 1, 6)
     setWeekRuns(w, i, 12)
-    const v = validateBaseBuildBlock(w, a.startKm).find(x => x.code === 'INV-PLAN-ONRAMP-PER-RUN-STEP')
+    const v = validateBaseBuildBlock(w, a.startKm, { volumeCappedInjury: volumeCappedRampOf(plan) }).find(x => x.code === 'INV-PLAN-ONRAMP-PER-RUN-STEP')
     expect(v?.actual).toBe('+100%')
     expect(v?.expected).toBe(`≤ +${C.LONG_RUN_PROGRESSION_CAP_PCT}%`)
   })

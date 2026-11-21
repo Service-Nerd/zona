@@ -1,6 +1,6 @@
 import type { Plan, GeneratorInput } from '@/types/plan'
 import { validatePlan, validateReshapedPlan, validateMaintenanceBlock, type Violation } from './invariants'
-import { validateBaseBuildBlock, validateStagedRace } from './baseBuildValidate'
+import { validateBaseBuildBlock, validateStagedRace, volumeCappedRampOf } from './baseBuildValidate'
 import { storedPlanInput } from './storedPlanInput'
 import { withProfileHr, type ProfileHr } from './rebuildInput'
 
@@ -64,7 +64,7 @@ function baseBuildErrors(plan: Plan): Violation[] {
   const startKm = Number((plan.meta as unknown as Record<string, unknown>).base_build_start_km ?? 0)
   const meta = plan.meta as unknown as { onramp_spaced?: boolean; generator_input?: GeneratorInput }
   return [...validateBaseBuildBlock(plan.weeks ?? [], startKm,
-    { spaced: meta.onramp_spaced === true, blocked: meta.generator_input?.days_cannot_train ?? [] }), ...validateStagedRace(plan)]
+    { spaced: meta.onramp_spaced === true, blocked: meta.generator_input?.days_cannot_train ?? [], volumeCappedInjury: volumeCappedRampOf(plan) }), ...validateStagedRace(plan)]
 }
 
 /** THE predicate for the maintenance kind. Same reason as `isBaseBuildPlan`:

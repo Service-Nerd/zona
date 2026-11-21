@@ -221,6 +221,11 @@ Returning to a volume held comfortably two weeks earlier is not a spike. Chronic
 
 ### The bounceback is bounded for injury-history runners — amended 2026-09-06 (RAMP-BOUNCEBACK-01)
 
+> 🔴 **WITHDRAWN by Amendment 3 below (2026-09-17) while `INJURY_RECOVERY_WEEK_VOLUME_PCT >=
+> INJURY_BOUNCEBACK_MIN_DELOAD_PCT`. Do not cite this section as the current injury bounceback rule.** The current
+> rule is a return to pre-deload, no higher. Citing this section is how ADR-027 hotfix 2's first attempt rebuilt a
+> ramp that declined (§116 Amendment 16).
+
 **Principle.** The bounceback exemption above applies to **healthy** runners only. For a runner with a knee or shin-splint history (§2's injury cap), the post-deload week is bounded by the **injury cap** (`INJURY_WEEKLY_INCREASE_CAP_PCT`, 5%) exactly like every other week — it does **not** get the exemption. The return to pre-deload volume still happens, but gradually, over the weeks that follow rather than in a single jump.
 
 **Why — the exemption was unbounded, and that was the hole.** The 2026-08-06 amendment let the bounceback return to pre-deload "without the cap applying" — and the engine implemented that as `Math.max(cappedValue, preDeloadVolume)`, which **silently overrode the injury cap**. A 70% deload returning fully to pre-deload is a **+43% single-week rise**, and it was exempt on exactly the same grounds as a 5% one. Measured on the §2 knee-injury archetype: a **+26%** week-on-week rise passed as a "bounceback". For injured tissue this is not low-risk. §2's own reasoning — "chronic load has not moved" — is an argument about the *acute:chronic* relationship, and it holds for **healthy** tissue; **injured tissue's binding constraint is the acute weekly load itself**, which a "return" does not lessen (cardiovascular readiness returns weeks ahead of musculoskeletal readiness — Willy). Whether a +26% jump was legal also depended on where the phase boundary happened to fall (a rise is exempt as a bounceback but capped as an ordinary week) — an arbitrariness no one chose, and the reason this blocked CB-PHASE-01 (base 35→30).
@@ -11464,6 +11469,60 @@ way neither sitting saw; they are returned to the board before §116's flag may 
   answers `checkpoint_choose` (run-walk finish or a later race) rather than building a block we know is not clean.
 - **C5** — measured: of 880 staged cases, **71.0% clean**; the rest are C4 (WEEK1-LEAP 10.0%, LONG-RUN-SHORT 9.8%, both
   6.2%) and §113 on the recorded long run (3.1%).
+
+### §116 Amendment 16 — §116 AMENDMENT 1, MADE LITERAL FOR A §12-CAPPED RUNNER *(Coaching Board 2026-11-21, `ONRAMP-INJURY-CLIMB-01`, ADR-027 hotfix 2)*
+
+*Numbered 16 because 13, 14 and 15 are reserved by `coaching-2026-11-20-phase0-collisions-numbering.md`
+(BASEBUILD-NO-LONG-RUN, BASEBUILD-DURATION, STAGED-RAMP-RATIO-16W-01) and none has landed.*
+
+**Principle.** A runner with a knee or shin-splint history (§12's cohort, `hasVolumeCappedInjuryHistory`) ramps
+under the race engine's own combination of §2, §2 Amendment 2 and §2 Amendment 3:
+
+1. an ordinary week rises at most `INJURY_WEEKLY_INCREASE_CAP_PCT` (5%) over the previous week;
+2. a deload is `INJURY_RECOVERY_WEEK_VOLUME_PCT` (85%) **of the previous week as prescribed**, never of a carried
+   build line;
+3. the week after a deload returns to the pre-deload week, **and no higher**. While
+   `INJURY_RECOVERY_WEEK_VOLUME_PCT < INJURY_BOUNCEBACK_MIN_DELOAD_PCT` it is bounded by the 5% cap instead
+   (§2 Amendment 3's self-withdrawal, inherited);
+4. growth resumes at 5% from there, on `BASE_BUILD_ONRAMP_DELOAD_FREQUENCY`. Net ×1.05² per 4-week cycle (+10.25%).
+
+🔴 **§2's RAMP-BOUNCEBACK-01 capped bounceback ("Amendment 1") is WITHDRAWN and must not be cited as the rule.**
+§2 Amendment 3 withdrew it on 2026-09-17. The brief for this hotfix cited it, and the first build attempt implemented
+it: with an 85% deload it is ×1.05³ × 0.85 = **0.984 per cycle**, and **216 of 425** knee/shin grid ramps ended at or
+below their own start.
+
+**One owner.** Rules 1–3 are `buildWeekCeilingKm` and `injuryBouncebackMayReturnToPreDeload` in
+`lib/plan/deloadCadence.ts`, read by both `buildVolumeSequence` (whole km) and `onRampCurve` (`floor1dp`). Two copies of
+one rule, one current and one stale, is the shape of this defect (D-08). The ramp's +0.1 km floor on an ordinary
+week is the `floor1dp` unit, not a coaching number, and it never lifts a bounceback above pre-deload.
+
+**Unchanged:** the healthy ramp's carried line and unbounded bounceback; achilles, back, hip and plantar histories;
+the race engine (`verify:parity` IDENTICAL once the new `meta.onramp_profile` stamp is excluded).
+
+**Measured** on the C1 ramp grid (11,040 inputs, production shape), before → after:
+
+| | before | after |
+|---|---|---|
+| route flips (served ↔ refused) | — | **0 / 0** |
+| healthy + other-injury plans changed | — | **0** |
+| knee/shin plans changed | — | **425 of 425** |
+| ordinary week rising > 5.5% | 425 of 425 | **0** (worst +5.0%) |
+| worst bounceback vs pre-deload | +21.4% | **0.0%** |
+| ramps ending at or below their start | 0 | **0** |
+| net ramp build, median (min) | +185% (+45%) | **+37.1% (+12.9%)** |
+| `reaches_door` true → false | — | **18** (knee 5, knee+other 4, shin 9); 0 false → true |
+
+Envelope marathon staged population: 3,056 staged, 1,280 knee/shin, **320** knee/shin reach the door (480 before);
+**0** base-build violations of any code.
+
+**Enforced by** `INV-PLAN-ONRAMP-CURVE-CLIMBS`, amended: arm 1 lets an injury ramp's bounceback EQUAL its pre-deload
+week; arm 3 (error) bounds an ordinary week at `prev × 1.05 + 0.1 km` and a bounceback at pre-deload; arm 4 (error)
+requires each pre-deload week to sit strictly above the previous one — "stuck is not" (§2 Am. 3), measured **0** on
+the grid and the envelope. The profile is read from the plan's `meta.onramp_profile` stamp.
+
+**Not proven:** that +37% median over a ramp is enough for the race block that follows (no harness measures post-ramp
+readiness; `measure:fitness` and `cohort:shape` never build a ramp); delivered deloads below 80% of the prior week
+(placement, ADR-022's class); masters cadence on an injury ramp (Sims, recorded). Live plans: new plans only.
 
 ### §116 Amendment 12 — THE PER-RUN STEP IS A RATIO, AND THE ABSOLUTE WAS UNSATISFIABLE *(Coaching Board 2026-11-15, `ENGINE-BASEBUILD-UNVALIDATED-01`)*
 

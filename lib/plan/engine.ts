@@ -58,7 +58,7 @@ import { generateStagedRacePlan, stagedRaceOf, observedCheckpointKm, observedLon
 import { notPassedHeading, notPassedWhy, NO_RUNS_HEADING, CHOOSE_HEADING } from './checkpointCopy'
 import { isBaseBuildPlan } from './validateStoredPlan'
 import type { WeeklyLoad } from '@/lib/coaching/weeklyActualLoad'
-import { validateBaseBuildBlock, validateStagedRace } from './baseBuildValidate'
+import { validateBaseBuildBlock, validateStagedRace, volumeCappedRampOf } from './baseBuildValidate'
 import { generateGetRunningPlan, getRunningApplies } from './getRunningPlan'
 import { baseBuildOfferLine, baseBuildOfferTitle, baseBuildOfferWhy } from './baseBuildCopy'
 import { LongRunReadinessError } from './longRunReadiness'
@@ -207,6 +207,7 @@ export function spacingOpts(plan: Plan, input: GeneratorInput) {
   return {
     spaced: (plan.meta as unknown as Record<string, unknown>).onramp_spaced === true,
     blocked: input.days_cannot_train ?? [],
+    volumeCappedInjury: volumeCappedRampOf(plan),
   }
 }
 

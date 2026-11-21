@@ -21,7 +21,7 @@
 
 import type { GeneratorInput } from '@/types/plan'
 import { generateStagedRacePlan, stagedRaceOf, checkpointRaceInput, longestSessionKm, raceBlockVerdict } from './stagedRacePlan'
-import { validateBaseBuildBlock, validateStagedRace } from './baseBuildValidate'
+import { validateBaseBuildBlock, validateStagedRace, volumeCappedRampOf } from './baseBuildValidate'
 
 export interface StagedScore {
   clean: boolean
@@ -42,7 +42,7 @@ export function scoreStagedCase(input: GeneratorInput, planStart: string, doorKm
   const s = stagedRaceOf(staged)!
   const startKm = Number((staged.meta as unknown as Record<string, unknown>).base_build_start_km ?? 0)
   const baseErrs = [...validateBaseBuildBlock(staged.weeks, startKm,
-    { spaced: (staged.meta as unknown as Record<string, unknown>).onramp_spaced === true, blocked: input.days_cannot_train ?? [] }), ...validateStagedRace(staged)]
+    { spaced: (staged.meta as unknown as Record<string, unknown>).onramp_spaced === true, blocked: input.days_cannot_train ?? [], volumeCappedInjury: volumeCappedRampOf(staged) }), ...validateStagedRace(staged)]
     .filter(v => v.severity === 'error').map(v => v.code)
 
   const checkpoint = addWeeks(planStart, s.checkpoint_week)

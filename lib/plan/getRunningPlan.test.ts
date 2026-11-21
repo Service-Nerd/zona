@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { generateGetRunningPlan, getRunningWeeks, getRunningApplies } from './getRunningPlan'
-import { validateBaseBuildBlock } from './baseBuildValidate'
+import { validateBaseBuildBlock, volumeCappedRampOf } from './baseBuildValidate'
 import { validatePlan } from './invariants'
 import { GENERATION_CONFIG as G } from './generationConfig'
 import type { GeneratorInput } from '@/types/plan'
@@ -75,7 +75,7 @@ describe('§118 — the get-running plan', () => {
           mk({ current_weekly_km: cwk, longest_recent_run_km: Math.max(1, Math.round(cwk * 0.4)),
                training_age: '<6mo' }),
           '2026-10-05', runway)
-        expect(validateBaseBuildBlock(plan.weeks, blockStartKm(plan)), `cwk ${cwk} runway ${runway}`).toEqual([])
+        expect(validateBaseBuildBlock(plan.weeks, blockStartKm(plan), { volumeCappedInjury: volumeCappedRampOf(plan) }), `cwk ${cwk} runway ${runway}`).toEqual([])
       }
     }
   })
@@ -131,7 +131,7 @@ describe('§118 — the get-running plan', () => {
       'fixture no longer crosses the 15km line, so it cannot pin anything',
     ).toBeGreaterThan(incompatibleAbove)
     // ...and the ratio arm is correctly silent on it, because every step is §2's 10%.
-    expect(validateBaseBuildBlock(plan.weeks, 20)
+    expect(validateBaseBuildBlock(plan.weeks, 20, { volumeCappedInjury: volumeCappedRampOf(plan) })
       .filter(v => v.code === 'INV-PLAN-ONRAMP-PER-RUN-STEP')).toEqual([])
   })
 
@@ -146,7 +146,7 @@ describe('§118 — the get-running plan', () => {
       const start = blockStartKm(plan)
       const ratio = endsAtKm / start
       expect(ratio, `cwk ${cwk} builds ${ratio.toFixed(2)}x from a ${start}km block start`).toBeLessThanOrEqual(G.MAX_BASE_BUILD_RATIO)
-      expect(validateBaseBuildBlock(plan.weeks, start).map(v => v.code))
+      expect(validateBaseBuildBlock(plan.weeks, start, { volumeCappedInjury: volumeCappedRampOf(plan) }).map(v => v.code))
         .not.toContain('INV-PLAN-GET-RUNNING-BUILD-RATIO')
     }
   })
@@ -214,7 +214,7 @@ describe('§118 — the get-running plan', () => {
 
     // (a) block-start denominator — satisfied, which is what `validateBaseBuildBlock` checks.
     expect(endsAtKm / blockStartKm(plan)).toBeLessThanOrEqual(G.MAX_BASE_BUILD_RATIO)
-    expect(validateBaseBuildBlock(plan.weeks, blockStartKm(plan)).map(v => v.code))
+    expect(validateBaseBuildBlock(plan.weeks, blockStartKm(plan), { volumeCappedInjury: volumeCappedRampOf(plan) }).map(v => v.code))
       .not.toContain('INV-PLAN-GET-RUNNING-BUILD-RATIO')
 
     // (b) raw declared-volume denominator — NOT satisfied, and it is an `error`.
@@ -269,7 +269,7 @@ describe('§118 — the get-running plan', () => {
     const { plan } = generateGetRunningPlan(mk(), '2026-10-05', 29)
     // Inflate only the LAST week: every week-on-week check is blind to this.
     plan.weeks[plan.weeks.length - 1].weekly_km = 999
-    expect(validateBaseBuildBlock(plan.weeks, 5).map(v => v.code))
+    expect(validateBaseBuildBlock(plan.weeks, 5, { volumeCappedInjury: volumeCappedRampOf(plan) }).map(v => v.code))
       .toContain('INV-PLAN-GET-RUNNING-BUILD-RATIO')
   })
 

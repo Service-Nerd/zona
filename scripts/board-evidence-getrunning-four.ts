@@ -13,7 +13,7 @@
  */
 import { runEngine } from '@/lib/plan/engine'
 import { validatePlan } from '@/lib/plan/invariants'
-import { validateBaseBuildBlock, validateStagedRace } from '@/lib/plan/baseBuildValidate'
+import { validateBaseBuildBlock, validateStagedRace, volumeCappedRampOf } from '@/lib/plan/baseBuildValidate'
 import { generateGetRunningPlan, getRunningWeeks } from '@/lib/plan/getRunningPlan'
 import { composeWalkRunStart, walkRunStartWeeks, walkRunSchedule } from '@/lib/plan/walkRunStart'
 import { stagedRaceOf } from '@/lib/plan/stagedRacePlan'
@@ -70,7 +70,7 @@ for (const [name, set] of [['staged', staged], ['accepted', accepted]] as const)
   let blk = 0, raw = 0, both = 0, wr = 0
   const rawAt: Record<string, number> = {}
   for (const r of set) {
-    const bb = validateBaseBuildBlock(r.plan.weeks, bbStart(r.plan)).some(v => v.code === 'INV-PLAN-GET-RUNNING-BUILD-RATIO')
+    const bb = validateBaseBuildBlock(r.plan.weeks, bbStart(r.plan), { volumeCappedInjury: volumeCappedRampOf(r.plan) }).some(v => v.code === 'INV-PLAN-GET-RUNNING-BUILD-RATIO')
     const vp = validatePlan(r.plan, r.input).some(v => v.code === 'INV-PLAN-BASE-BUILD-RATIO')
     if (r.plan.weeks.some(w => w.phase === 'walk_run_start')) wr++
     if (bb) blk++
@@ -119,7 +119,7 @@ console.log('\n── 2. LR half (accepted §118 plans at/above floor with lr < 
 // ── 3. STAGED-RAMP-RATIO-16W-01 ─────────────────────────────────────────────────────────────
 console.log('\n── 3. staged ramp ratio ──')
 {
-  const fire = staged.filter(r => validateBaseBuildBlock(r.plan.weeks, bbStart(r.plan)).some(v => v.code === 'INV-PLAN-GET-RUNNING-BUILD-RATIO'))
+  const fire = staged.filter(r => validateBaseBuildBlock(r.plan.weeks, bbStart(r.plan), { volumeCappedInjury: volumeCappedRampOf(r.plan) }).some(v => v.code === 'INV-PLAN-GET-RUNNING-BUILD-RATIO'))
   const rampLen = (p: Plan) => p.weeks.filter(w => w.phase === 'base_build').length
   const dist: Record<number, number> = {}; for (const r of staged) dist[rampLen(r.plan)] = (dist[rampLen(r.plan)] ?? 0) + 1
   console.log(`  staged=${staged.length}  firing INV-PLAN-GET-RUNNING-BUILD-RATIO=${fire.length}`)
@@ -175,7 +175,7 @@ async function prod() {
     const start = bbStart(p.plan_json), end = ramp.length ? ramp[ramp.length - 1].weekly_km ?? 0 : 0
     const wr = p.plan_json.weeks.filter(w => w.phase === 'walk_run_start').length
     const raw = gi ? validatePlan(p.plan_json, gi).filter(v => v.code === 'INV-PLAN-BASE-BUILD-RATIO').map(v => v.actual) : ['no input']
-    console.log(`  ${s ? 'staged' : '§118  '} cw${gi?.current_weekly_km} lr${gi?.longest_recent_run_km} ramp ${ramp.length}w ${start}→${end} (${start ? (end / start).toFixed(2) : '-'}x) walk-run weeks ${wr}  raw-§111 ${JSON.stringify(raw)}  blk ${JSON.stringify(codes(validateBaseBuildBlock(p.plan_json.weeks, start)).filter(c => c.includes('RATIO')))}`)
+    console.log(`  ${s ? 'staged' : '§118  '} cw${gi?.current_weekly_km} lr${gi?.longest_recent_run_km} ramp ${ramp.length}w ${start}→${end} (${start ? (end / start).toFixed(2) : '-'}x) walk-run weeks ${wr}  raw-§111 ${JSON.stringify(raw)}  blk ${JSON.stringify(codes(validateBaseBuildBlock(p.plan_json.weeks, start, { volumeCappedInjury: volumeCappedRampOf(p.plan_json) })).filter(c => c.includes('RATIO')))}`)
   }
 }
 if (process.argv.includes('--prod')) prod()
@@ -213,7 +213,7 @@ if (process.argv.includes('--prod-inputs')) prodInputs()
 async function item3() {
   const { generateStagedRacePlan } = await import('@/lib/plan/stagedRacePlan')
   const quiet = console.error; console.error = () => {}
-  const fireOf = (p: Plan) => validateBaseBuildBlock(p.weeks, bbStart(p)).find(v => v.code === 'INV-PLAN-GET-RUNNING-BUILD-RATIO')
+  const fireOf = (p: Plan) => validateBaseBuildBlock(p.weeks, bbStart(p), { volumeCappedInjury: volumeCappedRampOf(p) }).find(v => v.code === 'INV-PLAN-GET-RUNNING-BUILD-RATIO')
   let n = 0, fire = 0, maxRamp = 0
   for (const d of [21.0975, 42.195, 50, 80, 100]) for (const cw of [0, 1, 2, 3, 4, 5, 6, 8, 10, 12, 15, 20])
     for (const lr of [0, 1, 2, 4, 6]) for (const rw of [16, 24, 32, 40, 52, 64, 80]) for (const age of [35, 50]) {

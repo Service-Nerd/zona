@@ -179,7 +179,7 @@ or a `floor_protected` run, and end > week 1.
 
 | § | Highest present today (grep, with line) | Build → number it writes | Wave |
 |---|---|---|---|
-| **§116** | Am. 1–8 (table, 11327); 9 (11417); 10 (11693); 11 (11565); 12 (11468); no 13+ anywhere | BASEBUILD-NO-LONG-RUN → **Am. 13** · BASEBUILD-DURATION → **Am. 14** (its decision note's "13" is corrected at build) · STAGED-RAMP ratio-held exemption → **Am. 15** (board flag above) | W1, in that order |
+| **§116** | Am. 1–8 (table, 11327); 9 (11417); 10 (11693); 11 (11565); 12 (11468); no 13+ anywhere | BASEBUILD-NO-LONG-RUN → **Am. 13** · BASEBUILD-DURATION → **Am. 14** (its decision note's "13" is corrected at build) · STAGED-RAMP ratio-held exemption → **Am. 15** (board flag above) · ONRAMP-INJURY-CLIMB-01 → **Am. 16** (written 2026-11-21, ahead of 13–15) | W1, in that order |
 | **§118** | Am. 1–3 (table "The three amendments", 12317). 🔴 **Two headings already read "§118 Amendment 4"**: 12425 (walk-run start, 10-24) and 12333 (offer scope, 11-06, `STAGED-HM-DOOR-01`); code cites both | GETRUNNING-S111 → **Am. 2a** note · STAGED-RAMP → **Am. 2b** note (the bound covers every ramp; surplus weeks hold) | 2a in W0, 2b in W1 |
 | | | W0 docs fix: renumber the 11-06 heading to **Am. 5**. Update its citations: `engine.ts:425,614`, `stagedHmDoor.test.ts:1,190,420`, `coaching-rulings.md:18`. `baseBuildValidate.ts:378` cites the 10-24 one and stays | W0 |
 | **§9** | unnumbered "§9 Amendment" (1466; de facto Am. 1, S9-QUALITY-MINUTES-01); Am. 2 (1491); Am. 3 (1594) | S9-QUALITY-FLOOR-REACH → unnumbered note on the §9 Amendment · LONG-RUN-CAP-INJURY-VALUE → **Am. 3a** (value split, HM yardstick) · INJURY-RECENCY → **Am. 3b** (recency clause, declarative table) | note in W2; 3a then 3b in W4 |
