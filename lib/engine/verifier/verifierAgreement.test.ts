@@ -133,6 +133,19 @@ const EXTRA_MUTATIONS: { name: string; apply: (p: Plan, input: GeneratorInput) =
     ['no HR method', (p: Plan) => { delete p.meta.hr_zone_method; return true }],
     // Batch 8: the plan's declarations about its own limits.
     ['no compression class', (p: Plan) => { delete p.meta.compression_classification; return true }],
+    // Batch 19.
+    ['every main-week easy run turned into quality', (p: Plan) => {
+      let n = 0
+      for (const w of p.weeks.filter(x => x.n >= 1)) for (const s of Object.values(w.sessions ?? {})) if (s?.type === 'easy' && !isLongRun(s)) { s.type = 'quality'; n++ }
+      p.meta.volume_profile = 'build'; return n > 0
+    }],
+    ['a segment long run at the start of the build', (p: Plan) => {
+      const b = (p.phases ?? []).find(x => x.name === 'build')
+      const w = b && p.weeks.find(x => x.n === b.start_week && x.phase === 'build')
+      const s = w && Object.values(w.sessions ?? {}).find(x => x && isLongRun(x))
+      if (!s || !b || (b.end_week - b.start_week) < GENERATION_CONFIG.RACE_PACE_LR_BUILD_WEEKS + 1) return false
+      s.lr_segment_pace = '5:00/km'; return true
+    }],
     // Batch 18: run-walk and the shortfall cause.
     ['a run-walk plan whose biggest session sits just under the floor', (p: Plan) => {
       const ss = p.weeks.filter(w => w.n > 0 && w.type !== 'race' && w.type !== 'deload').flatMap(w => Object.values(w.sessions ?? {}))
@@ -598,6 +611,8 @@ const TARGETS: Record<string, string[]> = {
   'a quality session with no pace and an effort of 0': ['INV-PLAN-EFFORT-OR-PACE'],
   'a build week with its quality removed': ['INV-PLAN-QUALITY-EXPECTED'],
   'a run-walk plan whose biggest session sits just under the floor': ['INV-PLAN-RUNWALK-ADEQUATE'],
+  'every main-week easy run turned into quality': ['INV-PLAN-INTENSITY-DISTRIBUTION'],
+  'a segment long run at the start of the build': ['INV-PLAN-RACE-PACE-LR-BUILD-WINDOW'],
   'run-walk with a volume-capped injury stamped': ['INV-PLAN-RUNWALK-CAP-NOT-REDUCED'],
   'a volume-blaming shortfall note on an injury-capped plan': ['INV-PLAN-LR-SHORTFALL-CAUSE'],
   'a volume-blaming shortfall note with the long run at its minute cap': ['INV-PLAN-LR-SHORTFALL-CAUSE'],
@@ -640,6 +655,7 @@ const ARMS: Record<string, string[]> = {
   'INV-PLAN-GOAL-PAST-CV-DECLARED': ['withheld anchor reads comfortable', 'withheld anchor with no note'],
   'INV-PLAN-VDOT-STALENESS-LADDER': ['off the ladder:', 'dateless benchmark off the base rung'],
   'INV-PLAN-LR-SHORTFALL-CAUSE': ['blames volume for an injury cap', 'blames volume at the minute cap'],
+  'INV-PLAN-RACE-PACE-LR-BUILD-WINDOW': ['segment long run outside the build window', 'three segment long runs in a row'],
 }
 
 const tally = { rows: 0, threw: [] as string[], refused: 0, base: 0, foundation: 0, foundationCapped: 0 }

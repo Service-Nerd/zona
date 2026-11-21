@@ -1232,6 +1232,50 @@ const BATCH_18: Partial<Record<RuleId, Predicate>> = {
 }
 Object.assign(PREDICATES, BATCH_18)
 
+const BATCH_19: Partial<Record<RuleId, Predicate>> = {
+  // §1: across the main plan, quality sessions are at most the distance's share of running sessions (not on a
+  // maintenance profile). Counted HERE: validatePlan's planQualityCounts is also the producer's, so not shared.
+  'INV-PLAN-INTENSITY-DISTRIBUTION': (plan, { input }) => {
+    const dist = GENERATION_CONFIG.INTENSITY_DISTRIBUTION[raceDistanceKey(input.race_distance_km) as keyof typeof GENERATION_CONFIG.INTENSITY_DISTRIBUTION]
+    if (!dist || plan.meta.volume_profile === 'maintenance') return []
+    const weeks = GENERATION_CONFIG.INTENSITY_DISTRIBUTION_COUNTS_FOUNDATION_WEEKS ? plan.weeks : plan.weeks.filter(w => w.n >= 1)
+    let runs = 0, hard = 0
+    for (const w of weeks) for (const { session: s } of daysOf(w)) {
+      if (!s || s.type === 'rest' || s.type === 'strength' || s.type === 'cross-train') continue
+      runs++
+      if (isQualitySession(s)) hard++
+    }
+    return runs > 0 && (hard / runs) * 100 > dist.max_quality_session_pct
+      ? [{ rule_id: 'INV-PLAN-INTENSITY-DISTRIBUTION', week: PLAN, day: null, detail: `${((hard / runs) * 100).toFixed(1)}% quality` }] : []
+  },
+
+  // §25: race-pace long runs in the build sit only in its last RACE_PACE_LR_BUILD_WEEKS non-deload weeks, and never
+  // three weeks running.
+  'INV-PLAN-RACE-PACE-LR-BUILD-WINDOW': plan => {
+    const main = plan.weeks.filter(w => w.n >= 1)
+    const seg = (w: Week) => daysOf(w).some(x => !!x.session && isLongRun(x.session) && Boolean(x.session.lr_segment_pace))
+    const out: Raw[] = []
+    const build = (plan.phases ?? []).find(p => p.name === 'build')
+    if (build?.end_week != null) {
+      const legal = new Set<number>()
+      for (let n = build.end_week, placed = 0; n >= (build.start_week ?? 1) && placed < GENERATION_CONFIG.RACE_PACE_LR_BUILD_WEEKS; n--) {
+        const wk = main.find(x => x.n === n)
+        if (!wk || isDeloadWeek(wk)) continue
+        legal.add(n); placed++
+      }
+      for (const w of main) if (w.phase === 'build' && seg(w) && !legal.has(w.n)) out.push({ rule_id: 'INV-PLAN-RACE-PACE-LR-BUILD-WINDOW', week: w.n, day: null, detail: 'segment long run outside the build window' })
+    }
+    let run = 0
+    for (const w of main) {
+      run = seg(w) ? run + 1 : 0
+      // The FIRST streak only, as validatePlan reports it (it breaks after one finding).
+      if (run >= 3) { out.push({ rule_id: 'INV-PLAN-RACE-PACE-LR-BUILD-WINDOW', week: w.n, day: null, detail: 'three segment long runs in a row' }); break }
+    }
+    return out
+  },
+}
+Object.assign(PREDICATES, BATCH_19)
+
 const SEVERITY = new Map(RULES.map(r => [r.id, r.kind === 'soft' ? 'warn' as const : 'error' as const]))
 
 /** Every finding the ported predicates raise, with the severity the catalogue gives the rule. */
