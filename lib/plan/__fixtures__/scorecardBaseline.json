@@ -1,7 +1,7 @@
 {
- "reason": "ADR027-B0-SCORECARD: first baseline of Scorecard v2 on the current (frozen) engine at e2090264, existing corpora",
- "written_at": "2026-11-21T00:46:11.544Z",
- "git_head": "e2090264",
+ "reason": "ONRAMP-INJURY-CLIMB-01 (ADR-027 hotfix 2) landed: ramp injury-over-cap 847->0, post-deload jump 1466->863, session>2x longest 211->196; no line worse",
+ "written_at": "2026-11-21T01:14:34.042Z",
+ "git_head": "c121be9f",
  "modes": {
   "full": {
    "review.round.gate": {
@@ -1193,11 +1193,11 @@
     "better": "lower"
    },
    "planread.RAMP-INJURY-OVER-CAP@envelope": {
-    "value": 53,
+    "value": 0,
     "better": "lower"
    },
    "planread.RAMP-POST-DELOAD-JUMP@envelope": {
-    "value": 75,
+    "value": 67,
     "better": "lower"
    },
    "planread.RAMP-MASTERS-CADENCE@envelope": {
@@ -1401,11 +1401,11 @@
     "better": "lower"
    },
    "planread.RAMP-INJURY-OVER-CAP@beginnerMarathon": {
-    "value": 794,
+    "value": 0,
     "better": "lower"
    },
    "planread.RAMP-POST-DELOAD-JUMP@beginnerMarathon": {
-    "value": 1389,
+    "value": 794,
     "better": "lower"
    },
    "planread.RAMP-MASTERS-CADENCE@beginnerMarathon": {
@@ -1413,7 +1413,7 @@
     "better": "lower"
    },
    "planread.RAMP-SESSION-OVER-2X-LONGEST@beginnerMarathon": {
-    "value": 211,
+    "value": 196,
     "better": "lower"
    },
    "planread.FOUNDATION-CLIFF@beginnerMarathon": {
@@ -1793,11 +1793,11 @@
     "better": "lower"
    },
    "planread.RAMP-INJURY-OVER-CAP": {
-    "value": 847,
+    "value": 0,
     "better": "lower"
    },
    "planread.RAMP-POST-DELOAD-JUMP": {
-    "value": 1466,
+    "value": 863,
     "better": "lower"
    },
    "planread.RAMP-MASTERS-CADENCE": {
@@ -1805,7 +1805,7 @@
     "better": "lower"
    },
    "planread.RAMP-SESSION-OVER-2X-LONGEST": {
-    "value": 211,
+    "value": 196,
     "better": "lower"
    },
    "planread.FOUNDATION-CLIFF": {
@@ -2679,7 +2679,7 @@
     "better": "lower"
    },
    "planread.RAMP-INJURY-OVER-CAP@envelope": {
-    "value": 1,
+    "value": 0,
     "better": "lower"
    },
    "planread.RAMP-POST-DELOAD-JUMP@envelope": {
@@ -2887,11 +2887,11 @@
     "better": "lower"
    },
    "planread.RAMP-INJURY-OVER-CAP@beginnerMarathon": {
-    "value": 13,
+    "value": 0,
     "better": "lower"
    },
    "planread.RAMP-POST-DELOAD-JUMP@beginnerMarathon": {
-    "value": 25,
+    "value": 17,
     "better": "lower"
    },
    "planread.RAMP-MASTERS-CADENCE@beginnerMarathon": {
@@ -3279,11 +3279,11 @@
     "better": "lower"
    },
    "planread.RAMP-INJURY-OVER-CAP": {
-    "value": 14,
+    "value": 0,
     "better": "lower"
    },
    "planread.RAMP-POST-DELOAD-JUMP": {
-    "value": 30,
+    "value": 22,
     "better": "lower"
    },
    "planread.RAMP-MASTERS-CADENCE": {
