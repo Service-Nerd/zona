@@ -23,7 +23,7 @@ import { GENERATION_CONFIG, raceDistanceKey } from '@/lib/plan/generationConfig'
 import { hasInjuryKeyword } from '@/lib/plan/injuryScope'
 import { BENCHMARK_VDOT_MAX } from '@/lib/plan/benchmarkCheck'
 import { RULES } from '@/lib/engine/catalogue/rules'
-import { verifyPlan, PORTED_RULES } from './verifyPlan'
+import { verifyPlan, PORTED_RULES, DELIVERED_ROUNDING_TOLERANCE_PCT } from './verifyPlan'
 import { buildRunnerProfile, factsFromInput } from '@/lib/engine/profile/buildRunnerProfile'
 
 const clone = (p: Plan): Plan => JSON.parse(JSON.stringify(p))
@@ -378,19 +378,21 @@ const EXTRA_MUTATIONS: { name: string; apply: (p: Plan, input: GeneratorInput) =
     }],
     // Batch 13: the delivered-cap injury rules, on a runner given a delivered-cap injury.
     ['a knee injury with a bounce-back above the pre-deload week', (p: Plan, i: GeneratorInput) => {
-      const k = p.weeks.findIndex((w, j) => j >= 2 && (p.weeks[j - 1].type === 'deload') && w.type !== 'deload' && p.weeks[j - 2].type !== 'deload' && w.phase !== 'taper')
+      const dl = (w: Plan['weeks'][number]) => w.type === 'deload' || w.badge === 'deload'
+      const k = p.weeks.findIndex((w, j) => j >= 2 && dl(p.weeks[j - 1]) && !dl(w) && !dl(p.weeks[j - 2]) && w.phase !== 'taper')
       if (k < 2) return false
       i.injury_history = [GENERATION_CONFIG.DELIVERED_CAP_INJURIES[0]]
       p.weeks[k].weekly_km = p.weeks[k - 2].weekly_km + 1; return true
     }],
     ['a knee injury with non-long volume just over the cap', (p: Plan, i: GeneratorInput) => {
-      const k = p.weeks.findIndex((w, j) => j >= 1 && w.type !== 'deload' && p.weeks[j - 1].type !== 'deload' && w.phase !== 'taper' && p.weeks[j - 1].weekly_km > 0)
+      const dl = (w: Plan['weeks'][number]) => w.type === 'deload' || w.badge === 'deload'
+      const k = p.weeks.findIndex((w, j) => j >= 1 && !dl(w) && !dl(p.weeks[j - 1]) && w.phase !== 'taper' && p.weeks[j - 1].weekly_km > 0)
       if (k < 1) return false
       i.injury_history = [GENERATION_CONFIG.DELIVERED_CAP_INJURIES[0]]
       const lk = (w: Plan['weeks'][number]) => { const l = Object.values(w.sessions ?? {}).find(s => s && isLongRun(s)); return sessionKmSelfPaced(l) ?? 0 }
       const before = p.weeks[k - 1].weekly_km - lk(p.weeks[k - 1])
       if (before <= 0) return false
-      const pct = GENERATION_CONFIG.INJURY_WEEKLY_INCREASE_CAP_PCT + 10 + 1
+      const pct = GENERATION_CONFIG.INJURY_WEEKLY_INCREASE_CAP_PCT + DELIVERED_ROUNDING_TOLERANCE_PCT + 1
       const rise = Math.max(before * pct / 100, GENERATION_CONFIG.DELIVERED_ABSOLUTE_FLOOR_KM + 0.5)
       p.weeks[k].weekly_km = Math.round((before + rise + lk(p.weeks[k])) * 10) / 10; return true
     }],
@@ -445,6 +447,13 @@ const EXTRA_MUTATIONS: { name: string; apply: (p: Plan, input: GeneratorInput) =
   } },
 ]
 const hits = new Map<string, number>()
+/** Breakages that sit exactly where a rule must STAY silent, so they change nothing the old checker reports. */
+const SILENT_BY_DESIGN = new Set<string>([
+  'a gated short-distance on-ramp exactly at its (lower) floor',
+  'early onset for a beginner who declared experienced',
+  'a long-run note whose floor is BELOW its peak (no miss)',
+  're-entry WITH a VO2 session, note removed',
+])
 const GOAL_CASE = 'rebuilt as time target with no time, plus a quality session'
 /** Where the race-eve mutation put its over-cap session, so the verifier's day can be checked against it. */
 const raceEveDays = new WeakMap<Plan, string>()
@@ -477,7 +486,7 @@ beforeAll(() => {
 }, 120_000)
 
 function build() {
-  const cases: { label: string; plan: Plan; input: GeneratorInput; asOf: string; planStart: string; extra?: string }[] = []
+  const cases: { label: string; plan: Plan; input: GeneratorInput; asOf: string; planStart: string; extra?: string; base?: string }[] = []
   for (const row of goldenSample({ perGroup: 8 })) {
     tally.rows++
     let o: ReturnType<typeof runEngine>
@@ -524,11 +533,13 @@ function build() {
         }
       } catch { /* the engine refusing this variant is not a comparison */ }
     }
+    let base = ''
+    try { base = validatePlan(o.plan, row.input).map(v => key(v.code, v.week, v.day, v.severity)).sort().join(',') } catch { base = '<threw>' }
     for (const m of EXTRA_MUTATIONS) {
       const p = clone(o.plan)
       const input = JSON.parse(JSON.stringify(row.input)) as GeneratorInput
       if (!m.apply(p, input)) continue
-      cases.push({ label: `${row.id} / ${m.name}`, plan: p, input, asOf: row.asOf, planStart: row.planStart, extra: m.name })
+      cases.push({ label: `${row.id} / ${m.name}`, plan: p, input, asOf: row.asOf, planStart: row.planStart, extra: m.name, base })
     }
   }
   runs = cases.flatMap(c => {
@@ -536,8 +547,13 @@ function build() {
     // Only the OLD checker may be excused: a mutation it cannot read is not a comparison. A verifier throw
     // is not caught here, so it fails the file.
     try { old = validatePlan(c.plan, c.input) } catch { return [] }
-    // A mutation counts as LANDED only once its case is actually compared (code review, batch 8).
-    if (c.extra) hits.set(c.extra, (hits.get(c.extra) ?? 0) + 1)
+    // A mutation LANDS only when it changes what the old checker reports for that plan (code review, batch 13):
+    // being compared is not enough, since a breakage that reaches no rule is compared too. Breakages built to
+    // stay silent at a line (SILENT_BY_DESIGN) land when compared.
+    if (c.extra) {
+      const now = old.map(v => key(v.code, v.week, v.day, v.severity)).sort().join(',')
+      if (SILENT_BY_DESIGN.has(c.extra) || now !== c.base) hits.set(c.extra, (hits.get(c.extra) ?? 0) + 1)
+    }
     return [{ label: c.label,
       old: old.map(v => ({ rule: v.code, k: key(v.code, v.week, v.day, v.severity) })),
       eve: raceEveDays.get(c.plan) ?? null,
@@ -576,8 +592,8 @@ describe('ADR027-B3-VERIFIER — agreement with validatePlan, per ported rule', 
     expect(tally.foundationCapped, 'foundation plans whose input has a weekday limit').toBeGreaterThanOrEqual(2)
   })
 
-  it('every extra mutation landed on a session its rule checks, in at least one plan', () => {
-    for (const m of EXTRA_MUTATIONS) expect(hits.get(m.name) ?? 0, m.name).toBeGreaterThan(0)
+  it('🔴 every extra mutation changed what the old checker reports, in at least one plan', () => {
+    expect(EXTRA_MUTATIONS.filter(m => !(hits.get(m.name) ?? 0)).map(m => m.name)).toEqual([])
     expect(hits.get(GOAL_CASE) ?? 0, GOAL_CASE).toBeGreaterThan(0)
     expect(tally.base + tally.refused + tally.threw.length).toBe(tally.rows)
     expect(tally.threw.length, tally.threw.slice(0, 3).join(', ')).toBeLessThanOrEqual(Math.ceil(tally.rows / 10))

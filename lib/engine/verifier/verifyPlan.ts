@@ -19,7 +19,7 @@ import { V1_SESSION_CATALOGUE } from '@/lib/plan/sessionCatalogueData'
 import { FUELLING_PRACTICE_NOTE, ULTRA_FUELLING_PREFIX } from '@/lib/plan/fuellingNotes'
 import { normaliseDays } from '@/lib/plan/days'
 import { sessionKmSelfPaced } from '@/lib/plan/sessionDistance'
-import { hasInjuryKeyword } from '@/lib/plan/injuryScope'
+import { hasInjuryKeyword, hasDeliveredCapInjury } from '@/lib/plan/injuryScope'
 import { BENCHMARK_VDOT_MAX } from '@/lib/plan/benchmarkCheck'
 
 export type VerifierDay = 'mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat' | 'sun'
@@ -968,11 +968,11 @@ const BATCH_12: Partial<Record<RuleId, Predicate>> = {
 }
 Object.assign(PREDICATES, BATCH_12)
 
-/** §90: an injury on the profile that the delivered-volume caps apply to. */
-const deliveredCapInjury = (profile: RunnerProfile) =>
-  GENERATION_CONFIG.DELIVERED_CAP_INJURIES.some(k => hasInjuryKeyword(profile.injuries?.value ?? [], k))
+/** §90: an injury on the profile that the delivered-volume caps apply to, through the owner (a copied injury
+ *  predicate drifted from its owner for nine days once, INJURY-GUARD-PREDICATE-01). */
+const deliveredCapInjury = (profile: RunnerProfile) => hasDeliveredCapInjury(profile.injuries?.value ?? [])
 /** ⚠️ A literal in validatePlan, not config: copied so the two agree, and raised with the shakeout RPE cap. */
-const DELIVERED_ROUNDING_TOLERANCE_PCT = 10
+export const DELIVERED_ROUNDING_TOLERANCE_PCT = 10
 
 const BATCH_13: Partial<Record<RuleId, Predicate>> = {
   // §2: for a delivered-cap injury, the week after a deload never exceeds the week before the deload.
