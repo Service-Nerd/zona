@@ -6,6 +6,14 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-11-21 — ADR027-B1-CONTRACTS · the strict schema found what the loose one had been letting through
+
+**Dev.** The v2 plan schema extends the v1 Zod objects and is strict at every level, so I could ask a question nothing could answer before: which keys does a stored plan carry? v1 declares 61 meta keys. The type declares 118. A stored plan can carry 144. The extra 26 come from places nobody had listed: 9 keys written only through casts (the inventory said 8 and missed one added that morning), 16 input fields a base-build plan gets because its producer spreads the whole input into meta (including `accept_base_build`, a request flag), and the new stamps. A retired week field is still on 118 of 123 rows, and a Design Board guard forbids any file from declaring it, so the adapter carries it in an opaque bucket instead and the test proves the engine never uses that bucket. The adapter itself is small on purpose: `schema_version`, and stamps lifted out of meta. It round-trips every stored plan and every corpus plan, and dropping one field turns the test red.
+
+**Product.** Two live base-build plans fail today's own schema, on a missing `athlete`. So do 11 other stored rows, for a resting HR of 0, null handles and an old badge value. Nothing had said so, because the v1 schema is only consulted on a fresh save.
+
+**The honest bit.** The cohort grid's rows aren't production-shaped at the input level either: every row sends `primary_metric` and some send `plan_start`, neither of which is an input field. The strict schema refused them on the first run, and the test now strips and names them instead of declaring them. The contract had said 31 input fields for weeks while the type had 33, because the test checked the required count and not the total. It checks both now.
+
 ## 2026-11-21 — ONRAMP-INJURY-CLIMB-01 · the brief cited the version of the rule that had already been withdrawn
 
 **Dev.** The base-build ramp had one curve for everyone, so a knee runner got +10% weeks and a +21% return from every deload. The fix was not a new rule: the race engine already combined §2's 5% cap, the 85% injury deload and the "return to pre-deload, no higher" bounceback correctly. That ceiling now lives in one function in `deloadCadence.ts`, and both the race engine and the ramp call it. Parity came back identical on the race engine once the new meta stamp was excluded, which is the only reason the shared owner was allowed during the freeze.

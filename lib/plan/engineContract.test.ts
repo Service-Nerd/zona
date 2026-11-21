@@ -50,6 +50,22 @@ describe('ENGINE-CONTRACT-01 — the contract matches the engine', () => {
     }
   })
 
+  it('the total and optional field counts are the type\'s, and the contract says them', () => {
+    // ADR027-B1-CONTRACTS: the contract said "31 fields … 25 optional" while the type had
+    // 33 / 27, because the arm above pinned the REQUIRED count only. A count with no check drifts.
+    const i = TYPES.indexOf('export interface GeneratorInput')
+    const open = TYPES.indexOf('{', i)
+    let depth = 0, end = open
+    for (let k = open; k < TYPES.length; k++) {
+      if (TYPES[k] === '{') depth++
+      else if (TYPES[k] === '}') { depth--; if (depth === 0) { end = k; break } }
+    }
+    const fields = Array.from(TYPES.slice(open, end).matchAll(/^ {2}([a-z_][a-zA-Z_0-9]*)(\??):/gm))
+    const optional = fields.filter(m => m[2] === '?').length
+    expect(CONTRACT).toContain(`## Input — \`GeneratorInput\`, ${fields.length} fields`)
+    expect(CONTRACT).toContain(`**${optional} optional.**`)
+  })
+
   it('every designed-refusal name in the code appears in the contract table', () => {
     // The contract's most load-bearing claim: these FOUR are the engine working, and a
     // service must not map them to 500. A fifth added in code and not here would be

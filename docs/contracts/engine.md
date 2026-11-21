@@ -10,6 +10,11 @@
 >
 > 🔑 **Writing it found a defect before any code moved** — `PARITY-NO-BENCHMARK-01`, below.
 > That is the second time in this repo that writing a contract surfaced one.
+>
+> 🧭 **TWO VERSIONS, ONE CONTRACT (ADR-027, 2026-11-21).** Every section from *The call* to *What
+> this contract does NOT cover* is **v1: the engine as it runs today**. **§ v2** at the end is the
+> service contract ADR-027 builds towards; its types are in `lib/engine/contracts/`. Nothing calls
+> v2 yet, and v1 stays true until a plan kind is cut over (B4).
 
 ---
 
@@ -29,7 +34,7 @@ generateRulePlan(
 
 ---
 
-## Input — `GeneratorInput`, 31 fields
+## Input — `GeneratorInput`, 33 fields
 
 **6 required**, and the engine cannot run without them:
 
@@ -52,7 +57,7 @@ with a lie in front of it.** 16 of 56 live runners carry no age.
 arm declines, and §3's masters cadence resolves to the cautious side. §55 still rejects a PRESENT
 age outside 13–90 — absent became valid, nonsense did not.
 
-**25 optional.** Full list and semantics in `types/plan.ts`; it is the source and this contract
+**27 optional.** Full list and semantics in `types/plan.ts`; it is the source and this contract
 does not restate it, because a second copy is how `deloadCadence` started.
 
 ⚠️ **Two traps in the optional set, both already paid for:**
@@ -123,8 +128,10 @@ machine-checking the arithmetic.
 
 ## `tier` — the engine reads it, the caller decides it
 
-`'free' | 'trial' | 'paid'`, read in 28 places, gating which catalogue rows are selectable
-(`tier !== 'free' || row.is_free_tier`).
+`'free' | 'trial' | 'paid'`. `tier` appears 16 times in `ruleEngine.ts` code (comments stripped, re-counted
+2026-11-21; this line said "28 places" with no method), and the catalogue gate
+(`tier !== 'free' || row.is_free_tier`) decides which rows are selectable: 4 of 31 catalogue rows are
+paid-only.
 
 ⚠️ **Resolving the tier is NOT the engine's job and must not move inside it.** ADR-003 makes
 the API route the auth boundary, and `lib/trial.ts → resolveTier` is the single owner of the
@@ -154,6 +161,7 @@ the first thing this signature cannot express.
 | **2b · `ADJUST-ENGINE-ENTRY-01`** — the same, for the adaptive engine | ✅ `2026-10-15`. **14 → 5** (`adjust-plan` 601 → 438 lines) |
 | **3 · `ENGINE-CONTRACT-01`** — this document | ✅ `cc1d11b9`, 7 arms, 5 falsified |
 | *(found en route)* **`PARITY-NO-BENCHMARK-01`** | ✅ `58135cf9`. Grid 6,066 → 6,102 |
+| **ADR-027 B1 · `ADR027-B1-CONTRACTS`** — the v2 contract, types, v1↔v2 adapter, read model | ✅ 2026-11-21. See § v2 |
 
 **Nothing a runner sees has changed.** Proven twice by `verify:parity`.
 
@@ -250,3 +258,209 @@ Named so the work is visible rather than discovered later:
 `enrich` (the AI layer, ADR-006 — silent fallback by design), persistence, and the
 `waitUntil` background chain. Those are the **caller's**, and `ENGINE-PURITY-GATE-01` exists
 to keep them there.
+
+---
+
+## v2: the engine as a service (ADR-027, B1)
+
+**Status (2026-11-21, `ADR027-B1-CONTRACTS`):** contract written; types and schemas in
+`lib/engine/contracts/`; the v1↔v2 plan adapter and the plan read model exist. **No producer and no
+consumer uses them yet.** `runEngine` stays the entry (ADR-027 v1.1 § Reuse) and every v1 section above
+is still what runs. The engine's prescription code is frozen; nothing here changes what a plan contains.
+
+| File | Owns |
+|---|---|
+| `lib/engine/contracts/result.ts` | operations, the `plans.create` request, `EngineResult`, refusal codes, HTTP mapping |
+| `lib/engine/contracts/profile.ts` | `RunnerProfile`, `WeekCapacity` (types only; L1 builds them in B2) |
+| `lib/engine/contracts/rule.ts` | `Rule` (Zod, strict), `resolveRuleConfigKey` |
+| `lib/engine/contracts/decision.ts` | `Decision`, `Lever`, `Finding` (Zod), `findingFromViolation` |
+| `lib/engine/contracts/planV2.ts` | Plan v2 (strict Zod), built by extending `lib/plan/schema.ts` |
+| `lib/engine/contracts/planV1V2.ts` | `toV2`, `toV1`, `parsePlanV2` |
+| `lib/engine/readModel.ts` | typed plan accessors (ARCH-ENG-010) |
+
+`lib/engine` is inside `ENGINE-PURITY-GATE-01`'s population: it may not import `next/`, `react`,
+`@/app/`, `@/components/` or `@supabase/`.
+
+### Operations
+
+| Operation | Today's function | v2 response |
+|---|---|---|
+| `plans.create` | `runEngine` | `EngineResult` (below) |
+| `plans.adapt` | `runAdjustmentEngine` | a proposed plan, its diff and its ADR-012 magnitude; the app decides whether to auto-apply or confirm |
+| `checkpoint.evaluate` | `evaluateCheckpoint` | `EngineResult`; the two checkpoint refusals are codes |
+| `strength.create` | `generateStrengthPlan` (`packages/strength`) | `EngineResult` over a strength plan (B6) |
+
+Only `plans.create` has a request schema in B1 (`PlansCreateRequestSchema`). The other three get theirs in
+the B-phase that serves them (B4 adapt, B6 strength); their shape is fixed here so it is not invented then.
+
+### Request (`plans.create`)
+
+```ts
+{
+  operation: 'plans.create',
+  as_of: 'YYYY-MM-DD',          // REQUIRED. The date the request is evaluated at (ARCH-ENG-005)
+  engine_version?: string,      // pin; an unserved version is invalid_input on `engine_version`
+  input: GeneratorInput,        // strict: the 33 fields, nothing else
+  options: {
+    plan_start?: 'YYYY-MM-DD',  // default: the Monday after as_of
+    accept_base_build?: boolean,
+    acknowledged_days_warning?: boolean,
+    display_units: 'km' | 'mi', // ADR-015: the caller reads the runner's units
+  },
+}
+```
+
+- **No `tier`.** The engine is tier-blind in v2 (ADR-027 v1.1, ADR-003). ⚠️ Today it is not: it takes
+  `tier`, and 4 of 31 catalogue rows are paid-only. The HLD measured 0 output differences in 300 plans; that
+  is a sample, not a proof, and removing the argument is a B4 cut-over decision measured on the scorecard.
+- `input` becomes a `RunnerProfile` in L1 (B2). Today the same facts come from `resolveLevels`, `vdotFor`,
+  `effectiveStartKm`, `effectiveBaseline`, `recommendFitnessLevel` and `validatePrepTime`.
+- `plan_start` and `acknowledged_days_warning` are **options, not input fields**. Today
+  `acknowledged_days_warning` lives on `inputs.ts`'s internal type, and `plan_start` appears inside
+  `meta.generator_input` on 29 of 123 stored rows and inside some `cohortGrid` rows.
+
+### Response: a typed result, never a throw (ARCH-ENG-006)
+
+| Variant | Fields |
+|---|---|
+| ok | `{ ok: true, plan: PlanV2, decisions: Decision[], findings: Finding[], stamps }`. `findings` holds `warn` only: a plan with an `error` finding never leaves the service |
+| refused | `{ ok: false, refused: true, code, reason, levers: Lever[], offer?, requires_acknowledgment? }`. `reason` is runner-facing display copy and is never matched; `offer` is §118's get-running or staged plan, so no refusal is a dead end |
+| invalid input | `{ ok: false, invalid_input: true, field, why }` |
+
+An **engine fault** is not a result. It is a 500, and it emits a finding `engine_fault` carrying the
+input hash.
+
+### Refusal codes
+
+| Today | v2 `code` | § | Levers |
+|---|---|---|---|
+| `PrepTimeError` | `prep_time` | §44 | `race_date` later; `acknowledged_prep_warning` on the warn tier |
+| `DaysAvailableError` | `days_available` | §52 | `days_available` increase; `acknowledged_days_warning` on the warn tier |
+| `BaseVolumeError` | `base_volume` | §111 | `accept_base_build`; `race_date` later; `current_weekly_km` |
+| `LongRunReadinessError` | `long_run_readiness` | §113 | `accept_base_build`; `longest_recent_run_km` |
+| `evaluateCheckpoint` → `reason: 'checkpoint_no_base_build'` (409) | `checkpoint_no_base_build` | §116 Am. 9 | none: the stored plan is not a base build |
+| `evaluateCheckpoint` → `reason: 'checkpoint_no_runs'` | `checkpoint_no_runs` | §116 Am. 9 | connect a health source; a later race |
+| `InputFieldError` | not a refusal: `invalid_input`, `field` = `InputFieldError.field` | §55 | |
+
+`REFUSAL_CODE_BY_ERROR_NAME` in `result.ts` is the map; `contracts.test.ts` fails if it stops covering
+exactly `DESIGNED_REFUSAL_ERROR_NAMES`, or if a code there is missing from this table.
+
+### HTTP mapping
+
+| Result | Status |
+|---|---|
+| ok | 200 |
+| refused | 422 (`checkpoint_no_base_build`: 409, a state conflict, as today) |
+| invalid input | 400 |
+| engine fault | 500 + an `engine_fault` finding |
+
+⚠️ **400 for invalid input is a change, and it applies to the v2 endpoint only.** Today's
+`/api/generate-plan` answers 422 for `InputFieldError` and keeps doing so; the client renders that 422.
+Nothing moves until B7 puts the route behind the v2 contract.
+
+### Versioning: four stamps on every plan the v2 engine builds
+
+| Stamp | Meaning |
+|---|---|
+| `engine_version` | the planner build that made the plan |
+| `rules_version` | a hash of the L2 rule catalogue (B3). The nightly verifier uses it to tell *"defect at creation"* from *"a rule changed since"*, so a doctrine change never reads as a regression |
+| `as_of` | the request's evaluation date |
+| `input_hash` | a hash of the validated request: `input`, `options` and `as_of` |
+
+In Plan v2 they are the top-level `stamps`. Inside a v1 `plan_json` they travel as `meta.engine_stamps`, so
+a v2-built plan stored through `savePlanForUser` keeps them. **A plan the current engine built has no
+stamps**: `toV2` writes no `stamps` key and `planStamps(plan).engine` is `null`. Today's provenance fields
+(`generated_at`, `generator_version`, `tier`, `enrichment`) are unchanged and read through the same accessor.
+
+### Determinism (ARCH-ENG-005)
+
+**Rule:** the same request, `as_of` included, returns the same plan apart from stamps. The engine reads no
+wall clock.
+
+**Today it does, in 16 places.** Measured 2026-11-21 over non-test `lib/plan`, `lib/engine`,
+`packages/strength` and `lib/coaching/adjustmentEngine.ts`, comments stripped, pattern
+`new Date()` / `Date.now()`. They are the known violations, held by a ratchet
+(`lib/engine/contracts/determinism.test.ts`): a new one fails the build, a removed one must lower the baseline.
+
+| Site | Kind | Note |
+|---|---|---|
+| `ruleEngine.ts` `vdotFor` → `applyVdotDiscount(…, new Date())` | **hard** | the § The clock leak above |
+| `ruleEngine.ts` `applyRecalibration` → `applyVdotDiscount(…, new Date())` | **hard** | the same leak on the recalibration path |
+| `weekResolution.ts` `getCurrentWeek` | **hard** | read side, not generation |
+| `ruleEngine.ts` `buildRulePlanOnce` `todayOverride ?? new Date()` | default | pinned when the caller passes `today` |
+| `engine.ts` `runEngine` `req.today ?? new Date()` | default | |
+| `length.ts` `nextMonday(from = new Date())` | default | `planStart` defaults through it |
+| `inputs.ts` `assertPlausibleBenchmark(today = new Date())`, `benchmarkCheck.ts`, `hrSaveResolution.ts`, `supersede.ts`, `slowGoalGrid.ts` | default | one each |
+| `adjustmentEngine.ts` `req.now ?? new Date()` | default | twice |
+| `ruleEngine.ts` `generated_at`, `baseBuildOnRamp.ts` `last_updated`, `taperRecalibration.ts` `taper_recalibrated_at` | stamp | a timestamp written into the plan |
+
+A *default* is a hard read wherever a caller omits the argument; the only production caller of `runEngine`
+omits `today`.
+
+⚠️ **This does not contradict § The clock's "must not be fixed".** That section forbids changing what the
+staleness ramp measures (how long ago the runner actually ran). ARCH-ENG-005 keeps the measure and moves
+the read: in production `as_of` is today's date, so the price is the same, and it becomes an argument a
+support reproduction can pin. Not built in B1 (the engine is frozen); it belongs to L1 in B2.
+
+### Plan v2
+
+`PlanV2Schema` is **strict at every level**: top, meta, `generator_input`, week, session, phase, pre-plan
+(the one opening is `v1_carry`, below).
+It extends the v1 Zod objects rather than being a third schema, and `planV2.test.ts` fails if any field of
+`PlanMeta`, `Session`, `Week`, `RaceResult` or `GeneratorInput` in `types/plan.ts` is not declared.
+
+| | v1 Zod | TS type | v2 |
+|---|---|---|---|
+| meta keys | 61 | 118 | **144** |
+| session keys | 24 | 28 | 28 |
+| week keys | 18 | 18 | 18 (`badge` widened; see below) |
+| `GeneratorInput` | none | 33 | 33 (+ `plan_start`, `acknowledged_days_warning` on the stored copy) |
+
+The 83 meta keys v2 adds: **57** on `PlanMeta` but missing from `PlanMetaSchema`; **9** written only through
+casts (the inventory counted 8 and missed `onramp_profile`, added 2026-11-21); **16** `GeneratorInput` keys
+that `generateBaseBuildPlan`'s `...input` spread puts into a base-build plan's meta (one is
+`accept_base_build`, a request-body field); and `engine_stamps`.
+
+**Stored values v1's schema rejects, declared because they are stored** (production, 2026-11-21): `athlete`
+absent on 2 live base-build plans; `handle`/`charity` `null` on 3 rows; `resting_hr: 0` on 7 archive rows
+(the read model's `restingHr` returns null for it); `badge: 'key_session'` on 2 weeks of 1 archive row. 13 of 123
+stored rows fail v1 `PlanSchema` today (2 + 1 live, 7 + 2 + 1 archive), each for exactly one of these;
+123 of 123 parse as v2.
+
+**One stored field is carried, not declared.** `week.race_notes` is on one week of 118 of 123 stored rows,
+and RACE-NOTES-INERT-01 (Design Board, 2026-11-16) is held by `raceNotesRetired.test.ts`, which fails if any
+file declares or reads it. So v2 does not declare it: `toV2` moves any week key v2 does not declare into the
+opaque top-level `v1_carry`, and `toV1` puts it back. `carriedWeekKeys(plan)` names what was carried
+(production: `race_notes` and nothing else), and `planV1V2.test.ts` asserts the engine's own plans carry
+nothing, so a producer cannot hide a new field there.
+
+**The adapter** (`planV1V2.ts`) is lossless and pure: v2 adds `schema_version: 2`, lifts
+`meta.engine_stamps` to `stamps`, and carries undeclared week keys in `v1_carry`. Neither function parses; `parsePlanV2` validates separately, so *"the
+adapter lost a field"* and *"the plan is not valid v2"* are different failures.
+
+**The read model** (`readModel.ts`): `metaNotes` (the 16 `*_note` fields), `loadResidual` (the gate
+`planRationaleNotes` applies), `planStamps`, `generatorInput`, `planKind`, `baseBuildFacts` (the keys read
+through casts today), `restingHr`, `asPlanV2`. Each takes a v1 or a v2 plan. No consumer is migrated yet
+(B4/B5); the gate that bans raw `plan.meta.<key>` reads lands with that migration.
+
+### What stays outside the service
+
+- **Tier resolution and auth** (ADR-003): `resolveTier` at the route. The distance paywall is a commercial
+  403 at the route.
+- **Persistence**: `savePlanForUser`, `plan_archive`, `supersedeWeekKeyedRows`.
+- **Enrichment** (ADR-006, L6): an async job the route calls after the synchronous rule plan is returned.
+  `generateFreeIntro` and `enrich` call Anthropic and stay the caller's; their output is re-verified.
+- **IO the engine needs**: the route reads the stored plan and `fetchWeeklyLoad` for `checkpoint.evaluate`
+  and hands them in.
+- **Recording telemetry**: the engine returns events and findings; the caller writes `ops_events`.
+
+### What § v2 does not prove
+
+- Nothing serves it. The request schema, result union and HTTP mapping are unexercised by any route.
+- `RunnerProfile`, `WeekCapacity`, `Rule` and `Decision` have no producer. Their shapes will be tested by
+  the B-phase that produces them, and may need to change then.
+- Plan v2's `derived_set.blocks` is checked as an array only; ADR-019's step shape is not schema-checked.
+- `v1_carry` admits any undeclared week key on the adapter path. Only the corpus assertion stops a producer
+  using it, and a cast-only week field written by a path the corpus does not reach would be carried silently.
+- The stored-plan round trip ran once, read-only, on 2026-11-21 (43 live + 80 archive). It cannot run in CI;
+  a plan stored after that date is covered only by the key-set gate and the corpus test.

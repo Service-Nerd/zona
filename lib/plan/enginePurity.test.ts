@@ -28,7 +28,9 @@ import BASELINE from './__fixtures__/enginePurityBaseline.json'
  * count may only fall; a new offender fails the build.
  */
 
-const ENGINE_DIRS = ['lib/plan', 'lib/coaching']
+// `lib/engine` (ADR-027 B1): the v2 contracts and the plan read model. Same boundary —
+// the read model is what screens will import, so it must not import a screen.
+const ENGINE_DIRS = ['lib/plan', 'lib/coaching', 'lib/engine']
 
 /** What the engine may not reach for, and why each one matters once it is a service. */
 const FORBIDDEN: ReadonlyArray<{ pattern: RegExp; what: string; why: string }> = [
@@ -90,6 +92,8 @@ describe('ENGINE-PURITY-GATE-01 — the engine may not import the app', () => {
     // the engine's own heart must be in the set, or the gate is pointed at the wrong place
     expect(FILES).toContain('lib/plan/ruleEngine.ts')
     expect(FILES).toContain('lib/plan/invariants.ts')
+    expect(FILES).toContain('lib/engine/contracts/planV2.ts')
+    expect(FILES).toContain('lib/engine/readModel.ts')
   })
 
   it('the matcher finds a real import and ignores prose', () => {
