@@ -5,8 +5,8 @@
 // `lib/engine` is inside ENGINE-PURITY-GATE-01. It reads; it decides nothing. What the rows MEAN
 // (windows, dedupe, validity) is L1's pure `aggregateObserved`, so it can be tested without a database.
 //
-// ⚠️ NOT CALLED BY ANY ROUTE YET. Route adoption is B2b (`ADR027-B2B-PROFILE-ADOPTION`). Until then
-// `runEngine` builds facts from the request alone.
+// Called by `/api/generate-plan` (B2b part 1, 2026-11-21), which hands the result to `runEngine`
+// under a timeout and falls back to the request alone on an error or a stall.
 //
 // ⚠️ A QUERY ERROR IS NOT AN EMPTY HISTORY. Returning empty aggregates on an error would read as
 // "this runner has run nothing", the §68 Am.1 failure; it throws, as `fetchWeeklyLoad` does.
@@ -18,6 +18,11 @@ import type { RunnerFacts, SettingsFacts } from '@/lib/engine/contracts/facts'
 import { resolveAsOf } from '@/lib/engine/profile/asOf'
 import { aggregateObserved, OBSERVED_WINDOW_DAYS, type ObservedRows } from '@/lib/engine/profile/observed'
 import { parseDateLocal, formatDate, addDays } from '@/lib/plan/length'
+
+/** ADR027-B2B-PROFILE — how long a route waits for this read before building from the request
+ *  alone. The facts are carried and read by no planner until B4, so this bounds a cost, not a
+ *  coaching input. Lives here, not in the route: a Next.js route file may export only handlers. */
+export const RUNNER_FACTS_TIMEOUT_MS = 2500
 
 /** The supabase-js query builder, structurally. Same shape `fetchWeeklyLoad` takes. */
 type Db = { from: (t: string) => any }

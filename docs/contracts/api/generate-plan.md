@@ -574,8 +574,11 @@ to `runEngine` as `facts`, and `as_of` is resolved in the runner's timezone (ARC
 - **Carried, not prescribed from.** No planner reads the profile's settings or observed blocks until B4
   (`STARTVOL-OBSERVED-01`), so the plan is identical with or without them. Route arm J3 proves it, and fails if the
   engine starts prescribing from stored heart rate.
-- **A failed read never blocks a plan.** The route records `runner_facts_unavailable` (message only, truncated) and
-  builds from the request alone, exactly as before.
+- **A failed or stalled read never blocks a plan.** The read is raced against `RUNNER_FACTS_TIMEOUT_MS` (2,500 ms,
+  `lib/supabase/fetchRunnerFacts.ts`). On an error or a timeout the route records `runner_facts_unavailable`
+  (message only, truncated) and builds from the request alone, exactly as before. Route arms J2 and J4.
+- One clock: the instant the facts are read at is passed to `runEngine` as `clock`, so the observed windows and the
+  profile's `as_of` describe the same moment.
 - Request and response shapes are unchanged.
 
 ### Plan start

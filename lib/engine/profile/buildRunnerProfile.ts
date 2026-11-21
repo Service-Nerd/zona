@@ -228,8 +228,8 @@ function daysInclusive(from: IsoDate, to: IsoDate): number {
   return calendarDaysBetween(from, to) + 1
 }
 
-/** The facts the request alone carries: no settings, no observed block. The `runEngine` path until
- *  the route adopts the fetcher (B2b). */
+/** The facts the request alone carries: no settings, no observed block. `runEngine`'s fallback when
+ *  the route hands it no facts (a test, a script, or a failed or timed-out read). */
 export function factsFromInput(input: GeneratorInput): RunnerFacts {
   return { facts_version: 1, input, settings: null, observed: null }
 }

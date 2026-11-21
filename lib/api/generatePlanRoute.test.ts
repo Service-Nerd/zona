@@ -79,6 +79,8 @@ const S = vi.hoisted(() => ({
   /** GENERATE-500-NO-TRACE-01 — a table whose reads THROW, to drive the route into its
    *  real outer catch. A fault in the I/O, not a fiction about the engine. */
   crashTable: null as string | null,
+  /** A table whose reads never settle, for the facts-timeout arm. */
+  stallTable: null as string | null,
   /** ADR027-B0-PROD-FINDINGS — every `recordPlanFindings` the route started. It runs AFTER the
    *  response by design, so each test drains these before the store is reset for the next one;
    *  otherwise a late `plan_findings` row lands in the NEXT test's `ops_events`. */
@@ -113,7 +115,7 @@ function fakeTable(name: string) {
   // NO-RUNNER-TURNED-AWAY-01 — `fetchWeeklyLoad` (the checkpoint's read) narrows with `gte`/`lt` on an ISO date and
   // `is(col, null)` on `superseded_at`. Ranges compare as strings, which is correct for ISO-8601 at one offset; `is`
   // treats an absent column as null, as PostgREST would for a nullable one.
-  const ranges: [string, 'gte' | 'lt', string][] = []
+  const ranges: [string, 'gte' | 'lt' | 'lte', string][] = []
   const nulls: string[] = []
   // ADR027-B2B-PROFILE — `fetchRunnerFacts` narrows with `lte` and two `or()` disjunctions. STRICT, like the
   // adjust-plan double: only `col.eq.<v>` and `col.gt.<n>` terms are understood, and anything else THROWS, so a
@@ -124,7 +126,7 @@ function fakeTable(name: string) {
   const matching = () => {
     const hit = rows().filter(r =>
       filters.every(([c, v]) => r[c] === v)
-      && ranges.every(([c, op, v]) => op === 'gte' ? String(r[c]) >= v : String(r[c]) < v)
+      && ranges.every(([c, op, v]) => op === 'gte' ? String(r[c]) >= v : op === 'lte' ? String(r[c]) <= v : String(r[c]) < v)
       && nulls.every(c => r[c] == null)
       && ors.every(f => f(r)))
     for (const [c, asc] of [...sorts].reverse()) {
@@ -150,7 +152,7 @@ function fakeTable(name: string) {
     eq: (c: string, v: unknown) => { filters.push([c, v]); return api },
     gte: (c: string, v: string) => { ranges.push([c, 'gte', v]); return api },
     lt: (c: string, v: string) => { ranges.push([c, 'lt', v]); return api },
-    lte: (c: string, v: string) => { ors.push(r => String(r[c]) <= v); return api },
+    lte: (c: string, v: string) => { ranges.push([c, 'lte', v]); return api },
     or: (expr: string) => {
       const terms = expr.split(',').map(t => {
         const m = /^(\w+)\.(eq|gt)\.(.+)$/.exec(t)
@@ -179,7 +181,7 @@ function fakeTable(name: string) {
       return Promise.resolve({ ...r, data: d?.[0] ?? null })
     },
     then: (res: (v: unknown) => unknown, rej?: (e: unknown) => unknown) =>
-      Promise.resolve(result()).then(res, rej),
+      S.stallTable === name ? new Promise(() => {}) : Promise.resolve(result()).then(res, rej),
   }
   return api
 }
@@ -286,6 +288,7 @@ beforeEach(() => {
   S.store.ops_events = []
   S.user = { id: UID }
   S.crashTable = null
+  S.stallTable = null
   S.freeIntro = null
   S.gate = null
   S.enrichSaw = []
@@ -882,8 +885,24 @@ describe('J — ADR027-B2B-PROFILE part 1: the runner\'s stored facts reach the 
     expect(S.engineReqs.at(-1)?.facts, 'no facts means the request alone').toBeUndefined()
   })
 
+  it('🔴 J4 — a facts read that STALLS times out, is recorded, and the runner still gets a plan', async () => {
+    const { RUNNER_FACTS_TIMEOUT_MS } = await import('@/lib/supabase/fetchRunnerFacts')
+    S.stallTable = 'health_daily_samples'
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] })
+    try {
+      const pending = post(body())
+      await vi.advanceTimersByTimeAsync(RUNNER_FACTS_TIMEOUT_MS + 10)
+      const res = await pending
+      expect(res.status).toBe(200)
+      expect(await planOf(res)).toBeTruthy()
+    } finally { vi.useRealTimers() }
+    expect(events()).toContain('runner_facts_unavailable')
+    expect(String(eventDetail('runner_facts_unavailable')?.message)).toMatch(/timed out/)
+  })
+
   it('🔴 J3 — the plan is identical with and without the facts (carried, not prescribed from: STARTVOL-OBSERVED-01)', async () => {
-    S.store.user_settings[0].timezone = 'Europe/London'
+    // UTC+14, so the runner's `as_of` is a different date from the server's for most of the day.
+    S.store.user_settings[0].timezone = 'Pacific/Kiritimati'
     S.store.user_settings[0].resting_hr = 44
     S.store.user_settings[0].max_hr = 201
     S.store.strava_activities = Array.from({ length: 6 }, (_, i) => ({ user_id: UID,

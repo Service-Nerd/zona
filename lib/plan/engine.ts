@@ -305,6 +305,9 @@ export interface EngineRequest {
    *  as before. ⚠️ CARRIED, NOT PRESCRIBED FROM: the profile's settings and observed blocks are read by
    *  no planner until B4 (coaching ruling STARTVOL-OBSERVED-01), so this changes no plan. */
   facts?: RunnerFacts
+  /** The instant the route read the facts at, so the observed windows and the profile's `as_of`
+   *  describe the same moment. Defaults to the wall clock. */
+  clock?: Date
 }
 
 /**
@@ -322,14 +325,14 @@ export function runEngine(req: EngineRequest): EngineOutcome {
   const { input, tier, displayUnits } = req
   // ONE clock read (it was two: `nextMonday()` and `new Date()`), so a request straddling midnight
   // cannot default its plan start and its `today` from different days.
-  const clock = new Date()
+  const clock = req.clock ?? new Date()
   const planStart = req.planStart ?? formatDate(nextMonday(clock))
   const today = req.today ?? formatDate(clock)
 
   // ADR027-B2-PROFILE — L1's profile, built ONCE, and the facts this function used to derive
-  // inline (levels, effective start km, both weeks-to-race counters) are read from it. Built from
-  // the request alone (`factsFromInput`): the route does not fetch facts yet (B2b), and the engine
-  // still prescribes from the request either way.
+  // inline (levels, effective start km, both weeks-to-race counters) are read from it. Since B2b the
+  // route hands in the runner's stored facts; without them it is the request alone. The engine
+  // prescribes from the request either way until B4.
   // ⚠️ `asOf: clock`, NOT `today`: the refusal telemetry this replaces measured §10's staleness ramp
   // and `weeksUntilRaceSigned` to the wall clock even when a caller pinned `today`, and B2a changes no
   // output. In production `today` is unpinned, so the two are the same date.

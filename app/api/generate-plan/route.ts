@@ -21,7 +21,7 @@ import { getUserTier } from '@/lib/trial'
 // engine would not apply Zonna's price list. Collapsing those would drag the AI
 // layer and persistence inside the engine, which `ENGINE-PURITY-GATE-01` forbids.
 import { runEngine, evaluateCheckpoint, isBaseBuildPlan, type EngineOutcome } from '@/lib/plan/engine'
-import { fetchRunnerFacts } from '@/lib/supabase/fetchRunnerFacts'
+import { fetchRunnerFacts, RUNNER_FACTS_TIMEOUT_MS } from '@/lib/supabase/fetchRunnerFacts'
 import type { RunnerFacts } from '@/lib/engine/contracts/facts'
 import { canGenerateDistance } from '@/lib/plan/canUseFeature'
 import { enrich, type EnrichOutcome } from '@/lib/plan/enrich'
@@ -283,18 +283,27 @@ export async function POST(req: NextRequest) {
     // failed read is recorded and the plan is built from the request alone, as it always was: these
     // facts are carried by the profile and prescribed from by nothing until B4, so a read error must
     // never be the reason a runner gets no plan.
+    // A STALL is treated as a failure (code review 2026-11-21): six round-trips awaited with no bound
+    // could otherwise run the function out of time, which is a runner with no plan over unused data.
     let facts: RunnerFacts | undefined
+    const clock = new Date()
     try {
       const { createClient } = await import('@supabase/supabase-js')
       const svc = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
-      facts = await fetchRunnerFacts(svc, user.id, input, new Date())
+      let timer: ReturnType<typeof setTimeout> | undefined
+      const stall = new Promise<never>((_, reject) => {
+        timer = setTimeout(() => reject(new Error(`timed out after ${RUNNER_FACTS_TIMEOUT_MS} ms`)), RUNNER_FACTS_TIMEOUT_MS)
+      })
+      try {
+        facts = await Promise.race([fetchRunnerFacts(svc, user.id, input, clock), stall])
+      } finally { clearTimeout(timer) }
     } catch (err) {
       await recordOpsEvent('runner_facts_unavailable',
         { message: (err instanceof Error ? err.message : String(err)).slice(0, 200) }, user.id)
     }
 
     stage = 'engine'
-    const outcome: EngineOutcome = runEngine({ input, tier, acceptBaseBuild, displayUnits, facts })
+    const outcome: EngineOutcome = runEngine({ input, tier, acceptBaseBuild, displayUnits, facts, clock })
     stage = 'respond'
 
     if (outcome.kind === 'refusal') {
