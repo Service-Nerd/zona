@@ -118,7 +118,10 @@ const EXTRA_MUTATIONS: { name: string; apply: (p: Plan, input: GeneratorInput) =
       p.meta.prep_time_status = 'warned'; p.meta.prep_time_warning = 'tight'; delete p.meta.prep_time_alternatives; return true
     }],
     ['warned plan reading demanding', (p: Plan) => { p.meta.prep_time_status = 'warned'; p.meta.difficulty_band = 'demanding'; return true }],
-    ['constrained plan reading comfortable', (p: Plan) => { p.meta.compression_classification = 'constrained_by_inputs'; p.meta.difficulty_band = 'comfortable'; return true }],
+    // Short of target too, so COMPRESSION-CLASSIFICATION's ordered checks reach the third on every plan.
+    ['constrained plan reading comfortable', (p: Plan) => {
+      p.meta.compression_classification = 'constrained_by_inputs'; p.meta.difficulty_band = 'comfortable'; p.meta.time_compressed = true; return true
+    }],
     ...(['long_run_shortfall_note', 'peak_shortfall_note', 'volume_shortfall_note'] as const).map(note =>
       [`${note} declared, reading comfortable`, (p: Plan) => {
         for (const k of ['long_run_shortfall_note', 'peak_shortfall_note', 'volume_shortfall_note'] as const) delete p.meta[k]
@@ -128,7 +131,11 @@ const EXTRA_MUTATIONS: { name: string; apply: (p: Plan, input: GeneratorInput) =
     // Batch 8: the plan's declarations about its own limits.
     ['no compression class', (p: Plan) => { delete p.meta.compression_classification; return true }],
     ['optimal class on a compressed plan', (p: Plan) => { p.meta.compression_classification = 'optimal'; p.meta.time_compressed = true; return true }],
-    ['split flags missing', (p: Plan) => { delete p.meta.time_compressed; return true }],
+    ['split flags missing (time)', (p: Plan) => { delete p.meta.time_compressed; return true }],
+    ['split flags missing (volume)', (p: Plan) => { delete p.meta.volume_constrained; return true }],
+    ['a non-optimal class on a plan that reached its target', (p: Plan) => {
+      p.meta.compression_classification = 'constrained_by_inputs'; p.meta.time_compressed = false; p.meta.volume_constrained = false; return true
+    }],
     ['compressed disagreeing with the split', (p: Plan) => {
       p.meta.time_compressed = false; p.meta.volume_constrained = false; p.meta.compressed = true; return true
     }],
@@ -137,6 +144,8 @@ const EXTRA_MUTATIONS: { name: string; apply: (p: Plan, input: GeneratorInput) =
       p.meta.uncovered_runway_weeks = GENERATION_CONFIG.FOUNDATION_UNCOVERED_WEEKS_NOTE_THRESHOLD; delete p.meta.uncovered_runway_note; return true
     }],
     ['floor-held weeks at the line, undeclared', (p: Plan) => {
+      // Clear any existing holds first, so the count is EXACTLY the line on every plan.
+      for (const w of p.weeks) for (const s of Object.values(w.sessions ?? {})) if (s) delete s.floor_protected
       const weeks = p.weeks.filter(w => Object.values(w.sessions ?? {}).some(s => s?.type === 'easy'))
       if (weeks.length < GENERATION_CONFIG.EASY_RUN_FLOOR_PROTECTION_MAINTENANCE_WEEKS) return false
       for (const w of weeks.slice(0, GENERATION_CONFIG.EASY_RUN_FLOOR_PROTECTION_MAINTENANCE_WEEKS)) {
@@ -157,12 +166,31 @@ const EXTRA_MUTATIONS: { name: string; apply: (p: Plan, input: GeneratorInput) =
     }],
   ] as const).map(([name, f]) => ({ name, apply: (p: Plan) => f(p) })),
   ...([
-    ['a binding weekday cap with its cost, no shortfall note', (p: Plan, i: GeneratorInput) => {
+    // §40c's two lines at once: runs pinned at `cap - 1` (the tolerance), and EXACTLY the pinned share of
+    // weekday easy runs pinned, the rest well under. Returns whether it changed a run.
+    ['a weekday cap binding at exactly its share and tolerance, no shortfall note', (p: Plan, i: GeneratorInput) => {
       if (!i.max_weekday_mins) return false
-      for (const w of p.weeks) for (const d of ['mon', 'tue', 'wed', 'thu', 'fri'] as const) {
-        const s = w.sessions?.[d]; if (s?.type === 'easy') s.duration_mins = i.day_budgets?.[d] ?? i.max_weekday_mins
+      const runs: { s: Session; cap: number }[] = []
+      for (const w of p.weeks.filter(x => x.type !== 'deload' && x.type !== 'race' && x.badge !== 'deload')) {
+        for (const d of ['mon', 'tue', 'wed', 'thu', 'fri'] as const) {
+          const s = w.sessions?.[d]; if (s?.type === 'easy') runs.push({ s, cap: i.day_budgets?.[d] ?? i.max_weekday_mins })
+        }
       }
+      if (!runs.length) return false
+      const need = Math.ceil(runs.length * GENERATION_CONFIG.VOLUME_SHORTFALL_PINNED_SHARE)
+      runs.forEach((r, k) => { r.s.duration_mins = k < need ? r.cap - 1 : Math.max(1, r.cap - 10) })
       p.meta.volume_shortfall_pct = GENERATION_CONFIG.VOLUME_SHORTFALL_NOTE_THRESHOLD_PCT; delete p.meta.volume_shortfall_note; return true
+    }],
+    // §29 and §37 separately, with the plan's flag left as built, so each arm of the gate can disagree alone.
+    ['the explicit fresh-return input alone', (p: Plan, i: GeneratorInput) => {
+      i.weeks_at_current_volume = GENERATION_CONFIG.FRESH_RETURN_WEEKS_THRESHOLD - 1; i.training_age = '<6mo'; return true
+    }],
+    ['the fresh-return heuristic alone', (p: Plan, i: GeneratorInput) => {
+      delete (i as { weeks_at_current_volume?: number }).weeks_at_current_volume
+      i.training_age = '5yr+'
+      i.current_weekly_km = GENERATION_CONFIG.HEURISTIC_FRESH_RETURN_WEEKLY_KM - 1
+      i.longest_recent_run_km = GENERATION_CONFIG.HEURISTIC_FRESH_RETURN_LONG_RUN_KM - 1
+      return true
     }],
     ['meta age differing from the input', (p: Plan, i: GeneratorInput) => {
       if (typeof i.age !== 'number') return false
@@ -244,7 +272,7 @@ beforeAll(() => {
 }, 120_000)
 
 function build() {
-  const cases: { label: string; plan: Plan; input: GeneratorInput; asOf: string; planStart: string }[] = []
+  const cases: { label: string; plan: Plan; input: GeneratorInput; asOf: string; planStart: string; extra?: string }[] = []
   for (const row of goldenSample({ perGroup: 8 })) {
     tally.rows++
     let o: ReturnType<typeof runEngine>
@@ -290,8 +318,7 @@ function build() {
       const p = clone(o.plan)
       const input = JSON.parse(JSON.stringify(row.input)) as GeneratorInput
       if (!m.apply(p, input)) continue
-      hits.set(m.name, (hits.get(m.name) ?? 0) + 1)
-      cases.push({ label: `${row.id} / ${m.name}`, plan: p, input, asOf: row.asOf, planStart: row.planStart })
+      cases.push({ label: `${row.id} / ${m.name}`, plan: p, input, asOf: row.asOf, planStart: row.planStart, extra: m.name })
     }
   }
   runs = cases.flatMap(c => {
@@ -299,6 +326,8 @@ function build() {
     // Only the OLD checker may be excused: a mutation it cannot read is not a comparison. A verifier throw
     // is not caught here, so it fails the file.
     try { old = validatePlan(c.plan, c.input) } catch { return [] }
+    // A mutation counts as LANDED only once its case is actually compared (code review, batch 8).
+    if (c.extra) hits.set(c.extra, (hits.get(c.extra) ?? 0) + 1)
     return [{ label: c.label,
       old: old.map(v => ({ rule: v.code, k: key(v.code, v.week, v.day, v.severity) })),
       eve: raceEveDays.get(c.plan) ?? null,
