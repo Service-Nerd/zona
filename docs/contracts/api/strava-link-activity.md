@@ -2,8 +2,9 @@
 
 **Route:** `app/api/strava/link-activity/route.ts`. Bearer-authenticated (`getUserFromRequest`),
 then tier-gated on `activity_intelligence`. Called when a runner **manually** links an activity to
-a planned session, and it exists to mirror the Strava webhook's pipeline so a hand-linked run
-produces the same `strava_activities` + `run_analysis` rows as an auto-linked one.
+a planned session. Apple Health is the system of record (STRAVA-WEBHOOK-SOR-01): the route never
+stores a Strava row. An `apple_health_uuid` re-triggers `analyse-run`; a Strava id only patches an
+existing Apple Health run, or is refused.
 
 Written 2026-11-10 (`AI-ROUTE-HTTP-HOP-CEILING-01`) because the route changed and had no contract.
 It is one of `CONTRACT-COVERAGE-01`'s declared-debt routes; that debt is now 11 of 71.
@@ -29,7 +30,7 @@ HealthKit-only branch and returns immediately.
 |---|---|---|
 | 200 | `{ ok: true, mode: 'healthkit' }` | `apple_health_uuid` path — the row already exists; nothing is fetched from Strava |
 | 200 | `{ ok: true, mode: 'enriched_healthkit' }` | `tryEnrichHealthKitRow` found a matching HealthKit row and **patched** it (ADR-011's supplement path) |
-| 409 | `{ ok: false, mode: 'discarded_no_healthkit_match' }` | No HealthKit row matched. **Nothing is stored** (STRAVA-WEBHOOK-SOR-01, 2026-11-21); a `strava_activity_discarded` ops event is recorded. Until 2026-11-21 this path upserted a Strava-canonical row as `created_strava` |
+| 409 | `{ ok: false, mode: 'discarded_no_healthkit_match' }` | No HealthKit row matched. **Nothing is stored** (STRAVA-WEBHOOK-SOR-01, 2026-11-21); a `strava_activity_discarded` ops event is recorded. Until 2026-11-21 this path upserted a Strava-canonical row as `created_strava`. **Client obligation:** the completion was already saved with the Strava id, so the caller clears it through `/api/strava/unlink-activity`, conditional on the completion still carrying that id (`only_if_strava_activity_id`, STRAVA-SOR-REVIEW-FIX-03). Every client call goes through `lib/strava/linkActivity.ts → postLinkActivity`, which does that (gated by `linkActivity.test.ts`) |
 | 400 | `{ error: 'Strava not connected' }` | No token in `user_settings` |
 | 403 | `{ error: 'Subscription required' }` | `activity_intelligence` not allowed for the tier |
 | 422 | `{ error: 'Activity is not a run' }` | Strava returned a non-run activity |
@@ -38,6 +39,13 @@ HealthKit-only branch and returns immediately.
 
 `mode` is the field a caller should branch on: the three 200s are materially different outcomes
 and were previously indistinguishable to anyone reading only the status.
+
+⚠️ **Known gap, deliberately left (STRAVA-SOR-REVIEW-FIX-03).** `enriched_healthkit` returns without
+triggering `analyse-run`, and a Strava id that is already on an Apple Health row (a re-link) finds no
+unattached row and is answered 409. A review round fixed both and the fix was trimmed, because it
+re-keyed `run_analysis` writes for every runner; Strava is connected by the founder only. The client
+handles the 409: the link is cleared only when no row carries the id (`unlink-activity`'s guard),
+and only then does the post-run screen say the run was not linked.
 
 ## ✅ ADR-011 / INV-DATA-008 — resolved 2026-11-21 (STRAVA-WEBHOOK-SOR-01)
 

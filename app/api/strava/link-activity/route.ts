@@ -20,9 +20,11 @@ import { tryEnrichHealthKitRow } from '@/lib/coaching/healthkitConsolidate'
 export const maxDuration = 300
 
 // POST /api/strava/link-activity
-// Called when a user manually links a Strava activity to a planned session.
-// Mirrors the webhook's enrichment + analysis pipeline so manual linking
-// produces the same strava_activities + run_analysis rows as auto-linking.
+// Called when a user manually links a run to a planned session. Apple Health is the system of record (ADR-011,
+// STRAVA-WEBHOOK-SOR-01). An `apple_health_uuid` re-triggers analyse-run on that row. A `strava_activity_id` only
+// patches a matching, unattached Apple Health row (tryEnrichHealthKitRow) and answers `enriched_healthkit` without
+// triggering analysis itself; with no Apple Health run it is refused with 409 `discarded_no_healthkit_match`, nothing
+// is stored, and the client clears the completion's link (lib/strava/linkActivity.ts).
 
 export async function POST(req: NextRequest) {
   const user = await getUserFromRequest(req)

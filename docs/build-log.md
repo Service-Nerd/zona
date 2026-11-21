@@ -6,6 +6,14 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-11-21 — STRAVA-SOR-REVIEW-FIX-03 (trims STRAVA-SOR-REVIEW-FIX-01 and STRAVA-SOR-REVIEW-FIX-02, reverted unpushed) · two review rounds made the Strava fix riskier than the Strava bug
+
+**Dev.** Two rounds of code review on STRAVA-WEBHOOK-SOR-01 produced fixes that reached every runner to protect one. Round two re-keyed every `run_analysis` upsert from the activity row's ids, and `run_analysis` has full unique constraints that superseded rows also occupy, so the new key could collide with history. Both rounds added a Strava lookup to every Apple Health ingest, with a time window and a rate limit to keep it affordable. Strava is connected by the founder only. Both commits were reverted before they were pushed, and only the pieces that stay inside the Strava paths and the strength package came back: the per-side jump at S8's exact dose, one client owner for the link call, a conditional unlink, no false discard in the webhook, a scoped delete that reports its errors.
+
+**Dev, found in the trim.** Putting round one's client cleanup back on top of the round-one route made a new hole. The route answers 409 for a Strava id already merged onto an Apple Health row, because the merge only matches an unattached row, so the auto-heal of a merged run would have cleared a valid link. The unlink guard now refuses while any row carries that id, and the post-run screen says "not linked" only when the link was really cleared.
+
+**The honest bit.** Each review round was answered by adding code, and each round's findings were half about the previous round's code. The cheapest fix to a risk on a path one person uses was to stop extending it to everyone.
+
 ## 2026-11-21 — ADR027-B1-CONTRACTS · the strict schema found what the loose one had been letting through
 
 **Dev.** The v2 plan schema extends the v1 Zod objects and is strict at every level, so I could ask a question nothing could answer before: which keys does a stored plan carry? v1 declares 61 meta keys. The type declares 118. A stored plan can carry 144. The extra 26 come from places nobody had listed: 9 keys written only through casts (the inventory said 8 and missed one added that morning), 16 input fields a base-build plan gets because its producer spreads the whole input into meta (including `accept_base_build`, a request flag), and the new stamps. A retired week field is still on 118 of 123 rows, and a Design Board guard forbids any file from declaring it, so the adapter carries it in an opaque bucket instead and the test proves the engine never uses that bucket. The adapter itself is small on purpose: `schema_version`, and stamps lifted out of meta. It round-trips every stored plan and every corpus plan, and dropping one field turns the test red.

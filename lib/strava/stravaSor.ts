@@ -3,18 +3,63 @@
 // The Strava webhook is a SUPPLEMENT. A Strava activity may only patch an Apple Health run that already exists
 // (`tryEnrichHealthKitRow`, the single owner of the merge). With no matching Apple Health run it is DISCARDED, never
 // stored, and the discard is recorded so it is visible. A Strava delete may only remove a Strava-source row; on an
-// Apple Health row it clears the Strava patch, because that row is the runner's system of record.
+// Apple Health row it reverts the Strava patch, because that row is the runner's system of record.
 //
 // Before this, an unmatched activity was upserted as `source: 'strava'` and auto-matched (21 rows, 1 runner, newest
 // 2026-06-21), and a Strava delete removed the Apple Health row the merge had stamped with the Strava id.
+//
+// STRAVA-SOR-REVIEW-FIX-03 (code review, 2026-11-21): `findRowByStravaId` tells "already patched" from "no match", so a
+// duplicate webhook event is not recorded as a discard; the delete reads and records every query's error, and the row
+// revert lives with the merge (`revertHealthKitEnrichment`). Deliberately NOT here: any backfill on Apple Health ingest,
+// and any write to run_analysis or session_completions. Both were tried and trimmed (see the build-log).
 import type { SupabaseClient } from '@supabase/supabase-js'
+import { bucketHRHistogram, getUserHRZones } from '@/lib/strava'
+import { revertHealthKitEnrichment } from '@/lib/coaching/healthkitConsolidate'
+import { recordOpsEvent } from '@/lib/ops/recordOpsEvent'
 
-/** The Strava-only fields the merge patches onto an Apple Health row (healthkitConsolidate). */
-const STRAVA_PATCH_FIELDS = { strava_activity_id: null, splits_metric: null, avg_temp_c: null, suffer_score: null } as const
+/** The row a Strava id is already attached to, preferring the Apple Health one. `null` when none carries it. */
+export async function findRowByStravaId(
+  supabase: SupabaseClient | any,
+  userId: string,
+  stravaActivityId: number,
+): Promise<{ source: string; apple_health_uuid: string | null } | null> {
+  const { data, error } = await supabase
+    .from('strava_activities')
+    .select('source, apple_health_uuid')
+    .eq('user_id', userId)
+    .eq('strava_activity_id', stravaActivityId)
+  if (error) console.error('[strava-sor] row-by-strava-id read failed', error.message)
+  const rows = (data ?? []) as { source: string; apple_health_uuid: string | null }[]
+  return rows.find(r => r.source === 'apple_health' && r.apple_health_uuid) ?? rows[0] ?? null
+}
 
-export async function deleteStravaActivity(supabase: SupabaseClient, userId: string, stravaActivityId: number): Promise<void> {
-  await supabase.from('strava_activities').delete()
+/**
+ * A Strava delete. Removes a Strava-source row only; on an Apple Health row it reverts the patch
+ * (`revertHealthKitEnrichment`). Every query's error is read and recorded.
+ *
+ * The HR buckets are re-derived from the row's own `hr_bpm_histogram` (Apple Health samples, which the merge never
+ * touches) at the runner's CURRENT zones. A row with no histogram had no Apple Health HR, so its buckets return to null.
+ */
+export async function deleteStravaActivity(supabase: SupabaseClient | any, userId: string, stravaActivityId: number): Promise<void> {
+  const failed = async (stage: string, error: { message: string } | null | undefined) => {
+    if (!error) return
+    console.error(`[strava-sor] delete ${stage} failed`, error.message)
+    await recordOpsEvent('strava_sor_write_failed', { stage, strava_activity_id: stravaActivityId, message: error.message.slice(0, 500) }, userId)
+  }
+
+  const { error: delErr } = await supabase.from('strava_activities').delete()
     .match({ user_id: userId, strava_activity_id: stravaActivityId, source: 'strava' })
-  await supabase.from('strava_activities').update(STRAVA_PATCH_FIELDS)
+  await failed('delete_strava_row', delErr)
+
+  const { data: hkRows, error: readErr } = await supabase.from('strava_activities')
+    .select('id, hr_bpm_histogram')
     .match({ user_id: userId, strava_activity_id: stravaActivityId, source: 'apple_health' })
+  await failed('read_healthkit_rows', readErr)
+  const rows = (hkRows ?? []) as { id: string; hr_bpm_histogram: Record<string, number> | null }[]
+  if (!rows.length) return
+  const zones = await getUserHRZones(supabase, userId)
+  for (const row of rows) {
+    const { error } = await revertHealthKitEnrichment(supabase, row.id, bucketHRHistogram(row.hr_bpm_histogram, zones))
+    await failed('revert_healthkit_row', error)
+  }
 }

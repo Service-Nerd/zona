@@ -5,7 +5,7 @@ import { secretMatches } from '@/lib/security/secrets'
 import { getStravaToken, fetchHRStreamSummary } from '@/lib/strava'
 import { tryEnrichHealthKitRow } from '@/lib/coaching/healthkitConsolidate'
 import { recordOpsEvent } from '@/lib/ops/recordOpsEvent'
-import { deleteStravaActivity } from '@/lib/strava/stravaSor'
+import { deleteStravaActivity, findRowByStravaId } from '@/lib/strava/stravaSor'
 
 // Strava webhook docs: https://developers.strava.com/docs/webhooks/
 //
@@ -136,11 +136,10 @@ async function enrichAndPersist(event: StravaEvent) {
   // Fetch HR stream and compute zone percentages (raw stream discarded after)
   const hrSummary = await fetchHRStreamSummary(getSupabase(), access_token, event.object_id, userId)
 
-  // HealthKit-primary: if iOS already ingested this workout, enrich the HK
-  // row in place instead of inserting a Strava duplicate. Skip the auto-
-  // match path too — HK ingest already triggered analysis on the same
-  // session_completion. Falls through to the legacy create path when no HK
-  // row matches (Strava-only users, or webhook firing before HK sync).
+  // HealthKit-primary: if iOS already ingested this workout, enrich the HK row in place. No auto-match here: HK ingest
+  // already triggered analysis on the same session_completion. With no HK row the activity is discarded below
+  // (STRAVA-WEBHOOK-SOR-01). ⚠️ A run whose Apple Health sync lands AFTER this event is not patched by anything: the
+  // Strava-first race is open, deliberately (STRAVA-SOR-REVIEW-FIX-03 trimmed the ingest-side backfill).
   const consolidation = await tryEnrichHealthKitRow(
     getSupabase(),
     userId,
@@ -156,7 +155,9 @@ async function enrichAndPersist(event: StravaEvent) {
     hrSummary,
   )
   // STRAVA-WEBHOOK-SOR-01: Apple Health is the system of record. No matching Apple Health run -> discard, never store.
-  if (!consolidation.enriched) {
+  // STRAVA-SOR-REVIEW-FIX-03: an `update` event or a redelivery finds a row ALREADY carrying this id, and the merge only
+  // matches an unattached row. That is not a discard; say nothing.
+  if (!consolidation.enriched && !(await findRowByStravaId(getSupabase(), userId, activity.id))) {
     await recordOpsEvent('strava_activity_discarded', { reason: 'no_healthkit_match', strava_activity_id: activity.id }, userId)
   }
 }

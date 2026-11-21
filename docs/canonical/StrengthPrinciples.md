@@ -186,6 +186,14 @@ contacts against the cap of 60, on 6,466 swept sessions (final plan read, 2026-1
 the sets, and the check multiplies per-side items by two from the item's own fields. No number changed. **Check:**
 `S-PLYO-CONTACTS` (per-side arm) and `plyoPerSide.test.ts`. Falsified: reverting either half turns its test red, and
 the old dose under the new check fails `verify:strength` (up to 120 contacts).
+**Amended (2026-11-21, STRAVA-SOR-REVIEW-FIX-03, same defect fix).** Halving the sets missed the dose: rounded
+down, a per-side jump landed 20 contacts in the start week against S8's 30. A per-side set is now the same set of
+`PLYO_CONTACTS_PER_SET` split across the legs, 5 per side, so every jump takes the same sets as a bilateral one and
+lands the dose exactly: 30 is 3 × 5/side. The deload rule and the cap are unchanged, and a bilateral dose is
+byte-identical. `PLYO_CONTACTS_PER_SET` must be even for the split to be exact; a test asserts it, and an odd value
+needs a ruling rather than a rounding. The S10 fill step's floor for restoring a dropped jump counts total contacts
+from the item's own fields, so it is 3 sets for both shapes. No number changed. **Check:** `S-PLYO-CONTACTS` and
+`plyoPerSide.test.ts` (per-side total equals the week's dose at every week).
 
 ## S9. Injury, bone and equipment steer the choice
 

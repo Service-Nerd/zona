@@ -6,7 +6,7 @@
 
 import { CATALOGUE_BY_ID, HEAVY_LEG_PATTERNS, PATTERN_REGION } from './catalogue'
 import { STRENGTH_CONFIG as C } from './config'
-import { prescribe, type DoseContext } from './prescription'
+import { plyoRestoreMinSets, prescribe, type DoseContext } from './prescription'
 import { eligible, selectExercise, type SelectionContext } from './select'
 import type { Block, BlockRole, Focus, Pattern, Prescription, SessionKind, StrengthNote } from './types'
 
@@ -290,7 +290,7 @@ export function buildSession(kind: Exclude<SessionKind, 'mobility'>, sel: Select
     // peak weeks, 26 of 30 minutes used).
     // A short session takes fewer sets of jumps rather than none, never below the S8 start dose.
     if (droppedPlyo) {
-      const minSets = Math.ceil(C.PLYO_CONTACTS_START / C.PLYO_CONTACTS_PER_SET)
+      const minSets = plyoRestoreMinSets(droppedPlyo.item)
       for (let sets = droppedPlyo.item.sets; sets >= minSets; sets--) {
         const trial = [...chosen, { ...droppedPlyo, item: { ...droppedPlyo.item, sets } }]
         const t = estimateMinutes(assemble(trial), warmupMinutes)
