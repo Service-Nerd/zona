@@ -1160,6 +1160,39 @@ const BATCH_16: Partial<Record<RuleId, Predicate>> = {
 }
 Object.assign(PREDICATES, BATCH_16)
 
+const BATCH_17: Partial<Record<RuleId, Predicate>> = {
+  // §66 Am. 1: every long run has an axis: a positive, finite distance or duration.
+  'INV-PLAN-LONG-RUN-HAS-AN-AXIS': plan => plan.weeks.flatMap(w => daysOf(w).filter(({ session: s }) => !!s && isLongRun(s)
+    && !(s.distance_km != null && Number.isFinite(s.distance_km) && s.distance_km > 0)
+    && !(s.duration_mins != null && Number.isFinite(s.duration_mins) && s.duration_mins > 0))
+    .map(() => ({ rule_id: 'INV-PLAN-LONG-RUN-HAS-AN-AXIS' as RuleId, week: w.n, day: null, detail: 'long run with no distance or duration' }))),
+
+  // §25 Am. 1: a race-pace long run's "Final N% at" note sits inside the ratified band.
+  'INV-PLAN-LR-RACE-SEGMENT-PCT': plan => plan.weeks.flatMap(w => daysOf(w).flatMap(({ session: s }) => {
+    if (!s || !isLongRun(s) || !s.lr_segment_pace) return []
+    const note = (s.coach_notes ?? []).find(n => typeof n === 'string' && /^Final \d+% at /.test(n))
+    const pct = note ? Number(/^Final (\d+)%/.exec(note)?.[1]) : NaN
+    if (!Number.isFinite(pct)) return []
+    return pct < GENERATION_CONFIG.LR_RACE_SEGMENT_PCT_MIN || pct > GENERATION_CONFIG.LR_RACE_SEGMENT_PCT_MAX
+      ? [{ rule_id: 'INV-PLAN-LR-RACE-SEGMENT-PCT' as RuleId, week: w.n, day: null, detail: `final ${pct}% at race pace` }] : []
+  })),
+
+  // §1: an ordinary build or peak week for an intermediate or experienced runner (who does not avoid hard sessions
+  // and has no Achilles history) carries quality when an eligible weekday is free, unless intentionally downgraded.
+  // ⚠️ Ported faithfully: the level is the plan's own meta, and the Achilles test matches injury text. Both raised.
+  'INV-PLAN-QUALITY-EXPECTED': (plan, { input }) => {
+    const level = plan.meta.fitness_intensity_level ?? plan.meta.fitness_level
+    const achilles = (input.injury_history ?? []).some(i => i.toLowerCase().includes('achilles'))
+    if (!(level === 'intermediate' || level === 'experienced') || input.hard_session_relationship === 'avoid' || achilles) return []
+    const blocked = normaliseDays(input.days_cannot_train)
+    if (!(['wed', 'thu', 'tue', 'mon', 'fri'] as const).some(d => !blocked.has(d))) return []
+    return plan.weeks.filter(w => governed(w) && w.type !== 'race' && w.phase && w.phase !== 'base' && w.phase !== 'foundation'
+      && w.type !== 'deload' && !w.quality_downgraded && !running(w).some(x => x.session.type === 'quality'))
+      .map(w => ({ rule_id: 'INV-PLAN-QUALITY-EXPECTED' as RuleId, week: w.n, day: null, detail: 'no quality in a build or peak week' }))
+  },
+}
+Object.assign(PREDICATES, BATCH_17)
+
 const SEVERITY = new Map(RULES.map(r => [r.id, r.kind === 'soft' ? 'warn' as const : 'error' as const]))
 
 /** Every finding the ported predicates raise, with the severity the catalogue gives the rule. */

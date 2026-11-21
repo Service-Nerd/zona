@@ -133,6 +133,26 @@ const EXTRA_MUTATIONS: { name: string; apply: (p: Plan, input: GeneratorInput) =
     ['no HR method', (p: Plan) => { delete p.meta.hr_zone_method; return true }],
     // Batch 8: the plan's declarations about its own limits.
     ['no compression class', (p: Plan) => { delete p.meta.compression_classification; return true }],
+    // Batch 17.
+    ['a long run with no axis', (p: Plan) => {
+      const s = p.weeks.flatMap(w => Object.values(w.sessions ?? {})).find(x => x && isLongRun(x))
+      if (!s) return false
+      s.distance_km = 0; delete s.duration_mins; return true
+    }],
+    ['a race-pace long run one point past the segment band', (p: Plan) => {
+      const s = p.weeks.flatMap(w => Object.values(w.sessions ?? {})).find(x => x && isLongRun(x))
+      if (!s) return false
+      s.lr_segment_pace = '5:00/km'
+      s.coach_notes = [...(s.coach_notes ?? []).filter(n => !/^Final \d+% at /.test(n ?? '')), `Final ${GENERATION_CONFIG.LR_RACE_SEGMENT_PCT_MAX + 1}% at goal pace.`] as unknown as typeof s.coach_notes
+      return true
+    }],
+    ['a build week with its quality removed', (p: Plan) => {
+      const w = p.weeks.find(x => (x.phase === 'build' || x.phase === 'peak') && x.type !== 'deload' && x.type !== 'race' && !x.quality_downgraded
+        && Object.values(x.sessions ?? {}).some(s => s?.type === 'quality'))
+      if (!w) return false
+      for (const s of Object.values(w.sessions ?? {})) if (s?.type === 'quality') s.type = 'easy'
+      return true
+    }],
     // Batch 16.
     ['a quality session with no pace and no effort', (p: Plan) => {
       const s = p.weeks.flatMap(w => Object.values(w.sessions ?? {})).find(x => x && isQualitySession(x))
@@ -551,6 +571,8 @@ const TARGETS: Record<string, string[]> = {
   'a quality session with no pace and no effort': ['INV-PLAN-EFFORT-OR-PACE'],
   'a quality session with a blank pace and no effort': ['INV-PLAN-EFFORT-OR-PACE'],
   'a quality session with no pace and an effort of 0': ['INV-PLAN-EFFORT-OR-PACE'],
+  'a build week with its quality removed': ['INV-PLAN-QUALITY-EXPECTED'],
+  'a race-pace long run one point past the segment band': ['INV-PLAN-LR-RACE-SEGMENT-PCT'],
 }
 /** Rules that read only module data (the catalogue, the signatures), never the plan. */
 const STATIC_RULES = new Set<string>(['INV-PLAN-PHASE-FOCUS-REACHABLE'])
