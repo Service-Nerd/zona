@@ -9,7 +9,6 @@ import { join } from 'node:path'
 import { RULES } from './rules'
 import { RuleSchema, resolveRuleConfigKey } from '@/lib/engine/contracts/rule'
 import { INVARIANT_CODES } from '@/lib/plan/invariants'
-import { GENERATION_CONFIG } from '@/lib/plan/generationConfig'
 
 const read = (p: string) => readFileSync(join(process.cwd(), p), 'utf8')
 const STRENGTH_CODES = Array.from(new Set(
@@ -22,13 +21,16 @@ const LINES = COACHING.split('\n')
 const sectionLines = (n: string) => {
   const start = LINES.findIndex(l => new RegExp(`^## (${n}\\.|§${n}) `).test(l))
   if (start < 0) return []
-  const end = LINES.findIndex((l, i) => i > start && /^## (\d+[a-z]?\.|§\d+) /.test(l))
+  const end = LINES.findIndex((l, i) => i > start && /^## (\d+[a-z]?\.|§\d+[a-z]?) /.test(l))
   return LINES.slice(start, end < 0 ? undefined : end)
 }
 /** `§n Am. k` resolves when a heading names it, or an `Amendment k` heading sits inside §n. */
 const amendmentExists = (n: string, k: string) =>
   LINES.some(l => l.startsWith('#') && new RegExp(`§${n}\\s+(Amendment|Am\\.)\\s+${k}\\b`).test(l))
-  || sectionLines(n).some(l => new RegExp(`^#+ .*\\bAmendment ${k}\\b`).test(l))
+  // …unless the heading is LABELLED as another section's (`### §5 Amendment 1` nested under §52 is §5's).
+  // A title that merely cites a section ("§52 prevails…") is still §n's amendment.
+  || sectionLines(n).some(l => new RegExp(`^#+ .*\\bAmendment ${k}\\b`).test(l)
+       && !(/^#+ §(\d+[a-z]?) /.exec(l) && /^#+ §(\d+[a-z]?) /.exec(l)![1] !== n))
 
 /** 🔻 DEBT, measured 2026-11-21: amendment references the registry cites that cannot be traced to a
  *  heading. Three are filed under another section; three are not in CoachingPrinciples.md at all
@@ -43,7 +45,6 @@ const UNTRACED_AMENDMENTS = [
   'INV-PLAN-GOAL-BELOW-EASY-DECLARED → §44 Am. 3',
 ]
 
-const GC_KEYS = new Set(Object.keys(GENERATION_CONFIG))
 /** The MAIN registry row: the code cell is exactly the code; one rule has only an "(extended)" row. */
 const mainRow = (id: string) =>
   new RegExp('^\\| `' + id + '` \\| ([^|]*) \\| ([^|]*) \\| ([^\\n]*)$', 'm').exec(REGISTRY)
@@ -102,13 +103,14 @@ describe('ADR027-B3-CATALOGUE — every rule is well-formed and traceable', () =
     for (const r of RULES) expect(resolveRuleConfigKey(r), `${r.id} → ${r.config_key?.key}`).toBe(true)
   })
 
-  it('🔴 an INV rule names the ONE live key its registry row names, else none (code review 2026-11-21)', () => {
-    for (const r of RULES.filter(x => x.id.startsWith('INV-'))) {
-      const named = Array.from(new Set(Array.from(mainRow(r.id)![3].matchAll(/`([A-Z][A-Z0-9_]+)/g), m => m[1])
-        .filter(k => GC_KEYS.has(k))))
-      expect(r.config_key?.key ?? null, `${r.id}: row names ${named.join(', ') || 'none'}`)
-        .toBe(named.length === 1 ? named[0] : null)
-    }
+  it('🔴 no INV rule claims a config key before its predicate is ported (code review 2026-11-21)', () => {
+    // The registry's prose is not a reliable source for which tunable a check reads. Step 2 sets each
+    // key from the check's own code; until then a key here would be an unverified claim.
+    expect(RULES.filter(r => r.id.startsWith('INV-') && r.config_key).map(r => r.id)).toEqual([])
+  })
+
+  it('a strength reference names a section only, never an amendment (none is checked against S headings)', () => {
+    for (const r of RULES.filter(x => x.id.startsWith('S-'))) expect(r.principle_ref, r.id).toMatch(/^S\d+$/)
   })
 
   it('only the named structural rules trace to no principle', () => {
