@@ -52,15 +52,17 @@
    "stagedObjections": {}
   },
   "100": {
-   "fitPct": 100,
-   "fitPctPreCorrection": 100,
+   "fitPct": 98,
+   "fitPctPreCorrection": 98,
    "servedRefusedPct": 0,
    "doorPct": null,
    "unservedRefusedPct": 0,
    "refusedPct": 0,
    "refusedWithoutNextStepPct": 0,
    "invalidPlans": 0,
-   "objections": {},
+   "objections": {
+    "BINGE-WEEK": 2
+   },
    "watched": {},
    "stagedPct": 0,
    "stagedCleanPct": 0,
@@ -108,8 +110,8 @@
    "stagedPct": 9.2,
    "stagedCleanPct": 3.2,
    "stagedObjections": {
-    "LONG-RUN-SHORT": 2.3,
-    "REFUSED-AT-CHECKPOINT:LongRunReadinessError": 1.9,
+    "REFUSED-AT-CHECKPOINT:LongRunReadinessError": 2.1,
+    "LONG-RUN-SHORT": 2.1,
     "REFUSED-AT-CHECKPOINT:PrepTimeError": 1.8,
     "WEEK1-LEAP": 0.7
    }

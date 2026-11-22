@@ -313,7 +313,7 @@ const BATCH_3: Partial<Record<RuleId, Predicate>> = {
   },
 
   // §39 Am. 1: in the protected days before a race, nothing longer than the shakeout cap.
-  'INV-PLAN-NO-RACE-EVE-SESSION': plan => plan.weeks.flatMap(w => {
+  'INV-PLAN-NO-RACE-EVE-SESSION': plan => (plan.weeks.flatMap((w): Raw[] => {
     const entries = daysOf(w)
     const race = entries.find(x => x.session?.type === 'race')
     const raceIdx = race ? DAYS.indexOf(race.day) : -1
@@ -324,7 +324,20 @@ const BATCH_3: Partial<Record<RuleId, Predicate>> = {
       if (idx < 0 || idx >= raceIdx || raceIdx - idx > GENERATION_CONFIG.RACE_EVE_PROTECTED_DAYS) return false
       return (s.duration_mins ?? 0) > GENERATION_CONFIG.RACE_WEEK_SHAKEOUT_MAX_MINS
     }).map(x => ({ rule_id: 'INV-PLAN-NO-RACE-EVE-SESSION', week: w.n, day: x.day, detail: 'over the shakeout cap before the race' }))
-  }),
+  }) as Raw[]).concat(plan.weeks.flatMap((w, k) => {
+    // Across the week boundary (MONDAY-RACE-EVE-LONG-RUN-01): a race early in the week has race eve in the previous week.
+    const race = daysOf(w).find(x => x.session?.type === 'race')
+    const raceIdx = race ? DAYS.indexOf(race.day) : -1
+    const prev = k > 0 ? plan.weeks[k - 1] : undefined
+    if (raceIdx < 0 || !prev) return []
+    const out: Raw[] = []
+    for (let before = raceIdx + 1; before <= GENERATION_CONFIG.RACE_EVE_PROTECTED_DAYS; before++) {
+      const day = DAYS[7 + raceIdx - before], s = prev.sessions?.[day]
+      if (s && s.type !== 'rest' && s.type !== 'race' && (s.duration_mins ?? 0) > GENERATION_CONFIG.RACE_WEEK_SHAKEOUT_MAX_MINS)
+        out.push({ rule_id: 'INV-PLAN-NO-RACE-EVE-SESSION', week: prev.n, day: null, detail: 'over the shakeout cap the day before a race early in the week' })
+    }
+    return out
+  })),
 
   // §4: main-week phases each form one block, in the order base, build, peak, taper.
   'INV-PLAN-PHASE-STRUCTURE': plan => {

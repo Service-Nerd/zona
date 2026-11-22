@@ -1911,6 +1911,13 @@ Monday race today. §39 Am. 1 protects race eve on any weekday; `INV-PLAN-NO-RAC
 week, so the gate passes it. Related: §77's open cross-week case (`PV2-G`). **Done when:** no session within
 `RACE_EVE_PROTECTED_DAYS` of race day exceeds §30's cap across a week boundary, and the check looks there too.
 
+### 🔲 `MONDAY-RACE-TAPER-WEEK-01` — the week before a Monday race is built as a taper week, not as race week *(filed 2026-11-22, found building `MONDAY-RACE-EVE-LONG-RUN-01`)* 🏃 **COACHING BOARD**
+For a Monday race, race week holds only the race, so the seven days before it are an ordinary taper week. With race eve
+fixed, that week can still carry a long run three days out: measured in the 100K envelope, a 100–136 minute Friday run
+before a Monday 100K (it now reads as 62–63% of a lighter week, `BINGE-WEEK`). §26 asks for no fatigue-adding session in
+race week, and §77 names the Monday race as an open cross-week case (`PV2-G`, which "needs ADR"). Rule what the last seven
+days before an early-week race should hold.
+
 ### 🔲 `ADR027-B3-STRICT-01` — build the board's checker fixes into the verifier, observe-only first *(filed 2026-11-22, Coaching Board `ADR027-B3-RAISED-LIST-01`)* ⚙️ **NO BOARD** (ruled)
 The sitting's B, C, D2–D3 and E1 rulings: 18 checker fixes, the self-label reads replaced by the runner and the delivered
 sessions, the literals named, `ZONE-LABEL-HAS-PRESCRIPTION` made live in the base-build route. Each is a deliberate

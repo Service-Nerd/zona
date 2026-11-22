@@ -2409,6 +2409,60 @@ function raceSession(
  * final run before the race: minimal, and meant to leave the runner wondering
  * whether it was enough.
  */
+/**
+ * MONDAY-RACE-EVE-LONG-RUN-01 (hotfix, 2026-11-22; Coaching Board ADR027-B3-RAISED-LIST-01 ruled INCORRECT).
+ *
+ * §39 Am. 1 protects race eve on ANY weekday: no session within `RACE_EVE_PROTECTED_DAYS` of race day may exceed §30's
+ * shakeout cap. The race-week builder enforces that inside race week only, so a race early in the week (a Monday race)
+ * left the PREVIOUS week's session on race eve untouched: measured, the long run (63–85 min) the day before the race in
+ * 4 of 37 golden plans. §77 already names the remedy: the preceding week carries the priming. So a session over the cap
+ * on a protected day of the previous week becomes §30's race-eve shakeout with strides. That week's long run is not
+ * moved: the only days left before it are two or more days out, and §26 asks for no fatigue-adding session that close.
+ */
+function protectCrossWeekRaceEve(weeks: Week[], zones: ZoneTargets, pace: PaceGuide): void {
+  const raceIdx = weeks.findIndex(w => Object.values(w.sessions ?? {}).some(s => s?.type === 'race'))
+  if (raceIdx < 1) return
+  const raceDay = (Object.keys(weeks[raceIdx].sessions) as Day[]).find(d => weeks[raceIdx].sessions[d]?.type === 'race')
+  if (!raceDay) return
+  const prev = weeks[raceIdx - 1]
+  const cap = GENERATION_CONFIG.RACE_WEEK_SHAKEOUT_MAX_MINS
+  let changed = false
+  for (let k = 1; k <= GENERATION_CONFIG.RACE_EVE_PROTECTED_DAYS; k++) {
+    const idx = DAY_INDEX[raceDay] - k
+    if (idx >= 0) continue                          // inside race week: the race-week builder owns it
+    const day = DAY_ORDER[7 + idx]
+    const s = prev.sessions[day]
+    if (!s || s.type === 'rest' || s.type === 'strength' || s.type === 'cross-train') continue
+    const mins = s.duration_mins ?? (s.distance_km != null ? s.distance_km * pace.minPerKmEasy : 0)
+    if (mins <= cap && s.role !== 'long_run') continue
+    const shake = shakeoutSession(prev.n, day, zones, pace, 0)
+    // §30's cap binds the shakeout itself, as the race-week builder's enforceCap does (a slow runner's 4 km is > 35 min).
+    if (shake.duration_mins != null && shake.duration_mins > cap) {
+      const ratio = cap / shake.duration_mins
+      shake.duration_mins = cap
+      if (shake.distance_km != null) shake.distance_km = roundDistance(shake.distance_km * ratio)
+    }
+    // §28 allows strides on ONE easy run a week and never the day after quality. The race-eve priming (§30, §77) takes
+    // the week's stride note when it can; otherwise the week keeps the strides it already has.
+    const before = prev.sessions[DAY_ORDER[(DAY_INDEX[day] + 6) % 7]]
+    if (before?.type !== 'quality') {
+      for (const d of DAY_ORDER) {
+        const other = prev.sessions[d]
+        if (!other?.coach_notes) continue
+        const kept = other.coach_notes.filter(note => !!note && !/strides/i.test(note))
+        if (kept.length) other.coach_notes = kept as Session['coach_notes']
+        else delete other.coach_notes   // the schema wants at least one note when the field is present
+      }
+      shake.coach_notes = [shake.coach_notes?.[0] ?? 'Short and relaxed. Wake the legs, nothing more.', '4×100m strides at 5K effort, full recovery between.']
+    }
+    // A duration-anchored runner keeps duration-anchored sessions (§79's beginner default).
+    if (s.primary_metric === 'duration') { shake.primary_metric = 'duration'; delete shake.distance_km; if (s.duration_anchored) shake.duration_anchored = true }
+    prev.sessions[day] = shake
+    changed = true
+  }
+  if (changed) prev.weekly_km = sumWeeklyKm(prev.sessions, pace)
+}
+
 function shakeoutSession(
   weekN: number, day: Day, zones: ZoneTargets, pace: PaceGuide, slot: 0 | 1 = 0,
 ): Session {
@@ -8211,6 +8265,7 @@ function buildRulePlanOnce(
   // DIAGNOSTIC: re-run the cap last to test whether a later pass undoes it.
   applyV3HrEstimationNotePropagation(weeks, hrFallback.method, recalibrationWeeks)
   applyV7TaperRationale(weeks, input.race_distance_km)
+  protectCrossWeekRaceEve(weeks, zones, pace)
 
   // CoachingPrinciples §53 — quality variety across the full plan. Catalogue
   // rotation gets stuck when only one threshold row is eligible for taper

@@ -2960,6 +2960,31 @@ export function validatePlan(plan: Plan, rawInput: GeneratorInput): Violation[] 
         })
       }
     }
+    // MONDAY-RACE-EVE-LONG-RUN-01 (2026-11-22, Coaching Board ADR027-B3-RAISED-LIST-01): §39 Am. 1 protects race eve
+    // on ANY weekday, so for a race early in the week the protected days fall in the PREVIOUS week. This arm never
+    // existed, and the engine put the long run the day before a Monday race in 4 of 37 golden plans.
+    plan.weeks.forEach((w, k) => {
+      const race = (Object.entries(w.sessions ?? {}) as [string, Session | undefined][]).find(([, sn]) => sn?.type === 'race')
+      const raceIdx = race ? DAYS.indexOf(race[0] as typeof DAYS[number]) : -1
+      const prevWeek = k > 0 ? plan.weeks[k - 1] : undefined
+      if (raceIdx < 0 || !prevWeek) return
+      for (let before = raceIdx + 1; before <= protectedDays; before++) {
+        const day = DAYS[7 + raceIdx - before]
+        const sn = prevWeek.sessions?.[day]
+        if (!sn || sn.type === 'rest' || sn.type === 'race') continue
+        const mins = sn.duration_mins ?? 0
+        if (mins <= capMinsForRaceEve) continue
+        violations.push({
+          code: 'INV-PLAN-NO-RACE-EVE-SESSION',
+          principle_ref: 'CoachingPrinciples §39 Amendment 1',
+          severity: 'error',
+          week: prevWeek.n,
+          message: `${sn.label ?? 'session'} (${mins} min) is scheduled ${before} day(s) before race day, in the week before race week, and exceeds §30's ${capMinsForRaceEve}-minute shakeout cap — §39 Am. 1 protects race eve on any weekday`,
+          actual: `${mins} min, ${before} day(s) before`,
+          expected: `≤ ${capMinsForRaceEve} min within ${protectedDays} day(s) of the race`,
+        })
+      }
+    })
   }
 
   // INV-PLAN-RACE-NOTE-SCALES — §80 Amendment 1.

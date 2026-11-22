@@ -843,6 +843,15 @@ const EXTRA_MUTATIONS: { name: string; apply: (p: Plan, input: GeneratorInput) =
       }
       return false
     }],
+    // MONDAY-RACE-EVE-LONG-RUN-01: race moved to the Monday after its week, so race eve is the week before's Sunday.
+    ['a Monday race with a long run on the Sunday before', (p: Plan) => {
+      const k = p.weeks.findIndex(w => Object.values(w.sessions ?? {}).some(s => s?.type === 'race'))
+      if (k < 1) return false
+      const w = p.weeks[k], race = Object.entries(w.sessions).find(([, s]) => s?.type === 'race')!
+      delete (w.sessions as Record<string, unknown>)[race[0]]; w.sessions.mon = race[1]
+      p.weeks[k - 1].sessions.sun = { type: 'easy', role: 'long_run', label: 'Long run', duration_mins: 70, distance_km: 10 } as Session
+      return true
+    }],
     ['meta age differing from the input', (p: Plan, i: GeneratorInput) => {
       if (typeof i.age !== 'number') return false
       ;(p.meta as unknown as Record<string, unknown>).age = i.age + 1; return true
@@ -896,6 +905,7 @@ const EXTRA_MUTATIONS: { name: string; apply: (p: Plan, input: GeneratorInput) =
 /** Breakages whose landing must be on a NAMED rule: they also wake neighbouring cap rules, so "the old report
  *  changed" would pass without the target being reached (code review, batch 14). */
 const TARGETS: Record<string, string[]> = {
+  'a Monday race with a long run on the Sunday before': ['INV-PLAN-NO-RACE-EVE-SESSION'],
   'a progression step off every band': ['INV-PLAN-STEP-PACE-FROM-GUIDE'],
   'a goal one point past the stretch line, not withheld': ['INV-PLAN-GOAL-PACE-REACHABLE'],
   'a withheld plan whose race-pace long run finishes just off race pace': ['INV-PLAN-GOAL-PACE-REACHABLE'],
