@@ -1,6 +1,6 @@
 # ADR-027: the coaching engine as a layered service (ACCEPTED, 2026-11-20)
 
-**Status:** ✅ **ACCEPTED 2026-11-20** by the founder.
+**Status:** ✅ **ACCEPTED 2026-11-20** by the founder. ⏸️ **Build PAUSED 2026-11-22**: see § Build status for where to pick up.
 
 Founder decisions, 2026-11-20:
 1. Architecture approved.
@@ -19,6 +19,64 @@ https://claude.ai/artifact/HSgFxUU2qhWBbSdMbptN5F).
 **Trigger:** `docs/decisions/coaching-2026-11-20-final-plan-read.md`. About 46 new defect classes were found in one
 pass. All of them trace to five structural causes, and they meet the founder's stated condition for a new
 architecture.
+
+## ⏸️ Build status: PAUSED 2026-11-22 (founder: *"pause the new coaching engine work here"*)
+
+**Paused at `5d15f267`** (docs `ed9e4703`), on a green `main`: 848 test files / 8,927 tests, `tsc` 0,
+`audit-docs.sh` ALL CLEAN, `verify:parity` IDENTICAL over 6,210 cases. Nothing is half-built. There is no uncommitted
+engine code and no feature flag. Everything below is either shipped or not started.
+
+**The engine runners get is still the current, frozen engine.** The new layers (`lib/engine/`) are built beside it
+and nothing in production calls them, so pausing changes nothing a runner sees. The freeze stays in force while
+paused: only defects that harm runners are fixed, each one added to the hotfix table below with the founder's approval.
+
+### Where each phase stands
+| Phase | State | Record |
+|---|---|---|
+| B0 golden corpus + Scorecard v2 | ✅ done | `ADR027-B0-GOLDEN-CORPUS`, `ADR027-B0-PROD-FINDINGS`, `ADR027-B0-SCORECARD` (`npm run scorecard`) |
+| B1 contracts + canonical types | ✅ done | `ADR027-B1-CONTRACTS` (v1↔v2 adapter, 123 of 123 stored plans round-trip) |
+| B2 L1 runner facts + profile | ✅ done; part 1 of the route adoption done | `ADR027-B2-PROFILE`, `ADR027-B2B-PROFILE`. Parts 2–4 of `ADR027-B2B-PROFILE-ADOPTION` land in B4 (founder) |
+| B3 step 1: rule catalogue (L2) | ✅ done | `ADR027-B3-CATALOGUE`, `lib/engine/catalogue/rules.ts`, 221 rules |
+| B3 step 2: independent verifier (L5) | 🟡 **207 of 221 rules ported**, each agreeing finding for finding with the old checker | `ADR027-B3-VERIFIER`, `lib/engine/verifier/` |
+| B3 step 2b: the board's strict readings | 🔲 ruled, not started | `ADR027-B3-STRICT-01` |
+| B3 step 3: nightly check of every live plan, observe-only | 🔲 not started | `ADR027-B3-REMAINING` |
+| B3 step 4: trigger catalogue (ARCH-ENG-018) | 🔲 not started | `ADR027-B3-REMAINING` |
+| B3 exit: founder signs off the verifier replacing `validatePlan` as the gate | 🔲 | must name the 14 held rules (below) |
+| B4–B8 (planner, adapt, explanation, single writer, enrichment) | 🔲 not started | HLD |
+| Hotfixes 1–6 | ✅ five shipped, #4 dropped | table below |
+
+**The 14 rules the verifier does not yet check itself.** The old checker keeps judging them, and the cut-over gate
+is the verifier plus these 14 until B4 gives each an independent derivation (Coaching Board `ADR027-B3-RAISED-LIST-01`,
+E3–E4): `DELIVERED-RAMP`, `INJURY-NO-HILLS`, `RACE-WEEK-SHARPENING`, `COPY-MATCHES-SESSIONS`, `BEGINNER-NEUROMUSCULAR`,
+`RACE-SPECIFIC-LONG-RUN`, `BASE-BUILD-RATIO`, `TAPER-DELIVERED-DEPTH`, `STRIDES-PRESENT`, `STRIDES-NO-CARRIER`,
+`SURPLUS-IN-PLAN`, `RUNWALK-PRESCRIBED-WHEN-UNREADY`, `RUNWALK-SHORTDIST-SCOPE` and `STAGED-DOOR-RATIO` (all
+`INV-PLAN-*`). Most need a derivation only the planner has today. `STAGED-DOOR-RATIO` builds a race block to judge the
+door, so it is the producer checking itself. `INJURY-NO-HILLS`, `RACE-WEEK-SHARPENING` and `RACE-SPECIFIC-LONG-RUN` are
+ruled to be ported on structural signals (B15, B18). One ported rule, `ZONE-LABEL-HAS-PRESCRIPTION`, can never run in
+production and is named dead in the harness.
+
+### Where to pick up, in order
+1. **`ADR027-B3-STRICT-01`**: the 18 checker fixes and the self-label readings the board ruled, as deliberate divergences
+   from `validatePlan`, each in a register beside the agreement harness with its own falsified test.
+2. **B3 step 3**: the nightly live-plan check, observe-only. Build the profile **as of each plan's generation date**
+   (§10's staleness ramp moves the level with the clock). Report the count of live plans the strict readings flag.
+3. **B3 step 4**: the trigger catalogue, with values unchanged (§124 Am. 1).
+4. **The founder's cut-over sign-off**, naming the 14 held rules.
+5. Then B4, starting with 5K/10K, in shadow.
+
+Filed alongside, not blocking B3: `STRENGTH-S13-S14-LIVE-01` (no board; production never runs S13/S14),
+`PACE-GUIDE-PROVENANCE-01` (Coaching Board; the no-benchmark paces set 18 of 39 live race plans and have no principle,
+needed before B4 adopts them), `HR-MAX-SOURCE-01` (Coaching Board, once plans store the source),
+`MONDAY-RACE-TAPER-WEEK-01` (Coaching Board), `STARTVOL-OBSERVED-01` and `TRIGGERS-ON-RUN-ARRIVAL-01` (ruled; land in
+B2/B4 and B3/B4b, mockups owed).
+
+### Before resuming
+- Re-measure before planning: re-run `npx vitest run lib/engine` and `./scripts/audit-docs.sh`, and re-count the
+  verifier's rules. At the pause: `PORTED_RULES` ∪ `BASE_BUILD_RULES` ∪ `MAINTENANCE_RULES` = 157 of the catalogue's
+  171 `INV-*` rules, plus all 50 strength rules (`verifyStrength.ts`) = 207 of 221. Do not trust these figures, recount.
+- Re-read the sitting `docs/decisions/coaching-2026-11-22-b3-raised-list.md`; it holds the rulings step 2b builds.
+- Housekeeping, not engine work: 9 `proto/*` branches (the 2026-11-20 prototypes) and about 19 agent worktrees under
+  `.claude/worktrees/` are still on disk. Clear them when they are no longer needed.
 
 ## Decision (proposed)
 The engine is rebuilt as a versioned service, structured as six layers. Each layer owns one canonical truth:
