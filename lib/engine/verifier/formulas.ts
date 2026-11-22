@@ -110,3 +110,31 @@ export function bandForPaceAnchors(anchors: readonly (string | null | undefined)
   const anchor = bands.reduce((a, b) => (b.hi > a.hi ? b : a)).anchor
   return { lo, hi, hr: `${lo}–${hi} bpm`, zone: zoneLabel(zonesTouchedBy(lo, hi, max as number, rhr as number)), anchor }
 }
+
+/** A pace as "m:ss". */
+export function paceText(minPerKm: number): string {
+  const m = Math.floor(minPerKm), sec = Math.round((minPerKm - m) * 60)
+  return sec === 60 ? `${m + 1}:00` : `${m}:${String(sec).padStart(2, '0')}`
+}
+
+/** A band around a centre pace, ±pct, as the plan writes it: "fast–slow /km". */
+export const bandAround = (centre: number, pct: number) => `${paceText(centre * (1 - pct / 100))}–${paceText(centre * (1 + pct / 100))} /km`
+
+/** The fast end of a band string ("4:05–4:20 /km" → "4:05"). */
+export function fastEnd(band: string | null | undefined): string | null {
+  const m = band ? /^\s*(\d+:\d{2})\s*\u2013/.exec(band) : null
+  return m ? m[1] : null
+}
+
+/** The runner's pace bands per anchor, as text: E, T, CV, I from their fraction bands; M and HM ±3% of their point. */
+export function anchorBands(trainingVdot: number, rawVdot: number): Record<'E' | 'T' | 'CV' | 'I' | 'M' | 'HM', string> {
+  const band = (v: number, k: 'E' | 'T' | 'CV' | 'I') => `${paceText(paceAt(v, PACE_FRACTIONS[k][1]))}–${paceText(paceAt(v, PACE_FRACTIONS[k][0]))} /km`
+  return {
+    E: band(trainingVdot, 'E'), T: band(trainingVdot, 'T'), CV: band(trainingVdot, 'CV'), I: band(rawVdot, 'I'),
+    M: bandAround(paceAt(trainingVdot, PACE_FRACTIONS.M[0]), 3), HM: bandAround(paceAt(trainingVdot, PACE_FRACTIONS.HM[0]), 3),
+  }
+}
+
+/** 🔻 The easy pace (min/km) the planner assumes for a runner with no benchmark, by level. A table of coaching numbers
+ *  private to `ruleEngine.ts`, not in config: copied so the checker agrees, and raised for the board. */
+export const FALLBACK_EASY_MIN_PER_KM = { beginner: 8.0, intermediate: 7.0, experienced: 6.25 } as const

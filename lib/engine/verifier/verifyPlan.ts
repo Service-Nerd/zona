@@ -19,7 +19,7 @@ import { V1_SESSION_CATALOGUE } from '@/lib/plan/sessionCatalogueData'
 import { FUELLING_PRACTICE_NOTE, ULTRA_FUELLING_PREFIX } from '@/lib/plan/fuellingNotes'
 import { PLAN_SIGNATURES } from '@/lib/plan/planSignatures'
 import { normaliseDays } from '@/lib/plan/days'
-import { sessionKmSelfPaced } from '@/lib/plan/sessionDistance'
+import { sessionKmSelfPaced, sessionKmOrZero } from '@/lib/plan/sessionDistance'
 import { hasInjuryKeyword, hasDeliveredCapInjury, hasVolumeCappedInjuryHistory } from '@/lib/plan/injuryScope'
 import { BENCHMARK_VDOT_MAX } from '@/lib/plan/benchmarkCheck'
 import { parsePaceMidpoint } from '@/lib/plan/paceParse'
@@ -29,7 +29,7 @@ import { workAnchorsOf, goalPaceShapeWord, isV2Structure, StructureV2Schema } fr
 import { isEffortGovernedRow } from '@/lib/plan/hrBand'
 import { zoneStringFromZoneKeys } from '@/lib/coaching/zoneRules'
 import { quotesGoalPace, hasGoalGapSentence } from '@/lib/plan/goalPaceReach'
-import { paceGuide, racePace, bandForZoneLabel, zonesTouchedBy, zonesIn, bandForPaceAnchors } from './formulas'
+import { paceGuide, racePace, bandForZoneLabel, zonesTouchedBy, zonesIn, bandForPaceAnchors, anchorBands, bandAround, fastEnd, FALLBACK_EASY_MIN_PER_KM } from './formulas'
 
 export type VerifierDay = 'mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat' | 'sun'
 
@@ -2310,6 +2310,79 @@ const BATCH_32: Partial<Record<RuleId, Predicate>> = {
   },
 }
 Object.assign(PREDICATES, BATCH_32)
+
+/** The work-step anchors of a session's derived set, by pace: each derived step paired with its row step, when the two
+ *  have the same shape. Written here (the planner's join of the same name is display code). */
+function anchorByPace(s: Session): Map<string, string> {
+  const out = new Map<string, string>()
+  const d = s.derived_set
+  const row = catalogueRowFor(s)
+  if (!d || !Array.isArray(d.blocks) || !row || !isV2Structure(row.main_set_structure)) return out
+  const parsed = StructureV2Schema.safeParse(row.main_set_structure)
+  if (!parsed.success || d.blocks.length !== parsed.data.blocks.length) return out
+  const pairs: { derived: { pace?: string | null }; structural: (typeof parsed.data.blocks)[number]['steps'][number] }[] = []
+  for (let b = 0; b < parsed.data.blocks.length; b++) {
+    const ds = d.blocks[b]?.steps, ss = parsed.data.blocks[b].steps
+    if (!Array.isArray(ds) || ds.length !== ss.length) return out
+    for (let i = 0; i < ss.length; i++) pairs.push({ derived: ds[i], structural: ss[i] })
+  }
+  for (const p of pairs) if (p.structural.role === 'work' && p.structural.target.kind === 'pace' && p.derived.pace) out.set(p.derived.pace, p.structural.target.anchor)
+  return out
+}
+
+const BATCH_33: Partial<Record<RuleId, Predicate>> = {
+  // §90, §40c: a week's stated km is the sum of its sessions (easy-paced where a session is time-anchored), within a
+  // kilometre. Skipped when the plan's VDOT differs from the request's (a repriced plan), and on foundation weeks.
+  'INV-PLAN-WEEKLY-KM-MATCHES-SESSIONS': (plan, { profile }) => {
+    if ((profile.vdot?.value.raw ?? null) !== (plan.meta.vdot ?? null)) return []
+    const level = plan.meta.fitness_level
+    const easy = plan.meta.vdot != null && plan.meta.vdot_training_anchor != null ? paceGuide(plan.meta.vdot_training_anchor, plan.meta.vdot).easy
+      : level === 'beginner' || level === 'intermediate' || level === 'experienced' ? FALLBACK_EASY_MIN_PER_KM[level] : null
+    if (easy == null) return []
+    return plan.weeks.flatMap(w => {
+      if (w.phase === 'foundation' || w.weekly_km == null || !w.sessions) return []
+      let total = 0
+      for (const s of Object.values(w.sessions)) {
+        if (!s || s.type === 'strength' || s.type === 'rest' || s.type === 'race') continue
+        if (s.distance_km == null && s.duration_mins == null) return []
+        total += sessionKmOrZero(s, easy)
+      }
+      return Math.abs(w.weekly_km - Math.round(total)) <= 1 ? [] : [{ rule_id: 'INV-PLAN-WEEKLY-KM-MATCHES-SESSIONS' as RuleId, week: w.n, day: null, detail: `${w.weekly_km} km stated, ${Math.round(total)} placed` }]
+    })
+  },
+
+  // §125, §120: every work step of a quality session runs at a pace from the runner's own guide (its anchor's band,
+  // the goal pace, or any guide band for an unanchored step; a progression's ends at a band's fast end), within 3%.
+  'INV-PLAN-STEP-PACE-FROM-GUIDE': plan => {
+    if (plan.meta.vdot == null || plan.meta.vdot_training_anchor == null) return []
+    const bands = anchorBands(plan.meta.vdot_training_anchor, plan.meta.vdot) as Record<string, string | undefined>
+    const admitted = new Set<string>(Object.values(bands) as string[])
+    const goalBand = plan.meta.goal_pace_per_km
+    if (goalBand) { admitted.add(goalBand); const m = parsePaceMidpoint(goalBand); if (m != null) admitted.add(bandAround(m, 2)) }
+    const centre = (b: string): number | null => { const s = Array.from(b.matchAll(/(\d+):(\d{2})/g)).map(m => Number(m[1]) * 60 + Number(m[2])); return s.length ? s.reduce((a, c) => a + c, 0) / s.length : null }
+    const centres = Array.from(admitted).map(centre).filter((x): x is number => x != null)
+    const ceilings = Array.from(admitted).map(b => centre(fastEnd(b) ?? '')).filter((x): x is number => x != null)
+    const near = (v: number, pool: number[]) => pool.some(p => p > 0 && Math.abs(v - p) / p <= 0.03)
+    const goals: number[] = []
+    if (goalBand) { const c = centre(goalBand); if (c != null) goals.push(c); const m = parsePaceMidpoint(goalBand); if (m != null) { const c2 = centre(bandAround(m, 2)); if (c2 != null) goals.push(c2) } }
+    return plan.weeks.flatMap(w => Object.values(w.sessions ?? {}).flatMap(s => {
+      if (!s || s.type !== 'quality' || !s.derived_set) return []
+      const anchorOf = anchorByPace(s)
+      const off = Array.from(new Set(s.derived_set.blocks.flatMap(b => b.steps).filter(st => st.role === 'work' && st.pace).map(st => st.pace as string))).filter(band => {
+        const anchor = anchorOf.get(band)
+        if (anchor && !band.includes('\u2192')) {
+          const target = bands[anchor] ? centre(bands[anchor]!) : null, c = centre(band)
+          return c != null && target != null && !near(c, [target, ...goals])
+        }
+        if (band.includes('→')) { const ends = band.split('→').map(centre); return !ends.some(e => e == null) && !ends.every(e => near(e!, ceilings)) }
+        const c = centre(band)
+        return c != null && !near(c, centres)
+      })
+      return off.length ? [{ rule_id: 'INV-PLAN-STEP-PACE-FROM-GUIDE' as RuleId, week: w.n, day: null, detail: `off-guide ${off.join(', ')}` }] : []
+    }))
+  },
+}
+Object.assign(PREDICATES, BATCH_33)
 
 const SEVERITY = new Map(RULES.map(r => [r.id, r.kind === 'soft' ? 'warn' as const : 'error' as const]))
 /** Rules the catalogue marks as conditionally severe: only these may set a finding's severity (code review, batch 20). */

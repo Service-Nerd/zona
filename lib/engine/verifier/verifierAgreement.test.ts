@@ -834,6 +834,15 @@ const EXTRA_MUTATIONS: { name: string; apply: (p: Plan, input: GeneratorInput) =
       lr.catalogue_id = 'mp_long_run'; lr.lr_segment_pace = ss === 60 ? `${mm + 1}:00` : `${mm}:${String(ss).padStart(2, '0')}`
       return true
     }],
+    // Batch 33: a progression work step whose ends sit at no band's fast end.
+    ['a progression step off every band', (p: Plan) => {
+      if (p.meta.vdot == null || p.meta.vdot_training_anchor == null) return false
+      for (const w of p.weeks) for (const x of Object.values(w.sessions ?? {})) {
+        const st = x && x.type === 'quality' ? x.derived_set?.blocks.flatMap(b => b.steps).find(y => y.role === 'work' && y.pace) : undefined
+        if (st) { st.pace = '9:40→9:10'; return true }
+      }
+      return false
+    }],
     ['meta age differing from the input', (p: Plan, i: GeneratorInput) => {
       if (typeof i.age !== 'number') return false
       ;(p.meta as unknown as Record<string, unknown>).age = i.age + 1; return true
@@ -887,6 +896,7 @@ const EXTRA_MUTATIONS: { name: string; apply: (p: Plan, input: GeneratorInput) =
 /** Breakages whose landing must be on a NAMED rule: they also wake neighbouring cap rules, so "the old report
  *  changed" would pass without the target being reached (code review, batch 14). */
 const TARGETS: Record<string, string[]> = {
+  'a progression step off every band': ['INV-PLAN-STEP-PACE-FROM-GUIDE'],
   'a goal one point past the stretch line, not withheld': ['INV-PLAN-GOAL-PACE-REACHABLE'],
   'a withheld plan whose race-pace long run finishes just off race pace': ['INV-PLAN-GOAL-PACE-REACHABLE'],
   'a goal-pace decision recorded with no benchmark': ['INV-PLAN-GOAL-PACE-REACHABLE'],

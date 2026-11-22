@@ -1,8 +1,10 @@
 // ADR027-B3-VERIFIER — the checker's own maths gives the same numbers as the planner's, across a grid of runners.
 // The two are separate on purpose (a mistake in one must not pass the other), so this is what stops them drifting.
 import { describe, it, expect } from 'vitest'
-import { paceGuide, racePace, bandForZoneLabel, zonesTouchedBy, bandForPaceAnchors, PACE_FRACTIONS } from './formulas'
-import { buildPaceFromVDOT, VDOT_FRACTIONS } from '@/lib/plan/paceBands'
+import { paceGuide, racePace, bandForZoneLabel, zonesTouchedBy, bandForPaceAnchors, PACE_FRACTIONS, anchorBands, bandAround, fastEnd, paceText, FALLBACK_EASY_MIN_PER_KM } from './formulas'
+import { buildPaceFromVDOT, VDOT_FRACTIONS, paceBandStr, bandCeiling, formatPace } from '@/lib/plan/paceBands'
+import { fitnessAnchorMap } from '@/lib/plan/fitnessAnchorMap'
+import { buildFallbackPace } from '@/lib/plan/ruleEngine'
 import { racePaceMinPerKm } from '@/lib/plan/aerobicEstimate'
 import { hrBandForZoneString } from '@/lib/coaching/zoneRules'
 import { zonesOverlappedBy, bandForAnchors } from '@/lib/plan/anchorBand'
@@ -24,6 +26,25 @@ describe('ADR027-B3-VERIFIER — the checker\'s maths agrees with the planner\'s
       n++
     }
     expect(n).toBe(VDOTS.length * 3)
+  })
+
+  it('🔴 pace bands as text, per anchor, for every VDOT and discount', () => {
+    for (const raw of VDOTS) for (const d of [0, 0.03, 0.07]) {
+      const t = raw * (1 - d)
+      expect(anchorBands(t, raw)).toEqual(fitnessAnchorMap(buildPaceFromVDOT(t, raw)))
+    }
+  })
+
+  it('🔴 pace text, a band around a centre, and a band\'s fast end', () => {
+    for (let m = 3; m <= 12; m += 0.0137) {
+      expect(paceText(m)).toBe(formatPace(m))
+      for (const pct of [2, 3]) { const b = bandAround(m, pct); expect(b).toBe(paceBandStr(m, pct)); expect(fastEnd(b)).toBe(bandCeiling(b)) }
+    }
+    for (const b of [null, '', '5:00 /km', '4:05–4:20 /km', ' 4:05 – 4:20']) expect(fastEnd(b)).toBe(bandCeiling(b))
+  })
+
+  it('🔴 the fallback easy pace for a runner with no benchmark', () => {
+    for (const lvl of ['beginner', 'intermediate', 'experienced'] as const) expect(FALLBACK_EASY_MIN_PER_KM[lvl]).toBe(buildFallbackPace(lvl).minPerKmEasy)
   })
 
   it('🔴 race pace, for every VDOT and distance', () => {
