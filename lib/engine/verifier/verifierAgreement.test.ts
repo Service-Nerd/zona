@@ -972,6 +972,12 @@ const SILENT: Record<string, { rule: string; twin: string }> = {
   'a continuous goal-pace step over the cap in the halfway week itself (5K time goal)': { rule: 'INV-PLAN-GOAL-PACE-SHAPE', twin: 'a continuous goal-pace step over the cap in the week after halfway (5K time goal)' },
 }
 const SILENT_BY_DESIGN = new Set(Object.keys(SILENT))
+
+/** 🔻 Rules no production path can wake, with the reason: agreement holds (both silent) and there is nothing to fire.
+ *  Raised for the board, not hidden: a rule that cannot run is a decision, not a pass. */
+const DEAD_IN_PRODUCTION: Record<string, string> = {
+  'INV-PLAN-ZONE-LABEL-HAS-PRESCRIPTION': 'gated on plan_kind base_build inside validatePlan, and production routes every base-build plan to the base-build validators instead (code review, batches 34-37)',
+}
 const GOAL_CASE = 'rebuilt as time target with no time, plus a quality session'
 /** QUALITY-EXPECTED's downgrade exemption, as a PAIR on the same week (code review, batch 17): the unflagged twin must
  *  fire the rule there, and the flagged one must leave both checkers silent there. Taper weeks included. */
@@ -1234,7 +1240,7 @@ describe('ADR027-B3-VERIFIER — agreement with validatePlan, per ported rule', 
       expect(diffs.slice(0, 5), `${diffs.length} disagreements`).toEqual([])
       // A STATIC rule reads rule data, not the plan, so no plan breakage can wake it (the liveness harness's class).
       // A base-build rule's population is base-build plans; it must fire in verifierBaseBuild.test.ts instead.
-      if (!STATIC_RULES.has(rule) && !BASE_BUILD_RULES.includes(rule) && !MAINTENANCE_RULES.includes(rule)) expect(fired.old, 'nothing in the battery wakes this rule, so agreement proves nothing').toBeGreaterThan(0)
+      if (!STATIC_RULES.has(rule) && !BASE_BUILD_RULES.includes(rule) && !MAINTENANCE_RULES.includes(rule) && !DEAD_IN_PRODUCTION[rule]) expect(fired.old, 'nothing in the battery wakes this rule, so agreement proves nothing').toBeGreaterThan(0)
     })
   }
 })

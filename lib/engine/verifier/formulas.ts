@@ -7,6 +7,7 @@
 // GENERATION_CONFIG). `formulas.test.ts` holds the two copies to the same answers across a grid of runners, so they
 // cannot drift apart silently; nothing here imports the planner's pace or band code.
 import { GENERATION_CONFIG } from '@/lib/plan/generationConfig'
+import type { GeneratorInput } from '@/types/plan'
 
 /** Daniels' %VO2max bands per pace anchor. Facts about his tables, not tunable coaching choices. */
 export const PACE_FRACTIONS = {
@@ -138,3 +139,13 @@ export function anchorBands(trainingVdot: number, rawVdot: number): Record<'E' |
 /** 🔻 The easy pace (min/km) the planner assumes for a runner with no benchmark, by level. A table of coaching numbers
  *  private to `ruleEngine.ts`, not in config: copied so the checker agrees, and raised for the board. */
 export const FALLBACK_EASY_MIN_PER_KM = { beginner: 8.0, intermediate: 7.0, experienced: 6.25 } as const
+
+/** The weekly volume a plan builds FROM, for a request: a fresh return starts at a fraction of the declared volume
+ *  (unless the volume was observed), and a runner under six months is capped at the week-1 ceiling. */
+export function startVolume(i: GeneratorInput): number {
+  const fresh = !i.volume_observed && ((i.weeks_at_current_volume !== undefined && i.weeks_at_current_volume < GENERATION_CONFIG.FRESH_RETURN_WEEKS_THRESHOLD)
+    || ((i.training_age === '2-5yr' || i.training_age === '5yr+') && i.current_weekly_km < GENERATION_CONFIG.HEURISTIC_FRESH_RETURN_WEEKLY_KM
+      && i.longest_recent_run_km < GENERATION_CONFIG.HEURISTIC_FRESH_RETURN_LONG_RUN_KM))
+  const declared = fresh ? i.current_weekly_km * GENERATION_CONFIG.FRESH_RETURN_START_FRACTION : i.current_weekly_km
+  return i.training_age === '<6mo' ? Math.min(declared, GENERATION_CONFIG.BEGINNER_WEEK1_VOLUME_CAP_KM) : declared
+}

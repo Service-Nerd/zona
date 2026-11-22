@@ -29,7 +29,7 @@ import { workAnchorsOf, goalPaceShapeWord, isV2Structure, StructureV2Schema } fr
 import { isEffortGovernedRow } from '@/lib/plan/hrBand'
 import { zoneStringFromZoneKeys } from '@/lib/coaching/zoneRules'
 import { quotesGoalPace, hasGoalGapSentence } from '@/lib/plan/goalPaceReach'
-import { paceGuide, racePace, bandForZoneLabel, zonesTouchedBy, zonesIn, bandForPaceAnchors, anchorBands, bandAround, fastEnd, FALLBACK_EASY_MIN_PER_KM } from './formulas'
+import { paceGuide, racePace, bandForZoneLabel, zonesTouchedBy, zonesIn, bandForPaceAnchors, anchorBands, bandAround, fastEnd, FALLBACK_EASY_MIN_PER_KM, startVolume } from './formulas'
 
 export type VerifierDay = 'mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat' | 'sun'
 
@@ -2504,20 +2504,21 @@ const BATCH_34: Partial<Record<RuleId, Predicate>> = {
 Object.assign(PREDICATES, BATCH_34)
 /** The rules whose population is base-build and staged plans: compared in `verifierBaseBuild.test.ts`, against the
  *  base-build validators, rather than in the race-plan harness (where both checkers are silent on them). */
-export const BASE_BUILD_RULES = [...Object.keys(BATCH_34), 'INV-PLAN-WALKRUN-START-PROGRESSION', 'INV-PLAN-ZONE-LABEL-HAS-PRESCRIPTION'] as RuleId[]
+export const BASE_BUILD_RULES = [...Object.keys(BATCH_34), 'INV-PLAN-WALKRUN-START-PROGRESSION'] as RuleId[]
 
 const BATCH_35: Partial<Record<RuleId, Predicate>> = {
   // §116, §117 Am. 7, §118 Am. 4: a runner routed to a walk-run start gets one (warn where the route is not ratified:
   // not staged and above §116's floor); the walk-run block comes first, holds its sessions and minutes at one level a
   // week, starts at the right rung, never steps down or by more than one, holds on a deload, and ends at §117's level;
-  // and running weeks after it keep the run-walk pattern. ⚠️ The start volume is the L1 profile's (the old code derives
-  // it from the plan's stored request with the planner's own helper).
-  'INV-PLAN-WALKRUN-START-PROGRESSION': (plan, { profile }) => {
+  // and running weeks after it keep the run-walk pattern. The start volume is worked out from the plan's STORED request
+  // with the checker's own formula (code review: the L1 profile is the runner's request, which the checkpoint path
+  // replaces with observed volume).
+  'INV-PLAN-WALKRUN-START-PROGRESSION': plan => {
     const C = GENERATION_CONFIG, weeks = plan.weeks ?? [], m = bbMeta(plan), gi = m.generator_input
     const wr = weeks.filter(w => w.phase === 'walk_run_start'), carried = m.walk_run_carried === true
     const out: Raw[] = []
     const push = (week: number, detail: string, severity: 'error' | 'warn' = 'error') => out.push({ rule_id: 'INV-PLAN-WALKRUN-START-PROGRESSION', week, day: null, detail, severity })
-    const start = profile.volume.effective_start_km.value
+    const start = gi ? startVolume(gi) : 0
     const below = start < C.BASE_BUILD_ONRAMP_MIN_START_KM
     const prescribed = below || (typeof gi?.longest_recent_run_km === 'number' && gi.longest_recent_run_km < C.WALK_RUN_START_MIN_LONGEST_RUN_KM)
     if ((wr.length > 0 || weeks.some(w => w.phase === 'base_build')) && wr.length === 0 && !carried && gi && prescribed) {
@@ -2640,10 +2641,22 @@ const SEVERITY = new Map(RULES.map(r => [r.id, r.kind === 'soft' ? 'warn' as con
 const CONDITIONAL = new Set(RULES.filter(r => r.severity_note).map(r => r.id))
 
 /** Every finding the ported predicates raise, with the severity the catalogue gives the rule. */
+/** Which rules judge this plan, by its kind, as production routes it (`validateStoredPlan`): a base-build plan gets only
+ *  the base-build validators, a maintenance plan that recorded its base volume only the maintenance validator, and
+ *  every other plan (an unstamped maintenance plan included) the race rules. Code review: without this the race rules
+ *  ran on base-build and maintenance plans and raised thousands of errors production never raises. */
+export function rulesFor(plan: Plan): RuleId[] {
+  if (plan.meta?.plan_kind === 'base_build') return BASE_BUILD_RULES
+  if (maintOf(plan)) return MAINTENANCE_RULES
+  const other = new Set<RuleId>([...BASE_BUILD_RULES, ...MAINTENANCE_RULES])
+  return PORTED_RULES.filter(r => !other.has(r))
+}
+
 export function verifyPlan(plan: Plan, ctx: VerifyContext): VerifierFinding[] {
   // Each predicate is isolated (code review): one that cannot evaluate returns an UNVERIFIED finding for
   // its own rule, rather than ending the run and losing every other rule's findings. Never a silent pass.
-  return (Object.entries(PREDICATES) as [RuleId, Predicate][]).flatMap(([id, p]) => {
+  const judged = new Set(rulesFor(plan))
+  return (Object.entries(PREDICATES) as [RuleId, Predicate][]).filter(([id]) => judged.has(id)).flatMap(([id, p]) => {
     try { return p(plan, ctx) } catch (e) {
       return [{ rule_id: id, week: PLAN, day: null, detail: `unverified: ${e instanceof Error ? e.message : String(e)}` }]
     }

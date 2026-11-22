@@ -14,7 +14,7 @@ import { buildRunnerProfile, factsFromInput } from '@/lib/engine/profile/buildRu
 import { GENERATION_CONFIG } from '@/lib/plan/generationConfig'
 import { sessionKmSelfPaced } from '@/lib/plan/sessionDistance'
 import { verifyPlan, BASE_BUILD_RULES } from './verifyPlan'
-import { validatePlan } from '@/lib/plan/invariants'
+import { validateStoredPlan } from '@/lib/plan/validateStoredPlan'
 
 /** The 24-per-group rows that yield a walk-run start or a staged plan (none of the 8-per-group rows do). */
 const EXTRA_ROWS = new Set([
@@ -153,11 +153,6 @@ const BREAKS: [string, (p: Plan) => boolean][] = [
     if (i < 0 || j < 0) return false
     p.weeks[i].phase = 'base_build'; return true
   }],
-  ['a base-build zone label with its HR target removed', p => {
-    if (meta(p).plan_kind !== 'base_build' || meta(p).hr_derived_max == null) return false
-    const s = ramp(p).flatMap(runsOf).find(x => x.zone && x.hr_target); if (!s) return false
-    delete s.hr_target; return true
-  }],
   ['a block that ends past the build-ratio ceiling', p => {
     const start = Number(meta(p).base_build_start_km ?? 0), r = ramp(p)
     if (!(start > 0) || !r.length) return false
@@ -184,7 +179,7 @@ const ARMS: Record<string, string[]> = {
 }
 
 const cases: Case[] = []
-const key = (rule: string, week: number | null | undefined, sev: string) => `${rule}|${week ?? 0}|${sev}`
+const key = (rule: string, week: number | null | undefined, day: string | null | undefined, sev: string) => `${rule}|${week ?? 0}|${day ?? '-'}|${sev}`
 
 beforeAll(() => {
   vi.useFakeTimers({ toFake: ['Date'] })
@@ -206,8 +201,6 @@ function oldFindings(p: Plan) {
   return [
     ...validateBaseBuildBlock(p.weeks, Number(m.base_build_start_km ?? 0), { spaced: m.onramp_spaced === true, blocked: m.generator_input?.days_cannot_train ?? [], volumeCappedInjury: volumeCappedRampOf(p) }),
     ...validateStagedRace(p),
-    // The one base-build rule that lives in validatePlan, behind its plan_kind gate.
-    ...(() => { try { return validatePlan(p, meta(p).generator_input as GeneratorInput).filter(v => v.code === 'INV-PLAN-ZONE-LABEL-HAS-PRESCRIPTION') } catch { return [] } })(),
   ]
 }
 
@@ -227,9 +220,9 @@ describe('ADR027-B3-VERIFIER — base-build and staged plans', () => {
       const diffs: string[] = []
       let fired = 0
       for (const c of cases) {
-        const old = oldFindings(c.plan).filter(v => v.code === rule).map(v => key(v.code, v.week, v.severity)).sort()
+        const old = oldFindings(c.plan).filter(v => v.code === rule).map(v => key(v.code, v.week, v.day, v.severity)).sort()
         const profile = buildRunnerProfile(factsFromInput(c.input), { asOf: c.asOf, timezone: null, planStart: c.planStart })
-        const neu = verifyPlan(c.plan, { input: c.input, profile }).filter(f => f.rule_id === rule).map(f => key(f.rule_id, f.week, f.severity)).sort()
+        const neu = verifyPlan(c.plan, { input: c.input, profile }).filter(f => f.rule_id === rule).map(f => key(f.rule_id, f.week, f.day, f.severity)).sort()
         fired += old.length
         if (JSON.stringify(old) !== JSON.stringify(neu)) diffs.push(`${c.label}: old [${old}] new [${neu}]`)
       }
@@ -237,6 +230,33 @@ describe('ADR027-B3-VERIFIER — base-build and staged plans', () => {
       expect(fired, 'nothing here wakes this rule').toBeGreaterThan(0)
     })
   }
+
+  it('🔴 the WHOLE output agrees with what production runs on a base-build plan (no race rule leaks in)', () => {
+    // Code review: the verifier once ran every race rule here too; validateStoredPlan runs only the base-build validators.
+    const diffs: string[] = []
+    for (const c of cases.filter(x => meta(x.plan).plan_kind === 'base_build')) {
+      const old = validateStoredPlan(c.plan).map(v => key(v.code, v.week, v.day, v.severity)).sort()
+      const profile = buildRunnerProfile(factsFromInput(c.input), { asOf: c.asOf, timezone: null, planStart: c.planStart })
+      const neu = verifyPlan(c.plan, { input: c.input, profile }).map(f => key(f.rule_id, f.week, f.day, f.severity)).sort()
+      if (JSON.stringify(old) !== JSON.stringify(neu)) diffs.push(`${c.label}: old [${old.slice(0, 4)}] new [${neu.slice(0, 4)}]`)
+    }
+    expect(diffs.slice(0, 5), `${diffs.length} disagreements`).toEqual([])
+    expect(cases.filter(x => meta(x.plan).plan_kind === 'base_build').length).toBeGreaterThan(40)
+  })
+
+  it('🔴 the walk-run start volume comes from the STORED request, not the runner\'s (code review)', () => {
+    // The checkpoint path stores observed volume; here the stored request is a fresh return below the floor while the
+    // request the profile is built from is not.
+    const c = cases.find(x => !x.label.includes(' / ') && meta(x.plan).plan_kind === 'base_build' && !x.plan.weeks.some(w => w.phase === 'walk_run_start'))!
+    const p = structuredClone(c.plan)
+    Object.assign(meta(p).generator_input as object, { current_weekly_km: 7, weeks_at_current_volume: 4, volume_observed: false })
+    const input = { ...c.input, current_weekly_km: 7, weeks_at_current_volume: undefined }
+    const profile = buildRunnerProfile(factsFromInput(input), { asOf: c.asOf, timezone: null, planStart: c.planStart })
+    const pick = (xs: { code?: string; rule_id?: string; week: number | null; severity: string }[]) => xs.filter(x => (x.code ?? x.rule_id) === 'INV-PLAN-WALKRUN-START-PROGRESSION').map(x => `${x.week}|${x.severity}`)
+    const old = pick(oldFindings(p) as never)
+    expect(old.length, 'the case must wake the old rule').toBeGreaterThan(0)
+    expect(pick(verifyPlan(p, { input, profile }) as never)).toEqual(old)
+  })
 
   it('🔴 a conditional base-build rule produces each of its severities', () => {
     for (const [rule, branches] of [['INV-PLAN-WALKRUN-START-PROGRESSION', ['warn', 'error']]] as const) for (const sev of branches) {

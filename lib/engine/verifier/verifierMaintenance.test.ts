@@ -7,6 +7,10 @@ import { describe, it, expect, beforeAll } from 'vitest'
 import type { Plan, Session } from '@/types/plan'
 import { generateMaintenanceBlock } from '@/lib/plan/maintenance'
 import { validateMaintenanceBlock } from '@/lib/plan/invariants'
+import { validateStoredPlan } from '@/lib/plan/validateStoredPlan'
+import { goldenSample, GOLDEN_AS_OF } from '@/lib/corpus/goldenCorpus'
+import { runEngine } from '@/lib/plan/engine'
+import { vi, afterAll } from 'vitest'
 import { buildRunnerProfile, factsFromInput } from '@/lib/engine/profile/buildRunnerProfile'
 import { GENERATION_CONFIG } from '@/lib/plan/generationConfig'
 import { verifyPlan, MAINTENANCE_RULES } from './verifyPlan'
@@ -73,9 +77,23 @@ beforeAll(() => {
     cases.push({ label: id, plan })
     for (const [name, f] of BREAKS) { const p = structuredClone(plan); if (f(p)) cases.push({ label: `${id} / ${name}`, plan: p }) }
   }
+  // Code review: a stored maintenance plan carries the RACE plan's meta too (the route spreads it), so race rules must not
+  // judge it. Wrap real race plans' meta around maintenance weeks, as the route does.
+  vi.useFakeTimers({ toFake: ['Date'] }); vi.setSystemTime(new Date(`${GOLDEN_AS_OF}T12:00:00`))
+  for (const row of goldenSample({ perGroup: 2 })) {
+    let race: Plan
+    try { race = (runEngine({ input: row.input, tier: row.tier, displayUnits: 'km', planStart: row.planStart, today: row.asOf } as never) as { plan: Plan }).plan } catch { continue }
+    if (!race?.weeks?.length) continue
+    const base = row.input.current_weekly_km || 30
+    let weeks: W[]
+    try { weeks = generateMaintenanceBlock({ raceResult: { finish_time: '3:45:00', distance_km: row.input.race_distance_km, date: '2026-07-12', rpe: 7, outcome: 'on_target' } as never, lastRaceWeek: RACE_WEEK, baseWeeklyKm: base, raceDistanceKm: row.input.race_distance_km, daysAvailable: 4 }) } catch { continue }
+    cases.push({ label: `race-meta ${row.id}`, plan: { ...race, meta: { ...race.meta, plan_kind: 'maintenance', source_base_weekly_km: base, source_injured: false, source_run_days_per_week: 4 }, weeks } as Plan })
+  }
+  vi.useRealTimers()
 })
+afterAll(() => { vi.useRealTimers() })
 
-const key = (rule: string, week: number | null | undefined, sev: string) => `${rule}|${week ?? 0}|${sev}`
+const key = (rule: string, week: number | null | undefined, day: string | null | undefined, sev: string) => `${rule}|${week ?? 0}|${day ?? '-'}|${sev}`
 function oldFindings(p: Plan) {
   const m = p.meta
   if (!(typeof m.source_base_weekly_km === 'number' && m.source_base_weekly_km > 0)) return []
@@ -93,8 +111,8 @@ describe('ADR027-B3-VERIFIER — post-race maintenance plans', () => {
       const diffs: string[] = []
       let fired = 0
       for (const c of cases) {
-        const old = oldFindings(c.plan).filter(v => v.code === rule).map(v => key(v.code, v.week, v.severity)).sort()
-        const neu = verifyPlan(c.plan, { input: INPUT, profile: PROFILE }).filter(f => f.rule_id === rule).map(f => key(f.rule_id, f.week, f.severity)).sort()
+        const old = oldFindings(c.plan).filter(v => v.code === rule).map(v => key(v.code, v.week, v.day, v.severity)).sort()
+        const neu = verifyPlan(c.plan, { input: INPUT, profile: PROFILE }).filter(f => f.rule_id === rule).map(f => key(f.rule_id, f.week, f.day, f.severity)).sort()
         fired += old.length
         if (JSON.stringify(old) !== JSON.stringify(neu)) diffs.push(`${c.label}: old [${old}] new [${neu}]`)
       }
@@ -102,6 +120,17 @@ describe('ADR027-B3-VERIFIER — post-race maintenance plans', () => {
       expect(fired, 'nothing here wakes this rule').toBeGreaterThan(0)
     })
   }
+
+  it('🔴 the WHOLE output agrees with what production runs on a stamped maintenance plan (no race rule leaks in)', () => {
+    const stamped = cases.filter(c => typeof c.plan.meta.source_base_weekly_km === 'number' && c.plan.meta.source_base_weekly_km > 0)
+    expect(stamped.some(c => c.label.startsWith('race-meta')), 'no maintenance plan carrying race meta').toBe(true)
+    const diffs = stamped.flatMap(c => {
+      const old = validateStoredPlan(c.plan).map(v => key(v.code, v.week, v.day, v.severity)).sort()
+      const neu = verifyPlan(c.plan, { input: INPUT, profile: PROFILE }).map(f => key(f.rule_id, f.week, f.day, f.severity)).sort()
+      return JSON.stringify(old) === JSON.stringify(neu) ? [] : [`${c.label}: old [${old.slice(0, 4)}] new [${neu.slice(0, 4)}]`]
+    })
+    expect(diffs.slice(0, 5), `${diffs.length} disagreements`).toEqual([])
+  })
 
   it('🔴 every arm of a multi-check rule fires on its own', () => {
     for (const [rule, prefixes] of Object.entries(ARMS)) for (const pre of prefixes) {

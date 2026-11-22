@@ -1,10 +1,11 @@
 // ADR027-B3-VERIFIER — the checker's own maths gives the same numbers as the planner's, across a grid of runners.
 // The two are separate on purpose (a mistake in one must not pass the other), so this is what stops them drifting.
 import { describe, it, expect } from 'vitest'
-import { paceGuide, racePace, bandForZoneLabel, zonesTouchedBy, bandForPaceAnchors, PACE_FRACTIONS, anchorBands, bandAround, fastEnd, paceText, FALLBACK_EASY_MIN_PER_KM } from './formulas'
+import { paceGuide, racePace, bandForZoneLabel, zonesTouchedBy, bandForPaceAnchors, PACE_FRACTIONS, anchorBands, bandAround, fastEnd, paceText, FALLBACK_EASY_MIN_PER_KM, startVolume } from './formulas'
 import { buildPaceFromVDOT, VDOT_FRACTIONS, paceBandStr, bandCeiling, formatPace } from '@/lib/plan/paceBands'
 import { fitnessAnchorMap } from '@/lib/plan/fitnessAnchorMap'
 import { buildFallbackPace } from '@/lib/plan/ruleEngine'
+import { effectiveStartKm } from '@/lib/plan/startVolume'
 import { racePaceMinPerKm } from '@/lib/plan/aerobicEstimate'
 import { hrBandForZoneString } from '@/lib/coaching/zoneRules'
 import { zonesOverlappedBy, bandForAnchors } from '@/lib/plan/anchorBand'
@@ -45,6 +46,16 @@ describe('ADR027-B3-VERIFIER — the checker\'s maths agrees with the planner\'s
 
   it('🔴 the fallback easy pace for a runner with no benchmark', () => {
     for (const lvl of ['beginner', 'intermediate', 'experienced'] as const) expect(FALLBACK_EASY_MIN_PER_KM[lvl]).toBe(buildFallbackPace(lvl).minPerKmEasy)
+  })
+
+  it('🔴 the start volume, for every request shape', () => {
+    let n = 0
+    for (const km of [0, 3, 6, 8, 12, 19.9, 20, 35, 80]) for (const lr of [0, 4, 7.9, 8, 15]) for (const age of ['<6mo', '6-12mo', '1-2yr', '2-5yr', '5yr+'] as const)
+      for (const weeks of [undefined, 0, 3, 8, 20]) for (const observed of [undefined, true]) {
+        const i = { current_weekly_km: km, longest_recent_run_km: lr, training_age: age, weeks_at_current_volume: weeks, volume_observed: observed } as never
+        expect(startVolume(i)).toBe(effectiveStartKm(i)); n++
+      }
+    expect(n).toBeGreaterThan(2000)
   })
 
   it('🔴 race pace, for every VDOT and distance', () => {
