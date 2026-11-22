@@ -39,9 +39,10 @@ const ALLOWED_NAMES: Record<string, string[]> = {
   '@/lib/plan/hrBand': ['isEffortGovernedRow'],        // classifies a row by its targets (INV-CLASS, the builder's same test), fixture-tested
   '@/lib/coaching/zoneRules': ['zoneStringFromZoneKeys'], // the zone-string format owner (keys to "Zone 3–4")
   '@/lib/plan/goalPaceReach': ['quotesGoalPace', 'hasGoalGapSentence'], // match the plan's OWN copy (the gap sentence), not maths
-  '@/packages/strength/catalogue': ['CATALOGUE_BY_ID', 'PATTERN_REGION'], // the exercise catalogue: rule data
-  '@/packages/strength/config': ['STRENGTH_CONFIG'],   // the strength numerics: rule data
-  '@/packages/strength/types': ['InjuryTag', 'Prescription', 'RunContext', 'StrengthPlan', 'StrengthSession'], // types only
+  // The strength package's index, named exports only: the catalogue and config (rule data) and types, never its
+  // generator, placement or session code.
+  '@/packages/strength': ['CATALOGUE_BY_ID', 'PATTERN_REGION', 'STRENGTH_CONFIG', 'InjuryTag', 'Prescription', 'RunContext', 'StrengthPlan', 'StrengthSession'],
+  '@/lib/dates': ['calendarDaysBetween'],              // the calendar-day owner (dates are input format)
 }
 
 /** Every non-test source file under the verifier, recursively. */

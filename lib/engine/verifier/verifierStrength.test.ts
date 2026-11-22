@@ -5,13 +5,13 @@
 // woken; (2) the strength sweep's real plans, strength placed around generated run plans and standalone. The old side
 // is validateStrengthPlan / recoveryEaseViolations / progressionViolations; the key is (code, week, date-or-day).
 import { describe, it, expect, beforeAll } from 'vitest'
-import { generateStrengthPlan, standaloneContext } from '@/packages/strength/generate'
-import { validateStrengthPlan, recoveryEaseViolations, progressionViolations } from '@/packages/strength/validate'
-import { easeForRecovery } from '@/packages/strength/recovery'
-import { suggestLoad, isNoStepSession } from '@/packages/strength/progression'
-import { CATALOGUE_BY_ID, PATTERN_REGION } from '@/packages/strength/catalogue'
-import { STRENGTH_CONFIG } from '@/packages/strength/config'
-import type { Day, RunContext, RunDay, RunRole, RunWeek, StrengthPlan, StrengthProfile, StrengthSession } from '@/packages/strength/types'
+import { generateStrengthPlan, standaloneContext, withChosenDays } from '@/packages/strength'
+import { validateStrengthPlan, recoveryEaseViolations, progressionViolations } from '@/packages/strength'
+import { easeForRecovery } from '@/packages/strength'
+import { suggestLoad, isNoStepSession } from '@/packages/strength'
+import { CATALOGUE_BY_ID, PATTERN_REGION } from '@/packages/strength'
+import { STRENGTH_CONFIG } from '@/packages/strength'
+import type { Day, RunContext, RunDay, RunRole, RunWeek, StrengthPlan, StrengthProfile, StrengthSession } from '@/packages/strength'
 import { cohortGrid, COHORT_PLAN_START } from '@/lib/plan/cohortGrid'
 import { generateRulePlan } from '@/lib/plan/ruleEngine'
 import { isDesignedRefusal } from '@/lib/plan/designedRefusal'
@@ -166,8 +166,15 @@ beforeAll(() => {
   const upperAcc = rir.weeks[0].sessions.flatMap(x => x.blocks).filter(b => b.role === 'accessory' || b.role === 'main').flatMap(b => b.items)
     .find(i => { const e = CATALOGUE_BY_ID.get(i.exercise_id); return !!e && e.pattern.startsWith('upper') })
   if (upperAcc) { upperAcc.rir = STRENGTH_CONFIG.RIR_FLOOR - 1; cases.push({ label: 'extra upper lift under the RIR floor', plan: rir, ctx: C }) }
+  // Chosen days go through withChosenDays, as production's profile parsing does (code review: raw available_days left the
+  // producer ignoring them). Saturday 2026-11-28 is exactly RACE_WEEK_DAYS before the race, in a week labelled build.
   const noTaper: RunContext = { ...C, weeks: C.weeks.map(w => (w.n === 4 ? { ...w, phase: 'build' as const } : w)) }
-  cases.push({ label: 'race window, week not labelled taper, chosen days', plan: generateStrengthPlan({ ...PROFILE, available_days: ['wed', 'sun'], sessions_per_week: 2 }, noTaper), ctx: noTaper })
+  for (const days of [['sat'], ['wed', 'sun'], ['sat', 'tue']] as Day[][]) {
+    const pl = generateStrengthPlan(withChosenDays(PROFILE, days), noTaper)
+    cases.push({ label: `race window, week not labelled taper, chosen ${days.join('+')}`, plan: pl, ctx: noTaper })
+    const em = clone(pl); em.weeks[3].sessions = []
+    cases.push({ label: `race window, chosen ${days.join('+')}, week 4 emptied`, plan: em, ctx: noTaper })
+  }
   // (2) the sweep: strength around real run plans, every 11th profile per plan, and standalone.
   const profiles = strengthProfileGrid()
   const inputs = cohortGrid().filter((_, i) => i % 9001 === 0)
@@ -178,6 +185,28 @@ beforeAll(() => {
     for (let j = k % 11; j < profiles.length; j += 11) cases.push({ label: `sweep ${k}/${j}`, plan: generateStrengthPlan(profiles[j], rc), ctx: rc })
   })
   for (let j = 0; j < profiles.length; j += 7) { const sc = standaloneContext('2026-11-02'); cases.push({ label: `standalone ${j}`, plan: generateStrengthPlan(profiles[j], sc), ctx: sc }) }
+  // Production validates a standalone plan with NO calendar (code review: the null-ctx branches never ran).
+  for (let j = 0; j < profiles.length; j += 5) {
+    const pl = generateStrengthPlan(profiles[j], null, { standaloneStart: '2026-11-02' })
+    cases.push({ label: `standalone, no calendar ${j}`, plan: pl, ctx: null })
+    const late = clone(pl); late.start_date = '2026-11-16'
+    cases.push({ label: `standalone, no calendar, later start ${j}`, plan: late, ctx: null })
+  }
+  // The sweep as production runs it (code review: it raised nothing, so agreement was [] against []): an injured runner
+  // (injury tags come from the RUN plan), strength started mid-plan, and an injury-restricted lift placed on a real plan.
+  inputs.slice(0, 4).forEach((input, k) => {
+    let plan
+    try { plan = generateRulePlan({ ...input, injury_history: ['knee'] }, 'paid', COHORT_PLAN_START) } catch (e) { if (isDesignedRefusal(e)) return; throw e }
+    const rc = planToRunContext(plan)
+    const mid = rc.days.find(d => d.week_n === 5 && d.day === 'mon')?.date
+    for (let j = k % 5; j < profiles.length; j += 23) {
+      const pl = generateStrengthPlan(profiles[j], rc, mid ? { startDate: mid } : {})
+      cases.push({ label: `sweep knee ${k}/${j}`, plan: pl, ctx: rc })
+      const br = clone(pl)
+      const main = br.weeks.flatMap(w => w.sessions).find(s => s.heavy_legs)?.blocks.find(b => b.role === 'main')?.items[0]
+      if (main) { main.exercise_id = 'skater_squat'; cases.push({ label: `sweep knee ${k}/${j} / a knee-restricted lift`, plan: br, ctx: rc }) }
+    }
+  })
 })
 
 const S_CODES = RULES.filter(r => r.id.startsWith('S-')).map(r => r.id)
@@ -233,8 +262,9 @@ describe('ADR027-B3-VERIFIER — strength plans', () => {
       const today = new Date(Date.UTC(2026, 9, 1 + 3 * gap)).toISOString().slice(0, 10)
       const sug = suggestLoad(history as never, { exerciseId: ex.id, today, noStep: isNoStepSession(noStep ? 'deload' : 'build', false), injuries: [] })
       const region = PATTERN_REGION[ex.pattern], step = region === 'lower' ? STRENGTH_CONFIG.LOAD_STEP_KG_LOWER : STRENGTH_CONFIG.LOAD_STEP_KG_UPPER
-      const oneStepOver = 15 + step + STRENGTH_CONFIG.LOAD_ROUND_KG   // just past one step above the last load (15 kg)
-      for (const s of [sug, { ...sug, load_kg: (sug.load_kg ?? 15) + 10 }, { ...sug, load_kg: oneStepOver }, { ...sug, extra_reps: 9 }]) for (const reps of [undefined, 8, 10]) {
+      // Either side of the real line, last + step + LOAD_ROUND_KG/2 (code review: one full rounding step over sat past it).
+      const line = 15 + step + STRENGTH_CONFIG.LOAD_ROUND_KG / 2
+      for (const s of [sug, { ...sug, load_kg: (sug.load_kg ?? 15) + 10 }, { ...sug, load_kg: line + 0.1 }, { ...sug, load_kg: line - 0.1 }, { ...sug, extra_reps: 9 }]) for (const reps of [undefined, 8, 10]) {
         const o = progressionViolations(history, ex.id, today, noStep, s, reps).map(v => key(v.code, v.week, v.day) + v.detail).sort()
         const n = verifyProgression(history, ex.id, today, noStep, s, reps).map(f => key(f.rule_id, f.week, f.at) + f.detail).sort()
         fired += o.length
@@ -249,6 +279,13 @@ describe('ADR027-B3-VERIFIER — strength plans', () => {
     const src = require('node:fs').readFileSync('lib/engine/verifier/verifyStrength.ts', 'utf8') as string
     const emitted = new Set(Array.from(src.matchAll(/code: '(S-[A-Z0-9-]+)'/g)).map(m => m[1]))
     expect(S_CODES.filter(c => !emitted.has(c))).toEqual([])
+    // And the other direction (code review): a code the copy emits but the catalogue lacks would take a default severity.
+    expect(Array.from(emitted).filter(c => !S_CODES.includes(c as never))).toEqual([])
+  })
+
+  it('the corpus reaches the production shapes: no calendar, a mid-plan start, an injured runner', () => {
+    expect(cases.some(c => c.ctx === null)).toBe(true)
+    expect(cases.some(c => c.label.startsWith('sweep knee') && validateStrengthPlan(c.plan, c.ctx).some(v => v.code === 'S-INJURY-AVOID'))).toBe(true)
   })
 })
 

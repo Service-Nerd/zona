@@ -3,12 +3,13 @@
 // packages/strength/validate.ts was already written to be independent of the strength PRODUCER (it re-derives every
 // rule from the RunContext and the plan's own fields, never calling placement or session code), so the port is a
 // faithful copy, as every other rule's port is: the old checker is retired at cut-over and this one stays. It reads
-// only rule data (the exercise catalogue, its pattern regions, STRENGTH_CONFIG) and the plan types.
+// only rule data (the exercise catalogue, its pattern regions, STRENGTH_CONFIG) and the plan types, through the package's
+// index (the package boundary).
 // `verifierStrength.test.ts` holds it to validateStrengthPlan, recoveryEaseViolations and progressionViolations,
 // finding for finding, on the strength sweep's plans and on every one-rule breakage the old suite uses.
-import { CATALOGUE_BY_ID, PATTERN_REGION } from '@/packages/strength/catalogue'
-import { STRENGTH_CONFIG as C } from '@/packages/strength/config'
-import type { InjuryTag, Prescription, RunContext, StrengthPlan, StrengthSession } from '@/packages/strength/types'
+import { CATALOGUE_BY_ID, PATTERN_REGION, STRENGTH_CONFIG as C } from '@/packages/strength'
+import type { InjuryTag, Prescription, RunContext, StrengthPlan, StrengthSession } from '@/packages/strength'
+import { calendarDaysBetween } from '@/lib/dates'
 import type { RuleId } from '@/lib/engine/contracts/rule'
 import { RULES } from '@/lib/engine/catalogue/rules'
 
@@ -251,7 +252,9 @@ function strengthPlanViolations(plan: StrengthPlan, ctx: RunContext | null): Str
         if (start && d.date < start) continue
         if (d.role === 'race' || (d.runs ?? 0) >= 2) continue
         if (ctx.race_date) {
-          const until = Math.round((Date.parse(ctx.race_date + 'T00:00:00Z') - Date.parse(d.date + 'T00:00:00Z')) / 86_400_000)
+          // The ONE change from the copied validator: the countdown goes through the date owner (raceCountdownOwner gate),
+          // which equals the old UTC quotient on every valid calendar date.
+          const until = calendarDaysBetween(d.date, ctx.race_date)
           if (until >= 0 && until < C.RACE_WEEK_DAYS) continue
         }
         if (!placedDates.has(d.date)) v.push({ code: 'S-PINNED-DAYS', week: w.n, day: d.date, detail: `chosen day ${d.day} left without a session` })
