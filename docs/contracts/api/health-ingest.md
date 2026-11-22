@@ -18,7 +18,7 @@
 
 > ⚠️ **THERE ARE TWO PRODUCERS OF THE HealthKit REQUEST BODY** since 2026-11-05: `lib/health/clientSync.ts` (full payload, with HR) and `HealthObserverPlugin.shellPayload` in **Swift** (shell only, no HR — HR is deferred to `retryPendingHrRows`, per `HK-HR-LOCKED-DROPS-RUN-01`). The compiler sees neither side of that seam; `lib/health/nativeIngestContract.test.ts` compares the Swift source against the `HealthKitWorkoutPayload` interface in both directions. **Changing that interface means changing the Swift.**
 >
-> 🔑 **Late HR also fills the completion (SESSION-COMPLETION-AVG-HR-STALE-01, 2026-11-22).** When HR arrives for an already-stored run, on the same-uuid resync path and on the consolidation path, `mirrorAvgHrToCompletion` (`lib/coaching/completionHrMirror.ts`) writes `avg_hr` onto the run's LIVE `session_completions` row **only where it is NULL**. The completion copied it once at link time and never again. A manual log's value is never overwritten. ADR-027 B4b's single writer replaces this.
+> 🔑 **Late HR also fills the completion (SESSION-COMPLETION-AVG-HR-STALE-01, 2026-11-22).** When HR arrives for an already-stored run, on the same-uuid resync path and on the consolidation path, `mirrorAvgHrToCompletion` (`lib/supabase/completionHrMirror.ts`) writes `avg_hr` onto the run's LIVE `session_completions` row **only where it is NULL**. The completion copied it once at link time and never again. A manual log's value is never overwritten. ADR-027 B4b's single writer replaces this.
 
 > 🔑 Two producers are safe only because this route **upserts on `(user_id, apple_health_uuid)`**: the native shell row and the web path's later full-HR row converge on one row. Do not change that `onConflict`.
 
