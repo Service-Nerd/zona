@@ -14,6 +14,7 @@ import { buildRunnerProfile, factsFromInput } from '@/lib/engine/profile/buildRu
 import { GENERATION_CONFIG } from '@/lib/plan/generationConfig'
 import { sessionKmSelfPaced } from '@/lib/plan/sessionDistance'
 import { verifyPlan, BASE_BUILD_RULES } from './verifyPlan'
+import { validatePlan } from '@/lib/plan/invariants'
 
 /** The 24-per-group rows that yield a walk-run start or a staged plan (none of the 8-per-group rows do). */
 const EXTRA_ROWS = new Set([
@@ -152,6 +153,11 @@ const BREAKS: [string, (p: Plan) => boolean][] = [
     if (i < 0 || j < 0) return false
     p.weeks[i].phase = 'base_build'; return true
   }],
+  ['a base-build zone label with its HR target removed', p => {
+    if (meta(p).plan_kind !== 'base_build' || meta(p).hr_derived_max == null) return false
+    const s = ramp(p).flatMap(runsOf).find(x => x.zone && x.hr_target); if (!s) return false
+    delete s.hr_target; return true
+  }],
   ['a block that ends past the build-ratio ceiling', p => {
     const start = Number(meta(p).base_build_start_km ?? 0), r = ramp(p)
     if (!(start > 0) || !r.length) return false
@@ -200,6 +206,8 @@ function oldFindings(p: Plan) {
   return [
     ...validateBaseBuildBlock(p.weeks, Number(m.base_build_start_km ?? 0), { spaced: m.onramp_spaced === true, blocked: m.generator_input?.days_cannot_train ?? [], volumeCappedInjury: volumeCappedRampOf(p) }),
     ...validateStagedRace(p),
+    // The one base-build rule that lives in validatePlan, behind its plan_kind gate.
+    ...(() => { try { return validatePlan(p, meta(p).generator_input as GeneratorInput).filter(v => v.code === 'INV-PLAN-ZONE-LABEL-HAS-PRESCRIPTION') } catch { return [] } })(),
   ]
 }
 

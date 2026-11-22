@@ -2504,7 +2504,7 @@ const BATCH_34: Partial<Record<RuleId, Predicate>> = {
 Object.assign(PREDICATES, BATCH_34)
 /** The rules whose population is base-build and staged plans: compared in `verifierBaseBuild.test.ts`, against the
  *  base-build validators, rather than in the race-plan harness (where both checkers are silent on them). */
-export const BASE_BUILD_RULES = [...Object.keys(BATCH_34), 'INV-PLAN-WALKRUN-START-PROGRESSION'] as RuleId[]
+export const BASE_BUILD_RULES = [...Object.keys(BATCH_34), 'INV-PLAN-WALKRUN-START-PROGRESSION', 'INV-PLAN-ZONE-LABEL-HAS-PRESCRIPTION'] as RuleId[]
 
 const BATCH_35: Partial<Record<RuleId, Predicate>> = {
   // §116, §117 Am. 7, §118 Am. 4: a runner routed to a walk-run start gets one (warn where the route is not ratified:
@@ -2560,6 +2560,17 @@ const BATCH_35: Partial<Record<RuleId, Predicate>> = {
   },
 }
 Object.assign(PREDICATES, BATCH_35)
+
+const BATCH_36: Partial<Record<RuleId, Predicate>> = {
+  // §14 Am.: on a base-build plan that can derive an HR band, a zone label shown to the runner has a target behind it.
+  'INV-PLAN-ZONE-LABEL-HAS-PRESCRIPTION': plan => {
+    const m = plan.meta as unknown as Record<string, unknown>
+    if (m.plan_kind !== 'base_build' || m.hr_derived_max == null) return []
+    return plan.weeks.flatMap(w => daysOf(w).flatMap(({ day, session: s }) =>
+      s?.zone && !s.hr_target ? [{ rule_id: 'INV-PLAN-ZONE-LABEL-HAS-PRESCRIPTION' as RuleId, week: w.n, day, detail: 'a zone with no target' }] : []))
+  },
+}
+Object.assign(PREDICATES, BATCH_36)
 
 const SEVERITY = new Map(RULES.map(r => [r.id, r.kind === 'soft' ? 'warn' as const : 'error' as const]))
 /** Rules the catalogue marks as conditionally severe: only these may set a finding's severity (code review, batch 20). */
