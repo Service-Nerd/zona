@@ -1600,6 +1600,10 @@ with the Coaching Board (the week-1 floor for someone who has never run, and
 | **Strength route runs S13 and S14** (STRENGTH-S13-S14-LIVE-01) | 🔲 | S | ⚙️ Ruled 2026-11-22. |
 | **No-benchmark paces need a principle** (PACE-GUIDE-PROVENANCE-01) | 🔲 | S | 🏃 Own sitting; 18 of 39 live plans use them. |
 | **Plans record their max HR's source** (HR-MAX-SOURCE-01) | 🔲 | S | 🏃 After the data exists. |
+| **A run's HR facts are provisional until they settle** (ENGINE-HR-SETTLED-STATE-01) | 🔲 | M | 🏃💼🧭 Lands in ADR-027 B3 step 4 and B4b; filed 2026-11-22. |
+| **The EF baseline as an observed fact** (EF-BASELINE-OBSERVED-FACT-01) | 🔲 | S | 🏃 Rule before B4 reads `ef_trend_pct`. |
+| **Later HR batches re-score the analysis** (ANALYSIS-LATE-HR-REFRESH-01) | 🔲 | S | ⚙️ Deferred into ENGINE-HR-SETTLED-STATE-01. |
+| **Two HR-late-arrival backfills** (HR-LATE-ARRIVAL-BACKFILL-01) | 🔲 | S | ⚙️ SQL ready, founder runs it (3 completions, 66 analyses). |
 | **L1 profile, the rest: route fetches facts, derivations read the profile, three input defects** (ADR027-B2B-PROFILE-ADOPTION) | 🟡 | M | ⚙️ then 🏃. Part 1 shipped 2026-11-21 (`ADR027-B2B-PROFILE`: generate-plan reads the facts). Part 2 deferred to B4. Part 3 (VDOT-blind recommendation, prep-week floor, unsent `weeks_at_current_volume`) awaits one Coaching Board sitting. |
 | **Confirm/revert ignore their status writes after a save, and two taps can race** (CONFIRM-REVERT-WRITE-ERRORS-01) | 🔲 | S | ⚙️ Found 2026-11-21 by the hotfix 5 review; pre-existing. Folds into ADR-027 B4b's single writer. |
 | **Ask once for the facts the engine is missing** (PROFILE-MISSING-FACTS-PROMPT-01) | 🔲 | S | 🧭 then 💼. Future increment (founder 2026-11-21): outside B0–B8; cheap after B2 because the profile already lists what is missing. |

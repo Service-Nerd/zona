@@ -34,6 +34,7 @@ import { buildAthleteContext } from '@/lib/coaching/prompts/athleteContext'
 import { detectReframeTier } from '@/lib/coaching/reframeTier'
 import { assessReframeRiskGate, type CoachingFlag, type FatigueTag } from '@/lib/coaching/reframeRiskGate'
 import { isFatigueTag } from '@/lib/coaching/completionVocab'
+import { resolveAvgHr } from '@/lib/coaching/resolveAvgHr'
 import { COHORT_SIMILARITY, REFRAME_RISK, REFRAME_TIER, FATIGUE_HIGH_TAGS } from '@/lib/coaching/constants'
 import { inferLimiter } from '@/lib/coaching/limiter'
 import { coachingSessionType } from '@/lib/plan/sessionRole'
@@ -223,7 +224,9 @@ export async function POST(req: NextRequest) {
   const rpe = completion?.rpe ?? null
   const fatigueTag = completion?.fatigue_tag ?? null
   const actualDistKm = completion?.strava_activity_km ?? null
-  const actualAvgHr = completion?.avg_hr ?? null
+  // SESSION-COMPLETION-AVG-HR-STALE-01 — the completion's copy is null for a run linked before its HR arrived; the
+  // activity row below fills it (`resolveAvgHr`). Reassigned after that read.
+  let actualAvgHr = completion?.avg_hr ?? null
   const hrInZonePct = analysis?.hr_in_zone_pct != null ? Number(analysis.hr_in_zone_pct) : null
   const hrAboveCeilingPct = analysis?.hr_above_ceiling_pct != null ? Number(analysis.hr_above_ceiling_pct) : null
   const hrBelowFloorPct = analysis?.hr_below_floor_pct != null ? Number(analysis.hr_below_floor_pct) : null
@@ -240,11 +243,12 @@ export async function POST(req: NextRequest) {
       const filterVal = completion.strava_activity_id ?? completion.apple_health_uuid
       const { data: actRow } = await service
         .from('strava_activities')
-        .select('avg_temp_c, splits_metric')
+        .select('avg_temp_c, splits_metric, avg_hr')
         .eq('user_id', userId)
         .eq(filterCol, filterVal)
         .maybeSingle()
       tempC = actRow?.avg_temp_c != null ? Number(actRow.avg_temp_c) : null
+      actualAvgHr = resolveAvgHr(completion?.avg_hr, actRow?.avg_hr as number | null | undefined)
       paceFadeSummary = computePaceFadeSummary(
         actRow?.splits_metric as StravaSplitMetric[] | null,
       )

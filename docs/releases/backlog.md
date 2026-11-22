@@ -1943,6 +1943,32 @@ a sitting (Sims carrying) before B4 adopts them. Values unchanged until then.
 `HR-ASSUMPTIONS-SURFACED` exempts every Karvonen plan, including one whose max HR was only observed. Sims: an observed max
 is an assumption until measured. Not rulable until the plan stores the max's source.
 
+
+### 🔲 `ENGINE-HR-SETTLED-STATE-01` — a run's heart-rate facts are provisional until they settle *(filed 2026-11-22, from the HR-missing investigation; placed against ADR-027)* 🏃 **COACHING BOARD** then 💼 **SLT** (prompt frequency), 🧭 **DESIGN BOARD** for what the runner sees meanwhile
+📐 One run's HR arrived in two batches (46 then 52 samples) and was scored on the first; later batches never re-scored. ARCH-ENG-018 evaluates triggers when data arrives, and the adapt events (`run_logged`, `run_analysed`) have no state for "HR has settled", so a trigger reading HR fires on partial data. **Proposal:** the data dictionary and ADR-027 name HR as provisional until a settle rule says otherwise (no new batch for N minutes, or a run-age cap, both config); a trigger either waits for settled or re-evaluates under an idempotent key. Needs: Coaching Board on the settle threshold, SLT and Design Board on how often the runner is prompted. Lands in B3 step 4 (trigger catalogue) and B4b. Until then `ANALYSIS-LATE-HR-REFRESH-01` stays deferred.
+
+### 🔲 `EF-BASELINE-OBSERVED-FACT-01` — the EF baseline is looser than its comment, and the new profile reads it as a fact *(filed 2026-11-22, same investigation)* 🏃 **COACHING BOARD**
+`computeEFBaseline` (`lib/coaching/efTrend.ts`) says "runs of the same session type" but splits easy from non-easy by an absolute 160 bpm average-HR cut, takes the 6 newest of the last 20 activities, and includes 2 to 3 km runs. `lib/engine/profile/observed.ts` reads the stored `ef_trend_pct` into `analyses.ef_trend_pct_latest`. Decide before B4 reads it: is that a valid observed fact, and what should the baseline be (same session type, minimum distance, personal HR bands). No change to the stored value until ruled.
+
+### 🔲 `ANALYSIS-LATE-HR-REFRESH-01` — later HR batches do not re-score the analysis *(filed 2026-11-22; DEFERRED into `ENGINE-HR-SETTLED-STATE-01`)* ⚙️ **NO BOARD** (a band-aid now would be replaced by the settle rule)
+The late-HR re-score fires only while `strava_activities.avg_hr` is null (`/api/health/ingest`, `wasHrAbsent`). A second batch changes the zone split slightly (84.78 vs 84.62 above-ceiling in the measured case) and the analysis stays on the first.
+
+### 🔲 `HR-LATE-ARRIVAL-BACKFILL-01` — two historical backfills for `HR-LATE-ARRIVAL-01` *(filed 2026-11-22)* ⚙️ **NO BOARD** (data repair; **founder runs the SQL**, it is a production write and was NOT run)
+Counts measured read-only 2026-11-22: **3** live HealthKit completions (2 runners) hold a NULL `avg_hr` while their activity row has one, and **66 of 66** `run_analysis` rows keyed by a HealthKit uuid are labelled `'strava'`.
+```sql
+-- 1. fill a NULL completion avg_hr from the activity row (live rows only)
+update session_completions sc set avg_hr = sa.avg_hr, updated_at = now()
+from strava_activities sa
+where sc.user_id = sa.user_id and sc.apple_health_uuid = sa.apple_health_uuid
+  and sc.superseded_at is null and sc.avg_hr is null and sa.avg_hr is not null;
+-- 2. label HealthKit analyses as Apple Health
+update run_analysis ra set source = 'apple_health'
+from strava_activities sa
+where ra.user_id = sa.user_id and ra.apple_health_uuid = sa.apple_health_uuid
+  and sa.source = 'apple_health' and ra.source = 'strava';
+```
+Expect 3 and 66 rows. Run each `select count(*)` form first. Neither touches a plan.
+
 ### 🔲 `ADR027-B2B-PROFILE-ADOPTION` — the rest of L1: the route fetches facts, the remaining derivations read the profile, and three input-layer defects *(filed 2026-11-21, from `ADR027-B2-PROFILE`)* ⚙️ **NO BOARD** for the re-plumbing; 🏃 **COACHING BOARD** first for any piece that changes output (parts 3 and 4)
 
 **Order:** part 1 and part 2 are re-plumbing and need `verify:parity` IDENTICAL. Parts 3 and 4 change what a runner is

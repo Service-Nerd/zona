@@ -405,6 +405,12 @@ export type OpsEventKind =
   // could not see either — `postWorkout` returns false and the caller counts a
   // failure without ever learning why.
   | 'health_ingest_failed'
+  // HR-RETRY-SILENT-01 (2026-11-22) — a heart-rate retry for a HealthKit run stored WITHOUT HR found nothing, and why:
+  // 'empty' (Apple Health returned no samples for the run's window) or 'error' (the read threw, e.g. a locked phone).
+  // The retry swallowed both identically, so two HR-less runs (17 and 20 Nov) could only be INFERRED to have no data.
+  // Reported once per (run, outcome) by the client, so it is a handful of rows per HR-less run, not one per wake.
+  // No run id, no PII: a result word, an age in hours and a truncated error string.
+  | 'health_hr_retry'
   // HK-NATIVE-BG-INGEST-01 — recorded ONLY for the native path. The web sweep
   // is already measured by `health_sync_swept`, so this adds no rows for it.
   | 'health_native_ingest'

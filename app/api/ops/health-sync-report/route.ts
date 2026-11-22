@@ -29,6 +29,8 @@ interface Body {
   error?: string
   /** HK-INGEST-REASON-01 — per-workout rejection reasons, deduplicated with counts. */
   failures?: string
+  /** HR-RETRY-SILENT-01 — why a heart-rate retry found nothing. A retry report, NOT a sweep: it is recorded alone. */
+  hrRetry?: { result?: unknown; age_hours?: unknown; message?: unknown }
 }
 
 /** A client-supplied count is only trusted as a bounded non-negative integer. */
@@ -42,6 +44,21 @@ export async function POST(req: NextRequest) {
 
   let body: Body = {}
   try { body = (await req.json()) as Body } catch { /* empty body is fine */ }
+
+  // HR-RETRY-SILENT-01 — a retry report carries its own hardcoded kind and never a sweep row. The result is an
+  // allow-listed word and the age a bounded integer; the message is truncated text. No run id is accepted.
+  if (body.hrRetry && typeof body.hrRetry === 'object') {
+    const r = body.hrRetry
+    const result = r.result === 'empty' || r.result === 'error' ? r.result : null
+    // Telemetry never fails the path it monitors: an unrecognised result is dropped, not rejected.
+    if (!result) return NextResponse.json({ ok: true })
+    await recordOpsEvent('health_hr_retry', {
+      result,
+      age_hours: count(r.age_hours),
+      message:   result === 'error' && typeof r.message === 'string' ? r.message.slice(0, 200) : null,
+    }, user.id)
+    return NextResponse.json({ ok: true })
+  }
 
   await recordOpsEvent(
     'health_sync_swept',

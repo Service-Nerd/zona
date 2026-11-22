@@ -89,6 +89,10 @@ of live reads; it was told *"two sentences"* and returned 76 words.
 - Internal webhook path (called by Strava webhook handler): sets `tier = 'trial'` for enrichment and fires a push notification.
 - Scoring weights: HR 50%, distance 25%, pace 15%, EF 10%. See `lib/coaching/constants.ts`.
 
+### `run_analysis.source` (RUN-ANALYSIS-SOURCE-LABEL-01, 2026-11-22)
+
+A device-activity analysis stores the **activity row's own provenance**: `'apple_health'` for a HealthKit run, `'strava'` otherwise (`lib/coaching/analysisSource.ts`). Before this the column default (`'strava'`) was stored for every run, so HealthKit analyses were mislabelled. Derived from the activity, **not** from which id keys the upsert: a HealthKit row later patched with a Strava id is still an Apple Health run (ADR-011). The manual route writes `'manual'` itself. Rows written before 2026-11-22 keep `'strava'` until the next re-score; a backfill is a SQL step and was not run.
+
 ## Sibling route — POST `/api/analyse-run/manual`
 
 Coaching row for a session completed without a linked device activity. Writes `run_analysis` with `source='manual'` (DELETE+INSERT idempotent per session — partial unique index **`run_analysis_manual_live_uniq`**).

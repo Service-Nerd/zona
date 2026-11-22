@@ -44,6 +44,7 @@ import { convertDistanceString, convertPaceString, formatPace } from '@/lib/form
 import { readPlanStream, type PlanStreamMessage } from '@/lib/planStream'
 import { createEnrichSaveCoordinator } from '@/lib/plan/enrichSaveCoordinator'
 import { upsertCompletion } from '@/lib/plan/completions'
+import { mergeHealthKitRuns } from '@/lib/health/mergeHealthKitRuns'
 import { createClient } from '@/lib/supabase/client'
 import { trackEvent } from '@/lib/analytics'
 import AdjustmentDiff from '@/components/shared/AdjustmentDiff'
@@ -1580,14 +1581,8 @@ export default function DashboardClient() {
       }))
       const newHkIds = new Set(newHkRuns.map((r: any) => r.id))
       setStravaRuns(prev => {
-        if (!prev) return newHkRuns
-        // Replace any existing HK entries + keep non-HK runs (Strava)
-        const nonHk = prev.filter((r: any) => r.source !== 'apple_health')
-        // Only update if something actually changed (new UUIDs)
-        const existingHkIds = new Set(prev.filter((r: any) => r.source === 'apple_health').map((r: any) => r.id))
-        const hasNew = newHkRuns.some((r: any) => !existingHkIds.has(r.id))
-        if (!hasNew) return prev
-        return [...newHkRuns, ...nonHk]
+        // DASHBOARD-RUNS-STALE-HR-01 — a new run OR a held run whose heart rate has since arrived replaces the list.
+        return mergeHealthKitRuns(prev, newHkRuns)
       })
       // Also refresh completions — auto-match may have written a completion
       // while the app was backgrounded / while ingest was in flight.

@@ -245,3 +245,7 @@ feeds `sessionHRBand` a session's type again.
 ## Week coordinate — ADJUST-WEEK-COORD-01 (2026-11-21)
 
 The reflected week and the prior-week rows resolve by `findWeekByN`, and the four-week completion window starts from `weekIndexOfN(weeks, week_n)`, not `week_n - 1`. The owner is `lib/plan/weekResolution.ts` (`getCurrentWeekN`, `weekNAt`, `findWeekByN`, `weekIndexOfN`, `lastWeekN`; `getCurrentWeekOrdinal` for display only), and `lib/plan/weekCoordinate.test.ts` fails the build on a position written as a key (ARCH-ENG-015).
+
+## Actual average HR (SESSION-COMPLETION-AVG-HR-STALE-01, 2026-11-22)
+
+The average heart rate the reframe quotes is `resolveAvgHr(completion.avg_hr, activity.avg_hr)` (`lib/coaching/resolveAvgHr.ts`): the completion's value when it is a real heart rate, else the linked activity row's. `session_completions.avg_hr` is copied once at link time, so a run linked before its Apple Watch HR arrived held NULL there and the reframe read no HR. The activity row is the system of record for run metrics (ADR-011). The cohort match (`findSimilarRuns`) uses the same value, so it can now find similar runs for such a run.

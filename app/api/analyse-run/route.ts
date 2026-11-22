@@ -1,4 +1,5 @@
 import { getUserFromRequest } from '@/lib/supabase/getUserFromRequest'
+import { analysisSourceFor } from '@/lib/coaching/analysisSource'
 import { readPlanJson } from '@/lib/plan'
 import { enforceAiRateLimit } from '@/lib/ai/guardAiRequest'
 import { NextRequest, NextResponse } from 'next/server'
@@ -499,6 +500,8 @@ const { units: displayUnits } = await getUserDisplayPrefs(serviceSupabase, userI
   // Source-aware ID: write the column matching the source, leave the other null.
   const analysisRow: Record<string, unknown> = {
     user_id:               userId,
+    // RUN-ANALYSIS-SOURCE-LABEL-01 — provenance of the ACTIVITY this analyses, not the conflict key below.
+    source:                analysisSourceFor(activity.source as string | null | undefined),
     week_n,
     session_day,
     // ANALYSIS-SUPERSEDE-PATTERN-01 (Coaching Board, 2026-10-07) — the row carries

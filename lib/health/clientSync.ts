@@ -24,6 +24,7 @@ import { authedFetch } from '@/lib/supabase/authedFetch'
 import type { SyncTrigger } from '@/lib/health/syncTrigger'
 import { createClient } from '@/lib/supabase/client'
 import type { HealthKitWorkoutPayload } from './adapter'
+import { decideHrRetryReports, type HrRetryOutcome, type HrRetryReport } from './hrRetryReport'
 
 const LAST_SYNC_KEY         = 'vetra_healthkit_last_sync_ts'
 const SAMPLES_LOOKBACK_DAYS = 14
@@ -148,6 +149,36 @@ export async function postSamples(samples: Array<{
   // so a failed recovery-sample upload was exactly as undiagnosable as a failed run.
   if (samples.length === 0) return { ok: true, status: null, reason: null }
   return postJson('/api/health/samples', { samples })
+}
+
+const HR_RETRY_REPORTED_KEY = 'hr_retry_reported_v1'
+const HR_RETRY_REPORTED_CAP = 200
+const hrRetryReportedInMemory = new Set<string>()
+
+/**
+ * HR-RETRY-SILENT-01: reports why a heart-rate retry found nothing, once per (run, outcome).
+ * Never throws and never blocks: bookkeeping must not fail a sync.
+ */
+async function reportHrRetry(outcomes: HrRetryOutcome[]): Promise<void> {
+  try {
+    let stored: string[] = []
+    try { stored = JSON.parse(localStorage.getItem(HR_RETRY_REPORTED_KEY) ?? '[]') as string[] } catch { /* no storage: the in-memory set still throttles */ }
+    // Union with the in-memory set: it holds when storage is unavailable, and it is written SYNCHRONOUSLY below, before
+    // any await, so two overlapping wakes cannot both see "not yet reported".
+    const seen = new Set<string>(stored.concat(Array.from(hrRetryReportedInMemory)))
+    const { send, remember } = decideHrRetryReports(outcomes, seen)
+    if (!send.length) return
+    // Remembered BEFORE the post: a lost report is one missed data point, a lost throttle is a report per wake.
+    remember.forEach(k => hrRetryReportedInMemory.add(k))
+    try { localStorage.setItem(HR_RETRY_REPORTED_KEY, JSON.stringify(Array.from(seen).concat(remember).slice(-HR_RETRY_REPORTED_CAP))) } catch {}
+    for (const hrRetry of send as HrRetryReport[]) {
+      await authedFetch('/api/ops/health-sync-report', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ hrRetry }),
+      })
+    }
+  } catch { /* telemetry is never load-bearing */ }
 }
 
 /**
@@ -534,6 +565,7 @@ async function retryPendingHrRows(Health: HealthModule): Promise<void> {
 
     if (!pendingRows?.length) return
 
+    const outcomes: HrRetryOutcome[] = []
     for (const row of pendingRows as Array<{
       apple_health_uuid: string
       start_date:        string
@@ -541,6 +573,10 @@ async function retryPendingHrRows(Health: HealthModule): Promise<void> {
       raw_payload:       any
       distance_m:        string | number
     }>) {
+      // HR-RETRY-SILENT-01: 'read' until HealthKit has answered, so a throw AFTER it (the re-post) is not
+      // reported as an unreadable heart rate.
+      let stage: 'read' | 'post' = 'read'
+      const ageHours = (Date.now() - new Date(row.start_date).getTime()) / 3_600_000
       try {
         const startIso = row.start_date
         const endIso   = new Date(new Date(startIso).getTime() + row.moving_time_s * 1000).toISOString()
@@ -551,7 +587,10 @@ async function retryPendingHrRows(Health: HealthModule): Promise<void> {
           limit:     HR_SAMPLES_PER_WORKOUT_LIMIT,
           ascending: true,
         })
-        if (!hrRes.samples.length) continue  // still nothing — leave for the next retry
+        // A malformed answer is an UNREADABLE heart rate, not an empty one: stay at 'read' until the shape is proven.
+        if (!Array.isArray(hrRes?.samples)) throw new Error('hr read returned no samples array')
+        stage = 'post'
+        if (!hrRes.samples.length) { outcomes.push({ uuid: row.apple_health_uuid, result: 'empty', ageHours }); continue }  // still nothing — leave for the next retry
 
         // Reconstruct the payload using the stored raw_payload for the shell
         // fields (totalDistance, calories, sourceName, elevation metadata),
@@ -572,11 +611,14 @@ async function retryPendingHrRows(Health: HealthModule): Promise<void> {
           sourceName:          rawPayload.sourceName,
         }
         await postWorkout(payload)
+        outcomes.push({ uuid: row.apple_health_uuid, result: 'found', ageHours })
       } catch (err) {
+        if (stage === 'read') outcomes.push({ uuid: row.apple_health_uuid, result: 'error', ageHours, message: err instanceof Error ? err.message : String(err) })
         // eslint-disable-next-line no-console
         console.warn('[health-sync] hr-retry failed', row.apple_health_uuid, err)
       }
     }
+    await reportHrRetry(outcomes)
   } catch (err) {
     // eslint-disable-next-line no-console
     console.warn('[health-sync] hr-retry sweep skipped', err instanceof Error ? err.message : err)

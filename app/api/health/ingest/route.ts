@@ -9,6 +9,7 @@ import { getUserHRZones } from '@/lib/strava'
 import { adaptHealthKitWorkout, adaptManualRun, type HealthKitWorkoutPayload, type ManualRunPayload } from '@/lib/health/adapter'
 import { autoMatchAndAnalyse, getInternalBaseUrl, noteRunUnmatched } from '@/lib/coaching/autoAnalyse'
 import { consolidateIncomingHealthKitRow } from '@/lib/coaching/healthkitConsolidate'
+import { mirrorAvgHrToCompletion } from '@/lib/coaching/completionHrMirror'
 import { decideLateArrival, hrArrivalStamp } from '@/lib/coaching/lateArrivalGate'
 import { recordOpsEvent } from '@/lib/ops/recordOpsEvent'
 import { REPORTED_DISTANCE_M } from '@/lib/health/runDistance'
@@ -204,6 +205,8 @@ export async function POST(req: NextRequest) {
         .eq('user_id', userId)
         .eq('apple_health_uuid', dedup.canonicalAppleHealthUuid)
         .maybeSingle()
+      // SESSION-COMPLETION-AVG-HR-STALE-01 — the completion copied avg_hr once, before this HR existed.
+      await mirrorAvgHrToCompletion(supabase, userId, dedup.canonicalAppleHealthUuid, row.avg_hr)
       if (canonicalAnalysis) {
         // HK-FREE-INGEST-LINE-01 — the SECOND of three analysis triggers in this
         // route. It re-runs analyse-run, so it is the paid product too.
@@ -310,6 +313,8 @@ export async function POST(req: NextRequest) {
   // Defect fix restoring documented intent (the comment above is the intent),
   // so ADR-017-exempt from the Coaching Board.
   if (wasHrAbsent && lateArrival) {
+    // SESSION-COMPLETION-AVG-HR-STALE-01 — the completion copied avg_hr once, before this HR existed.
+    await mirrorAvgHrToCompletion(supabase, userId, payload.uuid, row.avg_hr)
     const { data: existingAnalysis } = await supabase
       .from('run_analysis')
       .select('week_n, session_day')

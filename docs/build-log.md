@@ -6,6 +6,15 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-11-22 — HR-LATE-ARRIVAL-01 · four copies of one heart rate, and they only agreed when the app was reloaded
+**Shipped:** a run's heart rate, when it arrives after the workout, now reaches the dashboard, the session's completion record and the post-run reframe; the HR retry says why it found nothing; HealthKit analyses are labelled as Apple Health.
+**Dev learning:** one fact lived in four places (activity row, analysis row, completion row, the screen's in-memory list) and each was filled at a different moment: the completion once at link time, the analysis on the first HR batch, the screen on load. The screen's refresh replaced its list only when a NEW run id appeared, so a run already on screen never saw its own HR. `session_completions.avg_hr` had a comment calling it "a denormalised copy that can be null", which is true and was the whole bug.
+**Product/creator learning:** "no HR" had three different causes in one week (Tuesday and Friday genuinely had no samples; Sunday's arrived late and the copies did not follow). A silent retry could not tell the first from an unreadable one, so the first answer to the runner's question was an inference.
+**AI-building learning:** the investigation was cheap because production is readable from here and the code names its owners; the part worth keeping is that I stated "the UI shows null" before proving which copy the screen reads. The code review found a pre-existing reader set I had narrowed past (Today's card, the session popup), which turned a one-reader patch into a fix at the single place HR arrives.
+**The honest bit:** I mutated an untracked file to falsify its test and ran `git checkout` to undo it. Untracked, so nothing was restored, and I only noticed because I read the file back. Restored by hand; it is why this entry says to read it back.
+**Hook material:** 12 live completions with no avg_hr; on 3 of them the activity row held the HR the whole time.
+**Postable?:** maybe
+
 ## 2026-11-22 — MONDAY-RACE-EVE-LONG-RUN-01 · the checker port found a plan we would hand over
 **Shipped:** a runner whose race falls on a Monday no longer gets a long run the day before it; race eve is a short shakeout with strides, and the check now looks across the week boundary.
 **Dev learning:** the defect sat between two owners. The race-week builder protects race eve "inside race week", the check iterated "within the week", and a Monday race puts race eve in the PREVIOUS week, which neither looked at. Parity came back byte-identical over 6,210 cases and proved nothing about this: its grid has no Monday race. The Monday population had to be measured directly.
