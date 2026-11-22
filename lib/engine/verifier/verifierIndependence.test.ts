@@ -38,6 +38,7 @@ const ALLOWED_NAMES: Record<string, string[]> = {
   '@/lib/plan/sessionStructureV2': ['workAnchorsOf', 'goalPaceShapeWord', 'isV2Structure', 'StructureV2Schema'], // read a catalogue row's anchors and shape noun: rule data
   '@/lib/plan/hrBand': ['isEffortGovernedRow'],        // classifies a row by its targets (INV-CLASS, the builder's same test), fixture-tested
   '@/lib/coaching/zoneRules': ['zoneStringFromZoneKeys'], // the zone-string format owner (keys to "Zone 3–4")
+  '@/lib/plan/goalPaceReach': ['quotesGoalPace', 'hasGoalGapSentence'], // match the plan's OWN copy (the gap sentence), not maths
 }
 
 /** Every non-test source file under the verifier, recursively. */

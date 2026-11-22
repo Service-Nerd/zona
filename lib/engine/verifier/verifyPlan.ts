@@ -28,6 +28,8 @@ import { SESSION_FORMAT } from '@/lib/plan/sessionFormat'
 import { workAnchorsOf, goalPaceShapeWord, isV2Structure, StructureV2Schema } from '@/lib/plan/sessionStructureV2'
 import { isEffortGovernedRow } from '@/lib/plan/hrBand'
 import { zoneStringFromZoneKeys } from '@/lib/coaching/zoneRules'
+import { quotesGoalPace, hasGoalGapSentence } from '@/lib/plan/goalPaceReach'
+import { paceGuide, racePace, bandForZoneLabel, zonesTouchedBy, zonesIn, bandForPaceAnchors } from './formulas'
 
 export type VerifierDay = 'mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat' | 'sun'
 
@@ -2202,6 +2204,112 @@ const BATCH_31: Partial<Record<RuleId, Predicate>> = {
   })),
 }
 Object.assign(PREDICATES, BATCH_31)
+
+// Batch 32 — the rules that work a pace or an HR band out, now on the checker's OWN maths (./formulas.ts).
+const BATCH_32: Partial<Record<RuleId, Predicate>> = {
+  // §120 Am. 2, §22, §25: goal pace is withheld exactly when the goal sits past the stretch line from the runner's race
+  // fitness, never without a benchmark or a recorded decision; once withheld, no session rehearses it, a race-pace long
+  // run finishes at current race pace, race day opens at race fitness and never cites goal pace, and the gap is named.
+  'INV-PLAN-GOAL-PACE-REACHABLE': (plan, { input, profile }) => {
+    const out: Raw[] = []
+    const push = (detail: string, week = 0) => out.push({ rule_id: 'INV-PLAN-GOAL-PACE-REACHABLE', week, day: null, detail })
+    const withheld = plan.meta.goal_pace_withheld, reach = plan.meta.goal_pace_reach
+    const goal = plan.meta.goal_pace_per_km ? parsePaceMidpoint(plan.meta.goal_pace_per_km) : null
+    const line = GENERATION_CONFIG.GOAL_PACE_MAX_STRETCH_PCT, tol = GENERATION_CONFIG.INTENSITY_ORDERING_TOLERANCE_PCT
+    const km = input.race_distance_km
+    if (reach && profile.race.goal === 'time_target' && goal != null && km > 0) {
+      if (!input.benchmark) push('a decision with no benchmark')
+      const gap = (1 - goal / racePace(reach.vdot, km)) * 100
+      if (!withheld && gap > line + tol) push('not withheld past the line')
+      else if (withheld && gap < line - tol) push('withheld inside the line')
+    } else if (withheld && !reach) push('withheld with no decision record')
+    if (!withheld) return out
+    const rehearse = GENERATION_CONFIG.GOAL_PACE_REHEARSAL_TOLERANCE_PCT / 100
+    const from = reach?.from_week ?? -Infinity, kept = new Set(reach?.kept_weeks ?? [])
+    const live = (w: Week) => w.n >= from && !kept.has(w.n)
+    for (const w of plan.weeks) for (const [, s] of Object.entries(w.sessions ?? {})) {
+      if (!s || !live(w)) continue
+      const m = s.lr_segment_pace ? parsePaceMidpoint(s.lr_segment_pace) : null
+      if (s.stimulus === 'race_pace' || (m != null && goal != null && m <= goal * (1 + rehearse))) push('still rehearses goal pace', w.n)
+    }
+    if (reach && goal != null) {
+      const rp = racePace(reach.vdot, km)
+      for (const w of plan.weeks) for (const s of Object.values(w.sessions ?? {})) {
+        if (!s || !live(w) || (s.catalogue_id !== 'mp_long_run' && s.catalogue_id !== 'hm_pace_long_run')) continue
+        const seg = s.lr_segment_pace ? parsePaceMidpoint(s.lr_segment_pace) : null
+        if (seg == null || Math.abs(seg - rp) / rp > rehearse) push('long-run finish off race pace', w.n)
+      }
+    }
+    const latest = typeof plan.meta.vdot_training_anchor === 'number' ? plan.meta.vdot_training_anchor : reach?.vdot
+    for (const w of plan.weeks) for (const s of Object.values(w.sessions ?? {})) {
+      if (!s || s.type !== 'race' || !reach?.race_day || !live(w)) continue
+      const notes = (s.coach_notes ?? []).filter((n): n is string => !!n)
+      const opening = s.race_opening_pace ? parsePaceMidpoint(s.race_opening_pace) : null
+      const rp = latest != null && s.distance_km ? racePace(latest, s.distance_km) : null
+      const beats = rp != null && goal != null && rp <= goal
+      if (notes.some(n => !!n && quotesGoalPace(n, plan.meta.goal_pace_per_km)) || opening == null || rp == null
+        || (beats ? opening < goal! * (1 - rehearse) : Math.abs(opening - rp) / rp > rehearse)) push('race day opening', w.n)
+    }
+    if (!hasGoalGapSentence(plan.meta.difficulty_note)) push('the gap not named')
+    return out
+  },
+
+  // §83 Am.: goal-paced work carries the zone its pace sits in: closer to interval than to threshold pace is interval
+  // effort (a 1% margin either side of the midpoint). Second-half rules' block: quality, weeks 1+, race-pace stimulus.
+  'INV-PLAN-PACE-ZONE-COHERENT': plan => {
+    if (plan.meta.vdot == null || plan.meta.vdot_training_anchor == null) return []
+    const g = paceGuide(plan.meta.vdot_training_anchor, plan.meta.vdot)
+    const mid = (g.threshold + g.interval) / 2
+    return plan.weeks.filter(w => w.n >= 1).flatMap(w => qualityOf(w).flatMap(({ day, s }) => {
+      if (classifyStimulus(s) !== 'race_pace' || !s.pace_target) return []
+      const goal = parsePaceMidpoint(s.pace_target)
+      if (goal == null || Math.abs(goal - mid) / mid <= 0.01) return []
+      const zone = String(s.zone ?? '')
+      return (goal < mid) !== (zone.includes('4') || zone.includes('5')) ? [{ rule_id: 'INV-PLAN-PACE-ZONE-COHERENT' as RuleId, week: w.n, day, detail: 'zone against the pace' }] : []
+    }))
+  },
+
+  // §84 (Am. 2): a quality session carries a zone when one can be derived; a note naming a zone names the session's
+  // own; and the zone label names exactly the zones its HR target overlaps.
+  'INV-PLAN-DISPLAY-ZONE-MATCHES-WORK': (plan, { input }) => plan.weeks.filter(governed).flatMap(w => {
+    const out: Raw[] = []
+    const R = 'INV-PLAN-DISPLAY-ZONE-MATCHES-WORK' as RuleId
+    const derivable = (plan.meta as unknown as Record<string, unknown>).hr_derived_max != null
+    for (const { day, session: s } of running(w)) {
+      const key = zonesIn(s.zone).join('-')
+      if (derivable && s.type === 'quality' && !key) { out.push({ rule_id: R, week: w.n, day, detail: 'no zone' }); continue }
+      if (!key) continue
+      const mentions = Array.from((s.coach_notes ?? []).join(' ').matchAll(/zone\s*[1-5](?:\s*[–-]\s*[1-5])?/gi)).map(m => zonesIn(m[0]).join('-')).filter(Boolean)
+      if (mentions.length > 0 && !mentions.includes(key)) out.push({ rule_id: R, week: w.n, day, detail: 'note names another zone' })
+    }
+    const rhr = plan.meta.resting_hr ?? input.resting_hr ?? null, max = (plan.meta.max_hr ?? input.max_hr ?? null) as number | null
+    for (const { day, session: s } of running(w)) {
+      if (!s.zone || typeof s.hr_target !== 'string') continue
+      const m = /^\s*(\d+)\s*[–-]\s*(\d+)\s*bpm\s*$/.exec(s.hr_target)
+      if (!m || !bandForZoneLabel(s.zone, rhr, max) || max === null) continue
+      const expected = zoneStringFromZoneKeys(zonesTouchedBy(Number(m[1]), Number(m[2]), max, rhr).map(n => `Z${n}`))
+      if (expected && s.zone.trim() !== expected) out.push({ rule_id: R, week: w.n, day, detail: `label against the HR target (${expected})` })
+    }
+    return out
+  }),
+
+  // §84 Am. 2 (ADR-026): a quality session's HR band is its pace anchor re-expressed in heart rate.
+  'INV-PLAN-HR-MATCHES-PACE': (plan, { input }) => {
+    const vdot = typeof plan.meta.vdot_training_anchor === 'number' ? plan.meta.vdot_training_anchor : typeof plan.meta.vdot === 'number' ? plan.meta.vdot : null
+    const max = (plan.meta.max_hr ?? input.max_hr ?? null) as number | null, rhr = (plan.meta.resting_hr ?? input.resting_hr ?? null) as number | null
+    return plan.weeks.filter(governed).flatMap(w => running(w).flatMap(({ day, session: s }) => {
+      if (s.type !== 'quality' || typeof s.hr_target !== 'string') return []
+      const m = /^\s*(\d+)\s*[–-]\s*(\d+)\s*bpm\s*$/.exec(s.hr_target)
+      if (!m) return []
+      const row = catalogueRowFor(s)
+      if (classifyStimulus(s) === 'race_pace') return []
+      const anchors = row?.category === 'vo2max' ? ['I'] : !row || row.category === 'aerobic' || row.category === 'ultra_specific' ? ['T'] : workAnchorsOf(row)
+      const band = bandForPaceAnchors(anchors, vdot, max, rhr)
+      return band && (Number(m[1]) !== band.lo || Number(m[2]) !== band.hi) ? [{ rule_id: 'INV-PLAN-HR-MATCHES-PACE' as RuleId, week: w.n, day, detail: `implies ${band.hr}` }] : []
+    }))
+  },
+}
+Object.assign(PREDICATES, BATCH_32)
 
 const SEVERITY = new Map(RULES.map(r => [r.id, r.kind === 'soft' ? 'warn' as const : 'error' as const]))
 /** Rules the catalogue marks as conditionally severe: only these may set a finding's severity (code review, batch 20). */

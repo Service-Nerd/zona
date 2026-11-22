@@ -19,6 +19,7 @@ import { isLongRun, isStructuredSession, isTimeTrial, isVo2maxSession, isQuality
 import { V1_SESSION_CATALOGUE } from '@/lib/plan/sessionCatalogueData'
 import { isEffortGovernedRow } from '@/lib/plan/hrBand'
 import { goalPaceShapeWord, workAnchorsOf } from '@/lib/plan/sessionStructureV2'
+import { racePaceMinPerKm } from '@/lib/plan/aerobicEstimate'
 import { sessionKmSelfPaced } from '@/lib/plan/sessionDistance'
 import { FUELLING_PRACTICE_NOTE, ULTRA_FUELLING_PREFIX } from '@/lib/plan/fuellingNotes'
 import { GENERATION_CONFIG, raceDistanceKey } from '@/lib/plan/generationConfig'
@@ -799,6 +800,40 @@ const EXTRA_MUTATIONS: { name: string; apply: (p: Plan, input: GeneratorInput) =
       s.derived_set = { blocks: [{ label: 'main', repeat: 6, steps: kind === 'no float' ? [work] : [work, float] }] } as unknown as Session['derived_set']
       return true
     }] as const),
+    // Batch 32: the goal-pace decision's three arms no corpus plan reached.
+    ['a goal-pace decision recorded with no benchmark', (p: Plan, i: GeneratorInput) => {
+      if (!p.meta.goal_pace_reach || !i.benchmark) return false
+      delete i.benchmark; return true
+    }],
+    ['goal pace withheld inside the line', (p: Plan) => {
+      if (!p.meta.goal_pace_reach || p.meta.goal_pace_withheld) return false
+      p.meta.goal_pace_withheld = { gap_pct: 1 }; return true
+    }],
+    ['goal pace withheld with no decision record', (p: Plan) => {
+      if (!p.meta.goal_pace_reach) return false
+      delete p.meta.goal_pace_reach; p.meta.goal_pace_withheld = { gap_pct: 12 }; return true
+    }],
+    // Goal-pace reach AT its lines: the goal one point past the stretch line, not withheld; and a withheld plan whose
+    // race-pace long run finishes half a tolerance off current race pace.
+    ['a goal one point past the stretch line, not withheld', (p: Plan, i: GeneratorInput) => {
+      const r = p.meta.goal_pace_reach
+      if (!r || !(i.race_distance_km > 0)) return false
+      const past = GENERATION_CONFIG.GOAL_PACE_MAX_STRETCH_PCT + GENERATION_CONFIG.INTENSITY_ORDERING_TOLERANCE_PCT + 1
+      const goal = racePaceMinPerKm(r.vdot, i.race_distance_km) * (1 - past / 100)
+      const mm = Math.floor(goal), ss = Math.round((goal - mm) * 60)
+      p.meta.goal_pace_per_km = ss === 60 ? `${mm + 1}:00` : `${mm}:${String(ss).padStart(2, '0')}`
+      delete p.meta.goal_pace_withheld; return true
+    }],
+    ['a withheld plan whose race-pace long run finishes just off race pace', (p: Plan, i: GeneratorInput) => {
+      const r = p.meta.goal_pace_reach
+      const lr = p.weeks.filter(w => w.n >= (r?.from_week ?? 1)).flatMap(w => Object.values(w.sessions ?? {})).find(x => x && isLongRun(x))
+      if (!r || !lr || !(i.race_distance_km > 0)) return false
+      const pace = racePaceMinPerKm(r.vdot, i.race_distance_km) * (1 + 1.5 * GENERATION_CONFIG.GOAL_PACE_REHEARSAL_TOLERANCE_PCT / 100)
+      const mm = Math.floor(pace), ss = Math.round((pace - mm) * 60)
+      p.meta.goal_pace_withheld = { gap_pct: 12 }
+      lr.catalogue_id = 'mp_long_run'; lr.lr_segment_pace = ss === 60 ? `${mm + 1}:00` : `${mm}:${String(ss).padStart(2, '0')}`
+      return true
+    }],
     ['meta age differing from the input', (p: Plan, i: GeneratorInput) => {
       if (typeof i.age !== 'number') return false
       ;(p.meta as unknown as Record<string, unknown>).age = i.age + 1; return true
@@ -852,6 +887,11 @@ const EXTRA_MUTATIONS: { name: string; apply: (p: Plan, input: GeneratorInput) =
 /** Breakages whose landing must be on a NAMED rule: they also wake neighbouring cap rules, so "the old report
  *  changed" would pass without the target being reached (code review, batch 14). */
 const TARGETS: Record<string, string[]> = {
+  'a goal one point past the stretch line, not withheld': ['INV-PLAN-GOAL-PACE-REACHABLE'],
+  'a withheld plan whose race-pace long run finishes just off race pace': ['INV-PLAN-GOAL-PACE-REACHABLE'],
+  'a goal-pace decision recorded with no benchmark': ['INV-PLAN-GOAL-PACE-REACHABLE'],
+  'goal pace withheld inside the line': ['INV-PLAN-GOAL-PACE-REACHABLE'],
+  'goal pace withheld with no decision record': ['INV-PLAN-GOAL-PACE-REACHABLE'],
   'a race-week shakeout over its RPE': ['INV-PLAN-RACE-WEEK-SHAKEOUT-CAP'],
   'a rolling VO2 session with no float': ['INV-PLAN-VO2MAX-FLOAT-IS-A-CEILING'],
   'a rolling VO2 session with a target float': ['INV-PLAN-VO2MAX-FLOAT-IS-A-CEILING'],
@@ -929,6 +969,8 @@ const downgradePairs: { label: string; week: number; unflagged: string[]; flagge
 const raceEveDays = new WeakMap<Plan, string>()
 /** Rules that make more than one independent check: each detail prefix must fire on its own. */
 const ARMS: Record<string, string[]> = {
+  'INV-PLAN-GOAL-PACE-REACHABLE': ['a decision with no benchmark', 'not withheld past the line', 'withheld inside the line', 'withheld with no decision record', 'still rehearses goal pace', 'long-run finish off race pace', 'race day opening', 'the gap not named'],
+  'INV-PLAN-DISPLAY-ZONE-MATCHES-WORK': ['no zone', 'note names another zone', 'label against the HR target'],
   'INV-PLAN-RACE-WEEK-SHAKEOUT-CAP': ['shakeout over its minutes', 'shakeout over its RPE'],
   'INV-PLAN-VO2MAX-FLOAT-IS-A-CEILING': ['no float step', 'float not a ceiling', 'float not run'],
   // Batches 22-30's multi-arm rules (code review): each arm must fire on its own, so one going quiet is caught.
