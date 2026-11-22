@@ -1905,6 +1905,33 @@ Step 1 shipped as `ADR027-B3-CATALOGUE` (221 rules). Remaining, in order:
 - **Exit (HLD):** the verifier finds every known defect class on the current engine, falsified class by class; 0
   false positives on the golden corpus; then the founder signs off replacing `validatePlan` as the gate.
 
+### 🔲 `MONDAY-RACE-EVE-LONG-RUN-01` — the engine puts the long run on the eve of a Monday race *(filed 2026-11-22, Coaching Board `ADR027-B3-RAISED-LIST-01`, ruled INCORRECT)* 👤 **FOUNDER** first (hotfix the frozen engine now, or fix in B4), then ⚙️ **NO BOARD** (defect against §39 Am. 1)
+📐 4 of 37 golden plans with a Monday race carry the long run (63–85 min) on the Sunday before it; 0 of 43 live plans have a
+Monday race today. §39 Am. 1 protects race eve on any weekday; `INV-PLAN-NO-RACE-EVE-SESSION` never looks into the previous
+week, so the gate passes it. Related: §77's open cross-week case (`PV2-G`). **Done when:** no session within
+`RACE_EVE_PROTECTED_DAYS` of race day exceeds §30's cap across a week boundary, and the check looks there too.
+
+### 🔲 `ADR027-B3-STRICT-01` — build the board's checker fixes into the verifier, observe-only first *(filed 2026-11-22, Coaching Board `ADR027-B3-RAISED-LIST-01`)* ⚙️ **NO BOARD** (ruled)
+The sitting's B, C, D2–D3 and E1 rulings: 18 checker fixes, the self-label reads replaced by the runner and the delivered
+sessions, the literals named, `ZONE-LABEL-HAS-PRESCRIPTION` made live in the base-build route. Each is a deliberate
+divergence from `validatePlan`, so it needs a register of intended divergences beside the agreement harness, each with
+its own falsified test. **Run observe-only in B3 step 3**; the count of live plans the strict readings flag goes to the
+founder with the cut-over request (McMillan's order). Sitting: `docs/decisions/coaching-2026-11-22-b3-raised-list.md`.
+
+### 🔲 `STRENGTH-S13-S14-LIVE-01` — the strength route runs the recovery-ease and load-progression checks *(filed 2026-11-22, Coaching Board `ADR027-B3-RAISED-LIST-01`)* ⚙️ **NO BOARD** (ruled; prescription unchanged)
+S13 (an eased session only takes away) and S14 (a load never jumps) are written and falsified, and production never runs
+either: the eased plan is served through `applyRecoveryEases` unchecked. Run S13 on every eased session before it is
+served and S14 on every load suggestion (Willy, Blagrove).
+
+### 🔲 `PACE-GUIDE-PROVENANCE-01` — the no-benchmark paces need a principle *(filed 2026-11-22, Coaching Board `ADR027-B3-RAISED-LIST-01`, INSUFFICIENT EVIDENCE)* 🏃 **COACHING BOARD**
+`PACE_GUIDE` in `ruleEngine.ts` (easy 8.0 / 7.0 / 6.25 min/km by level, with threshold and interval) sets the paces of
+**18 of 39 live race plans**, outside `GENERATION_CONFIG` and with no principle section. Bring the values' provenance to
+a sitting (Sims carrying) before B4 adopts them. Values unchanged until then.
+
+### 🔲 `HR-MAX-SOURCE-01` — a plan records where its max HR came from *(filed 2026-11-22, Coaching Board `ADR027-B3-RAISED-LIST-01`, not ruled)* 🏃 **COACHING BOARD** after the data exists
+`HR-ASSUMPTIONS-SURFACED` exempts every Karvonen plan, including one whose max HR was only observed. Sims: an observed max
+is an assumption until measured. Not rulable until the plan stores the max's source.
+
 ### 🔲 `ADR027-B2B-PROFILE-ADOPTION` — the rest of L1: the route fetches facts, the remaining derivations read the profile, and three input-layer defects *(filed 2026-11-21, from `ADR027-B2-PROFILE`)* ⚙️ **NO BOARD** for the re-plumbing; 🏃 **COACHING BOARD** first for any piece that changes output (parts 3 and 4)
 
 **Order:** part 1 and part 2 are re-plumbing and need `verify:parity` IDENTICAL. Parts 3 and 4 change what a runner is
