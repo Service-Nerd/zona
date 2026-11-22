@@ -26,7 +26,7 @@ import { GENERATION_CONFIG, raceDistanceKey } from '@/lib/plan/generationConfig'
 import { hasInjuryKeyword, VOLUME_CAPPED_INJURY_KEYWORDS } from '@/lib/plan/injuryScope'
 import { BENCHMARK_VDOT_MAX } from '@/lib/plan/benchmarkCheck'
 import { RULES } from '@/lib/engine/catalogue/rules'
-import { verifyPlan, PORTED_RULES, DELIVERED_ROUNDING_TOLERANCE_PCT, BASE_BUILD_RULES } from './verifyPlan'
+import { verifyPlan, PORTED_RULES, DELIVERED_ROUNDING_TOLERANCE_PCT, BASE_BUILD_RULES, MAINTENANCE_RULES } from './verifyPlan'
 import { buildRunnerProfile, factsFromInput } from '@/lib/engine/profile/buildRunnerProfile'
 
 const clone = (p: Plan): Plan => JSON.parse(JSON.stringify(p))
@@ -1234,7 +1234,7 @@ describe('ADR027-B3-VERIFIER — agreement with validatePlan, per ported rule', 
       expect(diffs.slice(0, 5), `${diffs.length} disagreements`).toEqual([])
       // A STATIC rule reads rule data, not the plan, so no plan breakage can wake it (the liveness harness's class).
       // A base-build rule's population is base-build plans; it must fire in verifierBaseBuild.test.ts instead.
-      if (!STATIC_RULES.has(rule) && !BASE_BUILD_RULES.includes(rule)) expect(fired.old, 'nothing in the battery wakes this rule, so agreement proves nothing').toBeGreaterThan(0)
+      if (!STATIC_RULES.has(rule) && !BASE_BUILD_RULES.includes(rule) && !MAINTENANCE_RULES.includes(rule)) expect(fired.old, 'nothing in the battery wakes this rule, so agreement proves nothing').toBeGreaterThan(0)
     })
   }
 })

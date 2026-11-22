@@ -2572,6 +2572,69 @@ const BATCH_36: Partial<Record<RuleId, Predicate>> = {
 }
 Object.assign(PREDICATES, BATCH_36)
 
+// Batch 37 — post-race maintenance plans (§75). The block is judged against the three facts the plan recorded when it
+// was built (`source_base_weekly_km`, `source_injured`, `source_run_days_per_week`), as `validateStoredPlan` does; a
+// plan without its base volume predates the stamp and is not judged here (the old validator returns null for it).
+const maintOf = (p: Plan) => {
+  const m = p.meta
+  return m.plan_kind === 'maintenance' && typeof m.source_base_weekly_km === 'number' && m.source_base_weekly_km > 0
+    ? { base: m.source_base_weekly_km, injured: m.source_injured ?? false, days: m.source_run_days_per_week ?? null } : null
+}
+const placedOf = (w: Week) => daysOf(w).filter((x): x is { day: VerifierDay; session: Session } => !!x.session)
+const M = GENERATION_CONFIG.POST_RACE_MAINTENANCE_BLOCK
+const maint = (f: (plan: Plan, mt: NonNullable<ReturnType<typeof maintOf>>) => Raw[]): Predicate => plan => { const mt = maintOf(plan); return mt ? f(plan, mt) : [] }
+
+const BATCH_37: Partial<Record<RuleId, Predicate>> = {
+  // §75: every maintenance week keeps a rest day.
+  'INV-MAINT-REST-DAY': maint(plan => plan.weeks.flatMap(w => {
+    const placed = placedOf(w).map(x => x.session)
+    return placed.some(s => s.type === 'rest') || placed.filter(s => s.type !== 'rest').length < 7 ? [] : [{ rule_id: 'INV-MAINT-REST-DAY' as RuleId, week: w.n, day: null, detail: 'no rest day' }]
+  })),
+  // §75: a restoration (phase 1) week holds easy running, rest and cross-training only.
+  'INV-MAINT-PHASE1-SESSION-TYPES': maint(plan => plan.weeks.filter(w => w.phase === 'maintenance_restoration').flatMap(w =>
+    placedOf(w).filter(({ session: s }) => s.type !== 'rest' && !['easy', 'rest', 'cross-train', 'cross_train'].includes(s.type))
+      .map(({ day, session: s }) => ({ rule_id: 'INV-MAINT-PHASE1-SESSION-TYPES' as RuleId, week: w.n, day, detail: `a ${s.type} session` })))),
+  // §75: a phase 2 week carries at most PHASE2_QUALITY_PER_WEEK quality sessions.
+  'INV-MAINT-QUALITY-CAP': maint(plan => plan.weeks.filter(w => w.phase !== 'maintenance_restoration').flatMap(w => {
+    const n = placedOf(w).filter(x => isQualitySession(x.session)).length
+    return n > M.PHASE2_QUALITY_PER_WEEK ? [{ rule_id: 'INV-MAINT-QUALITY-CAP' as RuleId, week: w.n, day: null, detail: `${n} quality sessions` }] : []
+  })),
+  // §75: no week runs more than VOLUME_CEILING_PCT_OF_BASE of the race plan's base volume.
+  'INV-MAINT-VOLUME-CEILING': maint((plan, mt) => plan.weeks.filter(w => w.weekly_km > mt.base * (M.VOLUME_CEILING_PCT_OF_BASE / 100) + 0.1)
+    .map(w => ({ rule_id: 'INV-MAINT-VOLUME-CEILING' as RuleId, week: w.n, day: null, detail: `${w.weekly_km} km over the ceiling` }))),
+  // §75: no week runs on more days than the race plan did.
+  'INV-MAINT-CADENCE': maint((plan, mt) => mt.days == null ? [] : plan.weeks.flatMap(w => {
+    const n = placedOf(w).filter(x => !['rest', 'cross-train', 'cross_train'].includes(x.session.type)).length
+    return n > mt.days! ? [{ rule_id: 'INV-MAINT-CADENCE' as RuleId, week: w.n, day: null, detail: `${n} run days` }] : []
+  })),
+  // §75: an injured runner's block carries no strides. ⚠️ Read from the session LABEL, as validatePlan does: raised.
+  'INV-MAINT-INJURY-EASY-ONLY': maint((plan, mt) => !mt.injured ? [] : plan.weeks.flatMap(w => placedOf(w)
+    .filter(x => /strides/i.test(x.session.label ?? '')).map(({ day }) => ({ rule_id: 'INV-MAINT-INJURY-EASY-ONLY' as RuleId, week: w.n, day, detail: 'strides for an injured runner' })))),
+  // §75: no race-specific or ultra-specific session. ⚠️ Read from a `category` the session itself carries, as
+  // validatePlan does (sessions do not normally carry one): raised.
+  'INV-MAINT-NO-RACE-SPECIFIC': maint(plan => plan.weeks.flatMap(w => placedOf(w).filter(x => {
+    const c = (x.session as unknown as { category?: string }).category ?? ''
+    return c === 'race_specific' || c === 'ultra_specific'
+  }).map(({ day }) => ({ rule_id: 'INV-MAINT-NO-RACE-SPECIFIC' as RuleId, week: w.n, day, detail: 'a race-specific session' })))),
+  // §75: no unresolved template token in a week's debrief, label or theme, or a session label.
+  'INV-MAINT-NO-PLACEHOLDER-COPY': maint(plan => plan.weeks.flatMap(w => {
+    const texts = [(w as unknown as { coach_debrief?: string }).coach_debrief, w.label, w.theme, ...placedOf(w).map(x => x.session.label)]
+    return texts.filter((t): t is string => !!t && /\{\{[^}]*\}\}/.test(t)).map(() => ({ rule_id: 'INV-MAINT-NO-PLACEHOLDER-COPY' as RuleId, week: w.n, day: null, detail: 'an unresolved token' }))
+  })),
+  // §75 (Phase 3), §67: exactly the last PHASE3_LAST_WEEKS phase 2 weeks are marked for re-engagement, and no
+  // restoration week is.
+  'INV-MAINT-REENGAGEMENT-WINDOW': maint(plan => {
+    const p2 = plan.weeks.filter(w => w.phase === 'maintenance_base')
+    const from = Math.max(0, p2.length - M.PHASE3_LAST_WEEKS)
+    const out: Raw[] = p2.flatMap((w, i) => !!w.reengagement !== (i >= from) ? [{ rule_id: 'INV-MAINT-REENGAGEMENT-WINDOW' as RuleId, week: w.n, day: null, detail: i >= from ? 'an unmarked window week' : 'a marked week outside the window' }] : [])
+    for (const w of plan.weeks) if (w.phase === 'maintenance_restoration' && w.reengagement) out.push({ rule_id: 'INV-MAINT-REENGAGEMENT-WINDOW', week: w.n, day: null, detail: 'a marked restoration week' })
+    return out
+  }),
+}
+Object.assign(PREDICATES, BATCH_37)
+/** Maintenance plans are their own population: compared in `verifierMaintenance.test.ts`. */
+export const MAINTENANCE_RULES = Object.keys(BATCH_37) as RuleId[]
+
 const SEVERITY = new Map(RULES.map(r => [r.id, r.kind === 'soft' ? 'warn' as const : 'error' as const]))
 /** Rules the catalogue marks as conditionally severe: only these may set a finding's severity (code review, batch 20). */
 const CONDITIONAL = new Set(RULES.filter(r => r.severity_note).map(r => r.id))
