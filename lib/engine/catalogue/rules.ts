@@ -161,7 +161,7 @@ export const RULES: readonly Rule[] = [
   { id: 'INV-PLAN-ONRAMP-CURVE-CLIMBS', principle_ref: '§116', scope: 'week', kind: 'hard', config_key: null, explain: null },
   { id: 'INV-PLAN-ONRAMP-ALL-EASY', principle_ref: '§116', scope: 'week', kind: 'hard', config_key: null, explain: null },
   { id: 'INV-PLAN-ONRAMP-PER-RUN-STEP', principle_ref: '§116 Am. 12', related_refs: ['§45', '§2 Am. 2'], scope: 'week', kind: 'hard', config_key: null, explain: null },
-  { id: 'INV-PLAN-STAGED-NO-RACE-BLOCK', principle_ref: '§116 Am. 9', scope: 'week', kind: 'hard', config_key: null, explain: null },
+  { id: 'INV-PLAN-STAGED-NO-RACE-BLOCK', principle_ref: '§116 Am. 9', related_refs: ['§44'], scope: 'week', kind: 'hard', config_key: null, explain: null },
   { id: 'INV-PLAN-STAGED-DOOR-RATIO', principle_ref: '§116 Am. 11', scope: 'week', kind: 'soft', config_key: null, explain: null },
   { id: 'INV-PLAN-WALKRUN-START-PROGRESSION', principle_ref: '§116', related_refs: ['§117 Am. 7', '§118 Am. 4'], scope: 'week', kind: 'hard', config_key: null, explain: null },
   { id: 'INV-PLAN-ONRAMP-SPACED', principle_ref: '§116', scope: 'week', kind: 'hard', config_key: null, explain: null },

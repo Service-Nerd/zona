@@ -2384,6 +2384,128 @@ const BATCH_33: Partial<Record<RuleId, Predicate>> = {
 }
 Object.assign(PREDICATES, BATCH_33)
 
+// Batch 34 — the base-build and staged plans (§116–§118). These read the records a base-build plan keeps on itself
+// (`base_build_start_km`, `onramp_spaced`, `onramp_profile`, `staged_race`, `generator_input`), as validatePlan's
+// base-build validators do: they are the plan's construction record, not a label it gives itself.
+type BBMeta = { base_build_start_km?: number; onramp_spaced?: boolean; onramp_profile?: string; generator_input?: GeneratorInput
+  staged_race?: { door_km: number; checkpoint_week: number; race_weeks: number }; walk_run_carried?: boolean; walk_run_resumed?: boolean }
+const bbMeta = (p: Plan) => p.meta as unknown as BBMeta
+const rampOf = (p: Plan) => (p.weeks ?? []).filter(w => w.phase === 'base_build')
+const isDl = (w: Week) => w.type === 'deload' || w.badge === 'deload'
+const rampRuns = (w: Week) => Object.values(w.sessions ?? {}).filter((s): s is Session => !!s && s.type !== 'rest' && s.type !== 'cross-train')
+const rampKm = (w: Week | undefined) => w?.weekly_km ?? 0
+const longestRun = (w: Week) => Math.max(0, ...rampRuns(w).map(s => sessionKmSelfPaced(s) ?? 0))
+const stagedOf = (p: Plan) => { const s = bbMeta(p).staged_race; return s && typeof s.door_km === 'number' && typeof s.checkpoint_week === 'number' ? s : null }
+
+/** §44's race-block weeks for a request: the distance's block, plus the returning-runner shift. */
+function raceBlockWeeks(i: GeneratorInput): number {
+  const x = i as GeneratorInput & { returning_runner_allowance_active?: boolean; fresh_return_active?: boolean }
+  const returning = !!x.returning_runner_allowance_active || !!x.fresh_return_active
+    || (i.weeks_at_current_volume !== undefined && i.weeks_at_current_volume < GENERATION_CONFIG.FRESH_RETURN_WEEKS_THRESHOLD)
+  return GENERATION_CONFIG.PREP_TIME_THRESHOLDS[raceDistanceKey(i.race_distance_km)].block + (returning ? GENERATION_CONFIG.PREP_TIME_RETURNING_RUNNER_SHIFT_WEEKS : 0)
+}
+
+const BATCH_34: Partial<Record<RuleId, Predicate>> = {
+  // §116: the on-ramp is all easy.
+  'INV-PLAN-ONRAMP-ALL-EASY': plan => rampOf(plan).flatMap(w => rampRuns(w).filter(s => isHardEffort(s) || s.type === 'race')
+    .map(s => ({ rule_id: 'INV-PLAN-ONRAMP-ALL-EASY' as RuleId, week: w.n, day: null, detail: `a ${s.type} session` }))),
+
+  // §116: every build week climbs on the last (a knee/shin ramp may equal it straight after a deload); the ramp never
+  // ends on a deload; on a knee/shin ramp each week stays inside the injury cap and returns from a deload no higher
+  // than before it, and each cycle's pre-deload week gains on the last.
+  'INV-PLAN-ONRAMP-CURVE-CLIMBS': plan => {
+    const ramp = rampOf(plan)
+    if (!ramp.length) return []
+    const out: Raw[] = []
+    const R = 'INV-PLAN-ONRAMP-CURVE-CLIMBS' as RuleId
+    const capped = bbMeta(plan).onramp_profile === 'volume_capped_injury'
+    const build = ramp.filter(w => !isDl(w))
+    for (let i = 1; i < build.length; i++) {
+      const j = ramp.indexOf(build[i])
+      const mayEqual = capped && j > 0 && isDl(ramp[j - 1])
+      if (mayEqual ? rampKm(build[i]) < rampKm(build[i - 1]) : rampKm(build[i]) <= rampKm(build[i - 1])) out.push({ rule_id: R, week: build[i].n, day: null, detail: 'does not climb' })
+    }
+    const last = ramp[ramp.length - 1]
+    if (isDl(last)) out.push({ rule_id: R, week: last.n, day: null, detail: 'ends on a deload' })
+    if (capped) {
+      for (let j = 1; j < ramp.length; j++) {
+        const w = ramp[j], prev = ramp[j - 1]
+        if (isDl(w)) continue
+        const bounce = isDl(prev) && j >= 2
+        const limit = bounce ? rampKm(ramp[j - 2]) : rampKm(prev) * (1 + GENERATION_CONFIG.INJURY_WEEKLY_INCREASE_CAP_PCT / 100) + 0.1
+        if (rampKm(w) > limit + 1e-9) out.push({ rule_id: R, week: w.n, day: null, detail: bounce ? 'returns above its pre-deload week' : 'over the injury cap' })
+      }
+      const pre = ramp.filter((w, j) => j + 1 < ramp.length && isDl(ramp[j + 1]) && !isDl(w))
+      for (let j = 1; j < pre.length; j++) if (rampKm(pre[j]) <= rampKm(pre[j - 1])) out.push({ rule_id: R, week: pre[j].n, day: null, detail: 'a cycle that does not gain' })
+    }
+    return out
+  },
+
+  // §116 Am. 12: the longest run steps by at most LONG_RUN_PROGRESSION_CAP_PCT between build weeks; on a spaced ramp a
+  // deload never holds a longer run than the build week before it.
+  'INV-PLAN-ONRAMP-PER-RUN-STEP': plan => {
+    const ramp = rampOf(plan), out: Raw[] = []
+    const R = 'INV-PLAN-ONRAMP-PER-RUN-STEP' as RuleId
+    let prev: number | null = null
+    for (let i = 0; i < ramp.length; i++) {
+      const w = ramp[i], l = longestRun(w)
+      if (i > 0 && !isDl(w) && !isDl(ramp[i - 1]) && prev != null && prev > 0 && 100 * (l - prev) / prev > GENERATION_CONFIG.LONG_RUN_PROGRESSION_CAP_PCT + 0.5)
+        out.push({ rule_id: R, week: w.n, day: null, detail: 'longest run steps too far' })
+      prev = l
+    }
+    if (bbMeta(plan).onramp_spaced === true) {
+      let lastBuild: number | null = null
+      for (const w of ramp) {
+        const l = longestRun(w)
+        if (isDl(w) && lastBuild != null && l > lastBuild + 0.05) out.push({ rule_id: R, week: w.n, day: null, detail: 'a deload holding a longer run' })
+        if (!isDl(w)) lastBuild = l
+      }
+    }
+    return out
+  },
+
+  // §116 (R1): on a spaced ramp, runs sit on consecutive days no more often than the runner's open days force.
+  'INV-PLAN-ONRAMP-SPACED': plan => {
+    if (bbMeta(plan).onramp_spaced !== true) return []
+    const ORDER = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']
+    const blocked = new Set((bbMeta(plan).generator_input?.days_cannot_train ?? []).map(d => String(d).slice(0, 3).toLowerCase()))
+    const open = ORDER.filter(d => !blocked.has(d))
+    const pairs = (days: string[]) => { let n = 0; for (let a = 0; a < days.length; a++) for (let b = a + 1; b < days.length; b++) { const g = Math.abs(ORDER.indexOf(days[a]) - ORDER.indexOf(days[b])); if (g === 1 || g === 6) n++ } return n }
+    const fewest = (k: number) => { let best = Infinity; const go = (from: number, c: string[]) => { if (c.length === k) { best = Math.min(best, pairs(c)); return } for (let a = from; a < open.length; a++) go(a + 1, [...c, open[a]]) }; go(0, []); return best }
+    return rampOf(plan).flatMap(w => {
+      const days = Object.entries(w.sessions ?? {}).filter(([, s]) => s && s.type !== 'rest' && s.type !== 'cross-train').map(([d]) => d)
+      const can = fewest(days.length)
+      return Number.isFinite(can) && pairs(days) > can ? [{ rule_id: 'INV-PLAN-ONRAMP-SPACED' as RuleId, week: w.n, day: null, detail: `${pairs(days)} consecutive pairs against ${can}` }] : []
+    })
+  },
+
+  // §118: a base-build block ends within MAX_BASE_BUILD_RATIO of where it started.
+  'INV-PLAN-GET-RUNNING-BUILD-RATIO': plan => {
+    const start = Number(bbMeta(plan).base_build_start_km ?? 0), ramp = rampOf(plan)
+    if (!(start > 0) || !ramp.length) return []
+    const end = ramp[ramp.length - 1].weekly_km ?? 0
+    return end / start > GENERATION_CONFIG.MAX_BASE_BUILD_RATIO + 0.01 ? [{ rule_id: 'INV-PLAN-GET-RUNNING-BUILD-RATIO', week: ramp[ramp.length - 1].n, day: null, detail: `${(end / start).toFixed(2)}x` }] : []
+  },
+
+  // §116 Am. 9: a staged plan holds base building (or a walk-run start) only, ends at its checkpoint, and leaves the
+  // race block at least §44's weeks.
+  'INV-PLAN-STAGED-NO-RACE-BLOCK': plan => {
+    const st = stagedOf(plan)
+    if (!st) return []
+    const out: Raw[] = []
+    const R = 'INV-PLAN-STAGED-NO-RACE-BLOCK' as RuleId
+    for (const w of plan.weeks ?? []) if (w.phase !== 'base_build' && w.phase !== 'walk_run_start') out.push({ rule_id: R, week: w.n, day: null, detail: `a ${w.phase} week` })
+    if ((plan.weeks?.length ?? 0) !== st.checkpoint_week) out.push({ rule_id: R, week: st.checkpoint_week, day: null, detail: 'does not end at the checkpoint' })
+    const gi = bbMeta(plan).generator_input
+    if (gi && (plan.weeks ?? []).some(w => w.phase === 'base_build') && st.race_weeks < raceBlockWeeks(gi)) out.push({ rule_id: R, week: st.checkpoint_week, day: null, detail: 'race block too short' })
+    return out
+  },
+}
+Object.assign(PREDICATES, BATCH_34)
+/** The rules whose population is base-build and staged plans: compared in `verifierBaseBuild.test.ts`, against the
+ *  base-build validators, rather than in the race-plan harness (where both checkers are silent on them). */
+export const BASE_BUILD_RULES = Object.keys(BATCH_34) as RuleId[]
+
 const SEVERITY = new Map(RULES.map(r => [r.id, r.kind === 'soft' ? 'warn' as const : 'error' as const]))
 /** Rules the catalogue marks as conditionally severe: only these may set a finding's severity (code review, batch 20). */
 const CONDITIONAL = new Set(RULES.filter(r => r.severity_note).map(r => r.id))
