@@ -6,6 +6,15 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-11-22 — MONDAY-RACE-EVE-LONG-RUN-01 · the checker port found a plan we would hand over
+**Shipped:** a runner whose race falls on a Monday no longer gets a long run the day before it; race eve is a short shakeout with strides, and the check now looks across the week boundary.
+**Dev learning:** the defect sat between two owners. The race-week builder protects race eve "inside race week", the check iterated "within the week", and a Monday race puts race eve in the PREVIOUS week, which neither looked at. Parity came back byte-identical over 6,210 cases and proved nothing about this: its grid has no Monday race. The Monday population had to be measured directly.
+**Product/creator learning:** the B3 port was meant to copy the old checker's gaps, not fix them. Measuring those gaps before the board sat turned one of them from "the checker misses X" into "the engine prescribes X": the long run, 63–85 minutes, the day before the race, in 4 of 37 golden plans.
+**AI-building learning:** the code review found three real defects in a 100-line fix that passed 8,927 tests: a card still saying "+ strides" after the strides moved, stale long-run hours on the chart, and an adjust-path refusal on stored plans. All three were in data the fix touched but no test of mine read.
+**The honest bit:** my first cut produced a 47-minute shakeout for a slow runner (the cap lives in a closure inside race week, and I rebuilt the session without it), a second stride note in the week, an empty notes array the schema rejects, and a distance-anchored run for a beginner. Each was caught by an existing gate, one at a time.
+**Hook material:** "Parity: identical, 6,210 cases. Plans affected by the bug in that grid: 0. Not because it was fixed; because the grid never asks for a Monday race."
+**Postable?:** yes
+
 ## 2026-11-21 — ADR027-B3-VERIFIER · half the corpus was refusals and the test did not say so
 **Shipped:** the first three rules of the new, independent plan checker, each proven to report exactly what the old checker reports on real and deliberately broken plans.
 **Dev learning:** the agreement test reported 840 cases and looked solid. Code review measured that 9 of the 18 corpus rows were refusals, dropped without a count, so the "no false positives" half ran on 8 real plans. A big case count built from mutations of a few plans hides how few plans there are. The floor now sits on base plans and every row is accounted for.
