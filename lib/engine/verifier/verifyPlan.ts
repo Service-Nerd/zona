@@ -334,7 +334,7 @@ const BATCH_3: Partial<Record<RuleId, Predicate>> = {
     for (let before = raceIdx + 1; before <= GENERATION_CONFIG.RACE_EVE_PROTECTED_DAYS; before++) {
       const day = DAYS[7 + raceIdx - before], s = prev.sessions?.[day]
       if (s && s.type !== 'rest' && s.type !== 'race' && (s.duration_mins ?? 0) > GENERATION_CONFIG.RACE_WEEK_SHAKEOUT_MAX_MINS)
-        out.push({ rule_id: 'INV-PLAN-NO-RACE-EVE-SESSION', week: prev.n, day: null, detail: 'over the shakeout cap the day before a race early in the week' })
+        out.push({ rule_id: 'INV-PLAN-NO-RACE-EVE-SESSION', week: prev.n, day, detail: 'over the shakeout cap the day before a race early in the week' })
     }
     return out
   })),

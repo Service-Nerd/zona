@@ -2401,15 +2401,6 @@ function raceSession(
 }
 
 /**
- * §30 (amended, F14) — the two race-week shakeouts are not the same session.
- * They were emitted identically (4 km, same label, differing only by a stride
- * note), which reads as a copy-paste rather than a plan.
- *
- * `slot` 0 is the earlier one: longer, carries the strides. `slot` 1 is the
- * final run before the race: minimal, and meant to leave the runner wondering
- * whether it was enough.
- */
-/**
  * MONDAY-RACE-EVE-LONG-RUN-01 (hotfix, 2026-11-22; Coaching Board ADR027-B3-RAISED-LIST-01 ruled INCORRECT).
  *
  * §39 Am. 1 protects race eve on ANY weekday: no session within `RACE_EVE_PROTECTED_DAYS` of race day may exceed §30's
@@ -2432,9 +2423,9 @@ function protectCrossWeekRaceEve(weeks: Week[], zones: ZoneTargets, pace: PaceGu
     if (idx >= 0) continue                          // inside race week: the race-week builder owns it
     const day = DAY_ORDER[7 + idx]
     const s = prev.sessions[day]
-    if (!s || s.type === 'rest' || s.type === 'strength' || s.type === 'cross-train') continue
+    if (!s || s.type === 'rest' || s.type === 'race') continue   // the same sessions the race-eve check judges
     const mins = s.duration_mins ?? (s.distance_km != null ? s.distance_km * pace.minPerKmEasy : 0)
-    if (mins <= cap && s.role !== 'long_run') continue
+    if (mins <= cap && !isLongRun(s)) continue
     const shake = shakeoutSession(prev.n, day, zones, pace, 0)
     // §30's cap binds the shakeout itself, as the race-week builder's enforceCap does (a slow runner's 4 km is > 35 min).
     if (shake.duration_mins != null && shake.duration_mins > cap) {
@@ -2449,6 +2440,8 @@ function protectCrossWeekRaceEve(weeks: Week[], zones: ZoneTargets, pace: PaceGu
       for (const d of DAY_ORDER) {
         const other = prev.sessions[d]
         if (!other?.coach_notes) continue
+        // The label names the strides it carried (STRIDE-VISIBILITY-01); it must lose them with the note (code review).
+        if (other.coach_notes.some(note => !!note && /strides/i.test(note)) && other.label) other.label = other.label.replace(/ \+ (hill strides|strides)/, '')
         const kept = other.coach_notes.filter(note => !!note && !/strides/i.test(note))
         if (kept.length) other.coach_notes = kept as Session['coach_notes']
         else delete other.coach_notes   // the schema wants at least one note when the field is present
@@ -2460,9 +2453,21 @@ function protectCrossWeekRaceEve(weeks: Week[], zones: ZoneTargets, pace: PaceGu
     prev.sessions[day] = shake
     changed = true
   }
-  if (changed) prev.weekly_km = sumWeeklyKm(prev.sessions, pace)
+  if (changed) {
+    prev.weekly_km = sumWeeklyKm(prev.sessions, pace)
+    prev.long_run_hrs = computeLongRunHrs(prev.sessions, pace)   // every pass that edits sessions restates it (code review)
+  }
 }
 
+/**
+ * §30 (amended, F14) — the two race-week shakeouts are not the same session.
+ * They were emitted identically (4 km, same label, differing only by a stride
+ * note), which reads as a copy-paste rather than a plan.
+ *
+ * `slot` 0 is the earlier one: longer, carries the strides. `slot` 1 is the
+ * final run before the race: minimal, and meant to leave the runner wondering
+ * whether it was enough.
+ */
 function shakeoutSession(
   weekN: number, day: Day, zones: ZoneTargets, pace: PaceGuide, slot: 0 | 1 = 0,
 ): Session {
@@ -8263,9 +8268,10 @@ function buildRulePlanOnce(
     }
   }
   // DIAGNOSTIC: re-run the cap last to test whether a later pass undoes it.
+  // Before the note passes, so the notes they add reach the race-eve shakeout rather than the session it replaces.
+  protectCrossWeekRaceEve(weeks, zones, pace)
   applyV3HrEstimationNotePropagation(weeks, hrFallback.method, recalibrationWeeks)
   applyV7TaperRationale(weeks, input.race_distance_km)
-  protectCrossWeekRaceEve(weeks, zones, pace)
 
   // CoachingPrinciples §53 — quality variety across the full plan. Catalogue
   // rotation gets stuck when only one threshold row is eligible for taper

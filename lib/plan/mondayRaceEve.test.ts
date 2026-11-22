@@ -6,6 +6,7 @@ import { generateRulePlan } from './ruleEngine'
 import { validatePlan } from './invariants'
 import { GENERATION_CONFIG as G } from './generationConfig'
 import type { GeneratorInput, Plan } from '@/types/plan'
+import { isLongRun } from './sessionRole'
 
 const PLAN_START = '2026-11-23'
 const base = { goal: 'finish', current_weekly_km: 30, longest_recent_run_km: 12, days_available: 4, training_age: '2-5yr', age: 38, injury_history: [] }
@@ -37,7 +38,7 @@ describe('MONDAY-RACE-EVE-LONG-RUN-01 — race eve before a Monday race', () => 
     for (const { plan } of plans) {
       const e = raceEve(plan)!
       if (!e.s || e.s.type === 'rest') continue
-      expect(e.s.role, `${plan.meta.race_distance_km} km`).not.toBe('long_run')
+      expect(isLongRun(e.s), `${plan.meta.race_distance_km} km`).toBe(false)
       expect(e.s.duration_mins ?? 0, `${plan.meta.race_distance_km} km`).toBeLessThanOrEqual(G.RACE_WEEK_SHAKEOUT_MAX_MINS)
     }
   })
@@ -47,6 +48,11 @@ describe('MONDAY-RACE-EVE-LONG-RUN-01 — race eve before a Monday race', () => 
       const e = raceEve(plan)!
       const withStrides = Object.values(e.week.sessions).filter(s => (s?.coach_notes ?? []).some(n => /strides/i.test(n ?? '')))
       expect(withStrides.length, `${plan.meta.race_distance_km} km`).toBeLessThanOrEqual(1)
+      // A label that names strides has the stride note behind it (code review: the moved strides left "+ strides" behind).
+      for (const s of Object.values(e.week.sessions)) if (/\+ (hill )?strides/.test(s?.label ?? '')) expect((s?.coach_notes ?? []).some(n => /strides/i.test(n ?? '')), s?.label).toBe(true)
+      // The long-run hours describe the week as it is now.
+      const lr = Object.values(e.week.sessions).find(s => s && isLongRun(s))
+      if (!lr) expect(e.week.long_run_hrs ?? null, `${plan.meta.race_distance_km} km long_run_hrs`).toBeNull()
     }
   })
 
