@@ -813,8 +813,8 @@ const EXTRA_MUTATIONS: { name: string; apply: (p: Plan, input: GeneratorInput) =
       if (!p.meta.goal_pace_reach) return false
       delete p.meta.goal_pace_reach; p.meta.goal_pace_withheld = { gap_pct: 12 }; return true
     }],
-    // Goal-pace reach AT its lines: the goal one point past the stretch line, not withheld; and a withheld plan whose
-    // race-pace long run finishes half a tolerance off current race pace.
+    // Goal-pace reach NEAR its lines (code review: not AT them): the goal one point past the stretch line, not withheld;
+    // and a withheld plan whose race-pace long run finishes 1.5 tolerances off current race pace.
     ['a goal one point past the stretch line, not withheld', (p: Plan, i: GeneratorInput) => {
       const r = p.meta.goal_pace_reach
       if (!r || !(i.race_distance_km > 0)) return false
@@ -945,6 +945,7 @@ const CONDITIONAL_PORTED: Record<string, { why: string; branches: ('warn' | 'err
   'INV-PLAN-NOT-DETRAINING': { why: 'not conditional: always warn; the note is a planned promotion', branches: ['warn'] },
   'INV-PLAN-PEAK-IN-PEAK-PHASE': { why: 'warn on a maintenance profile, error otherwise (set in the predicate)', branches: ['warn', 'error'] },
   'INV-PLAN-LR-MAX-WEEKLY-PCT': { why: 'warn on a maintenance profile, error otherwise (set in the predicate)', branches: ['warn', 'error'] },
+  'INV-PLAN-WALKRUN-START-PROGRESSION': { why: 'warn when the walk-run route is not ratified, error otherwise', branches: ['warn', 'error'] },
   'INV-PLAN-HEADER-PACE-MATCHES-WORK': { why: 'warn when the header reads the goal pace, error otherwise', branches: ['warn', 'error'] },
   'INV-PLAN-PEAK-STEPBACK-VOLUME': { why: 'warn when the §52 share floor sits above the previous week, error otherwise', branches: ['warn', 'error'] },
 }
@@ -1221,7 +1222,8 @@ describe('ADR027-B3-VERIFIER — agreement with validatePlan, per ported rule', 
     const bad: string[] = []
     for (const [r, { branches }] of Object.entries(CONDITIONAL_PORTED)) {
       if (!(PORTED_RULES as string[]).includes(r) || !conditional.has(r)) bad.push(`${r}: stale entry (not ported, or not conditional)`)
-      for (const sev of branches) if (!runs.some(c => c.new.some(x => x.rule === r && x.k.endsWith(`|${sev}`)))) bad.push(`${r}: never produced ${sev}`)
+      // A base-build rule's branches are seen in verifierBaseBuild.test.ts, its population.
+      if (!BASE_BUILD_RULES.includes(r as never)) for (const sev of branches) if (!runs.some(c => c.new.some(x => x.rule === r && x.k.endsWith(`|${sev}`)))) bad.push(`${r}: never produced ${sev}`)
     }
     expect(bad).toEqual([])
   })

@@ -103,6 +103,55 @@ const BREAKS: [string, (p: Plan) => boolean][] = [
     meta(p).staged_race = { door_km: 30, checkpoint_week: p.weeks.length, race_weeks: block, race_distance_km: 21.1, target_found: false }
     return true
   }],
+  // The walk-run start: the route (a short declared longest run given continuous running: warn; staged: error), then one
+  // breakage per arm on a plan that has a walk-run block.
+  ...(['unratified', 'staged'] as const).map(how => [`a short longest run given continuous running (${how})`, (p: Plan) => {
+    const gi = meta(p).generator_input as GeneratorInput | undefined
+    if (!gi || p.weeks.some(w => w.phase === 'walk_run_start') || !ramp(p).length || meta(p).walk_run_carried) return false
+    gi.longest_recent_run_km = GENERATION_CONFIG.WALK_RUN_START_MIN_LONGEST_RUN_KM - 1
+    if (how === 'staged') meta(p).staged_race = { door_km: 30, checkpoint_week: p.weeks.length, race_weeks: 30, race_distance_km: 21.1, target_found: false }
+    return true
+  }] as [string, (p: Plan) => boolean]),
+  ...([
+    ['a walk-run week one session short', (wr: W[]) => { const k = Object.keys(wr[0].sessions).find(d => (wr[0].sessions as Record<string, Session | undefined>)[d]?.walk_run_level); if (!k) return false; delete (wr[0].sessions as Record<string, unknown>)[k]; return true }],
+    ['a walk-run session without its level', (wr: W[]) => { const s = runsOf(wr[0])[0]; if (!s) return false; delete s.walk_run_level; return true }],
+    ['a walk-run week mixing levels', (wr: W[]) => { const ss = runsOf(wr[0]); if (ss.length < 2 || !ss[1].walk_run_level) return false; ss[1].walk_run_level = { ...ss[1].walk_run_level, run_mins: ss[1].walk_run_level.run_mins + 1 }; return true }],
+    ['a walk-run start at the wrong first level', (wr: W[]) => { for (const s of runsOf(wr[0])) if (s.walk_run_level) s.walk_run_level = { ...s.walk_run_level, run_mins: s.walk_run_level.run_mins + 1 }; return true }],
+    ['a walk-run week two levels up', (wr: W[]) => {
+      const k = wr.findIndex((w, j) => j > 0 && !dl(w)); if (k < 1) return false
+      const base = runsOf(wr[k - 1])[0]?.walk_run_level; if (!base) return false
+      for (const s of runsOf(wr[k])) s.walk_run_level = { run_mins: base.run_mins + 2, walk_mins: GENERATION_CONFIG.WALK_RUN_START_WALK_MINS }
+      return true
+    }],
+    ['a walk-run week stepping down', (wr: W[]) => {
+      const k = wr.findIndex((w, j) => j > 0 && !dl(w) && (runsOf(w)[0]?.walk_run_level?.run_mins ?? 0) > (runsOf(wr[0])[0]?.walk_run_level?.run_mins ?? 0))
+      if (k < 1) return false
+      const prev = runsOf(wr[k - 1])[0]?.walk_run_level; if (!prev) return false
+      for (const s of runsOf(wr[k])) s.walk_run_level = { run_mins: Math.max(0, prev.run_mins - 1), walk_mins: prev.walk_mins }
+      return true
+    }],
+    ['a walk-run deload that changes the level', (wr: W[]) => {
+      if (wr.length < 2) return false
+      const w = wr[1], prev = runsOf(wr[0])[0]?.walk_run_level; if (!prev) return false
+      w.type = 'deload'; for (const s of runsOf(w)) s.walk_run_level = { run_mins: prev.run_mins + 1, walk_mins: prev.walk_mins }
+      return true
+    }],
+    ['a walk-run start ending below the run-walk level', (wr: W[]) => {
+      const first = runsOf(wr[0])[0]?.walk_run_level; if (!first || wr.length < 2) return false
+      for (const s of runsOf(wr[wr.length - 1])) s.walk_run_level = { ...first }
+      return true
+    }],
+  ] as [string, (wr: W[]) => boolean][]).map(([name, f]) => [name, (p: Plan) => { const wr = p.weeks.filter(w => w.phase === 'walk_run_start'); return wr.length > 0 && f(wr) }] as [string, (p: Plan) => boolean]),
+  ['a running week after a walk-run start dropping the pattern', p => {
+    if (!p.weeks.some(w => w.phase === 'walk_run_start')) return false
+    const s = ramp(p).flatMap(runsOf).find(x => x.run_walk_strategy); if (!s) return false
+    delete s.run_walk_strategy; return true
+  }],
+  ['a running week before the walk-run start ends', p => {
+    const i = p.weeks.findIndex(w => w.phase === 'walk_run_start'); const j = p.weeks.findIndex((w, k) => k > i && w.phase === 'walk_run_start')
+    if (i < 0 || j < 0) return false
+    p.weeks[i].phase = 'base_build'; return true
+  }],
   ['a block that ends past the build-ratio ceiling', p => {
     const start = Number(meta(p).base_build_start_km ?? 0), r = ramp(p)
     if (!(start > 0) || !r.length) return false
@@ -122,6 +171,7 @@ const BREAKS: [string, (p: Plan) => boolean][] = [
 
 /** The arms, by the verifier's detail prefix: each must fire somewhere in the corpus or its breakages. */
 const ARMS: Record<string, string[]> = {
+  'INV-PLAN-WALKRUN-START-PROGRESSION': ['routed to a walk-run start', 'a running week before', 'session count', 'a session without', 'mixed levels', 'starts at the wrong level', 'a deload that does not hold', 'steps down', 'steps more than one level', 'ends below', 'a running week that drops'],
   'INV-PLAN-ONRAMP-CURVE-CLIMBS': ['does not climb', 'ends on a deload', 'over the injury cap', 'returns above its pre-deload week', 'a cycle that does not gain'],
   'INV-PLAN-ONRAMP-PER-RUN-STEP': ['longest run steps too far', 'a deload holding a longer run'],
   'INV-PLAN-STAGED-NO-RACE-BLOCK': ['a ', 'does not end at the checkpoint', 'race block too short'],
@@ -179,6 +229,16 @@ describe('ADR027-B3-VERIFIER — base-build and staged plans', () => {
       expect(fired, 'nothing here wakes this rule').toBeGreaterThan(0)
     })
   }
+
+  it('🔴 a conditional base-build rule produces each of its severities', () => {
+    for (const [rule, branches] of [['INV-PLAN-WALKRUN-START-PROGRESSION', ['warn', 'error']]] as const) for (const sev of branches) {
+      const seen = cases.some(c => {
+        const profile = buildRunnerProfile(factsFromInput(c.input), { asOf: c.asOf, timezone: null, planStart: c.planStart })
+        return verifyPlan(c.plan, { input: c.input, profile }).some(f => f.rule_id === rule && f.severity === sev)
+      })
+      expect(seen, `${rule} never produced ${sev}`).toBe(true)
+    }
+  })
 
   it('🔴 every arm of a multi-check rule fires on its own', () => {
     for (const [rule, prefixes] of Object.entries(ARMS)) for (const pre of prefixes) {

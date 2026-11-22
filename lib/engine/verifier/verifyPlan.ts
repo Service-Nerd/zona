@@ -2504,7 +2504,62 @@ const BATCH_34: Partial<Record<RuleId, Predicate>> = {
 Object.assign(PREDICATES, BATCH_34)
 /** The rules whose population is base-build and staged plans: compared in `verifierBaseBuild.test.ts`, against the
  *  base-build validators, rather than in the race-plan harness (where both checkers are silent on them). */
-export const BASE_BUILD_RULES = Object.keys(BATCH_34) as RuleId[]
+export const BASE_BUILD_RULES = [...Object.keys(BATCH_34), 'INV-PLAN-WALKRUN-START-PROGRESSION'] as RuleId[]
+
+const BATCH_35: Partial<Record<RuleId, Predicate>> = {
+  // §116, §117 Am. 7, §118 Am. 4: a runner routed to a walk-run start gets one (warn where the route is not ratified:
+  // not staged and above §116's floor); the walk-run block comes first, holds its sessions and minutes at one level a
+  // week, starts at the right rung, never steps down or by more than one, holds on a deload, and ends at §117's level;
+  // and running weeks after it keep the run-walk pattern. ⚠️ The start volume is the L1 profile's (the old code derives
+  // it from the plan's stored request with the planner's own helper).
+  'INV-PLAN-WALKRUN-START-PROGRESSION': (plan, { profile }) => {
+    const C = GENERATION_CONFIG, weeks = plan.weeks ?? [], m = bbMeta(plan), gi = m.generator_input
+    const wr = weeks.filter(w => w.phase === 'walk_run_start'), carried = m.walk_run_carried === true
+    const out: Raw[] = []
+    const push = (week: number, detail: string, severity: 'error' | 'warn' = 'error') => out.push({ rule_id: 'INV-PLAN-WALKRUN-START-PROGRESSION', week, day: null, detail, severity })
+    const start = profile.volume.effective_start_km.value
+    const below = start < C.BASE_BUILD_ONRAMP_MIN_START_KM
+    const prescribed = below || (typeof gi?.longest_recent_run_km === 'number' && gi.longest_recent_run_km < C.WALK_RUN_START_MIN_LONGEST_RUN_KM)
+    if ((wr.length > 0 || weeks.some(w => w.phase === 'base_build')) && wr.length === 0 && !carried && gi && prescribed) {
+      const first = weeks.find(w => w.phase === 'base_build')
+      push(first?.n ?? 1, 'routed to a walk-run start, given continuous running', stagedOf(plan) || below ? 'error' : 'warn')
+    }
+    if (wr.length === 0 && !carried) return out
+    const runs = (w: Week) => Object.values(w.sessions ?? {}).filter((s): s is Session => !!s && s.type !== 'rest' && s.type !== 'cross-train' && s.type !== 'strength')
+    const rank = (l: { run_mins: number; walk_mins: number }) => l.run_mins * 10 - l.walk_mins
+    const open = 7 - new Set((gi?.days_cannot_train ?? []).map(d => String(d).slice(0, 3).toLowerCase())).size
+    const want = Math.min(C.WALK_RUN_START_SESSIONS, open)
+    const firstRun = weeks.findIndex(w => w.phase === 'base_build')
+    const lastWr = weeks.reduce((at, w, i) => (w.phase === 'walk_run_start' ? i : at), -1)
+    if (firstRun >= 0 && firstRun < lastWr) push(weeks[firstRun].n, 'a running week before the walk-run start ends')
+    let prev: number | null = null, prevRun = 0
+    for (const w of wr) {
+      const ss = runs(w)
+      if (ss.length !== want) push(w.n, `session count ${ss.length}, not ${want}`)
+      const levels = ss.map(s => s.walk_run_level)
+      if (levels.some(l => !l) || ss.some(s => s.duration_mins !== C.WALK_RUN_START_MINS)) { push(w.n, 'a session without its level or minutes'); continue }
+      const r = Math.max(...levels.map(l => rank(l!)))
+      if (Math.min(...levels.map(l => rank(l!))) !== r) push(w.n, 'mixed levels')
+      if (prev === null) {
+        const first = m.walk_run_resumed === true ? { run_mins: C.FINISH_GOAL_RUNWALK_RUN_MINS, walk_mins: C.FINISH_GOAL_RUNWALK_WALK_MINS } : { run_mins: C.WALK_RUN_START_RUN_MINS, walk_mins: C.WALK_RUN_START_WALK_MINS }
+        if (r !== rank(first)) push(w.n, 'starts at the wrong level')
+      } else if (isDl(w)) {
+        if (r !== prev) push(w.n, 'a deload that does not hold the level')
+      } else if (r < prev) push(w.n, 'steps down the ladder')
+      else if (r > prev) {
+        const l = levels[0]!
+        const last = l.run_mins === C.FINISH_GOAL_RUNWALK_RUN_MINS && l.walk_mins === C.FINISH_GOAL_RUNWALK_WALK_MINS
+        if (l.run_mins - prevRun !== 1 || (!last && l.walk_mins !== C.WALK_RUN_START_WALK_MINS)) push(w.n, 'steps more than one level')
+      }
+      prev = r
+      prevRun = levels[0]!.run_mins
+    }
+    if (wr.length > 0 && prev !== null && prev !== rank({ run_mins: C.FINISH_GOAL_RUNWALK_RUN_MINS, walk_mins: C.FINISH_GOAL_RUNWALK_WALK_MINS })) push(wr[wr.length - 1].n, 'ends below the run-walk level')
+    for (const w of weeks.filter(x => x.phase === 'base_build')) if (runs(w).some(s => !s.run_walk_strategy)) push(w.n, 'a running week that drops the run-walk pattern')
+    return out
+  },
+}
+Object.assign(PREDICATES, BATCH_35)
 
 const SEVERITY = new Map(RULES.map(r => [r.id, r.kind === 'soft' ? 'warn' as const : 'error' as const]))
 /** Rules the catalogue marks as conditionally severe: only these may set a finding's severity (code review, batch 20). */
