@@ -6252,6 +6252,39 @@ in a bug fix. Prompting a runner about an unmatched run is **🧭 DESIGN BOARD /
 itself). The `no_plan` 10 belong to the activation programme. ⚠️ **Push DELIVERY is still not measurable** from the
 server and needs a TestFlight build.
 
+### 🔲 `PREPUSH-RUNNER-UNRESOLVED-01` — the pre-push gate says "THE TEST SUITE IS RED" when it could not run the suite at all *(filed 2026-11-25, hit on a real push)* ⚙️ **NO BOARD** (the gate's own message)
+
+📐 **Measured 2026-11-25 on a live `git push`:** `.githooks/pre-push` printed
+
+```
+full test suite (~3 min; the whole point is that it is not scoped to the diff)...
+/Users/russe/rts-training-hub/.githooks/pre-push: line 56: npx: command not found
+
+✗  THE TEST SUITE IS RED. Push blocked.
+```
+
+**The suite was green — 854 files / 8,976 tests, run twice that morning.** Git spawns hooks in a
+shell that has not sourced nvm, so `npx` is not on `PATH`, `! $RUNNER` is true, and the gate
+reports the one thing it has not established. It then advises checking whether a fixture expired,
+which sends the reader looking for a stale test that does not exist.
+
+🔑 **It fails CLOSED, which is right — the defect is the CLAIM, not the direction.** `exit 1` on an
+unrunnable check is correct (`unverified is never a pass`); saying *red* when the answer is *not
+measured* is the same class as `CHECK-SLOW-STALE-01` (`existsSync` answering a different question)
+and `an exit code is not a reason`.
+
+**Fix:** resolve the runner before judging it — the precedent is already in this repo.
+`scripts/xcode-verify-cap-config.sh` resolves `node` itself *"because Xcode strips the environment
+and never sources nvm"*, and `scripts/preflight-node.mjs` reads the required range from the
+installed CLI. Do the same here: if the runner cannot be resolved, exit 1 with **"COULD NOT RUN THE
+SUITE"** and the reason, never "RED". ⚠️ Keep `ZONNA_SKIP_SUITE=1`'s loudness; this is not a reason
+to soften the gate.
+
+⚠️ **`.githooks/pre-push.test.sh` has 9 cases with both commands injectable (`ZONNA_TSC_CMD` /
+`ZONNA_TEST_CMD`) and cannot see this** — an injected command always resolves, so "the runner is
+absent from `PATH`" is outside its population by construction. The new case has to unset `PATH`,
+not substitute a command.
+
 ### 🔲 `PUSH-SEND-OWNER-01` — `notifyUser` is not the owner of sending, so push telemetry covers two surfaces of five *(filed 2026-11-25, found by code review of `STEP4-RUNS-NO-COMPLETIONS-01`'s telemetry)* ⚙️ **NO BOARD** (refactor, no behavioural delta)
 
 🔴 **The comment said "single owner" and it was FALSE when written.** `notifyUser` has exactly **two** callers — `lib/coaching/autoAnalyse.ts:325` (the run-link push, the one `STEP4` is about) and `app/api/adjust-plan/route.ts:540`. **`push/send-daily`, `push/send-weekly-report` and `push/send-trial-insight` import `sendApnsPush` / `sendWebPush` directly** and bypass it entirely, so the new `push_attempted` event is emitted on two of five sending surfaces.
