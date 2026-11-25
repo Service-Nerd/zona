@@ -1234,6 +1234,12 @@ const STRICT_DIVERGENCES: Record<string, StrictDivergence> = {
     reach: 'reached',
     why: 'Two defects. `validatePlan` ranked by `distance_km ?? duration_mins ?? 0`, so a 10 km run (10) ranked below a 40-minute easy run (40) — km against minutes. And it skipped only `w.type === \'deload\'`, so a badge-only deload was ranked as an ordinary week. Now ranked by km-equivalent (the session\'s own band, else the plan\'s easy pace) and gated on `isDeloadWeek`, as every other deload rule here already is. ⚠️ `both`, and MEASURED rather than reasoned: the RANKING alone is bidirectional — a different pair becomes "largest", so some weeks start being flagged and others correctly stop (31 losses when the ranking is reverted). My first `why` attributed the losses to the widened deload skip and that was wrong: reverting the deload half alone leaves this suite GREEN, so no badge-only deload week exists in this corpus and that half is unreached here. It is proven directly in verifierStrict.test.ts instead. The rule\'s VALUE is untouched — the sitting records that as still unsettled.',
   },
+  'INV-PLAN-COACH-NOTES-MATCH-INTENT': {
+    ruling: 'B13',
+    direction: 'narrower',
+    reach: 'reached',
+    why: '`validatePlan` decided "this is hard work, so an aerobic cue is wrong on it" from the LABEL (`vo2max`, `vo2 max`, `-pace `, `mp `, `mp.`) — D-17\'s forbidden shape, since the enricher may rewrite a display string and change the check with no session changing. Now through `classifyStimulus` (the stamped training effect) and `workClassFor` (the catalogue row\'s category), which answer different questions and between them reach a goal-paced session whichever the producer stamped. The third loop in this rule already routed through `classifyStimulus`; this loop was the outlier. 📐 MEASURED IN BOTH POPULATIONS, because the two disagree: on REAL generated plans the structural reading is strictly BROADER — it catches two hill-rep sessions at vo2max stimulus that the label test missed, where an aerobic cue would plainly be wrong. Here it shows 60 LOSSES, all mutated sessions whose only evidence of being goal-paced was the token "MP " in a label, which is precisely what INV-CLASS forbids relying on. 🔻 `classifyStimulus`\'s own label fallback has no "mp" token — a gap in the OWNER, named rather than patched here, since it is shared by many rules.',
+  },
   'INV-PLAN-QUALITY-EXPECTED': {
     ruling: 'B11',
     direction: 'narrower',

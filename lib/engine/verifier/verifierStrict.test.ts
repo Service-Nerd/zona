@@ -338,3 +338,32 @@ describe('B11 / B12 — the injury chip, the stride signal and the catalogue cat
     expect(findings(p, RULE).map(f => f.day), 'the session carries no category of its own; its row does').toContain('wed')
   })
 })
+
+describe('B13 — coach-note intent decided structurally, not from the label', () => {
+  const RULE = 'INV-PLAN-COACH-NOTES-MATCH-INTENT'
+  const AEROBIC_CUE = 'Boring is the point.'
+  const quality = (over: Record<string, unknown>) =>
+    ({ type: 'quality', distance_km: 10, duration_mins: 55, coach_notes: [AEROBIC_CUE], ...over }) as unknown as Session
+
+  it('🔴 an aerobic cue on a STAMPED vo2max session is caught, whatever its label says', () => {
+    // 📐 The gain the real population shows: hill reps carry `stimulus: vo2max` and a label the
+    // old substrings never matched ("Hill reps — 45s"), so an aerobic cue on genuinely hard work
+    // went unchecked. This is the case, built from that shape.
+    const p = planWith({}, { phase: 'build', sessions: sessions({ wed: quality({ label: 'Hill reps — 45s', stimulus: 'vo2max' }) }) })
+    expect(findings(p, RULE).map(f => f.detail), 'a stamped vo2max session with an aerobic cue').toContain(`aerobic cue "boring is the point"`)
+  })
+
+  it('🔴 and a session whose ONLY evidence is the token "MP " in its label is no longer judged on it', () => {
+    // The ruled LOSS, stated as a deliberate behaviour rather than discovered later: `'mp '`
+    // matched any label containing it (including "ramp "), and a display string is what the
+    // enricher may rewrite. Nothing structural marks this session as goal-paced, so the rule
+    // declines — INV-CLASS's whole point.
+    const p = planWith({}, { phase: 'build', sessions: sessions({ wed: quality({ label: 'MP 3 x 2 miles' }) }) })
+    expect(findings(p, RULE), 'no stamp, no catalogue category: the label alone does not decide').toEqual([])
+  })
+
+  it('a session with no aerobic cue is silent either way', () => {
+    const p = planWith({}, { phase: 'build', sessions: sessions({ wed: quality({ label: 'Hill reps — 45s', stimulus: 'vo2max', coach_notes: ['Drive the knees.'] }) }) })
+    expect(findings(p, RULE)).toEqual([])
+  })
+})

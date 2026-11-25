@@ -2031,8 +2031,27 @@ const BATCH_27: Partial<Record<RuleId, Predicate>> = {
     }
     for (const { day, session: s } of placed) {
       if (s.type !== 'quality') continue
-      const label = (s.label ?? '').toLowerCase(), notes = (s.coach_notes ?? []).join(' ').toLowerCase()
-      const hard = label.includes('vo2max') || label.includes('vo2 max') || label.includes('-pace ') || label.includes('mp ') || label.includes('mp.')
+      const notes = (s.coach_notes ?? []).join(' ').toLowerCase()
+      // 🔴 ADR027-B3-STRICT-01 / sitting B13 — WHAT THE SESSION IS, DECIDED STRUCTURALLY.
+      // `validatePlan` decided "this is hard work, so an aerobic cue is wrong on it" from the
+      // LABEL: `vo2max`, `vo2 max`, `-pace `, `mp `, `mp.`. That is D-17's forbidden shape twice
+      // over — the enricher is allowed to rewrite a display string, so the same session could gain
+      // or lose this check on copy nobody changed — and the substrings are brittle in their own
+      // right: `'mp '` matches "tempo " nowhere but `'-pace '` needs a trailing space the
+      // enricher may not keep. The board: *"Decide VO2 and goal pace structurally
+      // (`classifyStimulus`, `workClassFor`), per INV-CLASS."*
+      //
+      // ⚠️ BOTH OWNERS, BECAUSE THEY ANSWER DIFFERENT QUESTIONS. `classifyStimulus` reads the
+      // stamped `stimulus` first and names the training effect; `workClassFor` reads the catalogue
+      // row's category through `catalogue_id` and names what kind of work it is. A goal-paced
+      // session is reachable through either depending on which the producer stamped, and the third
+      // loop below already routes through `classifyStimulus` — this one was the outlier.
+      //
+      // ⚠️ Each owner falls back to the label when nothing is stamped, which is the legacy path
+      // ADR-018 kept deliberately. Routing through them is still the fix: the fallback lives in
+      // one place that evolves with the catalogue, instead of five substrings here.
+      const stim = classifyStimulus(s)
+      const hard = stim === 'vo2max' || stim === 'race_pace' || workClassFor(s) === 'race_specific'
       if (!hard) continue
       for (const phrase of ['boring is the point', 'if it feels productive']) {
         if (notes.includes(phrase)) out.push({ rule_id: 'INV-PLAN-COACH-NOTES-MATCH-INTENT', week: w.n, day, detail: `aerobic cue "${phrase}"` })
