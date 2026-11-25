@@ -13,6 +13,13 @@
 import { describe, it, expect } from 'vitest'
 import { generateGetRunningPlan } from './getRunningPlan'
 import { validatePlan } from './invariants'
+// ADR027-B3-STRICT-01 / sitting E1 — these arms now go through the DISPATCHER, which is what
+// production runs. `INV-PLAN-ZONE-LABEL-HAS-PRESCRIPTION` used to live inside `validatePlan`
+// gated on `plan_kind === 'base_build'`, and `validateSavedPlan` never sends a base-build plan
+// there — so arm 6 was asserting a rule was "wakeable" through a path production never takes,
+// and it passed because the dead branch was still present to answer it. Calling the dispatcher is
+// the point of the fix: it exercises the route a saved plan actually travels.
+import { validateSavedPlan } from './validateStoredPlan'
 import type { GeneratorInput, Session } from '@/types/plan'
 
 const PINNED = '2026-10-12'
@@ -79,7 +86,7 @@ describe('BASEBUILD-ZONE-CEILING-01', () => {
 
   it('5. INV-PLAN-HR-ASSUMPTIONS-SURFACED no longer fires — it did on both live plans', () => {
     const { plan } = generateGetRunningPlan(input({ age: 25, max_hr: 182, max_hr_source: 'observed', resting_hr: 56 }), PINNED, RUNWAY)
-    const codes = validatePlan(plan, input({ age: 25 }) as never).map(v => v.code)
+    const codes = validateSavedPlan(plan, input({ age: 25 }) as never).map(v => v.code)
     expect(codes).not.toContain('INV-PLAN-HR-ASSUMPTIONS-SURFACED')
     expect(codes).not.toContain('INV-PLAN-ZONE-LABEL-HAS-PRESCRIPTION')
   })
@@ -89,7 +96,7 @@ describe('BASEBUILD-ZONE-CEILING-01', () => {
     const { plan } = generateGetRunningPlan(input({ age: 40, resting_hr: 50 }), PINNED, RUNWAY)
     for (const w of plan.weeks)
       for (const s of Object.values(w.sessions ?? {})) if (s) delete (s as { hr_target?: string }).hr_target
-    const v = validatePlan(plan, input({ age: 40 }) as never)
+    const v = validateSavedPlan(plan, input({ age: 40 }) as never)
       .filter(x => x.code === 'INV-PLAN-ZONE-LABEL-HAS-PRESCRIPTION')
     expect(v.length, 'the rule must be wakeable').toBeGreaterThan(0)
     expect(v[0].severity).toBe('error')
@@ -102,7 +109,7 @@ describe('BASEBUILD-ZONE-CEILING-01', () => {
     if (meta(plan).hr_derived_max != null) return // age defaulted somewhere; nothing to assert
     for (const w of plan.weeks)
       for (const s of Object.values(w.sessions ?? {})) if (s) delete (s as { hr_target?: string }).hr_target
-    const v = validatePlan(plan, input() as never)
+    const v = validateSavedPlan(plan, input() as never)
       .filter(x => x.code === 'INV-PLAN-ZONE-LABEL-HAS-PRESCRIPTION')
     expect(v).toEqual([])
   })

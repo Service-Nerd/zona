@@ -30,6 +30,57 @@ export function volumeCappedRampOf(plan: Plan): boolean {
  *
  * Four checks, one per binding board amendment that is mechanically checkable.
  */
+/**
+ * §14 Am. / §84 Am.1 — INV-PLAN-ZONE-LABEL-HAS-PRESCRIPTION, on a base-build plan.
+ *
+ * 🔴 WHY IT LIVES HERE NOW (`ADR027-B3-STRICT-01` / sitting E1, Coaching Board 2026-11-22).
+ * It was written inside `validatePlan` gated on `plan_kind === 'base_build'` — and
+ * `validateSavedPlan` dispatches a base-build plan to `validateBaseBuildBlock`, never to
+ * `validatePlan`. So the branch was unreachable for every plan production has ever saved: the
+ * only check guarding §84 Am.1's *"the zone is a LABEL about the prescription"* on the one plan
+ * kind measured to breach it (51/51 and 30/30 sessions carrying `zone` with ZERO `hr_target`)
+ * could never run. The board: *"make it live where its population is: the base-build route."*
+ *
+ * ⚠️ ONE OWNER, CALLED FROM THE DISPATCHER, NOT COPIED INTO IT. `validateBaseBuildBlock` takes
+ * `weeks`, not the plan, so it cannot see `meta.hr_derived_max` — and that field is the whole
+ * escape hatch. Widening that signature would make every caller pass a plan it does not have;
+ * composing a second validator in `baseBuildErrors`, which already holds the plan and already
+ * composes two, is the smaller change.
+ *
+ * ⚠️ THE ESCAPE HATCH IS DERIVABILITY, NOT ABSENCE OF DATA, and that is carried over verbatim
+ * from the original: `buildHRZonesWithFallback` falls back to Tanaka, so a runner who supplied
+ * nothing still gets a ceiling with a §50 note. The only genuine exemption is a plan where
+ * nothing could be derived at all — no `hr_derived_max` — because then there is no number to
+ * give. 📐 0 false positives on both live base-build plans at the time of the ruling (M11).
+ *
+ * ⚠️ STILL SCOPED TO `base_build`. Race plans sit at ~86% `hr_target` coverage, so a plan-wide
+ * rule would fire on the ~9 easy sessions per plan that legitimately carry none, and nobody has
+ * established why those nine are exempt. Widening it would be inventing an exemption to make a
+ * check pass. That remains `ZONE-LABEL-RACE-SCOPE-01`, untouched by E1.
+ */
+export function validateBaseBuildZoneLabels(plan: Plan): Violation[] {
+  const m = plan.meta as unknown as Record<string, unknown>
+  if (m.plan_kind !== 'base_build') return []
+  const derivedMax = m.hr_derived_max
+  if (derivedMax == null) return []
+  const out: Violation[] = []
+  for (const w of plan.weeks ?? []) {
+    for (const [day, sn] of Object.entries(w.sessions ?? {})) {
+      if (!sn?.zone || sn.hr_target) continue
+      out.push({
+        code: 'INV-PLAN-ZONE-LABEL-HAS-PRESCRIPTION',
+        principle_ref: 'CoachingPrinciples §14 Am., §84 Am.1',
+        severity: 'error',
+        week: w.n, day,
+        message: `Week ${w.n} ${day} shows the runner "${sn.zone}" with no hr_target behind it. §84 Am.1 — the zone is a LABEL about the prescription, and this plan can derive one (hr_derived_max ${String(derivedMax)}).`,
+        actual: `zone "${sn.zone}", hr_target absent`,
+        expected: 'an hr_target the zone label describes',
+      })
+    }
+  }
+  return out
+}
+
 export function validateBaseBuildBlock(weeks: Week[], startKm: number,
   /** ONRAMP-SPACING-01 (R1, R2): `spaced` is the producer's stamp that the plan was built under those rules, so the two
    *  live plans built before them are not refused on save (new plans only). `blocked` is the runner's blocked days. */

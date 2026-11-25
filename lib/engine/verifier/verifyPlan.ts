@@ -2708,7 +2708,11 @@ const BATCH_34: Partial<Record<RuleId, Predicate>> = {
 Object.assign(PREDICATES, BATCH_34)
 /** The rules whose population is base-build and staged plans: compared in `verifierBaseBuild.test.ts`, against the
  *  base-build validators, rather than in the race-plan harness (where both checkers are silent on them). */
-export const BASE_BUILD_RULES = [...Object.keys(BATCH_34), 'INV-PLAN-WALKRUN-START-PROGRESSION'] as RuleId[]
+export const BASE_BUILD_RULES = [...Object.keys(BATCH_34), 'INV-PLAN-WALKRUN-START-PROGRESSION',
+  // ADR027-B3-STRICT-01 / sitting E1 — this rule's population is base-build plans, so it is
+  // compared in `verifierBaseBuild.test.ts` against the base-build validators rather than in the
+  // race harness, where both checkers were silent on it and it sat in `DEAD_IN_PRODUCTION`.
+  'INV-PLAN-ZONE-LABEL-HAS-PRESCRIPTION'] as RuleId[]
 
 const BATCH_35: Partial<Record<RuleId, Predicate>> = {
   // §116, §117 Am. 7, §118 Am. 4: a runner routed to a walk-run start gets one (warn where the route is not ratified:

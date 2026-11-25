@@ -1,6 +1,6 @@
 import type { Plan, GeneratorInput } from '@/types/plan'
 import { validatePlan, validateReshapedPlan, validateMaintenanceBlock, type Violation } from './invariants'
-import { validateBaseBuildBlock, validateStagedRace, volumeCappedRampOf } from './baseBuildValidate'
+import { validateBaseBuildBlock, validateBaseBuildZoneLabels, validateStagedRace, volumeCappedRampOf } from './baseBuildValidate'
 import { storedPlanInput } from './storedPlanInput'
 import { withProfileHr, type ProfileHr } from './rebuildInput'
 
@@ -60,11 +60,26 @@ export function isBaseBuildPlan(plan: Plan | null | undefined): boolean {
  *  A plan missing `base_build_start_km` predates the field, and 0 is the honest
  *  floor — the curve-climbs check then compares against nothing rather than
  *  against a guess. */
-function baseBuildErrors(plan: Plan): Violation[] {
+/**
+ * Everything production runs on a BASE-BUILD plan, in one place.
+ *
+ * ⚠️ EXPORTED FOR THE VERIFIER'S BASE-BUILD HARNESS (`ADR027-B3-STRICT-01` / sitting E1), which
+ * held a REPLICA of this composition. That replica is the "two registers with a human in between"
+ * shape: adding `validateBaseBuildZoneLabels` to the route and not to the replica would have made
+ * the agreement comparison run against the wrong checker, silently — and I only avoided it by
+ * remembering, which this repo records as equivalent to having no rule. One owner, both callers.
+ */
+export function baseBuildErrors(plan: Plan): Violation[] {
   const startKm = Number((plan.meta as unknown as Record<string, unknown>).base_build_start_km ?? 0)
   const meta = plan.meta as unknown as { onramp_spaced?: boolean; generator_input?: GeneratorInput }
+  // ADR027-B3-STRICT-01 / sitting E1 — `validateBaseBuildZoneLabels` is composed here because
+  // this is the base-build ROUTE. The check was written inside `validatePlan` gated on
+  // `plan_kind === 'base_build'`, and the dispatch above never sends a base-build plan there, so
+  // it was unreachable for every plan production has saved. It takes the PLAN rather than weeks
+  // because its escape hatch is `meta.hr_derived_max`.
   return [...validateBaseBuildBlock(plan.weeks ?? [], startKm,
-    { spaced: meta.onramp_spaced === true, blocked: meta.generator_input?.days_cannot_train ?? [], volumeCappedInjury: volumeCappedRampOf(plan) }), ...validateStagedRace(plan)]
+    { spaced: meta.onramp_spaced === true, blocked: meta.generator_input?.days_cannot_train ?? [], volumeCappedInjury: volumeCappedRampOf(plan) }),
+  ...validateBaseBuildZoneLabels(plan), ...validateStagedRace(plan)]
 }
 
 /** THE predicate for the maintenance kind. Same reason as `isBaseBuildPlan`:

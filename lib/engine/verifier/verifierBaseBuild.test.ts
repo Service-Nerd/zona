@@ -9,7 +9,8 @@ import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest'
 import type { Plan, GeneratorInput, Session } from '@/types/plan'
 import { goldenSample, GOLDEN_AS_OF } from '@/lib/corpus/goldenCorpus'
 import { runEngine } from '@/lib/plan/engine'
-import { validateBaseBuildBlock, validateStagedRace, volumeCappedRampOf } from '@/lib/plan/baseBuildValidate'
+import { volumeCappedRampOf } from '@/lib/plan/baseBuildValidate'
+import { baseBuildErrors } from '@/lib/plan/validateStoredPlan'
 import { buildRunnerProfile, factsFromInput } from '@/lib/engine/profile/buildRunnerProfile'
 import { GENERATION_CONFIG } from '@/lib/plan/generationConfig'
 import { sessionKmSelfPaced } from '@/lib/plan/sessionDistance'
@@ -30,6 +31,22 @@ const meta = (p: Plan) => p.meta as unknown as Record<string, unknown>
 
 /** Breakages, each aimed at one arm. Each returns whether it changed the plan. */
 const BREAKS: [string, (p: Plan) => boolean][] = [
+  // ADR027-B3-STRICT-01 / sitting E1 — the state the pre-fix producer left on BOTH live base-build
+  // plans: every session carrying `zone: "Zone 2"` and ZERO carrying an `hr_target` (51/51 and
+  // 30/30). Added as a BREAKAGE rather than letting the rule read unwakeable here: nothing in the
+  // corpus strips a target, so without it the comparison would be between two silences.
+  // ⚠️ It returns false when nothing could be derived, so the plan is not added as a case at all —
+  // the rule's escape hatch is `hr_derived_max`, and a case that cannot reach the rule would make
+  // "every breakage landed on at least one plan" pass on a plan the rule ignores.
+  ['a zone label with no hr_target behind it', p => {
+    const m = p.meta as unknown as Record<string, unknown>
+    if (m.hr_derived_max == null) return false
+    let hit = false
+    for (const w of p.weeks) for (const sn of Object.values(w.sessions ?? {})) {
+      if (sn?.zone) { delete (sn as unknown as { hr_target?: string }).hr_target; hit = true }
+    }
+    return hit
+  }],
   ['a quality session in the ramp', p => { const s = ramp(p).flatMap(runsOf)[0]; if (!s) return false; s.type = 'quality'; return true }],
   ['a build week level with the one before', p => {
     const b = ramp(p).filter(w => !dl(w)); if (b.length < 3) return false
@@ -197,11 +214,13 @@ beforeAll(() => {
 afterAll(() => { vi.useRealTimers() })
 
 function oldFindings(p: Plan) {
-  const m = meta(p) as { base_build_start_km?: number; onramp_spaced?: boolean; generator_input?: GeneratorInput }
-  return [
-    ...validateBaseBuildBlock(p.weeks, Number(m.base_build_start_km ?? 0), { spaced: m.onramp_spaced === true, blocked: m.generator_input?.days_cannot_train ?? [], volumeCappedInjury: volumeCappedRampOf(p) }),
-    ...validateStagedRace(p),
-  ]
+  // 🔑 THE OWNER, NOT A REPLICA (ADR027-B3-STRICT-01 / sitting E1). This function used to compose
+  // `validateBaseBuildBlock` + `validateStagedRace` by hand, with a comment saying it was "what
+  // production runs on a base-build plan" — true when written, and a claim nothing held. E1 added
+  // a third validator to the route, and the only thing that kept this list in step was my
+  // remembering to edit it too. `baseBuildErrors` is now exported and called directly, so the
+  // comparison cannot drift from the checker it is comparing against.
+  return baseBuildErrors(p)
 }
 
 describe('ADR027-B3-VERIFIER — base-build and staged plans', () => {

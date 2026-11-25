@@ -7369,47 +7369,18 @@ export function validatePlan(plan: Plan, rawInput: GeneratorInput): Violation[] 
     }
   }
 
-  // INV-PLAN-ZONE-LABEL-HAS-PRESCRIPTION — §14 Am. / §84 Am.1, Coaching Board
-  // 2026-10-10 (BASEBUILD-ZONE-CEILING-01).
+  // INV-PLAN-ZONE-LABEL-HAS-PRESCRIPTION — §14 Am. / §84 Am.1 (BASEBUILD-ZONE-CEILING-01).
   //
-  // §84 Am.1: *"`hr_target` is the prescription; `session.zone` is a label ABOUT it."*
-  // Measured on both live base-build plans — every session carried `zone: "Zone 2"`
-  // and **ZERO carried an `hr_target`** (51/51 and 30/30), against ~86% on race
-  // plans. The label was standing on its own, because `generateBaseBuildPlan` built
-  // its meta from scratch and never computed zones at all.
+  // 🔴 MOVED OUT OF THIS FUNCTION 2026-11-25 (`ADR027-B3-STRICT-01` / sitting E1). It lived here
+  // gated on `plan_kind === 'base_build'`, and `validateSavedPlan` dispatches a base-build plan to
+  // `validateBaseBuildBlock` — never to `validatePlan`. The branch was therefore unreachable for
+  // every plan production has ever saved: the only guard on §84 Am.1 for the one plan kind
+  // measured to breach it could not run. The board ruled it live where its population is, so the
+  // owner is now `validateBaseBuildZoneLabels` in `baseBuildValidate.ts`, composed by
+  // `baseBuildErrors` — the base-build route.
   //
-  // ⚠️ SCOPED TO `base_build`, AND THE SCOPE IS A KNOWN LIMIT RATHER THAN A CHOICE
-  // I CAN DEFEND AS COMPLETE. Race plans sit at 57/66, 69/75, 62/74, 51/51 — i.e.
-  // ~86%, not 100% — so a plan-wide rule would fire on the ~9 easy sessions per plan
-  // that legitimately carry no target, and I have NOT established why those nine are
-  // exempt. Widening this without first explaining them would be inventing an
-  // exemption to make a check pass, which is the opposite of the job. Filed:
-  // `ZONE-LABEL-RACE-SCOPE-01`.
-  //
-  // ⚠️ THE ESCAPE HATCH IS DERIVABILITY, NOT ABSENCE OF DATA. `buildHRZonesWithFallback`
-  // falls back to Tanaka, so a runner who supplied nothing still gets a ceiling WITH a
-  // §50 note (Amendment 3). The only genuine exemption is a plan where nothing could be
-  // derived at all — no `hr_derived_max` — because then there is no number to give.
-  if ((plan.meta as unknown as Record<string, unknown>).plan_kind === 'base_build') {
-    const derivedMax = (plan.meta as unknown as Record<string, unknown>).hr_derived_max
-    if (derivedMax != null) {
-      for (const w of plan.weeks) {
-        for (const [day, sn] of Object.entries(w.sessions ?? {})) {
-          if (!sn?.zone) continue
-          if (sn.hr_target) continue
-          violations.push({
-            code: 'INV-PLAN-ZONE-LABEL-HAS-PRESCRIPTION',
-            principle_ref: 'CoachingPrinciples §14 Am., §84 Am.1',
-            severity: 'error',
-            week: w.n, day,
-            message: `Week ${w.n} ${day} shows the runner "${sn.zone}" with no hr_target behind it. §84 Am.1 — the zone is a LABEL about the prescription, and this plan can derive one (hr_derived_max ${String(derivedMax)}).`,
-            actual: `zone "${sn.zone}", hr_target absent`,
-            expected: 'an hr_target the zone label describes',
-          })
-        }
-      }
-    }
-  }
+  // ⚠️ NOT DELETED, MOVED, and nothing here replaces it: a `base_build` branch in the RACE
+  // constitution is dead by construction, and leaving a copy would be two owners of one rule.
 
   // INV-PLAN-HR-ASSUMPTIONS-SURFACED — every plan declares hr_zone_method, and
   // every method that rests on an assumption surfaces hr_assumption_note.

@@ -2,7 +2,7 @@ import { FUELLING_PRACTICE_NOTE, ULTRA_FUELLING_PREFIX } from './fuellingNotes'
 import { generateRulePlan, derivedLevelsFor } from '@/lib/plan/ruleEngine'
 import { V1_SESSION_CATALOGUE } from '@/lib/plan/sessionCatalogueData'
 import { validatePlan, validateMaintenanceBlock, INVARIANT_CODES, type Violation } from '@/lib/plan/invariants'
-import { validateBaseBuildBlock, validateStagedRace, volumeCappedRampOf } from '@/lib/plan/baseBuildValidate'
+import { validateBaseBuildBlock, validateBaseBuildZoneLabels, validateStagedRace, volumeCappedRampOf } from '@/lib/plan/baseBuildValidate'
 import { generateStagedRacePlan, stagedRaceOf } from '@/lib/plan/stagedRacePlan'
 import { assessOnRamp, generateBaseBuildPlan } from '@/lib/plan/baseBuildOnRamp'
 import { generateGetRunningPlan } from '@/lib/plan/getRunningPlan'
@@ -1322,13 +1322,43 @@ export function probeLiveness(sampleSize = 64): LivenessReport {
     } as unknown as GeneratorInput
     const a = assessOnRamp(input, 18, 29)
     if (a.outcome === 'offered') {
-      const base = generateBaseBuildPlan(input, '2026-10-05', a).weeks
+      const bbSource = generateBaseBuildPlan(input, '2026-10-05', a)
+      const base = bbSource.weeks
       const checkBB = (ws: Week[], why: string) => {
         for (const v of validateBaseBuildBlock(ws, a.startKm, { volumeCappedInjury: false })) {
           if (!woken.has(v.code)) woken.set(v.code, why)
         }
+        // 🔴 ADR027-B3-STRICT-01 / sitting E1 — `validateBaseBuildZoneLabels` is probed here, and
+        // the reason is MAINT-LIVENESS-01 repeating itself. That incident found the 8 INV-MAINT-*
+        // codes were never unreachable by plan SHAPE: they are checked by a different validator and
+        // this harness only ever called `validatePlan`. **The harness was calling the wrong
+        // validator.** The same was true of this code the moment E1 moved it out of `validatePlan`
+        // and onto the base-build route — so it is probed through its real validator rather than
+        // baselined as unproven. ⚠️ The baseline's own header says that list "may only SHRINK",
+        // and the one time a reason was added to it code review found the rule reachable in two
+        // lines and removed the entry again.
+        //
+        // ⚠️ It takes the PLAN, not the weeks, because its escape hatch is `meta.hr_derived_max`:
+        // the mutated weeks are spliced onto the generated plan's own meta.
+        for (const v of validateBaseBuildZoneLabels({ ...bbSource, weeks: ws })) {
+          if (!woken.has(v.code)) woken.set(v.code, why)
+        }
       }
       const BB_MUTATIONS: { name: string; apply: (w: Week[]) => void }[] = [
+        // ADR027-B3-STRICT-01 / sitting E1 — the state the pre-fix producer actually left:
+        // `generateBaseBuildPlan` built its meta from scratch and never computed zones, so every
+        // session carried `zone: "Zone 2"` and ZERO carried an `hr_target` (51/51 and 30/30 on the
+        // two live plans). ⚠️ Added as a MUTATION rather than baselining the rule as unproven,
+        // which is what the baseline's own `mutation` reason asks for: "Add a mutation, not a
+        // fixture." Without it the rule reads unwakeable, and that is the harness not perturbing
+        // the field rather than the rule being dead.
+        { name: 'bb: strip the hr_target behind a zone label', apply: ws => {
+            for (const w of ws) {
+              for (const sn of Object.values(w.sessions ?? {}) as (Session | undefined)[]) {
+                if (sn?.zone) delete (sn as unknown as { hr_target?: string }).hr_target
+              }
+            }
+          } },
         { name: 'bb: flatten the ramp', apply: ws => {
             for (const w of ws) (w as unknown as Poke).weekly_km = ws[0].weekly_km
           } },
