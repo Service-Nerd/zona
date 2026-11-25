@@ -1258,6 +1258,12 @@ const STRICT_DIVERGENCES: Record<string, StrictDivergence> = {
     reach: 'latent',
     why: 'AS WRITTEN IT COULD NEVER FIRE: `validatePlan` reads a `category` off the SESSION and a generated session carries none — the category lives on the catalogue ROW, joined by the `catalogue_id` ADR-018 stamps. A rule forbidding race-specific work in a maintenance block was unwakeable for every plan that has existed. The session\'s own field is still read first, for stored plans predating the join. 📐 0 live maintenance plans (the board\'s measurement), so latent either way.',
   },
+  'INV-PLAN-NO-RACE-EVE-SESSION': {
+    ruling: 'B1',
+    direction: 'stricter',
+    reach: 'reached',
+    why: 'The cap is in MINUTES and both arms read `duration_mins ?? 0`, so a distance-only session could never exceed it — `?? 0` asserts it took no time (the SESSION-KM-01 class). Now priced into minutes at the plan\'s easy pace, and unverified rather than zero when nothing can price it. ⚠️ The comparison stays in minutes because that is what the PRODUCER caps on (`enforceCap` tests `duration_mins > capMins`); converting the cap to km would make the checker measure a different quantity from the rule it guards. 📐 TWO POPULATIONS, both measured: **0 of 280** sessions in the protected window across 64 GENERATED plans are distance-only (and the producer carries the identical `!= null` guard, so the hole is latent on both sides in production), while this corpus reaches it **1×** because the mutation battery strips a duration no generator would. `reached` describes this harness, not a runner. B1\'s OTHER half — looking across the week boundary — shipped as ADR-027 hotfix 6 on 2026-11-22.',
+  },
   'INV-PLAN-EARLY-ONSET-GATED': {
     ruling: 'B4',
     direction: 'narrower',

@@ -322,7 +322,37 @@ const BATCH_3: Partial<Record<RuleId, Predicate>> = {
   },
 
   // §39 Am. 1: in the protected days before a race, nothing longer than the shakeout cap.
-  'INV-PLAN-NO-RACE-EVE-SESSION': plan => (plan.weeks.flatMap((w): Raw[] => {
+  //
+  // 🔴 ADR027-B3-STRICT-01 / sitting B1, SECOND HALF — A DISTANCE-ONLY SESSION WAS PRICED AT ZERO
+  // MINUTES. The cap is in minutes and both arms read `duration_mins ?? 0`, so a session anchored
+  // on distance alone could never exceed it: `?? 0` asserts the session took no time, which is the
+  // `SESSION-KM-01` class ("`?? 0` is not a safe default: it asserts this session covered no
+  // ground"). The board: *"price a distance-only session at the runner's easy pace."*
+  //
+  // ⚠️ THE COMPARISON STAYS IN MINUTES, because that is what the PRODUCER caps on. `ruleEngine`'s
+  // `enforceCap` tests `s.duration_mins > capMins`, so converting the cap to km here would make
+  // the checker measure a different quantity from the rule it guards — the recorded
+  // "checker reads a different source from the producer" class. Instead the SESSION is priced into
+  // minutes: distance x the plan's easy pace.
+  //
+  // 📐 LATENT, AND MEASURED BEFORE BUILDING: across 64 generated plans, **0 of 280 sessions** in
+  // the protected window are distance-only — every one carries `duration_mins`. ⚠️ The producer's
+  // own `enforceCap` has the identical `!= null` guard, so the hole is latent on both sides; that
+  // is why fixing the checker alone cannot produce a loud flag with nothing behind it.
+  'INV-PLAN-NO-RACE-EVE-SESSION': plan => {
+   const easy = easyMinPerKm(plan)
+   // Minutes if stated; else the distance at the plan's easy pace; else `null` — unverified,
+   // never zero, so an unpriceable session is not silently declared short.
+   const minsOf = (s: Session): number | null => {
+     if (s.duration_mins != null && Number.isFinite(s.duration_mins)) return s.duration_mins
+     if (s.distance_km != null && Number.isFinite(s.distance_km) && easy != null) return s.distance_km * easy
+     return null
+   }
+   const over = (s: Session): boolean => {
+     const m = minsOf(s)
+     return m != null && m > GENERATION_CONFIG.RACE_WEEK_SHAKEOUT_MAX_MINS
+   }
+   return (plan.weeks.flatMap((w): Raw[] => {
     const entries = daysOf(w)
     const race = entries.find(x => x.session?.type === 'race')
     const raceIdx = race ? DAYS.indexOf(race.day) : -1
@@ -331,7 +361,7 @@ const BATCH_3: Partial<Record<RuleId, Predicate>> = {
       if (!s || s.type === 'rest' || s.type === 'race') return false
       const idx = DAYS.indexOf(day)
       if (idx < 0 || idx >= raceIdx || raceIdx - idx > GENERATION_CONFIG.RACE_EVE_PROTECTED_DAYS) return false
-      return (s.duration_mins ?? 0) > GENERATION_CONFIG.RACE_WEEK_SHAKEOUT_MAX_MINS
+      return over(s)
     }).map(x => ({ rule_id: 'INV-PLAN-NO-RACE-EVE-SESSION', week: w.n, day: x.day, detail: 'over the shakeout cap before the race' }))
   }) as Raw[]).concat(plan.weeks.flatMap((w, k) => {
     // Across the week boundary (MONDAY-RACE-EVE-LONG-RUN-01): a race early in the week has race eve in the previous week.
@@ -342,11 +372,12 @@ const BATCH_3: Partial<Record<RuleId, Predicate>> = {
     const out: Raw[] = []
     for (let before = raceIdx + 1; before <= GENERATION_CONFIG.RACE_EVE_PROTECTED_DAYS; before++) {
       const day = DAYS[7 + raceIdx - before], s = prev.sessions?.[day]
-      if (s && s.type !== 'rest' && s.type !== 'race' && (s.duration_mins ?? 0) > GENERATION_CONFIG.RACE_WEEK_SHAKEOUT_MAX_MINS)
+      if (s && s.type !== 'rest' && s.type !== 'race' && over(s))
         out.push({ rule_id: 'INV-PLAN-NO-RACE-EVE-SESSION', week: prev.n, day, detail: 'over the shakeout cap the day before a race early in the week' })
     }
     return out
-  })),
+  }))
+  },
 
   // §4: main-week phases each form one block, in the order base, build, peak, taper.
   'INV-PLAN-PHASE-STRUCTURE': plan => {

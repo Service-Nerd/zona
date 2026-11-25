@@ -367,3 +367,34 @@ describe('B13 — coach-note intent decided structurally, not from the label', (
     expect(findings(p, RULE)).toEqual([])
   })
 })
+
+describe('B1 (second half) — a distance-only session on race eve is priced, not read as zero minutes', () => {
+  const RULE = 'INV-PLAN-NO-RACE-EVE-SESSION'
+  // An easy run with BOTH anchors, so `easyMinPerKm` has a pace to read off the plan.
+  const pacer = { type: 'easy', label: 'Easy run', distance_km: 10, duration_mins: 60 } as unknown as Session
+  const race = { type: 'race', label: 'Race day', distance_km: 21.1 } as unknown as Session
+
+  it('🔴 a 12 km distance-only session the day before the race is over the 35-minute cap', () => {
+    // 12 km at the plan's easy pace (6 min/km) is 72 minutes. Read as `duration_mins ?? 0` it is
+    // ZERO and can never breach a minutes cap, which is how a long run could sit on race eve
+    // unnoticed. ⚠️ Latent in production — 0 of 280 sessions in the protected window are
+    // distance-only — so only a direct case can reach it.
+    const p = planWith({}, { type: 'race', sessions: sessions({
+      mon: pacer, sat: { type: 'easy', label: 'Long run', distance_km: 12 } as unknown as Session, sun: race }) })
+    expect(findings(p, RULE).map(f => f.day), '12 km at 6 min/km is 72 min, over the 35 min cap').toContain('sat')
+  })
+
+  it('a short distance-only shakeout is still silent', () => {
+    // 4 km at 6 min/km is 24 minutes, inside the cap: the fix must not flag everything it can now see.
+    const p = planWith({}, { type: 'race', sessions: sessions({
+      mon: pacer, sat: { type: 'easy', label: 'Shakeout', distance_km: 4 } as unknown as Session, sun: race }) })
+    expect(findings(p, RULE)).toEqual([])
+  })
+
+  it('and with no pace anywhere in the plan it is unverified, never zero', () => {
+    // Nothing to convert with, so the rule declines rather than declaring the session short.
+    const p = planWith({}, { type: 'race', sessions: sessions({
+      sat: { type: 'easy', label: 'Long run', distance_km: 12 } as unknown as Session, sun: race }) })
+    expect(findings(p, RULE), 'no easy pace to price it with').toEqual([])
+  })
+})
