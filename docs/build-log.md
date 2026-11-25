@@ -6,6 +6,19 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-11-25 — ADR027-B3-SHADOW-01 · the measurement disagreed with itself, and that was the finding
+**Shipped:** The new verifier now runs beside the old checker over every plan a real runner holds, observe-only, and reports what would change if it took over.
+
+**Dev learning:** The first run said eight plans would gain a new error. Seven of those eight were my own measurement being wrong, and the only reason I found out is that the number looked odd — six of them carried the *same two* rules, which is not what a scatter of genuine findings looks like. The baseline I was comparing against turned out to be the *lenient* variant of the old checker: it deliberately drops two whole-plan rules, because they fire on every old plan that was generated before a 2026 fix and a later edit to that plan neither caused that nor can fix it. So I was asking a harsher question than the thing I was comparing to, and calling the difference a result. **A comparison is only as honest as its baseline, and the baseline is a thing you have to go and read.**
+
+The eighth was subtler and worse. One runner's plan was built for someone assessed as a beginner on volume but intermediate on intensity — a deliberate split the engine makes. Rebuilding that runner's profile from the stored plan collapsed the two back into one, because a single field is doing duty for both signals, so the plan got judged against a quality ceiling of *zero* for seven weeks. I had a note about exactly that hazard from reading the code an hour earlier, and still only saw it by chasing a number I could not explain. **Writing the hazard down is not the same as noticing it fire.**
+
+**AI-building learning:** I nearly shipped a total. 489 findings on the new side against 487 on the old reads as "these agree". It was +8 on one rule and −24 on another almost cancelling out: one of the board's fixes genuinely biting on a live plan, and one rule reporting itself once per plan where the old one reported once per week. Neither changes what a human would see in the morning digest, so the headline comparison was silent on both — correctly, by its own definition. The fix was to publish the per-rule difference and only the rules that differ: five of fifty-one. **A single number is a place for two findings to hide.**
+
+**The honest bit:** One of my own mutation tests stayed green when I deliberately deleted the code it was meant to protect. The test looped over the exempt rules and asked "if the verifier fired this, is it reported?" — but the whole point of that bucket is that those rules are excluded from the list I was checking, so the condition could never be true and the assertion inside it never ran once. It had passed from the moment I wrote it. An arm that allows by default is not a check, and the only thing that exposed it was breaking the code on purpose and being surprised that nothing went red.
+
+---
+
 ## 2026-11-25 — ADR027-B3-STRICT-01 · the register came first, and then it caught seven of my own defects
 **Shipped:** The register of intended divergences from `validatePlan`, and 13 of the Coaching Board's 14 ruled checker fixes.
 
