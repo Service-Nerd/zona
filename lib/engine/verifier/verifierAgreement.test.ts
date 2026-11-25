@@ -1143,17 +1143,103 @@ const OLD_OMITS_DAY = new Set<string>([
 ])
 const dropDay = (k: string) => k.replace(/^([^|]+\|[^|]+)\|[^|]+\|/, '$1|-|')
 
+/**
+ * ADR027-B3-STRICT-01 — THE REGISTER OF INTENDED DIVERGENCES FROM `validatePlan`.
+ *
+ * 🔴 WHY IT HAS TO EXIST BEFORE ANY FIX. Every arm in this file asserts the verifier and the old
+ * checker report *the same findings*, which is exactly what made the port trustworthy. The
+ * Coaching Board's 2026-11-22 sitting then ruled 14 places where `validatePlan` is WRONG and the
+ * verifier must be right instead (`docs/decisions/coaching-2026-11-22-b3-raised-list.md`, § B/C/E).
+ * So each of those fixes turns `diffs` red **by design**, and without a register the only two ways
+ * to a green suite are to soften the fix or to loosen the comparison — both of which lose the
+ * ruling. A declared divergence keeps agreement as the default and makes each exception a
+ * decision somebody signed.
+ *
+ * ⚠️ IT IS AN EXTENSION OF `OLD_OMITS_DAY`, NOT A NEW MECHANISM. That set already carries this
+ * idea for a narrower case, with the discipline this one copies: *"listed so the exemption is a
+ * decision, not a drift"*, plus an arm proving the old checker really does omit the day and really
+ * does fire. `SILENT`, `CONDITIONAL_PORTED`, `DEAD_IN_PRODUCTION` and `STATIC_RULES` are the same
+ * shape. A sixth parallel mechanism would be the duplication class this repo has recorded five
+ * times; this is the fifth register in one file and it reuses their comparison and their proof.
+ *
+ * ── THE TWO-SIDED PROOF, which is the whole value ──────────────────────────────────────────────
+ * `direction` says which checker may hold findings the other does not:
+ *   · `stricter` — the verifier reports what `validatePlan` MISSES. Every old finding must still
+ *     be present (a fix adds strictness; it never loses a finding), and the extras are the fix.
+ *   · `narrower` — the verifier deliberately DROPS an arm the old checker still has (B15: the
+ *     label arm, on the board's measurement that 0 live plans need it). Every new finding must
+ *     still be present in the old.
+ * `reach` is the arm that stops this register rotting:
+ *   · `reached` — the corpus DOES produce the divergence. If it stops, the entry is stale or the
+ *     corpus shrank, and either way the test fails rather than passing on a smaller world.
+ *   · `latent` — the fix is correct and NO plan reaches it, with the measurement that says so.
+ *     ⚠️ A `latent` entry that STARTS being reached also FAILS. That direction matters more than
+ *     it looks: it is the moment a declared-harmless hole became a live one, and the repo's own
+ *     record is that *"a declared limit with no live example is the dangerous kind"*.
+ */
+interface StrictDivergence {
+  /** The sitting row that ruled it, so the register points back at its authority. */
+  ruling: string
+  direction: 'stricter' | 'narrower'
+  reach: 'reached' | 'latent'
+  /** For `latent`, the measurement that says no plan reaches it. Required — a bare assertion of
+   *  latency is the claim this repo has been wrong about most often. */
+  why: string
+}
+
+const STRICT_DIVERGENCES: Record<string, StrictDivergence> = {
+  'INV-PLAN-NO-INVENTED-AGE': {
+    ruling: 'B7',
+    direction: 'narrower',
+    reach: 'reached',
+    why: 'The age is a property of the RUNNER, not of a week. `validatePlan` repeats the identical finding once per governed week — measured 15 on a 15-week half-marathon plan, all keyed w1, and the verifier matched it. The verifier now reports it once per plan; every finding it makes is still one the old checker makes, so the containment arm holds.',
+  },
+}
+
+/** Keys for `rule`, per case, with the day dropped where the old checker omits it. */
+function keysFor(rule: string, c: { old: { rule: string; k: string }[]; new: { rule: string; k: string }[] }) {
+  const old = c.old.filter(x => x.rule === rule).map(x => x.k)
+  const nu = c.new.filter(x => x.rule === rule).map(x => (OLD_OMITS_DAY.has(rule) ? dropDay(x.k) : x.k))
+  return { old, nu }
+}
+
 function compare(rule: string) {
   const fired = { old: 0, new: 0 }
   const diffs: string[] = []
+  // A declared divergence is compared as containment plus extras, never as equality.
+  const d = STRICT_DIVERGENCES[rule]
+  let diverged = 0
   for (const c of runs) {
-    const oldKeys = c.old.filter(x => x.rule === rule).map(x => x.k)
-    const newKeys = c.new.filter(x => x.rule === rule).map(x => (OLD_OMITS_DAY.has(rule) ? dropDay(x.k) : x.k))
+    const { old: oldKeys, nu: newKeys } = keysFor(rule, c)
     fired.old += oldKeys.length; fired.new += newKeys.length
-    const a = [...oldKeys].sort().join(','), b = [...newKeys].sort().join(',')
-    if (a !== b) diffs.push(`${c.label}: old [${a}] new [${b}]`)
+    if (!d) {
+      const a = [...oldKeys].sort().join(','), b = [...newKeys].sort().join(',')
+      if (a !== b) diffs.push(`${c.label}: old [${a}] new [${b}]`)
+      continue
+    }
+    // `sub` must be contained in `sup`; anything `sup` holds beyond it is the declared divergence.
+    //
+    // 🔴 AS MULTISETS, NOT SETS, AND THE FIRST CUT OF THIS REGISTER GOT IT WRONG. B7's divergence
+    // is 15 IDENTICAL keys becoming 1 — the old checker repeats one fact once per governed week —
+    // so a set difference is empty and the register reported "no divergence" on a fix that plainly
+    // diverges. It would equally have missed a `stricter` fix that reports the same key twice.
+    // Counting occurrences is the only comparison that can see either.
+    const count = (ks: string[]) => ks.reduce((m, k) => m.set(k, (m.get(k) ?? 0) + 1), new Map<string, number>())
+    const [sub, sup] = d.direction === 'stricter' ? [count(oldKeys), count(newKeys)] : [count(newKeys), count(oldKeys)]
+    const lost: string[] = []
+    // `Array.from`, not `for...of` on a Map: this repo's tsconfig has no downlevelIteration (CLAUDE.md § TypeScript).
+    for (const [k, n] of Array.from(sub)) {
+      const have = sup.get(k) ?? 0
+      if (have < n) lost.push(`${k}×${n - have}`)
+    }
+    if (lost.length) {
+      // A fix that DROPS a finding the other checker makes is not a declared divergence — it is a
+      // regression wearing one, and this is the arm that tells them apart.
+      diffs.push(`${c.label}: ${d.direction} divergence LOST ${d.direction === 'stricter' ? 'an old' : 'a new'} finding [${lost.sort().join(',')}]`)
+    }
+    for (const [k, n] of Array.from(sup)) diverged += Math.max(0, n - (sub.get(k) ?? 0))
   }
-  return { fired, diffs }
+  return { fired, diffs, diverged }
 }
 
 describe('ADR027-B3-VERIFIER — agreement with validatePlan, per ported rule', () => {
@@ -1172,6 +1258,40 @@ describe('ADR027-B3-VERIFIER — agreement with validatePlan, per ported rule', 
     expect(hits.get(GOAL_CASE) ?? 0, GOAL_CASE).toBeGreaterThan(0)
     expect(tally.base + tally.refused + tally.threw.length).toBe(tally.rows)
     expect(tally.threw.length, tally.threw.slice(0, 3).join(', ')).toBeLessThanOrEqual(Math.ceil(tally.rows / 10))
+  })
+
+  it('🔴 ADR027-B3-STRICT-01 — every declared divergence is live, ported, and reached exactly as declared', () => {
+    const bad: string[] = []
+    for (const [rule, d] of Object.entries(STRICT_DIVERGENCES)) {
+      // Stale in the first sense: declared against a rule nobody ported.
+      if (!(PORTED_RULES as string[]).includes(rule)
+        && !BASE_BUILD_RULES.includes(rule as never)
+        && !MAINTENANCE_RULES.includes(rule as never)) {
+        bad.push(`${rule}: declared as a divergence but not ported — stale entry`)
+        continue
+      }
+      if (!d.ruling || !d.why) { bad.push(`${rule}: a divergence must name its ruling and its reason`); continue }
+      const { diverged, fired } = compare(rule)
+      // 🔴 A `narrower` DIVERGENCE CANNOT SEE THE RULE BEING KILLED OUTRIGHT, because an empty
+      // multiset is contained in anything — so "report nothing at all" satisfies containment and
+      // registers as a large, legal divergence. Falsified: replacing B7's body with `return []`
+      // left this arm green and was caught only by the pre-existing `ARMS` arm, which covers a
+      // rule that declares detail prefixes and would not cover one that does not. So the register
+      // closes its own hole: a narrower divergence must still FIRE.
+      if (d.direction === 'narrower' && fired.old > 0 && fired.new === 0) {
+        bad.push(`${rule} (${d.ruling}): declared a 'narrower' divergence and the verifier reports it NOWHERE while validatePlan fires it ${fired.old}× — that is the rule removed, not narrowed`)
+      }
+      // Stale in the second sense: declared `reached` and the corpus no longer reaches it. Either
+      // the fix was reverted or the corpus shrank; a pass here would be a pass on a smaller world.
+      if (d.reach === 'reached' && diverged === 0) {
+        bad.push(`${rule} (${d.ruling}): declared 'reached' and the corpus produced NO divergence — the fix is gone, or the corpus no longer reaches it`)
+      }
+      // The direction that matters more: a hole declared harmless has started firing.
+      if (d.reach === 'latent' && diverged > 0) {
+        bad.push(`${rule} (${d.ruling}): declared 'latent' and it fired ${diverged}× — it is no longer latent. Re-measure, upgrade it to 'reached', and say what changed`)
+      }
+    }
+    expect(bad).toEqual([])
   })
 
   it('the day exemption is used only where the old checker really omits the day', () => {

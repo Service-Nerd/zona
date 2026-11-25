@@ -604,7 +604,17 @@ const BATCH_7: Partial<Record<RuleId, Predicate>> = {
     if (has && meta.age != null && meta.age !== age) once.push({ rule_id: 'INV-PLAN-NO-INVENTED-AGE', week, day: null, detail: 'meta age differs from the input' })
     if (!has && meta.age != null) once.push({ rule_id: 'INV-PLAN-NO-INVENTED-AGE', week, day: null, detail: 'meta age with no input age' })
     if (!has && !meta.hr_assumption_note) once.push({ rule_id: 'INV-PLAN-NO-INVENTED-AGE', week, day: null, detail: 'no age and no assumption note' })
-    return plan.weeks.filter(governed).flatMap(() => once)
+    // 🔴 ADR027-B3-STRICT-01 / sitting B7 — ONCE PER PLAN, which is a deliberate divergence from
+    // `validatePlan`. The age is a property of the RUNNER, not of a week: the old checker repeats
+    // the identical finding (same code, same `week`, same message) once per governed week, so a
+    // 15-week plan with one fabricated age reports fifteen violations of one fact. Measured on a
+    // half-marathon plan: **15 findings from each checker, all keyed w1**, which is also why
+    // agreement was green on it — both were wrong the same way.
+    //
+    // ⚠️ `plan.weeks.filter(governed)` is KEPT as the gate, not deleted: the rule is still scoped
+    // to plans that have a governed week at all, so a pure maintenance or base-build plan stays
+    // silent here exactly as before. What changes is that it is reported once, not per week.
+    return plan.weeks.some(governed) ? once : []
   },
 
   // §50: the plan names its HR method, and any method but Karvonen carries an assumption note.
