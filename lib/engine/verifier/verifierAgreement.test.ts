@@ -1234,6 +1234,30 @@ const STRICT_DIVERGENCES: Record<string, StrictDivergence> = {
     reach: 'reached',
     why: 'Two defects. `validatePlan` ranked by `distance_km ?? duration_mins ?? 0`, so a 10 km run (10) ranked below a 40-minute easy run (40) — km against minutes. And it skipped only `w.type === \'deload\'`, so a badge-only deload was ranked as an ordinary week. Now ranked by km-equivalent (the session\'s own band, else the plan\'s easy pace) and gated on `isDeloadWeek`, as every other deload rule here already is. ⚠️ `both`, and MEASURED rather than reasoned: the RANKING alone is bidirectional — a different pair becomes "largest", so some weeks start being flagged and others correctly stop (31 losses when the ranking is reverted). My first `why` attributed the losses to the widened deload skip and that was wrong: reverting the deload half alone leaves this suite GREEN, so no badge-only deload week exists in this corpus and that half is unreached here. It is proven directly in verifierStrict.test.ts instead. The rule\'s VALUE is untouched — the sitting records that as still unsettled.',
   },
+  'INV-PLAN-QUALITY-EXPECTED': {
+    ruling: 'B11',
+    direction: 'narrower',
+    reach: 'latent',
+    why: '⚠️ `narrower`, which is the opposite of how a "stricter reading" sounds: an Achilles match makes the rule EXIT (the runner is exempt from the quality expectation), and `hasInjuryKeyword` matches strictly more spellings than `includes`, so more runners are exempted and FEWER findings are reported. 📐 AND FOR THIS KEYWORD IT CHANGES NO VERDICT ON ANY REALISTIC CHIP: the two readings differ only through the owner\'s reverse arm (a chip SHORTER than \'achilles\'), which the product never sends — my first test used `Achilles_Tendinopathy` and the mutation stayed green, because the underscore follows the word and a substring still matches. The fix is right as ROUTING (if the chip vocabulary changes, the owner follows and a copy would not) and behaviourally latent, which verifierStrict.test.ts states. The gate matched `i.toLowerCase().includes(\'achilles\')` against free text, so it turned on how the chip happened to be spelled. Now through `hasInjuryKeyword`, the chip owner, which normalises underscores and whitespace and matches both ways (INJURY-GUARD-PREDICATE-01: a copied injury predicate drifted from its owner for nine days). 🔻 The LEVEL is still a self-label and is deliberately left — that is C1\'s ruling, scheduled as its own wave, not a B-row fix to do piecemeal.',
+  },
+  'INV-MAINT-INJURY-EASY-ONLY': {
+    ruling: 'B11',
+    direction: 'stricter',
+    reach: 'latent',
+    why: 'The stride test read `session.label`, D-17\'s forbidden shape: the enricher may rewrite a display string, so an injured runner\'s plan could pass or fail on copy nobody changed. Now it reads `coach_notes`, the signal the foundation rule already uses and the engine actually stamps, and keeps the label test as well so nothing is lost. Latent: the maintenance corpus carries no injured block with strides.',
+  },
+  'INV-MAINT-NO-RACE-SPECIFIC': {
+    ruling: 'B12',
+    direction: 'stricter',
+    reach: 'latent',
+    why: 'AS WRITTEN IT COULD NEVER FIRE: `validatePlan` reads a `category` off the SESSION and a generated session carries none — the category lives on the catalogue ROW, joined by the `catalogue_id` ADR-018 stamps. A rule forbidding race-specific work in a maintenance block was unwakeable for every plan that has existed. The session\'s own field is still read first, for stored plans predating the join. 📐 0 live maintenance plans (the board\'s measurement), so latent either way.',
+  },
+  'INV-PLAN-EARLY-ONSET-GATED': {
+    ruling: 'B4',
+    direction: 'narrower',
+    reach: 'reached',
+    why: '`validatePlan` resolved the level as `meta.fitness_intensity_level ?? input.user_declared_level ?? meta.fitness_level` — a chain of SELF-LABELS whose first link a beginner plan leaves unset, so a runner who DECLARED a higher level and was ASSESSED beginner passed §89\'s beginner veto on their own claim. Now it reads `profile.levels.intensity`, the assessed level: a declaration binds structure downward only and cannot promote a runner past an assessment. 🔴 `narrower` AND THAT IS THE UNCOMFORTABLE MEASUREMENT: 8 losses, **0 gains**. This corpus never builds the case the fix exists for — a runner who DECLARED a higher level, was ASSESSED beginner, and got `early_quality_onset` stamped — so the only half this harness can see is the half that reports LESS. The protective half is proven directly in verifierStrict.test.ts instead, and that asymmetry is stated here rather than left to look like a clean win. The loss is the ruling working rather than a regression: the `early onset for an otherwise-ready beginner` mutation stamps a beginner LABEL on a plan whose runner is assessed otherwise, so the old veto fired on the label and the new reading correctly finds that runner ready. A plan whose label disagrees with its runner is a self-consistency defect and belongs to C1\'s rule, not to §89\'s readiness gate.',
+  },
   'INV-PLAN-EMPTY-SESSION': {
     ruling: 'B2',
     direction: 'stricter',

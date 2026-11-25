@@ -760,14 +760,30 @@ Object.assign(PREDICATES, BATCH_8)
 const BATCH_9: Partial<Record<RuleId, Predicate>> = {
   // §89: early quality onset only for a ready runner: no injury, regular recent quality, a deep training age, and
   // an intensity level above beginner. One finding however many conditions fail.
-  // ⚠️ PORTED FAITHFULLY, INCLUDING A SAFETY HOLE (code review, batch 9): validatePlan reads the level as
-  // `meta.fitness_intensity_level ?? input.user_declared_level ?? meta.fitness_level`. A beginner plan leaves the
-  // first unset, so a runner who DECLARED a higher level but was assessed beginner passes the beginner veto. The
-  // profile's intensity level would catch them; that change is a ruling, raised, not made here. Self-label read.
-  'INV-PLAN-EARLY-ONSET-GATED': (plan, { input }) => {
+  // 🔴 ADR027-B3-STRICT-01 / sitting B4 — THE VETO READS THE RUNNER, NOT THE PLAN'S LABEL FOR
+  // THEM (Willy, binding). `validatePlan` resolves the level as
+  // `meta.fitness_intensity_level ?? input.user_declared_level ?? meta.fitness_level` — a chain of
+  // SELF-LABELS, and a beginner plan leaves the first unset. So a runner who DECLARED a higher
+  // level and was ASSESSED beginner walks straight through the beginner veto on their own
+  // declaration, and §89's whole point is that early quality onset is for a demonstrably ready
+  // runner. The previous batch ported the hole faithfully and raised it; this is the ruling.
+  //
+  // 🔴 `assessed_intensity`, NOT `intensity`, AND THE BOARD'S WORDS WERE PRECISE WHERE I WAS NOT.
+  // The profile carries BOTH: the assessed level comes from the two-signal model, and the resolved
+  // one is `declaredLevel ?? assessedIntensity` — the runner's claim when they made one. I wrote
+  // the resolved field first, which is the exact hole this ruling closes, so the fix would have
+  // read differently and changed nothing. The ruling says "the L1 profile's ASSESSED intensity
+  // level". A declaration binds structure downward only; it cannot promote a runner past an
+  // assessment, and that is also why the old chain's ORDER made things worse rather than better —
+  // the fallback it reached for was the claim.
+  //
+  // ⚠️ The two-signal model is cited by name rather than by section number here: a § in this
+  // comment is read as a CITATION by `verifierComments.test.ts`, which requires it to be the
+  // rule's own principle, and this rule's is §89.
+  'INV-PLAN-EARLY-ONSET-GATED': (plan, { input, profile }) => {
     if (!plan.meta.early_quality_onset) return []
     const deep = input.training_age === '2-5yr' || input.training_age === '5yr+'
-    const level = plan.meta.fitness_intensity_level ?? input.user_declared_level ?? plan.meta.fitness_level
+    const level = profile.levels.assessed_intensity.value
     const fails = (input.injury_history ?? []).length > 0 || input.recent_quality_training !== 'regular'
       || !deep || level === 'beginner'
     return fails ? [{ rule_id: 'INV-PLAN-EARLY-ONSET-GATED', week: PLAN, day: null, detail: 'early onset for a runner who is not ready' }] : []
@@ -1306,10 +1322,21 @@ const BATCH_17: Partial<Record<RuleId, Predicate>> = {
 
   // §1: an ordinary build or peak week for an intermediate or experienced runner (who does not avoid hard sessions
   // and has no Achilles history) carries quality when an eligible weekday is free, unless intentionally downgraded.
-  // ⚠️ Ported faithfully: the level is the plan's own meta, and the Achilles test matches injury text. Both raised.
+  // 🔴 ADR027-B3-STRICT-01 / sitting B11 — THE ACHILLES TEST GOES THROUGH THE INJURY-CHIP OWNER.
+  // `validatePlan` matched `i.toLowerCase().includes('achilles')` against free text, so the gate
+  // that keeps quality away from an Achilles history turned on how the chip happened to be
+  // spelled: `hasInjuryKeyword` normalises underscores and whitespace and matches both ways round,
+  // which is why it exists (`INJURY-GUARD-PREDICATE-01` — a copied injury predicate drifted from
+  // its owner for nine days). A substring test on a runner's injury list is the same class as a
+  // label test on a session.
+  //
+  // 🔻 THE LEVEL IS STILL A SELF-LABEL AND IS DELIBERATELY LEFT. `plan.meta.fitness_intensity_level
+  // ?? plan.meta.fitness_level` is the plan's description of its own runner, which is **C1's**
+  // ruling, not B11's. Fixing it here would be doing C1 piecemeal inside a B-row fix, and C1 is
+  // scheduled as its own wave with an observe-only run behind it.
   'INV-PLAN-QUALITY-EXPECTED': (plan, { input }) => {
     const level = plan.meta.fitness_intensity_level ?? plan.meta.fitness_level
-    const achilles = (input.injury_history ?? []).some(i => i.toLowerCase().includes('achilles'))
+    const achilles = hasInjuryKeyword(input.injury_history, 'achilles')
     if (!(level === 'intermediate' || level === 'experienced') || input.hard_session_relationship === 'avoid' || achilles) return []
     const blocked = normaliseDays(input.days_cannot_train)
     if (!(['wed', 'thu', 'tue', 'mon', 'fri'] as const).some(d => !blocked.has(d))) return []
@@ -2735,13 +2762,37 @@ const BATCH_37: Partial<Record<RuleId, Predicate>> = {
     const n = placedOf(w).filter(x => !['rest', 'cross-train', 'cross_train'].includes(x.session.type)).length
     return n > mt.days! ? [{ rule_id: 'INV-MAINT-CADENCE' as RuleId, week: w.n, day: null, detail: `${n} run days` }] : []
   })),
-  // §75: an injured runner's block carries no strides. ⚠️ Read from the session LABEL, as validatePlan does: raised.
+  // §75: an injured runner's block carries no strides.
+  //
+  // 🔴 ADR027-B3-STRICT-01 / sitting B11 — THE STRIDE SIGNAL IS THE COACH NOTE, NOT THE LABEL.
+  // `validatePlan` tested `/strides/i` against `session.label`, which is D-17's forbidden shape:
+  // the enricher may rewrite a display string, so an injured runner's plan could pass or fail on
+  // copy nobody changed deliberately. The foundation rule already reads the signal the engine
+  // actually stamps — `coach_notes` — and the board ruled this one onto the same source. Both are
+  // checked here: a label that still says strides is not ignored, but a note that says so no
+  // longer escapes.
   'INV-MAINT-INJURY-EASY-ONLY': maint((plan, mt) => !mt.injured ? [] : plan.weeks.flatMap(w => placedOf(w)
-    .filter(x => /strides/i.test(x.session.label ?? '')).map(({ day }) => ({ rule_id: 'INV-MAINT-INJURY-EASY-ONLY' as RuleId, week: w.n, day, detail: 'strides for an injured runner' })))),
-  // §75: no race-specific or ultra-specific session. ⚠️ Read from a `category` the session itself carries, as
-  // validatePlan does (sessions do not normally carry one): raised.
+    .filter(x => {
+      const notes = Array.isArray(x.session.coach_notes) ? x.session.coach_notes.join(' ') : String(x.session.coach_notes ?? '')
+      return /strides/i.test(notes) || /strides/i.test(x.session.label ?? '')
+    }).map(({ day }) => ({ rule_id: 'INV-MAINT-INJURY-EASY-ONLY' as RuleId, week: w.n, day, detail: 'strides for an injured runner' })))),
+  // §75: no race-specific or ultra-specific session.
+  //
+  // 🔴 ADR027-B3-STRICT-01 / sitting B12 — AS WRITTEN IT COULD NEVER FIRE. `validatePlan` reads a
+  // `category` off the SESSION, and a generated session does not carry one: the category lives on
+  // the session's **catalogue row**, joined by the `catalogue_id` ADR-018 stamps at construction.
+  // So a rule forbidding race-specific work in a maintenance block was unwakeable for every plan
+  // that has ever existed. The board: *"Read the category of the session's catalogue row. As
+  // written it can never fire."*
+  //
+  // ⚠️ THE SESSION'S OWN `category` IS STILL READ FIRST, and that is not belt-and-braces: a
+  // STORED plan from before the catalogue join may carry one, and ADR-018 kept the legacy path for
+  // exactly that reason. 📐 0 live maintenance plans today (the board's M-measurement), so this is
+  // latent either way and the fix is about the rule being able to fire at all.
   'INV-MAINT-NO-RACE-SPECIFIC': maint(plan => plan.weeks.flatMap(w => placedOf(w).filter(x => {
-    const c = (x.session as unknown as { category?: string }).category ?? ''
+    const own = (x.session as unknown as { category?: string }).category ?? ''
+    const row = catalogueRowFor(x.session as never, V1_SESSION_CATALOGUE)
+    const c = own || (row as unknown as { category?: string } | null)?.category || ''
     return c === 'race_specific' || c === 'ultra_specific'
   }).map(({ day }) => ({ rule_id: 'INV-MAINT-NO-RACE-SPECIFIC' as RuleId, week: w.n, day, detail: 'a race-specific session' })))),
   // §75: no unresolved template token in a week's debrief, label or theme, or a session label.

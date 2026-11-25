@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { verifyPlan } from './verifyPlan'
 import { buildRunnerProfile, factsFromInput } from '@/lib/engine/profile/buildRunnerProfile'
+import { V1_SESSION_CATALOGUE } from '@/lib/plan/sessionCatalogueData'
 import type { GeneratorInput, Plan, Session } from '@/types/plan'
 
 /**
@@ -238,5 +239,102 @@ describe('B9 — a time trial under a non-day key is unverified, not an arbitrar
     // The guard must not silence the rule generally — this is the case it exists for.
     const p = planWith({}, { sessions: sessions({ sun: long, sat: tt }) })
     expect(findings(p, RULE).length, 'one day apart, inside the minimum gap of 2').toBe(1)
+  })
+})
+
+describe('B4 — §89\'s readiness veto reads the assessed runner, not the plan\'s label', () => {
+  const RULE = 'INV-PLAN-EARLY-ONSET-GATED'
+
+  /**
+   * 🔴 THE HOLE B4 CLOSES IS STRUCTURALLY UNREACHABLE THROUGH THE WIZARD, AND THAT IS A FINDING
+   * RATHER THAN A REASON TO SKIP THE FIX. The veto fails a runner on four conditions, and for the
+   * LEVEL to be the deciding one the other three must pass — including a deep training age. But
+   * §79 LIFTS an intensity level that reads beginner when the training age is deep ("an
+   * experienced runner reading beginner on intensity is returning, not new"), so "assessed
+   * beginner" and "deep training age" cannot co-exist from wizard input: the `deep` condition
+   * already catches that runner. The combination is reachable only through `input.fitness_level`,
+   * the API's structural override, which `assessedIntensity` reads BEFORE the assessment
+   * (`input.fitness_level ?? assessed.intensity`).
+   *
+   * ⚠️ SO THIS CASE SETS `fitness_level` DELIBERATELY AND IT IS NOT A PRODUCTION SHAPE.
+   * `COHORT-GRID-UNSET-LEVEL-01` is the recorded incident for corpora that set it: no production
+   * caller does, and six measurement corpora were blind for exactly that reason. It is set here
+   * because this rule is ABOUT that field's effect on the veto, and a test that cannot reach the
+   * case proves nothing. It must not be copied into a corpus.
+   */
+  const override = { ...(INPUT as unknown as Record<string, unknown>),
+    fitness_level: 'beginner', user_declared_level: 'experienced', training_age: '5yr+',
+    recent_quality_training: 'regular', injury_history: [] } as unknown as GeneratorInput
+
+  it('🔴 the veto reads the ASSESSED level, not the resolved one a declaration wins', () => {
+    const prof = buildRunnerProfile(factsFromInput(override), { asOf: AS_OF, timezone: null, planStart: AS_OF })
+    // The two fields the ruling distinguishes, and the reason reading the wrong one changes
+    // nothing: `intensity` is `declaredLevel ?? assessedIntensity`, so it IS the claim here.
+    expect(prof.levels.assessed_intensity.value, 'the assessed level must be beginner or this is vacuous').toBe('beginner')
+    expect(prof.levels.intensity.value, 'and the resolved level must differ, or the fix is untested').toBe('experienced')
+    const out = findings(planWith({ early_quality_onset: true }, {}), RULE, override)
+    expect(out.length, 'early onset stamped for a runner ASSESSED beginner').toBe(1)
+  })
+
+  it('and the veto is silent when the plan never claimed early onset', () => {
+    expect(findings(planWith({}, {}), RULE, override)).toEqual([])
+  })
+})
+
+describe('B11 / B12 — the injury chip, the stride signal and the catalogue category', () => {
+  it('🔴 B11a: the Achilles gate goes through the chip owner, not a substring test', () => {
+    // 🔴 AND MY FIRST CASE HERE WAS HOLLOW, which is worth stating because the reason generalises.
+    // I used `'Achilles_Tendinopathy'` expecting the underscore to defeat `includes('achilles')` —
+    // it does not: the underscore comes AFTER the word, so a plain substring still matches, the
+    // mutation back to `includes` stayed green, and the test proved nothing.
+    //
+    // For the keyword 'achilles' the two readings differ ONLY through the owner's reverse arm
+    // (`k.includes(v)` when `v.length >= 3`), i.e. a chip SHORTER than the keyword. 📐 No chip the
+    // product sends is shorter than 'achilles', so **the fix changes no verdict for any realistic
+    // chip** — it is correct as ROUTING (if the chip vocabulary ever changes, the owner follows and
+    // a copy here would not), and that is what this case proves. Same honest shape as B5's `?? 0`
+    // half: ruled, right, and behaviourally latent.
+    const RULE = 'INV-PLAN-QUALITY-EXPECTED'
+    const build = planWith({ fitness_intensity_level: 'intermediate' },
+      { phase: 'build', type: 'build', sessions: sessions({ tue: { type: 'easy', label: 'Easy run', distance_km: 8, duration_mins: 44 } as unknown as Session }) })
+    const withChip = (hist: string[]) => ({ ...(INPUT as unknown as Record<string, unknown>),
+      injury_history: hist, hard_session_relationship: 'embrace' } as unknown as GeneratorInput)
+
+    // A chip the OWNER matches and a substring test does not. Synthetic by necessity, and named as
+    // such — it is the only input that separates the two readings.
+    expect(findings(build, RULE, withChip(['Achil'])), 'the owner matches a chip shorter than the keyword').toEqual([])
+    // The ordinary spellings, which both readings agree on: the exemption still holds.
+    for (const chip of ['Achilles', 'Achilles_Tendinopathy', 'achilles tendinopathy']) {
+      expect(findings(build, RULE, withChip([chip])), chip).toEqual([])
+    }
+    // And it is not a blanket exemption: no Achilles history, so the week is still expected to carry quality.
+    expect(findings(build, RULE, withChip([])).length, 'no Achilles history').toBe(1)
+  })
+
+  it('🔴 B11b: strides named in a COACH NOTE are caught, not only in the label', () => {
+    const RULE = 'INV-MAINT-INJURY-EASY-ONLY'
+    const p = {
+      meta: { race_distance_km: 21.1, race_date: '2027-03-01', plan_kind: 'maintenance', source_base_weekly_km: 20, source_injured: true },
+      weeks: [{ n: 1, date: '2026-11-23', label: 'M1', phase: 'maintenance_base', type: 'build', weekly_km: 20,
+        sessions: sessions({ tue: { type: 'easy', label: 'Easy run', distance_km: 6, duration_mins: 34,
+          coach_notes: ['Finish with 4 x 20s strides.'] } as unknown as Session }) }],
+    } as unknown as Plan
+    const out = findings(p, RULE)
+    expect(out.map(f => f.day), 'the engine stamps the stride prescription in the note, not the label').toContain('tue')
+  })
+
+  it('🔴 B12: a race-specific session is found through its CATALOGUE ROW, which is the only place the category lives', () => {
+    const RULE = 'INV-MAINT-NO-RACE-SPECIFIC'
+    // Pick a real catalogue row whose category is race_specific, so the case is the product's own
+    // data rather than a shape invented for the test.
+    const row = V1_SESSION_CATALOGUE.find(r => (r as unknown as { category?: string }).category === 'race_specific')
+    expect(row, 'the catalogue must hold a race_specific row or this case is vacuous').toBeTruthy()
+    const p = {
+      meta: { race_distance_km: 21.1, race_date: '2027-03-01', plan_kind: 'maintenance', source_base_weekly_km: 20, source_injured: false },
+      weeks: [{ n: 1, date: '2026-11-23', label: 'M1', phase: 'maintenance_base', type: 'build', weekly_km: 20,
+        sessions: sessions({ wed: { type: 'quality', label: 'Session', distance_km: 10, duration_mins: 55,
+          catalogue_id: (row as unknown as { id: string }).id } as unknown as Session }) }],
+    } as unknown as Plan
+    expect(findings(p, RULE).map(f => f.day), 'the session carries no category of its own; its row does').toContain('wed')
   })
 })
