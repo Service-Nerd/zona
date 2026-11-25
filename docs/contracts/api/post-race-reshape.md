@@ -69,7 +69,7 @@ Authorization: Bearer <supabase access token>     // native rides the Bearer tok
 - **Rate limited** by `guardAiRequest` under the `post-race-reshape` key: `HEAVY_LIMIT` 10/hour
   (`AI_ROUTE_LIMITS`).
 
-## `/confirm` and `/revert` — applying or undoing the proposal
+## /api/post-race-reshape/confirm and /api/post-race-reshape/revert — applying or undoing the proposal
 
 - 🔴 **BOTH WERE THE TWIN THAT `ADJUST-STATUS-WITHOUT-SAVE-01` LEFT BEHIND (`CONFIRM-REVERT-WRITE-ERRORS-01`, 2026-11-25).** They do the same job as `confirm-adjustment` / `revert-adjustment` — save the plan, then mark the row — and had neither of that fix's two halves: **no `try/catch` around `savePlanForUser`**, so a failed save was a bare 500 with no `plan_save_failed` event, and an **unconditional, unread** status update after it.
 - Both now go through **`lib/supabase/applyAnsweredProposal.ts`**, the single owner shared with the two adjustment routes. Consequences, which are the contract:

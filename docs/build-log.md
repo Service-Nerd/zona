@@ -6,7 +6,7 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
-## 2026-11-25 — CONFIRM-REVERT-WRITE-ERRORS-01 + STEP4-RUNS-NO-COMPLETIONS-01 (telemetry) · the review found nine defects and eight were mine
+## 2026-11-25 — CONFIRM-REVERT-WRITE-ERRORS-01 + STEP4-RUN-JOURNEY-TELEMETRY-01 · the review found nine defects and eight were mine
 **Shipped:** One owner for "the runner answered a plan proposal, so apply it and record the answer" across four routes that each wrote it by hand, plus the missing half of the run-to-logged-session telemetry.
 
 **Dev learning:** `supabase-js` RESOLVES with `{ error }` instead of rejecting, so `await Promise.all([update(), update()])` with the result discarded is a write you can never know failed. There is nothing to catch. That was the whole defect, and the same shape is in about twenty more places under `app/api`.
