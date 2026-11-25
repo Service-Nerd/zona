@@ -6246,11 +6246,42 @@ caller invokes it as `void notifyUser(...)`, so a rejecting `sendApnsPush` becam
 run-analysis push is the mechanism meant to bring a runner back to log their run and whether it ever left the server
 had no answer anywhere.**
 
-🔻 **WHAT IS LEFT, and it is not a defect fix.** Whether `MIN_AUTO_LINK_CONFIDENCE` should admit `medium` on the
-server is a **🏃 COACHING BOARD** question against POST-RUN-01, with this measurement attached — not a change to make
-in a bug fix. Prompting a runner about an unmatched run is **🧭 DESIGN BOARD / 💼 SLT** (ADR-027 ARCH-ENG-018 says so
+🔻 **WHAT IS LEFT, and the plan is settled (founder, 2026-11-25).** 🔑 **The gap is SILENCE, not the threshold:**
+`autoMatchAndAnalyse` `return`s before the push block on an unmatched run, so nothing reaches the runner — while the
+app already offers a medium-confidence match as **one tap** (`resolveAutoMatch`, AUTO-MATCH-02). So: build
+**`RUN-UNMATCHED-PROMPT-01`** (🧭 Design Board) → read `run_linked` / `run_unmatched` for two weeks → and only then,
+if the rate has not moved, take `MIN_AUTO_LINK_CONFIDENCE` to the **🏃 COACHING BOARD** against POST-RUN-01. The
+threshold is the last resort, not the first. ⚠️ **ARCH-ENG-022 is folded into ADR-027 B3 step 4** so the trigger
+catalogue can see an unmatched run; the prompt is deliberately NOT folded in, because it needs no engine. Prompting a runner about an unmatched run is **🧭 DESIGN BOARD / 💼 SLT** (ADR-027 ARCH-ENG-018 says so
 itself). The `no_plan` 10 belong to the activation programme. ⚠️ **Push DELIVERY is still not measurable** from the
 server and needs a TestFlight build.
+
+### 🔲 `RUN-UNMATCHED-PROMPT-01` — tell the runner when a run could not be matched *(filed 2026-11-25; the fix for `STEP4-RUNS-NO-COMPLETIONS-01`, not a new finding)* 🧭 **DESIGN BOARD** (a new prompt: copy, surface, frequency) → 👤 **FOUNDER** if the words carry voice
+
+🔑 **THE GAP IS SILENCE, NOT THE THRESHOLD, AND THAT IS THE WHOLE POINT OF THIS ITEM.** Verified in the
+code 2026-11-25: when the server cannot match a run, `autoMatchAndAnalyse` records `run_unmatched` and
+**`return`s before the push block** (`lib/coaching/autoAnalyse.ts`) — so no push, no inbox row, nothing.
+Meanwhile **the app already accepts a MEDIUM-confidence match as a one-tap log** (`resolveAutoMatch`:
+*"tapping is consent"*, AUTO-MATCH-02). So the match the server refused is one the runner could clear in a
+single tap — they are simply never told there is anything to clear.
+
+📐 Measured: **39 distinct unmatched runs in 14 days**; **27 of 176 live completions carry a run link, 15.3%**;
+runner `cf9f51f9` has **38 runs, 20 completions, 0 linked** — they tap every time and the run never attaches.
+
+**Scope:** a push + inbox item on an unmatched run ("You ran Tuesday. Which session was that?") opening the
+picker that already exists. ⚠️ **Reuse, do not build:** `notifyUser`, `recordNotification` and the picker are
+all live; this is a trigger and copy, not new machinery.
+
+⚠️ **Why it is NOT folded into ADR-027** (founder, 2026-11-25): it needs no engine, and folding it in parks it
+behind B3 2b/3/4, the cut-over sign-off and B4. ARCH-ENG-022 (the `run_arrived` event) IS folded in, so the
+catalogue can condition on an unmatched run later; this item is the runner-facing half and ships on its own.
+
+⚠️ **Not a trigger-evaluation event.** §124 Am. 1 ruled *"the evaluation event is `run_analysed`, never raw
+ingest"*. This prompt is a notification about a missing link, not an adjustment trigger, and must not become one.
+
+🔻 **Do NOT reach for the threshold first.** Lowering `MIN_AUTO_LINK_CONFIDENCE` to medium server-side reopens
+POST-RUN-01 (*"a wrong link is worse than a picker tap"*) and is 🏃 Coaching Board. Build this, read
+`run_linked` / `run_unmatched` for two weeks, and only take the threshold to the board if the rate has not moved.
 
 ### 🔲 `PREPUSH-RUNNER-UNRESOLVED-01` — the pre-push gate says "THE TEST SUITE IS RED" when it could not run the suite at all *(filed 2026-11-25, hit on a real push)* ⚙️ **NO BOARD** (the gate's own message)
 
