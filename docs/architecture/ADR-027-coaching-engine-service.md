@@ -75,8 +75,21 @@ B2/B4 and B3/B4b, mockups owed).
   verifier's rules. At the pause: `PORTED_RULES` ∪ `BASE_BUILD_RULES` ∪ `MAINTENANCE_RULES` = 157 of the catalogue's
   171 `INV-*` rules, plus all 50 strength rules (`verifyStrength.ts`) = 207 of 221. Do not trust these figures, recount.
 - Re-read the sitting `docs/decisions/coaching-2026-11-22-b3-raised-list.md`; it holds the rulings step 2b builds.
-- Housekeeping, not engine work: 9 `proto/*` branches (the 2026-11-20 prototypes) and about 19 agent worktrees under
-  `.claude/worktrees/` are still on disk. Clear them when they are no longer needed.
+- ✅ **Housekeeping DONE 2026-11-25, and the advice it used to give here was dangerous.** The **11 agent worktrees**
+  under `.claude/worktrees/` are removed: **743 MB**, gitignored, and the only dirty path in any of them was
+  `node_modules`. `git worktree remove` does not touch a branch, so nothing was lost; `tsc` 0 and
+  `npx vitest run lib/engine` 307/307 after.
+  🔴 **THE `proto/*` BRANCHES ARE KEPT, AND "CLEAR THEM WHEN NO LONGER NEEDED" WOULD HAVE DESTROYED CITED EVIDENCE.**
+  All nine 2026-11-20 prototypes are **named 3 to 5 times each** by OPEN backlog items and board sittings — they are
+  the measurement behind rulings that have not been built yet (`BASEBUILD-NO-LONG-RUN-01`, `S9-QUALITY-FLOOR-REACH-01`,
+  `STEPBACK-SPECIFICITY-SCOPE-01`, `STRENGTH-PAIR-STRIDE-01` and five more). ⚠️ **`npm run backlog:verify` CANNOT CATCH
+  THIS: its dead-reference arms check file PATHS and symbols, never a git ref**, so deleting a cited branch is a silent
+  loss of the only copy. Delete a `proto/*` branch only when the item that cites it is closed.
+  ⚠️ The nine `worktree-agent-*` branches are also kept — a few KB each, and `git cherry` shows 5 of 9 carry a patch
+  main does not match (the same work, landed with a different patch), so each would need checking by hand for no gain.
+  📐 **Why they accumulated:** `isolation: "worktree"` auto-cleans a worktree only if it is UNCHANGED, and every one of
+  these committed, so nothing ever pruned them and nothing in the repo notices 743 MB of gitignored checkouts.
+  ⚠️ **And the count here was wrong in both directions** — it said 9 branches and ~19 worktrees; the truth was 10 and 11.
 
 ## Decision (proposed)
 The engine is rebuilt as a versioned service, structured as six layers. Each layer owns one canonical truth:
