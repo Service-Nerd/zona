@@ -2030,22 +2030,6 @@ RHR median, RPE and fatigue trend). Starting volume from the log is §2/§106's 
 
 **Verify still open:** `git grep -n "fetchRunnerFacts(" -- app` returns nothing.
 
-### 🔲 `CONFIRM-REVERT-WRITE-ERRORS-01` — confirm/revert ignore their status writes after a save, and two taps can race *(filed 2026-11-21)* ⚙️ **NO BOARD** (defect)
-
-Found by the ADJUST-WEEK-COORD-01 code review (round 3), and pre-existing.
-
-**The ignored writes:** after a successful plan save, `confirm-adjustment` (~line 105) and `revert-adjustment`
-(~line 120) run the `plan_adjustments` status update and the `user_settings` flag in a `Promise.all` and ignore both
-errors. If the row write fails, the plan has changed, but the row stays `pending` and the card comes back.
-
-**The race:** the status update is keyed on `id` only, not on the status it read, so a concurrent confirm and revert
-(or a double tap) can leave the plan and the row disagreeing.
-
-**Fix:**
-- Read both results and record an ops event.
-- Make the status update conditional: `.eq('status', <read status>)`, with 0 rows treated as a conflict.
-- This folds into ADR-027 B4b's single writer if that lands first.
-
 ### 🔲 `PROFILE-MISSING-FACTS-PROMPT-01` — ask once for the facts the engine is missing *(filed 2026-11-21, founder: future increment)* 🧭 **DESIGN BOARD** then 💼 **SLT** (tier)
 
 **Opportunity found during the ADR-027 build.** Since B2a the runner profile lists every fact it could not use
