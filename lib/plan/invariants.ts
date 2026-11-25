@@ -10,6 +10,7 @@
 // logs in production (does not break the user).
 
 import { BENCHMARK_VDOT_MAX } from './benchmarkCheck'
+import { rulesSkippedBy } from '@/lib/engine/catalogue/rules'
 import type { Plan, GeneratorInput, Session, Week } from '@/types/plan'
 import { storedPlanInput } from './storedPlanInput'
 import { runWalkPrescriptionApplies, runWalkOutOfScopeUnready } from './runWalkPlan'
@@ -10041,15 +10042,15 @@ export function validatePlan(plan: Plan, rawInput: GeneratorInput): Violation[] 
  * reshaped week when it's known: stale copy on an untouched legacy week is a
  * pre-GEN-FIX-06 generation defect, not this reshape's responsibility.
  */
-// EXPORTED for ADR-027 B3 step 3 (2026-11-25). The verifier's live-plan shadow run compares
-// against `validateStoredPlan`, which is this variant — so the shadow must know which rules that
-// baseline deliberately drops, or it reports them as new strict readings. Measured: 6 of 8
-// flagged live plans were this artefact. ⚠️ READ, NEVER COPIED: a second list would drift, and
-// the two readers would then disagree about what the baseline asks, which is the defect itself.
-export const RESHAPE_SKIP_INVARIANTS = new Set<string>([
-  'INV-PLAN-COVERS-RACE-DATE',
-  'INV-PLAN-RACE-ON-RACE-DAY',
-])
+// 🔑 DERIVED FROM THE CATALOGUE, NOT LISTED HERE (`VERIFIER-RESHAPE-POLICY-01`, 2026-11-25).
+// The two rules carry `skipped_by: ['stored']` in `lib/engine/catalogue/rules.ts`, which is L2's
+// rule data and the one thing both checkers are allowed to read: the verifier's import gate admits
+// the catalogue and forbids this file, so a hand-written list here could only ever be the SECOND
+// copy. ⚠️ It was, for a day, and it cost a measurement: the verifier's first live shadow run
+// reported 8 plans gaining a code and 6 of them were these two rules, which this baseline drops on
+// purpose. The set keeps its name because two call sites read it and neither needs to know where it
+// comes from.
+export const RESHAPE_SKIP_INVARIANTS: ReadonlySet<string> = rulesSkippedBy('stored')
 
 export function validateReshapedPlan(plan: Plan, reshapedWeekN?: number): Violation[] {
   // ADR-020 / CB-2 (2026-09-03) — prefer the PERSISTED generator input.

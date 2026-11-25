@@ -1099,7 +1099,7 @@ function build() {
         try {
           downgradePairs.push({ label: row.id, week: pick.n,
             unflagged: at(validatePlan(un, row.input)),
-            flagged: { old: at(validatePlan(fl, row.input)), new: at(verifyPlan(fl, { input: row.input, profile: prof })) } })
+            flagged: { old: at(validatePlan(fl, row.input)), new: at(verifyPlan(fl, { input: row.input, profile: prof }, 'saved')) } })
         } catch { /* a plan the old checker cannot read is not a comparison */ }
       }
     }
@@ -1131,7 +1131,7 @@ function build() {
       old: old.map(v => ({ rule: v.code, k: key(v.code, v.week, v.day, v.severity) })),
       eve: raceEveDays.get(c.plan) ?? null,
       extra: c.extra ?? null,
-      new: verifyPlan(c.plan, { input: c.input, profile: buildRunnerProfile(factsFromInput(c.input), { asOf: c.asOf, timezone: null, planStart: c.planStart }) }).map(f => ({ rule: f.rule_id as string, k: key(f.rule_id, f.week, f.day, f.severity), detail: f.detail })) }]
+      new: verifyPlan(c.plan, { input: c.input, profile: buildRunnerProfile(factsFromInput(c.input), { asOf: c.asOf, timezone: null, planStart: c.planStart }) }, 'saved').map(f => ({ rule: f.rule_id as string, k: key(f.rule_id, f.week, f.day, f.severity), detail: f.detail })) }]
   })
 }
 

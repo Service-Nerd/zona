@@ -17,7 +17,7 @@
 //   · `explain` is null until B5.
 // Nothing reads this file yet. It changes no plan.
 
-import type { Rule } from '@/lib/engine/contracts/rule'
+import type { Rule, RuleId } from '@/lib/engine/contracts/rule'
 
 export const RULES: readonly Rule[] = [
   { id: 'INV-PLAN-BOUNCEBACK-BOUNDED', principle_ref: '§2', scope: 'week', kind: 'soft', config_key: null, explain: null },
@@ -174,8 +174,8 @@ export const RULES: readonly Rule[] = [
   { id: 'INV-PLAN-ULTRA-NO-PACE-SEGMENTS', principle_ref: '§24e', scope: 'session', kind: 'hard', config_key: null, explain: null },
   { id: 'INV-PLAN-WEEK-HAS-REST-DAY', principle_ref: '§64', scope: 'week', kind: 'hard', config_key: null, explain: null },
   { id: 'INV-PLAN-WEEK-DELIVERS-DECLARED-DAYS', principle_ref: '§64', related_refs: ['§18 Am. 1', '§90'], scope: 'week', kind: 'soft', config_key: null, explain: null },
-  { id: 'INV-PLAN-COVERS-RACE-DATE', principle_ref: '§76', scope: 'week', kind: 'hard', config_key: null, explain: null },
-  { id: 'INV-PLAN-RACE-ON-RACE-DAY', principle_ref: '§77', scope: 'session', kind: 'hard', config_key: null, explain: null },
+  { id: 'INV-PLAN-COVERS-RACE-DATE', principle_ref: '§76', scope: 'week', kind: 'hard', config_key: null, explain: null, skipped_by: ['stored'] },
+  { id: 'INV-PLAN-RACE-ON-RACE-DAY', principle_ref: '§77', scope: 'session', kind: 'hard', config_key: null, explain: null, skipped_by: ['stored'] },
   { id: 'INV-PLAN-RECALIBRATION-HAS-SESSION', principle_ref: '§78', scope: 'week', kind: 'hard', config_key: null, explain: null },
   { id: 'INV-PLAN-TT-LONG-RUN-SPACING', principle_ref: '§78 Am. 2', related_refs: ['§7'], scope: 'week', kind: 'hard', config_key: null, explain: null },
   { id: 'INV-PLAN-PEAK-IN-PEAK-PHASE', principle_ref: '§23', related_refs: ['§40d'], scope: 'week', kind: 'hard', config_key: null, explain: null, severity_note: 'error (warn on maintenance plans)' },
@@ -242,3 +242,16 @@ export const RULES: readonly Rule[] = [
   { id: 'S-WARMUP-REPEAT', principle_ref: 'S10', scope: 'strength', kind: 'hard', config_key: null, explain: null },
   { id: 'S-WARMUP-ROUNDS', principle_ref: 'S10', scope: 'strength', kind: 'hard', config_key: null, explain: null },
 ]
+
+/**
+ * The rules a given CALLER POLICY does not apply, derived from `skipped_by` — never a second list.
+ *
+ * 🔑 THE ONE LIST LIVES IN THE CATALOGUE AND BOTH CHECKERS READ IT. `lib/plan/invariants.ts`'s
+ * `RESHAPE_SKIP_INVARIANTS` is this set, and `lib/engine/verifier/verifyPlan.ts`'s `rulesFor` filters
+ * by it, so the old checker and the verifier cannot come to disagree about what the audit path asks.
+ * They already had: the verifier's first live shadow run reported 8 plans gaining a code and 6 of them
+ * were the two rules the baseline drops on purpose (`VERIFIER-RESHAPE-POLICY-01`).
+ */
+export function rulesSkippedBy(policy: 'stored'): ReadonlySet<RuleId> {
+  return new Set(RULES.filter(r => r.skipped_by?.includes(policy)).map(r => r.id))
+}

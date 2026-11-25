@@ -112,7 +112,7 @@ describe('ADR027-B3-VERIFIER — post-race maintenance plans', () => {
       let fired = 0
       for (const c of cases) {
         const old = oldFindings(c.plan).filter(v => v.code === rule).map(v => key(v.code, v.week, v.day, v.severity)).sort()
-        const neu = verifyPlan(c.plan, { input: INPUT, profile: PROFILE }).filter(f => f.rule_id === rule).map(f => key(f.rule_id, f.week, f.day, f.severity)).sort()
+        const neu = verifyPlan(c.plan, { input: INPUT, profile: PROFILE }, 'saved').filter(f => f.rule_id === rule).map(f => key(f.rule_id, f.week, f.day, f.severity)).sort()
         fired += old.length
         if (JSON.stringify(old) !== JSON.stringify(neu)) diffs.push(`${c.label}: old [${old}] new [${neu}]`)
       }
@@ -126,7 +126,7 @@ describe('ADR027-B3-VERIFIER — post-race maintenance plans', () => {
     expect(stamped.some(c => c.label.startsWith('race-meta')), 'no maintenance plan carrying race meta').toBe(true)
     const diffs = stamped.flatMap(c => {
       const old = validateStoredPlan(c.plan).map(v => key(v.code, v.week, v.day, v.severity)).sort()
-      const neu = verifyPlan(c.plan, { input: INPUT, profile: PROFILE }).map(f => key(f.rule_id, f.week, f.day, f.severity)).sort()
+      const neu = verifyPlan(c.plan, { input: INPUT, profile: PROFILE }, 'saved').map(f => key(f.rule_id, f.week, f.day, f.severity)).sort()
       return JSON.stringify(old) === JSON.stringify(neu) ? [] : [`${c.label}: old [${old.slice(0, 4)}] new [${neu.slice(0, 4)}]`]
     })
     expect(diffs.slice(0, 5), `${diffs.length} disagreements`).toEqual([])
@@ -134,7 +134,7 @@ describe('ADR027-B3-VERIFIER — post-race maintenance plans', () => {
 
   it('🔴 every arm of a multi-check rule fires on its own', () => {
     for (const [rule, prefixes] of Object.entries(ARMS)) for (const pre of prefixes) {
-      const n = cases.reduce((t, c) => t + verifyPlan(c.plan, { input: INPUT, profile: PROFILE }).filter(f => f.rule_id === rule && f.detail.startsWith(pre)).length, 0)
+      const n = cases.reduce((t, c) => t + verifyPlan(c.plan, { input: INPUT, profile: PROFILE }, 'saved').filter(f => f.rule_id === rule && f.detail.startsWith(pre)).length, 0)
       expect(n, `${rule}: "${pre}" never fires`).toBeGreaterThan(0)
     }
   })

@@ -29,7 +29,7 @@ describe('ADR027-B3-VERIFIER — static rules fire, on swapped rule data', () =>
     ] } as never
     const old = validatePlan(plan, input).filter(v => v.code === 'INV-PLAN-PHASE-FOCUS-REACHABLE').map(v => `${v.week}|${v.severity}`)
     const profile = buildRunnerProfile(factsFromInput(input), { asOf: '2026-11-16', timezone: null, planStart: '2026-11-23' })
-    const neu = verifyPlan(plan, { input, profile }).filter(f => f.rule_id === 'INV-PLAN-PHASE-FOCUS-REACHABLE').map(f => `${f.week}|${f.severity}`)
+    const neu = verifyPlan(plan, { input, profile }, 'saved').filter(f => f.rule_id === 'INV-PLAN-PHASE-FOCUS-REACHABLE').map(f => `${f.week}|${f.severity}`)
     expect(old.length, 'the old checker did not fire on the swapped signature').toBeGreaterThan(0)
     expect(neu).toEqual(old)
   })
@@ -47,7 +47,7 @@ describe('ADR027-B3-VERIFIER — static rules fire, on swapped rule data', () =>
       codes.filter(v => (v.code ?? v.rule_id) === 'INV-PLAN-RACE-SPECIFIC-EXPOSURE').map(v => `${v.week ?? 0}|${v.severity}`)
     const old = pick(validatePlan(plan, input) as never)
     const profile = buildRunnerProfile(factsFromInput(input), { asOf: '2026-11-16', timezone: null, planStart: '2026-11-23' })
-    const neu = pick(verifyPlan(plan, { input, profile }) as never)
+    const neu = pick(verifyPlan(plan, { input, profile }, 'saved') as never)
     expect(old.length, 'the old checker did not fire on the swapped config').toBeGreaterThan(0)
     expect(neu).toEqual(old)
   })

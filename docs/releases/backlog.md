@@ -1927,7 +1927,7 @@ before a Monday 100K (it now reads as 62–63% of a lighter week, `BINGE-WEEK`).
 race week, and §77 names the Monday race as an open cross-week case (`PV2-G`, which "needs ADR"). Rule what the last seven
 days before an early-week race should hold.
 
-### 🔲 `VERIFIER-RESHAPE-POLICY-01` — the verifier has no strict-vs-reshape policy, so 7 live plans would be flagged every morning *(filed 2026-11-25, ADR-027 B3 step 3)* ⚙️ **NO BOARD** (restores documented intent; `RESHAPE_SKIP_INVARIANTS`' own comment is the ruling)
+### ✅ `VERIFIER-RESHAPE-POLICY-01` — SHIPPED 2026-11-25 — the verifier has the baseline's own strict-vs-reshape policy; 7 live plans → 0 *(filed 2026-11-25, ADR-027 B3 step 3)* ⚙️ **NO BOARD** (restored documented intent; `RESHAPE_SKIP_INVARIANTS`' own comment was the ruling)
 
 `validateStoredPlan` — the checker `/api/ops/plan-audit` calls — is `validateReshapedPlan`, which filters
 `RESHAPE_SKIP_INVARIANTS` (`INV-PLAN-COVERS-RACE-DATE`, `INV-PLAN-RACE-ON-RACE-DAY`). The reason is written in
@@ -1943,6 +1943,39 @@ are already-known generation debt, which is precisely why the baseline drops the
 already differ from `validateStoredPlan` on the same predicate. So the verifier needs the same seam: one rule set, the
 caller choosing whether a whole-plan layout rule applies. Deciding that seam is the work; it is small, and it blocks
 nothing until the cut-over.
+
+✅ **DONE.** `rulesFor(plan, policy)` is the single owner of **both** halves of "which rules apply to this plan": its
+KIND (as before) and the CALLER's strictness (new). `VerifierPolicy` is `'saved' | 'stored' | 'repaired'`, mirroring
+`validateStoredPlan.ts`'s three by name, and **the argument is REQUIRED with no default** — a default is a policy
+nobody chose, and `STORED-PLAN-VALIDATOR-INPUT-01` is eight scripts that each hand-rolled this choice and all eight
+got it wrong. All 13 `verifyPlan` call sites now state their policy: the agreement, base-build, maintenance, static
+and strict harnesses are `saved` (they compare against `validatePlan` / `baseBuildErrors` /
+`validateMaintenanceBlock`); the ops shadow is `stored`.
+
+🔑 **AND THE EXEMPT LIST IS NOW ONE LIST, NOT TWO.** The verifier's import gate admits
+`@/lib/engine/catalogue/rules` (rule data) and forbids `@/lib/plan/invariants`, so a list written in the verifier
+could only ever be the second copy. The two rules carry **`skipped_by: ['stored']`** in the catalogue — a new field on
+the rule contract — and `RESHAPE_SKIP_INVARIANTS` is now `rulesSkippedBy('stored')`, derived. ⚠️ `lib/plan/engine.ts`
+already imports from `lib/engine/`, so the direction is the one the extraction wants: the old engine may depend on the
+new L2, never the reverse.
+
+📐 **Re-measured on the live fleet through the shadow: `plans_reshape_exempt` 7 → 0, and `new_findings` 494 → 482 —
+exactly the 12 findings this item measured, gone.** 44 assessed, 1 strict-only (unchanged: the level-mismatched plan),
+0 escalations, 0 lost, 0 unverified; `rules_fired` 53 → 51.
+
+⚠️ **The `reshape_exempt` bucket is KEPT, empty, and that is deliberate** — it is now the arm that would notice the
+policy lapsing. An empty bucket and a rule that never fires look identical, so the gate asserts **both halves**: under
+`stored` the rule is not judged, and under `saved` the same plan DOES report it. Without the second half the case
+would pass against a verifier that had simply lost the rule.
+
+🔴 **4 mutations, each verified to have landed, each red:** the rule losing its `skipped_by`; `rulesFor` ignoring the
+policy; the derived set returning nothing; `invariants.ts` going back to a hand-written list with one rule missing.
+The catalogue gate asserts the set's **contents**, not just that the two readers agree — a derived export matches its
+source by construction, so comparing them proves nothing on its own.
+
+🔻 **Negative space: this proves the two checkers now ask the same question on the audit path. It does not prove
+either answer is right**, and nothing a runner receives changed — `/api/ops/plan-audit` still gates on
+`validateStoredPlan`. `verify:parity` IDENTICAL over 6,210 (a validator-only change must not move generation).
 
 🔑 **Found because the measurement disagreed with itself**, not by reading: the first live run reported 8 plans gaining
 a code, and chasing why 6 of them carried the same two rules found the baseline's own filter.

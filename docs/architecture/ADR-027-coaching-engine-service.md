@@ -63,7 +63,7 @@ profile built **as of each plan's generation date** (`lib/ops/verifierShadow.ts`
 
 | | |
 |---|---|
-| Plans that would GAIN a code | **1**, `INV-PLAN-QUALITY-PER-WEEK` — and it is the same plan whose level is not comparable (below), so **0 comparable plans gain a code from a held reading** |
+| Plans that would GAIN a code | **1** — and it is the same plan whose level is not comparable (below), so **0 comparable plans gain a code from a held reading**. (C1 added two more level-dependent rules on that one plan; `VERIFIER-RESHAPE-POLICY-01` then took the reshape bucket from 7 plans to 0.) |
 | Plans that would LOSE a code | **0** |
 | Severity escalations (warn → error) | **0** |
 | Rules that could not evaluate | **0**, across all 44 |
@@ -73,10 +73,17 @@ profile built **as of each plan's generation date** (`lib/ops/verifierShadow.ts`
 artefacts of the comparison asking a harsher question than its baseline, and the eighth of a level the profile
 re-derives. Both are now named in the measurement rather than counted by it, and both are filed:
 
-- **`VERIFIER-RESHAPE-POLICY-01`** — the audit's baseline is `validateReshapedPlan`, which drops
-  `RESHAPE_SKIP_INVARIANTS` (`COVERS-RACE-DATE`, `RACE-ON-RACE-DAY`) because they fire on every legacy plan that
-  ends short of race day and a reshape neither caused that nor can fix it. **The verifier has no such policy, so
-  7 live plans would gain those two codes every morning** — exactly the noise that set exists to prevent.
+- ✅ **`VERIFIER-RESHAPE-POLICY-01` — SHIPPED 2026-11-25.** The audit's baseline is `validateReshapedPlan`, which
+  drops `COVERS-RACE-DATE` and `RACE-ON-RACE-DAY` because they fire on every legacy plan that ends short of race day
+  and a reshape neither caused that nor can fix it; the verifier had no such policy, so **7 live plans would have
+  gained those two codes every morning.** `rulesFor(plan, policy)` now owns both halves of "which rules apply" — the
+  plan's KIND and the caller's STRICTNESS — with `VerifierPolicy` (`'saved' | 'stored' | 'repaired'`) **required and
+  without a default**, mirroring `validateStoredPlan.ts`'s three by name. The exempt list is **one list**: the two
+  rules carry `skipped_by: ['stored']` in the catalogue (rule data, which the verifier's import gate admits where it
+  forbids `invariants.ts`) and `RESHAPE_SKIP_INVARIANTS` is derived from it. 📐 **Live: `plans_reshape_exempt` 7 → 0,
+  `new_findings` 494 → 482 — exactly the 12 findings measured.** The empty bucket is kept as the arm that would
+  notice the policy lapsing, and its gate asserts both halves (not judged under `stored`, still reported under
+  `saved`) because an empty bucket and a lost rule look identical.
 - **`VERIFIER-STORED-LEVEL-01`** — `storedPlanInput` takes the levels from `meta` so the old validator judges a plan at
   the level it was BUILT at, but `fitnessAssessment.ts:201` lets `input.fitness_level` win the INTENSITY band
   (`assessedIntensity = input.fitness_level ?? assessed.intensity`) and nothing reads `input.fitness_intensity_level`
@@ -187,8 +194,9 @@ upward on intensity); §89 is the one veto a self-declaration must not unlock. C
 1. **`ADR027-B3-STRICT-01`**: D2/D3 (named parameters and rule data). ✅ C1 shipped 2026-11-25. B10 needs a
    `quality_pool_sizes` week key from the producer; B14 needs the §117 reading; **C1's two reclassified fields need
    the chair's word on the scope correction** (above), which blocks nothing.
-2. **The two port gaps above**, which the cut-over needs settled: `VERIFIER-RESHAPE-POLICY-01` and
-   `VERIFIER-STORED-LEVEL-01`.
+2. **`VERIFIER-STORED-LEVEL-01`** — the remaining port gap, and a 🔺 **CUT-OVER BLOCKER** since C1 widened it from
+   2 rules to 9 and inverted two directions on the stored path. 🏃 The Coaching Board rules which level a stored plan
+   is judged at, then build. ✅ `VERIFIER-RESHAPE-POLICY-01` shipped 2026-11-25.
 3. **B3 step 4**: the trigger catalogue, with values unchanged (§124 Am. 1), **plus ARCH-ENG-022** — add `run_analysed` (§124 Am. 1 asked for it) and `run_arrived` with its match outcome; `run_logged` keeps its ratified meaning. Amended 2026-11-25 while the list was still only prose; the mechanical check is this step's.
 4. **The founder's cut-over sign-off**, naming the 14 held rules.
 5. Then B4, starting with 5K/10K, in shadow.

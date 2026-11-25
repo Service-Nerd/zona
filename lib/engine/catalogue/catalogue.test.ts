@@ -6,9 +6,9 @@
 import { describe, it, expect } from 'vitest'
 import { readFileSync, readdirSync } from 'node:fs'
 import { join } from 'node:path'
-import { RULES } from './rules'
+import { RULES, rulesSkippedBy } from './rules'
 import { RuleSchema, resolveRuleConfigKey } from '@/lib/engine/contracts/rule'
-import { INVARIANT_CODES } from '@/lib/plan/invariants'
+import { INVARIANT_CODES, RESHAPE_SKIP_INVARIANTS } from '@/lib/plan/invariants'
 
 const read = (p: string) => readFileSync(join(process.cwd(), p), 'utf8')
 const STRENGTH_CODES = Array.from(new Set(
@@ -126,6 +126,31 @@ describe('ADR027-B3-CATALOGUE — every rule is well-formed and traceable', () =
       expect(r.kind, `${r.id}: registry says "${sev}"`).toBe(sev.startsWith('warn') ? 'soft' : 'hard')
       // A conditional severity must carry its condition, or it is lost when the predicate is ported.
       expect(!!r.severity_note, `${r.id}: severity "${sev}"`).toBe(!/^(error|warn)$/.test(sev))
+    }
+  })
+
+  it('🔴 `skipped_by: stored` is the ONE list, and both checkers read it (VERIFIER-RESHAPE-POLICY-01)', () => {
+    // 🔑 THE POINT OF THE FIELD IS THAT THERE IS NO SECOND LIST. `lib/plan/invariants.ts`'s
+    // `RESHAPE_SKIP_INVARIANTS` is `rulesSkippedBy('stored')` and the verifier's `rulesFor` filters by
+    // the same call, so the old checker and the verifier cannot come to disagree about what the audit
+    // path asks. They already had, for a day: the verifier's first live shadow run reported 8 plans
+    // gaining a code and 6 of them were these two rules, which the baseline drops on purpose.
+    //
+    // ⚠️ This asserts the CONTENT, not just the wiring. A derived export is identical to its source by
+    // construction, so comparing them proves nothing on its own — what it would miss is somebody adding
+    // a third rule to the field by accident, which is why the expected ids are written out here, and
+    // why a rule joining the set has to come past this line and say why.
+    expect(Array.from(rulesSkippedBy('stored')).sort()).toEqual([
+      'INV-PLAN-COVERS-RACE-DATE',   // §76: does the plan reach race day — a whole-plan layout property
+      'INV-PLAN-RACE-ON-RACE-DAY',   // §77: is the race on race day — likewise, fixed at generation
+    ])
+    expect(Array.from(RESHAPE_SKIP_INVARIANTS).sort(), 'the old checker reads the same list, not a copy')
+      .toEqual(Array.from(rulesSkippedBy('stored')).sort())
+    // And every marked rule is a PLAN-WIDE or WEEK-LAYOUT property, which is the reason the set exists:
+    // a reshape moves sessions within a week and cannot change either.
+    for (const id of Array.from(rulesSkippedBy('stored'))) {
+      const r = RULES.find(x => x.id === id)!
+      expect(['week', 'session', 'plan'], `${id}: scope ${r.scope}`).toContain(r.scope)
     }
   })
 })

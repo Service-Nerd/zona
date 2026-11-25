@@ -91,7 +91,7 @@ describe('shadowVerifyPlan — the join, and what it refuses to assess', () => {
 
   it('a rule the OLD checker already reports is not a strict reading', () => {
     const plan = storedPlan()
-    const judged = rulesFor(plan) as unknown as string[]
+    const judged = rulesFor(plan, 'stored') as unknown as string[]
     // The composition the route performs: the producer's own full list, every severity.
     const old = validateStoredPlan(plan)
     const row = shadowVerifyPlan(plan, old, null)
@@ -114,7 +114,7 @@ describe('shadowVerifyPlan — the join, and what it refuses to assess', () => {
 
   it('🔴 a finding the OLD checker makes and the verifier does not is reported as lost', () => {
     const plan = storedPlan()
-    const judged = rulesFor(plan) as unknown as string[]
+    const judged = rulesFor(plan, 'stored') as unknown as string[]
     const quiet = judged.filter(r => !strictOnlyOf(plan).includes(r))
     expect(quiet.length).toBeGreaterThan(0)
     const row = shadowVerifyPlan(plan, [v(quiet[0])], null)
@@ -126,7 +126,7 @@ describe('shadowVerifyPlan — the join, and what it refuses to assess', () => {
     const plan = storedPlan()
     // Any rule the verifier fires at ERROR severity: an escalation needs warn -> error, so a
     // warn-severity rule could not reach the branch and would make this case vacuous.
-    const errored = verifyPlan(plan, verifierContextFor(plan, GENERATED))
+    const errored = verifyPlan(plan, verifierContextFor(plan, GENERATED), 'stored')
       .find(f => f.severity === 'error' && strictOnlyOf(plan).includes(f.rule_id as string))
       ?.rule_id as string | undefined
     expect(errored).toBeTruthy()
@@ -148,21 +148,43 @@ describe('shadowVerifyPlan — the join, and what it refuses to assess', () => {
     expect(Object.values(row2.instances).reduce((n, [, b]) => n + b, 0)).toBe(row2.old_findings)
   })
 
-  it('🔴 a rule the BASELINE cannot report is never a strict reading, and is never dropped', () => {
-    // ⚠️ THIS CASE HAD AN UNREACHABLE GUARD AND A MUTATION THAT DELETED THE BUCKET STAYED GREEN.
-    // It read `if (strictOnlyOf(plan).includes(rule))` — and the exempt rules are excluded from
-    // `strict_only` by construction, so the condition was always false and the assertion inside
-    // it never ran. An allow-by-default arm is not a check. Asserted unconditionally now, on a
-    // fixture whose final week genuinely does not contain its race date.
+  it('🔴 a rule the BASELINE drops is not judged at all under the stored policy, and IS under the saved one', () => {
+    // ⚠️ TWO LESSONS LIVE IN THIS CASE, BOTH PAID FOR.
+    // (1) It once read `if (strictOnlyOf(plan).includes(rule))` — and the exempt rules are excluded
+    //     from `strict_only` by construction, so the condition could never be true and the assertion
+    //     inside it never ran once. An allow-by-default arm is not a check.
+    // (2) Since `VERIFIER-RESHAPE-POLICY-01` the verifier has the baseline's own policy, so the
+    //     bucket is EMPTY rather than full — and an empty bucket is exactly what a rule that never
+    //     fires looks like. So the `saved` half is asserted beside it: the rule still exists, still
+    //     fires on this plan, and the POLICY is what suppresses it. Without that half this case
+    //     would pass against a verifier that had simply lost the rule.
     const plan = storedPlan()
     const row = shadowVerifyPlan(plan, [], null)
     if (!row.assessed) throw new Error('fixture should be assessable')
-    expect(row.reshape_exempt).toContain('INV-PLAN-COVERS-RACE-DATE')
+    expect(row.reshape_exempt, 'the stored policy does not judge it, so there is nothing to bucket').toEqual([])
     for (const rule of Array.from(RESHAPE_SKIP_INVARIANTS)) {
       expect(row.strict_only).not.toContain(rule)
     }
-    // The set is READ from the owner, so this case cannot pass against a stale local copy.
+    // THE OTHER HALF: the same plan, judged as the SAVE path judges it, does report the rule.
+    const asOf = shadowAsOf(plan, null)
+    if (!asOf) throw new Error('fixture should carry a generation date')
+    const saved = verifyPlan(plan, verifierContextFor(plan, asOf), 'saved').map(f => f.rule_id as string)
+    expect(saved, 'the rule exists and this plan breaches it: only the policy hides it').toContain('INV-PLAN-COVERS-RACE-DATE')
+    // The set is READ from the owner (now the catalogue's `skipped_by`), so this cannot pass against a copy.
     expect(RESHAPE_SKIP_INVARIANTS.has('INV-PLAN-COVERS-RACE-DATE')).toBe(true)
+  })
+
+  it('🔴 and `rulesFor` is where the policy lives, so the two halves cannot be answered differently', () => {
+    // The seam is in ONE owner, as `validateStoredPlan.ts` keeps the kind dispatch and the strictness
+    // together. If a future caller filters findings itself instead, this is the arm that notices.
+    const plan = storedPlan()
+    const stored = rulesFor(plan, 'stored') as unknown as string[]
+    const saved = rulesFor(plan, 'saved') as unknown as string[]
+    expect(saved).toContain('INV-PLAN-COVERS-RACE-DATE')
+    expect(stored).not.toContain('INV-PLAN-COVERS-RACE-DATE')
+    expect(saved.filter(r => !stored.includes(r)).sort(), 'exactly the catalogue\'s skipped set, no more')
+      .toEqual(Array.from(RESHAPE_SKIP_INVARIANTS).sort())
+    expect(rulesFor(plan, 'repaired') as unknown as string[], 'a repair script is strict, like the save path').toEqual(saved)
   })
 
   it('level_mismatch is false when meta carries no level to disagree with', () => {

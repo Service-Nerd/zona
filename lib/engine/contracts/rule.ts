@@ -53,6 +53,24 @@ export const RuleSchema = z.strictObject({
   severity_note: z.string().min(1).refine(explainCopiesNoValue, {
     message: 'severity_note copies a value: it names the condition, never a threshold (ARCH-ENG-003)',
   }).optional(),
+  /**
+   * Callers that do NOT apply this rule. **Strictness is a CALLER's policy, not a rule's**, and that
+   * is already settled in `lib/plan/validateStoredPlan.ts`, which runs one dispatch under three:
+   * `validateSavedPlan` (the save path, strict), `validateStoredPlan` (the audit and adjust paths,
+   * lenient), `validateRepairedPlan` (a repair script, strict). The rule is the same in all three; who
+   * is allowed to skip it is not.
+   *
+   * `'stored'` means: not applied to a plan we are RE-checking rather than generating. A whole-plan
+   * LAYOUT property is fixed at generation, so a reshape neither caused a breach of it nor can fix one,
+   * and holding a legacy plan to it reports a generation defect as a reshape failure on every
+   * adjustment (`RESHAPE_SKIP_INVARIANTS`' own comment is the ruling; VERIFIER-RESHAPE-POLICY-01).
+   *
+   * ⚠️ THIS FIELD IS THE ONE LIST. `lib/plan/invariants.ts` DERIVES `RESHAPE_SKIP_INVARIANTS` from it
+   * rather than holding its own, because two lists with a human between them is the shape this repo
+   * keeps paying for, and the first measured run of the verifier's live shadow read 6 of its 8 flagged
+   * plans off exactly that gap.
+   */
+  skipped_by: z.array(z.enum(['stored'])).nonempty().optional(),
 })
 
 export type Rule = z.infer<typeof RuleSchema>

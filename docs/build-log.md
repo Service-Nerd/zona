@@ -6,6 +6,19 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-11-25 — VERIFIER-RESHAPE-POLICY-01 · two lists with a person in between, one day after I wrote the second one
+**Shipped:** The new plan checker now knows *which caller is asking*, so it stops reporting two rules that the thing it is being compared against deliberately ignores.
+
+**Dev learning:** The old checker has three modes and has had for a while: strict when a plan is first generated, lenient when a stored plan is re-checked, strict again when a repair script asks. The lenient one skips two rules about whether a plan reaches its race date, because every plan built before a 2026 fix ends short of it, and an edit to one of those plans neither caused that nor can fix it. The new checker had no modes at all — so compared against the lenient one, it reported those two rules on seven of forty-four real plans, every morning, forever. The fix is one argument with no default value. **A default would have been a policy nobody chose, and this codebase already has the receipt for that: eight repair scripts once each guessed at this same choice and all eight guessed wrong.**
+
+**Product learning:** The more interesting half is where the *list* of skipped rules lives. Yesterday I put it in the old checker and exported it, with a comment saying "read, never copied". That was the right instinct and the wrong place: the new checker is deliberately forbidden from importing the old one — that is the entire point of building it separately — so any list it used would have been a copy by construction, no matter what the comment said. The list belongs in the shared rule catalogue, as a field on the rule, and the old checker now derives its own copy from there. **A comment saying "do not copy this" does not stop the next person copying it; moving it somewhere both sides can reach does.**
+
+**AI-building learning:** The fix makes a counter go to zero, and a counter at zero is indistinguishable from a counter that is broken. So the test asserts both directions: under the lenient policy the rule is not checked, and *under the strict policy the same plan still reports it*. Without the second half, the test would pass against a version that had simply lost the rule entirely. I only wrote it that way because yesterday I shipped a test whose condition could never be true, and it took deliberately deleting the code to find out. **An empty result needs a companion assertion that the thing can still be non-empty.**
+
+**The honest bit:** The whole fix is about forty lines and I had the information to write it correctly yesterday — the three modes are documented at length in the old checker, each with its own explanation of why it differs. I read that file, wrote down that the strictness "is a caller's policy, not a rule's", filed it as an item, and then put the list in the wrong module anyway. **Noticing the pattern and then not applying it is its own failure mode, and it looks exactly like progress.**
+
+---
+
 ## 2026-11-25 — ADR027-B3-STRICT-01 (C1) · a plan that agrees with itself is why checking its own label looked safe
 **Shipped:** The new plan checker stopped asking the plan who its runner is. It reads the runner's own record and the sessions the plan actually contains.
 

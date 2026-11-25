@@ -241,7 +241,7 @@ describe('ADR027-B3-VERIFIER — base-build and staged plans', () => {
       for (const c of cases) {
         const old = oldFindings(c.plan).filter(v => v.code === rule).map(v => key(v.code, v.week, v.day, v.severity)).sort()
         const profile = buildRunnerProfile(factsFromInput(c.input), { asOf: c.asOf, timezone: null, planStart: c.planStart })
-        const neu = verifyPlan(c.plan, { input: c.input, profile }).filter(f => f.rule_id === rule).map(f => key(f.rule_id, f.week, f.day, f.severity)).sort()
+        const neu = verifyPlan(c.plan, { input: c.input, profile }, 'saved').filter(f => f.rule_id === rule).map(f => key(f.rule_id, f.week, f.day, f.severity)).sort()
         fired += old.length
         if (JSON.stringify(old) !== JSON.stringify(neu)) diffs.push(`${c.label}: old [${old}] new [${neu}]`)
       }
@@ -256,7 +256,7 @@ describe('ADR027-B3-VERIFIER — base-build and staged plans', () => {
     for (const c of cases.filter(x => meta(x.plan).plan_kind === 'base_build')) {
       const old = validateStoredPlan(c.plan).map(v => key(v.code, v.week, v.day, v.severity)).sort()
       const profile = buildRunnerProfile(factsFromInput(c.input), { asOf: c.asOf, timezone: null, planStart: c.planStart })
-      const neu = verifyPlan(c.plan, { input: c.input, profile }).map(f => key(f.rule_id, f.week, f.day, f.severity)).sort()
+      const neu = verifyPlan(c.plan, { input: c.input, profile }, 'saved').map(f => key(f.rule_id, f.week, f.day, f.severity)).sort()
       if (JSON.stringify(old) !== JSON.stringify(neu)) diffs.push(`${c.label}: old [${old.slice(0, 4)}] new [${neu.slice(0, 4)}]`)
     }
     expect(diffs.slice(0, 5), `${diffs.length} disagreements`).toEqual([])
@@ -274,14 +274,14 @@ describe('ADR027-B3-VERIFIER — base-build and staged plans', () => {
     const pick = (xs: { code?: string; rule_id?: string; week: number | null; severity: string }[]) => xs.filter(x => (x.code ?? x.rule_id) === 'INV-PLAN-WALKRUN-START-PROGRESSION').map(x => `${x.week}|${x.severity}`)
     const old = pick(oldFindings(p) as never)
     expect(old.length, 'the case must wake the old rule').toBeGreaterThan(0)
-    expect(pick(verifyPlan(p, { input, profile }) as never)).toEqual(old)
+    expect(pick(verifyPlan(p, { input, profile }, 'saved') as never)).toEqual(old)
   })
 
   it('🔴 a conditional base-build rule produces each of its severities', () => {
     for (const [rule, branches] of [['INV-PLAN-WALKRUN-START-PROGRESSION', ['warn', 'error']]] as const) for (const sev of branches) {
       const seen = cases.some(c => {
         const profile = buildRunnerProfile(factsFromInput(c.input), { asOf: c.asOf, timezone: null, planStart: c.planStart })
-        return verifyPlan(c.plan, { input: c.input, profile }).some(f => f.rule_id === rule && f.severity === sev)
+        return verifyPlan(c.plan, { input: c.input, profile }, 'saved').some(f => f.rule_id === rule && f.severity === sev)
       })
       expect(seen, `${rule} never produced ${sev}`).toBe(true)
     }
@@ -291,7 +291,7 @@ describe('ADR027-B3-VERIFIER — base-build and staged plans', () => {
     for (const [rule, prefixes] of Object.entries(ARMS)) for (const pre of prefixes) {
       const n = cases.reduce((t, c) => {
         const profile = buildRunnerProfile(factsFromInput(c.input), { asOf: c.asOf, timezone: null, planStart: c.planStart })
-        return t + verifyPlan(c.plan, { input: c.input, profile }).filter(f => f.rule_id === rule && f.detail.startsWith(pre)).length
+        return t + verifyPlan(c.plan, { input: c.input, profile }, 'saved').filter(f => f.rule_id === rule && f.detail.startsWith(pre)).length
       }, 0)
       expect(n, `${rule}: "${pre}" never fires`).toBeGreaterThan(0)
     }

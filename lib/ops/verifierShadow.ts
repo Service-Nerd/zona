@@ -44,15 +44,16 @@ import { storedPlanInput } from '@/lib/plan/storedPlanInput'
  * plan's kind. Without that filter every unported invariant would read as a finding the verifier
  * LOST, which says nothing about the 14 held readings and would bury the number that matters.
  *
- * 🔴 AND THE BASELINE IS THE RESHAPE VARIANT, WHICH DROPS TWO RULES ON PURPOSE. `validateStoredPlan`
- * — what `/api/ops/plan-audit` actually calls — is `validateReshapedPlan`, which filters
- * `RESHAPE_SKIP_INVARIANTS` because `INV-PLAN-COVERS-RACE-DATE` and `INV-PLAN-RACE-ON-RACE-DAY`
- * fire on every legacy plan that ends short of race day (the F2 defect) and a reshape neither
- * caused that nor can fix it. **The verifier has no such policy, so the first measured run read
- * 8 plans flagged and 6 of them were this artefact** — the comparison asking a harsher question
- * than its baseline, not a strict reading biting. Those findings are reported in their own
- * bucket: visible, because the port still owes the verifier a strict-vs-reshape policy, and out
- * of `strict_only`, because they are not what the B3 sitting ruled on.
+ * ✅ AND THE BASELINE'S POLICY IS NOW THE VERIFIER'S TOO (`VERIFIER-RESHAPE-POLICY-01`, 2026-11-25).
+ * `validateStoredPlan` — what `/api/ops/plan-audit` actually calls — is `validateReshapedPlan`, which
+ * drops `INV-PLAN-COVERS-RACE-DATE` and `INV-PLAN-RACE-ON-RACE-DAY` because they fire on every legacy
+ * plan that ends short of race day (the F2 defect) and a reshape neither caused that nor can fix it.
+ * 🔴 **The verifier had no such policy, so the first measured run read 8 plans flagged and 6 of them
+ * were this artefact** — the comparison asking a harsher question than its baseline, not a strict
+ * reading biting. It is `verifyPlan(plan, ctx, 'stored')` now, and `rulesFor` owns both halves of
+ * "which rules apply": the plan's KIND and the CALLER's strictness, as `validateStoredPlan.ts` has
+ * owned them for the old checker since `STORED-PLAN-VALIDATOR-INPUT-01`. The `reshape_exempt` bucket
+ * stays, empty, as the arm that would notice the policy lapsing.
  *
  * 🔴 AND A SECOND ARTEFACT, WHICH THE FIRST MEASURED RUN READ AS THE ONE REMAINING STRICT HIT.
  * `storedPlanInput` takes the levels from `meta` on purpose, so the old validator judges a plan
@@ -79,8 +80,10 @@ export type ShadowRow =
       assessed: true
       /** Rules the verifier fires that the old checker does not — THE cut-over number. */
       strict_only: string[]
-      /** Fired by the verifier, but dropped by the baseline's OWN policy (`RESHAPE_SKIP_INVARIANTS`).
-       *  Not a strict reading: a port gap, reported so it is neither counted nor hidden. */
+      /** ✅ **EMPTY SINCE `VERIFIER-RESHAPE-POLICY-01`, AND KEPT AS THE ARM THAT WOULD NOTICE.**
+       *  The verifier is now run under the baseline's own policy (`verifyPlan(…, 'stored')`), so a rule
+       *  the baseline drops is not judged at all and there is nothing to bucket. A non-empty value here
+       *  means the policy stopped applying — which is the only reason to keep a field that reads 0. */
       reshape_exempt: string[]
       /** Rules both fire, where the verifier is the harsher severity. */
       escalated: string[]
@@ -167,9 +170,9 @@ export function shadowVerifyPlan(
   try { ctx = verifierContextFor(plan, asOf) } catch { return { assessed: false, reason: 'context_failed' } }
 
   let findings
-  try { findings = verifyPlan(plan, ctx) } catch { return { assessed: false, reason: 'verifier_threw' } }
+  try { findings = verifyPlan(plan, ctx, 'stored') } catch { return { assessed: false, reason: 'verifier_threw' } }
 
-  const judged = new Set<string>(rulesFor(plan) as unknown as string[])
+  const judged = new Set<string>(rulesFor(plan, 'stored') as unknown as string[])
   // Materialised once: the totals, the per-rule counts and the rule-id join must all read the
   // SAME filtered population, or the three numbers describe three different things.
   const judgedFindings = findings
@@ -186,8 +189,10 @@ export function shadowVerifyPlan(
   const reshape_exempt: string[] = []
   for (const [rule, sev] of Array.from(next)) {
     const was = prev.get(rule)
-    // The baseline cannot report this rule at all, so its silence is not agreement and the
-    // verifier firing is not a strict reading. Read from the owner's set, never a local copy.
+    // ✅ The verifier now runs under the baseline's OWN policy, so this should never fire. Kept as a
+    // RESIDUAL DETECTOR rather than deleted: if the policy ever stops applying, these findings would
+    // otherwise re-enter `strict_only` and read as 7 live plans suddenly breaching two rules. Read
+    // from the owner's set (the catalogue's `skipped_by`), never a local copy.
     if (RESHAPE_SKIP_INVARIANTS.has(rule)) { reshape_exempt.push(rule); continue }
     if (!was) strict_only.push(rule)
     else if (was === 'warn' && sev === 'error') escalated.push(rule)

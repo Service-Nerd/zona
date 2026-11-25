@@ -45,7 +45,7 @@ const planWith = (meta: Record<string, unknown>, week: Record<string, unknown>):
 } as unknown as Plan)
 
 const findings = (p: Plan, rule: string, input?: GeneratorInput) =>
-  verifyPlan(p, ctx(input)).filter(f => f.rule_id === rule)
+  verifyPlan(p, ctx(input), 'saved').filter(f => f.rule_id === rule)
 
 describe('B2 — §9 has no race-week exemption from being EMPTY', () => {
   const RULE = 'INV-PLAN-EMPTY-SESSION'

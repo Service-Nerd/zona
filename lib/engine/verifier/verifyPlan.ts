@@ -12,7 +12,7 @@
 import type { Plan, Session, GeneratorInput } from '@/types/plan'
 import type { RuleId } from '@/lib/engine/contracts/rule'
 import type { RunnerProfile } from '@/lib/engine/contracts/profile'
-import { RULES } from '@/lib/engine/catalogue/rules'
+import { RULES, rulesSkippedBy } from '@/lib/engine/catalogue/rules'
 import { GENERATION_CONFIG, raceDistanceKey } from '@/lib/plan/generationConfig'
 import { isLongRun, isShakeout, isSecondaryQuality, isQualitySession, isStructuredSession, isTimeTrial, isVo2maxSession, classifyStimulus, isHardEffort, workClassFor } from '@/lib/plan/sessionRole'
 import { V1_SESSION_CATALOGUE } from '@/lib/plan/sessionCatalogueData'
@@ -3006,21 +3006,43 @@ const SEVERITY = new Map(RULES.map(r => [r.id, r.kind === 'soft' ? 'warn' as con
 const CONDITIONAL = new Set(RULES.filter(r => r.severity_note).map(r => r.id))
 
 /** Every finding the ported predicates raise, with the severity the catalogue gives the rule. */
+/**
+ * WHICH CALLER IS ASKING. `lib/plan/validateStoredPlan.ts` runs one dispatch under three of these and
+ * writes the difference out in each docstring: `validateSavedPlan` is `saved`, `validateStoredPlan` (the
+ * daily audit and `/api/adjust-plan`) is `stored`, `validateRepairedPlan` is `repaired`.
+ *
+ * 🔴 IT IS A REQUIRED ARGUMENT AND THERE IS NO DEFAULT, DELIBERATELY. A default here would be a policy
+ * nobody chose, which is this repo's `a default argument hides an unwired parameter` class, and the
+ * strictness is the whole point of the field: `STORED-PLAN-VALIDATOR-INPUT-01` is eight scripts that
+ * each hand-rolled this choice and all eight got it wrong. Every call site says which it is.
+ */
+export type VerifierPolicy = 'saved' | 'stored' | 'repaired'
+
 /** Which rules judge this plan, by its kind, as production routes it (`validateStoredPlan`): a base-build plan gets only
  *  the base-build validators, a maintenance plan that recorded its base volume only the maintenance validator, and
  *  every other plan (an unstamped maintenance plan included) the race rules. Code review: without this the race rules
- *  ran on base-build and maintenance plans and raised thousands of errors production never raises. */
-export function rulesFor(plan: Plan): RuleId[] {
-  if (plan.meta?.plan_kind === 'base_build') return BASE_BUILD_RULES
-  if (maintOf(plan)) return MAINTENANCE_RULES
-  const other = new Set<RuleId>([...BASE_BUILD_RULES, ...MAINTENANCE_RULES])
-  return PORTED_RULES.filter(r => !other.has(r))
+ *  ran on base-build and maintenance plans and raised thousands of errors production never raises.
+ *
+ *  ✅ AND SINCE `VERIFIER-RESHAPE-POLICY-01` IT ALSO ANSWERS THE SECOND HALF OF THAT QUESTION — the
+ *  CALLER's strictness — because the two halves belong to one owner. The old checker learned this the
+ *  expensive way: when the kind dispatch and the strictness lived apart, eight repair scripts took the
+ *  dispatch and skipped the policy. The skipped set is read from the catalogue's `skipped_by`, the one
+ *  list both checkers share; `lib/plan/invariants.ts`'s `RESHAPE_SKIP_INVARIANTS` is the same set.
+ *  ⚠️ Only `stored` skips anything today. `saved` and `repaired` are strict and are named rather than
+ *  collapsed into one value, because they are different callers and the next exemption may split them. */
+export function rulesFor(plan: Plan, policy: VerifierPolicy): RuleId[] {
+  const kind = plan.meta?.plan_kind === 'base_build' ? BASE_BUILD_RULES
+    : maintOf(plan) ? MAINTENANCE_RULES
+    : PORTED_RULES.filter(r => !new Set<RuleId>([...BASE_BUILD_RULES, ...MAINTENANCE_RULES]).has(r))
+  if (policy !== 'stored') return kind
+  const skip = rulesSkippedBy('stored')
+  return kind.filter(r => !skip.has(r))
 }
 
-export function verifyPlan(plan: Plan, ctx: VerifyContext): VerifierFinding[] {
+export function verifyPlan(plan: Plan, ctx: VerifyContext, policy: VerifierPolicy): VerifierFinding[] {
   // Each predicate is isolated (code review): one that cannot evaluate returns an UNVERIFIED finding for
   // its own rule, rather than ending the run and losing every other rule's findings. Never a silent pass.
-  const judged = new Set(rulesFor(plan))
+  const judged = new Set(rulesFor(plan, policy))
   return (Object.entries(PREDICATES) as [RuleId, Predicate][]).filter(([id]) => judged.has(id)).flatMap(([id, p]) => {
     try { return p(plan, ctx) } catch (e) {
       return [{ rule_id: id, week: PLAN, day: null, detail: `unverified: ${e instanceof Error ? e.message : String(e)}` }]
