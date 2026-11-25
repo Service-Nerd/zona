@@ -1982,6 +1982,21 @@ a code, and chasing why 6 of them carried the same two rules found the baseline'
 `lib/ops/verifierShadow.ts` reports them in `reshape_exempt_by_rule` — out of the cut-over number, still visible — and
 **reads the set from its owner** rather than holding a copy, so the two cannot drift.
 
+### 🔲 `HELD-RULE-LIST-DERIVED-01` — the 14 held rules the cut-over sign-off must name are a hand-written list beside a derivable one *(filed 2026-11-25, found auditing the records)* ⚙️ **NO BOARD** (tooling)
+
+The B3 exit is *"the verifier PLUS these 14 old checks, named in the founder's sign-off"* (Coaching Board
+`ADR027-B3-RAISED-LIST-01` E4), and ADR-027 carries those 14 names **as prose**. They are also derivable: the
+catalogue's `INV-` ids minus `PORTED_RULES`.
+
+📐 **Re-derived 2026-11-25: the two agree exactly, 14 for 14.** So this is a ratchet, not a fix.
+
+⚠️ **It is the `two registers with a human in between` shape on the one document that must not be stale.** Every rule
+B3 ports shrinks the derived list and leaves the prose unchanged, and the sign-off is a founder decision made from the
+prose. An incomplete gate must say it is incomplete — and it can only say so correctly if the count is computed.
+
+**Done when:** a test fails if ADR-027's named list differs from the derived set in either direction, naming the rules
+that differ. ⚠️ **Assert the NAMES, not the count** — a port plus a new hold nets to 14 and would pass a count check.
+
 ### 🔲 `VERIFIER-STORED-LEVEL-01` — 🔺 **CUT-OVER BLOCKER** — `resolveLevels` lets the API STRUCTURAL declaration set the INTENSITY axis, which §79 forbids in as many words *(filed 2026-11-25, ADR-027 B3 step 3; widened 2 → 9 rules by C1; rerouted and conditioned by the board 2026-11-25)* ⚙️ **NO BOARD — a defect fix restoring documented intent, ruled EXEMPT**
 
 ⚖️ **RULED EXEMPT, `STORED-LEVEL-AND-C1-SCOPE-01`, 2026-11-25: §79 ALREADY DECIDED THIS AND THE ITEM WAS FILED AS A BOARD QUESTION IN ERROR — MINE.** §79 carries the sentence *“Two inputs, two axes — do not merge them … collapsing them is what produced the defect: one enum was carrying two different authorities”*, written because the engine had already done it once. `fitnessAssessment.ts:201` reads `assessedIntensity = input.fitness_level ?? assessed.intensity` — the API **structural** declaration setting the **intensity** axis. There is no policy to choose; the fix is to read `input.fitness_intensity_level`, a field §79's Meta clause mandates, `storedPlanInput` already carries for exactly this, `invariants.ts:1100` already reads, and the assessment's `Pick<>` parameter type **structurally cannot see**.

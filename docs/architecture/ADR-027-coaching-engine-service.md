@@ -191,14 +191,21 @@ reads `levels.intensity` deliberately, because that is the level the planner bui
 upward on intensity); §89 is the one veto a self-declaration must not unlock. Corrected.
 
 ### Where to pick up, in order
-1. **`ADR027-B3-STRICT-01`**: D2/D3 (named parameters and rule data). ✅ C1 shipped 2026-11-25. B10 needs a
-   `quality_pool_sizes` week key from the producer; B14 needs the §117 reading; **C1's two reclassified fields need
-   the chair's word on the scope correction** (above), which blocks nothing.
-2. **`VERIFIER-STORED-LEVEL-01`** — the remaining port gap, and a 🔺 **CUT-OVER BLOCKER** since C1 widened it from
-   2 rules to 9 and inverted two directions on the stored path. 🏃 The Coaching Board rules which level a stored plan
-   is judged at, then build. ✅ `VERIFIER-RESHAPE-POLICY-01` shipped 2026-11-25.
+1. 🔺 **`VERIFIER-STORED-LEVEL-01` — THE ONLY CUT-OVER BLOCKER, AND IT IS A BUILD, NOT A QUESTION.** The Coaching
+   Board ruled it **EXEMPT** on 2026-11-25 (`STORED-LEVEL-AND-C1-SCOPE-01`): §79 already decided it — *"Two inputs,
+   two axes — do not merge them … collapsing them is what produced the defect"* — and `fitnessAssessment.ts:201` lets
+   the API STRUCTURAL declaration set the INTENSITY axis. A defect fix restoring documented intent. **10 of 44 live
+   plans exposed, 9 masked by an upward declaration that coincidentally resolves to the same level.** Spiked: the
+   collapse goes 1 → 0 and `verify:parity` is IDENTICAL over 6,210. **Three binding conditions**, of which the one
+   parity does NOT cover is that `property-validate-plans.ts` and `r23-phase7-validation.ts` must both run clean.
+2. **`ADR027-B3-STRICT-01`**: D2/D3 (named parameters and rule data). ✅ C1 shipped 2026-11-25, and the chair accepted
+   its scope correction on §23/§46 grounds. B10 needs a `quality_pool_sizes` week key from the producer; B14 needs the
+   §117 reading. ✅ `VERIFIER-RESHAPE-POLICY-01` shipped 2026-11-25 — both port gaps are now closed or ruled.
 3. **B3 step 4**: the trigger catalogue, with values unchanged (§124 Am. 1), **plus ARCH-ENG-022** — add `run_analysed` (§124 Am. 1 asked for it) and `run_arrived` with its match outcome; `run_logged` keeps its ratified meaning. Amended 2026-11-25 while the list was still only prose; the mechanical check is this step's.
-4. **The founder's cut-over sign-off**, naming the 14 held rules.
+4. **The founder's cut-over sign-off**, naming the 14 held rules. ⚠️ **That list is hand-written above and
+   derivable from code** (`RULES` INV ids minus `PORTED_RULES`); re-derived 2026-11-25 and the two agree exactly, 14
+   for 14. It is the `two registers with a human in between` shape and the sign-off is the one document that must not
+   be stale, so a gate belongs with it: `HELD-RULE-LIST-DERIVED-01`.
 5. Then B4, starting with 5K/10K, in shadow.
 
 Filed alongside, not blocking B3: `STRENGTH-S13-S14-LIVE-01` (no board; production never runs S13/S14),
