@@ -121,11 +121,20 @@ export const PREDICATES: Partial<Record<RuleId, Predicate>> = {
   }),
 
   // §9: a placed session carries a distance or a duration.
-  // ⚠️ PORTED FAITHFULLY, INCLUDING A PROBABLE BLIND SPOT: `validatePlan` runs this inside the size loop,
-  // so it skips the race, a race-week easy run and a shakeout, and an EMPTY race-week shakeout passes.
-  // Kept identical so agreement means something; raised for a ruling rather than changed here.
+  //
+  // 🔴 ADR027-B3-STRICT-01 / sitting B2 — THE RACE-WEEK EXEMPTION IS A SIZE EXEMPTION, NOT A
+  // LICENCE TO BE EMPTY, and the board ruled it a defect: "§9 has no race-week exemption."
+  // `validatePlan` runs this inside its size loop, so it inherits `sizeExempt` and an EMPTY
+  // race-week easy run or shakeout passes. The previous batch ported that faithfully and left a
+  // note asking for a ruling rather than changing it; this is the ruling.
+  //
+  // ⚠️ SCOPED TO WHAT THE RULING NAMES. §9's floor legitimately does not govern a race-week easy
+  // run (it may be short) or a shakeout (it is short by design) — but "shorter than the floor" and
+  // "no distance and no duration at all" are different claims, and only the first was exempted.
+  // The RACE itself stays exempt: the ruling does not name it, and a race row is sized from the
+  // race distance rather than a training floor, so changing it is a separate question.
   'INV-PLAN-EMPTY-SESSION': plan => plan.weeks.filter(governed).flatMap(w =>
-    running(w).filter(({ session: s }) => !sizeExempt(w, s))
+    running(w).filter(({ session: s }) => s.type !== 'race')
       .filter(({ session: s }) => (s.duration_mins ?? 0) === 0 && (s.distance_km ?? 0) === 0)
       .map(({ day }) => ({ rule_id: 'INV-PLAN-EMPTY-SESSION', week: w.n, day, detail: 'zero distance and zero duration' }))),
 
@@ -571,7 +580,12 @@ const BATCH_7: Partial<Record<RuleId, Predicate>> = {
     if (!m.prep_time_status) out.push({ rule_id: 'INV-PLAN-PREP-TIME-STATUS-ANNOTATED', week: PLAN, day: null, detail: 'no prep_time_status' })
     // Two conditions, two details, so each can be shown to fire on its own (code review).
     if (m.prep_time_status === 'warned' && !m.prep_time_warning) out.push({ rule_id: 'INV-PLAN-PREP-TIME-STATUS-ANNOTATED', week: PLAN, day: null, detail: 'warned without its warning' })
-    else if (m.prep_time_status === 'warned' && !m.prep_time_alternatives) out.push({ rule_id: 'INV-PLAN-PREP-TIME-STATUS-ANNOTATED', week: PLAN, day: null, detail: 'warned without its alternatives' })
+    // 🔴 ADR027-B3-STRICT-01 / sitting B8 — AN EMPTY LIST IS NO ALTERNATIVES. `validatePlan` tests
+    // `!prep_time_alternatives`, and `[]` is truthy in JS, so a plan warned about its prep time
+    // with an EMPTY alternatives array satisfied the rule that exists to make sure the runner is
+    // offered a way forward. The board ruled it a defect. Same shape as `?? 0` standing in for a
+    // measurement: the field is present and says nothing.
+    else if (m.prep_time_status === 'warned' && !m.prep_time_alternatives?.length) out.push({ rule_id: 'INV-PLAN-PREP-TIME-STATUS-ANNOTATED', week: PLAN, day: null, detail: 'warned without its alternatives' })
     return out
   },
 
@@ -589,7 +603,6 @@ const BATCH_7: Partial<Record<RuleId, Predicate>> = {
     if (m.prep_time_status === 'warned' && m.difficulty_band !== 'very_demanding') f('warned plan not very demanding')
     if (m.compression_classification === 'constrained_by_inputs' && m.difficulty_band === 'comfortable') f('constrained plan reads comfortable')
     if ([m.long_run_shortfall_note, m.peak_shortfall_note, m.volume_shortfall_note].some(Boolean) && m.difficulty_band === 'comfortable') f('shortfall declared, reads comfortable')
-    // ⚠️ validatePlan checks `!prep_time_alternatives`, so an EMPTY list passes (arrays are truthy); copied, raised.
     return out
   },
 

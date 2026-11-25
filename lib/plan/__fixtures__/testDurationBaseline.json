@@ -214,6 +214,13 @@
       "title": "app/ lib/ components/ carry no position-derived week key outside the owner",
       "ms": 2526,
       "reason": "ADJUST-WEEK-COORD-01 (2026-11-21): a tree-wide source sweep for `getCurrentWeekIndex(...) + 1` used as a key, over every non-test file in app/, lib/ and components/. The cost is reading the tree, which is the point: ARCH-ENG-015's gate has to see code nobody touched. Allowed; if it grows, cache the file list rather than narrow the population."
+    },
+    {
+      "file": "lib/scorecard/scorecard.test.ts",
+      "title": "a planted STAMP (run-walk interval on a quality session) fires and is WORSE",
+      "ms": 1820,
+      "reason": "⚠️ NOT A SLOW TEST — 629 ms STANDALONE, measured twice. It crosses the line only under full-suite contention, and it crossed on the run that added `verifierStrict.test.ts` (ADR027-B3-STRICT-01): one more file of load tipped a borderline test over, which CLAUDE.md records as a known effect of adding a test file. Baselined at its in-suite figure because that is where the gate measures, with the standalone number here so nobody later reads this entry as a claim the test is heavy. ⚠️ Its siblings moved the other way on the same run (the 'planted FALSE NOTE' case 4,208 → 1,619 ms, 'no plan-read line is worse' 8,317 → 4,065 ms) — a full re-baseline was DECLINED for that reason: it would have written measurement noise into the register as fact, and five entries that merely dipped under the 1,000 ms reporting line would have been dropped.",
+      "budgetMs": 120000
     }
   ]
 }

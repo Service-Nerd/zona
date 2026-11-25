@@ -1172,10 +1172,18 @@ const dropDay = (k: string) => k.replace(/^([^|]+\|[^|]+)\|[^|]+\|/, '$1|-|')
  * `reach` is the arm that stops this register rotting:
  *   · `reached` — the corpus DOES produce the divergence. If it stops, the entry is stale or the
  *     corpus shrank, and either way the test fails rather than passing on a smaller world.
- *   · `latent` — the fix is correct and NO plan reaches it, with the measurement that says so.
+ *   · `latent` — the fix is correct and NOTHING here reaches it, with the measurement that says so.
  *     ⚠️ A `latent` entry that STARTS being reached also FAILS. That direction matters more than
  *     it looks: it is the moment a declared-harmless hole became a live one, and the repo's own
  *     record is that *"a declared limit with no live example is the dangerous kind"*.
+ *
+ * 🔴 `reach` IS ABOUT THIS CORPUS, WHICH IS NOT THE POPULATION THE BOARD MEASURED, and reading
+ * one as the other is the denominator error this repo keeps paying for. **This corpus contains
+ * ~100 DELIBERATELY BROKEN plans**, so a defect no real plan can produce is still reached here:
+ * B2 is "Latent (M3: 0 golden, 0 live)" in the sitting and fires **40×** in this file, because the
+ * mutation battery strips fields a generator never would. Both statements are true of different
+ * worlds. So `reach` records what THIS harness sees, and `why` carries the board's live
+ * measurement — a `reached` entry is NOT a claim that any runner has ever hit it.
  */
 interface StrictDivergence {
   /** The sitting row that ruled it, so the register points back at its authority. */
@@ -1188,6 +1196,18 @@ interface StrictDivergence {
 }
 
 const STRICT_DIVERGENCES: Record<string, StrictDivergence> = {
+  'INV-PLAN-EMPTY-SESSION': {
+    ruling: 'B2',
+    direction: 'stricter',
+    reach: 'reached',
+    why: 'A race-week easy run and a shakeout are exempt from §9\'s SIZE floor, and `validatePlan` runs the empty check inside that same loop, so an empty one passes. ⚠️ TWO POPULATIONS: the board measured it LATENT on real plans (M3: 0 golden, 0 live) and ruled it a defect anyway; it fires 40× HERE because the mutation battery strips fields no generator would. `reached` is this corpus, not a claim any runner hit it. The race itself stays exempt, which the ruling does not name.',
+  },
+  'INV-PLAN-PREP-TIME-STATUS-ANNOTATED': {
+    ruling: 'B8',
+    direction: 'stricter',
+    reach: 'latent',
+    why: '`validatePlan` tests `!prep_time_alternatives` and `[]` is truthy, so a plan warned about its prep time with an EMPTY alternatives list passes the rule that exists to offer the runner a way forward. Declared latent until measured: nothing in this corpus builds a warned plan with an empty list, because the producer either sets alternatives or does not warn.',
+  },
   'INV-PLAN-NO-INVENTED-AGE': {
     ruling: 'B7',
     direction: 'narrower',
