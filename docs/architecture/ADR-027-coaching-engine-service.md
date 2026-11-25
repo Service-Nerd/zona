@@ -38,7 +38,7 @@ paused: only defects that harm runners are fixed, each one added to the hotfix t
 | B2 L1 runner facts + profile | ✅ done; part 1 of the route adoption done | `ADR027-B2-PROFILE`, `ADR027-B2B-PROFILE`. Parts 2–4 of `ADR027-B2B-PROFILE-ADOPTION` land in B4 (founder) |
 | B3 step 1: rule catalogue (L2) | ✅ done | `ADR027-B3-CATALOGUE`, `lib/engine/catalogue/rules.ts`, 221 rules |
 | B3 step 2: independent verifier (L5) | 🟡 **207 of 221 rules ported**, each agreeing finding for finding with the old checker | `ADR027-B3-VERIFIER`, `lib/engine/verifier/` |
-| B3 step 2b: the board's strict readings | 🟡 **14 of 14 rows shipped**; C1, D2–D3 open, B10 blocked on the producer, B14 on a §117 reading | `ADR027-B3-STRICT-01`, `lib/engine/verifier/verifierStrict.test.ts` |
+| B3 step 2b: the board's strict readings | 🟡 **14 of 14 B rows + C1 shipped**; D2–D3 open, B10 blocked on the producer, B14 on a §117 reading, two of C1's seven named fields reclassified (below) | `ADR027-B3-STRICT-01`, `lib/engine/verifier/verifierStrict.test.ts` |
 | B3 step 3: nightly check of every live plan, observe-only | ✅ done 2026-11-25 | `ADR027-B3-SHADOW-01`, `lib/ops/verifierShadow.ts`, inside `/api/ops/plan-audit` |
 | B3 step 4: trigger catalogue (ARCH-ENG-018) + the event vocabulary (ARCH-ENG-022) | 🔲 not started | `ADR027-B3-REMAINING`; vocabulary folded in 2026-11-25 |
 | B3 exit: founder signs off the verifier replacing `validatePlan` as the gate | 🔲 | must name the 14 held rules (below) |
@@ -91,9 +91,102 @@ ranking fix genuinely reaching the fleet, 103 against 96 over the same 18 plans)
 Neither changes a code set, so the rule-id join is silent on both. `instance_delta_by_rule` lists only the rules that
 differ — 5 of 51 — so a doubling cannot hide inside a sum again.
 
+### C1 — the verifier reads the runner and the delivered sessions (shipped 2026-11-25)
+
+The sitting's C1 row: *"the verifier reads the RUNNER (L1 profile, request) and the DELIVERED sessions, never the
+plan's label for itself. Construction records (stored request, staged door, source base volume, start km) stay
+readable."* **Population counted from the code, not from the item** — 157 parsed predicates, and the seven fields the
+row names resolve to: level 9 rules · race distance 4 · injuries 2 · goal-from-meta 1 · peak `weekly_km` 3 ·
+`volume_profile` 7 · `peak_km_target` 1.
+
+**Built: five readings, one owner each** (`levelIntensity`, `levelStructural`, `raceKm`, `injuriesOf`, `deliveredKm`),
+because the meta chain was written out by hand in nine places — the `DELOAD-OWNER-01` shape. `checkerFitness`, the
+four-step fallback that both began and could end at the plan's own label, is deleted. **17 register entries** in
+`STRICT_DIVERGENCES`, 13 `reached` and 4 `latent`, each falsified.
+
+🔑 **ONE MEASUREMENT GOVERNS ALL OF IT: on the 37 VALID golden plans every C1 divergence is 0 gained and 0 lost.** A
+plan the engine produced agrees with itself, which is exactly why the old readings looked harmless. Every divergence
+number in the register comes from the mutation battery, which breaks a label away from its runner on purpose.
+
+📐 **Live fleet, re-measured through the step-3 shadow after the change (44 plans, 44 assessed):**
+
+| | before C1 | after C1 |
+|---|---|---|
+| Plans that would GAIN a code | 1 (all of it the level-mismatched plan) | **1 — the same plan**, so **still 0 comparable plans** |
+| Rules it gains on that plan | `QUALITY-PER-WEEK` | **+ `CATALOGUE-ELIGIBLE`, `STRUCTURED-SESSION-DURATION-COHERENT`** — all three level-dependent |
+| Plans that would LOSE a code | 0 | **0** |
+| Escalations · unverified | 0 · 0 | **0 · 0** |
+| Findings | 489 new / 487 old | **494 / 487** — the +5 is entirely that one plan |
+
+So C1 moves nothing on 43 of 44 live plans, and on the 44th it moves what `VERIFIER-STORED-LEVEL-01` already names.
+Read the other C1 readings on the fleet directly: race distance 0 divergences, injuries 0, goal 0, declared level 0,
+structural level 0; **5 of 80 peak weeks state a volume more than a kilometre from their placed sessions.**
+
+🔴 **THE DELIVERED SUM IS ROUNDED TO THE WHOLE KILOMETRE, AND THE FIRST CUT WAS NOT — IT COST A FINDING.** Unrounded,
+one live plan LOST `INV-PLAN-PEAK-IN-PEAK-PHASE`: its biggest week read 37.5 km instead of its stated 38, which moved
+the peak's share from 89.5% to 90.7% across §23's 10% inversion line. **No session changed.** That is
+`GOALPACE-5K-CLOCK-01`'s arithmetic (4.66% → 5.44% across a 5% line, no commit between) and it is not what C1 ruled. A
+week states its volume as an integer and `INV-PLAN-WEEKLY-KM-MATCHES-SESSIONS` already decides honesty at that grain
+(`Math.round`, ±1 km); at that grain the two readings coincide wherever the label agrees with the sessions and diverge
+exactly where it does not. `plans_lost` went 1 → **0**.
+
+⚠️ **TWO OF C1'S SEVEN NAMED FIELDS ARE NOT SELF-LABELS AND WERE NOT BUILT AS ONES.** Both are construction records in
+the same class as the stored request and the staged door the ruling itself keeps readable. Recorded here, in the
+predicates, and in the sitting's register row, and **routed back to the chair as a scope correction** rather than
+quietly dropped:
+
+- **`meta.volume_profile` (7 rules).** It is composed from SIX triggers, of which §23's delivered ratio is one, and
+  re-deriving it was already **measured and refused inside the engine on 2026-11-03: 3,544 of 17,200 sampled plans
+  pass §23 on their delivered weeks while being maintenance for one of the other five**, and would lose their
+  runner-facing `volume_constraint_note`. Worse, deriving the exemption from the delivered ratio makes
+  `INV-PLAN-PEAK-OVER-BASE` **unwakeable** — the rule fires on precisely the condition the derivation would read as
+  maintenance. 19 of 44 live plans are maintenance and **0 carry the label without its note**, so the one cheap
+  strengthening available (require the note) is latent. Filed for the board as a possible new rule: *a maintenance
+  claim must be justified by the runner's own facts*, which the profile can answer.
+- **`meta.peak_km_target` (1 rule).** §79's subject IS the target — *"an upward declaration never raises the peak
+  TARGET above the assessed band"* — so substituting the delivered peak asks a different question, one ADR-022
+  already governs with its curve-vs-delivered divergence declared. Measured: the delivered reading fires on **1 of 44
+  live plans, at 38.5 km against a 38 km beginner band**, a rounding-grade divergence and not a declaration defect.
+  The two LEVELS in that rule are C1's and did convert.
+
+⚠️ **Also named rather than converted: the ADR-022 curve family.** `DELOAD-IS-A-REDUCTION`, `BOUNCEBACK-BOUNDED`,
+`INJURY-CAP-DELIVERED`, `NOT-DETRAINING`, `PEAK-STEPBACK-VOLUME`, `PEAK-NOT-BELOW-START`, `RACE-NOT-VOLUME`,
+`FOUNDATION-BLOCK` and `GET-RUNNING-BUILD-RATIO` still read `w.weekly_km`, because **ADR-022 ratified `weekly_km` as
+the curve §2/§3/§12 enforce**, with the delivered divergence declared and bounded and fixed for injury runners only.
+Converting them would reverse a ruling rather than implement one. C1 named "peak `weekly_km` labels" and M7 measured
+peak weeks; the three §23/§46 peak-volume rules are what moved.
+
+🔴 **CODE REVIEW FOUND THREE, AND THE FIRST IS THE ONE THAT MATTERS: C1 WIDENS `VERIFIER-STORED-LEVEL-01` FROM 2
+RULES TO 9, AND INVERTS THE DIRECTION OF TWO OF THEM.** `storedPlanInput` always sets `input.fitness_level` from
+`meta.fitness_level`, `resolveLevels` lets that override win BOTH axes, and nothing reads
+`input.fitness_intensity_level` — so a runner at `{12 km/week, 6 km longest, 5yr+}` resolves **`beginner /
+intermediate` live and `beginner / beginner` through a stored plan** (probed). `INV-PLAN-QUALITY-NOT-ZERO` and
+`INV-PLAN-QUALITY-EXPECTED` both **EXEMPT** a beginner, so on the stored path they check LESS than the deleted
+`checkerFitness` did — the opposite of the `stricter` their register entries declare, **because those directions are
+measured in a harness that builds the profile from the row's own request.** 📐 Latent on the fleet: `plans_lost: 0`
+and `lost_by_rule: {}` across all 44 plans. ⚠️ **But the cut-over cannot run on a reading that is stricter in the
+harness and more lenient in production**, so `VERIFIER-STORED-LEVEL-01` is now marked a cut-over blocker and the
+register head scopes every level direction to its population.
+
+⚠️ **The second was a direction I had not worked out.** `INV-PLAN-PEAK-IN-PEAK-PHASE` is the one converted rule whose
+comparison spans the whole plan (`max` over every non-deload main week), so an unpriceable BASE week leaves it
+incomplete, and the first cut refused outright — turning a real, specific finding into a vague one. **Excluding the
+week is worse** (a lower `max` makes `peak >= max × 0.9` easier and HIDES an inversion), so neither reflex is right:
+an unknown week can only RAISE `max`, which can only make an inversion worse, so **a finding already demonstrated at
+the known maximum is reported, and only the absence of one is uncertain.** Four cases, both directions. The third was
+a comment stating §46's marathon floor as 52.6 km where 42.2 × 1.25 = 52.75.
+
+🔴 **AND B4'S REGISTER ENTRY NAMED THE WRONG FIELD, WHICH C1 FOUND BY NEEDING TO DISAGREE WITH IT.** It said the
+early-onset veto *"reads `profile.levels.intensity`, the assessed level"*. The code reads
+`profile.levels.assessed_intensity`, and the difference is the whole ruling: `levels.intensity` is
+`declared ?? assessedIntensity`, so it CARRIES the runner's own claim — the hole B4 closes. Every other level rule
+reads `levels.intensity` deliberately, because that is the level the planner builds at (§79: a declaration binds
+upward on intensity); §89 is the one veto a self-declaration must not unlock. Corrected.
+
 ### Where to pick up, in order
-1. **`ADR027-B3-STRICT-01`**: C1 (the self-label replacement), then D2/D3. B10 needs a `quality_pool_sizes` week key
-   from the producer; B14 needs the §117 reading.
+1. **`ADR027-B3-STRICT-01`**: D2/D3 (named parameters and rule data). ✅ C1 shipped 2026-11-25. B10 needs a
+   `quality_pool_sizes` week key from the producer; B14 needs the §117 reading; **C1's two reclassified fields need
+   the chair's word on the scope correction** (above), which blocks nothing.
 2. **The two port gaps above**, which the cut-over needs settled: `VERIFIER-RESHAPE-POLICY-01` and
    `VERIFIER-STORED-LEVEL-01`.
 3. **B3 step 4**: the trigger catalogue, with values unchanged (§124 Am. 1), **plus ARCH-ENG-022** — add `run_analysed` (§124 Am. 1 asked for it) and `run_arrived` with its match outcome; `run_logged` keeps its ratified meaning. Amended 2026-11-25 while the list was still only prose; the mechanical check is this step's.

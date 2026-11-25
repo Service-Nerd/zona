@@ -398,3 +398,246 @@ describe('B1 (second half) — a distance-only session on race eve is priced, no
     expect(findings(p, RULE), 'no easy pace to price it with').toEqual([])
   })
 })
+
+describe('C1 — the runner and the delivered sessions, never the plan\'s label for itself', () => {
+  // 🔑 WHY EVERY CASE HERE IS HAND-BUILT, AND WHY THE AGREEMENT HARNESS CANNOT STAND IN.
+  // On the 37 VALID golden plans every C1 divergence measures 0 gained and 0 lost — a plan the
+  // engine produced agrees with itself, which is the whole reason the old readings looked harmless.
+  // Every number in `STRICT_DIVERGENCES` comes from the mutation battery, and a mutation moves a
+  // label in whichever direction the battery happens to move it. These cases move it DELIBERATELY,
+  // in both directions, so the protective half is proven rather than inferred from a baseline.
+  //
+  // The readings are grouped as the ruling groups them — level, injuries, distance, goal, delivered
+  // volume — not per rule: after C1 there is one owner for each, so proving the owner proves its
+  // callers. Where a second rule shares an owner it is named in the register and not re-tested here.
+
+  /** A runner the assessment reads as experienced on both axes: high volume, a long recent run. */
+  const EXPERIENCED = { ...(INPUT as unknown as Record<string, unknown>),
+    current_weekly_km: 80, longest_recent_run_km: 32, training_age: '5yr+' } as unknown as GeneratorInput
+  /** A runner the assessment reads as a beginner: low volume, short longest run, new to it. */
+  const BEGINNER = { ...(INPUT as unknown as Record<string, unknown>),
+    current_weekly_km: 10, longest_recent_run_km: 5, training_age: '<6mo' } as unknown as GeneratorInput
+
+  const eightWeeks = (over: Record<string, unknown> = {}) =>
+    Array.from({ length: 8 }, (_, i) => ({
+      n: i + 1, date: '2026-11-23', label: `W${i + 1}`, phase: i < 4 ? 'base' : 'build', type: 'build',
+      weekly_km: 30, sessions: sessions({}), ...over,
+    }))
+  const planWeeks = (meta: Record<string, unknown>, weeks: unknown[]): Plan =>
+    ({ meta: { race_distance_km: 21.1, race_date: '2027-03-01', ...meta }, weeks } as unknown as Plan)
+
+  describe('the LEVEL', () => {
+    const RULE = 'INV-PLAN-QUALITY-NOT-ZERO'
+
+    it('🔴 a plan with no quality cannot excuse itself by CALLING its runner a beginner', () => {
+      // §110's exemption is for a beginner, and `validatePlan` asked the plan. A label is not a runner:
+      // this plan says `beginner` while the assessment reads the request as experienced, and the old
+      // reading let it through the quality floor on its own word.
+      const p = planWeeks({ fitness_level: 'beginner', fitness_intensity_level: 'beginner' }, eightWeeks())
+      expect(findings(p, RULE, EXPERIENCED).length, 'the runner is not a beginner, so §110 governs this plan').toBe(1)
+    })
+
+    it('and a plan that OVER-states its runner is no longer flagged on the strength of the label', () => {
+      // The converse, and the half a safety reading tends to leave untested: the label claims
+      // experienced, the runner is a beginner, and §110 genuinely does not ask this plan for quality.
+      const p = planWeeks({ fitness_level: 'experienced', fitness_intensity_level: 'experienced' }, eightWeeks())
+      expect(findings(p, RULE, BEGINNER), 'the runner IS a beginner, whatever the plan calls them').toEqual([])
+    })
+
+    it('🔴 and the rule that CATCHES a dishonest weekly label no longer prices the week at the label\'s pace', () => {
+      // `INV-PLAN-WEEKLY-KM-MATCHES-SESSIONS` converts time-anchored sessions at the level's fallback
+      // easy pace (8.0 / 7.0 / 6.25 min/km). Keyed by `meta.fitness_level`, a plan claiming to be
+      // experienced was priced at 6.25 — so the same 60 minutes became 9.6 km instead of 7.5 km and
+      // the week's stated 10 km matched. The rule whose entire job is to find a label that lies about
+      // the sessions was taking a different label's word for how to measure them.
+      const week = { n: 1, date: '2026-11-23', label: 'W1', phase: 'base', type: 'build', weekly_km: 10,
+        sessions: sessions({ tue: { type: 'easy', label: 'Easy run', duration_mins: 60 } as unknown as Session }) }
+      const p = planWeeks({ fitness_level: 'experienced' }, [week])
+      const f = findings(p, 'INV-PLAN-WEEKLY-KM-MATCHES-SESSIONS', BEGINNER)
+      expect(f.map(x => x.detail), '60 min at the beginner pace is 7.5 km, not the stated 10').toEqual(['10 km stated, 8 placed'])
+    })
+
+    it('and the same week is silent when the stated km matches the RUNNER\'s pace', () => {
+      const week = { n: 1, date: '2026-11-23', label: 'W1', phase: 'base', type: 'build', weekly_km: 8,
+        sessions: sessions({ tue: { type: 'easy', label: 'Easy run', duration_mins: 60 } as unknown as Session }) }
+      const p = planWeeks({ fitness_level: 'experienced' }, [week])
+      expect(findings(p, 'INV-PLAN-WEEKLY-KM-MATCHES-SESSIONS', BEGINNER)).toEqual([])
+    })
+  })
+
+  describe('the INJURY list', () => {
+    const RULE = 'INV-PLAN-RUNWALK-CAP-NOT-REDUCED'
+    const injured = { ...(INPUT as unknown as Record<string, unknown>), injury_history: ['knee'] } as unknown as GeneratorInput
+
+    it('🔴 a run-walk plan that LOST its injury stamp is still flagged for the runner\'s capped injury', () => {
+      // §117 Am. 4 is about the runner, and the old reading asked `meta.injury_history`. A plan with no
+      // stamp passed a safety rule about the person it was built for. ⚠️ This is the half the agreement
+      // corpus measures at 0 gained — its injury mutations rewrite the stamp, never the request — so
+      // without this case the fix would look like nothing but a loss of findings.
+      const p = planWeeks({ finish_goal_run_walk: true }, eightWeeks())
+      expect(findings(p, RULE, injured).length, 'the RUNNER has a knee history, stamp or no stamp').toBe(1)
+    })
+
+    it('and a stamp the runner does not have no longer fires it', () => {
+      const p = planWeeks({ finish_goal_run_walk: true, injury_history: ['knee'] }, eightWeeks())
+      expect(findings(p, RULE, INPUT), 'the request carries no injury, so §117 Am. 4 does not apply').toEqual([])
+    })
+  })
+
+  describe('the RACE DISTANCE', () => {
+    it('🔴 §93\'s scope is the runner\'s race, so a plan understating its distance no longer escapes it', () => {
+      // `INV-PLAN-PEAK-SPECIFICITY` only asks for race-specific peak work above 6 km, and the gate read
+      // `meta.race_distance_km`. A plan stamped 5 km was out of scope whatever race the runner entered.
+      // 📐 Declared LATENT in the register (no mutation moves the stamp across 6 km), so this is the
+      // only thing that reaches it.
+      const timeGoal = { ...(INPUT as unknown as Record<string, unknown>), goal: 'time_target', target_time: '1:45:00' } as unknown as GeneratorInput
+      const peak = { n: 1, date: '2026-11-23', label: 'W1', phase: 'peak', type: 'build', weekly_km: 40,
+        sessions: sessions({ thu: { type: 'quality', label: 'Threshold', duration_mins: 50, catalogue_id: 'threshold_continuous' } as unknown as Session }) }
+      const p = planWeeks({ race_distance_km: 5 }, [peak])
+      expect(findings(p, 'INV-PLAN-PEAK-SPECIFICITY', timeGoal).length, 'the runner is racing 21.1 km').toBe(1)
+    })
+
+    it('and a race session with no distance of its own falls back to the runner\'s race, not the stamp', () => {
+      // `INV-PLAN-RACE-NOTE-SCALES` prefers the race SESSION's distance — that is the delivered race and
+      // is right — and only falls back. Latent in the corpus because every race session carries one.
+      const race = { type: 'race', label: 'Race day', coach_notes: ['First 2.1 km at goal pace'] } as unknown as Session
+      const week = { n: 1, date: '2026-11-23', label: 'W1', phase: 'peak', type: 'race', weekly_km: 21, sessions: sessions({ sun: race }) }
+      const ok = planWeeks({ race_distance_km: 5 }, [week])
+      expect(findings(ok, 'INV-PLAN-RACE-NOTE-SCALES'), '2.1 km is the right opening fraction of 21.1 km').toEqual([])
+      const bad = { ...race, coach_notes: ['First 0.5 km at goal pace'] } as unknown as Session
+      const wrong = planWeeks({ race_distance_km: 5 }, [{ ...week, sessions: sessions({ sun: bad }) }])
+      expect(findings(wrong, 'INV-PLAN-RACE-NOTE-SCALES').length, '0.5 km would only be right for a 5 km race').toBe(1)
+    })
+  })
+
+  describe('the GOAL', () => {
+    const RULE = 'INV-PLAN-TIME-TARGET-QUALITY-FLOOR'
+
+    it('🔴 a time target with no time is a FINISH goal here too, as it is in every neighbouring rule', () => {
+      // `validatePlan` scoped this rule on the plan's own copy of the request, read RAW, where its
+      // neighbours all read `profile.race.goal`. So one plan was a time goal to this rule and a finish
+      // goal one rule away. The normalised goal is the only reading now.
+      const noTime = { ...(INPUT as unknown as Record<string, unknown>), goal: 'time_target' } as unknown as GeneratorInput
+      const weeks = eightWeeks({ weekly_km: 40 })
+      const p = planWeeks({ generator_input: { goal: 'time_target' } }, weeks)
+      expect(findings(p, RULE, noTime), 'a time target with no time normalises to a finish goal').toEqual([])
+    })
+
+    it('and a real time target still reaches the quality floor', () => {
+      const timed = { ...(INPUT as unknown as Record<string, unknown>), goal: 'time_target', target_time: '1:45:00' } as unknown as GeneratorInput
+      const p = planWeeks({}, eightWeeks({ weekly_km: 40 }))
+      expect(findings(p, RULE, timed).length, 'eight weeks, build phases, 40 km weeks, no quality').toBe(1)
+    })
+  })
+
+  describe('the DELIVERED volume', () => {
+    const RULE = 'INV-PLAN-PEAK-VOLUME-FLOOR-LONG-RACES'
+    // §46: a time-targeted marathon peaks at 1.25 × its distance — 52.75 km for a 42.2 km race, reported as 53.
+    const MARATHON = { ...(INPUT as unknown as Record<string, unknown>), race_distance_km: 42.2,
+      goal: 'time_target', target_time: '4:00:00', current_weekly_km: 50, longest_recent_run_km: 25 } as unknown as GeneratorInput
+    const peakWeek = (weeklyKm: number, sess: Record<string, unknown>) =>
+      ({ n: 1, date: '2026-11-23', label: 'W1', phase: 'peak', type: 'build', weekly_km: weeklyKm, sessions: sessions(sess) })
+    const run = (km: number) => ({ type: 'easy', label: 'Easy run', distance_km: km, duration_mins: km * 6 }) as unknown as Session
+
+    it('🔴 THE RULE THE SITTING NAMED: a peak week LABELLED above the floor whose sessions are under it', () => {
+      // A floor is a claim about what the runner runs. Stated 60 km clears §46's 52.6; the placed
+      // sessions add to 30, and the old reading passed the plan on its own label.
+      const p = planWeeks({ race_distance_km: 42.2 }, [peakWeek(60, { sat: run(20), sun: run(10) })])
+      expect(findings(p, RULE, MARATHON).map(f => f.detail)).toEqual(['peak 30 km delivered under 53 km'])
+    })
+
+    it('and a peak week whose sessions clear the floor while its LABEL understates is silent', () => {
+      // The converse: the label says 20 km, the sessions add to 55. The runner gets §46's volume, so
+      // the rule has nothing to say — and the old reading would have flagged it.
+      const p = planWeeks({ race_distance_km: 42.2 }, [peakWeek(20, { sat: run(35), sun: run(20) })])
+      expect(findings(p, RULE, MARATHON)).toEqual([])
+    })
+
+    it('🔴 and a peak week whose sessions cannot be priced is UNVERIFIED, never zero', () => {
+      // `?? 0` on a floor reads as "the runner ran nothing", which FIRES — and on a ratio it divides by
+      // zero. A session with neither a distance nor a duration makes the rule decline instead (B5's
+      // ruling, carried into every delivered reading).
+      const naked = { type: 'easy', label: 'Easy run' } as unknown as Session
+      const p = planWeeks({ race_distance_km: 42.2 }, [peakWeek(60, { sat: run(20), sun: naked })])
+      const f = findings(p, RULE, MARATHON)
+      expect(f.length).toBe(1)
+      expect(f[0].detail).toMatch(/^unverified: /)
+    })
+
+    it('🔴 and the delivered sum is read at the WHOLE KILOMETRE, so a threshold case does not flip on 0.5 km', () => {
+      // THIS IS THE LIVE PLAN, REBUILT. §23's `INV-PLAN-PEAK-IN-PEAK-PHASE` allows the peak phase to sit
+      // within PEAK_INVERSION_MATERIAL_PCT (10%) of the plan's biggest week. One live plan's biggest week
+      // states 38 km and its sessions add to 37.5, which moves its peak's share from 34/38 = 89.5% to
+      // 34/37.5 = 90.7% — across the 10% line, with NO SESSION CHANGING. Unrounded, the verifier stopped
+      // reporting a finding the old checker makes (`plans_lost` 1); rounded to the grain the week states
+      // its volume in, and that `INV-PLAN-WEEKLY-KM-MATCHES-SESSIONS` already judges honesty at, the two
+      // readings agree. ⚠️ Not cosmetic, and not a tolerance: it is the difference between measuring the
+      // sessions and re-deciding a threshold.
+      const run2 = (km: number) => ({ type: 'easy', label: 'Easy run', distance_km: km, duration_mins: km * 6 }) as unknown as Session
+      const week = (n: number, phase: string, label: number, sess: Record<string, unknown>) =>
+        ({ n, date: '2026-11-23', label: `W${n}`, phase, type: 'build', weekly_km: label, sessions: sessions(sess) })
+      const p = planWeeks({ race_distance_km: 5 }, [
+        // 20 + 17.5 = 37.5 placed, stated 38 — inside WEEKLY-KM-MATCHES-SESSIONS' ±1 km, so the label is honest.
+        week(1, 'base', 38, { sat: run2(20), sun: run2(17.5) }),
+        week(2, 'peak', 34, { sat: run2(20), sun: run2(14) }),
+      ])
+      expect(findings(p, 'INV-PLAN-PEAK-IN-PEAK-PHASE').map(f => f.week),
+        '34 of 38 is 89.5%, under §23\'s 90% — the same verdict the old checker reaches').toEqual([1])
+      expect(findings(p, 'INV-PLAN-WEEKLY-KM-MATCHES-SESSIONS'),
+        'and the week\'s own label is honest, so nothing says otherwise').toEqual([])
+    })
+
+    describe('an unpriceable week, where the rule prices EVERY main week', () => {
+      // 🔑 `INV-PLAN-PEAK-IN-PEAK-PHASE` is the one converted rule whose comparison spans the whole plan
+      // (`max` over every non-deload main week), so an unpriceable BASE week leaves it incomplete. Code
+      // review (2026-11-25) read the first cut as over-strict — it refused outright, turning a real
+      // finding into a vague one. The direction decides it: an unknown week can only RAISE `max`, which
+      // can only make an inversion WORSE, so a finding already demonstrated is kept and only an absence
+      // of one is uncertain. ⚠️ Excluding the week instead would be the unsafe direction, because a lower
+      // `max` makes `peak >= max × 0.9` easier and HIDES an inversion.
+      const run3 = (km: number) => ({ type: 'easy', label: 'Easy run', distance_km: km, duration_mins: km * 6 }) as unknown as Session
+      const naked3 = { type: 'easy', label: 'Easy run' } as unknown as Session
+      const wk = (n: number, phase: string, sess: Record<string, unknown>) =>
+        ({ n, date: '2026-11-23', label: `W${n}`, phase, type: 'build', weekly_km: 30, sessions: sessions(sess) })
+      const RULE2 = 'INV-PLAN-PEAK-IN-PEAK-PHASE'
+
+      it('🔴 a finding demonstrated at the KNOWN maximum survives an unpriceable base week', () => {
+        const p = planWeeks({ race_distance_km: 5 }, [
+          wk(1, 'base', { sat: run3(20), sun: run3(18) }),          // 38 known
+          wk(2, 'base', { sat: run3(10), sun: naked3 }),            // unpriceable
+          wk(3, 'peak', { sat: run3(20), sun: run3(14) }),          // 34 — 89.5% of 38
+        ])
+        const f = findings(p, RULE2)
+        expect(f.map(x => x.detail), 'the inversion is already proved without the unknown week').toEqual(['peak phase short of the plan max'])
+        expect(f.map(x => x.week)).toEqual([1])
+      })
+
+      it('🔴 but NO finding at the known maximum is UNVERIFIED, never a pass', () => {
+        const p = planWeeks({ race_distance_km: 5 }, [
+          wk(1, 'base', { sat: run3(10), sun: run3(10) }),          // 20 known
+          wk(2, 'base', { sat: run3(10), sun: naked3 }),            // unpriceable — could be the real max
+          wk(3, 'peak', { sat: run3(20), sun: run3(14) }),          // 34, clears 20 easily
+        ])
+        const f = findings(p, RULE2)
+        expect(f.length, 'the unknown week could hold a higher max and create an inversion').toBe(1)
+        expect(f[0].detail).toMatch(/^unverified: /)
+      })
+
+      it('and an unpriceable PEAK week refuses immediately — it is one side of the comparison', () => {
+        const p = planWeeks({ race_distance_km: 5 }, [
+          wk(1, 'base', { sat: run3(20), sun: run3(18) }),
+          wk(2, 'peak', { sat: run3(20), sun: naked3 }),
+        ])
+        expect(findings(p, RULE2)[0]?.detail).toMatch(/^unverified: /)
+      })
+
+      it('and a fully priceable plan with no inversion is silent, so the refusal is not the default', () => {
+        const p = planWeeks({ race_distance_km: 5 }, [
+          wk(1, 'base', { sat: run3(10), sun: run3(10) }),
+          wk(2, 'peak', { sat: run3(20), sun: run3(14) }),
+        ])
+        expect(findings(p, RULE2)).toEqual([])
+      })
+    })
+  })
+})

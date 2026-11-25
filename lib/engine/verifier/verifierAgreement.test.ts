@@ -1203,6 +1203,126 @@ interface StrictDivergence {
 }
 
 const STRICT_DIVERGENCES: Record<string, StrictDivergence> = {
+  // ─── C1: THE RUNNER AND THE DELIVERED SESSIONS, NEVER THE PLAN'S LABEL FOR ITSELF ─────────────
+  //
+  // 🔑 ONE MEASUREMENT GOVERNS ALL SEVENTEEN ENTRIES BELOW, AND IT IS THE REASON THEY ARE SAFE:
+  // on the **37 VALID golden plans** every one of these divergences is **0 gained, 0 lost**. A plan
+  // the engine actually produced agrees with itself, so the readings coincide; every number quoted
+  // below comes from the MUTATION battery, which breaks a label away from its runner or its sessions
+  // on purpose. `reached` describes this harness, never a runner — and the live fleet says the same
+  // (2026-11-25, 44 stored plans: distance 0, injuries 0, goal 0, declared level 0, intensity level
+  // 1 — the one plan `VERIFIER-STORED-LEVEL-01` already names — and 5 of 80 peak weeks whose label
+  // differs from their placed sessions by more than a kilometre).
+  //
+  // 🔴 AND EVERY `direction` ON A LEVEL ENTRY BELOW IS MEASURED IN *THIS* HARNESS, WHICH BUILDS THE
+  // PROFILE FROM THE ROW'S OWN `GeneratorInput`. THE STORED-PLAN PATH INVERTS SOME OF THEM, and that is
+  // code review's finding, not a prediction: `storedPlanInput` always sets `input.fitness_level` from
+  // `meta.fitness_level`, `resolveLevels` lets that override win BOTH axes, and nothing reads
+  // `input.fitness_intensity_level` — so a runner at `{12 km/wk, 6 km longest, 5yr+}` resolves
+  // `beginner / intermediate` live and `beginner / beginner` through a stored plan (probed, 2026-11-25).
+  // `INV-PLAN-QUALITY-NOT-ZERO` and `INV-PLAN-QUALITY-EXPECTED` both EXEMPT a beginner, so on that path
+  // they check LESS than the deleted `checkerFitness` did — the opposite of the `stricter` each declares
+  // here. ⚠️ THE CAUSE IS `VERIFIER-STORED-LEVEL-01`, AND C1 WIDENS IT FROM 2 RULES TO 9: it is a
+  // cut-over blocker for that reason and the item says so. 📐 Latent on the fleet today — the step-3
+  // shadow reports `plans_lost: 0` and `lost_by_rule: {}` over all 44 plans, and flags the one
+  // level-mismatched plan whichever way it leans — but the claim is scoped here rather than left to read
+  // as universal, because a direction measured in one population is a claim about that population.
+  'INV-PLAN-PEAK-OVER-BASE': {
+    ruling: 'C1',
+    direction: 'both',
+    reach: 'reached',
+    why: '§23 compares peak volume with week 1\'s, and `validatePlan` read both ends off `w.weekly_km` — the plan\'s LABEL for a week\'s volume, where `INV-PLAN-WEEKLY-KM-MATCHES-SESSIONS` exists precisely because the label and the placed sessions can differ. Both ends are now `deliveredKm`. 📐 122 gained / 46 lost across the battery, 0 and 0 on the 37 valid plans. `both` is arithmetic, not a hedge: the ratio has a label on each end, so moving to delivered can raise it or lower it depending on which week the plan over-states. ⚠️ An unpriceable week is UNVERIFIED, not 0 — `?? 0` on a RATIO would read as "peak ran no distance" and fire, or as "week 1 ran none" and divide by zero.',
+  },
+  'INV-PLAN-PEAK-VOLUME-FLOOR-LONG-RACES': {
+    ruling: 'C1',
+    direction: 'both',
+    reach: 'reached',
+    why: 'THE RULE THE SITTING NAMED (M7: 6 peak weeks in the golden corpus state a km that differs from their sessions). §46 is a FLOOR — "a time-targeted marathon or ultra peaks at or above its distance\'s floor" — so a peak whose LABEL clears it while its sessions do not was passing a claim about volume the runner never ran. Now `deliveredKm`. 📐 8 gained / 6 lost in the battery, 0 and 0 on the valid plans; 5 of 80 peak weeks on the live fleet differ by over a kilometre. The old NaN guard (`!Number.isFinite(weekly_km)` → throw) is replaced by `deliveredKmAll`\'s, which refuses a week whose SESSIONS cannot be priced — a strictly larger set, and silence on a floor reads as "satisfied".',
+  },
+  'INV-PLAN-PEAK-IN-PEAK-PHASE': {
+    ruling: 'C1',
+    direction: 'both',
+    reach: 'reached',
+    why: '"Is the runner\'s biggest week inside the peak phase" is a question about what they run, and `validatePlan` answered it by comparing one label with another. Now every week\'s volume is its placed sessions. 📐 THE LARGEST NUMBER IN THIS REGISTER — 345 gained / 215 lost — and the reason is the corpus, not the fix: the battery\'s volume mutations (invert the curve, make every week a peak, strip a session) move a week\'s LABEL and its SESSIONS independently, so on a deliberately-broken plan the two readings disagree almost everywhere. On the 37 valid plans it is 0 and 0, with the rule firing 3× on each side. ⚠️ `volume_profile` still sets the severity and is NOT converted: see `levelIntensity`\'s note for the measurement that refused it.',
+  },
+  'INV-PLAN-QUALITY-NOT-ZERO': {
+    ruling: 'C1',
+    direction: 'stricter',
+    reach: 'reached',
+    why: '§110\'s "non-beginner" test read `meta.fitness_intensity_level ?? meta.fitness_level`, so a plan could exempt itself from the quality floor by describing its runner as a beginner. Now `profile.levels.intensity` — the level the planner builds at (§79: a declaration binds upward on intensity). 📐 6 gained, 0 lost; 0 on the valid plans. `stricter` and one-directional IN THIS HARNESS: a mutation can only lower the label here, and the exemption is what that buys. ⚠️ NOT one-directional on the stored-plan path, where the level collapses the other way and this rule stops checking a plan the old reading checked — see the register head.',
+  },
+  'INV-PLAN-CATALOGUE-ELIGIBLE': {
+    ruling: 'C1',
+    direction: 'both',
+    reach: 'reached',
+    why: 'Row eligibility is a band around the runner\'s level, and the level came from the plan\'s own meta with a `?? \'beginner\'` default — so a plan that lost its stamp was judged against the narrowest band in the catalogue, and one that over-stated its runner was judged against the widest. Now `profile.levels.intensity`. 📐 36 gained / 35 lost, and the near-symmetry is the shape of a BAND read rather than a threshold: a wrong level moves both edges, so some rows fall out of eligibility and others fall in. 0 and 0 on the valid plans.',
+  },
+  'INV-PLAN-GOAL-PACE-SHAPE': {
+    ruling: 'C1',
+    direction: 'narrower',
+    reach: 'reached',
+    why: '§22 Am. 3\'s scope is "a 5K time goal, or a BEGINNER\'s 10K", and the beginner test was the plan\'s label for its runner (with the same `?? \'beginner\'` default). Now the runner\'s intensity level. 📐 2 lost, 0 gained; 0 on the valid plans. `narrower` here because the only way the label can change this verdict is by claiming beginner on a 10K and pulling the plan INTO scope — which is what the battery does.',
+  },
+  'INV-PLAN-RACE-SPECIFIC-VARIETY': {
+    ruling: 'C1',
+    direction: 'both',
+    reach: 'reached',
+    why: 'The level decided whether an ALTERNATIVE race-specific row exists for this runner, through `validatePlan`\'s four-step fallback `meta.fitness_intensity_level ?? input.fitness_intensity_level ?? input.fitness_level ?? meta.fitness_level` — which both starts and can end at the plan\'s own label. The helper is deleted; the two rules that used it read `profile.levels.intensity`. 📐 4 gained / 2 lost, 0 and 0 on the valid plans. `both`, because the level gates a catalogue band: a wrong level can invent an alternative row or hide the only one.',
+  },
+  'INV-PLAN-PEAK-RACE-SPECIFIC-REACHED': {
+    ruling: 'C1',
+    direction: 'both',
+    reach: 'latent',
+    why: 'The second caller of the deleted four-step `checkerFitness`, converted with it. 📐 LATENT, MEASURED: 0 divergences in either direction across the whole battery, because the rule only counts SURVIVING rows when a goal anchor is withheld, and the level narrows that count only at the edges of the band. Declared `both` for the direction it will diverge in once a case reaches it; the reading is proven directly in verifierStrict.test.ts.',
+  },
+  'INV-PLAN-STRUCTURED-SESSION-DURATION-COHERENT': {
+    ruling: 'C1',
+    direction: 'both',
+    reach: 'reached',
+    why: 'The progressive tempo\'s EXPECTED main-set minutes are keyed by level (`PROGRESSIVE_TEMPO_MAIN_MINS[level][phase]`), and the key was the plan\'s label for its runner — so a mislabelled plan was checked against the wrong expected duration, in whichever direction the label was wrong. Now `profile.levels.intensity`. 📐 18 gained / 2 lost, 0 and 0 on the valid plans.',
+  },
+  'INV-PLAN-WEEKLY-KM-MATCHES-SESSIONS': {
+    ruling: 'C1',
+    direction: 'narrower',
+    reach: 'reached',
+    why: '🔑 THE RULE WHOSE WHOLE JOB IS TO CATCH A DISHONEST LABEL WAS PRICING THE SESSIONS AT A PACE IT TOOK FROM A LABEL. Its fallback easy pace is keyed by level, and the key was `meta.fitness_level`; a plan that over-states its runner was priced at a FASTER easy pace, so its time-anchored sessions converted to more kilometres and the comparison came out wrong in the plan\'s own favour. Now the runner\'s STRUCTURAL level — the axis the planner\'s own `PACE_GUIDE` fallback is keyed by. The delivered sum also moves to `deliveredKm`, the one owner the peak rules read, so "placed" cannot come to mean two things. 📐 46 lost, 0 gained, all on the two `declared level buys tonnage` cases, where the mutation raises the label and the old checker then invented a mismatch on every week of a 21- and a 25-week plan. 0 on the valid plans.',
+  },
+  'INV-PLAN-USER-LEVEL-NO-UPWARD-TONNAGE': {
+    ruling: 'C1',
+    direction: 'both',
+    reach: 'reached',
+    why: '§79\'s rule compared three self-labels: `meta.fitness_level_declared`, `meta.fitness_level` and `meta.peak_km_target`, with the band keyed by `meta.race_distance_km`. The two LEVELS and the distance are now the runner\'s (`levels.declared`, `levels.structural`, `profile.race.distance_km`), so a plan can no longer escape the rule by not stamping the declaration it was built from. 📐 7 gained / 14 lost, 0 and 0 on the valid plans. ⚠️ `peak_km_target` IS DELIBERATELY STILL READ, and that is the decision, not an oversight: §79\'s subject is the TARGET — "a declaration never raises the peak target above the assessed band" — so substituting the delivered peak asks a different question, one ADR-022 already governs with its curve-vs-delivered divergence declared and bounded. Measured on the live fleet: the delivered reading fires on 1 of 44 plans, at 38.5 km against a 38 km beginner band, which is a rounding-grade §52 divergence and not a declaration defect. Recorded in the predicate, and routed back to the chair rather than built.',
+  },
+  'INV-PLAN-RUNWALK-CAP-NOT-REDUCED': {
+    ruling: 'C1',
+    direction: 'narrower',
+    reach: 'reached',
+    why: '§117 Am. 4 asks whether THE RUNNER has a volume-capped injury, and `validatePlan` asked the plan\'s stamped `meta.injury_history` — so a plan that lost the stamp passed a safety rule about the runner it was built for. Now `profile.injuries`. 📐 16 lost, 0 gained, every one on a mutation that rewrites the stamp; 0 on the valid plans. ⚠️ `narrower` reads backwards for a safety rule and the measurement is honest about it: the battery\'s injury mutations ADD a capped chip to the plan\'s stamp without touching the request, so the only half this corpus reaches is the one that reports LESS. The protective half — a real injured runner whose plan lost its stamp — is proven directly in verifierStrict.test.ts.',
+  },
+  'INV-PLAN-LR-SHORTFALL-CAUSE': {
+    ruling: 'C1',
+    direction: 'both',
+    reach: 'reached',
+    why: '§80 Am. 1 checks whether a note blaming weekly volume is honest, and both of its arms read the plan\'s description of its runner: the injury list from `meta.injury_history` and the race distance from `meta.race_distance_km` (which sets the long-run minute cap). Both are the runner\'s now. 📐 29 gained / 8 lost, 0 and 0 on the valid plans. `both`, because the distance moves a CAP: a mis-stamped distance can put the long run at its ceiling or well under it.',
+  },
+  'INV-PLAN-RACE-NOTE-SCALES': {
+    ruling: 'C1',
+    direction: 'both',
+    reach: 'latent',
+    why: 'The opening-pace note is checked against the race\'s distance, taken from the race SESSION first — which is the delivered race and stays — and from `meta.race_distance_km` only as a fallback. That fallback is the runner\'s race now. 📐 LATENT, MEASURED: 0 divergences, because every race session in this corpus carries its own `distance_km`, so the fallback is never reached. Declared `both` for the direction it will take when a race session loses its distance.',
+  },
+  'INV-PLAN-PEAK-SPECIFICITY': {
+    ruling: 'C1',
+    direction: 'both',
+    reach: 'latent',
+    why: '§93\'s scope gate is "a time goal over 6 km", and the distance came from `meta.race_distance_km` while the neighbouring rules in the same batch read the request. Now the runner\'s. 📐 LATENT, MEASURED: 0 divergences — no mutation moves the stamped distance across the 6 km line. `both` is the direction it will diverge in: a mis-stamped distance can scope a plan in or out.',
+  },
+  'INV-PLAN-TIME-TARGET-QUALITY-FLOOR': {
+    ruling: 'C1',
+    direction: 'narrower',
+    reach: 'latent',
+    why: '`validatePlan` scoped this rule on `meta.generator_input?.goal` — the plan\'s copy of the request, read RAW — before falling back to the normalised goal, where every neighbouring rule reads `profile.race.goal`. So a time target with no time was IN scope here and OUT of scope one rule away: one goal, two answers. Now the normalised goal only. 📐 LATENT, MEASURED: 0 divergences, because the golden corpus\'s no-time rows carry no persisted `generator_input.goal` that disagrees with the normalised one. `narrower` is the only direction available — normalisation can downgrade a time target to a finish goal, never the reverse — so this can only ever scope a plan OUT.',
+  },
   'INV-PLAN-PEAK-LR-ALTERNATION': {
     ruling: 'B15',
     direction: 'narrower',
@@ -1240,10 +1360,10 @@ const STRICT_DIVERGENCES: Record<string, StrictDivergence> = {
     why: '`validatePlan` decided "this is hard work, so an aerobic cue is wrong on it" from the LABEL (`vo2max`, `vo2 max`, `-pace `, `mp `, `mp.`) — D-17\'s forbidden shape, since the enricher may rewrite a display string and change the check with no session changing. Now through `classifyStimulus` (the stamped training effect) and `workClassFor` (the catalogue row\'s category), which answer different questions and between them reach a goal-paced session whichever the producer stamped. The third loop in this rule already routed through `classifyStimulus`; this loop was the outlier. 📐 MEASURED IN BOTH POPULATIONS, because the two disagree: on REAL generated plans the structural reading is strictly BROADER — it catches two hill-rep sessions at vo2max stimulus that the label test missed, where an aerobic cue would plainly be wrong. Here it shows 60 LOSSES, all mutated sessions whose only evidence of being goal-paced was the token "MP " in a label, which is precisely what INV-CLASS forbids relying on. 🔻 `classifyStimulus`\'s own label fallback has no "mp" token — a gap in the OWNER, named rather than patched here, since it is shared by many rules.',
   },
   'INV-PLAN-QUALITY-EXPECTED': {
-    ruling: 'B11',
-    direction: 'narrower',
-    reach: 'latent',
-    why: '⚠️ `narrower`, which is the opposite of how a "stricter reading" sounds: an Achilles match makes the rule EXIT (the runner is exempt from the quality expectation), and `hasInjuryKeyword` matches strictly more spellings than `includes`, so more runners are exempted and FEWER findings are reported. 📐 AND FOR THIS KEYWORD IT CHANGES NO VERDICT ON ANY REALISTIC CHIP: the two readings differ only through the owner\'s reverse arm (a chip SHORTER than \'achilles\'), which the product never sends — my first test used `Achilles_Tendinopathy` and the mutation stayed green, because the underscore follows the word and a substring still matches. The fix is right as ROUTING (if the chip vocabulary changes, the owner follows and a copy would not) and behaviourally latent, which verifierStrict.test.ts states. The gate matched `i.toLowerCase().includes(\'achilles\')` against free text, so it turned on how the chip happened to be spelled. Now through `hasInjuryKeyword`, the chip owner, which normalises underscores and whitespace and matches both ways (INJURY-GUARD-PREDICATE-01: a copied injury predicate drifted from its owner for nine days). 🔻 The LEVEL is still a self-label and is deliberately left — that is C1\'s ruling, scheduled as its own wave, not a B-row fix to do piecemeal.',
+    ruling: 'B11 + C1',
+    direction: 'stricter',
+    reach: 'reached',
+    why: '⚠️ `narrower`, which is the opposite of how a "stricter reading" sounds: an Achilles match makes the rule EXIT (the runner is exempt from the quality expectation), and `hasInjuryKeyword` matches strictly more spellings than `includes`, so more runners are exempted and FEWER findings are reported. 📐 AND FOR THIS KEYWORD IT CHANGES NO VERDICT ON ANY REALISTIC CHIP: the two readings differ only through the owner\'s reverse arm (a chip SHORTER than \'achilles\'), which the product never sends — my first test used `Achilles_Tendinopathy` and the mutation stayed green, because the underscore follows the word and a substring still matches. The fix is right as ROUTING (if the chip vocabulary changes, the owner follows and a copy would not) and behaviourally latent, which verifierStrict.test.ts states. The gate matched `i.toLowerCase().includes(\'achilles\')` against free text, so it turned on how the chip happened to be spelled. Now through `hasInjuryKeyword`, the chip owner, which normalises underscores and whitespace and matches both ways (INJURY-GUARD-PREDICATE-01: a copied injury predicate drifted from its owner for nine days). ✅ AND THE LEVEL IS THE RUNNER\'S NOW (C1, this wave): `meta.fitness_intensity_level ?? meta.fitness_level` was the plan\'s description of the runner §1\'s quality expectation is about, so a plan could excuse itself by calling its runner a beginner. 📐 THE DIRECTION FLIPPED WHEN C1 LANDED AND THE REGISTER CAUGHT IT: B11\'s Achilles half can only ever report LESS (an Achilles match EXITS the rule) and measured 0 either way, so the entry read `narrower`/`latent`; C1\'s level read is one-directional the other way — the label can only ever buy an exemption here — and it GAINS 38. `stricter`/`reached` now, with B11\'s half still latent in this corpus and proven directly in verifierStrict.test.ts. 0 gained and 0 lost on the 37 valid plans. ⚠️ `stricter` IS THIS HARNESS\'S DIRECTION: the rule exempts a beginner, so the stored-plan level collapse inverts it — see the register head.',
   },
   'INV-MAINT-INJURY-EASY-ONLY': {
     ruling: 'B11',
@@ -1267,7 +1387,7 @@ const STRICT_DIVERGENCES: Record<string, StrictDivergence> = {
     ruling: 'B4',
     direction: 'narrower',
     reach: 'reached',
-    why: '`validatePlan` resolved the level as `meta.fitness_intensity_level ?? input.user_declared_level ?? meta.fitness_level` — a chain of SELF-LABELS whose first link a beginner plan leaves unset, so a runner who DECLARED a higher level and was ASSESSED beginner passed §89\'s beginner veto on their own claim. Now it reads `profile.levels.intensity`, the assessed level: a declaration binds structure downward only and cannot promote a runner past an assessment. 🔴 `narrower` AND THAT IS THE UNCOMFORTABLE MEASUREMENT: 8 losses, **0 gains**. This corpus never builds the case the fix exists for — a runner who DECLARED a higher level, was ASSESSED beginner, and got `early_quality_onset` stamped — so the only half this harness can see is the half that reports LESS. The protective half is proven directly in verifierStrict.test.ts instead, and that asymmetry is stated here rather than left to look like a clean win. The loss is the ruling working rather than a regression: the `early onset for an otherwise-ready beginner` mutation stamps a beginner LABEL on a plan whose runner is assessed otherwise, so the old veto fired on the label and the new reading correctly finds that runner ready. A plan whose label disagrees with its runner is a self-consistency defect and belongs to C1\'s rule, not to §89\'s readiness gate.',
+    why: '`validatePlan` resolved the level as `meta.fitness_intensity_level ?? input.user_declared_level ?? meta.fitness_level` — a chain of SELF-LABELS whose first link a beginner plan leaves unset, so a runner who DECLARED a higher level and was ASSESSED beginner passed §89\'s beginner veto on their own claim. Now it reads `profile.levels.assessed_intensity`: a declaration binds structure downward only and cannot promote a runner past an assessment. ⚠️ `assessed_intensity`, NOT `levels.intensity` — this sentence named the wrong field until C1 (2026-11-25), and the difference is the whole ruling: `levels.intensity` is `declared ?? assessedIntensity`, i.e. it CARRIES the runner\'s own claim, which is the hole B4 closes. Every other level rule reads `levels.intensity` deliberately, because that is the level the planner builds at; §89 is the one veto a self-declaration must not unlock (Willy, binding). 🔴 `narrower` AND THAT IS THE UNCOMFORTABLE MEASUREMENT: 8 losses, **0 gains**. This corpus never builds the case the fix exists for — a runner who DECLARED a higher level, was ASSESSED beginner, and got `early_quality_onset` stamped — so the only half this harness can see is the half that reports LESS. The protective half is proven directly in verifierStrict.test.ts instead, and that asymmetry is stated here rather than left to look like a clean win. The loss is the ruling working rather than a regression: the `early onset for an otherwise-ready beginner` mutation stamps a beginner LABEL on a plan whose runner is assessed otherwise, so the old veto fired on the label and the new reading correctly finds that runner ready. A plan whose label disagrees with its runner is a self-consistency defect and belongs to C1\'s rule, not to §89\'s readiness gate.',
   },
   'INV-PLAN-EMPTY-SESSION': {
     ruling: 'B2',

@@ -111,6 +111,94 @@ function easyMinPerKm(plan: Plan): number | null {
 /** §9's session-size rules do not govern the race itself, a race-week easy run, or a shakeout. */
 const sizeExempt = (w: Week, s: Session) => s.type === 'race' || (w.type === 'race' && s.type === 'easy') || isShakeout(s)
 
+// ─── ADR027-B3-STRICT-01 / sitting C1 — THE RUNNER, NEVER THE PLAN'S LABEL FOR ITSELF ──────────
+//
+// `validatePlan` resolves the runner's level, goal, race distance and injury list from `plan.meta`
+// — the plan's own description of the runner it was built for. Checking a plan against the label
+// the plan gave itself is circular: a plan whose label disagrees with its runner passes, and the
+// disagreement is the defect. The board ruled (C1, McMillan's order) that the verifier reads the
+// RUNNER (the L1 profile, the request) and the DELIVERED sessions instead.
+//
+// 🔑 WHICH LEVEL, AND WHY IT IS NOT `assessed_intensity` EXCEPT ONCE. `levels.intensity` is
+// `declared ?? assessedIntensity` — the level the PLANNER builds at, because §79 lets a
+// declaration bind UPWARD on intensity. That is the right reading for every rule that asks "what
+// shape should this plan have for this runner", which is all of them bar one. B4's
+// `INV-PLAN-EARLY-ONSET-GATED` reads `levels.assessed_intensity` deliberately and separately:
+// §89 is a readiness VETO on tissue, and a self-declaration must not unlock a veto (Willy,
+// binding, same sitting). The seam is the veto, not the field.
+//
+// ⚠️ NOT a self-label, and NOT converted — both measured, both recorded:
+//   · `meta.volume_profile` (7 rules). Composed from SIX triggers, of which §23's delivered ratio
+//     is one; re-deriving it was measured and refused in the engine on 2026-11-03 (3,544 of 17,200
+//     sampled plans pass §23 while being maintenance for another trigger, and would lose their
+//     runner-facing `volume_constraint_note`). And deriving the exemption from the delivered ratio
+//     would make `INV-PLAN-PEAK-OVER-BASE` unwakeable — the rule fires on exactly the condition
+//     the derivation would read as "maintenance". A construction record, like the stored request.
+//   · `meta.peak_km_target` (1 rule). §79's subject IS the target: "an upward declaration never
+//     raises the peak TARGET above the assessed band". The delivered peak answers a different
+//     question — one ADR-022 already governs, with its curve-vs-delivered divergence declared —
+//     and it fires at 38.5 km against a 38 km band on a live plan. The two LEVELS in that rule
+//     are C1's and do convert; the target does not.
+//
+/** The level the plan is built at on the intensity axis (§79). C1: the runner's, never the plan's label. */
+const levelIntensity = (ctx: VerifyContext) => ctx.profile.levels.intensity.value
+/** The level the plan is built at on the VOLUME axis: peak km, long-run caps, the fallback easy pace. */
+const levelStructural = (ctx: VerifyContext) => ctx.profile.levels.structural.value
+/** The race the runner asked for, from the request. `plan.meta.race_distance_km` is the stamp of it. */
+const raceKm = (ctx: VerifyContext) => ctx.profile.race.distance_km
+/** The runner's injury chips, lower-cased as the old checker's `metaInjuries` did. */
+const injuriesOf = (ctx: VerifyContext) => (ctx.profile.injuries?.value ?? []).map(i => String(i).toLowerCase())
+
+/**
+ * The easy pace (min/km) a time-anchored session is priced at for the DELIVERED volume reading.
+ * The plan's own VDOT anchors first — construction records, the paces it was actually built at —
+ * then the structural level's fallback. ONE owner, shared by the label-vs-delivered rule and the
+ * three peak-volume rules, so the two cannot come to disagree about what the sessions add up to.
+ */
+const pricingEasyPace = (plan: Plan, ctx: VerifyContext): number | null => {
+  const anchor = plan.meta.vdot_training_anchor, vdot = plan.meta.vdot
+  if (vdot != null && anchor != null) return paceGuide(anchor, vdot).easy
+  return FALLBACK_EASY_MIN_PER_KM[levelStructural(ctx)] ?? null
+}
+
+/**
+ * A week's DELIVERED volume: its placed running sessions, time-anchored ones priced at `easy`.
+ * This is what C1 means by "the delivered sessions" — `w.weekly_km` is the plan's label for the
+ * same quantity, and `INV-PLAN-WEEKLY-KM-MATCHES-SESSIONS` exists because the two can differ.
+ *
+ * ⚠️ `null` when nothing can price it: UNVERIFIED, never 0. `?? 0` asserts a session covered no
+ * ground, which can only make a floor look satisfied (B5's ruling, and `SESSION-KM-01`'s class).
+ *
+ * 🔴 ROUNDED TO THE WHOLE KILOMETRE, AND THAT IS NOT COSMETIC — IT WAS MEASURED. A week states its
+ * volume as an integer, and `INV-PLAN-WEEKLY-KM-MATCHES-SESSIONS` already decides whether the label
+ * is honest at that grain (`Math.round(total)`, ±1 km). Reading the delivered sum at sub-kilometre
+ * precision therefore re-decides every verdict that sits on a threshold WITHOUT a session changing:
+ * measured on the live fleet 2026-11-25, one plan lost `INV-PLAN-PEAK-IN-PEAK-PHASE` because its
+ * biggest week went from 38 to 37.5 km, moving the peak's share from 89.5% to 90.7% across §23's
+ * 10% inversion line. That is `GOALPACE-5K-CLOCK-01`'s arithmetic — 4.66% to 5.44% across a 5% line
+ * with no commit between — and it is not what C1 ruled. At this grain the two readings coincide
+ * wherever the label agrees with the sessions and diverge exactly where it does not, which is the
+ * divergence the sitting named and the only one it asked for.
+ */
+const deliveredKm = (w: Week, easy: number | null): number | null => {
+  if (easy == null || !w.sessions) return null
+  let total = 0
+  for (const s of Object.values(w.sessions as Record<string, Session | undefined>)) {
+    if (!s || s.type === 'strength' || s.type === 'rest' || s.type === 'race') continue
+    if (s.distance_km == null && s.duration_mins == null) return null
+    total += sessionKmOrZero(s, easy)
+  }
+  return Math.round(total)
+}
+
+/** `deliveredKm` across weeks, throwing (→ UNVERIFIED) rather than reading an unpriceable week as 0. */
+const deliveredKmAll = (weeks: readonly Week[], easy: number | null): number[] =>
+  weeks.map(w => {
+    const km = deliveredKm(w, easy)
+    if (km == null) throw new Error(`week ${w.n}'s delivered volume cannot be priced`)
+    return km
+  })
+
 export const PREDICATES: Partial<Record<RuleId, Predicate>> = {
   // §64: every week but race week keeps at least one day off.
   'INV-PLAN-WEEK-HAS-REST-DAY': plan => plan.weeks.filter(governed).flatMap(w => {
@@ -446,14 +534,18 @@ const BATCH_4: Partial<Record<RuleId, Predicate>> = {
 
   // §23: peak volume is at least PEAK_OVER_BASE_RATIO of week 1's, unless the plan is a maintenance profile.
   // Only on a plan of PEAK_OVERLOAD_MIN_PLAN_WEEKS main weeks or more (code review: the first port missed it).
-  // ⚠️ Trusts the plan's own `volume_profile` label, as validatePlan does: a self-label read, recorded.
-  'INV-PLAN-PEAK-OVER-BASE': plan => {
+  // 🔴 C1: BOTH ENDS OF THE RATIO ARE THE DELIVERED SESSIONS, not the weeks' `weekly_km` labels.
+  // ⚠️ `volume_profile` stays: a construction record, for the measured reason at `levelIntensity`.
+  'INV-PLAN-PEAK-OVER-BASE': (plan, ctx) => {
     const total = plan.weeks.filter(w => w.n > 0).length || plan.weeks.length
     if (total < GENERATION_CONFIG.PEAK_OVERLOAD_MIN_PLAN_WEEKS) return []
-    const w1 = (plan.weeks.find(w => w.phase !== 'foundation') ?? plan.weeks[0])?.weekly_km ?? 0
+    const first = plan.weeks.find(w => w.phase !== 'foundation') ?? plan.weeks[0]
     const peaks = plan.weeks.filter(w => w.phase === 'peak')
-    if (!(w1 > 0) || !peaks.length || plan.meta.volume_profile === 'maintenance') return []
-    const ratio = Math.max(...peaks.map(w => w.weekly_km)) / w1
+    if (!first || !peaks.length || plan.meta.volume_profile === 'maintenance') return []
+    const easy = pricingEasyPace(plan, ctx)
+    const w1 = deliveredKmAll([first], easy)[0]
+    if (!(w1 > 0)) return []
+    const ratio = Math.max(...deliveredKmAll(peaks, easy)) / w1
     return ratio < GENERATION_CONFIG.PEAK_OVER_BASE_RATIO
       ? [{ rule_id: 'INV-PLAN-PEAK-OVER-BASE', week: PLAN, day: null, detail: `peak at ${Math.round(ratio * 100)}% of week 1` }] : []
   },
@@ -504,7 +596,11 @@ const BATCH_5: Partial<Record<RuleId, Predicate>> = {
   },
 
   // §46: a time-targeted marathon or ultra peaks at or above its distance's floor (not on a maintenance profile).
-  'INV-PLAN-PEAK-VOLUME-FLOOR-LONG-RACES': (plan, { input, profile }) => {
+  // 🔴 C1: THE PEAK IS THE PLACED SESSIONS, NOT THE WEEK'S LABEL. This is the rule the sitting named —
+  // a peak whose stated km meets the floor while its sessions do not was passing, and a FLOOR is a
+  // claim about what the runner actually runs. ⚠️ `volume_profile` stays (see `levelIntensity`).
+  'INV-PLAN-PEAK-VOLUME-FLOOR-LONG-RACES': (plan, ctx) => {
+    const { input, profile } = ctx
     if (profile.race.goal !== 'time_target' || plan.meta.volume_profile === 'maintenance') return []
     const d = input.race_distance_km
     const floor = d >= 40 && d <= 43 ? d * GENERATION_CONFIG.MARATHON_PEAK_VOLUME_FLOOR_RATIO
@@ -513,12 +609,11 @@ const BATCH_5: Partial<Record<RuleId, Predicate>> = {
       : 0
     if (!(floor > 0)) return []
     const peaks = plan.weeks.filter(w => w.phase === 'peak')
-    // A peak week with no usable volume cannot be checked; throwing makes verifyPlan report it UNVERIFIED
-    // (validatePlan lets the NaN pass silently, so the two differ on such a plan by design).
-    if (peaks.some(w => !Number.isFinite(w.weekly_km))) throw new Error('a peak week has no weekly_km')
-    // ⚠️ Reads the plan's own weekly_km, not the placed sessions (ADR-022's divergence); recorded.
-    const peak = peaks.length ? Math.max(...peaks.map(w => w.weekly_km)) : 0
-    return peak + 0.01 < floor ? [{ rule_id: 'INV-PLAN-PEAK-VOLUME-FLOOR-LONG-RACES', week: PLAN, day: null, detail: `peak ${peak} km under ${Math.round(floor)} km` }] : []
+    // A peak week whose sessions cannot be priced cannot be checked; `deliveredKmAll` throws, which makes
+    // verifyPlan report the rule UNVERIFIED (validatePlan lets the NaN pass silently, so the two differ
+    // on such a plan by design — and silence on a FLOOR reads as "satisfied", the worst outcome).
+    const peak = peaks.length ? Math.max(...deliveredKmAll(peaks, pricingEasyPace(plan, ctx))) : 0
+    return peak + 0.01 < floor ? [{ rule_id: 'INV-PLAN-PEAK-VOLUME-FLOOR-LONG-RACES', week: PLAN, day: null, detail: `peak ${peak} km delivered under ${Math.round(floor)} km` }] : []
   },
 
   // §53: across the plan (race week aside) no one quality row repeats more than its share allows; the
@@ -1003,12 +1098,14 @@ const BATCH_11: Partial<Record<RuleId, Predicate>> = {
   },
 
   // §80 Am. 1: a race's opening-pace note names RACE_OPENING_FRACTION of the race distance, within half a kilometre.
-  'INV-PLAN-RACE-NOTE-SCALES': plan => plan.weeks.flatMap(w => daysOf(w).flatMap(({ session: s }) => {
+  // 🔴 C1: the session's OWN distance first (that is the delivered race), then the RUNNER's race distance
+  // from the request — not `meta.race_distance_km`, the plan's stamp of it.
+  'INV-PLAN-RACE-NOTE-SCALES': (plan, ctx) => plan.weeks.flatMap(w => daysOf(w).flatMap(({ session: s }) => {
     if (!s || s.type !== 'race') return []
     const note = (s.coach_notes ?? []).find(n => typeof n === 'string' && /First [\d.]+ km/.test(n))
     if (!note) return []
     const stated = Number(/First ([\d.]+) km/.exec(note)?.[1])
-    const km = s.distance_km ?? plan.meta.race_distance_km
+    const km = s.distance_km ?? raceKm(ctx)
     if (!Number.isFinite(stated) || !km) return []
     return Math.abs(stated - km * GENERATION_CONFIG.RACE_OPENING_FRACTION) > 0.5
       ? [{ rule_id: 'INV-PLAN-RACE-NOTE-SCALES' as RuleId, week: w.n, day: null, detail: `opening note says ${stated} km` }] : []
@@ -1361,12 +1458,12 @@ const BATCH_17: Partial<Record<RuleId, Predicate>> = {
   // its owner for nine days). A substring test on a runner's injury list is the same class as a
   // label test on a session.
   //
-  // 🔻 THE LEVEL IS STILL A SELF-LABEL AND IS DELIBERATELY LEFT. `plan.meta.fitness_intensity_level
-  // ?? plan.meta.fitness_level` is the plan's description of its own runner, which is **C1's**
-  // ruling, not B11's. Fixing it here would be doing C1 piecemeal inside a B-row fix, and C1 is
-  // scheduled as its own wave with an observe-only run behind it.
-  'INV-PLAN-QUALITY-EXPECTED': (plan, { input }) => {
-    const level = plan.meta.fitness_intensity_level ?? plan.meta.fitness_level
+  // ✅ AND THE LEVEL IS THE RUNNER'S NOW (C1): `plan.meta.fitness_intensity_level ?? fitness_level`
+  // was the plan's description of its own runner. `levels.intensity` is the same value for a plan
+  // whose label agrees with the runner, so this diverges exactly where the plan is inconsistent.
+  'INV-PLAN-QUALITY-EXPECTED': (plan, ctx) => {
+    const { input } = ctx
+    const level = levelIntensity(ctx)
     const achilles = hasInjuryKeyword(input.injury_history, 'achilles')
     if (!(level === 'intermediate' || level === 'experienced') || input.hard_session_relationship === 'avoid' || achilles) return []
     const blocked = normaliseDays(input.days_cannot_train)
@@ -1377,9 +1474,6 @@ const BATCH_17: Partial<Record<RuleId, Predicate>> = {
   },
 }
 Object.assign(PREDICATES, BATCH_17)
-
-// ⚠️ SELF-LABEL READ (recorded): the plan's stamped injury list, as validatePlan reads it, not the request's.
-const metaInjuries = (plan: Plan) => (plan.meta.injury_history ?? []).map(i => String(i).toLowerCase())
 
 const BATCH_18: Partial<Record<RuleId, Predicate>> = {
   // §117 Am. 2: a finish-goal run-walk plan's biggest main-week session reaches the floor.
@@ -1393,22 +1487,25 @@ const BATCH_18: Partial<Record<RuleId, Predicate>> = {
       ? [{ rule_id: 'INV-PLAN-RUNWALK-ADEQUATE', week: PLAN, day: null, detail: `peak session ${peak.toFixed(1)} km` }] : []
   },
 
-  // §117 Am. 4: run-walk is never the answer for a volume-capped injury. (Reads the plan's stamped injury list.)
-  'INV-PLAN-RUNWALK-CAP-NOT-REDUCED': plan => plan.meta.finish_goal_run_walk && hasVolumeCappedInjuryHistory(metaInjuries(plan))
+  // §117 Am. 4: run-walk is never the answer for a volume-capped injury.
+  // 🔴 C1: the RUNNER's injury chips, not the plan's stamped list — a plan that lost the stamp was passing.
+  'INV-PLAN-RUNWALK-CAP-NOT-REDUCED': (plan, ctx) => plan.meta.finish_goal_run_walk && hasVolumeCappedInjuryHistory(injuriesOf(ctx))
     ? [{ rule_id: 'INV-PLAN-RUNWALK-CAP-NOT-REDUCED', week: PLAN, day: null, detail: 'run-walk with a volume-capped injury' }] : [],
 
   // §80 Am. 1: a long-run shortfall note that blames weekly volume is wrong when an injury caps the volume, and
   // wrong when the long run already sits at its minute cap.
-  'INV-PLAN-LR-SHORTFALL-CAUSE': (plan, { profile }) => {
+  // 🔴 C1: the race distance and the injury list are the RUNNER's, not the plan's stamps.
+  'INV-PLAN-LR-SHORTFALL-CAUSE': (plan, ctx) => {
+    const { profile } = ctx
     const note = plan.meta.long_run_shortfall_note
     if (typeof note !== 'string' || !note.length || !note.includes('your weekly volume is what limits it')) return []
-    const km = plan.meta.race_distance_km
-    const cap = typeof km === 'number' && km > 0 ? longCapMinsFor(km, profile) : 0
+    const km = raceKm(ctx)
+    const cap = km > 0 ? longCapMinsFor(km, profile) : 0
     let lr = 0
     for (const w of plan.weeks.filter(x => x.n >= 1 && x.type !== 'race'))
       for (const { session: s } of daysOf(w)) if (s && isLongRun(s) && typeof s.duration_mins === 'number') lr = Math.max(lr, s.duration_mins)
     const out: Raw[] = []
-    if (hasVolumeCappedInjuryHistory(metaInjuries(plan))) out.push({ rule_id: 'INV-PLAN-LR-SHORTFALL-CAUSE', week: PLAN, day: null, detail: 'blames volume for an injury cap' })
+    if (hasVolumeCappedInjuryHistory(injuriesOf(ctx))) out.push({ rule_id: 'INV-PLAN-LR-SHORTFALL-CAUSE', week: PLAN, day: null, detail: 'blames volume for an injury cap' })
     if (cap > 0 && lr > 0 && lr + GENERATION_CONFIG.LONG_RUN_AT_CAP_TOLERANCE_MINS >= cap) out.push({ rule_id: 'INV-PLAN-LR-SHORTFALL-CAUSE', week: PLAN, day: null, detail: 'blames volume at the minute cap' })
     return out
   },
@@ -1485,13 +1582,35 @@ const BATCH_20: Partial<Record<RuleId, Predicate>> = {
 
   // §23: the peak phase reaches the plan's highest volume (within a plateau tolerance). CONDITIONAL severity: a
   // warning on a maintenance profile, an error otherwise.
-  'INV-PLAN-PEAK-IN-PEAK-PHASE': plan => {
+  // 🔴 C1: the volumes compared are the DELIVERED sessions, not the weeks' labels — "is the runner's
+  // biggest week in the peak phase" is a question about what they run. ⚠️ `volume_profile` sets the
+  // severity and stays: a construction record (see `levelIntensity`).
+  // 🔑 AND IT PRICES EVERY MAIN WEEK, SO THE UNPRICEABLE CASE NEEDED ITS DIRECTION WORKED OUT RATHER
+  // THAN A REFLEX (code review, 2026-11-25). Unlike its two siblings — which price only the weeks they
+  // compare — `max` here is over every non-deload main week, so one unpriceable BASE week is enough to
+  // make the comparison incomplete. ⚠️ Refusing outright turns a REAL, specific finding into a vague
+  // one; excluding the week silently is worse, because a lower `max` makes `peak >= max × 0.9` EASIER
+  // and so hides an inversion. The resolution is neither: an unknown week can only RAISE `max`, which
+  // can only make an inversion worse, so a finding already demonstrated at the known maximum is
+  // reported, and only an absence of one is uncertain. ⚠️ A PEAK week that cannot be priced is one
+  // side of the comparison itself, so that refuses immediately.
+  'INV-PLAN-PEAK-IN-PEAK-PHASE': (plan, ctx) => {
     const nd = plan.weeks.filter(w => w.n > 0 && w.type !== 'race' && w.type !== 'deload')
     const peak = nd.filter(w => w.phase === 'peak')
     if (nd.length <= 1 || !peak.length) return []
-    const max = Math.max(...nd.map(w => w.weekly_km))
-    if (peak.some(w => w.weekly_km >= max * (1 - GENERATION_CONFIG.PEAK_INVERSION_MATERIAL_PCT / 100))) return []
-    return [{ rule_id: 'INV-PLAN-PEAK-IN-PEAK-PHASE', week: (nd.find(w => w.weekly_km === max) ?? nd[0]).n, day: null,
+    const easy = pricingEasyPace(plan, ctx)
+    const priced = nd.map(w => ({ w, km: deliveredKm(w, easy) }))
+    deliveredKmAll(peak, easy)   // throws → UNVERIFIED: a peak week is one side of the comparison
+    const known = priced.filter((x): x is { w: Week; km: number } => x.km != null)
+    const max = Math.max(...known.map(x => x.km))
+    const clears = known.some(x => x.w.phase === 'peak' && x.km >= max * (1 - GENERATION_CONFIG.PEAK_INVERSION_MATERIAL_PCT / 100))
+    if (clears) {
+      // No inversion at the known maximum. An unpriceable week could hold a higher one, and that would
+      // CREATE an inversion, so silence here would be a pass on an unfinished comparison.
+      if (priced.some(x => x.km == null)) throw new Error('a main week\'s delivered volume cannot be priced')
+      return []
+    }
+    return [{ rule_id: 'INV-PLAN-PEAK-IN-PEAK-PHASE', week: (known.find(x => x.km === max)?.w ?? nd[0]).n, day: null,
       detail: 'peak phase short of the plan max', severity: plan.meta.volume_profile === 'maintenance' ? 'warn' : 'error' }]
   },
 }
@@ -1578,10 +1697,10 @@ const BATCH_22: Partial<Record<RuleId, Predicate>> = {
   },
 
   // Every placed catalogue row sits inside its distance and level eligibility, except a taper race-specific row
-  // where no race-specific taper row fits this runner at all. ⚠️ The level is the plan's own meta (self-label
-  // read), as validatePlan reads it.
-  'INV-PLAN-CATALOGUE-ELIGIBLE': (plan, { input }) => {
-    const level = (plan.meta.fitness_intensity_level ?? plan.meta.fitness_level ?? 'beginner') as keyof typeof LEVEL_RANK
+  // where no race-specific taper row fits this runner at all. 🔴 C1: the level is the RUNNER's.
+  'INV-PLAN-CATALOGUE-ELIGIBLE': (plan, ctx) => {
+    const { input } = ctx
+    const level = levelIntensity(ctx) as keyof typeof LEVEL_RANK
     const dk = raceDistanceKey(input.race_distance_km)
     const R = LEVEL_RANK as Record<string, number>
     const fits = (r: (typeof V1_SESSION_CATALOGUE)[number]) => R[r.fitness_level_min] <= R[level]
@@ -1599,9 +1718,10 @@ const BATCH_22: Partial<Record<RuleId, Predicate>> = {
 
   // §22 Am. 3: on a 5K time goal (or a beginner's 10K), second-half build/peak goal-pace work comes as reps, never one
   // long continuous step; beginner goal-pace reps stay under their session total. The SCOPE reads the goal as the
-  // runner STATED it, as validatePlan does (not the normalised one), and the level is the plan's meta (self-label).
-  'INV-PLAN-GOAL-PACE-SHAPE': (plan, { input, profile }) => {
-    const level = plan.meta.fitness_intensity_level ?? plan.meta.fitness_level ?? 'beginner'
+  // runner STATED it, as validatePlan does (not the normalised one). 🔴 C1: the level is the RUNNER's.
+  'INV-PLAN-GOAL-PACE-SHAPE': (plan, ctx) => {
+    const { input, profile } = ctx
+    const level = levelIntensity(ctx)
     const dk = raceDistanceKey(input.race_distance_km)
     const half = Math.ceil(plan.weeks.filter(w => w.n >= 1).length / 2)
     const scope = profile.race.goal_stated === 'time_target' && (dk === '5K' || (dk === '10K' && level === 'beginner'))
@@ -1650,9 +1770,10 @@ const BATCH_22: Partial<Record<RuleId, Predicate>> = {
   },
 
   // §93 (§5): a time-goal plan over 6 km has SOME race-specific work in its peak key sessions (quality, plus any
-  // long run that is itself race-specific). ⚠️ Distance read from the plan's own meta, as validatePlan does.
-  'INV-PLAN-PEAK-SPECIFICITY': (plan, { profile }) => {
-    if (profile.race.goal !== 'time_target' || !(plan.meta.race_distance_km && plan.meta.race_distance_km > 6)) return []
+  // long run that is itself race-specific). 🔴 C1: the race distance is the RUNNER's, not the plan's stamp.
+  'INV-PLAN-PEAK-SPECIFICITY': (plan, ctx) => {
+    const { profile } = ctx
+    if (profile.race.goal !== 'time_target' || !(raceKm(ctx) > 6)) return []
     let key = 0, specific = 0
     for (const w of plan.weeks.filter(x => x.n >= 1 && x.phase === 'peak' && x.type !== 'deload' && x.type !== 'race')) {
       for (const { session: s } of daysOf(w)) {
@@ -1705,10 +1826,10 @@ const BATCH_22: Partial<Record<RuleId, Predicate>> = {
 }
 Object.assign(PREDICATES, BATCH_22)
 
-/** validatePlan's `fitness`: the plan's intensity level, then the request's, then the request's and the plan's structural
- *  level. ⚠️ It starts at the plan's own meta, so it is partly a self-label read. */
-const checkerFitness = (plan: Plan, input: GeneratorInput) =>
-  plan.meta.fitness_intensity_level ?? input.fitness_intensity_level ?? input.fitness_level ?? plan.meta.fitness_level
+// 🔴 C1: `checkerFitness` is GONE. `validatePlan`'s four-step fallback
+// (`meta.fitness_intensity_level ?? input.fitness_intensity_level ?? input.fitness_level ?? meta.fitness_level`)
+// started at the plan's own meta and could end there too, so the LEVEL a catalogue-row rule judged by was
+// the plan's label for its runner. Its two callers read `levelIntensity` now, like every other level rule.
 
 const BATCH_23: Partial<Record<RuleId, Predicate>> = {
   // §5: on a race of 21 km or less, the first VO2max session leaves VO2MAX_ONSET_MIN_ADAPTATION_WEEKS before the taper,
@@ -1760,11 +1881,12 @@ const BATCH_23: Partial<Record<RuleId, Predicate>> = {
   })),
 
   // §104: a time-goal peak does not fill two or more race-specific slots with one row while another eligible row exists.
-  // ⚠️ The level is validatePlan's four-step fallback: plan meta, then the request, then the plan's structural level.
-  'INV-PLAN-RACE-SPECIFIC-VARIETY': (plan, { input, profile }) => {
+  // 🔴 C1: the level is the RUNNER's, not validatePlan's four-step fallback starting at the plan's own meta.
+  'INV-PLAN-RACE-SPECIFIC-VARIETY': (plan, ctx) => {
+    const { input, profile } = ctx
     if (profile.race.goal !== 'time_target') return []
     const dk = raceDistanceKey(input.race_distance_km)
-    const fitness = checkerFitness(plan, input)
+    const fitness = levelIntensity(ctx)
     const R = LEVEL_RANK as Record<string, number>
     const slots = plan.weeks.filter(w => w.phase === 'peak' && w.type !== 'race')
       .flatMap(w => Object.values(w.sessions ?? {}).filter((s): s is Session => s != null && !!s.catalogue_id && !isLongRun(s)).map(s => ({ week: w.n, id: s.catalogue_id! })))
@@ -1780,13 +1902,19 @@ const BATCH_23: Partial<Record<RuleId, Predicate>> = {
     return alt.length > 0 ? [{ rule_id: 'INV-PLAN-RACE-SPECIFIC-VARIETY', week: slots[0].week, day: null, detail: `${slots.length} slots, one row (${only})` }] : []
   },
 
-  // §79: an upward level declaration never raises the peak target above the assessed level's band. ⚠️ Three
-  // self-label reads (declared, structural and target all from meta), copied.
-  'INV-PLAN-USER-LEVEL-NO-UPWARD-TONNAGE': plan => {
-    const declared = plan.meta.fitness_level_declared, structural = plan.meta.fitness_level, target = plan.meta.peak_km_target
+  // §79: an upward level declaration never raises the peak target above the assessed level's band.
+  // 🔴 C1: the DECLARED and STRUCTURAL levels and the race distance are the RUNNER's now.
+  // ⚠️ `peak_km_target` STAYS, and that is a decision with a measurement behind it: §79's subject IS the
+  // target ("a declaration never raises the peak TARGET"), so swapping in the delivered peak asks a
+  // different question — one ADR-022 already governs, with its curve-vs-delivered divergence declared.
+  // Measured on the live fleet 2026-11-25: the delivered reading fires on 1 of 44 plans, at 38.5 km
+  // against a 38 km beginner band, which is a rounding-grade curve-vs-delivered divergence, not a declaration defect.
+  // A construction record, like the stored request and the staged door the ruling keeps readable.
+  'INV-PLAN-USER-LEVEL-NO-UPWARD-TONNAGE': (plan, ctx) => {
+    const declared = ctx.profile.levels.declared?.value, structural = levelStructural(ctx), target = plan.meta.peak_km_target
     const R = LEVEL_RANK as Record<string, number>
-    if (!declared || !structural || typeof target !== 'number' || !(R[declared] > R[structural])) return []
-    const band = GENERATION_CONFIG.PEAK_KM_BY_LEVEL[raceDistanceKey(plan.meta.race_distance_km ?? 0)]
+    if (!declared || typeof target !== 'number' || !(R[declared] > R[structural])) return []
+    const band = GENERATION_CONFIG.PEAK_KM_BY_LEVEL[raceDistanceKey(raceKm(ctx))]
     return target > band[structural] ? [{ rule_id: 'INV-PLAN-USER-LEVEL-NO-UPWARD-TONNAGE', week: PLAN, day: null, detail: `peak target ${target} over the ${structural} band` }] : []
   },
 
@@ -1845,12 +1973,14 @@ function vo2WorkMins(s: Session): number | null {
 const BATCH_24: Partial<Record<RuleId, Predicate>> = {
   // §93 Am. 1: a time-goal plan at a distance whose peak prefers race-specific work has at least one race-specific peak
   // quality session, unless a withheld anchor leaves no eligible race-specific row at all.
-  'INV-PLAN-PEAK-RACE-SPECIFIC-REACHED': (plan, { input, profile }) => {
+  // 🔴 C1: the level is the RUNNER's (was validatePlan's four-step fallback off the plan's own meta).
+  'INV-PLAN-PEAK-RACE-SPECIFIC-REACHED': (plan, ctx) => {
+    const { input, profile } = ctx
     const dk = raceDistanceKey(input.race_distance_km)
     const prefers = (GENERATION_CONFIG.TIME_TARGET_PEAK_RACE_SPECIFIC_DISTANCES as readonly string[]).includes(dk)
     const goalWithheld = plan.meta.goal_pace_withheld != null
     const withheld = plan.meta.hm_goal_anchor_withheld === true || goalWithheld
-    const f = checkerFitness(plan, input), R = LEVEL_RANK as Record<string, number>
+    const f = levelIntensity(ctx), R = LEVEL_RANK as Record<string, number>
     const rank = f ? R[f] : undefined
     const surviving = !withheld ? 1 : V1_SESSION_CATALOGUE.filter(r => r.category === 'race_specific'
       && (r.distance_eligibility as readonly string[]).includes(dk) && (r.phase_eligibility as readonly string[]).includes('peak')
@@ -1975,19 +2105,23 @@ function closedMins(raw: string, pace: number | null, siblings: { length?: strin
 
 const BATCH_26: Partial<Record<RuleId, Predicate>> = {
   // §110 (§1): a non-beginner plan long enough to carry quality, with build or peak weeks, has some quality in them,
-  // when the week can hold it. ⚠️ "Beginner" is the plan's own meta (self-label read), as validatePlan reads it.
-  'INV-PLAN-QUALITY-NOT-ZERO': (plan, { input }) => {
+  // when the week can hold it. 🔴 C1: "beginner" is the RUNNER's level, not the plan's label for it.
+  'INV-PLAN-QUALITY-NOT-ZERO': (plan, ctx) => {
+    const { input } = ctx
     const n = plan.weeks.filter(w => w.n >= 1 && (w.phase === 'build' || w.phase === 'peak')).flatMap(w => Object.values(w.sessions ?? {})).filter(s => s?.type === 'quality').length
     const bp = plan.weeks.some(w => w.phase === 'build' || w.phase === 'peak')
     const long = plan.weeks.filter(w => w.n >= 1).length >= GENERATION_CONFIG.QUALITY_FLOOR_MIN_PLAN_WEEKS
-    const beginner = (plan.meta.fitness_intensity_level ?? plan.meta.fitness_level) === 'beginner'
+    const beginner = levelIntensity(ctx) === 'beginner'
     return !beginner && bp && long && n === 0 && geometryHoldsQuality(plan, input) ? [{ rule_id: 'INV-PLAN-QUALITY-NOT-ZERO', week: PLAN, day: null, detail: 'no quality' }] : []
   },
 
-  // §110 Am. 2, §22: a time-goal plan that can carry quality prescribes at least one quality session. ⚠️ The goal is the
-  // plan's own stored request first, then the normalised one, as validatePlan reads it.
+  // §110 Am. 2, §22: a time-goal plan that can carry quality prescribes at least one quality session.
+  // 🔴 C1: the goal is the RUNNER's, normalised (`profile.race.goal`). `validatePlan` read the plan's own
+  // stored request first, which is the plan describing the request it was built from — and it reads it RAW,
+  // where every neighbouring rule reads it normalised, so a time target with no time was scoped in here and
+  // out everywhere else: one goal, two answers.
   'INV-PLAN-TIME-TARGET-QUALITY-FLOOR': (plan, { input, profile }) => {
-    if ((plan.meta.generator_input?.goal ?? profile.race.goal) !== 'time_target') return []
+    if (profile.race.goal !== 'time_target') return []
     const bp = plan.weeks.some(w => w.phase === 'build' || w.phase === 'peak')
     const long = plan.weeks.filter(w => w.n >= 1).length >= GENERATION_CONFIG.QUALITY_FLOOR_MIN_PLAN_WEEKS
     const n = plan.weeks.filter(w => w.n >= 1).flatMap(w => Object.values(w.sessions ?? {})).filter(s => s?.type === 'quality').length
@@ -2300,10 +2434,10 @@ function continuousTempoMain(s: Session): number | null {
 
 const BATCH_30: Partial<Record<RuleId, Predicate>> = {
   // §8: a structured session's duration is its main set plus the universal warm-up and cool-down, within the tolerance.
-  // ⚠️ The progressive tempo's expected main set is keyed by the plan's own level (self-label read), as validatePlan does.
-  'INV-PLAN-STRUCTURED-SESSION-DURATION-COHERENT': plan => {
+  // 🔴 C1: the progressive tempo's expected main set is keyed by the RUNNER's level, not the plan's label.
+  'INV-PLAN-STRUCTURED-SESSION-DURATION-COHERENT': (plan, ctx) => {
     const tol = GENERATION_CONFIG.MAIN_SET_ORDERING_TOLERANCE_MINS
-    const fitness = plan.meta.fitness_intensity_level ?? plan.meta.fitness_level
+    const fitness = levelIntensity(ctx)
     return plan.weeks.flatMap(w => daysOf(w).flatMap(({ day, session: s }) => {
       if (!s || !s.derived_set || s.duration_mins == null) return []
       const progressive = s.catalogue_id === 'progressive_tempo' && fitness && w.phase
@@ -2537,21 +2671,20 @@ function anchorByPace(s: Session): Map<string, string> {
 const BATCH_33: Partial<Record<RuleId, Predicate>> = {
   // §90, §40c: a week's stated km is the sum of its sessions (easy-paced where a session is time-anchored), within a
   // kilometre. Skipped when the plan's VDOT differs from the request's (a repriced plan), and on foundation weeks.
-  'INV-PLAN-WEEKLY-KM-MATCHES-SESSIONS': (plan, { profile }) => {
+  // 🔴 C1: the fallback easy pace is keyed by the RUNNER's STRUCTURAL level (the axis the planner's own
+  // `PACE_GUIDE` fallback is keyed by), not the plan's `meta.fitness_level` label. And the delivered sum
+  // now goes through `deliveredKm`, the single owner the three peak-volume rules read, so the rule that
+  // detects a dishonest label and the rules that bypass it cannot come to mean different things by "placed".
+  'INV-PLAN-WEEKLY-KM-MATCHES-SESSIONS': (plan, ctx) => {
+    const { profile } = ctx
     if ((profile.vdot?.value.raw ?? null) !== (plan.meta.vdot ?? null)) return []
-    const level = plan.meta.fitness_level
-    const easy = plan.meta.vdot != null && plan.meta.vdot_training_anchor != null ? paceGuide(plan.meta.vdot_training_anchor, plan.meta.vdot).easy
-      : level === 'beginner' || level === 'intermediate' || level === 'experienced' ? FALLBACK_EASY_MIN_PER_KM[level] : null
+    const easy = pricingEasyPace(plan, ctx)
     if (easy == null) return []
     return plan.weeks.flatMap(w => {
       if (w.phase === 'foundation' || w.weekly_km == null || !w.sessions) return []
-      let total = 0
-      for (const s of Object.values(w.sessions)) {
-        if (!s || s.type === 'strength' || s.type === 'rest' || s.type === 'race') continue
-        if (s.distance_km == null && s.duration_mins == null) return []
-        total += sessionKmOrZero(s, easy)
-      }
-      return Math.abs(w.weekly_km - Math.round(total)) <= 1 ? [] : [{ rule_id: 'INV-PLAN-WEEKLY-KM-MATCHES-SESSIONS' as RuleId, week: w.n, day: null, detail: `${w.weekly_km} km stated, ${Math.round(total)} placed` }]
+      const total = deliveredKm(w, easy)   // already rounded to the whole kilometre, the grain the label states
+      if (total == null) return []
+      return Math.abs(w.weekly_km - total) <= 1 ? [] : [{ rule_id: 'INV-PLAN-WEEKLY-KM-MATCHES-SESSIONS' as RuleId, week: w.n, day: null, detail: `${w.weekly_km} km stated, ${total} placed` }]
     })
   },
 

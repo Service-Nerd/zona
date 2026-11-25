@@ -6,6 +6,19 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-11-25 — ADR027-B3-STRICT-01 (C1) · a plan that agrees with itself is why checking its own label looked safe
+**Shipped:** The new plan checker stopped asking the plan who its runner is. It reads the runner's own record and the sessions the plan actually contains.
+
+**Dev learning:** The old checker decided a runner's training level, their race distance, their injuries and their goal by reading fields the *plan* had written about itself. That is circular: if a plan says its runner is a beginner, four rules excuse it from expecting hard sessions, and nobody asks whether the runner is one. The board ruled it out in November and I replaced it. Then I measured it, and the measurement is the real story: **across the thirty-seven valid plans the engine produces, the old reading and the new one agree exactly — zero differences, in either direction.** Of course they do. A plan the engine just built describes its own runner correctly. Every difference I can demonstrate comes from deliberately breaking a plan's label away from its runner. **That is precisely why this survived for a year: the dangerous reading and the safe one give identical answers on everything that is working.**
+
+**Product learning:** Two of the seven fields the ruling named turned out not to be labels at all, and I only found that by trying to build them. One of them — the flag that marks a plan as "maintaining, not building" — is assembled from six separate triggers, and someone had already measured, in September, that recomputing it from one of those six would misclassify three and a half thousand plans out of seventeen thousand and throw away the explanation each of those runners is shown. Better still: deriving the exemption from the delivered volume would have made the rule it exempts *impossible to ever fire*, because the rule fires on exactly the condition the derivation would read as "maintaining". I wrote the reason down, filed it back to the board as a correction to their own scope, and did not build it. **A ruling can be right about the problem and wrong about which field it lives in, and the measurement that settles it may already be in the codebase.**
+
+**AI-building learning:** My first version read volumes to the half kilometre instead of the whole kilometre, which sounds strictly more accurate. It cost a real finding on a real plan: a week whose stated volume is 38 km adds up to 37.5, and that moved one ratio from 89.5% to 90.7% across a 90% line. **No session changed.** The plan was fine, the label was honest within the tolerance the engine itself uses, and I had quietly re-decided a threshold case by measuring more precisely than the thing being measured is stated. Rounding to the grain the plan writes its weeks in made the two readings agree wherever the label is honest and disagree exactly where it lies — which is the whole point. **More precision is not more correctness when the threshold was calibrated on the coarser number.**
+
+**The honest bit:** The register entry for an earlier fix in this same batch said it "reads the assessed level" and named a field that is not the assessed level — it is the assessed level *or the runner's own claim, whichever is higher*, which is the exact hole that fix was built to close. The code was right; the sentence describing it was wrong, and it had been wrong since I wrote it a few days ago. I only caught it because this change needed to read the *other* field for every other rule and I had to explain why. **A false sentence next to correct code survives every test you own.**
+
+---
+
 ## 2026-11-25 — ADR027-B3-SHADOW-01 · the measurement disagreed with itself, and that was the finding
 **Shipped:** The new verifier now runs beside the old checker over every plan a real runner holds, observe-only, and reports what would change if it took over.
 
