@@ -1982,6 +1982,34 @@ a code, and chasing why 6 of them carried the same two rules found the baseline'
 `lib/ops/verifierShadow.ts` reports them in `reshape_exempt_by_rule` — out of the cut-over number, still visible — and
 **reads the set from its owner** rather than holding a copy, so the two cannot drift.
 
+### 🔲 `VERIFY-RED-ON-MAIN-01` — 🔺 `npm run verify` fails on `main` on two gates, and nothing on this machine was going to say so *(filed 2026-11-25, found running VERIFIER-STORED-LEVEL-01's board conditions)* ⚙️ **NO BOARD** (triage first; the fix may route)
+
+📐 **Measured 2026-11-25 on clean `main` (`d2ffef97`), with my own change stashed so the attribution is not mine:**
+
+| Gate | Exit | What it says |
+|---|---|---|
+| `verify:sweep` (`property-validate-plans.ts`) | **1** | `INV-PLAN-INTENSITY-ORDERING@slow-goal: 13 (baseline 0) — 13 NEW` |
+| `verify:matrix` (`r23-phase7-validation.ts`) | **1** | `PASS 62 · FAIL 3 · 14 of 17 cases` — three `Taper reduction (%)` misses (58.6 vs 45, 50.0 vs 35, 48.8 vs 35) |
+
+**Both are in `verify:ci`.** So `npm run verify` is red, and has been, undetected.
+
+🔴 **WHY NOTHING CAUGHT IT, AND IT IS THE RECORDED HOLE:** the pre-push hook runs `tsc --noEmit` and the **vitest
+suite** — it does **not** run `verify:ci`. So a gate that lives only in `verify:ci` is enforced by CI alone, and
+`OPS-CI-UNWATCHED-01` records that **nobody is watching CI** and that it cannot be checked from this machine (`gh` is
+not installed, the GitHub MCP server is unauthorised). **This is that item's first measured cost**, and it is exactly
+`a gate that nothing reads is not a gate`.
+
+⚠️ **TRIAGE BEFORE FIXING, AND THE FIRST HYPOTHESIS IS THE CLOCK.** The slow-goal grid derives its benchmark date from
+today (`slowGoalDates`, deliberately, because a pinned date expires — `PINNED-CLOCK-01`), and `INTENSITY-ORDERING`
+compares a goal-pace session against a threshold one, so it moves with the VDOT staleness discount (§10). That is
+`GOALPACE-5K-CLOCK-01`'s arithmetic exactly: **a bisect cannot tell a commit that broke a test from a test that
+expired**, so run the sweep at an older date before attributing it to any commit. The taper misses are a separate
+question and may not share a cause.
+
+**Done when:** each of the two is diagnosed (clock, real regression, or stale baseline) and either fixed or baselined
+with a written reason; and the push gate's coverage is reconciled with `verify:ci`'s, because the gap between them is
+the mechanism rather than the symptom.
+
 ### 🔲 `HELD-RULE-LIST-DERIVED-01` — the 14 held rules the cut-over sign-off must name are a hand-written list beside a derivable one *(filed 2026-11-25, found auditing the records)* ⚙️ **NO BOARD** (tooling)
 
 The B3 exit is *"the verifier PLUS these 14 old checks, named in the founder's sign-off"* (Coaching Board
@@ -1997,7 +2025,45 @@ prose. An incomplete gate must say it is incomplete — and it can only say so c
 **Done when:** a test fails if ADR-027's named list differs from the derived set in either direction, naming the rules
 that differ. ⚠️ **Assert the NAMES, not the count** — a port plus a new hold nets to 14 and would pass a count check.
 
-### 🔲 `VERIFIER-STORED-LEVEL-01` — 🔺 **CUT-OVER BLOCKER** — `resolveLevels` lets the API STRUCTURAL declaration set the INTENSITY axis, which §79 forbids in as many words *(filed 2026-11-25, ADR-027 B3 step 3; widened 2 → 9 rules by C1; rerouted and conditioned by the board 2026-11-25)* ⚙️ **NO BOARD — a defect fix restoring documented intent, ruled EXEMPT**
+### ✅ `VERIFIER-STORED-LEVEL-01` — SHIPPED 2026-11-25, CUT-OVER UNBLOCKED — `resolveLevels` let the API STRUCTURAL declaration set the INTENSITY axis, which §79 forbids in as many words *(filed 2026-11-25, ADR-027 B3 step 3; widened 2 → 9 rules by C1; rerouted and conditioned by the board 2026-11-25)* ⚙️ **NO BOARD — a defect fix restoring documented intent, ruled EXEMPT**
+
+✅ **DONE.** `assessedIntensity` reads `input.fitness_intensity_level ?? input.fitness_level ?? assessed.intensity`,
+and `resolveLevels`' parameter type widens to include the field it could not previously see. **The order is §79's:**
+the field supplies the ASSESSED intensity; the runner's declaration still binds upward on top of it; structure stays
+on `fitness_level`. §79's "two axes" paragraph gains the cross-reference naming `resolveLevels` as the site that
+breached it — the sitting's one required artifact.
+
+📐 **ALL TEN PLANS, which is condition 3** (it asked for the ten, not the one):
+
+| Race | Stamped split | Declared | Before | After |
+|---|---|---|---|---|
+| 5 km × 2 | beginner → intermediate | intermediate | masked | reproduced |
+| 10 km | intermediate → experienced | experienced | masked | reproduced |
+| 21.1 km | beginner → experienced | experienced | masked | reproduced |
+| 21.1 km | beginner → intermediate | intermediate | masked | reproduced |
+| **21.1 km** | **beginner → intermediate** | **none** | 🔴 **COLLAPSED** | ✅ **reproduced** |
+| 42.2 km × 4 | beginner → intermediate | intermediate | masked | reproduced |
+
+🔑 **The one that collapsed is the only one with NO declaration**, which is the whole shape of it: §79's training-age
+lift did the elevating, and nothing downstream could reproduce it. The nine "masked" are masked by an upward
+declaration that coincidentally resolves to the same level — an accident of the data, not a mechanism. `plans_level_mismatch`
+on the live fleet: **1 → 0.**
+
+✅ **All three conditions met:**
+1. `verify:parity` **IDENTICAL over 6,210** on the final code (the wizard never sends the field; no corpus sets it).
+2. 🔴 **`verify:sweep` and `verify:matrix` both measured WITH AND WITHOUT the fix, and they are identical** — the
+   matrix is `PASS 62 / FAIL 3 / 14 of 17` either way, and the sweep is **0 new violations from this change and 1
+   FIXED** (`INV-PLAN-PEAK-OVER-BASE@slow-goal` 1 → 0). ⚠️ **Both scripts fail on `main` for reasons that are not
+   this change**, which is filed separately below and is the more serious finding.
+3. All ten plans named above.
+
+🔴 **4 mutations, each verified to have landed, each red:** the intensity axis back to the structural override; the
+field read but the structural override DROPPED (the over-reach — `fitness_level` must still stand in for both when it
+is the only field supplied, because §79 calls it a long-standing contract the archetype matrix and property sweep rely
+on); the field winning the STRUCTURAL axis too (the same merge reversed); and the declaration no longer binding upward.
+
+🔻 **Negative space: this proves a stored plan is now re-judged at the level it was built at. It does not change what
+any runner is prescribed** — parity is byte-identical and the field has no production sender.
 
 ⚖️ **RULED EXEMPT, `STORED-LEVEL-AND-C1-SCOPE-01`, 2026-11-25: §79 ALREADY DECIDED THIS AND THE ITEM WAS FILED AS A BOARD QUESTION IN ERROR — MINE.** §79 carries the sentence *“Two inputs, two axes — do not merge them … collapsing them is what produced the defect: one enum was carrying two different authorities”*, written because the engine had already done it once. `fitnessAssessment.ts:201` reads `assessedIntensity = input.fitness_level ?? assessed.intensity` — the API **structural** declaration setting the **intensity** axis. There is no policy to choose; the fix is to read `input.fitness_intensity_level`, a field §79's Meta clause mandates, `storedPlanInput` already carries for exactly this, `invariants.ts:1100` already reads, and the assessment's `Pick<>` parameter type **structurally cannot see**.
 

@@ -6,6 +6,19 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-11-25 — VERIFIER-STORED-LEVEL-01 · the rule said don't merge these two fields, so I went looking for where I had
+**Shipped:** A plan built for a runner who is a beginner on volume but intermediate on intensity is now re-checked at the level it was actually built at, instead of collapsing back to beginner.
+
+**Dev learning:** The coaching constitution contains a paragraph headed *"two inputs, two axes — do not merge them"*, and it ends *"collapsing them is what produced the defect: one enum was carrying two different authorities."* That sentence was written because the engine had already done it once, in a different place, and someone wrote it down so it would not happen again. It happened again, one axis over, in the function that owns both axes — and it survived because the field that exists to carry the second axis was read by the validator and by **nothing in the assessment**. The function's own parameter type could not even see the field. **The rule was in the constitution, the field was in the type, and the only thing missing was one `??`.**
+
+**Product learning:** Ten of forty-four live plans carry that split, and **nine of them were fine by coincidence.** They happen to carry a runner's own declaration that resolves to the same level the engine had derived, so the collapse produced the right answer by accident. One plan had no declaration, so it was the only one that visibly broke. If I had looked only at the plan that broke I would have fixed an edge case; the exposure was ten. **A defect masked in nine of ten cases reads as an edge case, which is the most expensive way for one to look.**
+
+**AI-building learning:** The board attached three conditions and one of them was the only reason I found something worse. Two of the three were things I could already prove. The third was *run these two scripts, because the thing you are changing has consumers outside the check you're relying on*. I ran them, got thirteen failures, and nearly wrote them up as mine. They were not: clean `main` produces the identical thirteen. **`npm run verify` has been failing on two gates and nothing on this machine was going to say so** — the push hook runs the type check and the test suite, not the full verify, and nobody reads CI. **The condition that found it was the one I would have skipped as paperwork.**
+
+**The honest bit:** I filed this as a question for the coaching board — *"which level should a stored plan be judged at?"* — and it was never a question. The answer was already written, in the section the defect breaks, in a sentence about this exact mistake. I convened a board to rule on something the constitution had ruled on, and the board's first act was to tell me so. **Framing a defect as a decision is a way of not having read the decision.**
+
+---
+
 ## 2026-11-25 — VERIFIER-RESHAPE-POLICY-01 · two lists with a person in between, one day after I wrote the second one
 **Shipped:** The new plan checker now knows *which caller is asking*, so it stops reporting two rules that the thing it is being compared against deliberately ignores.
 

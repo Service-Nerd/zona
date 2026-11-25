@@ -222,6 +222,48 @@ describe('the refusal telemetry records the levels it claims to', () => {
    * Pinned here so it is visible, and so that if a caller ever does set the override
    * the limitation is already written down rather than rediscovered.
    */
+  /**
+   * 🔴 VERIFIER-STORED-LEVEL-01 — THE STRUCTURAL OVERRIDE DOES NOT SET THE INTENSITY AXIS.
+   *
+   * §79 carries the sentence this defect broke, and it was written because the engine had already
+   * done it once: *"Two inputs, two axes — do not merge them … collapsing them is what produced the
+   * defect: one enum was carrying two different authorities."* `resolveLevels` read
+   * `input.fitness_level ?? assessed.intensity`, so the API-level STRUCTURAL declaration won the
+   * INTENSITY band too — the same merge, one axis over, in the function that owns both.
+   *
+   * 📐 10 of 44 live plans carry §79's split. Ruled EXEMPT from the Coaching Board
+   * (`STORED-LEVEL-AND-C1-SCOPE-01`, 2026-11-25): a defect fix restoring documented intent.
+   */
+  it('🔴 `fitness_intensity_level` sets the INTENSITY axis and leaves structure to `fitness_level`', () => {
+    // The live shape: a plan built for a runner assessed beginner on volume and lifted to
+    // intermediate on intensity by §79's training-age rule, re-validated through `storedPlanInput`.
+    const l = resolveLevels(mk({ fitness_level: 'beginner', fitness_intensity_level: 'intermediate' }))
+    expect(l.assessedIntensity, 'the intensity axis reads its own field').toBe('intermediate')
+    expect(l.intensity).toBe('intermediate')
+    expect(l.structural, 'structure stays on the STRUCTURAL override').toBe('beginner')
+    expect(l.assessedStructural).toBe('beginner')
+  })
+
+  it('and with only the structural override set, both axes still collapse to it — unchanged', () => {
+    // ⚠️ THE HALF THAT MUST NOT MOVE. §79 calls `fitness_level` a long-standing contract the
+    // archetype matrix and the property sweep rely on; narrowing it to structure ALONE would change
+    // what those corpora generate. It still stands in for both when it is the only field supplied.
+    const l = resolveLevels(mk({ fitness_level: 'experienced' }))
+    expect(l.assessedStructural).toBe('experienced')
+    expect(l.assessedIntensity).toBe('experienced')
+  })
+
+  it('and a declaration still wins the intensity axis over the stamped level (§79, upward binding)', () => {
+    // The ORDER matters and is §79's: the field supplies the ASSESSED intensity, and the runner's
+    // own declaration binds upward on top of it. A plan whose declaration disagrees with its stamp
+    // is self-inconsistent, which is what the ops shadow's `level_mismatch` flag is for.
+    const l = resolveLevels(mk({ fitness_level: 'beginner', fitness_intensity_level: 'intermediate',
+      user_declared_level: 'experienced' }))
+    expect(l.assessedIntensity, 'the assessment is still the stamped level').toBe('intermediate')
+    expect(l.intensity, 'the declaration binds upward on intensity').toBe('experienced')
+    expect(l.structural, 'and never on structure').toBe('beginner')
+  })
+
   it('pins the API-override case: all four collapse to the override', () => {
     const { detail } = refuse({ fitness_level: 'experienced' })
     expect(detail.fitness_level_api_override).toBe('experienced')

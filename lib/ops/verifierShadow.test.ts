@@ -193,13 +193,31 @@ describe('shadowVerifyPlan — the join, and what it refuses to assess', () => {
     expect(row.level_mismatch).toBe(false)
   })
 
-  it('🔴 level_mismatch fires when the profile re-derives a level the plan was not built at', () => {
-    // The live shape: meta says §79 elevated this runner, the profile re-derives the structural
-    // level because `fitness_level` wins the intensity band (fitnessAssessment.ts:201).
+  it('✅ a §79-SPLIT plan no longer mismatches — the profile reproduces the level it was built at', () => {
+    // 🔴 THIS CASE USED TO ASSERT `true`, AND IT WAS PINNING THE DEFECT. `VERIFIER-STORED-LEVEL-01`:
+    // `resolveLevels` read `input.fitness_level ?? assessed.intensity`, so the API STRUCTURAL
+    // override won the INTENSITY band and a §79-elevated stored plan re-derived as a beginner. It
+    // reads `input.fitness_intensity_level` first now, which `storedPlanInput` carries for exactly
+    // this, so this plan is judged at `intermediate` as it was built. Measured: 10 of 44 live plans
+    // carry this split and the fleet's `plans_level_mismatch` goes 1 → 0.
     const row = shadowVerifyPlan(
       storedPlan({ fitness_level: 'beginner', fitness_intensity_level: 'intermediate' }), [], null)
     if (!row.assessed) throw new Error('fixture should be assessable')
-    expect(row.level_mismatch).toBe(true)
+    expect(row.level_mismatch, 'the split is reproduced, so there is nothing to flag').toBe(false)
+  })
+
+  it('🔴 but level_mismatch is NOT dead: a plan whose own levels contradict each other still fires it', () => {
+    // ⚠️ A FLAG THAT NEVER FIRES AND A FLAG THAT CANNOT FIRE LOOK IDENTICAL, which is why this case
+    // exists beside the one above rather than instead of it. The flag's job is unchanged: say when
+    // the profile cannot reproduce the level a plan claims. After the fix the way to reach that is a
+    // plan whose stamped DECLARATION disagrees with its stamped intensity level — `intensity` is
+    // `declared ?? assessedIntensity`, so the declaration wins and the claim is not reproduced.
+    // That is a genuinely self-inconsistent plan, and it is exactly what the flag should catch.
+    const row = shadowVerifyPlan(
+      storedPlan({ fitness_level: 'beginner', fitness_intensity_level: 'intermediate',
+        fitness_level_declared: 'experienced' }), [], null)
+    if (!row.assessed) throw new Error('fixture should be assessable')
+    expect(row.level_mismatch, 'declared experienced against a stamped intermediate intensity').toBe(true)
   })
 
   it('🔴 an unported invariant is OUT of the population, not a lost finding', () => {

@@ -184,7 +184,8 @@ export interface ResolvedLevels {
  */
 export function resolveLevels(
   input: Pick<import('@/types/plan').GeneratorInput,
-    'current_weekly_km' | 'longest_recent_run_km' | 'training_age' | 'fitness_level' | 'user_declared_level'>,
+    'current_weekly_km' | 'longest_recent_run_km' | 'training_age' | 'fitness_level'
+    | 'fitness_intensity_level' | 'user_declared_level'>,
   vdot?: number,
 ): ResolvedLevels {
   // D2 — VDOT and volume answer different questions; consult both. §79 — a deep
@@ -198,7 +199,33 @@ export function resolveLevels(
   // it stands in for the volume-derived assessment (long-standing contract; the
   // archetype matrix and property sweep rely on it).
   const assessedStructural: FitnessLevel = input.fitness_level ?? assessed.structural
-  const assessedIntensity:  FitnessLevel = input.fitness_level ?? assessed.intensity
+
+  // 🔴 VERIFIER-STORED-LEVEL-01 — THE STRUCTURAL OVERRIDE DOES NOT SET THE INTENSITY AXIS, AND
+  // §79 SAYS SO IN AS MANY WORDS. This line read `input.fitness_level ?? assessed.intensity`, so
+  // the API-level STRUCTURAL declaration won the INTENSITY band too — the merge §79's own
+  // paragraph forbids: *"Two inputs, two axes — do not merge them … collapsing them is what
+  // produced the defect: one enum was carrying two different authorities."* That sentence exists
+  // because the engine had already done this once; this was the second instance, one axis over.
+  //
+  // `fitness_intensity_level` is the field §79's Meta clause mandates for exactly this — *"when
+  // the signals disagree, `fitness_intensity_level` carries the higher level"* — and until now
+  // NOTHING in the assessment read it. `storedPlanInput` carries it deliberately across the
+  // meta→input round-trip (§79, 2026-09-02) and `invariants.ts` reads it; the gap was here, and
+  // the parameter type above could not even see the field.
+  //
+  // 📐 MEASURED ON THE LIVE FLEET, 2026-11-25: **10 of 44 stored plans carry §79's split**, and
+  // reading this field is what lets them be re-judged at the level they were BUILT at. ⚠️ Nine of
+  // the ten were masked, not safe: they also carry an upward `user_declared_level` that happens to
+  // resolve to the same level, which is an accident of the data rather than a mechanism.
+  //
+  // ⚠️ A NO-OP FOR GENERATION, BY CONSTRUCTION AND BY MEASUREMENT. The wizard never sends this
+  // field (`wizardShape.ts` → `NOT_WIZARD`) and no corpus sets it, so the only caller that
+  // supplies it is the stored-plan round-trip. `verify:parity` IDENTICAL over 6,210.
+  //
+  // Ruled EXEMPT from the Coaching Board (`STORED-LEVEL-AND-C1-SCOPE-01`, 2026-11-25): a defect
+  // fix restoring documented intent, not a policy choice. §79 had already decided it.
+  const assessedIntensity:  FitnessLevel =
+    input.fitness_intensity_level ?? input.fitness_level ?? assessed.intensity
 
   const declaredLevel = input.user_declared_level
   const declaredIsDownward =
