@@ -506,6 +506,15 @@ const BATCH_5: Partial<Record<RuleId, Predicate>> = {
     }
     if (!total) return []
     const share = Math.floor(total / GENERATION_CONFIG.QUALITY_VARIETY_DENOMINATOR) + GENERATION_CONFIG.QUALITY_VARIETY_ALLOWANCE
+    // 🔻 ADR027-B3-STRICT-01 / sitting B10 — RULED AND NOT IMPLEMENTABLE HERE, deliberately left.
+    // The board: *"The bound uses the same weeks it counts."* The counts above skip race weeks
+    // (`w.type === 'race'`); `quality_pool_sizes` is `number[]`, **one entry per PICK with no week
+    // key**, so the verifier cannot tell which entries came from the weeks it counted. Aligning
+    // them needs the producer to stamp the week alongside each pool size — an engine change, and
+    // the sitting ruled this one "fix the verifier; prescription unchanged". The other way to
+    // align them is to COUNT race-week quality too, which changes what the rule judges rather
+    // than how, and the ruling does not say which side moves. Raised rather than guessed:
+    // `B10-POOL-WEEK-KEY-01`. Latent either way (M: 0 live).
     const pools = plan.meta.quality_pool_sizes ?? []
     let pigeon = 0
     for (const size of Array.from(new Set(pools))) {
@@ -661,8 +670,19 @@ const BATCH_7: Partial<Record<RuleId, Predicate>> = {
       const long = entries.find(x => !!x.session && isLongRun(x.session))
       if (!long) return []
       // The circular day gap, computed HERE (code review): `dayGap` is the producer's own placement predicate.
-      const gap = (a: string, b: string) => { const d = Math.abs(DAYS.indexOf(a as VerifierDay) - DAYS.indexOf(b as VerifierDay)); return Math.min(d, 7 - d) }
-      return entries.filter(x => x.session && isTimeTrial(x.session) && gap(x.day, long.day) < min)
+      //
+      // 🔴 ADR027-B3-STRICT-01 / sitting B9 — A NON-DAY KEY IS UNVERIFIED, NOT AN ARBITRARY GAP.
+      // `DAYS.indexOf` returns **-1** for a session stored under a key that is not a weekday, and
+      // the arithmetic carries on: against a Thursday long run that is `min(|-1-3|, 7-4)` = **3
+      // days**, a number computed from a sentinel and indistinguishable from a real measurement.
+      // Depending on `min_gap_days_from_long_run` it either invents a violation or hides one. The
+      // board: *"Unverified, not an arbitrary gap."*
+      const gap = (a: string, b: string): number | null => {
+        const ia = DAYS.indexOf(a as VerifierDay), ib = DAYS.indexOf(b as VerifierDay)
+        if (ia < 0 || ib < 0) return null
+        const d = Math.abs(ia - ib); return Math.min(d, 7 - d)
+      }
+      return entries.filter(x => { const g = x.session && isTimeTrial(x.session) ? gap(x.day, long.day) : null; return g != null && g < min })
         .map(() => ({ rule_id: 'INV-PLAN-TT-LONG-RUN-SPACING', week: w.n, day: null, detail: 'time trial beside the long run' }))
     })
   },
@@ -1372,11 +1392,19 @@ const BATCH_19: Partial<Record<RuleId, Predicate>> = {
       }
       for (const w of main) if (w.phase === 'build' && seg(w) && !legal.has(w.n)) out.push({ rule_id: 'INV-PLAN-RACE-PACE-LR-BUILD-WINDOW', week: w.n, day: null, detail: 'segment long run outside the build window' })
     }
+    // 🔴 ADR027-B3-STRICT-01 / sitting B6 — EVERY STREAK, NOT ONLY THE FIRST. `validatePlan`
+    // `break`s after one finding, so a plan with three segment long runs in weeks 3-5 AND again in
+    // weeks 9-11 reports one violation and the second block is invisible: the runner is told about
+    // one stretch of back-to-back race-pace long runs while another goes unmentioned. The board:
+    // *"Report every streak."*
+    //
+    // ⚠️ ONE FINDING PER STREAK, NOT PER WEEK IN IT. `run` resets after reporting, so a run of
+    // five reports once at week 3 and again only if a fresh streak reaches three — otherwise a
+    // long stretch would push a finding on every week past the third and bury the count.
     let run = 0
     for (const w of main) {
       run = seg(w) ? run + 1 : 0
-      // The FIRST streak only, as validatePlan reports it (it breaks after one finding).
-      if (run >= 3) { out.push({ rule_id: 'INV-PLAN-RACE-PACE-LR-BUILD-WINDOW', week: w.n, day: null, detail: 'three segment long runs in a row' }); break }
+      if (run >= 3) { out.push({ rule_id: 'INV-PLAN-RACE-PACE-LR-BUILD-WINDOW', week: w.n, day: null, detail: 'three segment long runs in a row' }); run = 0 }
     }
     return out
   },
@@ -1944,9 +1972,13 @@ const BATCH_27: Partial<Record<RuleId, Predicate>> = {
       const lr = lrOf(w)
       const km = lr ? sessionKmSelfPaced(lr) : null
       if (!lr || km == null || km + 0.01 < threshold) return false
-      if (lr.lr_segment_pace) return true
-      const l = (lr.label ?? '').toLowerCase()
-      return l.includes('pace') || l.includes(' mp') || l.startsWith('mp') || l.includes('hm-pace')
+      // 🔴 ADR027-B3-STRICT-01 / sitting B15 — THE LABEL ARM IS DROPPED. A long run counted as
+      // "peak-level" if its LABEL happened to contain "pace", " mp", "mp…" or "hm-pace", which is
+      // D-17's forbidden shape: the enricher is allowed to rewrite a display string, so the same
+      // plan could change verdict after enrichment without one session changing. The board
+      // measured the arm unnecessary (M8: **0 live plans need it**) and ruled: drop it. The
+      // stamped `lr_segment_pace` is the structural signal and is now the only one.
+      return !!lr.lr_segment_pace
     }
     const eligible = input.hard_session_relationship === 'love' && (input.injury_history ?? []).length === 0 && input.training_age === '5yr+'
     let used = false

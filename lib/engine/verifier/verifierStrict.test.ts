@@ -215,3 +215,28 @@ describe('B5 — every long run, and an unpriceable one is unverified rather tha
     expect(findings(p, RULE).length).toBe(1)
   })
 })
+
+describe('B9 — a time trial under a non-day key is unverified, not an arbitrary gap', () => {
+  const RULE = 'INV-PLAN-TT-LONG-RUN-SPACING'
+  const tt = { type: 'hard', label: '5K time trial', distance_km: 5, is_time_trial: true } as unknown as Session
+  const long = { type: 'easy', role: 'long_run', label: 'Long run', distance_km: 20, pace_target: '6:00-6:30 /km' } as unknown as Session
+
+  it('🔴 a session stored under a key that is not a weekday is not measured against the long run', () => {
+    // `DAYS.indexOf('sun2')` is -1 and the old arithmetic carried on from there.
+    //
+    // ⚠️ THE LONG RUN IS ON SUNDAY DELIBERATELY, AND MY FIRST CASE PUT IT ON THURSDAY AND PROVED
+    // NOTHING. `min_gap_days_from_long_run` is 2, and the sentinel gap depends on the long run's
+    // day: against Thursday it is min(|-1-3|, 7-4) = 3, which is NOT under the minimum, so both
+    // readings stay silent and the mutation passed. Against SUNDAY it is min(|-1-6|, 7-7) = **0**,
+    // comfortably inside the minimum, so the old reading invents a violation and the new one
+    // declines. Mutate on the far side of the threshold or the falsification is worthless.
+    const p = planWith({}, { sessions: { ...(sessions({ sun: long }) as unknown as Record<string, unknown>), sun2: tt } })
+    expect(findings(p, RULE), 'a non-day key carries no measurable gap').toEqual([])
+  })
+
+  it('and a time trial on a REAL day beside the long run still fires', () => {
+    // The guard must not silence the rule generally — this is the case it exists for.
+    const p = planWith({}, { sessions: sessions({ sun: long, sat: tt }) })
+    expect(findings(p, RULE).length, 'one day apart, inside the minimum gap of 2').toBe(1)
+  })
+})

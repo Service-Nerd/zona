@@ -1204,6 +1204,24 @@ interface StrictDivergence {
 }
 
 const STRICT_DIVERGENCES: Record<string, StrictDivergence> = {
+  'INV-PLAN-PEAK-LR-ALTERNATION': {
+    ruling: 'B15',
+    direction: 'narrower',
+    reach: 'reached',
+    why: 'A long run counted as "peak-level" if its LABEL contained "pace", " mp", "mp…" or "hm-pace" — D-17\'s forbidden shape, since the enricher may rewrite a display string and change the verdict with no session changing. The board measured the arm unnecessary (M8: 0 live plans need it) and ruled it dropped; the stamped `lr_segment_pace` is the only signal now. 📐 Measured 25 divergences here, not the latency I first declared — the corpus does build long runs whose label carries "pace" without the stamp, which is exactly the population the board measured at 0 on LIVE plans. Two worlds again.',
+  },
+  'INV-PLAN-RACE-PACE-LR-BUILD-WINDOW': {
+    ruling: 'B6',
+    direction: 'stricter',
+    reach: 'reached',
+    why: '`validatePlan` `break`s after one finding, so a plan with three segment long runs in weeks 3-5 AND again in 9-11 reports one and hides the other. Now every streak is reported, once per streak (`run` resets) rather than once per week past the third. 📐 Measured 270 divergences here, not the latency I first declared: the mutation battery builds plans where most weeks carry a segment long run, so one `break` hid a great many.',
+  },
+  'INV-PLAN-TT-LONG-RUN-SPACING': {
+    ruling: 'B9',
+    direction: 'narrower',
+    reach: 'latent',
+    why: '`DAYS.indexOf` returns -1 for a session stored under a non-weekday key and the arithmetic carries on: against a Thursday long run that is min(|-1-3|, 7-4) = 3 days, computed from a sentinel. Now unverified. `narrower` because the only change is declining a gap it could not measure; latent because every session in this corpus sits under a real day key.',
+  },
   'INV-PLAN-LONGEST-RUN-NOT-IN-BASE': {
     ruling: 'B5',
     direction: 'both',
