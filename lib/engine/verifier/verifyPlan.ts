@@ -19,7 +19,7 @@ import { V1_SESSION_CATALOGUE } from '@/lib/plan/sessionCatalogueData'
 import { FUELLING_PRACTICE_NOTE, ULTRA_FUELLING_PREFIX } from '@/lib/plan/fuellingNotes'
 import { PLAN_SIGNATURES } from '@/lib/plan/planSignatures'
 import { normaliseDays } from '@/lib/plan/days'
-import { sessionKmSelfPaced, sessionKmOrZero } from '@/lib/plan/sessionDistance'
+import { sessionKm, sessionKmSelfPaced, sessionKmOrZero } from '@/lib/plan/sessionDistance'
 import { hasInjuryKeyword, hasDeliveredCapInjury, hasVolumeCappedInjuryHistory } from '@/lib/plan/injuryScope'
 import { BENCHMARK_VDOT_MAX } from '@/lib/plan/benchmarkCheck'
 import { parsePaceMidpoint } from '@/lib/plan/paceParse'
@@ -991,12 +991,39 @@ const BATCH_12: Partial<Record<RuleId, Predicate>> = {
   },
 
   // §7: the week's two largest sessions sit at least the configured gap apart.
-  // ⚠️ PORTED FAITHFULLY: "size" is distance_km, else duration_mins, so km and minutes are compared; raised.
+  //
+  // 🔴 ADR027-B3-STRICT-01 / sitting B3 — TWO DEFECTS, BOTH RULED. `validatePlan` ranked by
+  // `distance_km ?? duration_mins ?? 0`, so **a 10 km run (10) ranked below a 40-minute easy run
+  // (40)**: km and minutes compared as if they were the same quantity, which makes "the two
+  // largest" the two with the biggest NUMBER, not the biggest session. And it skipped only
+  // `w.type === 'deload'`, so a badge-only deload — one the engine marks without setting `type` —
+  // was ranked as an ordinary week, where every other deload rule here already uses
+  // `isDeloadWeek`. The board: *"Rank by kilometre-equivalent at the easy pace; treat a badge-only
+  // deload as a deload, like every other deload rule."*
+  //
+  // ⚠️ THE RULE'S VALUE STAYS UNSETTLED and this does not touch it (prior disagreement, recorded
+  // in the sitting). `MIN_HOURS_BETWEEN_LARGEST_SESSIONS` is unchanged; only which two sessions
+  // the rule is looking at changes.
+  //
+  // ⚠️ `sessionKmSelfPaced` FIRST, the plan's easy pace second. The owner's own header says the
+  // session's band is the better conversion — a long run with a race-pace segment is not run at
+  // easy pace — and the ruling's "at the easy pace" is about converting minutes to km at all, not
+  // about preferring a plan-level number to a session-level one.
+  //
+  // ⚠️ AND I OVER-REACHED HERE FIRST, WHICH THE REGISTER'S CONTAINMENT ARM CAUGHT. My first cut
+  // skipped the whole week when any session could not be priced — "unverified, never 0", which is
+  // the board's language for **B5 and B9** and is NOT what it ruled for B3. Applied here it
+  // silently dropped real findings (one `strip pace_target` mutation lost a week outright). A
+  // ruling's reasoning does not travel to a rule it was not written for: an unpriceable session
+  // keeps its raw number here, exactly as before, so this fix changes the RANKING and nothing else.
   'INV-PLAN-LARGEST-SESSIONS-SPACED': plan => {
     const min = Math.ceil(GENERATION_CONFIG.MIN_HOURS_BETWEEN_LARGEST_SESSIONS / 24)
-    const size = (s: Session) => (s.type === 'race' ? 0 : (s.distance_km ?? s.duration_mins ?? 0))
-    return plan.weeks.filter(w => w.n > 0 && w.type !== 'deload').flatMap(w => {
-      const placed = daysOf(w).filter(x => !!x.session && size(x.session) > 0)
+    const easy = easyMinPerKm(plan)
+    const size = (s: Session): number =>
+      s.type === 'race' ? 0
+        : (sessionKmSelfPaced(s) ?? sessionKm(s, easy) ?? s.distance_km ?? s.duration_mins ?? 0)
+    return plan.weeks.filter(w => w.n > 0 && !isDeloadWeek(w)).flatMap(w => {
+      const placed = daysOf(w).filter(x => !!x.session && size(x.session!) > 0)
         .map(x => ({ day: x.day, size: size(x.session!) })).sort((a, b) => b.size - a.size)
       if (placed.length < 2) return []
       const ia = DAYS.indexOf(placed[0].day), ib = DAYS.indexOf(placed[1].day)
@@ -1007,12 +1034,44 @@ const BATCH_12: Partial<Record<RuleId, Predicate>> = {
   },
 
   // §23: the longest long run is not in base while later phases run shorter.
+  //
+  // 🔴 ADR027-B3-STRICT-01 / sitting B5 — TWO DEFECTS IN HOW THE LONGEST WAS FOUND, both ruled:
+  // `longKm` takes `.find(isLongRun)`, so **only the FIRST long run in a week is considered** and
+  // a week carrying two has its second ignored; and it reads `sessionKmSelfPaced(s) ?? 0`, so an
+  // unpriceable long run is scored as **covering no ground**, which can only ever make base look
+  // shorter and the rule look satisfied. The board: *"Every long run; an unpriceable one is
+  // unverified, never 0."*
+  //
+  // ⚠️ A DEDICATED HELPER, NOT A CHANGE TO `longKm`, AND THAT IS A SCOPE DECISION. `longKm` has
+  // one other consumer, `INV-PLAN-TAPER-LR-NOT-ABOVE-PEAK`, which has the **identical** shape and
+  // which the sitting did not rule. Fixing it here would be changing a rule no board ruled on, so
+  // the twin is left intact and named instead — visible for the next sitting rather than silently
+  // altered or silently forgotten.
   'INV-PLAN-LONGEST-RUN-NOT-IN-BASE': plan => {
     const scored = plan.weeks.filter(w => w.n > 0 && w.type !== 'race' && w.type !== 'deload')
-    const top = (ph: string) => Math.max(0, ...scored.filter(w => w.phase === ph).map(longKm))
+    // Every long run in the week, priced by its own band. `null` means unpriceable.
+    const longsOf = (w: Week): (number | null)[] =>
+      Object.values((w.sessions ?? {}) as Record<string, Session | undefined>)
+        .filter((x): x is Session => !!x && isLongRun(x))
+        .map(s => sessionKmSelfPaced(s))
+    // 🔴 "UNVERIFIED, NEVER 0" APPLIES ONLY WHERE IT CAN CHANGE THE ANSWER, and my first cut got
+    // this wrong twice over. It declined whenever ANY long run anywhere was unpriceable, which
+    // LOSES true findings: an unpriceable run in BASE can only lower our estimate of base, and the
+    // claim is "base is longer than later", so a lower base makes the rule fire less — conservative
+    // and safe. It is an unpriceable run in a LATER phase that is dangerous: `later` is an upper
+    // bound we are asserting base exceeds, and `?? 0` would read "we cannot price it" as "it was
+    // nothing", which is the only direction that invents a violation.
+    //
+    // ⚠️ AND MY FIRST TEST FOR THIS WAS HOLLOW — the mutation back to `?? 0` landed (verified) and
+    // stayed green, because `Math.max` plus the `later > 0` guard absorb a zero. A case only
+    // distinguishes them when the later phase ALSO holds a priceable long run, so `later > 0`
+    // holds and the unpriceable one is the difference.
+    const laterPhases = ['build', 'peak', 'taper']
+    if (scored.some(w => laterPhases.includes(w.phase ?? '') && longsOf(w).some(v => v == null))) return []
+    const top = (ph: string) => Math.max(0, ...scored.filter(w => w.phase === ph).flatMap(w => longsOf(w).filter((v): v is number => v != null)))
     const base = top('base'), later = Math.max(top('build'), top('peak'), top('taper'))
     if (!(base > 0 && later > 0 && base > later)) return []
-    return [{ rule_id: 'INV-PLAN-LONGEST-RUN-NOT-IN-BASE', week: scored.find(w => w.phase === 'base' && longKm(w) === base)?.n ?? PLAN, day: null, detail: 'longest long run is in base' }]
+    return [{ rule_id: 'INV-PLAN-LONGEST-RUN-NOT-IN-BASE', week: scored.find(w => w.phase === 'base' && longsOf(w).includes(base))?.n ?? PLAN, day: null, detail: 'longest long run is in base' }]
   },
 }
 Object.assign(PREDICATES, BATCH_12)

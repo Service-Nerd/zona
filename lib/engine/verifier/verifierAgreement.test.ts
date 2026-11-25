@@ -1188,7 +1188,15 @@ const dropDay = (k: string) => k.replace(/^([^|]+\|[^|]+)\|[^|]+\|/, '$1|-|')
 interface StrictDivergence {
   /** The sitting row that ruled it, so the register points back at its authority. */
   ruling: string
-  direction: 'stricter' | 'narrower'
+  /**
+   * ⚠️ `both` EXISTS BECAUSE ONE RULING CAN DO TWO THINGS, and B3 found that the hard way: it
+   * ranks sessions correctly (finds mis-ranked pairs `validatePlan` missed) AND widens the deload
+   * skip to badge-only deloads (correctly stops reporting on weeks it should never have judged).
+   * Containment holds in NEITHER direction, so `both` asserts the stronger thing instead: the fix
+   * must be seen GAINING findings and LOSING findings, each at least once. A `both` entry that
+   * only ever loses is a rule being quietly switched off wearing a ruling's name.
+   */
+  direction: 'stricter' | 'narrower' | 'both'
   reach: 'reached' | 'latent'
   /** For `latent`, the measurement that says no plan reaches it. Required — a bare assertion of
    *  latency is the claim this repo has been wrong about most often. */
@@ -1196,6 +1204,18 @@ interface StrictDivergence {
 }
 
 const STRICT_DIVERGENCES: Record<string, StrictDivergence> = {
+  'INV-PLAN-LONGEST-RUN-NOT-IN-BASE': {
+    ruling: 'B5',
+    direction: 'both',
+    reach: 'latent',
+    why: '`longKm` took `.find(isLongRun)` — only the FIRST long run in a week — and read an unpriceable one as `?? 0`, i.e. covering no ground, which can only make base look shorter and the rule look satisfied. Now every long run is priced, and an unpriceable one makes the comparison UNVERIFIED rather than zero. ⚠️ LATENT HERE, MEASURED: 0 divergences in either direction, because no week in this corpus carries TWO long runs and no long run is unpriceable — so "every long run" equals "the first" and `?? 0` never fires. Both halves are proven directly in verifierStrict.test.ts instead. `both` is the direction it will diverge in once reached. ⚠️ `longKm`\'s other consumer, INV-PLAN-TAPER-LR-NOT-ABOVE-PEAK, has the identical shape and was NOT ruled — left intact and named in the code rather than silently changed.',
+  },
+  'INV-PLAN-LARGEST-SESSIONS-SPACED': {
+    ruling: 'B3',
+    direction: 'both',
+    reach: 'reached',
+    why: 'Two defects. `validatePlan` ranked by `distance_km ?? duration_mins ?? 0`, so a 10 km run (10) ranked below a 40-minute easy run (40) — km against minutes. And it skipped only `w.type === \'deload\'`, so a badge-only deload was ranked as an ordinary week. Now ranked by km-equivalent (the session\'s own band, else the plan\'s easy pace) and gated on `isDeloadWeek`, as every other deload rule here already is. ⚠️ `both`, and MEASURED rather than reasoned: the RANKING alone is bidirectional — a different pair becomes "largest", so some weeks start being flagged and others correctly stop (31 losses when the ranking is reverted). My first `why` attributed the losses to the widened deload skip and that was wrong: reverting the deload half alone leaves this suite GREEN, so no badge-only deload week exists in this corpus and that half is unreached here. It is proven directly in verifierStrict.test.ts instead. The rule\'s VALUE is untouched — the sitting records that as still unsettled.',
+  },
   'INV-PLAN-EMPTY-SESSION': {
     ruling: 'B2',
     direction: 'stricter',
@@ -1228,7 +1248,7 @@ function compare(rule: string) {
   const diffs: string[] = []
   // A declared divergence is compared as containment plus extras, never as equality.
   const d = STRICT_DIVERGENCES[rule]
-  let diverged = 0
+  let diverged = 0, gained = 0, lost = 0
   for (const c of runs) {
     const { old: oldKeys, nu: newKeys } = keysFor(rule, c)
     fired.old += oldKeys.length; fired.new += newKeys.length
@@ -1245,21 +1265,25 @@ function compare(rule: string) {
     // diverges. It would equally have missed a `stricter` fix that reports the same key twice.
     // Counting occurrences is the only comparison that can see either.
     const count = (ks: string[]) => ks.reduce((m, k) => m.set(k, (m.get(k) ?? 0) + 1), new Map<string, number>())
-    const [sub, sup] = d.direction === 'stricter' ? [count(oldKeys), count(newKeys)] : [count(newKeys), count(oldKeys)]
-    const lost: string[] = []
-    // `Array.from`, not `for...of` on a Map: this repo's tsconfig has no downlevelIteration (CLAUDE.md § TypeScript).
-    for (const [k, n] of Array.from(sub)) {
-      const have = sup.get(k) ?? 0
-      if (have < n) lost.push(`${k}×${n - have}`)
+    const o = count(oldKeys), n2 = count(newKeys)
+    // Excess of `a` over `b`, as a multiset. `Array.from`, not `for...of` on a Map: no
+    // downlevelIteration in this tsconfig (CLAUDE.md § TypeScript).
+    const excess = (a: Map<string, number>, b: Map<string, number>) => {
+      const out: string[] = []
+      for (const [k, cnt] of Array.from(a)) { const have = b.get(k) ?? 0; if (cnt > have) out.push(`${k}×${cnt - have}`) }
+      return out
     }
-    if (lost.length) {
-      // A fix that DROPS a finding the other checker makes is not a declared divergence — it is a
-      // regression wearing one, and this is the arm that tells them apart.
-      diffs.push(`${c.label}: ${d.direction} divergence LOST ${d.direction === 'stricter' ? 'an old' : 'a new'} finding [${lost.sort().join(',')}]`)
-    }
-    for (const [k, n] of Array.from(sup)) diverged += Math.max(0, n - (sub.get(k) ?? 0))
+    const gainedKeys = excess(n2, o)   // the verifier reports what validatePlan does not
+    const lostKeys = excess(o, n2)     // validatePlan reports what the verifier does not
+    const total = (ks: string[]) => ks.reduce((t, k) => t + Number(k.split('×').pop()), 0)
+    // A fix that DROPS a finding it was not ruled to drop is not a declared divergence — it is a
+    // regression wearing one, and this is the arm that tells them apart.
+    if (d.direction === 'stricter' && lostKeys.length) diffs.push(`${c.label}: stricter divergence LOST an old finding [${lostKeys.sort().join(',')}]`)
+    if (d.direction === 'narrower' && gainedKeys.length) diffs.push(`${c.label}: narrower divergence GAINED a finding [${gainedKeys.sort().join(',')}]`)
+    diverged += d.direction === 'narrower' ? total(lostKeys) : d.direction === 'stricter' ? total(gainedKeys) : total(gainedKeys) + total(lostKeys)
+    gained += total(gainedKeys); lost += total(lostKeys)
   }
-  return { fired, diffs, diverged }
+  return { fired, diffs, diverged, gained, lost }
 }
 
 describe('ADR027-B3-VERIFIER — agreement with validatePlan, per ported rule', () => {
@@ -1291,7 +1315,13 @@ describe('ADR027-B3-VERIFIER — agreement with validatePlan, per ported rule', 
         continue
       }
       if (!d.ruling || !d.why) { bad.push(`${rule}: a divergence must name its ruling and its reason`); continue }
-      const { diverged, fired } = compare(rule)
+      const { diverged, fired, gained, lost } = compare(rule)
+      // A `both` entry must be seen doing BOTH, or it is one of the other two mislabelled — or, in
+      // the direction that matters, a rule being switched off under a ruling's name.
+      if (d.direction === 'both' && d.reach === 'reached' && diverged > 0) {
+        if (gained === 0) bad.push(`${rule} (${d.ruling}): declared 'both' and it only ever LOSES findings (${lost}) — that is 'narrower', or a rule being switched off`)
+        if (lost === 0) bad.push(`${rule} (${d.ruling}): declared 'both' and it only ever GAINS findings (${gained}) — that is 'stricter'`)
+      }
       // 🔴 A `narrower` DIVERGENCE CANNOT SEE THE RULE BEING KILLED OUTRIGHT, because an empty
       // multiset is contained in anything — so "report nothing at all" satisfies containment and
       // registers as a large, legal divergence. Falsified: replacing B7's body with `return []`

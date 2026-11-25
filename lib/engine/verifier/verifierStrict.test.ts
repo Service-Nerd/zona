@@ -129,3 +129,89 @@ describe('B8 — an empty prep_time_alternatives list is no alternatives', () =>
     expect(out.map(f => f.detail)).toContain('warned without its alternatives')
   })
 })
+
+describe('B3 — the two largest sessions, ranked in one unit and skipping every deload', () => {
+  const RULE = 'INV-PLAN-LARGEST-SESSIONS-SPACED'
+  const run = (over: Record<string, unknown>) => ({ type: 'easy', label: 'Easy run', ...over }) as unknown as Session
+
+  it('🔴 a 10 km run outranks a 40-minute easy run — km and minutes are not the same quantity', () => {
+    // `validatePlan` ranks on `distance_km ?? duration_mins ?? 0`, so 40 (minutes) beat 10 (km) and
+    // the "two largest" were the two biggest NUMBERS. Here the 10 km run and the 12 km run are the
+    // real top two and they sit one day apart, which the old ranking could not see.
+    const p = planWith({}, { sessions: sessions({
+      mon: run({ distance_km: 10, duration_mins: 55, pace_target: '5:30-6:00 /km' }),
+      tue: run({ distance_km: 12, duration_mins: 66, pace_target: '5:30-6:00 /km' }),
+      thu: run({ duration_mins: 40, pace_target: '5:30-6:00 /km' }),
+    }) })
+    const out = findings(p, RULE)
+    expect(out.length, 'the two biggest SESSIONS are mon and tue, one day apart').toBe(1)
+  })
+
+  it('🔴 a BADGE-ONLY deload is skipped, as every other deload rule here already does', () => {
+    // The corpus cannot reach this: it holds no badge-only deload week, so the agreement harness
+    // is green either way and only a direct case proves it. `w.type` is NOT 'deload'; the week is
+    // marked by its badge, and `isDeloadWeek` is the owner that reads both.
+    const close = sessions({
+      mon: run({ distance_km: 12, duration_mins: 66, pace_target: '5:30-6:00 /km' }),
+      tue: run({ distance_km: 10, duration_mins: 55, pace_target: '5:30-6:00 /km' }),
+    })
+    const ordinary = planWith({}, { type: 'build', sessions: close })
+    expect(findings(ordinary, RULE).length, 'an ordinary week with two big sessions adjacent should fire').toBe(1)
+    // The field is `badge`, read from the verifier's own predicate (`w.type === 'deload' ||
+    // w.badge === 'deload'`) rather than guessed — my first attempt invented `is_deload`.
+    const badgeOnly = planWith({}, { type: 'build', badge: 'deload', sessions: close })
+    expect(findings(badgeOnly, RULE), 'a badge-only deload must be skipped').toEqual([])
+  })
+})
+
+describe('B5 — every long run, and an unpriceable one is unverified rather than zero', () => {
+  const RULE = 'INV-PLAN-LONGEST-RUN-NOT-IN-BASE'
+  const long = (over: Record<string, unknown>) =>
+    ({ type: 'easy', role: 'long_run', label: 'Long run', pace_target: '6:00-6:30 /km', ...over }) as unknown as Session
+  const week = (n: number, phase: string, sess: Record<string, unknown>) =>
+    ({ n, date: '2026-11-23', label: `W${n}`, phase, type: 'build', weekly_km: 30, sessions: sessions(sess) })
+  const plan = (weeks: unknown[]) => ({ meta: { race_distance_km: 21.1, race_date: '2027-03-01' }, weeks } as unknown as Plan)
+
+  it('🔴 a SECOND long run in the base week is seen — `.find` stopped at the first', () => {
+    // Base holds a short long run on Saturday and a 30 km one on Sunday; build's is 20 km. Reading
+    // only the first long run scores base at 12 and the rule stays silent on a real violation.
+    const p = plan([
+      week(1, 'base', { sat: long({ distance_km: 12 }), sun: long({ distance_km: 30 }) }),
+      week(2, 'build', { sun: long({ distance_km: 20 }) }),
+    ])
+    expect(findings(p, RULE).length, 'base 30 km > build 20 km, via the SECOND long run').toBe(1)
+  })
+
+  it('🔴 an UNPRICEABLE long run in a LATER phase makes the comparison unverified, not zero', () => {
+    // The case that actually distinguishes the two readings, and my first one did not: build holds
+    // a priceable 20 km long run AND an unpriceable one. Under `?? 0` the unpriceable scores 0,
+    // `later` is 20, base 30 > 20 and the rule FIRES on an upper bound it cannot support. Now it
+    // declines. ⚠️ A case where build held ONLY the unpriceable run proves nothing — `later` is
+    // then 0 and the rule's own `later > 0` guard returns [] under both readings.
+    const p = plan([
+      week(1, 'base', { sun: long({ distance_km: 30 }) }),
+      week(2, 'build', { sat: long({ distance_km: 20 }), sun: long({ duration_mins: 100, pace_target: null }) }),
+    ])
+    expect(findings(p, RULE), 'later holds a long run nobody can price, so base > later is unprovable').toEqual([])
+  })
+
+  it('an unpriceable long run in BASE is still judged — it can only make the rule fire less', () => {
+    // Declining here would LOSE a true finding, which my first cut did: the claim is "base is
+    // longer than later", so a base run we cannot price lowers our estimate of base and makes the
+    // assertion conservative. Base's priceable 30 km still exceeds build's 20 km.
+    const p = plan([
+      week(1, 'base', { sat: long({ distance_km: 30 }), sun: long({ duration_mins: 100, pace_target: null }) }),
+      week(2, 'build', { sun: long({ distance_km: 20 }) }),
+    ])
+    expect(findings(p, RULE).length, 'base 30 > build 20 is still provable').toBe(1)
+  })
+
+  it('and a fully priceable plan with the longest in base still fires', () => {
+    // The guard must not silence the rule generally — this is the case it exists for.
+    const p = plan([
+      week(1, 'base', { sun: long({ distance_km: 30 }) }),
+      week(2, 'build', { sun: long({ distance_km: 20 }) }),
+    ])
+    expect(findings(p, RULE).length).toBe(1)
+  })
+})
