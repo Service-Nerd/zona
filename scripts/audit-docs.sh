@@ -583,7 +583,14 @@ fi
 #     shipped-but-open. The registry row says REVERTED in its first cell. **Remove when the
 #     Coaching Board rules on §116's ramp target versus §82/§122's weekday cap and the re-fix
 #     lands, or if the item is killed.**
-_SHIPPED_AND_OPEN_OK='READINESS-SURFACE-01 STEPPER-CONTROL-01 TODAY-CTA-CLEARANCE-01 NATIVE-BATCH-01 CONTRACT-COVERAGE-03 BASEBUILD-DURATION-01'
+#   ADR027-B3-STRICT-01 (2026-11-25): a MULTI-WAVE item by the sitting's own structure. Phase 0
+#     (the `STRICT_DIVERGENCES` register) and 13 of the 14 B-rows are LIVE in the verifier and
+#     carry a registry row; C1 (the self-label replacement, its own wave), D2/D3 (named parameters
+#     and rule data) and E1 (moves a rule onto the base-build ROUTE, a production change) are
+#     still open under the same heading, which is marked 🟡. B10 is ruled and blocked on the
+#     producer: `quality_pool_sizes` carries no week key. **Remove when C1, D2, D3 and E1 have
+#     shipped, or when the remainder is split into its own id.**
+_SHIPPED_AND_OPEN_OK='READINESS-SURFACE-01 STEPPER-CONTROL-01 TODAY-CTA-CLEARANCE-01 NATIVE-BATCH-01 CONTRACT-COVERAGE-03 BASEBUILD-DURATION-01 ADR027-B3-STRICT-01'
 for id in $(comm -12 /tmp/_reg /tmp/_open); do
   case " $_SHIPPED_AND_OPEN_OK " in *" $id "*) continue ;; esac
   say "  STILL OPEN $id (has a feature-registry row)"; afail=1; fail=1

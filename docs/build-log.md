@@ -6,6 +6,23 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-11-25 — ADR027-B3-STRICT-01 · the register came first, and then it caught seven of my own defects
+**Shipped:** The register of intended divergences from `validatePlan`, and 13 of the Coaching Board's 14 ruled checker fixes.
+
+**Dev learning:** The order was the whole design. Every arm of the agreement harness asserts the verifier and the old checker report the *same* findings — that is what made a 207-rule port trustworthy — so a fix the board ruled on turns it red **by design**. Without a register there are exactly two routes to a green suite: soften the fix, or loosen the comparison. Both lose the ruling. So the register had to exist before the first fix, and it had to extend `OLD_OMITS_DAY`, the pattern already in that file, rather than become a sixth parallel mechanism.
+Then the first fix found two defects *in the register*: my `diverged` count was set-based, so it could not see fifteen identical keys becoming one; and a `narrower` divergence could not see a rule being killed outright, because an empty multiset is contained in anything. Both are now closed, the second by the register rather than by a neighbouring arm.
+
+**Product/creator learning:** Twelve of the fourteen rows were a checker disagreeing with its own principle, and two were rules that could not fire at all — `INV-MAINT-NO-RACE-SPECIFIC` read a `category` off the session when the category lives on the catalogue row, so a rule forbidding race-specific work in a maintenance block has been unwakeable for every plan that ever existed. The more useful number: **"18 checker fixes" was 14.** The item counted the sitting's table rows, two of which the board explicitly ruled KEEP.
+
+**AI-building learning:** I wrote three hollow tests in one session and every one of them was found the same way — by asserting the mutation *landed* before trusting that it failed. B5's `?? 0` case was absorbed by `Math.max` plus the rule's own guard. B9's put the long run on Thursday, where the sentinel gap computes to 3 against a minimum of 2; Sunday gives 0. B11a used `Achilles_Tendinopathy`, and the underscore *follows* the word, so a plain substring still matches. Each test looked right, read right, and proved nothing.
+The worst one was not a test. A `replace(old, new, 1)` with no assertion hit the **first** match in the file, which belonged to a rule the board never ruled on — and the suite stayed green, because the change had no effect in that corpus. I found it by counting occurrences afterwards. An unverified edit under a green suite is evidence about the suite.
+
+**The honest bit:** Three times I declared a divergence "latent" and the register came back with a number — 40, 270, 25. Each time I had taken the board's measurement, which is about *live plans*, and applied it to a corpus of a hundred deliberately broken ones. That is the denominator error this repo keeps paying for, and I made it three times in an afternoon with the correction mechanism already running. I also invented three field names before reading their owners: the deload badge, the maintenance meta shape, and the generator input.
+
+**Hook material:** The register I built to police thirteen fixes failed on the first one — it compared findings as sets, and the whole divergence was fifteen copies of one finding becoming one.
+
+**Postable?:** yes
+
 ## 2026-11-25 — CONFIRM-REVERT-WRITE-ERRORS-01 + STEP4-RUN-JOURNEY-TELEMETRY-01 · the review found nine defects and eight were mine
 **Shipped:** One owner for "the runner answered a plan proposal, so apply it and record the answer" across four routes that each wrote it by hand, plus the missing half of the run-to-logged-session telemetry.
 
