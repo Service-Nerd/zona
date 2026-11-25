@@ -10041,7 +10041,12 @@ export function validatePlan(plan: Plan, rawInput: GeneratorInput): Violation[] 
  * reshaped week when it's known: stale copy on an untouched legacy week is a
  * pre-GEN-FIX-06 generation defect, not this reshape's responsibility.
  */
-const RESHAPE_SKIP_INVARIANTS = new Set<string>([
+// EXPORTED for ADR-027 B3 step 3 (2026-11-25). The verifier's live-plan shadow run compares
+// against `validateStoredPlan`, which is this variant — so the shadow must know which rules that
+// baseline deliberately drops, or it reports them as new strict readings. Measured: 6 of 8
+// flagged live plans were this artefact. ⚠️ READ, NEVER COPIED: a second list would drift, and
+// the two readers would then disagree about what the baseline asks, which is the defect itself.
+export const RESHAPE_SKIP_INVARIANTS = new Set<string>([
   'INV-PLAN-COVERS-RACE-DATE',
   'INV-PLAN-RACE-ON-RACE-DAY',
 ])

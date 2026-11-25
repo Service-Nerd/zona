@@ -38,8 +38,8 @@ paused: only defects that harm runners are fixed, each one added to the hotfix t
 | B2 L1 runner facts + profile | ✅ done; part 1 of the route adoption done | `ADR027-B2-PROFILE`, `ADR027-B2B-PROFILE`. Parts 2–4 of `ADR027-B2B-PROFILE-ADOPTION` land in B4 (founder) |
 | B3 step 1: rule catalogue (L2) | ✅ done | `ADR027-B3-CATALOGUE`, `lib/engine/catalogue/rules.ts`, 221 rules |
 | B3 step 2: independent verifier (L5) | 🟡 **207 of 221 rules ported**, each agreeing finding for finding with the old checker | `ADR027-B3-VERIFIER`, `lib/engine/verifier/` |
-| B3 step 2b: the board's strict readings | 🔲 ruled, not started | `ADR027-B3-STRICT-01` |
-| B3 step 3: nightly check of every live plan, observe-only | 🔲 not started | `ADR027-B3-REMAINING` |
+| B3 step 2b: the board's strict readings | 🟡 **14 of 14 rows shipped**; C1, D2–D3 open, B10 blocked on the producer, B14 on a §117 reading | `ADR027-B3-STRICT-01`, `lib/engine/verifier/verifierStrict.test.ts` |
+| B3 step 3: nightly check of every live plan, observe-only | ✅ done 2026-11-25 | `ADR027-B3-SHADOW-01`, `lib/ops/verifierShadow.ts`, inside `/api/ops/plan-audit` |
 | B3 step 4: trigger catalogue (ARCH-ENG-018) + the event vocabulary (ARCH-ENG-022) | 🔲 not started | `ADR027-B3-REMAINING`; vocabulary folded in 2026-11-25 |
 | B3 exit: founder signs off the verifier replacing `validatePlan` as the gate | 🔲 | must name the 14 held rules (below) |
 | B4–B8 (planner, adapt, explanation, single writer, enrichment) | 🔲 not started | HLD |
@@ -55,11 +55,47 @@ door, so it is the producer checking itself. `INJURY-NO-HILLS`, `RACE-WEEK-SHARP
 ruled to be ported on structural signals (B15, B18). One ported rule, `ZONE-LABEL-HAS-PRESCRIPTION`, can never run in
 production and is named dead in the harness.
 
+### B3 step 3 — the live-plan shadow run, and the number the cut-over rests on
+
+`/api/ops/plan-audit` now runs the verifier beside `validateStoredPlan` on every stored plan, observe-only, with the
+profile built **as of each plan's generation date** (`lib/ops/verifierShadow.ts`). Measured on the live fleet,
+2026-11-25 — **44 stored plans, 39 race and 5 base-build, 44 assessed, 0 unassessable:**
+
+| | |
+|---|---|
+| Plans that would GAIN a code | **1**, `INV-PLAN-QUALITY-PER-WEEK` — and it is the same plan whose level is not comparable (below), so **0 comparable plans gain a code from a held reading** |
+| Plans that would LOSE a code | **0** |
+| Severity escalations (warn → error) | **0** |
+| Rules that could not evaluate | **0**, across all 44 |
+| Rules fired by either side | **51**, of which **46 have identical instance counts** |
+
+🔴 **TWO PORT GAPS, AND THE FIRST RUN READ BOTH AS STRICT READINGS.** It reported 8 plans flagged; 7 of those 8 were
+artefacts of the comparison asking a harsher question than its baseline, and the eighth of a level the profile
+re-derives. Both are now named in the measurement rather than counted by it, and both are filed:
+
+- **`VERIFIER-RESHAPE-POLICY-01`** — the audit's baseline is `validateReshapedPlan`, which drops
+  `RESHAPE_SKIP_INVARIANTS` (`COVERS-RACE-DATE`, `RACE-ON-RACE-DAY`) because they fire on every legacy plan that
+  ends short of race day and a reshape neither caused that nor can fix it. **The verifier has no such policy, so
+  7 live plans would gain those two codes every morning** — exactly the noise that set exists to prevent.
+- **`VERIFIER-STORED-LEVEL-01`** — `storedPlanInput` takes the levels from `meta` so the old validator judges a plan at
+  the level it was BUILT at, but `fitnessAssessment.ts:201` lets `input.fitness_level` win the INTENSITY band
+  (`assessedIntensity = input.fitness_level ?? assessed.intensity`) and nothing reads `input.fitness_intensity_level`
+  at all. One §79-elevated live plan (`beginner` structural, `intermediate` intensity) therefore re-derives as a
+  beginner and is judged against a quality ceiling of **0 for 7 weeks**. Verified identical as of today, so §10's
+  staleness ramp is not the cause.
+
+📐 **AND THE TOTALS NEARLY CANCELLED, WHICH IS WHY THE SUMMARY REPORTS PER-RULE INSTANCE COUNTS.** 489 new findings
+against 487 old looked like agreement; the `+2` was **+8 on one plan's `INV-PLAN-LARGEST-SESSIONS-SPACED`** (B3's
+ranking fix genuinely reaching the fleet, 103 against 96 over the same 18 plans) and **−24 on one plan's
+`INV-PLAN-NO-INVENTED-AGE`** (reported plan-wide by the verifier, per-week by the old checker) almost netting out.
+Neither changes a code set, so the rule-id join is silent on both. `instance_delta_by_rule` lists only the rules that
+differ — 5 of 51 — so a doubling cannot hide inside a sum again.
+
 ### Where to pick up, in order
-1. **`ADR027-B3-STRICT-01`**: the 18 checker fixes and the self-label readings the board ruled, as deliberate divergences
-   from `validatePlan`, each in a register beside the agreement harness with its own falsified test.
-2. **B3 step 3**: the nightly live-plan check, observe-only. Build the profile **as of each plan's generation date**
-   (§10's staleness ramp moves the level with the clock). Report the count of live plans the strict readings flag.
+1. **`ADR027-B3-STRICT-01`**: C1 (the self-label replacement), then D2/D3. B10 needs a `quality_pool_sizes` week key
+   from the producer; B14 needs the §117 reading.
+2. **The two port gaps above**, which the cut-over needs settled: `VERIFIER-RESHAPE-POLICY-01` and
+   `VERIFIER-STORED-LEVEL-01`.
 3. **B3 step 4**: the trigger catalogue, with values unchanged (§124 Am. 1), **plus ARCH-ENG-022** — add `run_analysed` (§124 Am. 1 asked for it) and `run_arrived` with its match outcome; `run_logged` keeps its ratified meaning. Amended 2026-11-25 while the list was still only prose; the mechanical check is this step's.
 4. **The founder's cut-over sign-off**, naming the 14 held rules.
 5. Then B4, starting with 5K/10K, in shadow.

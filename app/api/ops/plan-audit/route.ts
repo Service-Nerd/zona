@@ -14,7 +14,11 @@ import { summarisePlanAges, type PlanAgeRow } from '@/lib/ops/planAuditAges'
 import { summariseCodeStep } from '@/lib/ops/planAuditCodeStep'
 import { summariseGoalGap } from '@/lib/ops/planAuditGoalGap'
 import { cadenceSinceLastRun } from '@/lib/ops/planAuditCadence'
+import {
+  shadowVerifyPlan, summariseVerifierShadow, type ShadowRow,
+} from '@/lib/ops/verifierShadow'
 import type { Plan } from '@/types/plan'
+import type { Violation } from '@/lib/plan/invariants'
 
 // GET/POST /api/ops/plan-audit — PLAN-AUDIT-01 daily constitutional audit.
 //
@@ -157,12 +161,19 @@ export async function POST(req: NextRequest) {
   // one is a STANDING report rather than a transition alert.
   const repairableRows: Array<{ user_id: string; codes: string[] }> = []
   const verdictNotes: string[] = []
+  // ADR-027 B3 step 3 — one row per plan, summarised after the loop. Kept in its own array and
+  // out of every other collector: `codesThisRun`, `repairableRows` and `lastSeen` all feed alerts.
+  const shadowRows: ShadowRow[] = []
 
   for (const row of rows ?? []) {
     const plan = row.plan_json as Plan | null
     if (!plan?.weeks?.length || !plan.meta) { skipped++; continue }
 
-    let errors
+    // ADR-027 B3 step 3 — the FULL list, every severity. The audit alerts on errors only, but
+    // the verifier shadow below compares against error AND warn: judging its output against the
+    // error-only slice would report every pre-existing warn as a new strict reading. One call,
+    // both uses — validating twice per plan is cost this route does not need.
+    let all: Violation[]
     try {
       // Single owner for "validate a stored plan" — it picks the constitution
       // that applies to this plan's KIND, then (for a race plan) prefers the
@@ -175,15 +186,28 @@ export async function POST(req: NextRequest) {
       // 50.5 against 8.2 for every other plan — and every one was a phantom,
       // because a plan with no start line has no prep-time status to annotate.
       // `baseBuildValidate.ts`'s own header had predicted it in writing.
-      errors = validateStoredPlan(plan).filter(v => v.severity === 'error')
+      all = validateStoredPlan(plan)
     } catch (e) {
       // A validator throw is itself a finding, but must not abort the audit.
       console.error('[plan-audit] validate threw', e)
       skipped++
       continue
     }
+    const errors = all.filter(v => v.severity === 'error')
     checked++
     checkedPlans.push(plan)
+    // ADR-027 B3 step 3 — THE VERIFIER, BESIDE THE OLD CHECKER, OVER THE LIVE FLEET.
+    //
+    // OBSERVE-ONLY, and structurally so: the row goes into `shadowRows` and nowhere else. It is
+    // deliberately NOT joined to `codes` below, so a strict reading cannot enter the per-user
+    // alert set, and its summary is recorded under its own event `source` that neither the
+    // per-user dedupe nor the fleet step reads. Nothing here can wake anyone before the founder
+    // has ruled on the cut-over, which is McMillan's order in the B3 sitting.
+    //
+    // Never throws — `shadowVerifyPlan` returns an UNASSESSED row with a named reason instead,
+    // including when the plan cannot say when it was generated. An ops probe that can fail the
+    // run it is observing is worse than no probe.
+    shadowRows.push(shadowVerifyPlan(plan, all, row.created_at as string | null))
     // PLAN-STORED-SCHEMA-DRIFT-01 — two questions this audit never asked, joined
     // to the SAME per-user code set so PLAN-AUDIT-01's alert-on-transition rule
     // covers them: a known-bad legacy plan reports once, a new break alerts the
@@ -373,6 +397,25 @@ export async function POST(req: NextRequest) {
   // `plan_enrich_server_saved` record its success case.
   await recordOpsEvent('plan_rule_invalid', { source: 'plan-audit-summary', ...summary }, null)
 
+  // ── ADR-027 B3 step 3 — THE CUT-OVER FIGURE ─────────────────────────────────
+  //
+  // `plans_strict_only` is the answer to the only question the B3 sitting left open: how many
+  // plans people are RUNNING would gain a finding if the verifier became the live checker. The
+  // agreement corpus cannot answer it — its ~100 fixtures are deliberately broken, and a rate
+  // over them says nothing about a fleet. `lost_by_rule` is the other half: a cut-over that
+  // drops a finding the old checker makes today is the direction nobody would notice.
+  //
+  // A THIRD `source`, read by neither consumer above (`plan-audit` for the per-user dedupe,
+  // `plan-audit-summary` for the fleet step), so observe-only holds without anyone remembering
+  // it. Recorded every run, clean or not: a zero here is a measurement, and the absence of a
+  // row would be indistinguishable from the probe never running.
+  const verifierShadow = summariseVerifierShadow(shadowRows)
+  await recordOpsEvent(
+    'plan_rule_invalid',
+    { source: 'plan-audit-verifier-shadow', ...verifierShadow },
+    null,
+  )
+
   // ── PLAN-WEEK-COLLISION-01 — does any LIVE week-keyed row predate its plan? ──
   //
   // Piggy-backs on this probe because it has already fetched every user's plan,
@@ -430,6 +473,9 @@ export async function POST(req: NextRequest) {
     ...summary, unchanged, changed, flagged,
     collisions: collisions.length,
     cause,
+    // ADR-027 B3 step 3. Returned as well as recorded, so the number can be read by running the
+    // route rather than by querying `ops_events` for it.
+    verifier_shadow: verifierShadow,
     // Kept for triage: the reason each classification reached its verdict, so an
     // `undecidable` can be chased without re-deriving it by hand.
     verdict_notes: verdictNotes.slice(0, 20),

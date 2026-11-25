@@ -169,6 +169,67 @@ sentences are mutually exclusive and a regression outranks an undecidable, asser
 `regressionVsNewRule.test.ts` — a digest that reads "NOT A DEFECT" over a regression would be worse
 than silence.
 
+## ADR-027 B3 step 3 — the verifier's shadow run (`verifier_shadow`, 2026-11-25)
+
+The route also runs `lib/engine/verifier/verifyPlan.ts` beside `validateStoredPlan` on every plan it reads, and reports
+what would change if the verifier replaced the old checker. **Observe-only, and structurally so.** Owner:
+`lib/ops/verifierShadow.ts`; gate `lib/ops/verifierShadow.test.ts` (28 cases).
+
+```ts
+verifier_shadow: {
+  assessed: number,                      // plans the verifier could judge
+  not_assessed?: Record<'no_generation_date' | 'context_failed' | 'verifier_threw', number>,
+  plans_strict_only: number,             // would GAIN at least one code — the cut-over figure
+  plans_reshape_exempt: number,          // flagged only by a rule the BASELINE drops (see below)
+  plans_escalated: number,               // same rule, warn -> error
+  plans_lost: number,                    // would LOSE a code the old checker reports today
+  plans_level_mismatch: number,          // the profile re-derives a level the plan was built at
+  plans_strict_only_level_mismatch: number,   // the subtraction a reader needs
+  strict_only_by_rule: Record<string, number>,
+  reshape_exempt_by_rule: Record<string, number>,
+  lost_by_rule: Record<string, number>,
+  rules_fired: number,
+  rules_same_instances: number,
+  instance_delta_by_rule: Record<string, [newCount: number, oldCount: number]>,
+  new_findings: number, old_findings: number, unverified: number,
+}
+```
+
+Also recorded as `plan_rule_invalid` with `source: 'plan-audit-verifier-shadow'` — **a third source, read by
+neither existing consumer**: the per-user dedupe filters `source === 'plan-audit'` and the fleet step reads
+`'plan-audit-summary'`. So a strict reading cannot enter the transition alert, and that holds without anyone
+remembering it.
+
+**The profile is built as of each plan's `meta.generated_at`** (falling back to the row's `created_at`), never from
+the clock: §10's staleness ramp moves a runner's level with time, so a profile built "now" is not the one the plan was
+built against. 🔑 **When neither date exists the plan is NOT assessed** — reaching for today would write absence as a
+value, in the measurement a cut-over decision rests on. Measured 2026-11-25: 0 of 44.
+
+⚠️ **THE JOIN IS BY RULE ID**, because the transition alert compares CODE SETS: a rule both checkers fire on different
+weeks changes nothing a digest reads. `instance_delta_by_rule` covers what that cannot see — see below.
+
+🔴 **TWO READINGS ARE NOT STRICTNESS, AND THE FIRST RUN COUNTED BOTH AS IF THEY WERE.** It reported 8 plans flagged;
+7 were the comparison asking a harsher question than its baseline, and the 8th a level the profile re-derives.
+- **`reshape_exempt`** — the baseline is `validateReshapedPlan`, which filters `RESHAPE_SKIP_INVARIANTS`
+  (`INV-PLAN-COVERS-RACE-DATE`, `INV-PLAN-RACE-ON-RACE-DAY`) because they fire on every legacy plan that ends short of
+  race day. The verifier has no such policy: **7 of 44 live plans, 12 findings.** `VERIFIER-RESHAPE-POLICY-01`.
+  ⚠️ The set is **read from its owner in `invariants.ts`**, never copied, so the two cannot drift.
+- **`level_mismatch`** — `storedPlanInput` takes the levels from `meta`, but `fitnessAssessment.ts:201` lets
+  `input.fitness_level` win the INTENSITY band and nothing reads `input.fitness_intensity_level`, so a §79-elevated
+  plan re-derives as a beginner: **1 of 44, judged against a quality ceiling of 0 for 7 weeks.**
+  `VERIFIER-STORED-LEVEL-01`. ⚠️ **Deliberately not patched here** — composing a different profile inside the
+  measurement would only make it agree with itself.
+
+📐 **AND THE TOTALS NEARLY CANCELLED**, which is why `instance_delta_by_rule` exists: 489 new findings against 487 old
+read as agreement, and that `+2` was **+8 on one plan's `INV-PLAN-LARGEST-SESSIONS-SPACED`** (B3's ranking fix
+reaching the fleet: 103 against 96 over the same 18 plans) and **−24 on one plan's `INV-PLAN-NO-INVENTED-AGE`**
+(plan-wide for the verifier, per-week for the old checker) almost netting out. Neither changes a code set. The field
+lists ONLY the rules whose counts differ — **5 of 51 fired** — so a doubling cannot hide inside a sum again.
+
+**Live result, 2026-11-25 (44 plans, 39 race + 5 base-build):** 44 assessed · **1** would gain a code and it is the
+one level-mismatched plan, so **0 comparable plans gain a code from a held reading** · **0** would lose one · **0**
+escalations · **0** rules failed to evaluate.
+
 ## Consumers
 
 - The **daily ops digest** — a cloud routine, not repo code (editable via RemoteTrigger).

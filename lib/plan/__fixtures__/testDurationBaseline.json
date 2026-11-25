@@ -221,6 +221,12 @@
       "ms": 1820,
       "reason": "⚠️ NOT A SLOW TEST — 629 ms STANDALONE, measured twice. It crosses the line only under full-suite contention, and it crossed on the run that added `verifierStrict.test.ts` (ADR027-B3-STRICT-01): one more file of load tipped a borderline test over, which CLAUDE.md records as a known effect of adding a test file. Baselined at its in-suite figure because that is where the gate measures, with the standalone number here so nobody later reads this entry as a claim the test is heavy. ⚠️ Its siblings moved the other way on the same run (the 'planted FALSE NOTE' case 4,208 → 1,619 ms, 'no plan-read line is worse' 8,317 → 4,065 ms) — a full re-baseline was DECLINED for that reason: it would have written measurement noise into the register as fact, and five entries that merely dipped under the 1,000 ms reporting line would have been dropped.",
       "budgetMs": 120000
+    },
+    {
+      "file": "lib/engine/verifier/verifierBaseBuild.test.ts",
+      "title": "🔴 every arm of a multi-check rule fires on its own",
+      "ms": 1337,
+      "reason": "ADR027-B3-STRICT-01 E1 (2026-11-25). Measured STANDALONE at 1,337 ms of 2.90 s for the file; the full-suite report read 1,878 ms at 1.12x load. It composes a base-build plan per ARM of each multi-check rule and runs the whole verifier on each, which is what makes the claim in its title: a rule with three checks passes an aggregate assertion on one of them. ALLOWED — the cost is one plan build per arm and the alternative is asserting the rule fires at all, which is the hollow shape this file exists to avoid. ⚠️ Flagged only once the report was fresh (CHECK-SLOW-STALE-01): it entered the suite on 8571b999 and the gate was reading an older report."
     }
   ]
 }

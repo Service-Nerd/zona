@@ -1790,7 +1790,8 @@ consequence, iOS only), and mockups to the founder.
 ### 🔲 `ADR027-B3-REMAINING` — B3 steps 2 to 4 (verifier batches ship as `ADR027-B3-VERIFIER`): the independent checker, the nightly live-plan run, the trigger catalogue *(filed 2026-11-21)* ⚙️ **NO BOARD** (no prescription or visible change; the founder signs off the cut-over)
 
 ⏸️ **PAUSED 2026-11-22 by the founder at 207 of 221 rules.** Where every phase stands and the pick-up order: ADR-027
-§ Build status. Resume with `ADR027-B3-STRICT-01`, then step 3.
+§ Build status. **Resumed 2026-11-25**: step 2b is 14 of 14 and step 3 is shipped. Next is `ADR027-B3-STRICT-01`'s
+C1/D2/D3, the two port gaps step 3 found, then step 4.
 
 Step 1 shipped as `ADR027-B3-CATALOGUE` (221 rules). Remaining, in order:
 - **Step 2, the verifier (L5).** Predicates written fresh, not wrapping `validatePlan`, ported a batch at a time
@@ -1902,7 +1903,11 @@ Step 1 shipped as `ADR027-B3-CATALOGUE` (221 rules). Remaining, in order:
   the plan's own `volume_profile`, its `phase: 'peak'` labels and its `long_run_hrs` for the pace.
   **Batch 5 raised (pre-existing, not changed):** `QUALITY-VARIETY-FULL-PLAN` counts no race-week quality but takes
   every `quality_pool_sizes` entry for its pigeonhole bound; if the producer stamps race-week picks, the cap rises.
-- **Step 3, nightly on every live plan**, observe-only (the founder chose this over an earlier start).
+- ✅ **Step 3, nightly on every live plan**, observe-only — **SHIPPED 2026-11-25 as `ADR027-B3-SHADOW-01`**
+  (`lib/ops/verifierShadow.ts`, inside `/api/ops/plan-audit`; the summary is in the route's JSON and in a
+  `plan-audit-verifier-shadow` ops row). **44 live plans, 44 assessed, 0 unassessable; 0 comparable plans would gain a
+  code from a held reading, 0 would lose one, 0 rules failed to evaluate.** The two port gaps it found are filed as
+  `VERIFIER-RESHAPE-POLICY-01` and `VERIFIER-STORED-LEVEL-01`; full numbers in ADR-027 § B3 step 3.
 - **Step 4, the trigger catalogue** (ARCH-ENG-018): adjustment thresholds move into the catalogue as data, values
   unchanged, per §124 Am. 1.
 - **Exit (HLD):** the verifier finds every known defect class on the current engine, falsified class by class; 0
@@ -1922,12 +1927,66 @@ before a Monday 100K (it now reads as 62–63% of a lighter week, `BINGE-WEEK`).
 race week, and §77 names the Monday race as an open cross-week case (`PV2-G`, which "needs ADR"). Rule what the last seven
 days before an early-week race should hold.
 
+### 🔲 `VERIFIER-RESHAPE-POLICY-01` — the verifier has no strict-vs-reshape policy, so 7 live plans would be flagged every morning *(filed 2026-11-25, ADR-027 B3 step 3)* ⚙️ **NO BOARD** (restores documented intent; `RESHAPE_SKIP_INVARIANTS`' own comment is the ruling)
+
+`validateStoredPlan` — the checker `/api/ops/plan-audit` calls — is `validateReshapedPlan`, which filters
+`RESHAPE_SKIP_INVARIANTS` (`INV-PLAN-COVERS-RACE-DATE`, `INV-PLAN-RACE-ON-RACE-DAY`). The reason is written in
+`lib/plan/invariants.ts`: those two fire on every *legacy* plan generated before GEN-FIX-03, which by definition ends
+short of race day, and enforcing them on a reshape attributes a generation defect to a reshape that neither caused it
+nor can fix it. **The verifier has no equivalent policy.**
+
+📐 **Measured on the live fleet, 2026-11-25: 7 of 44 plans, 12 findings** (`COVERS-RACE-DATE` 6, `RACE-ON-RACE-DAY` 6).
+One plan's final week starts **two months** before its race date. All 7 are real properties of those plans and all 7
+are already-known generation debt, which is precisely why the baseline drops them.
+
+⚠️ **The strictness is a CALLER's policy, not a rule's**, exactly as `validateSavedPlan` and `validateRepairedPlan`
+already differ from `validateStoredPlan` on the same predicate. So the verifier needs the same seam: one rule set, the
+caller choosing whether a whole-plan layout rule applies. Deciding that seam is the work; it is small, and it blocks
+nothing until the cut-over.
+
+🔑 **Found because the measurement disagreed with itself**, not by reading: the first live run reported 8 plans gaining
+a code, and chasing why 6 of them carried the same two rules found the baseline's own filter.
+`lib/ops/verifierShadow.ts` reports them in `reshape_exempt_by_rule` — out of the cut-over number, still visible — and
+**reads the set from its owner** rather than holding a copy, so the two cannot drift.
+
+### 🔲 `VERIFIER-STORED-LEVEL-01` — the profile re-derives a level the plan was built at, and a §79-elevated live plan reads as a beginner *(filed 2026-11-25, ADR-027 B3 step 3)* 🏃 **COACHING BOARD** (it decides which level a stored plan is judged at), then ⚙️ build
+
+`storedPlanInput` takes the levels from `meta` deliberately, so the old validator judges a plan at the level it was
+BUILT at (`RUNWALK-ASSESSED-LEVEL-01`). But `lib/plan/fitnessAssessment.ts:201` reads `input.fitness_level` as the API
+**structural** override and lets it win the **intensity** band too —
+`assessedIntensity = input.fitness_level ?? assessed.intensity` — while **nothing reads `input.fitness_intensity_level`
+at all**. Composing the two therefore discards §79's result.
+
+📐 **Measured, 1 of 44 live plans:** `meta.fitness_level: 'beginner'` with `meta.fitness_intensity_level:
+'intermediate'` re-derives as `intensity: beginner`, so `INV-PLAN-QUALITY-PER-WEEK` judges it against a ceiling of
+**0 for 7 of 14 weeks**. ⚠️ **Verified identical as of today**, so §10's staleness ramp is not the cause — this is the
+field read, not the clock.
+
+⚠️ **`COHORT-GRID-UNSET-LEVEL-01` FROM THE OTHER SIDE.** There six corpora SET `fitness_level`, which no production
+caller sends, and §79's two-signal disagreement was unreachable by eight gates. Here a stored plan's own DERIVED
+structural level is read back as that same override, and the disagreement is erased in the other direction. **The two
+share one cause: one field standing for two signals.**
+
+🔴 **The board rules first, and the question is narrow:** `VerifyContext` says a rule needing the level reads the
+profile, *"never from the plan's own `meta`: checking a plan against the label the plan gave itself is circular"* —
+which is right for generation and is the opposite of what judging a STORED plan needs. Both policies are defensible and
+they cannot both be the default. ⚠️ **Do not patch it in the ops probe:** `verifierShadow.ts` flags the plan
+`level_mismatch` and reports `plans_strict_only_level_mismatch` so the figure is attributable, because composing a
+different profile inside the measurement would only make it agree with itself.
+
 ### 🟡 `ADR027-B3-STRICT-01` — build the board's checker fixes into the verifier, observe-only first *(filed 2026-11-22, Coaching Board `ADR027-B3-RAISED-LIST-01`)* ⚙️ **NO BOARD** (ruled)
 The sitting's B, C, D2–D3 and E1 rulings: 18 checker fixes, the self-label reads replaced by the runner and the delivered
 sessions, the literals named, `ZONE-LABEL-HAS-PRESCRIPTION` made live in the base-build route. Each is a deliberate
 divergence from `validatePlan`, so it needs a register of intended divergences beside the agreement harness, each with
 its own falsified test. **Run observe-only in B3 step 3**; the count of live plans the strict readings flag goes to the
 founder with the cut-over request (McMillan's order). Sitting: `docs/decisions/coaching-2026-11-22-b3-raised-list.md`.
+
+✅ **McMILLAN'S COUNT IS MEASURED (B3 step 3, 2026-11-25): 0 of 44 comparable live plans gain a code from a held
+reading.** One plan is flagged by `INV-PLAN-QUALITY-PER-WEEK` and it is the one plan whose level the profile
+re-derives (`VERIFIER-STORED-LEVEL-01`), so the finding measures the derivation rather than the rule. 📐 **The held
+readings DO reach the fleet within rules both checkers fire** — `INV-PLAN-LARGEST-SESSIONS-SPACED` is 103 findings
+against 96 over the same 18 plans, +8 of that on a single plan — which the rule-id join cannot see and a findings
+total nearly cancelled. Full numbers: ADR-027 § B3 step 3.
 
 ✅ **PHASE 0 + ALL 14 ROWS SHIPPED 2026-11-25 as `ADR027-B3-STRICT-REGISTER`** (`83aeeb2e`; commits `c6cb91dc`, `70a2c7f3`, `482e16ab`, `85e42c68`, `f74c9793`, `83aeeb2e`). The item stays OPEN for C1, D2, D3 and E1.
 - **Phase 0 — `STRICT_DIVERGENCES`**, the register of intended divergences from `validatePlan`, extending `OLD_OMITS_DAY`'s pattern in the same file. Each entry names its sitting row, a `direction` (`stricter` / `narrower` / `both`, containment asserted so a fix can never LOSE a finding) and a `reach` (`reached` / `latent`, where a latent entry that STARTS firing also fails). **Six arms, each falsified against a real mutation.**
