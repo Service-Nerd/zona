@@ -4,7 +4,8 @@ import { applyAdjustmentDays } from '@/lib/coaching/applyAdjustmentDays'
 import { createClient as createServiceClient } from '@supabase/supabase-js'
 import { getUserTier } from '@/lib/trial'
 import { isFeatureAllowed } from '@/lib/plan/canUseFeature'
-import { savePlanForUser, readPlanJson } from '@/lib/plan'
+import { readPlanJson } from '@/lib/plan'
+import { applyAnsweredProposal } from '@/lib/supabase/applyAnsweredProposal'
 import { findWeekByN } from '@/lib/plan/weekResolution'
 import { recordOpsEvent } from '@/lib/ops/recordOpsEvent'
 import type { Plan } from '@/types/plan'
@@ -91,30 +92,24 @@ export async function POST(req: NextRequest) {
   // recorded either; only `adjust-plan` emitted `plan_save_failed`. Now a failed save
   // leaves the row `pending`, which is what the client already assumes (it keeps the
   // card visible on any non-200).
-  const nowIso = new Date().toISOString()
-  try {
-    await savePlanForUser(user.id, updatedPlan, serviceSupabase)
-  } catch (err) {
-    await recordOpsEvent(
-      'plan_save_failed',
-      { route: 'confirm-adjustment', week_n: weekN, message: err instanceof Error ? err.message : String(err) },
-      user.id,
-    )
-    return NextResponse.json({ error: 'Could not save the plan' }, { status: 500 })
-  }
-  await Promise.all([
-    serviceSupabase
-      .from('plan_adjustments')
-      .update({ status: 'confirmed', confirmed_at: nowIso })
-      .eq('id', adjustment_id),
-    serviceSupabase
-      .from('user_settings')
-      .update({
-        last_adjustment_check_at:           nowIso,
-        last_adjustment_check_found_change: false,
-      })
-      .eq('id', user.id),
-  ])
+  //
+  // CONFIRM-REVERT-WRITE-ERRORS-01 (2026-11-25) — the order was right and the two writes AFTER
+  // the save were unread, so a lost status write left the plan changed and the row `pending`
+  // with no trace. `applyAnsweredProposal` is the single owner of the save + transition for all
+  // four routes that answer a proposal; it reads both results, makes the transition conditional
+  // on the status read above, and records what it could not do.
+  const written = await applyAnsweredProposal(serviceSupabase, {
+    userId:  user.id,
+    route:   'confirm-adjustment',
+    plan:    updatedPlan,
+    proposal: { table: 'plan_adjustments', id: adjustment_id, fromStatus: adjustment.status, answer: 'confirmed' },
+    clearAdjustmentFlag: true,
+    detail:  { week_n: weekN },
+  })
+  if (!written.ok) return NextResponse.json({ error: 'Could not save the plan' }, { status: 500 })
 
+  // ⚠️ A 200 even when the transition did not land. The plan IS saved by this point, so telling
+  // the client it failed would make it show PLAN_CHANGE_SAVE_FAILED for a change that applied.
+  // The divergence is in `proposal_transition_incomplete`, not in the runner's face.
   return NextResponse.json({ plan: updatedPlan })
 }

@@ -10,7 +10,7 @@ import { getUserFromRequest } from '@/lib/supabase/getUserFromRequest'
 import { createClient as createServiceClient } from '@supabase/supabase-js'
 import { getUserTier } from '@/lib/trial'
 import { isFeatureAllowed } from '@/lib/plan/canUseFeature'
-import { savePlanForUser } from '@/lib/plan'
+import { applyAnsweredProposal } from '@/lib/supabase/applyAnsweredProposal'
 import type { Plan } from '@/types/plan'
 
 export async function POST(req: NextRequest) {
@@ -54,13 +54,23 @@ export async function POST(req: NextRequest) {
   // the Bearer token, so the cookie session isn't available server-side on native;
   // a cookie-bound write hits RLS with no session and silently no-ops (the reshape
   // would look applied but the plan never changes).
-  await savePlanForUser(user.id, row.reshaped_plan_json as Plan, serviceClient)
-
-  // Mark as confirmed
-  await serviceClient
-    .from('post_race_reshapes')
-    .update({ status: 'confirmed', confirmed_at: new Date().toISOString() })
-    .eq('id', reshapeId)
+  //
+  // CONFIRM-REVERT-WRITE-ERRORS-01 (2026-11-25) — THIS ROUTE IS THE TWIN THAT WAS LEFT BEHIND.
+  // `ADJUST-STATUS-WITHOUT-SAVE-01` gave the two adjustment routes save-then-mark and a
+  // `plan_save_failed` event; this one and its revert sibling do the identical job and got
+  // neither. The save had NO try/catch, so a failure was a bare 500 with nothing recorded, and
+  // the status update that followed was unconditional and unread.
+  const applied = await applyAnsweredProposal(serviceClient, {
+    userId:  user.id,
+    route:   'post-race-reshape/confirm',
+    plan:    row.reshaped_plan_json as Plan,
+    proposal: { table: 'post_race_reshapes', id: reshapeId, fromStatus: row.status as string, answer: 'confirmed' },
+    // This route has never touched the Me-screen adjustment flag; a post-race reshape is not a
+    // `plan_adjustments` proposal and does not set that flag when it is created either.
+    clearAdjustmentFlag: false,
+    detail:  { weeks_affected: row.weeks_affected },
+  })
+  if (!applied.ok) return NextResponse.json({ error: 'Could not save the plan' }, { status: 500 })
 
   return NextResponse.json({
     ok:                  true,

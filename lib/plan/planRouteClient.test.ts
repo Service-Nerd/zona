@@ -58,8 +58,40 @@ const PLAN_FETCHERS = routeFiles().filter(f =>
  * failure class this repo has recorded four times in one day — the list stops
  * matching the code and the check reports on a smaller world.
  */
-const PLAN_SAVERS = routeFiles().filter(f =>
-  /\bsavePlanForUser\s*\(/.test(readFileSync(f, 'utf8')))
+/**
+ * 🔴 AND THE POPULATION HAD TO WIDEN WHEN A SAVE MOVED BEHIND AN OWNER
+ * (`CONFIRM-REVERT-WRITE-ERRORS-01`, 2026-11-25).
+ *
+ * This arm globbed `app/api/**\/route.ts` for `savePlanForUser(`. Four routes
+ * (confirm-adjustment, revert-adjustment, post-race-reshape/confirm and
+ * /revert) now reach it through `applyAnsweredProposal`, which lives in `lib/`
+ * — so **matching only the direct call would have dropped all four out of the
+ * population and left them unguarded**, while every remaining arm went on
+ * passing. That is the "a check's population excludes the cases at risk" class,
+ * and here the fix would have CAUSED it.
+ *
+ * ⚠️ The floor below is what makes it loud: 9 routes wrote a plan before the
+ * move and 5 call `savePlanForUser` directly after it, so a silent narrowing
+ * fails rather than passing on a smaller world.
+ *
+ * Each helper declares WHICH ARGUMENT carries the client, because they differ:
+ * `savePlanForUser(userId, plan, client)` is the third, `applyAnsweredProposal(client, args)`
+ * is the first.
+ */
+const PLAN_WRITE_HELPERS = [
+  { name: 'savePlanForUser',       clientArg: 3 },
+  { name: 'applyAnsweredProposal', clientArg: 1 },
+] as const
+
+/** `helper(a, b, <capture>` — the identifier at 1-based position `clientArg`. */
+function clientArgPattern(name: string, clientArg: number): RegExp {
+  return new RegExp(`\\b${name}\\(\\s*${'[^,]+,\\s*'.repeat(clientArg - 1)}([A-Za-z_$][\\w$]*)`)
+}
+
+const PLAN_SAVERS = routeFiles().filter(f => {
+  const src = readFileSync(f, 'utf8')
+  return PLAN_WRITE_HELPERS.some(h => new RegExp(`\\b${h.name}\\s*\\(`).test(src))
+})
 
 describe('plan-fetching routes use the service client', () => {
   it('there ARE such routes — otherwise the assertion below is vacuous', () => {
@@ -102,10 +134,18 @@ describe('plan-SAVING routes never write through a cookie client', () => {
 
   // 🔴 THE REGRESSION CASE. Red against adjust-plan / confirm-adjustment /
   // revert-adjustment as they stood on 2026-10-12.
-  it.each(PLAN_SAVERS)('%s passes a client that sets auth.uid() INTO savePlanForUser', file => {
+  it.each(PLAN_SAVERS)('%s passes a client that sets auth.uid() INTO its plan write', file => {
     const src = readFileSync(file, 'utf8')
-    const passed = src.match(/savePlanForUser\(\s*[^,]+,\s*[^,]+,\s*([A-Za-z_$][\w$]*)/)?.[1]
-    expect(passed, `${file}: could not read the client argument to savePlanForUser`).toBeTruthy()
+    // ⚠️ EVERY helper present, not the first one found. `find` inspected only the earliest entry
+    // in the list, so a route calling BOTH `savePlanForUser` directly and `applyAnsweredProposal`
+    // would have had only the first checked (code review, 2026-11-25). No route does both today
+    // — 5 direct, 4 via the owner, 9 total — so it was latent, which is the kind that surfaces
+    // when someone adds the tenth.
+    const helpers = PLAN_WRITE_HELPERS.filter(h => new RegExp(`\\b${h.name}\\s*\\(`).test(src))
+    expect(helpers.length, `${file}: in the population but calls no known plan-write helper`).toBeGreaterThan(0)
+    for (const helper of helpers) {
+    const passed = src.match(clientArgPattern(helper.name, helper.clientArg))?.[1]
+    expect(passed, `${file}: could not read the client argument to ${helper.name}`).toBeTruthy()
 
     // Either client is acceptable and the reason differs per table, so the check
     // is "sets auth.uid() or bypasses RLS deliberately", never a single name:
@@ -117,12 +157,13 @@ describe('plan-SAVING routes never write through a cookie client', () => {
       `(const|let)\\s+${passed}\\s*=\\s*(createServiceClient|createUserScopedClient)\\(`,
     ).test(src)
     expect(ok,
-      `${file}: savePlanForUser receives \`${passed}\`, which is not assigned from `
+      `${file}: ${helper.name} receives \`${passed}\`, which is not assigned from `
       + 'createServiceClient or createUserScopedClient. A bearer-authenticated route that '
       + 'writes through the cookie client has auth.uid() NULL on native, so RLS refuses the '
       + 'upsert and savePlanForUser throws AFTER the caller has already recorded its work. '
       + 'This is ADJUST-PLAN-SAVE-CLIENT-01, measured 3× on production.',
     ).toBe(true)
+    }
   })
 
   it.each(PLAN_SAVERS)('%s does not build a cookie client at all', file => {
@@ -131,5 +172,24 @@ describe('plan-SAVING routes never write through a cookie client', () => {
       `${file} saves a plan and still imports the cookie client. Even unused it is a loaded `
       + 'footgun: the next edit reaches for the nearest client in scope.',
     ).toBe(false)
+  })
+
+  // 🔴 THE OWNER ITSELF CANNOT BE CHECKED THE SAME WAY, so it is checked the other way.
+  // `applyAnsweredProposal` takes its client as a PARAMETER, so there is no
+  // `createServiceClient(` assignment in it to match — the arms above are about its callers.
+  // What would make all of them worthless is the owner quietly building its own client, so
+  // that is what this asserts. Without it, moving the save behind an owner moves the defect
+  // one file further from the guard.
+  it('applyAnsweredProposal takes its client as a parameter and builds none', () => {
+    const src = readFileSync('lib/supabase/applyAnsweredProposal.ts', 'utf8')
+    expect(/from '@\/lib\/supabase\/server'/.test(src),
+      'applyAnsweredProposal imports the cookie client. It is the single writer for four '
+      + 'bearer-authenticated routes; a cookie client here breaks all four at once.').toBe(false)
+    expect(/createClient\s*\(/.test(src),
+      'applyAnsweredProposal builds a Supabase client. It must receive one, so each route '
+      + 'stays answerable to the arms above.').toBe(false)
+    expect(/db:\s*SupabaseClient/.test(src),
+      'applyAnsweredProposal no longer takes a typed SupabaseClient parameter named `db`; '
+      + 'the arms above read the client from argument 1.').toBe(true)
   })
 })

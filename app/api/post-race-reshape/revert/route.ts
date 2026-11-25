@@ -13,7 +13,7 @@ import { getUserFromRequest } from '@/lib/supabase/getUserFromRequest'
 import { createClient as createServiceClient } from '@supabase/supabase-js'
 import { getUserTier } from '@/lib/trial'
 import { isFeatureAllowed } from '@/lib/plan/canUseFeature'
-import { savePlanForUser } from '@/lib/plan'
+import { applyAnsweredProposal } from '@/lib/supabase/applyAnsweredProposal'
 import type { Plan } from '@/types/plan'
 
 export async function POST(req: NextRequest) {
@@ -56,13 +56,21 @@ export async function POST(req: NextRequest) {
   // Restore the original plan via the SERVICE client — this route authenticates
   // off the Bearer token, so the cookie session isn't available server-side on
   // native; a cookie-bound write hits RLS with no session and silently no-ops.
-  await savePlanForUser(user.id, row.original_plan_json as Plan, serviceClient)
-
-  // Mark as reverted
-  await serviceClient
-    .from('post_race_reshapes')
-    .update({ status: 'reverted', reverted_at: new Date().toISOString() })
-    .eq('id', reshapeId)
+  //
+  // CONFIRM-REVERT-WRITE-ERRORS-01 (2026-11-25) — the same owner as its three siblings.
+  //
+  // 🔻 AND THIS ROUTE HAS NO CLIENT. `PostRaceReshapeCard` calls confirm; a grep of `app/`,
+  // `components/` and `lib/` finds ZERO callers of this path. It is live and reachable by API, so
+  // it is fixed rather than exempted, and filed as `POSTRACE-REVERT-UNREACHABLE-01`
+  // (the `WAITLIST-UNREACHABLE-01` class).
+  const applied = await applyAnsweredProposal(serviceClient, {
+    userId:  user.id,
+    route:   'post-race-reshape/revert',
+    plan:    row.original_plan_json as Plan,
+    proposal: { table: 'post_race_reshapes', id: reshapeId, fromStatus: row.status as string, answer: 'reverted' },
+    clearAdjustmentFlag: false,
+  })
+  if (!applied.ok) return NextResponse.json({ error: 'Could not save the plan' }, { status: 500 })
 
   return NextResponse.json({ ok: true })
 }

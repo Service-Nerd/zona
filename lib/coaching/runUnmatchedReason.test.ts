@@ -22,6 +22,22 @@ vi.mock('@/lib/ops/recordOpsEvent', () => ({
   },
 }))
 
+/**
+ * 🔴 THE WINNING-CLAIM ARMS REACH THE LINK-TIME PUSH, AND THE PUSH BUILDS A REAL SUPABASE CLIENT.
+ * Caught by the FULL suite, not by running this file: `notifyUser` throws
+ * `supabaseUrl is required` under `environment: 'node'` with no env, and it throws from a
+ * `void`-ed call inside `autoMatchAndAnalyse`, so it surfaces as an unhandled error AFTER the
+ * test has already passed. 854 files green, 3 errors — the kind of green that is not green.
+ *
+ * ⚠️ And I only saw it because the full run prints `Errors 3`; the single-file runs I had been
+ * grepping for `Tests |FAIL` were hiding it. Do not pipe away your own instrumentation.
+ *
+ * The send path's own behaviour is covered by `runJourneyTelemetry.test.ts`, which mocks the
+ * client deliberately. Here it is out of scope and is stubbed to nothing.
+ */
+vi.mock('@/lib/webpush', () => ({ notifyUser: async () => {} }))
+vi.mock('@/lib/notifications', () => ({ recordNotification: async () => {} }))
+
 import { autoMatchAndAnalyse, RUN_UNMATCHED_REASONS } from './autoAnalyse'
 
 /**
@@ -30,7 +46,7 @@ import { autoMatchAndAnalyse, RUN_UNMATCHED_REASONS } from './autoAnalyse'
  * the code under test cannot turn this red for a reason that has nothing to do with the subject.
  * Only the terminals resolve.
  */
-function supabaseWith(tables: Record<string, unknown>) {
+function supabaseWith(tables: Record<string, unknown>, claimWon = false) {
   const make = (name: string) => {
     const result = { data: tables[name] ?? null, error: null }
     const target: Record<string, unknown> = {
@@ -48,9 +64,11 @@ function supabaseWith(tables: Record<string, unknown>) {
   }
   return {
     from: (t: string) => make(t),
-    // `claimAutoLink` elects the single winner through an RPC; `false` is "someone else won",
-    // which is the no-op answer and enough to prove the MATCHED path records nothing.
-    rpc: async () => ({ data: false, error: null }),
+    // `claimAutoLink` elects the single winner through an RPC. `false` is "someone else won",
+    // which falls through to the attach path and ends at 'exists' — the no-op answer, and what
+    // every arm above wants. `claimWon` makes this invocation the WINNER, which is the only
+    // state that reaches the link-time push and the `run_linked` record.
+    rpc: async () => ({ data: claimWon, error: null }),
   }
 }
 
@@ -68,8 +86,8 @@ const week = (date: string, sessions: Record<string, unknown>) =>
 
 const planWith = (...weeks: unknown[]) => ({ plan_json: { weeks, meta: {}, phases: [] } })
 
-const run = (tables: Record<string, unknown>, activity = RUN) =>
-  autoMatchAndAnalyse(supabaseWith(tables), 'user-1', activity as never, REF, 'http://localhost:3000')
+const run = (tables: Record<string, unknown>, activity = RUN, claimWon = false) =>
+  autoMatchAndAnalyse(supabaseWith(tables, claimWon), 'user-1', activity as never, REF, 'http://localhost:3000')
 
 beforeEach(() => { recorded.length = 0 })
 
@@ -160,13 +178,66 @@ describe('ACT-RUNREAD-REACH-01 — each wall records itself', () => {
     expect(recorded).toHaveLength(0)
   })
 
-  it('a MATCHED run records nothing', async () => {
+  it('a MATCHED run records no WALL', async () => {
     // Same weekday + duration inside ±15% + easy with HR < 155 = 80 points.
     await run({
       plans: planWith(week('2026-10-05', { tue: { type: 'easy', duration_mins: 40, primary_metric: 'duration' } })),
       session_overrides: [], session_completions: [],
     })
     expect(recorded.filter(r => r.kind === 'run_unmatched')).toHaveLength(0)
+  })
+})
+
+/**
+ * STEP4-RUNS-NO-COMPLETIONS-01 (2026-11-25) — and the other side of the same question.
+ *
+ * 🔴 WHY IT IS HERE AND NOT IN A NEW FILE. This harness already drives the real
+ * `autoMatchAndAnalyse` over real plan fixtures, which is the whole reason the reasons above are
+ * trustworthy. A second harness for the success case would be a second definition of "what a
+ * matched run looks like", and the two would drift — the duplication class this repo has
+ * recorded under five names.
+ *
+ * 📐 The gap this closes, measured on production the day it shipped: `run_unmatched` had logged
+ * 39 distinct unlinked runs over 14 days and NOTHING had ever logged a link, so the rate could
+ * only be derived from table counts (27 of 176 live completions carry a run link, 15.3%).
+ */
+describe('STEP4-RUNS-NO-COMPLETIONS-01 — a LINKED run records itself', () => {
+  const MATCHING = {
+    plans: planWith(week('2026-10-05', { tue: { type: 'easy', duration_mins: 40, primary_metric: 'duration' } })),
+    session_overrides: [], session_completions: [],
+  }
+
+  it('🔴 the winner records run_linked, with the day it landed on', async () => {
+    await run(MATCHING, RUN, true)
+    const ev = recorded.find(r => r.kind === 'run_linked')
+    expect(ev, 'a run was auto-linked and nothing recorded it — the funnel has no denominator').toBeTruthy()
+    expect(ev!.detail).toMatchObject({
+      source: 'apple_health', activity_id: 'uuid-1', week_n: 1, session_day: 'tue', claim: 'won',
+    })
+    expect(ev!.userId).toBe('user-1')
+  })
+
+  it('records the DATE and not the time, exactly as the unmatched side does', async () => {
+    await run(MATCHING, RUN, true)
+    expect(recorded.find(r => r.kind === 'run_linked')!.detail.activity_date).toBe('2026-10-06')
+  })
+
+  it('a linked run records NO wall, and an unlinked one records no link', async () => {
+    // The two sides must be mutually exclusive, or a rate computed from them double-counts.
+    await run(MATCHING, RUN, true)
+    expect(recorded.filter(r => r.kind === 'run_unmatched')).toHaveLength(0)
+    recorded.length = 0
+    await run({ plans: null })
+    expect(recorded.filter(r => r.kind === 'run_linked')).toHaveLength(0)
+    expect(recorded.filter(r => r.kind === 'run_unmatched')).toHaveLength(1)
+  })
+
+  it('a LOSING concurrent claim records nothing — it did not do the linking', async () => {
+    // `claimAutoLink` returning 'exists' means another ingest of the same run won. Recording it
+    // would count one run twice, and `clientSync` re-posts every sweep (46 attempts per run,
+    // measured), so that is not a rare case.
+    await run(MATCHING, RUN, false)
+    expect(recorded.filter(r => r.kind === 'run_linked')).toHaveLength(0)
   })
 })
 

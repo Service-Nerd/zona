@@ -69,6 +69,16 @@ Authorization: Bearer <supabase access token>     // native rides the Bearer tok
 - **Rate limited** by `guardAiRequest` under the `post-race-reshape` key: `HEAVY_LIMIT` 10/hour
   (`AI_ROUTE_LIMITS`).
 
+## `/confirm` and `/revert` — applying or undoing the proposal
+
+- 🔴 **BOTH WERE THE TWIN THAT `ADJUST-STATUS-WITHOUT-SAVE-01` LEFT BEHIND (`CONFIRM-REVERT-WRITE-ERRORS-01`, 2026-11-25).** They do the same job as `confirm-adjustment` / `revert-adjustment` — save the plan, then mark the row — and had neither of that fix's two halves: **no `try/catch` around `savePlanForUser`**, so a failed save was a bare 500 with no `plan_save_failed` event, and an **unconditional, unread** status update after it.
+- Both now go through **`lib/supabase/applyAnsweredProposal.ts`**, the single owner shared with the two adjustment routes. Consequences, which are the contract:
+  - A failed plan save is `500 { error: 'Could not save the plan' }` with `plan_save_failed` recorded under `route: 'post-race-reshape/confirm'` or `.../revert`. The row stays at its prior status, so a retry works.
+  - A failed or conflicting status transition is **still a 200** — the plan has already saved — and records `proposal_transition_incomplete` with `outcome: 'row_write_failed' | 'conflict'` (plus `observed_status` on a conflict).
+  - The transition is **conditional on the status the route read** (`pending` for confirm, `confirmed` for revert), so two answers cannot overwrite each other.
+  - Neither route touches `user_settings.last_adjustment_check_found_change`, and never did — a post-race reshape is not a `plan_adjustments` proposal.
+- 🔻 **`/revert` HAS NO CLIENT.** `PostRaceReshapeCard` calls `/confirm`; a sweep of `app/`, `components/` and `lib/` finds **zero** callers of `/revert`. It is live and API-reachable, so it carries the fix; filed as `POSTRACE-REVERT-UNREACHABLE-01` (the `WAITLIST-UNREACHABLE-01` class).
+
 ## Consumers
 
 - `components/training/RaceResultSheet.tsx:141` — "Log result" calls this, then emits

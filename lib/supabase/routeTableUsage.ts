@@ -80,6 +80,40 @@ export const CLIENT_ACCEPTING_HELPERS: Record<string, {
       charity_codes:     ['select', 'update'],
     },
   },
+  // 🔴 CONFIRM-REVERT-WRITE-ERRORS-01 (2026-11-25) — REGISTERED BECAUSE MOVING A SAVE BEHIND AN
+  // OWNER MADE FOUR ROUTES LOOK CONVERTIBLE WHEN THEY ARE NOT.
+  //
+  // This map keys on the helper's name appearing in the ROUTE source. `confirm-adjustment`,
+  // `revert-adjustment`, `post-race-reshape/confirm` and `post-race-reshape/revert` reach
+  // `savePlanForUser` through `applyAnsweredProposal` and no longer name it, so every table it
+  // touches — including the `charity_codes: ['select','update']` pair that BLOCKS conversion —
+  // became invisible to the analysis. Measured by code review: `rls-convertible-routes.ts`
+  // listed all four as 🟢 CONVERTIBLE while `post-race-reshape/route.ts`, which still calls
+  // `savePlanForUser` directly, stayed 🔴 BLOCKED. Converting any of them to a JWT client would
+  // have stopped charity grants re-anchoring, silently, for the 500 Make-A-Wish runners — the
+  // exact failure `ADJUST-PLAN-SAVE-CLIENT-01` records as its abandoned first cut.
+  //
+  // ⚠️ `rlsCoverage.test.ts` CANNOT CATCH A MISSING ENTRY — it verifies that LISTED helpers still
+  // do what they claim, so its population is this object. A helper nobody registers is outside
+  // it by construction. **Register a client-accepting helper in the same commit that creates
+  // one**, and the sibling to check is `planRouteClient.test.ts`, whose population had the same
+  // dependency on the literal call.
+  applyAnsweredProposal: {
+    modules: ['lib/supabase/applyAnsweredProposal.ts', 'lib/plan.ts', 'lib/charity/reanchor.ts'],
+    tables: {
+      // Its own writes.
+      plan_adjustments:   ['select', 'update'],
+      post_race_reshapes: ['select', 'update'],
+      user_settings:      ['update'],
+      // …plus everything `savePlanForUser` does, because it calls it. Kept as a literal copy
+      // rather than a spread so a reader sees what a JWT client would be asked to do, and the
+      // drift check reads the modules above either way.
+      plans:              ['select', 'insert', 'update'],
+      plan_archive:       ['select', 'insert'],
+      plan_weekly_notes:  ['delete'],
+      charity_codes:      ['select', 'update'],
+    },
+  },
 }
 
 /** Merge in the usage of any client-accepting helper this source calls. */

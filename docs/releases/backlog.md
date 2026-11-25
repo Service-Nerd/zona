@@ -6219,6 +6219,103 @@ plan-holders have runs arriving and zero `session_completions`**, 6 of them paid
 (run → logged session), not demand. **Why those runs never link is not measured** — auto-match not firing, the runner
 never tapping, or the run not matching a planned day are three different defects. Diagnose first; no fix is specified.
 
+✅ **DIAGNOSED 2026-11-25 (`/zona-debug`), AND THE TELEMETRY TO ANSWER IT ALREADY EXISTED AND HAD NEVER BEEN READ.**
+`ACT-RUNREAD-REACH-01` built `run_unmatched` with a six-reason vocabulary and it has recorded since 2026-11-11.
+**1,793 rows → 39 DISTINCT runs** over those 14 days (⚠️ `count(*)` is meaningless here: **46 ingest attempts per
+run**, because `clientSync` re-posts every sweep — `RUN-UNMATCHED-RESEND-STORM-01`):
+
+| Reason | Distinct runs |
+|---|---|
+| `below_threshold` — a session was there and no candidate reached the auto-link score | **18** |
+| `no_plan` — no plan at all when the run arrived | **10** |
+| `outside_plan_weeks` | **9** |
+| `tier_gated` — free: the row lands, the read does not | **2** |
+| `week_has_no_sessions` · `plan_read_failed` | **0** |
+
+🔑 **So all three hypotheses are true at once, in those proportions, plus a fourth the item did not list.** Re-derived
+the same day: 12 plan-holders with runs since 10-08 and zero completions since (**as filed**), 13 with zero
+completions *ever*. ⚠️ Their runs since 10-08 measure **101**, against the item's 271 — a **different denominator**
+(`v_metric_users` rows vs all plan-holders' activity rows), not a correction.
+
+🔴 **AND THE BIGGER NUMBER NOBODY HAD: 27 of 176 live completion rows carry a run link. 15.3%.** Step 4 half-fails
+for the runners who *do* log, not only the twelve who don't. ⚠️ **That falsifies "the runner never tapped" outright
+for at least one runner** — `cf9f51f9` has **38 runs, 20 completions, 0 linked**: they tap every time and the run
+never attaches.
+
+**Mechanism of the dominant reason, and it is the system working as designed.** `MIN_AUTO_LINK_CONFIDENCE = 'high'`
+(`sessionMatch.ts:13`) = ≥70 points, scored `sameWeekday` **40** · distance band **30** · duration band **30** · +10.
+A run on the right day whose distance missed its band scores **40 = medium**, and medium is deliberately discarded
+(POST-RUN-01: *"a wrong link is worse than a picker tap"*). The design then assumes the runner opens the app and
+taps, and 15.3% is the measurement of that assumption not holding. **The defect is not in the matcher; it is in the
+step after it.**
+
+⚠️ **TWO NEGATIVE FINDINGS, so nobody re-chases them.** (1) 9 of the 18 `below_threshold` runs resolved to a
+**negative `week_n`** (-3/-2/-1): that is not a defect, foundation and base-build weeks are numbered
+`weekN = i - weekCount` (`foundationBlock.ts:701`), so half the misses are in the pre-race block. (2) The client's
+activity pool is **not** wrongly source-filtered — `DashboardClient:2180-2254` loads HealthKit rows and marshals them
+into the matcher's shape. Checked because a bad `source` filter would have explained everything.
+
+✅ **THE TELEMETRY HALF SHIPPED 2026-11-25** (⚙️ no board): `run_linked` is the counterpart to `run_unmatched`, so the
+funnel has a denominator at last, and `push_attempted` records every send from `notifyUser` — which is where three
+things were invisible: it returned silently when a runner has no subscription, had no per-send `try/catch`, and every
+caller invokes it as `void notifyUser(...)`, so a rejecting `sendApnsPush` became an unhandled rejection. **The
+run-analysis push is the mechanism meant to bring a runner back to log their run and whether it ever left the server
+had no answer anywhere.**
+
+🔻 **WHAT IS LEFT, and it is not a defect fix.** Whether `MIN_AUTO_LINK_CONFIDENCE` should admit `medium` on the
+server is a **🏃 COACHING BOARD** question against POST-RUN-01, with this measurement attached — not a change to make
+in a bug fix. Prompting a runner about an unmatched run is **🧭 DESIGN BOARD / 💼 SLT** (ADR-027 ARCH-ENG-018 says so
+itself). The `no_plan` 10 belong to the activation programme. ⚠️ **Push DELIVERY is still not measurable** from the
+server and needs a TestFlight build.
+
+### 🔲 `PUSH-SEND-OWNER-01` — `notifyUser` is not the owner of sending, so push telemetry covers two surfaces of five *(filed 2026-11-25, found by code review of `STEP4-RUNS-NO-COMPLETIONS-01`'s telemetry)* ⚙️ **NO BOARD** (refactor, no behavioural delta)
+
+🔴 **The comment said "single owner" and it was FALSE when written.** `notifyUser` has exactly **two** callers — `lib/coaching/autoAnalyse.ts:325` (the run-link push, the one `STEP4` is about) and `app/api/adjust-plan/route.ts:540`. **`push/send-daily`, `push/send-weekly-report` and `push/send-trial-insight` import `sendApnsPush` / `sendWebPush` directly** and bypass it entirely, so the new `push_attempted` event is emitted on two of five sending surfaces.
+
+⚠️ **The claim is corrected in place** (`lib/webpush.ts`, `recordOpsEvent.ts`), so nobody reads those rows as "every push". What is left is the refactor: route the three direct callers through `notifyUser` so one owner sends and one event covers all of them. ⚠️ **They do not merely send** — each loops users and has its own per-user bookkeeping, so this is not a one-line move; check what each does between the lookup and the send before collapsing them.
+
+📐 Measured the same day: `push_sent` and every other push-named ops kind returned **0 rows** because no such kind existed. There is still no measurement of DELIVERY, which needs a device (`NATIVE-BATCH-01`).
+
+### 🔲 `SAVEPLAN-PARTIAL-THROW-01` — `savePlanForUser` can throw after the plan has already saved, and every caller reports it as "nothing changed" *(filed 2026-11-25, found by code review)* ⚙️ **NO BOARD** (defect; the remedy is a typed result, not a message test)
+
+🔴 `savePlanForUser` throws on the `plan_weekly_notes` invalidation (`lib/plan.ts:329`) — **after** the `plans` upsert has succeeded. Every caller treats a throw as a failed save: `applyAnsweredProposal` returns `ok: false`, the four proposal routes answer **500**, and the client shows `PLAN_CHANGE_SAVE_FAILED` for a change that **applied**. The proposal row stays at its prior status, so a retry re-applies the same change — idempotent, because `applyAdjustmentDays` writes `to[i]` wherever it differs from `from[i]` regardless of the week's current contents, but the runner has been told the opposite of the truth in the meantime.
+
+⚠️ **Pre-dates `CONFIRM-REVERT-WRITE-ERRORS-01` and was deliberately not "fixed" there.** Telling the two apart from the caller means reading the thrown message, and this repo forbids matching a failure by its message (`feedback-never-match-a-refusal-by-its-message`). The fix belongs to the owner that throws: `savePlanForUser` should return a typed result naming which stage failed, so a caller can distinguish *the plan did not change* from *the plan changed and a follow-up write did not*. That is the same shape ADR-027 ARCH-ENG-006 requires of the engine (a refusal is a result, never a throw).
+
+📐 `plan_save_failed` carries the message, so the existing ledger can be read for which path a given failure took: **3 rows ever, all `route: 'adjust-plan'`, all RLS on the `plans` upsert** — i.e. the genuine-non-save path, and the partial-throw path has never been observed.
+
+### 🔲 `RUN-UNMATCHED-RESEND-STORM-01` — one run is ingested 46 times, and each attempt writes an ops row *(filed 2026-11-25, from `STEP4-RUNS-NO-COMPLETIONS-01`'s diagnosis)* ⚙️ **NO BOARD** (cost and signal-to-noise)
+
+📐 Measured 2026-11-25: `run_unmatched` holds **1,793 rows for 39 DISTINCT runs** over 14 days — **46 ingest attempts
+per run** — because `clientSync` re-posts recent workouts on every sweep and the route documents concurrent app-open
+ingests. That is **1,793 of 39,545 `ops_events` rows (4.5%) in two weeks**, on 27 users.
+
+⚠️ **The duplication is KNOWN AND DELIBERATE at the read side, which is why this is a cost item and not a defect.**
+`noteRunUnmatched`'s own comment explains that it carries `activity_id` precisely so a count can be taken DISTINCT,
+and `v_activation_funnel.unmatched_runs` does exactly that (`count(distinct detail->>'activity_id')`).
+
+🔴 **AND THE OBVIOUS FIX IS THE ONE TO AVOID.** Deduping at the WRITE side changes
+`v_activation_funnel.last_unmatched_reason`, which reads the **newest row** — it would silently become "the reason of
+the most recently first-seen run" rather than "the most recent attempt", in a view the trial activation programme
+reads. **Dedupe the INGEST, not the telemetry**: the same workout being posted 46 times is the thing worth fixing, and
+it would take the row count down with it. ⚠️ `run_linked` (2026-11-25) inherits the same multiplier by construction and
+is documented as counting distinct for the same reason.
+
+### 🔲 `POSTRACE-REVERT-UNREACHABLE-01` — `/api/post-race-reshape/revert` has no caller *(filed 2026-11-25, found fixing `CONFIRM-REVERT-WRITE-ERRORS-01`)* ⚙️ **NO BOARD** (dead surface) → 💼 **SLT** only if the answer is "build the control"
+
+📐 `PostRaceReshapeCard` calls `/confirm`; a sweep of `app/`, `components/` and `lib/` finds **zero** callers of
+`/revert`. The route is live, tier-gated, API-reachable and now shares `applyAnsweredProposal` with its three siblings,
+so it is **correct and unreached** — the `WAITLIST-UNREACHABLE-01` class (an API route, a table and a trigger all live
+with no render site).
+
+📐 `post_race_reshapes` holds **1 row ever**, status `dismissed` — a status that is in neither the confirm nor the
+revert vocabulary, which is worth a look alongside this.
+
+**Two ways to close it:** give the runner a way to undo an applied post-race reshape (every other reshape path has
+one, and ADR-012's authority model assumes it), or retire the route. ⚠️ **Do not retire it on the strength of this
+count alone** — it was fixed rather than exempted for the same reason, and `CONTRACT-LEDGERCARD-01`'s second number
+exists because a zero-importer surface reads identically to a drop-out and to a deliberate reserve.
+
 ### 🔲 `SITE-ANALYTICS-OFF-01` — no marketing page can be measured 💼 **SLT** (whether to enable, cost) → ⚙️ **NO BOARD** (wiring)
 ⚖️ **SAT 2026-11-20** (SLT) — **ENABLE**: Vercel Web Analytics on Pro ($0.03/1K events, no Plus add-on), **marketing routes only by allow-list**, query strings dropped, pageviews plus two scroll-depth events for `SITE-SCROLL-DEPTH-01`; privacy page updated in the same commit; 28-day review or it comes out. ⚠️ `@vercel/analytics` is not installed, so the dashboard toggle alone collects nothing. 👤 Founder flips the dashboard toggle and sets a spend notification; ⚙️ wiring follows. Note: `docs/decisions/slt-2026-11-20-site-analytics-off-01.md`.
 

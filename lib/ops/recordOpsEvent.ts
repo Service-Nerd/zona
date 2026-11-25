@@ -521,6 +521,57 @@ export type OpsEventKind =
   // "granted twice", and only one of those is a defect.
   | 'trial_extended'
   | 'trial_extend_failed'
+  // CONFIRM-REVERT-WRITE-ERRORS-01 (2026-11-25) — the plan SAVED and the proposal row did not
+  // follow it. `detail`: `{ route, table, proposal_id, answer, outcome, observed_status?,
+  // message?, ...caller detail }`.
+  //
+  // 🔴 WHY THE PLAN STILL COUNTS AS APPLIED, AND WHY THIS IS NOT A 500. The four routes save the
+  // plan FIRST (ADJUST-STATUS-WITHOUT-SAVE-01), so by the time this fires the runner's plan has
+  // already changed. Answering non-200 would make every client show PLAN_CHANGE_SAVE_FAILED for a
+  // change that landed — a worse lie than the card reappearing. So the request succeeds and the
+  // divergence is recorded here instead.
+  //
+  // ⚠️ `outcome: 'conflict'` IS NOT AN ERROR. It means the row no longer held the status the route
+  // read, so another answer (a second device, or the readiness sweep closing a stale card) got
+  // there first; the conditional predicate declined to overwrite it. A failure is
+  // `row_write_failed` / `flag_write_failed`, each after one retry.
+  //
+  // ⚠️ Nothing can PROBE for this state. `/api/ops/reshape-integrity` is the daily probe for the
+  // sibling class and its own header excludes `pending` rows "by construction" — correct when
+  // written, and the exact opposite of this defect, which is a pending row whose plan DID change.
+  // A content diff cannot stand in either: that probe rejected one because AI enrichment rewrites
+  // sessions after apply. The route watching its own write is the only place this is visible.
+  | 'proposal_transition_incomplete'
+  // STEP4-RUNS-NO-COMPLETIONS-01 (2026-11-25) — the counterpart to `run_unmatched`, so the
+  // journey has a DENOMINATOR. `detail`: `{ source, activity_id, activity_date, week_n,
+  // session_day, claim }`.
+  //
+  // 🔴 WHY: `run_unmatched` has recorded only the FAILURES since 2026-11-11, so the auto-link rate
+  // could not be computed from events at all — it had to be derived from table counts (27 of 176
+  // live completions carry a run link, 15.3%). A one-sided funnel cannot tell a fix from noise.
+  //
+  // ⚠️ `claim` distinguishes the three real outcomes of `claimAutoLink`: 'won' is a fresh link
+  // that also pushed, 'attached' is a link onto a pre-existing stub (no push), and 'exists' is
+  // recorded by nobody because it means another concurrent ingest already did the work. The same
+  // run is ingested many times (see `run_unmatched`), so count DISTINCT `activity_id` here too.
+  | 'run_linked'
+  // STEP4-RUNS-NO-COMPLETIONS-01 — whether a push was actually attempted, per call to
+  // `notifyUser`. `detail`: `{ tag, outcome, sent?, attempted?, platforms?, message? }` where
+  // `outcome` is `sent` | `partial` | `failed` | `no_subscription` | `lookup_failed`.
+  //
+  // 🔴 THE OUTCOME IS READ FROM EACH SENDER'S RETURN VALUE, NEVER FROM CONTROL FLOW, AND THE
+  // FIRST CUT GOT THAT WRONG. `sendApnsPush` returns `{ ok, reason }` and `sendWebPush` returns
+  // a boolean; both catch everything internally, so a `try/catch` around them reports every
+  // real failure as a success. `lib/webpush.ts` carries the full reasoning.
+  //
+  // ⚠️ IT COVERS TWO SENDING SURFACES OF FIVE. `notifyUser` has two callers (the run-link push
+  // and `adjust-plan`); `send-daily`, `send-weekly-report` and `send-trial-insight` call the
+  // senders directly and emit nothing here. `PUSH-SEND-OWNER-01` tracks it. Do not read these
+  // rows as "every push".
+  //
+  // ⚠️ 'sent' means ACCEPTED BY APNs/the web push service, never delivered to a device. Delivery
+  // cannot be observed from the server and needs a TestFlight build.
+  | 'push_attempted'
 
 /**
  * Record an internal ops event. Fire-and-forget by nature but awaitable, so a

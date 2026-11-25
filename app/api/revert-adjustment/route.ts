@@ -4,7 +4,8 @@ import { applyAdjustmentDays } from '@/lib/coaching/applyAdjustmentDays'
 import { createClient as createServiceClient } from '@supabase/supabase-js'
 import { getUserTier } from '@/lib/trial'
 import { isFeatureAllowed } from '@/lib/plan/canUseFeature'
-import { savePlanForUser, readPlanJson } from '@/lib/plan'
+import { readPlanJson } from '@/lib/plan'
+import { applyAnsweredProposal } from '@/lib/supabase/applyAnsweredProposal'
 import { findWeekByN } from '@/lib/plan/weekResolution'
 import { recordOpsEvent } from '@/lib/ops/recordOpsEvent'
 import type { Plan } from '@/types/plan'
@@ -110,30 +111,22 @@ export async function POST(req: NextRequest) {
   // recorded either; only `adjust-plan` emitted `plan_save_failed`. Now a failed save
   // leaves the row `pending`, which is what the client already assumes (it keeps the
   // card visible on any non-200).
-  const nowIso = new Date().toISOString()
-  try {
-    await savePlanForUser(user.id, updatedPlan, serviceSupabase)
-  } catch (err) {
-    await recordOpsEvent(
-      'plan_save_failed',
-      { route: 'revert-adjustment', week_n: weekN, message: err instanceof Error ? err.message : String(err) },
-      user.id,
-    )
-    return NextResponse.json({ error: 'Could not save the plan' }, { status: 500 })
-  }
-  await Promise.all([
-    serviceSupabase
-      .from('plan_adjustments')
-      .update({ status: 'reverted', reverted_at: nowIso })
-      .eq('id', adjustment_id),
-    serviceSupabase
-      .from('user_settings')
-      .update({
-        last_adjustment_check_at:           nowIso,
-        last_adjustment_check_found_change: false,
-      })
-      .eq('id', user.id),
-  ])
+  //
+  // CONFIRM-REVERT-WRITE-ERRORS-01 (2026-11-25) — see `applyAnsweredProposal`, the single owner
+  // of the save + conditional transition shared with the three sibling routes.
+  //
+  // ⚠️ `fromStatus` is the status READ above, not a constant. This route accepts a row that is
+  // `pending` OR `confirmed` (it refuses only one already `reverted`), so hardcoding `'pending'`
+  // would make every revert-after-confirm report a conflict.
+  const written = await applyAnsweredProposal(serviceSupabase, {
+    userId:  user.id,
+    route:   'revert-adjustment',
+    plan:    updatedPlan,
+    proposal: { table: 'plan_adjustments', id: adjustment_id, fromStatus: adjustment.status, answer: 'reverted' },
+    clearAdjustmentFlag: true,
+    detail:  { week_n: weekN },
+  })
+  if (!written.ok) return NextResponse.json({ error: 'Could not save the plan' }, { status: 500 })
 
   return NextResponse.json({ plan: updatedPlan })
 }

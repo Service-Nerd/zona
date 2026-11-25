@@ -280,6 +280,31 @@ export async function autoMatchAndAnalyse(
   if (claim === 'exists') return   // already linked / manually complete / a concurrent winner handled it — no push, no re-analysis
   const shouldPush = claim === 'won'  // a fresh attach onto a pre-existing stub analyses but does not push
 
+  // 🔴 STEP4-RUNS-NO-COMPLETIONS-01 (2026-11-25) — THE COUNTERPART TO `run_unmatched`, SO THE
+  // JOURNEY HAS A DENOMINATOR.
+  //
+  // `noteRunUnmatched` has recorded the four walls since 2026-11-11 and nothing recorded a run
+  // getting THROUGH, so the auto-link rate could not be computed from events at all: measured
+  // 2026-11-25 it had to be derived from table counts instead (27 of 176 live completions carry
+  // a run link, 15.3%). A one-sided funnel can show a number moving and not say whether that is
+  // the fix working or the population changing.
+  //
+  // ⚠️ COUNT DISTINCT `activity_id` HERE TOO. `clientSync` re-posts recent workouts on every
+  // sweep, so this fires once per ingest ATTEMPT exactly as `run_unmatched` does — measured at
+  // 46 attempts per run. The 'exists' return above absorbs most repeats, but not a concurrent
+  // pair, and `count(*)` would report sweeps rather than runs.
+  // Lazily imported, like every other dependency in this module.
+  const { recordOpsEvent: recordLinked } = await import('@/lib/ops/recordOpsEvent')
+  await recordLinked('run_linked', {
+    source:        ref.source,
+    activity_id:   ref.source === 'strava' ? String(ref.stravaActivityId) : ref.appleHealthUuid,
+    // The DATE, never the time — the same rule `noteRunUnmatched` states and for the same reason.
+    activity_date: activity.start_date.slice(0, 10),
+    week_n:        week.n,
+    session_day:   bestDay,
+    claim,
+  }, userId)
+
   // POST-RUN-01 link-time push. Fires immediately on confident auto-link, so
   // the user is brought back BEFORE the LLM round-trip — the wait gets covered
   // by RPE entry inside the Post-Run screen instead of a silent 30s gap.

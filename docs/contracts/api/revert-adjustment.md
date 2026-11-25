@@ -34,6 +34,12 @@ The returned plan has the adjustment's `sessions_before` snapshot restored to th
 
 ## Notes
 
+- 🔴 **A 200 DOES NOT PROVE THE ROW FOLLOWED THE PLAN (`CONFIRM-REVERT-WRITE-ERRORS-01`, 2026-11-25).** The plan is saved first, so by the time the status transition runs the runner's plan has already changed. Answering non-200 would make every client show `PLAN_CHANGE_SAVE_FAILED` for a change that landed, which is a worse lie than the card reappearing. So the request still succeeds and the divergence is recorded as **`proposal_transition_incomplete`**, with `outcome`:
+  - `row_write_failed` / `flag_write_failed` — the write errored, after one retry. The row write is retried; the flag write is not, because the ROW decides whether a retry can succeed.
+  - `conflict` — the conditional predicate matched 0 rows, so the row no longer held the status this route read and another answer got there first. **Not an error.** `observed_status` names what it holds.
+- **The status update is CONDITIONAL on the status that was read** (`.eq('status', <read status>)`). It used to be keyed on `id` alone, so two concurrent answers overwrote each other in silence. ⚠️ The **plan** write is still last-writer-wins across two devices; closing that needs the optimistic-concurrency check ADR-027 ARCH-ENG-016 specifies.
+- **Owner: `lib/supabase/applyAnsweredProposal.ts`** — the save and the transition for all four routes that answer a proposal (`confirm-adjustment`, `revert-adjustment`, `post-race-reshape/confirm`, `post-race-reshape/revert`). Gated by `lib/api/adjustmentStatusAfterSave.test.ts`; `lib/plan/planRouteClient.test.ts` widened its population to follow the save behind the owner.
+
 - **Order (ADJUST-STATUS-WITHOUT-SAVE-01, 2026-10-16): the plan is saved FIRST.** Only after it succeeds are the `plan_adjustments` status and the `user_settings` flag written (those two in parallel). They used to run in one `Promise.all` with the save, so a failed save still flipped the row and the flag, and the change card vanished with nothing to retry.
 
 - Sets `plan_adjustments.status = 'reverted'` and `reverted_at = now()`.
