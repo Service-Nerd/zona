@@ -6,6 +6,19 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-11-26 — S124-AMENDMENT-MISSING-01 · I built a check that enforced a citation to a rule nobody wrote
+**Shipped:** Corrected a reference, in code I had written hours earlier, to a section of the coaching constitution that does not exist.
+
+**Dev learning:** Starting the next piece of work meant reading the ruling it is built on. The architecture document cites it as an amendment to a numbered principle, four separate times. **There is no such amendment.** The ruling itself is entirely real — there is a board sitting, there is a register entry, there are specific numbers and a named chair decision. What was never written is the principle section, which the board's own rule says must land in the same commit as any ruling. So a decision that genuinely happened has been cited for days against a paragraph that was never created.
+
+**The uncomfortable part:** I did the same thing myself, this morning, in the step before this one. My new event contract cites that amendment in four places — **and the test I wrote to protect it asserts that the citation string contains the section number.** I built a check whose job was to enforce a reference to something that does not exist. It passed, because the string was there; the string was simply pointing at nothing.
+
+**AI-building learning:** This is the same shape as a thing I'd recorded two hours earlier, one layer up. Then it was an architecture principle naming a registry file nobody had created. Now it's a ruling naming a constitution section nobody had written. In both cases the citation reads as evidence — it has an identifier, it looks checkable — and in both cases nothing resolves it, because prose references are not compiled. **The only reason either surfaced is that somebody finally tried to *use* the thing cited rather than cite it again.**
+
+**The honest bit:** I corrected the reference to point at the sitting and the register, which are records that do exist. That is the smaller half. The larger half — writing the amendment — is the board's, and I filed it rather than inventing the wording myself, because a principle is the one artefact I should not be drafting on their behalf.
+
+---
+
 ## 2026-11-26 — ADR027-B3-STEP4A · the registry the architecture had been citing didn't exist
 **Shipped:** The three "a run happened" events now exist as typed data rather than prose, and the canonical registry of *who owns which truth* has been created — with the run-to-session matcher as its first real entry.
 
