@@ -2179,7 +2179,28 @@ the first being the principle §.
 blocks nothing** — the ruling is enforceable as recorded — **but 4b writes the trigger catalogue from it**, so the
 catalogue should cite something that resolves.
 
-### 🔲 `ENGINE-CONTRACT-V2-COVERAGE-01` — the v2 engine is in NO arm of the docs audit, and L5 has no contract at all *(filed 2026-11-26, found auditing ADR-027's own currency)* ⚙️ **NO BOARD** (documentation and a gate; no behavioural delta)
+### ✅ `ENGINE-CONTRACT-V2-COVERAGE-01` — SHIPPED 2026-11-26 — the v2 engine was in NO arm of the docs audit, and L5 had no contract at all *(filed and closed 2026-11-26, found auditing ADR-027's own currency)* ⚙️ **NO BOARD** (documentation and a gate; no behavioural delta)
+
+✅ **DONE: `docs/contracts/engine.md § v2` gained an L2 and an L5 section, 20 of 20 `lib/engine` modules are named, and `lib/engine/contracts/engineContractV2.test.ts` (11 arms) holds it.** The gate's population is **walked from the tree**, never listed — a hand-written list was the finding. It lives in the suite rather than in `audit-docs.sh` for two measured reasons: that script is **diff-based** and the engine is not routed, so there is no diff to hang it on; and a vitest gate runs in the **pre-push hook AND `verify:ci`**, both of which are read.
+
+🥇 **AND WRITING IT WAS A CODE REVIEW, AS IT HAS BEEN EVERY TIME — THREE FINDINGS BEFORE A LINE OF THE GATE EXISTED.**
+- 🔴 **`UNVERIFIED_PREFIX` was two independent literals with no gate**: a template literal in `verifyPlan`, a `startsWith('unverified:')` in `verifierShadow`. Rewording the message would have made the nightly run report **0 unverified** for ever, reading as *"every rule evaluated cleanly"* — **on the number that goes to the founder with the cut-over request.** `verifierShadow.test.ts` could not see it: it tested the summariser against a hand-supplied count and never exercised the producer→consumer path. One owner plus `isUnverified`, and a **behavioural** arm that sabotages a real predicate and reads the real count. Falsified against the real defect: shadow-with-own-literal + reworded prefix → RED; shadow-reading-the-owner + reworded prefix → GREEN.
+- 🔴 **§ v2 asserted *"`Rule` and `Decision` have no producer"*** and `Rule` gained one at B3 step 1 — 221 rows, read by L5. **A contract asserting an absence that has since been filled is exactly what a records audit cannot see**: `audit-docs.sh` proves a record EXISTS, not that it is TRUE.
+- 📐 **ADR-027's *"207 of 221 ported"* is a SUM OVER TWO MODULES** (157 `INV-` + 50 `S-`), and `PORTED_RULES` is **157**. Reasoning from that constant against the 221 denominator gives **64 held, not 14**. The decomposition is now written down and gated: `221 = 171 INV + 50 S`, `14 = 171 − 157`. **Cite the family with the number.**
+
+🔴 **CODE REVIEW THEN FOUND SEVEN, ALL MINE, AND FIVE WERE HOLES IN THE GATES I HAD JUST WRITTEN — INCLUDING THE HEADLINE ARM.** Each mutation-verified by the reviewer and re-falsified here:
+- **The single-owner arm was satisfied by the comment recording the defect.** It read RAW source while its sibling stripped comments, and `verifierShadow.ts`'s comment contains the word `isUnverified` — so dropping the import and re-spelling the predicate as `slice(0, 12)` left both arms green. **The fix this file exists to protect was revertible without the gate noticing.** `HOOK-RGBA-COMMENTS-01` from the other side: one arm found the comment about the defect, the next was satisfied by it.
+- **The L5 slice ran to EOF**, so `/does not prove/i` bound to the pre-existing `### What § v2 does not prove` heading and deleting L5's own negative-space paragraph stayed green. **Bound the region, never grep the file.**
+- **Coverage matched by BASENAME**, so `catalogue/triggers.ts` was satisfied by `contracts/triggers.ts` — erasing every mention of the former reported `missing: []`. **`AUDIT-CONTRACT-MENTION-01`'s prefix bug, reproduced in a file that cites it four lines above.**
+- **2 of 5 number checks were vacuous**: `'50'` matched a pre-existing `| 500` row and `'14'` matched `ARCH-ENG-014` and a `**144**` cell — so **the 14-held figure the sign-off names was bound to nothing.** All five are matched in context now.
+- **The fleet citation quoted the three zeroes and dropped the only non-zero row** (1 plan would GAIN a code, 0 comparable), which reads as full agreement.
+- The behavioural arm's victim was `Object.keys(PREDICATES)[0]`, so a batch reorder would have failed as *"not counted"* rather than as a bad victim choice; it is chosen from `rulesFor` now and a bad choice fails as one.
+
+🔑 **The pattern across both rounds: every hollow arm was one where the thing CLAIMING correctness and the thing ENFORCING it had drifted** — a title, a comment, a basename, a bare digit. Same class as 4b's three, measured hours apart.
+
+🔻 **Negative space.** The gate proves the contract **mentions** each module and that the **numbers** it publishes are live. **It cannot prove a section is correct** — prose about a mechanism is not the mechanism. And L5 still has never refused a save, because nothing calls it on the save path.
+
+**Prior filing, for the record:**
 
 📐 **Measured 2026-11-26: `lib/engine` appears ZERO times in `scripts/audit-docs.sh`.** Every arm of that script has a
 population — changed API routes, changed components, invariants, registry rows, build-log entries, board rulings — and

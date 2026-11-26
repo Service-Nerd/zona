@@ -499,6 +499,173 @@ adapter lost a field"* and *"the plan is not valid v2"* are different failures.
 through casts today), `restingHr`, `asPlanV2`. Each takes a v1 or a v2 plan. No consumer is migrated yet
 (B4/B5); the gate that bans raw `plan.meta.<key>` reads lands with that migration.
 
+### L2: the rule catalogue, the event vocabulary and the trigger catalogue (B3 steps 1 and 4)
+
+**What L2 is:** everything the engine BELIEVES, as data. No predicate, no clock, no I/O. ARCH-ENG-001 —
+layers depend downward only — so **no module here may import `lib/coaching/` or `lib/plan/`**, and that
+constraint is why two vocabularies moved rather than being imported from where they grew.
+
+| Piece | Where | Pure? |
+|---|---|---|
+| `RULES` — the rule catalogue, **221 entries** | `lib/engine/catalogue/rules.ts` | data |
+| `RuleSchema` / `Rule` / `RuleId` — the row shape, `z.strictObject` | `lib/engine/contracts/rule.ts` | type |
+| `rulesSkippedBy(policy)` — the rules a caller's strictness exempts | `lib/engine/catalogue/rules.ts` | yes |
+| `RUN_EVENTS` + `TRIGGER_EVALUATION_EVENTS` — the three run events | `lib/engine/contracts/events.ts` | data |
+| `RUN_UNMATCHED_REASONS` — why a run produced no read | `lib/engine/contracts/runOutcome.ts` | data |
+| `TRIGGER_TYPES` / `DETECTED_TRIGGER_TYPES` — the adjustment trigger vocabulary | `lib/engine/contracts/triggers.ts` | data |
+| `TRIGGER_RULES` + `triggersFor(event)` — the ARCH-ENG-018 trigger catalogue | `lib/engine/catalogue/triggers.ts` | yes |
+
+**The rule catalogue.** A row carries `id`, `principle_ref`, optional `related_refs`, `scope`, `kind`
+(`hard` / `soft` / `prefer`), `config_key`, `explain`, optional `severity_note` and optional `skipped_by`.
+
+- **A rule references its numeric and never copies it** (ARCH-ENG-003). `config_key` is a
+  `{ object, path }` reference and `resolveRuleConfigKey` proves the key exists in the object it names.
+  `explain` and `severity_note` are both refused by the schema if they contain a value: numbers reach copy
+  through an L4 `{placeholder}` filled from a Decision.
+- **`explain` is `null` on every row today, deliberately.** Explanations are B5's job on the founder's copy
+  delegation; 221 placeholder sentences written at B3 would be invented copy.
+- **`kind` sets severity, `severity_note` keeps a condition the registry states conditionally.** `soft` →
+  `warn`, everything else → `error`; a rule whose registry row says *"error, OR warn on maintenance plans"*
+  carries the stricter reading in `kind` and the condition in `severity_note` until its predicate is ported.
+- 🔑 **`skipped_by` IS THE ONE LIST, and `lib/plan/invariants.ts` DERIVES `RESHAPE_SKIP_INVARIANTS` from it.**
+  Strictness is a CALLER's policy, not a rule's — already settled in `validateStoredPlan.ts`, which runs one
+  dispatch under three callers. Two lists with a human between them is the shape this repo keeps paying for:
+  the verifier's first live shadow run read **6 of its 8 flagged plans off exactly that gap**.
+
+📐 **221 = 171 `INV-` + 50 `S-`, AND THE DECOMPOSITION MATTERS BECAUSE TWO MODULES VERIFY THEM.**
+Measured 2026-11-26. **`PORTED_RULES` is 157, all `INV-`** — the 50 strength rules are named in
+`verifyStrength.ts`, a separate entry point that does not feed `PORTED_RULES`. ⚠️ **So ADR-027's
+*"207 of 221 ported"* is a SUM OVER BOTH MODULES** (157 + 50), and the 14 held rules are
+`171 − 157`, not `221 − 207` applied to `PORTED_RULES`. Reasoning from `PORTED_RULES` against the 221
+denominator gives **64 held**, which is wrong, and `heldRules.test.ts` derives the real list as
+`RULES` INV ids minus `PORTED_RULES`. **Cite the family with the number.**
+
+**The event vocabulary.** Three events in the order a run passes through them — `run_arrived`,
+`run_logged`, `run_analysed` — each carrying `evaluates_triggers` and the ruling that set it.
+
+- **Only two evaluate triggers, and that is a RULING, not a preference** (Coaching Board 2026-11-21,
+  sitting `docs/decisions/boards-2026-11-21-triggers-on-run-arrival.md`, register row in
+  `coaching-rulings.md`). `run_arrived` does not: *"the evaluation event is `run_analysed`, never raw
+  ingest."* The flag is DATA rather than a convention each call site remembers.
+- ⚠️ **ADR-027 cites this as "§124 Amendment 1" and no such amendment exists** (verified 2026-11-26).
+  The ruling is real and enforceable from the register; the principle artifact is owed as
+  `S124-TRIGGER-ARRIVAL-AMENDMENT-01`. **Cite the sitting, never the amendment.**
+- `run_arrived` carries `{ outcome: 'linked' | 'unmatched', reason? }`, with `reason` **required when
+  unmatched and absent when linked, expressed in the type** — "unmatched with no reason" is absence written
+  as a value. The reason vocabulary is read from `runOutcome.ts`; `lib/coaching/autoAnalyse.ts` re-exports
+  the same object, so there is one definition and `engineTruths.test.ts` asserts **object identity**.
+- 🔴 **NOTHING EMITS AN EVENT.** The names had **zero occurrences** in code before `events.ts` existed, so
+  this is a first definition and not a migration. Raising `run_arrived` from the ingest route changes a
+  production path and belongs to 4c / B4b.
+
+**The trigger catalogue.** One `TRIGGER_RULES` row per trigger type: `evaluates_on`, `threshold_keys`
+(symbol names), `raises`, `detected`.
+
+- **Ten types, eight of which we DETECT.** The other two — `skip_with_reason`, `session_reorder` — are the
+  runner telling us. ⚠️ **The honest count of things the product watches for is 8, not 10**
+  (`ADJUST-TRIGGER-MANUAL-DEAD-01`: a dead union member became a marketing claim).
+- **`threshold_keys` names SYMBOLS, never values**, resolved against `lib/coaching/constants.ts` by the gate.
+  🔻 **The check is named→exists, NOT exists→named**, so an INCOMPLETE row passes; the reverse needs parsing
+  the detector. Every DETECTED row must name at least one symbol, per row and not in aggregate.
+- **`evaluates_on` is `never_on_arrival`, `week_close`, or a non-empty list of events** — the first two are
+  ruled values and the array form is typed non-empty so an empty list cannot express them.
+- 🔑 **IT HOLDS NO CONDITIONS AND NO PRIORITY ORDER, DELIBERATELY.** `lib/coaching/planAdjustment.ts` owns
+  the predicates and `lib/coaching/triggerInputs.ts` is already a declared reflection of what feeds each
+  one, so a third representation was the risk. The ORDER is real and load-bearing (an if-chain with early
+  returns) and `triggerInputs.test.ts` **observes** it by peeling — fire, neutralise the winner, fire again.
+  **The one thing most likely to drift is the one thing this layer does not copy.**
+- 🔻 **Nothing evaluates it.** Wiring evaluation onto data arrival is `TRIGGERS-ON-DATA-ARRIVAL-01`, parked
+  by founder decision because ARCH-ENG-018 routes its thresholds to the Coaching Board and its FREQUENCY to
+  Design and the SLT.
+
+**Readers today:** the L5 verifier reads `RULES` (severity, conditional severity, `skipped_by`);
+`lib/plan/invariants.ts` derives `RESHAPE_SKIP_INVARIANTS` from `rulesSkippedBy('stored')`;
+`lib/coaching/planAdjustment.ts` re-exports the trigger vocabulary. **The event and trigger catalogues have
+no runtime reader at all.** Gates: `lib/engine/catalogue/rules.test.ts`,
+`lib/engine/catalogue/triggers.test.ts`, `lib/engine/contracts/engineTruths.test.ts`,
+`lib/coaching/triggerProducers.test.ts`.
+
+### L5: the independent verifier (B3 step 2)
+
+**What L5 is:** a second, independent answer to *"is this plan right?"*, derived from L1's view of the runner
+rather than from the plan's own claims about itself. It is what the B3 cut-over asks the founder to approve in
+place of `validatePlan`.
+
+| Piece | Where | Pure? |
+|---|---|---|
+| `verifyPlan(plan, ctx, policy)` → `VerifierFinding[]` | `lib/engine/verifier/verifyPlan.ts` | yes: no clock, no I/O, never throws |
+| `rulesFor(plan, policy)` → `RuleId[]` — which rules judge THIS plan | `lib/engine/verifier/verifyPlan.ts` | yes |
+| `PREDICATES` (the ported rules) and `PORTED_RULES` (their ids) | `lib/engine/verifier/verifyPlan.ts` | yes |
+| `UNVERIFIED_PREFIX` / `isUnverified(f)` — the unverified contract | `lib/engine/verifier/verifyPlan.ts` | yes |
+| `verifyStrengthPlan` / `verifyRecoveryEase` / `verifyProgression` → `StrengthFinding[]` | `lib/engine/verifier/verifyStrength.ts` | yes |
+| Pace, zone and band maths the predicates need | `lib/engine/verifier/formulas.ts` | yes |
+| `verifierShadow` — the nightly live-plan run, observe-only | `lib/ops/verifierShadow.ts` | **no**: reads stored plans |
+
+**`VerifyContext` is the whole point, and it has two rules.**
+
+- **`input` is the request RAW.** `validatePlan` first normalises it with the planner's `coherentGoal`; the
+  verifier may not import that (ARCH-ENG-001). **A goal-dependent rule reads `profile.race.goal` — the
+  normalised goal — and NEVER `input.goal`.**
+- **`profile` must be built AS OF THE PLAN'S GENERATION DATE.** §10's staleness ramp makes a runner's level
+  depend on the instant the profile is built, so the nightly run against an old plan must not use "now".
+- 🔑 **A rule that needs the runner's LEVEL reads the profile, never the plan's own `meta`.** Checking a plan
+  against the label the plan gave itself is circular. `ADR027-B3-STRICT-01` row C1 took this from 2 rules to
+  9, and on the stored path two of the register's directions INVERT.
+
+**Findings.**
+
+- `VerifierFinding` is `{ rule_id, severity, week, day, detail }`. **`week` is the week's `n`, never its
+  position** (ARCH-ENG-015); foundation weeks are `n <= 0`.
+- **Severity comes from the catalogue, not the predicate.** A predicate sets `severity` only for a rule whose
+  severity is CONDITIONAL (its row has a `severity_note`); every other finding takes `kind`'s mapping.
+- 🔴 **A PREDICATE THAT CANNOT EVALUATE RETURNS AN UNVERIFIED FINDING FOR ITS OWN RULE — NEVER A SILENT
+  PASS, AND NEVER THE END OF THE RUN.** Each predicate is isolated, so one that throws does not lose every
+  other rule's findings. **`UNVERIFIED_PREFIX` is the contract**: a consumer classifies on `isUnverified`,
+  never on a string of its own. ⚠️ Those two WERE two independent literals with no gate until
+  `ENGINE-CONTRACT-V2-COVERAGE-01` (2026-11-26) — rewording the message would have made the nightly run
+  report 0 unverified for ever, reading as *"every rule evaluated cleanly"*.
+- **An unverified finding is counted and lands in `strict_only`**, so a crashing rule reads as a plan GAINING
+  a code. That is deliberate: loud, not silent.
+
+**`rulesFor` owns BOTH halves of "which rules apply".**
+
+- **The plan's KIND**: a base-build plan gets only the base-build validators, a maintenance plan that
+  recorded its base volume only the maintenance validator, every other plan the race rules. Without this the
+  race rules ran on base-build and maintenance plans and raised thousands of errors production never raises.
+- **The caller's STRICTNESS**: `VerifierPolicy` is `'saved' | 'stored' | 'repaired'`, **required and with no
+  default**, mirroring `validateStoredPlan.ts`'s three callers by name. Only `stored` skips anything today;
+  `saved` and `repaired` are both strict and are named rather than collapsed, because they are different
+  callers and the next exemption may split them.
+- 🔑 **The two halves belong to one owner because the old checker learned it the expensive way:** when the
+  kind dispatch and the strictness lived apart, eight repair scripts took the dispatch and skipped the policy.
+
+**Coverage, and what the cut-over gate actually is.**
+
+📐 **157 of 171 `INV-` rules have a predicate; 14 are HELD** and the old checker keeps judging them, so **the
+cut-over gate is the verifier PLUS those 14** until B4 gives each an independent derivation. The 14 are named
+in ADR-027 § Build status and that paragraph is held to the derived list by `heldRules.test.ts` — it is the
+one document a founder decision is read from, and it was hand-written beside a derivable set.
+⚠️ **One ported rule, `ZONE-LABEL-HAS-PRESCRIPTION`, can never fire in production** and is named dead in the
+harness. ⚠️ **Strength is a SEPARATE ENTRY POINT with a DIFFERENT finding shape** — `StrengthFinding` carries
+`at: string | null` where `VerifierFinding` carries `day` — and its 50 rules are outside `PORTED_RULES` by
+construction, which is why `heldRules.test.ts` pins its population to `INV-` only.
+
+**Readers today:** `lib/ops/verifierShadow.ts` only, inside `/api/ops/plan-audit`, **observe-only** — it runs
+the verifier beside `validateStoredPlan` on every stored plan and writes nothing back to a plan. Nothing in a
+runner-facing path calls L5. Gates: `lib/engine/verifier/verifyPlan.test.ts`, `verifierStrict.test.ts`,
+`verifierAgreement.test.ts`, `heldRules.test.ts`, `verifyStrength.test.ts`, `lib/ops/verifierShadow.test.ts`.
+
+🔻 **What L5 does not prove.** It has never refused a save, because nothing calls it on the save path. Its
+agreement with the old checker is measured on the golden corpus and on the live fleet as of 2026-11-25 — **not on
+plans stored since.** 📐 **44 stored plans: 1 would GAIN a code, 0 would LOSE one, 0 escalations, 0 unable to
+evaluate.** ⚠️ **That `1` is not a rounding of zero and must be quoted with the rest**: it is the one plan whose level
+is not comparable, so **0 COMPARABLE plans gain a code** — the figure the cut-over actually rests on, and the reason
+`VERIFIER-STORED-LEVEL-01` was a blocker. A first draft of this paragraph quoted the three zeroes and dropped the
+non-zero row, which reads as full agreement; code review caught it. And
+`PREDICATES` is a map, so a rule can be ported, agree with the old checker on every corpus plan, and still be
+unreachable for the population that matters: `invariant:liveness` is the harness for that question and it
+covers `validatePlan`, not this module.
+
 ### What stays outside the service
 
 - **Tier resolution and auth** (ADR-003): `resolveTier` at the route. The distance paywall is a commercial
@@ -513,9 +680,12 @@ through casts today), `restingHr`, `asPlanV2`. Each takes a v1 or a v2 plan. No 
 ### What § v2 does not prove
 
 - Nothing serves it. The request schema, result union and HTTP mapping are unexercised by any route.
-- `Rule` and `Decision` have no producer. Their shapes will be tested by the B-phase that produces them,
-  and may need to change then. `RunnerProfile` has one (B2); its `observed` block and `capacity` have no
-  reader, and nothing has run `fetchRunnerFacts` against the live database.
+- **`Decision` has no producer.** Its shape will be tested by the B-phase that produces it (B4) and may need
+  to change then. ⚠️ **This line said `Rule` had none either, and that stopped being true at B3 step 1** —
+  `RULES` has 221 rows and L5 reads them, measured 2026-11-26 while writing § L2. A contract asserting an
+  absence that has since been filled is the shape `audit-docs.sh` cannot see: it proves a record EXISTS, not
+  that it is TRUE. `RunnerProfile` has a producer (B2); its `observed` block and `capacity` have no reader,
+  and nothing has run `fetchRunnerFacts` against the live database.
 - Plan v2's `derived_set.blocks` is checked as an array only; ADR-019's step shape is not schema-checked.
 - `v1_carry` admits any undeclared week key on the adapter path. Only the corpus assertion stops a producer
   using it, and a cast-only week field written by a path the corpus does not reach would be carried silently.

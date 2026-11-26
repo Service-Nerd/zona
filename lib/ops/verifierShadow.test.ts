@@ -3,8 +3,9 @@ import {
   shadowAsOf, verifierContextFor, shadowVerifyPlan, summariseVerifierShadow, type ShadowRow,
 } from './verifierShadow'
 import { validateStoredPlan } from '@/lib/plan/validateStoredPlan'
-import { rulesFor, verifyPlan } from '@/lib/engine/verifier/verifyPlan'
+import { rulesFor, verifyPlan, PREDICATES } from '@/lib/engine/verifier/verifyPlan'
 import type { Plan, Session } from '@/types/plan'
+import type { RuleId } from '@/lib/engine/contracts/rule'
 import { RESHAPE_SKIP_INVARIANTS, type Violation } from '@/lib/plan/invariants'
 
 /**
@@ -360,5 +361,51 @@ describe('🔴 OBSERVE-ONLY — the shadow cannot reach the audit alert', () => 
     // The two readers, unchanged: the per-user dedupe and the fleet step.
     expect(s).toMatch(/if \(d\.source !== 'plan-audit'\) continue/)
     expect(s).toMatch(/d\.source === 'plan-audit-summary'/)
+  })
+})
+
+describe('ENGINE-CONTRACT-V2-COVERAGE-01 — a predicate that CANNOT evaluate is counted, end to end', () => {
+  /**
+   * 🔴 THE ARM THAT WOULD HAVE CAUGHT THE DEFECT, and it has to be BEHAVIOURAL.
+   *
+   * `verifyPlan` writes a crashed predicate's detail with `UNVERIFIED_PREFIX`; this module counted them
+   * with its OWN `startsWith('unverified:')`. Two copies of one convention, no gate, and the failure is
+   * silent in the worst direction: reword the message and the nightly run reports **0 unverified** for
+   * ever, which reads as *"every rule evaluated cleanly"* — **on the number that goes to the founder with
+   * the cut-over request.** Found writing `docs/contracts/engine.md § L5`, 2026-11-26.
+   *
+   * ⚠️ A SOURCE ASSERTION WAS NOT ENOUGH (`engineContractV2.test.ts` has one, deliberately kept as the
+   * cheap tripwire). This exercises the real composition: make a real predicate throw, run the real
+   * shadow, and read the real count. **Test the composition, not the halves.**
+   */
+  it('🔴 a throwing predicate reaches `unverified`, through the owner\'s prefix', () => {
+    // ⚠️ THE VICTIM IS CHOSEN FROM `rulesFor`, NOT `Object.keys(PREDICATES)[0]`. The first cut took index
+    // 0, which depends on batch literal order AND on that rule surviving the `'stored'` policy — so a
+    // harmless reorder would have failed this as *"the planted crash was not counted"*, pointing at the
+    // consumer instead of at the choice. Code review. **A bad victim now fails as a bad victim.**
+    const plan = storedPlan()
+    const judged = rulesFor(plan, 'stored')
+    expect(judged.length, 'no rule judges the fixture — the victim choice below is meaningless').toBeGreaterThan(0)
+    const victim = judged.find(r => PREDICATES[r])!
+    expect(victim, 'no judged rule has a predicate to sabotage').toBeTruthy()
+    const original = PREDICATES[victim]
+    try {
+      PREDICATES[victim] = () => { throw new Error('planted') }
+      const row = shadowVerifyPlan(plan, [], `${GENERATED}T00:00:00Z`)
+      expect(row.assessed, 'the plan must still be assessed: one bad predicate never ends the run').toBe(true)
+      if (!row.assessed) return
+      expect(row.unverified, 'the planted crash was not counted').toBeGreaterThanOrEqual(1)
+      // And it is LOUD, not merely tallied: an unverified rule reads as a plan gaining a code.
+      expect(row.strict_only, 'an unverified rule must surface, never be silently absorbed').toContain(victim)
+    } finally {
+      if (original) PREDICATES[victim] = original; else delete PREDICATES[victim]
+    }
+  })
+
+  it('and with every predicate healthy the count is zero, so the arm above is not always-true', () => {
+    // Falsification runs both ways: a counter that always returns >= 1 would pass the arm above.
+    const row = shadowVerifyPlan(storedPlan(), [], `${GENERATED}T00:00:00Z`)
+    expect(row.assessed).toBe(true)
+    if (row.assessed) expect(row.unverified).toBe(0)
   })
 })

@@ -1,6 +1,6 @@
 import type { Plan } from '@/types/plan'
 import { RESHAPE_SKIP_INVARIANTS, type Violation } from '@/lib/plan/invariants'
-import { verifyPlan, rulesFor, type VerifyContext } from '@/lib/engine/verifier/verifyPlan'
+import { verifyPlan, rulesFor, type VerifyContext, isUnverified } from '@/lib/engine/verifier/verifyPlan'
 import { buildRunnerProfile, factsFromInput } from '@/lib/engine/profile/buildRunnerProfile'
 import { storedPlanInput } from '@/lib/plan/storedPlanInput'
 
@@ -207,7 +207,9 @@ export function shadowVerifyPlan(
     lost: lost.sort(),
     new_findings: judgedFindings.length,
     old_findings: judgedOld.length,
-    unverified: findings.filter(f => f.detail.startsWith('unverified:')).length,
+    // ⚠️ `isUnverified` is the VERIFIER's, not a local string match. It was `startsWith('unverified:')`
+    // here against a template literal there — two copies of one convention, no gate (see UNVERIFIED_PREFIX).
+    unverified: findings.filter(isUnverified).length,
     level_mismatch: levelMismatch(plan, ctx),
     instances: instanceCounts(judgedFindings, judgedOld),
   }

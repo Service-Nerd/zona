@@ -6,6 +6,23 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-11-26 — ENGINE-CONTRACT-V2-COVERAGE-01 · I wrote the interface down and it found three bugs before the gate existed
+**Shipped:** The new engine's rule layer and its verifier now have written contracts, and a check that keeps them honest.
+
+**Dev learning:** The trigger was a question about whether the documents were current. The answer involved grepping the audit script for the engine's directory, and getting zero. Every arm of that script has a population — changed routes, changed components, invariants, registry rows — and the new engine was in none of them. So the "all clean" line I quote on every single ship was, for the entire new engine, a statement about nothing.
+
+Two of three modules in the verifier had no written interface at all, and the verifier is the thing I am about to ask the founder to approve in place of the old checker. The reason the original engine contract was written, a month ago, was that the engine's own interface was governed by nothing. The same sentence had become true again one layer up, and nobody noticed because the check that would have said so could not see the directory.
+
+Writing the thing down found three defects before I had written a line of the gate. The worst: a crashed rule gets reported with a specific message prefix, and the nightly job that counts those crashes was matching that prefix with its own separately-typed copy of the string. Reword the message and the nightly report says zero crashes, for ever — which reads as every rule evaluating cleanly. On the exact number that goes to the founder with the approval request. Two literals, no gate, and the existing test could not see it because it fed the summariser a hand-written count instead of running the real path.
+
+**The honest bit:** The code review found seven and five were holes in the gates I had just written, including the headline one. The arm asserting that the fix stayed fixed read the raw source file, while the arm directly above it stripped comments out first — and the comment I had written *explaining the defect* contains the name of the function the arm was looking for. So the arm was satisfied by the comment about the problem. Delete the import, re-spell the check by hand, and both arms stayed green: the single fix the whole file exists to protect was revertible without a murmur.
+
+Three of the other four were the same thing in different clothes. A region that ran to the end of the file and matched a heading that was already there. A path match that compared filenames only, so one file stood in for another with the same name — the exact bug I cite by name four lines above it. And two number checks where the digits I was pinning turned up inside unrelated text, so the figure that matters most in the whole document was bound to nothing at all.
+
+The pattern, twice in one day: every hollow check was one where the thing claiming correctness and the thing enforcing it had quietly stopped being the same thing. A title. A comment. A filename. A bare digit.
+
+---
+
 ## 2026-11-26 — ADR027-B3-STEP4B · Moving a number six lines made it visible to a check for the first time
 **Shipped:** The plan-adjustment triggers became catalogue data — ten rows saying which event each one listens to, which thresholds it reads by name, and what it raises. No value changed.
 

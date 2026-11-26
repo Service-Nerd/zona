@@ -3039,13 +3039,33 @@ export function rulesFor(plan: Plan, policy: VerifierPolicy): RuleId[] {
   return kind.filter(r => !skip.has(r))
 }
 
+/**
+ * The prefix an UNVERIFIED finding's `detail` carries, and **the contract between this module and every
+ * consumer that counts them.**
+ *
+ * 🔴 IT WAS TWO INDEPENDENT LITERALS AND NOTHING BOUND THEM. This module wrote the prefix inline and
+ * `lib/ops/verifierShadow.ts` matched it with its own `startsWith('unverified:')`. **Found writing the L5
+ * contract, 2026-11-26** (`ENGINE-CONTRACT-V2-COVERAGE-01`), and it is the
+ * *never-match-a-refusal-by-its-message* class: rewording this string would have made the nightly live run
+ * report **0 unverified** for ever, which reads as *"every rule evaluated cleanly"* — the most reassuring
+ * possible wrong answer, **on the metric the B3 cut-over rests on.** And the failure was invisible to
+ * `verifierShadow.test.ts`, which tests the summariser against a hand-supplied count and never exercises
+ * the producer→consumer path.
+ *
+ * ⚠️ A consumer must classify on THIS constant, never on a string of its own.
+ */
+export const UNVERIFIED_PREFIX = 'unverified: '
+
+/** Did this finding come from a predicate that could not evaluate, rather than from a breach? */
+export const isUnverified = (f: Pick<VerifierFinding, 'detail'>): boolean => f.detail.startsWith(UNVERIFIED_PREFIX)
+
 export function verifyPlan(plan: Plan, ctx: VerifyContext, policy: VerifierPolicy): VerifierFinding[] {
   // Each predicate is isolated (code review): one that cannot evaluate returns an UNVERIFIED finding for
   // its own rule, rather than ending the run and losing every other rule's findings. Never a silent pass.
   const judged = new Set(rulesFor(plan, policy))
   return (Object.entries(PREDICATES) as [RuleId, Predicate][]).filter(([id]) => judged.has(id)).flatMap(([id, p]) => {
     try { return p(plan, ctx) } catch (e) {
-      return [{ rule_id: id, week: PLAN, day: null, detail: `unverified: ${e instanceof Error ? e.message : String(e)}` }]
+      return [{ rule_id: id, week: PLAN, day: null, detail: `${UNVERIFIED_PREFIX}${e instanceof Error ? e.message : String(e)}` }]
     }
   }).map(f => ({ ...f, severity: (CONDITIONAL.has(f.rule_id) ? f.severity : undefined) ?? SEVERITY.get(f.rule_id) ?? 'error' }))
 }
