@@ -1909,7 +1909,18 @@ Step 1 shipped as `ADR027-B3-CATALOGUE` (221 rules). Remaining, in order:
   code from a held reading, 0 would lose one, 0 rules failed to evaluate.** The two port gaps it found are filed as
   `VERIFIER-RESHAPE-POLICY-01` and `VERIFIER-STORED-LEVEL-01`; full numbers in ADR-027 § B3 step 3.
 - **Step 4, the trigger catalogue** (ARCH-ENG-018): adjustment thresholds move into the catalogue as data, values
-  unchanged, per §124 Am. 1.
+  unchanged, per §124 Am. 1. ⚖️ **SCOPED TO 4a + 4b BY FOUNDER DECISION, 2026-11-26** — 4c is parked as
+  `TRIGGERS-ON-DATA-ARRIVAL-01`:
+  - **4a** — the event vocabulary (`run_analysed`, `run_arrived` carrying its match outcome; `run_logged` unchanged
+    per §124 Am. 1) **and the run→session matcher's `engine-truths.md` row.** ⚙️ No board. **The matcher is currently
+    in NO LAYER** and it is not I/O: *"is this run that session?"* is a pure classifier over facts, scored by rule with
+    its threshold set by a ruling (POST-RUN-01). 📐 It carries step 4's only live finding — **27 of 176 completion rows
+    have a run link (15.3%), and 39 runs reached the matcher unlinked over 14 days** (`below_threshold` 18 · `no_plan`
+    10 · `outside_plan_weeks` 9 · `tier_gated` 2). A run that never links raises neither `run_logged` nor
+    `run_analysed`, so that population is outside the catalogue's reach entirely, and L1's observed block is assembled
+    from completions — at that link rate it reads a fraction of what the runner ran.
+  - **4b** — triggers become catalogue data with thresholds out of inline literals, **values unchanged.** ⚙️ No board.
+  - **4c** — PARKED. See below.
 - **Exit (HLD):** the verifier finds every known defect class on the current engine, falsified class by class; 0
   false positives on the golden corpus; then the founder signs off replacing `validatePlan` as the gate.
 
@@ -2067,6 +2078,28 @@ Tracked at `OPS-CI-UNWATCHED-01`.
 **Original done-when, for the record:** **Done when:** each of the two is diagnosed (clock, real regression, or stale baseline) and either fixed or baselined
 with a written reason; and the push gate's coverage is reconciled with `verify:ci`'s, because the gap between them is
 the mechanism rather than the symptom.
+
+### 🔲 `TRIGGERS-ON-DATA-ARRIVAL-01` — evaluating adjustment triggers when data ARRIVES changes how often runners are prompted *(parked by founder decision 2026-11-26, split out of ADR-027 B3 step 4)* 🏃 **COACHING BOARD** (thresholds), then 🧭 **DESIGN BOARD** / 💼 **SLT** (frequency)
+
+`ARCH-ENG-018` states the rule and routes it in the same breath: *"Triggers are evaluated **when data arrives**
+(ingest, analysis), not only when the runner taps something. ⚠️ Running them on data arrival changes how often runners
+are prompted, so the Coaching Board rules on the thresholds and the Design Board/SLT on the frequency."*
+
+**So this cannot be built before it is ruled**, and it is the only part of step 4 that cannot. 4a (the event vocabulary
+plus the matcher's truths row) and 4b (triggers as catalogue data, values unchanged) change nothing a runner
+experiences and proceed without a sitting — which is why step 4 is scoped to those two and this is parked.
+
+📐 **The measurement that belongs in the submission, taken 2026-11-25:** **27 of 176 live completion rows carry a run
+link — 15.3% — and 39 distinct runs reached the matcher unlinked over 14 days of telemetry** (`below_threshold` 18 ·
+`no_plan` 10 · `outside_plan_weeks` 9 · `tier_gated` 2). ⚠️ **That is the population the frequency question is really
+about:** today a trigger is reached only when the runner taps, and for 85% of completions there is no linked run for it
+to read anyway. Moving evaluation to data arrival does not merely change timing — it changes *who gets evaluated at
+all*.
+
+⚠️ **Do not open this sitting without the link-rate fix in view.** Prompting on arrival while 85% of completions carry
+no run link would fire the triggers that can fire and stay silent for exactly the runners the SLT identified as the
+journey's break (`STEP4-RUNS-NO-COMPLETIONS-01`). The honest order is 4a first (which makes the unmatched population
+visible), then this.
 
 ### 🔲 `ANCHOR-BAND-ORDERING-PAIR-01` — 🔺 ADR-026's condition 3 was declared BINDING, was not met, and the gate it predicted has been red for nine days *(filed 2026-11-26, found by VERIFY-RED-ON-MAIN-01; the condition itself is from 2026-11-20)* 🏃 **COACHING BOARD**
 

@@ -40,7 +40,7 @@ paused: only defects that harm runners are fixed, each one added to the hotfix t
 | B3 step 2: independent verifier (L5) | 🟡 **207 of 221 rules ported**, each agreeing finding for finding with the old checker | `ADR027-B3-VERIFIER`, `lib/engine/verifier/` |
 | B3 step 2b: the board's strict readings | 🟡 **14 of 14 B rows + C1 shipped**; D2–D3 open, B10 blocked on the producer, B14 on a §117 reading, two of C1's seven named fields reclassified (below) | `ADR027-B3-STRICT-01`, `lib/engine/verifier/verifierStrict.test.ts` |
 | B3 step 3: nightly check of every live plan, observe-only | ✅ done 2026-11-25 | `ADR027-B3-SHADOW-01`, `lib/ops/verifierShadow.ts`, inside `/api/ops/plan-audit` |
-| B3 step 4: trigger catalogue (ARCH-ENG-018) + the event vocabulary (ARCH-ENG-022) | 🔲 not started | `ADR027-B3-REMAINING`; vocabulary folded in 2026-11-25 |
+| B3 step 4: trigger catalogue (ARCH-ENG-018) + the event vocabulary (ARCH-ENG-022) | 🔲 not started; **scoped to 4a + 4b by founder decision 2026-11-26** — 4c parked as `TRIGGERS-ON-DATA-ARRIVAL-01` | `ADR027-B3-REMAINING`; vocabulary folded in 2026-11-25 |
 | B3 exit: founder signs off the verifier replacing `validatePlan` as the gate | 🔲 | must name the 14 held rules (below) |
 | B4–B8 (planner, adapt, explanation, single writer, enrichment) | 🔲 not started | HLD |
 | Hotfixes 1–7 | ✅ six shipped, #4 dropped | table below |
@@ -201,7 +201,13 @@ upward on intensity); §89 is the one veto a self-declaration must not unlock. C
 2. **`ADR027-B3-STRICT-01`**: D2/D3 (named parameters and rule data). ✅ C1 shipped 2026-11-25, and the chair accepted
    its scope correction on §23/§46 grounds. B10 needs a `quality_pool_sizes` week key from the producer; B14 needs the
    §117 reading. ✅ `VERIFIER-RESHAPE-POLICY-01` shipped 2026-11-25 — both port gaps are now closed or ruled.
-3. **B3 step 4**: the trigger catalogue, with values unchanged (§124 Am. 1), **plus ARCH-ENG-022** — add `run_analysed` (§124 Am. 1 asked for it) and `run_arrived` with its match outcome; `run_logged` keeps its ratified meaning. Amended 2026-11-25 while the list was still only prose; the mechanical check is this step's.
+3. **B3 step 4 — SCOPED TO 4a + 4b** (founder decision, 2026-11-26). **4a**: the event vocabulary plus the
+   run→session matcher's `engine-truths.md` row — the matcher is in **no layer** today, and this carries step 4's
+   only live finding (**27 of 176 completion rows carry a run link, 15.3%; 39 runs unmatched in 14 days**). **4b**:
+   triggers become catalogue data, thresholds out of inline literals, values unchanged. ⚠️ **4c —
+   evaluating triggers when data ARRIVES — is PARKED** as `TRIGGERS-ON-DATA-ARRIVAL-01`: ARCH-ENG-018 routes
+   thresholds to the Coaching Board and frequency to Design/SLT, so it cannot be built before it is ruled, and 4a+4b
+   change nothing a runner experiences. Original scope, for the record: the trigger catalogue with values unchanged (§124 Am. 1), **plus ARCH-ENG-022** — add `run_analysed` (§124 Am. 1 asked for it) and `run_arrived` with its match outcome; `run_logged` keeps its ratified meaning. Amended 2026-11-25 while the list was still only prose; the mechanical check is this step's.
 4. **The founder's cut-over sign-off**, naming the 14 held rules. ✅ **That list is now held to the derived one by
    `lib/engine/verifier/heldRules.test.ts`** (`HELD-RULE-LIST-DERIVED-01`, 2026-11-26): the paragraph above is compared,
    **by name and in both directions**, against `RULES` INV ids minus `PORTED_RULES`, and its own stated count is checked
