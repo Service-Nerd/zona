@@ -6,6 +6,17 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-11-26 — HELD-RULE-LIST-DERIVED-01 · the list a decision gets made from was typed by hand
+**Shipped:** A test that fails if the fourteen rules named in the architecture document stop matching the fourteen the code actually leaves unchecked.
+
+**Dev learning:** The cut-over for the new plan checker is a decision the founder makes, and the thing he reads to make it is a paragraph listing fourteen rules the new checker does not cover yet. That paragraph was typed by hand. The same list falls straight out of the code — every catalogued rule minus every rule with a new predicate. They agreed, exactly, fourteen for fourteen. **But the drift is one-directional: every rule we port shrinks the real list and leaves the paragraph alone.** So the document a decision is read from was the one guaranteed to go stale, and nothing would have said so.
+
+**AI-building learning:** The parser has to read ids out of prose, and the naive version is wrong in a way I had already demonstrated. Yesterday I grepped that section while auditing and got sixteen, because the sentences *after* the list repeat four of the same names and mention a fifth that is not on it at all. So the parser reads a bounded region between two fixed delimiters, and — this is the part worth keeping — it returns *nothing found* rather than an empty list when a delimiter moves. An empty list would still fail the comparison, but it would fail saying "the document names no rules", which is a different and misleading complaint. **A measuring tool that cannot tell "I found zero" from "I could not look" will eventually tell you the wrong story.**
+
+**The honest bit:** I asserted the *names*, not the count, and only because the item I wrote yesterday told me to. The reasoning is not obvious: if someone ports one rule and holds a new one in the same week, the count stays fourteen while the list is wrong twice over. I would have written the count check. **The version of me that filed the item was more careful than the version that built it**, which is the argument for writing the item properly in the first place.
+
+---
+
 ## 2026-11-26 — VERIFY-RED-ON-MAIN-01 · the test suite was green, the real gate had been red for nine days
 **Shipped:** Found and diagnosed why the project's full verification command had been failing on the main branch, fixed both gates, and gave one of them the ability to record a known problem instead of just failing forever.
 

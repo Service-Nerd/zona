@@ -202,10 +202,12 @@ upward on intensity); §89 is the one veto a self-declaration must not unlock. C
    its scope correction on §23/§46 grounds. B10 needs a `quality_pool_sizes` week key from the producer; B14 needs the
    §117 reading. ✅ `VERIFIER-RESHAPE-POLICY-01` shipped 2026-11-25 — both port gaps are now closed or ruled.
 3. **B3 step 4**: the trigger catalogue, with values unchanged (§124 Am. 1), **plus ARCH-ENG-022** — add `run_analysed` (§124 Am. 1 asked for it) and `run_arrived` with its match outcome; `run_logged` keeps its ratified meaning. Amended 2026-11-25 while the list was still only prose; the mechanical check is this step's.
-4. **The founder's cut-over sign-off**, naming the 14 held rules. ⚠️ **That list is hand-written above and
-   derivable from code** (`RULES` INV ids minus `PORTED_RULES`); re-derived 2026-11-25 and the two agree exactly, 14
-   for 14. It is the `two registers with a human in between` shape and the sign-off is the one document that must not
-   be stale, so a gate belongs with it: `HELD-RULE-LIST-DERIVED-01`.
+4. **The founder's cut-over sign-off**, naming the 14 held rules. ✅ **That list is now held to the derived one by
+   `lib/engine/verifier/heldRules.test.ts`** (`HELD-RULE-LIST-DERIVED-01`, 2026-11-26): the paragraph above is compared,
+   **by name and in both directions**, against `RULES` INV ids minus `PORTED_RULES`, and its own stated count is checked
+   too. ⚠️ So **editing that list is now a build-breaking act unless the code agrees** — which is the point, because the
+   sign-off is the one document a founder decision is read from and every ported rule shrinks the real set while leaving
+   prose untouched.
 5. Then B4, starting with 5K/10K, in shadow.
 
 Filed alongside, not blocking B3: `STRENGTH-S13-S14-LIVE-01` (no board; production never runs S13/S14),

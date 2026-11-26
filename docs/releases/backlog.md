@@ -2116,7 +2116,7 @@ narrower one worth asking first:** the hotfix was ruled for Monday races, of whi
 whether these three archetypes have a Monday race at all, or whether the change reached them through a shared code
 path it was not ruled for.
 
-### 🔲 `HELD-RULE-LIST-DERIVED-01` — the 14 held rules the cut-over sign-off must name are a hand-written list beside a derivable one *(filed 2026-11-25, found auditing the records)* ⚙️ **NO BOARD** (tooling)
+### ✅ `HELD-RULE-LIST-DERIVED-01` — SHIPPED 2026-11-26 — the 14 held rules the cut-over sign-off must name were a hand-written list beside a derivable one *(filed 2026-11-25, found auditing the records)* ⚙️ **NO BOARD** (tooling)
 
 The B3 exit is *"the verifier PLUS these 14 old checks, named in the founder's sign-off"* (Coaching Board
 `ADR027-B3-RAISED-LIST-01` E4), and ADR-027 carries those 14 names **as prose**. They are also derivable: the
@@ -2128,7 +2128,33 @@ catalogue's `INV-` ids minus `PORTED_RULES`.
 B3 ports shrinks the derived list and leaves the prose unchanged, and the sign-off is a founder decision made from the
 prose. An incomplete gate must say it is incomplete — and it can only say so correctly if the count is computed.
 
-**Done when:** a test fails if ADR-027's named list differs from the derived set in either direction, naming the rules
+✅ **DONE.** `lib/engine/verifier/heldRules.test.ts`, 4 arms, **5 mutations each verified to have landed and each red.**
+The derived set is `RULES` INV ids minus `PORTED_RULES`; the ADR's set is parsed from its paragraph.
+
+🔴 **THE PARSER BOUNDS THE REGION AND THAT IS THE MEASURED DEFECT, NOT A PRECAUTION.** The paragraph is followed by
+sentences that repeat four of the same ids in backticks **plus one that is not held at all**
+(`ZONE-LABEL-HAS-PRESCRIPTION` — ported, but dead in production). A grep over the section returns **16** where the
+answer is **14**: I did exactly that yesterday while auditing the records and had to go back. CLAUDE.md's rule
+verbatim — *bound the region, never grep the file* — so the parse runs between the ruling reference and the
+``(all `INV-PLAN-*`)`` qualifier, and **returns `null` rather than an empty list** when it cannot find them. An empty
+list would still fail, but with the wrong reason, and absence written as a value is the class this repo keeps paying
+for.
+
+**Four arms:** the paragraph is parseable at all (unverified is never a pass) · every named rule IS held · every held
+rule IS named · and **the number in the heading is the derived count**, so a half-edited paragraph fails. ⚠️ **Asserted
+as NAMES, not a count**, which the item asked for and which matters: a port landing alongside a new hold nets to the
+same number and would pass a count check on a list wrong twice over.
+
+🔴 **5 mutations, all red:** a held rule dropped from the list (the actual staleness scenario) · a ported rule named as
+held · the heading's number left stale · the region's delimiter moved so the list is unparseable (3 of 4 arms fire, the
+parse arm first) · and the strength prefix filter removed, which without it reports all 50 strength rules as held
+because `verifyStrength.ts` does not contribute to `PORTED_RULES`.
+
+🔻 **Negative space: INV rules only.** An unported STRENGTH rule is outside this gate's population by construction, and
+the limit is pinned as its own arm rather than left in a comment. `verifierStrength.test.ts` holds that side.
+📐 **And it is a ratchet, not a fix: the two agreed 14 for 14, name for name, before the gate existed.**
+
+**Original done-when:** **Done when:** a test fails if ADR-027's named list differs from the derived set in either direction, naming the rules
 that differ. ⚠️ **Assert the NAMES, not the count** — a port plus a new hold nets to 14 and would pass a count check.
 
 ### ✅ `VERIFIER-STORED-LEVEL-01` — SHIPPED 2026-11-25, CUT-OVER UNBLOCKED — `resolveLevels` let the API STRUCTURAL declaration set the INTENSITY axis, which §79 forbids in as many words *(filed 2026-11-25, ADR-027 B3 step 3; widened 2 → 9 rules by C1; rerouted and conditioned by the board 2026-11-25)* ⚙️ **NO BOARD — a defect fix restoring documented intent, ruled EXEMPT**
