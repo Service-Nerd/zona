@@ -48,7 +48,7 @@ it is a Design Board decision, not a prop added here.**
    `span.href.startsWith('/')` in `renderSpans`. The repo's internal-nav pattern.
 5. ⚠️ **`APP_URL` falls back to the committed `'https://www.zonna.run'`** and
    `NEXT_PUBLIC_APP_URL` is deliberately unset (`GTM-SITE-01`). `www` is the only host that
-   serves 200; the apex 307-redirects. A canonical or JSON-LD URL built on the apex publishes a
+   serves 200; the apex 308-redirects (307 until 2026-11-26, `SEO-APEX-308-01`). A canonical or JSON-LD URL built on the apex publishes a
    redirect to every crawler.
 6. **Layout primitives are lifted from `/plans`** — `SiteHeader`, `SiteFooter`, the section
    width and the type scale — so this content type carries the same visual weight as the rest of

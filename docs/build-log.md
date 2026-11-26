@@ -6,6 +6,19 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-11-26 — SEO-APEX-308-01 · the one redirect that wasn't in the repo was the one that was wrong
+**Shipped:** Changed the bare `zonna.run` → `www.zonna.run` redirect from temporary to permanent, so Google stops holding the old address open.
+
+**Dev learning:** A Search Console email said some fixes had failed. Two things were going on and only one was real. The email itself was not a defect report: the pages it complains about redirect *on purpose*, so asking Google to validate a fix on them can only ever fail. But underneath it there was a genuine mistake — the redirect was a **307**, which means *temporary*. Google reads that as "keep the old address, don't move anything across, check again later". It should be a **308**, meaning *permanent, consolidate and move on*. One field.
+
+**The part worth keeping:** the two redirects written in our own code were already correct, with a comment next to them explaining precisely this reasoning. The one that was wrong was the one that lives in the hosting dashboard rather than the repository — so it was outside every check, every review and every gate this codebase has. **A setting that isn't in version control gets no code review, ever, and that is where the stale value was.**
+
+**AI-building learning:** My first attempt sent only the field I wanted to change. The API treats that endpoint as a *replace*, not an update, so it set my field and simultaneously wiped the redirect target — the bare domain served the site directly for about ten seconds, which is duplicate content against the real one. I caught it in the response and repaired it immediately. **"Look at the thing before you overwrite it" is a rule I apply to files and had not been applying to API payloads.**
+
+**The honest bit:** before changing anything I checked all twenty-nine pages in the sitemap and every one returned a clean 200. The site was never broken. It would have been easy to treat an alarming email as evidence of damage and start fixing things — the discipline that mattered was measuring first and establishing that most of the message was expected behaviour, so the actual change was one setting rather than a day of work on a site that was fine.
+
+---
+
 ## 2026-11-26 — HELD-RULE-LIST-DERIVED-01 · the list a decision gets made from was typed by hand
 **Shipped:** A test that fails if the fourteen rules named in the architecture document stop matching the fourteen the code actually leaves unchecked.
 

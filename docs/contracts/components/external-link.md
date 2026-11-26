@@ -41,7 +41,7 @@ on this gate to catch an undocumented one. It reaches the DOM through `...rest`.
 4. 🔴 **THE ABSOLUTE URL COMES FROM `window.location.origin`, NEVER A CONSTANT.** The webview is
    loaded from the canonical host, so the link inherits it. A hardcoded apex URL would be worse
    than wrong: `allowNavigation` lists `www.zonna.run` only, so Capacitor would bounce the runner
-   out to Safari (see also `GTM-SITE-01` — the apex 307-redirects to `www`).
+   out to Safari (see also `GTM-SITE-01` — the apex 308-redirects to `www`; 307 until 2026-11-26, `SEO-APEX-308-01`).
 5. ⚠️ **THE CATCH FALLS BACK TO A SAME-WEBVIEW NAVIGATION, DELIBERATELY.** If the plugin is
    missing or refused, that is still better than a dead tap on a link **Apple requires to work**.
 6. **`target="_blank"` and `rel="noopener noreferrer"` stay on the anchor** — they are what make

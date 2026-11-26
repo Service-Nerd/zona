@@ -47,7 +47,7 @@ https://www.zonna.run/auth/reset
 ```
 
 `www` is the canonical host and the only one Capacitor's `allowNavigation`
-permits. **Do not add the apex** (`https://zonna.run/...`) — it 307-redirects, and
+permits. **Do not add the apex** (`https://zonna.run/...`) — it 308-redirects (307 until 2026-11-26), and
 inside the app a non-allowed host opens in Safari instead of the webview.
 
 ---
