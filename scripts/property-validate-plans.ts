@@ -1654,7 +1654,34 @@ const BASELINE: Record<string, number> = {
   // slow-grid weeks stated more than their sessions held). One clone (10K, 7 days, 40 km/week, 30-min weekdays) then
   // peaks at 108% of week 1, under §23's 110%, and is not flagged maintenance: the classification is decided before
   // that pass and read the stale, higher total. Filed as `S9-HELD-PEAK-CLASSIFY-01`; the classifier is not changed here.
-  'INV-PLAN-PEAK-OVER-BASE@slow-goal':       1,
+  // 1 -> 0 (`VERIFIER-STORED-LEVEL-01`, 2026-11-26). The clone was a 10K runner whose peak read 108%
+  // of week 1 and was not flagged maintenance because the classifier ran before the final cap pass.
+  // The §79 fix removed it: the plan is built at the level §79 assessed rather than the collapsed one,
+  // so the peak no longer lands inside §23's 110% window. Lowered as the script instructs, not because
+  // the entry was inconvenient — `S9-HELD-PEAK-CLASSIFY-01` (the classifier ordering) is unchanged and
+  // still open; this clone simply no longer reaches it.
+  'INV-PLAN-PEAK-OVER-BASE@slow-goal':       0,
+
+  // 🔴 0 -> 13 AT `9497de8e` (ADR-026 / `ANCHOR-BAND-FLIP-01`, 2026-11-17), AND THE INVARIANT'S OWN
+  // COMMENT PREDICTED IT AT THAT COMMIT. `invariants.ts`'s `INV-PLAN-INTENSITY-ORDERING` block says:
+  // *"THIS ONE DOES NOT SURVIVE ADR-026 BY CONSTRUCTION: once the band is derived from the runner's
+  // own pace anchor, a threshold session can read 'Zone 4' and join the VO2max side, so the pair
+  // being compared changes per runner. That is ADR-026 condition 3 exactly, it needs the board
+  // rather than a re-key."* The check classifies the two sides by the session's ZONE STRING, and
+  // ADR-026 made that string a function of the runner's own anchor — so on a slow runner with an
+  // ambitious goal the pair it compares is no longer the pair it was written for.
+  //
+  // ⚠️ BASELINED, NOT FIXED, AND THE FIX IS NOT MINE: ADR-026's condition 3 ("`INV-PLAN-PACE-ZONE-COHERENT`
+  // amended in the same commit or the release goes red") was declared BINDING and was not met. The
+  // release did go red, here, and `ANCHOR-BAND-ORDERING-PAIR-01` now carries it as its own OPEN item
+  // rather than a line inside a closed one — which is why nine days passed with nobody acting on it.
+  //
+  // 🔴 AND THE REASON IT WENT UNSEEN FOR NINE DAYS IS THE REAL FINDING (`VERIFY-RED-ON-MAIN-01`): this
+  // script is `verify:sweep`, inside `verify:ci` — and the pre-push hook runs `tsc` plus the vitest
+  // suite, NOT `verify:ci`. So the only reader was CI, which nobody watches. **Locked at 13 so a
+  // FOURTEENTH reads as new**, which is the whole point of this register; the entry is removed when
+  // the board rules the pairing, not before.
+  'INV-PLAN-INTENSITY-ORDERING@slow-goal':   13,
 
   // 87 -> 75 -> 0 (LABEL-VARIETY-01, 2026-08-21). The LABEL count is now zero:
   // the peak goal-pace override takes the row's shape word ("…-pace ladder",
@@ -1898,6 +1925,33 @@ const ACKNOWLEDGED_WARN_RATES: Record<string, string> = {
   // did not fix it.
   'INV-PLAN-MIN-LOADING-BLOCK':
     'The measured size of DELOAD-PLAN-OPENING-01, not check noise: every firing is a real one-week loading block and ~100% of them are the plan\'s opening block. Producer change deferred by board ruling (§119) because the greedy fix moves the failure rather than removing it. Expected to fall to ~0, not to a residual.',
+
+  // 68.2% (11234/16464), acknowledged 2026-11-26 — VERIFY-RED-ON-MAIN-01.
+  //
+  // 🔴 IT WAS INVISIBLE UNTIL TODAY, AND NOT BECAUSE IT IS NEW. The sweep exits at its FIRST failing
+  // arm, and the NEW-violations arm has been red since 2026-11-17 (`9497de8e`), so this run never
+  // reached the noise section at all. Baselining the arm above is what revealed this one. ⚠️ **A gate
+  // that stops at its first failure cannot tell you how many of its arms are failing** — which is the
+  // same shape as `verify:ci` being red and unread, one level down.
+  //
+  // 📐 THE GRID OVERSTATES IT ROUGHLY TWOFOLD, AND THE RESIDUAL IS STILL REAL. Every benchmark in
+  // this sweep is UNDATED by construction (the script pins PLAN_START, and a dated benchmark would be
+  // judged against the wall clock and expire — PINNED-CLOCK-01), so the grid's rate is close to "every
+  // benchmarked row". Measured on the live fleet the same day: **8 of 24 benchmarked plans are dateless
+  // = 33.3%** (8 of 44 plans overall). So 68.2% is a corpus artefact of the undated design, **and
+  // 33.3% is above the 30% line regardless** — this is not a mis-scoped check.
+  //
+  // WHY THE RESIDUAL IS HONEST. §10's ruling is that a dateless benchmark is **DECLARED, never
+  // priced** (Coaching Board, 2026-11-16): the engine cannot age a time the runner gave without a
+  // date, so it says so instead of inventing a staleness discount. Every firing is therefore a real
+  // runner state correctly surfaced, not a check misfiring — the definition this register asks for.
+  //
+  // ⚠️ NOT A PERMANENT ACCEPTANCE. The live 33.3% is filed as `DATELESS-BENCHMARK-RATE-01` for the
+  // board: a warn reaching a third of benchmarked runners is a doctrine question (should the wizard
+  // require a date?) and not a tuning one. If that ruling changes the prescription, this entry goes
+  // with it.
+  'INV-PLAN-VDOT-DISCOUNT-DATELESS':
+    'Declared, never priced (§10, 2026-11-16): every firing is a real dateless benchmark the engine refuses to age. 68.2% here is the undated grid by construction (PINNED-CLOCK-01); the live rate is 33.3% of benchmarked plans, measured 2026-11-26, still above the line and filed as DATELESS-BENCHMARK-RATE-01 for the board.',
 }
 const noiseRates = Array.from(warnByCode.entries())
   .map(([code, n]) => ({ code, n, pct: (n / generated) * 100 }))

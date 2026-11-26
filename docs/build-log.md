@@ -6,6 +6,19 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-11-26 — VERIFY-RED-ON-MAIN-01 · the test suite was green, the real gate had been red for nine days
+**Shipped:** Found and diagnosed why the project's full verification command had been failing on the main branch, fixed both gates, and gave one of them the ability to record a known problem instead of just failing forever.
+
+**Dev learning:** Yesterday a review condition told me to run two scripts I would not otherwise have run. Both failed. Neither failure was mine — they had been failing on the main branch for nine days and four days respectively, and nothing was going to say so. The push gate runs the type check and the test suite; these two live only in the full verification command, which runs in CI, which nobody reads. **The suite being green and the project being verified turned out to be two different claims, and I had been treating one as evidence for the other.**
+
+**Product learning:** Both failures were *predicted*. One of them is written into the code that fails: the check's own comment says, at the commit that broke it, that it "does not survive" the change being made and "needs the board". The architecture decision that caused it carried a condition saying, in as many words, *amend this in the same commit or the release goes red*. The condition was not met, the release went red exactly where it said it would, and then the item was closed with that condition still listed as open inside it. **A binding condition inside a closed item is not a tracker — it is a note in a drawer.**
+
+**AI-building learning:** I filed this guessing the cause was the clock, because one of the grids derives a date from today and I had been burned by exactly that two weeks ago. The script's own comment says it is clock-independent by construction and explains why. **I pattern-matched to the last bug instead of reading the thing in front of me**, and the honest version of the fix was ten minutes of bracketing with the script copied into each old commit so the measuring instrument stayed constant.
+
+**The honest bit, twice over.** First: the two gates had two *different* causes a week apart, and after one probe showed both clean before the same change I was a keystroke from writing "both share a cause". One more run said otherwise. Second: fixing the first failure revealed a *third* that had been invisible, because the script stops at its first failing check — so for nine days it was reporting one problem and hiding another. **A gate that exits on its first failure cannot tell you how many of its gates are failing**, which is the same shape as the problem one level up, and I only saw it because I made the first one pass.
+
+---
+
 ## 2026-11-25 — VERIFIER-STORED-LEVEL-01 · the rule said don't merge these two fields, so I went looking for where I had
 **Shipped:** A plan built for a runner who is a beginner on volume but intermediate on intensity is now re-checked at the level it was actually built at, instead of collapsing back to beginner.
 

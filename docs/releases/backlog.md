@@ -1982,7 +1982,7 @@ a code, and chasing why 6 of them carried the same two rules found the baseline'
 `lib/ops/verifierShadow.ts` reports them in `reshape_exempt_by_rule` — out of the cut-over number, still visible — and
 **reads the set from its owner** rather than holding a copy, so the two cannot drift.
 
-### 🔲 `VERIFY-RED-ON-MAIN-01` — 🔺 `npm run verify` fails on `main` on two gates, and nothing on this machine was going to say so *(filed 2026-11-25, found running VERIFIER-STORED-LEVEL-01's board conditions)* ⚙️ **NO BOARD** (triage first; the fix may route)
+### ✅ `VERIFY-RED-ON-MAIN-01` — DIAGNOSED AND BOTH GATES GREEN 2026-11-26 — `npm run verify` failed on `main` on two gates (and a THIRD behind them), and nothing on this machine was going to say so *(filed 2026-11-25, found running VERIFIER-STORED-LEVEL-01's board conditions)* ⚙️ **NO BOARD** (the two prescription questions it exposed are board-routed separately)
 
 📐 **Measured 2026-11-25 on clean `main` (`d2ffef97`), with my own change stashed so the attribution is not mine:**
 
@@ -2006,9 +2006,115 @@ compares a goal-pace session against a threshold one, so it moves with the VDOT 
 expired**, so run the sweep at an older date before attributing it to any commit. The taper misses are a separate
 question and may not share a cause.
 
-**Done when:** each of the two is diagnosed (clock, real regression, or stale baseline) and either fixed or baselined
+✅ **DONE. BOTH GATES EXIT 0, AND THERE WERE THREE FAILURES, NOT TWO.**
+
+🔴 **MY FIRST HYPOTHESIS WAS WRONG AND THE CODE SAID SO.** I filed this guessing the clock, because the slow-goal grid
+derives its benchmark date from today. The sweep's own comment answers it: *"Undated benchmarks, like every other set
+here: the sweep pins PLAN_START, and a dated benchmark would be judged against the wall clock and expire
+(PINNED-CLOCK-01)."* **It is clock-independent by construction**, so a bisect is valid here — the opposite of
+`GOALPACE-5K-CLOCK-01`. Read the instrument before theorising about the result.
+
+📐 **BOTH BRACKETED EXACTLY, with today's script copied into a worktree at each commit so the instrument stayed
+constant** (`verify-parity`'s approach). ⚠️ **And they are TWO SEPARATE CAUSES — I nearly reported one**, because the
+first probe showed both gates clean before ADR-026 and I was one keystroke from writing "both share a cause":
+
+| Gate | Clean at | Red at | Change | Red for |
+|---|---|---|---|---|
+| `verify:sweep`, 13 × `INTENSITY-ORDERING@slow-goal` | `7521806e` | **`9497de8e`** | ADR-026 / `ANCHOR-BAND-FLIP-01`, the anchor band WIRED | **9 days** |
+| `verify:matrix`, 3 × `Taper reduction (%)` | `0dc0d054` (and `9497de8e`) | **`686c141b`** | `MONDAY-RACE-EVE-LONG-RUN-01`, hotfix 6 | **4 days** |
+
+🔑 **THE SWEEP'S 13 WERE PREDICTED IN WRITING, AT THE COMMIT THAT CAUSED THEM.** `INV-PLAN-INTENSITY-ORDERING`'s own
+comment: *"THIS ONE DOES NOT SURVIVE ADR-026 BY CONSTRUCTION: once the band is derived from the runner's own pace
+anchor, a threshold session can read 'Zone 4' and join the VO2max side, so the pair being compared changes per runner.
+That is ADR-026 condition 3 exactly, it needs the board rather than a re-key."* And ADR-026's condition 3 reads
+*"`INV-PLAN-PACE-ZONE-COHERENT` amended in the same commit **or the release goes red**"* — declared **binding**, not
+met, and the release went red exactly where it said it would. ⚠️ **The condition was a line inside a CLOSED item
+(`THRESHOLD-BAND-ANCHOR-01`), which is why nine days passed with nobody acting on it.** It is `ANCHOR-BAND-ORDERING-PAIR-01`
+now, open and board-routed.
+
+🔴 **AND BASELINING THE FIRST ARM REVEALED A THIRD FAILURE THAT HAD BEEN INVISIBLE.** The sweep **exits at its first
+failing arm**, so `main`'s run never reached the noise section at all — `grep -c "Warn-invariant firing rates"` on
+`main`'s output is **0**. Behind it: `INV-PLAN-VDOT-DISCOUNT-DATELESS` firing at **68.2% (11,234/16,464)**, over
+NOISE-GATE-01's 30% line and unacknowledged. ⚠️ **A gate that stops at its first failure cannot tell you how many of
+its arms are failing** — the same shape as `verify:ci` being red and unread, one level down.
+📐 **Measured on the live fleet rather than assumed a corpus artefact: 8 of 24 benchmarked plans are dateless =
+33.3%.** So the grid overstates it ~2× (every benchmark there is undated by design) **and 33.3% is still above the
+line**, so it is not a mis-scoped check. Acknowledged with that measurement; the live rate is filed as
+`DATELESS-BENCHMARK-RATE-01`.
+
+**What landed:**
+- `INV-PLAN-INTENSITY-ORDERING@slow-goal` **baselined at 13** with the attribution and the board routing. Locked, so a
+  fourteenth reads as new.
+- `INV-PLAN-PEAK-OVER-BASE@slow-goal` **lowered 1 → 0**, as the script instructed: `VERIFIER-STORED-LEVEL-01` genuinely
+  cleared it. `S9-HELD-PEAK-CLASSIFY-01` is unchanged and still open; that clone just no longer reaches it.
+- `INV-PLAN-VDOT-DISCOUNT-DATELESS` **acknowledged** in `ACKNOWLEDGED_WARN_RATES` with both rates.
+- ✅ **`MATRIX-BASELINE-01`: the archetype matrix gains a debt register, because it had none** — one deviation took it
+  to exit 1 permanently, and a gate with no register has two states, green and ignored. Entries are
+  `<case> / <metric>`, printed as `DEBT` and counted on every run, and **a STALE entry fails too**: an entry whose
+  check now passes is debt that has been paid and must be deleted, or the register starts excusing a check that no
+  longer needs it. 🔴 **Both arms falsified** — a bogus entry → exit 1 naming it; one real deviation un-declared →
+  `FAIL: 1`, not absorbed.
+- 🏃 **The three taper deviations are NOT baselined away.** §26/§6 govern taper depth and these now taper DEEPER than
+  their archetype target; whether 48-59% is right, or whether the targets move, is the board's. Filed as
+  `TAPER-DEPTH-AFTER-RACE-EVE-01`.
+
+🔻 **THE MECHANISM IS UNFIXED AND IT IS THE FOUNDER'S CALL.** The pre-push hook runs `tsc` + vitest; `verify:sweep` and
+`verify:matrix` live only in `verify:ci`, which nothing on this machine reads. Making the push gate run `verify:ci`
+costs roughly ten minutes a push on top of the current three. **Until that is decided, this will happen again** — and
+the only reason it surfaced this time is that a board condition sent me to a script I would not otherwise have run.
+Tracked at `OPS-CI-UNWATCHED-01`.
+
+**Original done-when, for the record:** **Done when:** each of the two is diagnosed (clock, real regression, or stale baseline) and either fixed or baselined
 with a written reason; and the push gate's coverage is reconciled with `verify:ci`'s, because the gap between them is
 the mechanism rather than the symptom.
+
+### 🔲 `ANCHOR-BAND-ORDERING-PAIR-01` — 🔺 ADR-026's condition 3 was declared BINDING, was not met, and the gate it predicted has been red for nine days *(filed 2026-11-26, found by VERIFY-RED-ON-MAIN-01; the condition itself is from 2026-11-20)* 🏃 **COACHING BOARD**
+
+**ADR-026's conditions read: *"(3) `INV-PLAN-PACE-ZONE-COHERENT` amended in the same commit or the release goes red —
+it asserts `'threshold zone (Z3)'` and would fire on correct plans."* The item records *"(3) remains open and
+blocking."* The commit shipped without it. The release went red.** `THRESHOLD-BAND-ANCHOR-01` was then closed on
+2026-11-20 with that line inside it, which is why nobody acted: **a binding condition inside a closed item is not a
+tracker.**
+
+🔑 **The live symptom is `INV-PLAN-INTENSITY-ORDERING`, and its own comment named this at the causing commit:** *"once
+the band is derived from the runner's own pace anchor, a threshold session can read 'Zone 4' and join the VO2max side,
+so the pair being compared changes per runner. That is ADR-026 condition 3 exactly, it needs the board rather than a
+re-key."* The check classifies its two sides by the session's **zone string**, and ADR-026 made that string a function
+of the runner's own anchor.
+
+📐 **13 of 16,464 swept plans, all slow runners with an ambitious goal** (`@slow-goal` clones): a Zone-3 goal-pace
+session prescribed faster than a Zone 4–5 tempo, with no `goal_beyond_measured_fitness` declaration. Bracketed to
+`9497de8e` by running the sweep at `7521806e` (0) and `9497de8e` (13). Baselined at 13 with the reason; **the entry
+goes when this rules, not before.**
+
+**The question for the board:** when the band is per-runner, which pair should an intensity-ordering check compare —
+and does `INV-PLAN-PACE-ZONE-COHERENT`'s `'threshold zone (Z3)'` assertion still hold? ⚠️ **Do not re-key to the
+catalogue row**: the invariant's comment already measured that and rejected it — *"26,928 of 250,616 cohort quality
+sessions sit on the VO2max side of this comparison purely because §22 renamed them, and the category would move all
+of them."*
+
+### 🔲 `TAPER-DEPTH-AFTER-RACE-EVE-01` — hotfix 6 moved the race-eve long run and three archetypes now taper DEEPER than their target *(filed 2026-11-26, found by VERIFY-RED-ON-MAIN-01)* 🏃 **COACHING BOARD**
+
+📐 **Bracketed to `686c141b` (`MONDAY-RACE-EVE-LONG-RUN-01`, hotfix 6, 2026-11-22):** the archetype matrix is
+`PASS 65 / FAIL 0` at `0dc0d054` and `PASS 62 / FAIL 3` at `686c141b`. The three:
+
+| Archetype | Taper reduction | Target |
+|---|---|---|
+| Returning runner, 5yr+ training age, low volume | **58.6%** | 45% |
+| ASSESSED, no `fitness_level`, signals agree (10K, 30 km/wk) | **50.0%** | 35% |
+| Foundation, auto-added block (14-day gap) | **48.8%** | 35% |
+
+The hotfix stopped the engine placing a long run on the eve of a Monday race — a ruled INCORRECT prescription against
+§39 Am. 1, and the right fix. Removing or moving that session changes the week's volume, and the taper reduction is
+measured against the weeks around it.
+
+⚠️ **This is a prescription question and is deliberately NOT baselined away.** §26 and §6 govern taper depth. Declared
+as board-routed debt in `MATRIX-BASELINE-01` so the gate reads again; the three entries go when this rules.
+
+**The question:** is a 48–59% taper correct for these archetypes, or do the archetype targets move? ⚠️ **And one
+narrower one worth asking first:** the hotfix was ruled for Monday races, of which there are **0 live** — so check
+whether these three archetypes have a Monday race at all, or whether the change reached them through a shared code
+path it was not ruled for.
 
 ### 🔲 `HELD-RULE-LIST-DERIVED-01` — the 14 held rules the cut-over sign-off must name are a hand-written list beside a derivable one *(filed 2026-11-25, found auditing the records)* ⚙️ **NO BOARD** (tooling)
 
