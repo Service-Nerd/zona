@@ -157,13 +157,6 @@ const SKIP = /^(true|false|null|undefined|warn|error|string|number|boolean|paid|
  * the `ZONES-SURFACE-01` precedent for exactly that).
  */
 const DEAD_BY_DESIGN = new Map([
-  // ADR-027's own ARCH-ENG-002 names `docs/canonical/engine-truths.md` — *"a canonical truth registry:
-  // one owner per truth"*, with the check *"a test fails if a second writer appears"* — and the HLD
-  // names it too. **It has never been created**, so neither the registry nor that test exists. B3
-  // step 4a is the first item to NAME the path, which is why this gate fired: the absence is the
-  // finding, and it is the registry's own row for the run→session matcher that step 4a owes.
-  ['ADR027-B3-REMAINING|engine-truths.md',
-    'ARCH-ENG-002 and the HLD both name docs/canonical/engine-truths.md and it has never been created, so its one-owner-per-truth check does not exist either. B3 step 4a owes it the matcher\'s row. Remove this entry when the registry is written.'],
   ['CONTRACT-LEDGERCARD-01|docs/contracts/components/ledger-card.md',
    'the item exists BECAUSE this contract is missing — the absence is the finding. Remove when the contract is written.'],
 ])

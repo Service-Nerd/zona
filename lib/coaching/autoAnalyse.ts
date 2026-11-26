@@ -38,30 +38,13 @@ export interface MatchableActivity {
   name?:               string | null
 }
 
-/**
- * ACT-RUNREAD-REACH-01 — every wall a run can hit between landing and being READ.
- *
- * 🔴 WHY A VOCABULARY AND NOT FOUR STRING LITERALS. This module has four early returns and
- * the ingest route has a fifth, and all five were silent on both sides: the runner watches
- * the run appear and never gets a read, and we could not say which one stopped it. The
- * reasons are listed here so the recorder, the caller's tier-gate branch and the gate all
- * name the same five things.
- *
- * ⚠️ `tier_gated` is recorded by the CALLER, not here — `/api/health/ingest` wraps this
- * whole function in `if (canAnalyse)` (HK-FREE-INGEST-LINE-01), so a free runner's run never
- * reaches this code at all. A reason that lives outside the function it describes is exactly
- * the kind that goes uncounted, which is why it is in this list rather than in that route.
- */
-export const RUN_UNMATCHED_REASONS = {
-  no_plan:             'the runner had no plan at all when the run arrived',
-  plan_read_failed:    'the plan read itself failed, so whether they had one is unknown',
-  outside_plan_weeks:  'the run date is not inside the 7-day window of the week it resolved to',
-  week_has_no_sessions: 'the week the run resolved to offers nothing to match: after overrides, and on a multi-session day after dropping ones already complete',
-  below_threshold:     'a session was there and no candidate reached the auto-link score',
-  tier_gated:          'free tier: the row lands, the read does not (recorded by the caller)',
-} as const
-
-export type RunUnmatchedReason = keyof typeof RUN_UNMATCHED_REASONS
+// ACT-RUNREAD-REACH-01's vocabulary MOVED to `@/lib/engine/contracts/runOutcome` (ADR-027 B3 step
+// 4a), because `run_arrived` carries the reason (ARCH-ENG-022) and the engine's event contract
+// cannot import this module to get it — doing so pulls `readPlanJson` and `AI_LIMITS` into L2 and
+// inverts ARCH-ENG-001. Re-exported so every existing consumer and its test are untouched, and so
+// there is still exactly ONE definition rather than a copy on each side.
+export { RUN_UNMATCHED_REASONS, type RunUnmatchedReason } from '@/lib/engine/contracts/runOutcome'
+import type { RunUnmatchedReason } from '@/lib/engine/contracts/runOutcome'
 
 /**
  * Record why a run produced no read. Never throws and never blocks the path it watches —

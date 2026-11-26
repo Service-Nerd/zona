@@ -6,6 +6,19 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-11-26 — ADR027-B3-STEP4A · the registry the architecture had been citing didn't exist
+**Shipped:** The three "a run happened" events now exist as typed data rather than prose, and the canonical registry of *who owns which truth* has been created — with the run-to-session matcher as its first real entry.
+
+**Dev learning:** The architecture decision for this rebuild says, as one of its numbered principles, that there is a canonical registry listing one owner per truth, at a named path, with a test that fails if a second writer appears. **That file had never been created.** Neither had the test. It had been cited for weeks as though it constrained something, and the only reason it surfaced is that a backlog item finally named the path and a checker noticed the path didn't resolve. **A principle that names an artefact nobody made is indistinguishable, from the inside, from one that works.**
+
+**Product learning:** The thing that earns the first row is the code that decides *"is this run the session you were supposed to do?"* It sits in no layer at all. The ingest that fetches the run is I/O and correctly lives outside the engine — but the judgement inside it is a pure classifier with a threshold set by a ruling, which is engine work by any definition. Because it belonged to neither side it had been subject to neither side's discipline, and its most important property — that the server auto-links only on high confidence while the screen will *show* you a medium-confidence guess — existed as a comment in one file. Two different bars for the same calculation, for an excellent reason (one is silent, one you tap to confirm), recorded nowhere a person would look.
+
+**AI-building learning:** Writing the registry row meant re-deriving the scorer rather than copying the architecture doc's summary of it, and the summary was wrong — it lists three scoring components and the code has four, and it omits an entire confidence band. Nothing was broken; the description had simply never been checked against the thing it described. **If I had written the row from the document, I would have published the error into the registry that exists to be authoritative.**
+
+**The honest bit:** my first version of the event contract imported six strings from a module that also pulls in the plan reader and the AI rate limits — so a file whose entire purpose is to be a lightweight contract was dragging server code into the layer below it. It compiled, every test passed, and it inverted the first principle in the same document I was implementing. I moved the data and left a re-export behind. **"It type-checks" and "it respects the architecture" are unrelated claims, and only one of them has a test.**
+
+---
+
 ## 2026-11-26 — SEO-APEX-308-01 · the one redirect that wasn't in the repo was the one that was wrong
 **Shipped:** Changed the bare `zonna.run` → `www.zonna.run` redirect from temporary to permanent, so Google stops holding the old address open.
 

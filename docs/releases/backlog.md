@@ -1911,8 +1911,25 @@ Step 1 shipped as `ADR027-B3-CATALOGUE` (221 rules). Remaining, in order:
 - **Step 4, the trigger catalogue** (ARCH-ENG-018): adjustment thresholds move into the catalogue as data, values
   unchanged, per §124 Am. 1. ⚖️ **SCOPED TO 4a + 4b BY FOUNDER DECISION, 2026-11-26** — 4c is parked as
   `TRIGGERS-ON-DATA-ARRIVAL-01`:
-  - **4a** — the event vocabulary (`run_analysed`, `run_arrived` carrying its match outcome; `run_logged` unchanged
-    per §124 Am. 1) **and the run→session matcher's `engine-truths.md` row.** ⚙️ No board. **The matcher is currently
+  - ✅ **4a — SHIPPED 2026-11-26.** `lib/engine/contracts/events.ts` (the three events as typed L2 data, with
+    `evaluates_triggers` carrying §124 Am. 1's ruling rather than leaving it to each call site) and
+    **`docs/canonical/engine-truths.md`, created** with the matcher's row. Gate: `engineTruths.test.ts`, 8 arms,
+    **6 mutations each verified to have landed and each red.**
+    📐 **Re-measured first: the three event names had ZERO occurrences in code** — they existed only as prose in
+    ARCH-ENG-022, so this is a first definition, not a migration. ⚠️ **Nothing emits them, deliberately** — wiring the
+    ingest route to raise `run_arrived` changes a production path and belongs to 4b/B4b.
+    🔴 **AND ARCH-ENG-022'S OWN DESCRIPTION OF THE SCORER IS INCOMPLETE, found re-deriving it.** It says
+    *"`sameWeekday` 40 · distance band 30 · duration band 30; high ≥ 70"*. `scoreMatch` also has a **fourth component,
+    effort alignment +10** (easy/recovery with average HR under 155) and a **`medium ≥ 40` band**, neither mentioned.
+    The registry row carries the code's scorer, not the ADR's summary of it.
+    🔑 **One move the contract forced:** importing `RUN_UNMATCHED_REASONS` from `lib/coaching/autoAnalyse.ts` dragged
+    `readPlanJson` and `AI_LIMITS` into L2, inverting ARCH-ENG-001. The vocabulary moved to
+    `lib/engine/contracts/runOutcome.ts` and `autoAnalyse` **re-exports** it — one definition, no consumer churn, and
+    the gate asserts **object identity** rather than deep equality, because two separate objects can be equal.
+    ⚠️ **One limit, stated not discovered:** the gate does not verify the row's score WEIGHTS against `scoreMatch` —
+    they are private to that module and reading them would mean parsing its source, the "grep the file" shape. It pins
+    what is mechanically checkable: the gate CONSTANT (`MIN_AUTO_LINK_CONFIDENCE`), both rulings by name, and every
+    named owner resolving to a live file. **The matcher is currently
     in NO LAYER** and it is not I/O: *"is this run that session?"* is a pure classifier over facts, scored by rule with
     its threshold set by a ruling (POST-RUN-01). 📐 It carries step 4's only live finding — **27 of 176 completion rows
     have a run link (15.3%), and 39 runs reached the matcher unlinked over 14 days** (`below_threshold` 18 · `no_plan`
