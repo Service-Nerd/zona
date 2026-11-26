@@ -6,6 +6,21 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-11-26 — ADR027-B3-STEP4B · Moving a number six lines made it visible to a check for the first time
+**Shipped:** The plan-adjustment triggers became catalogue data — ten rows saying which event each one listens to, which thresholds it reads by name, and what it raises. No value changed.
+
+**Dev learning:** The interesting part was not the catalogue. Nine of the ten thresholds already lived in the file where thresholds live. One did not: it sat next to the code that used it, as a plain exported constant, and had done since the triggers shipped. Moving it into the file with its siblings took one cut and paste — and the build went red immediately, on a gate that fails when a coaching number ships with no written principle explaining it.
+
+The number had never been explained. It had also never been checkable, because the gate reads one file and the number was in another. So for months there was a doctrine value with no doctrine behind it, invisible to the check built to catch exactly that, and invisible to the edit-time hook as well, because that hook watches the same list of files. I did not fix a problem by moving it. I made one countable. The allowance that tracks undeclared numbers went from 29 to 30 on a commit that changed no value, which is the honest way round.
+
+**The honest bit:** The code review found eight things and all eight were mine. The worst was one row of data where the comment said *week close* and the only field a program reads said *on every analysed run*. The comment was right. The field was wrong. Every test passed, because every test I had written compared the data to itself. The next step reads that field to decide when to evaluate — so an efficiency-decline check that a board had specifically ruled should run once a week would have run on every single run, and the prose sitting directly above it would have gone on saying otherwise.
+
+Two others were the same shape in miniature. One test was *titled* "this layer does not import that layer" and its body asserted that an array had ten elements — it could not have failed on an import if I had added one. Another swept a directory tree looking for duplicate declarations, with a comment claiming it covered any file in the repo, while excluding the one directory where the duplicate had actually happened before, which was named in a comment two lines further down.
+
+What those three have in common is that the thing claiming correctness and the thing enforcing it had drifted apart, and only the claim was checked. A title is not an assertion. A comment is not a field. A stated population is not the population.
+
+---
+
 ## 2026-11-26 — S124-AMENDMENT-MISSING-01 · I built a check that enforced a citation to a rule nobody wrote
 **Shipped:** Corrected a reference, in code I had written hours earlier, to a section of the coaching constitution that does not exist.
 

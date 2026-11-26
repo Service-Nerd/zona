@@ -57,28 +57,12 @@ export type AdjustmentType = 'reduce_volume' | 'swap_session' | 'extend_recovery
 // `scripts/backtest-adjustment-triggers.ts` had hand-written its own copy of these ten, and
 // the compiler caught it diverging the moment `'manual'` was removed. A vocabulary with two
 // hand-maintained copies is this repo's most-recorded defect shape, so there is now one.
-export const TRIGGER_TYPES = [
-  'acute_chronic_high',   // load ratio spike vs 4-week rolling avg
-  'zone_drift',           // easy runs running too hard (HR score + RPE fallback)
-  'shadow_load',          // actual km > planned km by threshold
-  'ef_decline',           // aerobic efficiency drop over 4-week window
-  'fatigue_accumulation', // N consecutive heavy/wrecked sessions
-  'skip_with_reason',     // user-initiated: session skipped with a reason
-  'session_reorder',      // user-initiated: session moved to another day
-  'readiness_signal',     // pre-session RHR / HRV / sleep deviation
-  'fitness_signal',       // ENGINE-01: quality faster than band with HR controlled → benchmark recal prompt
-  'long_run_shortfall',   // ENGINE-02: consecutive long runs under planned distance → reduce prescription
-] as const
-
-/**
- * The eight the product could honestly claim to WATCH FOR. The other two are the runner
- * telling us, not us noticing — and that distinction is the whole reason the marketing
- * number is eight and not ten.
- */
-export const DETECTED_TRIGGER_TYPES = TRIGGER_TYPES
-  .filter(t => t !== 'skip_with_reason' && t !== 'session_reorder')
-
-export type TriggerType    = typeof TRIGGER_TYPES[number]
+// MOVED to `@/lib/engine/contracts/triggers` (ADR-027 B3 step 4b): L2's trigger catalogue names
+// these, and importing THIS module to get them would drag `invariants`, `scaleSessionAnchors` and
+// the rest of the adjustment engine into a contract layer (ARCH-ENG-001). Re-exported here so every
+// existing consumer is untouched and there is still exactly one definition.
+export { TRIGGER_TYPES, DETECTED_TRIGGER_TYPES, type TriggerType } from '@/lib/engine/contracts/triggers'
+import type { TriggerType } from '@/lib/engine/contracts/triggers'
 
 export interface AdjustmentTrigger {
   type:   TriggerType
@@ -203,7 +187,10 @@ export interface AdjustmentCheckInput {
 }
 
 const DAY_ORDER = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'] as const
-export const RPE_DISCONNECT_THRESHOLD = 8
+// MOVED to `./constants` with its siblings (ADR-027 B3 step 4b), value unchanged. Re-exported
+// because `triggerInputs.ts` imports it FROM THIS MODULE on purpose, to avoid a second copy.
+export { RPE_DISCONNECT_THRESHOLD } from './constants'
+import { RPE_DISCONNECT_THRESHOLD } from './constants'
 const SKIP_INJURY_VOLUME_REDUCTION = 0.85  // 15% cut per session
 const HILL_TYPES = new Set(['hills', 'hill_repeats'])
 

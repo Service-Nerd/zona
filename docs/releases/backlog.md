@@ -1936,7 +1936,29 @@ Step 1 shipped as `ADR027-B3-CATALOGUE` (221 rules). Remaining, in order:
     10 · `outside_plan_weeks` 9 · `tier_gated` 2). A run that never links raises neither `run_logged` nor
     `run_analysed`, so that population is outside the catalogue's reach entirely, and L1's observed block is assembled
     from completions — at that link rate it reads a fraction of what the runner ran.
-  - **4b** — triggers become catalogue data with thresholds out of inline literals, **values unchanged.** ⚙️ No board.
+  - ✅ **4b** — **SHIPPED 2026-11-26.** Triggers are catalogue data: `lib/engine/catalogue/triggers.ts`, one row per
+    type (event binding · threshold SYMBOLS · what it raises), **values unchanged**, gated by `triggers.test.ts` (11
+    arms, 8 + 6 falsifications). `TRIGGER_TYPES` moved to `lib/engine/contracts/triggers.ts` so L2 need not import the
+    plan engine (ARCH-ENG-001); `planAdjustment.ts` re-exports, so one definition and no consumer churn.
+    🔴 **IT REFUSES TO HOLD TWO THINGS, AND THAT IS THE DESIGN:** the CONDITIONS (`planAdjustment.ts` owns them, and
+    `triggerInputs.ts` is already a declared second reflection whose header warns it is *"a second copy by
+    construction"* — a third representation was the risk) and the PRIORITY ORDER (`triggerInputs.test.ts` observes it
+    by peeling, so the one thing most likely to drift is the one thing the catalogue does not copy).
+    🔴 **ONE GENUINE INLINE LITERAL EXISTED AND MOVING IT SURFACED REAL DEBT.** `RPE_DISCONNECT_THRESHOLD = 8` sat
+    beside its detector in `planAdjustment.ts` while its ten siblings live in `lib/coaching/constants.ts` — so it was
+    **outside `configPrincipleSync`'s population**, no principle explained it, and the coaching guard does not fire on
+    that file. **The `peakKmByLevel` class verbatim: the Configuration Singularity bypassed by a file path.** Moving it
+    made it countable and the gate fired on the first run. Declared `DEBT 2026-11-26`, allowance **29 → 30** on a
+    commit that changed no value; principle owed as `RPE-DISCONNECT-PRINCIPLE-01`.
+    🔴 **CODE REVIEW FOUND 8, ALL MINE, AND THE WORST WAS PROSE OVERRULING DATA.** `ef_decline` carried
+    `on: ['run_analysed']` with a NOTE saying *week close* — the note right, the only machine-readable field wrong,
+    every arm green, and `triggersFor('run_analysed')` returning it, so **4c would have evaluated EF on every arriving
+    run, which is exactly what the ruling forbids.** New `week_close` variant; the array form is now typed non-empty so
+    `on: []` cannot compile. Also: an arm titled *"L2 does not import the plan engine"* that asserted a length equality
+    and **could not fail on an import**; the uniqueness sweep claiming *"any file"* while excluding `scripts/`, the
+    recorded duplicate site; the MIN_RUNS reminder watching only `constants.ts` when the ruling says the literals go to
+    `GENERATION_CONFIG`; an aggregate threshold count that hid `readiness_signal` naming **none**; and a comment
+    orphaned from `FITNESS_SIGNAL_SESSION_THRESHOLD` by the insert.
   - **4c** — PARKED. See below.
 - **Exit (HLD):** the verifier finds every known defect class on the current engine, falsified class by class; 0
   false positives on the golden corpus; then the founder signs off replacing `validatePlan` as the gate.
@@ -2156,6 +2178,27 @@ the first being the principle §.
 **Done when:** either §124 gains the amendment, or ADR-027's four citations are repointed at the register. ⚠️ **It
 blocks nothing** — the ruling is enforceable as recorded — **but 4b writes the trigger catalogue from it**, so the
 catalogue should cite something that resolves.
+
+### 🔲 `RPE-DISCONNECT-PRINCIPLE-01` — the RPE at which a runner's reported effort is taken to disagree with an easy prescription has no principle *(filed 2026-11-26, surfaced by ADR-027 B3 step 4b)* 🏃 **COACHING BOARD**
+
+`RPE_DISCONNECT_THRESHOLD = 8` is `zone_drift`'s second condition: an easy or long session reported at RPE ≥ 8 **with no
+HR data to tell the same story** is read as the runner saying it was harder than it should have been, and the trigger
+fires. It has been live since the adjustment triggers shipped. **No section of `CoachingPrinciples.md` explains it**
+(grepped 2026-11-26: 0 hits for the threshold or a disconnect rule).
+
+🔴 **It was invisible, not merely undocumented.** It sat as a bare `export const` in `lib/coaching/planAdjustment.ts`
+rather than with its ten siblings in `lib/coaching/constants.ts`, so `configPrincipleSync.test.ts` — the gate that fails
+the build when a coaching numeric ships without a principle — **could not see it**, and `coaching-guard.py` does not
+fire on `planAdjustment.ts` either. Step 4b moved it into the gate's population and the gate fired immediately.
+**This is `peakKmByLevel` again: every governance layer bypassed by a table being in the wrong file.**
+
+⚠️ **Declared `DEBT 2026-11-26` in `CONSTANTS_DEBT`, not `FACT`** — "the RPE at which we stop believing the
+prescription" is plainly a number a coach would tune, and the allowance moved 29 → 30 to hold it. A declared reason is
+not a fixed problem. **Blocks nothing**; the value is unchanged and the trigger works as it always has.
+
+**For the board:** is 8 the right line on a 1–10 scale for an easy day, does it differ for a long run (the condition
+treats them alike), and should it bind at all when HR data is merely ABSENT rather than contradicting? Three artifacts:
+principle §, the constant stays where it now is, and an invariant or an explicit "not mechanically checkable".
 
 ### 🔲 `TRIGGERS-ON-DATA-ARRIVAL-01` — evaluating adjustment triggers when data ARRIVES changes how often runners are prompted *(parked by founder decision 2026-11-26, split out of ADR-027 B3 step 4)* 🏃 **COACHING BOARD** (thresholds), then 🧭 **DESIGN BOARD** / 💼 **SLT** (frequency)
 

@@ -86,9 +86,28 @@ describe('every declared trigger type has a producer', () => {
   it('the array is the source and the type is derived from it', () => {
     // Two hand-maintained copies is what the compiler caught when 'manual' was deleted:
     // the backtest script still named it. One source now.
-    const src = readFileSync(join(process.cwd(), 'lib/coaching/planAdjustment.ts'), 'utf8')
-    expect(src).toContain('export const TRIGGER_TYPES = [')
-    expect(src).toContain('export type TriggerType    = typeof TRIGGER_TYPES[number]')
+    //
+    // 🔴 THIS ARM USED TO NAME `lib/coaching/planAdjustment.ts` AND BROKE WHEN THE DECLARATION
+    // MOVED THERE FROM — ADR-027 B3 step 4b put it in `lib/engine/contracts/triggers.ts` so L2's
+    // trigger catalogue could read the vocabulary without importing the plan engine (ARCH-ENG-001),
+    // and `planAdjustment` re-exports it so no consumer changed. The INTENT was never "it lives at
+    // this path"; it was **one declaration, anywhere**. Pinning the path asserted the mechanism and
+    // went red on a move that preserved the rule — so it now SWEEPS, using this file's own walker,
+    // and is both move-proof and strictly stronger: a second declaration appearing anywhere in
+    // `lib/`, `app/` or `scripts/` fails, which the path-pinned version could not see.
+    // ⚠️ POPULATION: `lib/`, `app/` AND `scripts/`. The first cut swept lib+app while claiming "any
+    // file", which left `scripts/backtest-adjustment-triggers.ts` — **the recorded duplicate site,
+    // named two lines below** — outside the check. Found by code review. It is not every file in the
+    // repo and does not claim to be; it is every place a declaration has ever appeared.
+    const declarers = sources(join(process.cwd(), 'lib'))
+      .concat(sources(join(process.cwd(), 'app')))
+      .concat(sources(join(process.cwd(), 'scripts')))
+      .filter(f => /export const TRIGGER_TYPES = \[/.test(readFileSync(f, 'utf8')))
+    expect(declarers.map(f => f.replace(process.cwd() + '/', '')),
+      'TRIGGER_TYPES must be declared exactly once').toEqual(['lib/engine/contracts/triggers.ts'])
+    const src = readFileSync(declarers[0], 'utf8')
+    expect(src, 'the type must be derived from the array, never written out beside it')
+      .toMatch(/export type TriggerType = typeof TRIGGER_TYPES\[number\]/)
     const script = readFileSync(join(process.cwd(), 'scripts/backtest-adjustment-triggers.ts'), 'utf8')
     // ⚠️ `toMatch(/\b…\b/)`, not `toContain`: `hollowTestShapes.test.ts` — shipped
     // earlier today — caught this exact line, because `toContain('TRIGGER_TYPES')`

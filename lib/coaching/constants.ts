@@ -397,6 +397,21 @@ export const LONG_RUN_SHORTFALL_CONSECUTIVE     = 2
 // Reduce the upcoming long run prescription by this fraction (15% trim).
 export const LONG_RUN_SHORTFALL_REDUCE_PCT      = 0.85
 
+// RPE disconnect — the lowest-priority automatic signal. An easy or long session reported at this
+// RPE or above, when there is NO heart-rate data to tell the same story, is the runner saying the
+// session was harder than it should have been.
+//
+// 🔴 MOVED HERE FROM `planAdjustment.ts` (ADR-027 B3 step 4b). It was declared beside the detector
+// as a bare `export const RPE_DISCONNECT_THRESHOLD = 8`, while every other trigger threshold lived
+// in this file — so it was the one adjustment numeric outside the place they are kept, which is
+// exactly what ARCH-ENG-018 means by *"a config key, never inline"*. **Value unchanged.**
+// ⚠️ `planAdjustment.ts` re-exports it: `triggerInputs.ts` imports it from there deliberately
+// ("the fix is not a better copy, it is no copy"), and that import keeps working.
+// ⚠️ Placed at the END of the trigger thresholds, not between them: the first attempt inserted it
+// above `FITNESS_SIGNAL_SESSION_THRESHOLD` and **orphaned that constant's own explanatory comment**,
+// which then read as the RPE block's heading. Found by code review.
+export const RPE_DISCONNECT_THRESHOLD = 8
+
 // Max volume increase per adjustment — re-exported from generationConfig (§2).
 export const MAX_VOLUME_INCREASE_PCT = GENERATION_CONFIG.MAX_WEEKLY_VOLUME_INCREASE_PCT
 

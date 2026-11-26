@@ -142,6 +142,21 @@ const CONSTANTS_DEBT: Record<string, string> = {
   // second principle would be a second source of truth for one number.
   MIN_QUALITY_GAP_HOURS:           'ALIAS 2026-10-08 — re-exports GENERATION_CONFIG.MIN_HOURS_BETWEEN_QUALITY, documented there',
   MAX_VOLUME_INCREASE_PCT:         'ALIAS 2026-10-08 — re-exports GENERATION_CONFIG.MAX_WEEKLY_VOLUME_INCREASE_PCT, documented there',
+  // DEBT = a real coaching choice with no principle yet. Not a FACT and not an ALIAS.
+  //
+  // 🔴 `RPE_DISCONNECT_THRESHOLD` ENTERED THIS REGISTER BY BEING MOVED, NOT BY BEING WRITTEN.
+  // It has been 8 and live since the adjustment triggers shipped, but it sat as an inline literal
+  // in `lib/coaching/planAdjustment.ts`, which is OUTSIDE this gate's population. ADR-027 B3 step
+  // 4b moved it to its ten siblings here, and the gate fired immediately. **This is the
+  // `peakKmByLevel` class exactly: the Configuration Singularity can be bypassed by a file path,
+  // and the bypass is invisible — no principle explained the number, this check could not see it,
+  // and the coaching-guard hook does not fire on `planAdjustment.ts`.** The move did not create the
+  // debt; it made it countable. ⚠️ The allowance below therefore rises by one on a commit that
+  // changed no value: declared, with the reason, rather than absorbed.
+  //
+  // It is DEBT and not FACT because "a runner reporting RPE ≥ 8 on a session prescribed easy"
+  // is plainly a threshold a coach would tune. Owed principle: `RPE-DISCONNECT-PRINCIPLE-01`.
+  RPE_DISCONNECT_THRESHOLD:        'DEBT 2026-11-26 — RPE at which a runner\'s reported effort is taken to disagree with an easy prescription (zone_drift\'s second condition). A coaching choice with no principle; surfaced by moving it out of planAdjustment.ts into the gate\'s population. Routed to the Coaching Board as RPE-DISCONNECT-PRINCIPLE-01',
   // DEAD = a deletion question, not a doctrine one. The board declined to write a
   // principle for a value nothing can reach.
   //
