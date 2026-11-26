@@ -2107,6 +2107,30 @@ discard the first verdict. Harmless while pushes are batched per wave; worth kno
 with a written reason; and the push gate's coverage is reconciled with `verify:ci`'s, because the gap between them is
 the mechanism rather than the symptom.
 
+### 🔲 `S124-AMENDMENT-MISSING-01` — 🔺 ADR-027 cites "§124 Amendment 1" and no such amendment exists *(filed 2026-11-26, found starting B3 step 4b)* 🏃 **COACHING BOARD** (its own three-artifact rule)
+
+**The RULING is real and recorded.** Coaching Board, 2026-11-21, sitting
+`docs/decisions/boards-2026-11-21-triggers-on-run-arrival.md`, register row in `coaching-rulings.md`: *"evaluate on
+`run_analysed` (free/manual: `run_logged`, `shadow_load` only); `zone_drift` needs `ZONE_DRIFT_MIN_RUNS` (2);
+`ef_decline` at week close with `EF_DECLINE_MIN_RUNS` (2); fatigue, RPE and readiness never on arrival; one fire per
+trigger type per week"*, with literals moving into `GENERATION_CONFIG.ADJUSTMENT_TRIGGERS`.
+
+🔴 **What is missing is the PRINCIPLE artifact.** `grep` for `"124 Am."` and `"124 Amendment"` in
+`CoachingPrinciples.md` returns **nothing**; §124 has four sub-headings and none is an amendment. ADR-027's
+ARCH-ENG-022 cites "§124 Amendment 1" four times, and the Coaching Board's own rule is that **every CORRECT ruling
+lands three artifacts in one commit, the first being the principle §.**
+
+⚠️ **And I propagated it the same day I found it.** `ADR027-B3-STEP4A` shipped `lib/engine/contracts/events.ts`
+citing "§124 Am. 1" in four places, with a gate asserting the string matched `/§124/` — **a check enforcing a
+citation to a section that was never written.** Corrected in the same wave: the contract and the gate now cite the
+sitting date and the register, which are the records that exist. **This is `a principle naming an artefact nobody
+made`, one layer up: a ruling naming a section nobody wrote.**
+
+**Done when:** either §124 gains the amendment (the board's preference, since the ruling changes when the engine may
+act) or ADR-027 and every citation point at the register instead. ⚠️ **It blocks nothing** — the ruling is
+enforceable from the register — but **4b writes the trigger catalogue from this ruling**, so the catalogue should
+cite something that exists.
+
 ### 🔲 `TRIGGERS-ON-DATA-ARRIVAL-01` — evaluating adjustment triggers when data ARRIVES changes how often runners are prompted *(parked by founder decision 2026-11-26, split out of ADR-027 B3 step 4)* 🏃 **COACHING BOARD** (thresholds), then 🧭 **DESIGN BOARD** / 💼 **SLT** (frequency)
 
 `ARCH-ENG-018` states the rule and routes it in the same breath: *"Triggers are evaluated **when data arrives**

@@ -15,11 +15,20 @@
 // The distinction is a RULING, not a design preference, and it is the whole reason the type below
 // carries `evaluates_triggers` rather than leaving it to each call site to remember:
 //
-//   · `run_logged`   — UNCHANGED by §124 Amendment 1 (Coaching Board, 2026-11-21): the evaluation
+// 🔴 THE RULING IS REAL AND IS *NOT* WHERE ADR-027 SAYS IT IS. ADR-027's ARCH-ENG-022 cites
+// "§124 Amendment 1", and **there is no Amendment 1 under §124 in `CoachingPrinciples.md`** —
+// verified 2026-11-26. The ruling exists, in `docs/canonical/coaching-rulings.md` and the sitting
+// `docs/decisions/boards-2026-11-21-triggers-on-run-arrival.md`; the PRINCIPLE artifact the
+// Coaching Board's own three-artifact rule requires was never written. Cited below by the register
+// and the sitting, which are the records that exist. Filed as `S124-AMENDMENT-MISSING-01`.
+//
+//   · `run_logged`   — UNCHANGED by the 2026-11-21 ruling (register: `coaching-rulings.md`): the evaluation
 //                      event for a runner with no analysis (free tier, or a manual log), for the
 //                      ACTIVITY-LOG triggers only.
 //   · `run_analysed` — ADDED, which that sitting asked for in as many words: *"ADR-027's event list
-//                      has `run_logged` but no `run_analysed`; the catalogue needs it."*
+//                      has `run_logged` but no `run_analysed`; the catalogue needs it."* It is THE
+//                      evaluation event: *"evaluate on `run_analysed` (free/manual: `run_logged`,
+//                      `shadow_load` only)"*.
 //   · `run_arrived`  — ADDED and NOT an evaluation event. The same sitting ruled *"the evaluation
 //                      event is `run_analysed`, never raw ingest"*, and that stands. Giving it a
 //                      trigger would reverse §124 Am. 1.
@@ -66,17 +75,17 @@ export const RUN_EVENTS: readonly RunEvent[] = [
   {
     name: 'run_arrived',
     evaluates_triggers: false,
-    ruling: '§124 Am. 1 — the evaluation event is run_analysed, never raw ingest. Raised for every run that lands, carrying its match outcome, so an unmatched run is visible to the catalogue, to L1 validity and to the runner (RUN-UNMATCHED-PROMPT-01).',
+    ruling: 'Coaching Board 2026-11-21 (coaching-rulings.md; ADR-027 cites this as "§124 Am. 1" and no such amendment exists) — the evaluation event is run_analysed, never raw ingest. Raised for every run that lands, carrying its match outcome, so an unmatched run is visible to the catalogue, to L1 validity and to the runner (RUN-UNMATCHED-PROMPT-01).',
   },
   {
     name: 'run_logged',
     evaluates_triggers: true,
-    ruling: '§124 Am. 1 — UNCHANGED. The evaluation event for a runner with no analysis (free tier, or a manual log), for the activity-log triggers only.',
+    ruling: 'Coaching Board 2026-11-21 — UNCHANGED. The evaluation event for a runner with no analysis (free tier, or a manual log); the ruling scopes it to shadow_load only.',
   },
   {
     name: 'run_analysed',
     evaluates_triggers: true,
-    ruling: '§124 Am. 1 — added at that sitting\'s request: the catalogue needs an event for an analysed run.',
+    ruling: 'Coaching Board 2026-11-21 — added at that sitting\'s request: the catalogue needs an event for an analysed run, and it is THE evaluation event.',
   },
 ] as const
 

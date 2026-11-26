@@ -37,7 +37,11 @@ describe('ADR-027 step 4a — the run event vocabulary', () => {
     // the list could be "right" while the flag that encodes it is wrong.
     const arrived = RUN_EVENTS.find(e => e.name === 'run_arrived')!
     expect(arrived.evaluates_triggers, 'the evaluation event is run_analysed, never raw ingest').toBe(false)
-    expect(arrived.ruling).toMatch(/§124/)
+    // ⚠️ Matched on the SITTING DATE, not on "§124 Am. 1". ADR-027 cites that amendment and
+    // **it does not exist in CoachingPrinciples.md** (verified 2026-11-26, filed as
+    // S124-AMENDMENT-MISSING-01). Asserting a citation to a section that was never written would
+    // make this gate enforce the fiction.
+    expect(arrived.ruling).toMatch(/2026-11-21/)
   })
 
   it('every event states the ruling it comes from, so the flag is never a bare preference', () => {
