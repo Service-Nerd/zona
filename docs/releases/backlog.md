@@ -2179,6 +2179,44 @@ the first being the principle §.
 blocks nothing** — the ruling is enforceable as recorded — **but 4b writes the trigger catalogue from it**, so the
 catalogue should cite something that resolves.
 
+### 🔲 `ENGINE-CONTRACT-V2-COVERAGE-01` — the v2 engine is in NO arm of the docs audit, and L5 has no contract at all *(filed 2026-11-26, found auditing ADR-027's own currency)* ⚙️ **NO BOARD** (documentation and a gate; no behavioural delta)
+
+📐 **Measured 2026-11-26: `lib/engine` appears ZERO times in `scripts/audit-docs.sh`.** Every arm of that script has a
+population — changed API routes, changed components, invariants, registry rows, build-log entries, board rulings — and
+**`lib/engine/` is in none of them.** So `audit-docs.sh ALL CLEAN`, which this project quotes on every ship and in
+every state block, **is silent about the entire v2 engine by construction.** That is not a defect in the script; it is
+the `CONTRACT-COVERAGE-01` population question one layer out, and it is the fourth time this repo has recorded
+*"the check's population excludes the case at risk"*.
+
+📐 **And the contract is behind: 13 of 20 `lib/engine` modules are named in `docs/contracts/engine.md`.** The seven
+that are not: `contracts/events.ts`, `contracts/runOutcome.ts`, `contracts/triggers.ts`, `catalogue/triggers.ts` —
+and **all three of L5: `verifier/formulas.ts`, `verifier/verifyPlan.ts`, `verifier/verifyStrength.ts`.**
+
+🔴 **THE L5 HALF IS THE ONE THAT MATTERS.** B3's exit is the founder signing off *the verifier replacing `validatePlan`
+as the gate* — and **the verifier has no written interface.** 207 of 221 rules, a three-value `VerifierPolicy` that is
+required without a default, a `skipped_by` exemption mechanism, and a nightly live-plan run, all governed by nothing but
+module comments. `ENGINE-CONTRACT-01`'s own stated reason was *"the engine's own interface was governed by nothing — and
+it is the one interface that must be written down before anything external can call it."* **The same sentence now
+applies to the thing that will decide whether a plan ships.**
+
+⚠️ **`engine.md § v2` was written at B1 and has not grown with the layers.** It covers the request, the result, the
+refusal codes, the HTTP mapping, determinism, L1 and plan v2. It mentions the catalogue once and the verifier twice, in
+passing, with no section for either. Last touched `00bc9e4e`, 2026-11-21.
+
+⚠️ **It IS partly gated, which is why this was not obvious:** `contracts.test.ts` asserts the doc names every refusal
+code, every checkpoint code and every operation, and `engineContract.test.ts` holds the v1 half. **Those arms pass, and
+they are about B1's surface.** A gate that is green on the part that exists reads exactly like a gate on the whole.
+
+**Scope.** (1) An L2 and an L5 section in `engine.md § v2`, written as a contract rather than a summary — writing one is
+a code review, and the last four found a defect each. (2) A gate whose population is **derived from the tree**
+(`find lib/engine -name '*.ts' ! -name '*.test.ts'`) and which fails when a module is named by no contract, with a
+declared baseline so the debt is visible and cannot grow. Not a hand-written list: the point of the finding is that the
+list was the problem. (3) Decide explicitly whether `audit-docs.sh` gains an engine arm or whether the gate lives in
+`lib/engine/`; the second is cheaper and runs in the suite, which `verify:ci` already reads.
+
+🔻 **Blocks nothing today** — nothing in production calls `lib/engine`. **It blocks the B3 cut-over sign-off**, because
+the founder is being asked to approve an interface that is not written down.
+
 ### 🔲 `RPE-DISCONNECT-PRINCIPLE-01` — the RPE at which a runner's reported effort is taken to disagree with an easy prescription has no principle *(filed 2026-11-26, surfaced by ADR-027 B3 step 4b)* 🏃 **COACHING BOARD**
 
 `RPE_DISCONNECT_THRESHOLD = 8` is `zone_drift`'s second condition: an easy or long session reported at RPE ≥ 8 **with no
