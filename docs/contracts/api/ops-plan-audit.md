@@ -173,7 +173,7 @@ than silence.
 
 The route also runs `lib/engine/verifier/verifyPlan.ts` beside `validateStoredPlan` on every plan it reads, and reports
 what would change if the verifier replaced the old checker. **Observe-only, and structurally so.** Owner:
-`lib/ops/verifierShadow.ts`; gate `lib/ops/verifierShadow.test.ts` (28 cases).
+`lib/ops/verifierShadow.ts`; gate `lib/ops/verifierShadow.test.ts` (35 cases).
 
 ```ts
 verifier_shadow: {
@@ -182,18 +182,48 @@ verifier_shadow: {
   plans_strict_only: number,             // would GAIN at least one code — the cut-over figure
   plans_reshape_exempt: number,          // flagged only by a rule the BASELINE drops (see below)
   plans_escalated: number,               // same rule, warn -> error
-  plans_lost: number,                    // would LOSE a code the old checker reports today
+  plans_lost: number,                    // would LOSE a code the old checker reports today —
+                                         // INCLUDING to a decline (see plans_unverified_only)
+  plans_unverified_only: number,         // a rule COULD NOT EVALUATE: neither verdict nor silence
   plans_level_mismatch: number,          // the profile re-derives a level the plan was built at
   plans_strict_only_level_mismatch: number,   // the subtraction a reader needs
   strict_only_by_rule: Record<string, number>,
   reshape_exempt_by_rule: Record<string, number>,
   lost_by_rule: Record<string, number>,
+  unverified_only_by_rule: Record<string, number>,
   rules_fired: number,
   rules_same_instances: number,
   instance_delta_by_rule: Record<string, [newCount: number, oldCount: number]>,
   new_findings: number, old_findings: number, unverified: number,
 }
 ```
+
+🔴 **A DECLINE IS NOT A VERDICT, AND BEFORE 2026-11-27 IT WAS COUNTED AS ONE**
+(`VERIFIER-UNVERIFIED-KEY-COLLISION-01`). An `unverified:` finding means *"this rule could not
+evaluate"*. It used to be folded into the verdict population as an ordinary `error`, so
+`plans_strict_only` counted a decline as a code the verifier GAINED, `plans_escalated` read a `warn`
+old finding against it as an escalation, `new_findings` and `instances` counted it as a finding —
+and **`plans_lost`, which joins on rule id, could not see a real old finding REPLACED by one.**
+
+So read these three together:
+
+| Field | Means |
+|---|---|
+| `plans_strict_only` | the verifier reached a verdict the old checker did not |
+| `plans_lost` | the old checker reached a verdict the verifier did not — **including where the verifier declined** |
+| `plans_unverified_only` | a rule could not evaluate at all. Excluded from every verdict figure above |
+
+⚠️ **`plans_unverified_only` is not a subset of `plans_lost`.** A rule may decline where the old
+checker was also silent (no loss) or where it had a verdict (a loss). The two are read side by side.
+
+📐 **Live, 2026-11-27 (44 plans):** `plans_strict_only` **0**, `plans_lost` **0**,
+`plans_escalated` **0**, `plans_unverified_only` **0**, `unverified` **0**,
+`plans_level_mismatch` **0**, `rules_fired` **48** with **46** identical instance counts,
+`new_findings`/`old_findings` **467 / 484**. Two instance deltas:
+`INV-PLAN-LARGEST-SESSIONS-SPACED` **[102, 95]** and `INV-PLAN-NO-INVENTED-AGE` **[1, 25]**.
+⚠️ **Read these from the route, never from here** — the figures this section published before that
+date (1 strict-only on the level-mismatched plan, 51 rules fired) were true when written and went
+stale when `VERIFIER-STORED-LEVEL-01` shipped, and nothing compares the two.
 
 Also recorded as `plan_rule_invalid` with `source: 'plan-audit-verifier-shadow'` — **a third source, read by
 neither existing consumer**: the per-user dedupe filters `source === 'plan-audit'` and the fleet step reads

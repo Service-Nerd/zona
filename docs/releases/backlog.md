@@ -2642,32 +2642,99 @@ runner's own facts, or by a note that names the delivered constraint* is checkab
 `volume_constraint_note`** — so the cheapest version (require the note before honouring the exemption) is latent today
 and buys only a ratchet. **The board rules on whether the stronger version is worth a rule at all.**
 
-### 🔴 `VERIFIER-UNVERIFIED-KEY-COLLISION-01` — an UNVERIFIED finding is indistinguishable from a real one in both guards, so a rule that stops being able to judge reads as a rule that judged cleanly *(filed 2026-11-27, found by code review of B10)* ⚙️ **NO BOARD** (measurement defect)
+### ✅ `VERIFIER-UNVERIFIED-KEY-COLLISION-01` — SHIPPED 2026-11-27 — a decline is its own bucket now, and the cut-over numbers are re-measured *(filed 2026-11-27, found by code review of B10; shipped the same day)* ⚙️ **NO BOARD** (measurement defect)
 
-🔴 **THIS IS THE ONE THAT MATTERS, AND IT IS NOT ABOUT B10.** The verifier's `unverified:` contract
-exists so a rule that cannot evaluate says so rather than passing silently. **Neither of the two
-guards that compare the verifier to `validatePlan` can tell an unverified finding from a real one.**
+✅ **DONE.** An `unverified:` finding means *"this rule could not evaluate"* — neither a verdict nor
+silence — and **both guards comparing the verifier to `validatePlan` treated it as an ordinary
+`error`.**
 
-| Guard | Why it is blind |
-|---|---|
-| `verifierAgreement.test.ts:35` | the comparison key is `rule\|week\|day\|severity` — **`detail` is excluded**, and an unverified finding carries `week 0 / day null / error`, the same key a real plan-scope finding carries. A real finding REPLACED by an unverified one is a no-op to the diff |
-| `verifierShadow.ts:200` | `lost = prev.keys().filter(r => !next.has(r))` joins on **rule id** with no `isUnverified` filter, so the rule is still "present in next" and the loss is invisible |
+| Guard | Was | Now |
+|---|---|---|
+| `verifierAgreement.test.ts` | key `rule\|week\|day\|severity`, **`detail` excluded**, so a decline carried the same key as a real plan-scope finding | the marker is **appended when true**, so every real finding's key is byte-identical and a decline matches nothing on the old side |
+| `verifierShadow.ts` | `lost` joined on rule id over a population **including** declines; `strict_only` counted a decline as a gain; `escalated`, `new_findings` and `instances` likewise | declines are excluded from every verdict population, counted in `unverified`, and **named in a new `unverified_only`** — aggregated as `plans_unverified_only` / `unverified_only_by_rule` |
 
-🔴 **THE CONSEQUENCE IS THE NUMBER THE CUT-OVER REQUEST QUOTES.** `plans_lost: 0` and
-`lost_by_rule: {}` over 44 live plans are cited in ADR-027, the feature registry and three state
-blocks as evidence the verifier loses no finding. **Both are computed by the join above**, so they
-cannot see the one failure mode the `unverified` contract was built to make visible.
+📐 **MEASURED BEFORE THE FIX, FROM THE HARNESS ITSELF: 8,737 cases, 75 unverified findings from 3
+rules** (`PEAK-IN-PEAK-PHASE` 60, `PEAK-OVER-BASE` 13, `PEAK-VOLUME-FLOOR-LONG-RACES` 2), **and 6 of
+them were a real `validatePlan` finding replaced by a decline** — all six green, because the rule
+declares `both` and the swap sat inside a declared divergence.
 
-📐 **Demonstrated, not theorised** (code review's probe, B10's reverted change): a plan with six
-identical quality rows and a pool list short by one went from a real §53 finding under
-`validatePlan` to a bare `unverified: …` under the verifier, and **the agreement harness stayed
-green and the shadow reported 0 lost.** My own "0 lost across the battery" claim in the register was
-unfalsifiable for exactly the case it was written to cover.
+🔴 **TWO OF MY OWN CLAIMS HERE WERE WRONG AND CODE REVIEW MEASURED BOTH.** (1) The figures above
+first read **20 over 1,470 from 2 rules, 4 swaps** — that was a `perGroup 4` probe with the base
+mutations only, published as the harness's. **A number from a different population is a different
+number.** (2) I called the key marker the fix: *"a real finding replaced by a decline was a no-op to
+the diff, because both carry the same four values."* **In all 6 real swaps the old key is
+`…|1|-|warn` against a decline of `…|0|-|error`, so they never collided**, and suppressing the
+suffix leaves gained/lost byte-identical across all 30 register entries. The marker is DEFENSIVE.
+**The dedicated arm is the fix** — it names the collision for every rule regardless of what any entry
+declares, with an allowlist of (rule, reason) pairs **and the swap count PINNED at 6**, because
+"cannot grow silently" was not what the arm checked until review said so: 6 could have become 60
+under the same declaration and stayed green. ⚠️ **The anti-rot arm immediately removed one of my own two entries:**
+`PEAK-OVER-BASE` emits a decline but never over a verdict, and I had declared it from the same
+ruling by symmetry — which is the habit the arm exists to break.
 
-**Fix:** the key must include whether the finding is unverified, and the shadow's `lost` must treat
-"a rule that now only reports unverified" as a loss. Both are small; the care is in re-measuring
-every `STRICT_DIVERGENCES` entry afterwards, because some may have been passing on this collision.
-⚠️ **Do this BEFORE the cut-over sign-off**: the sign-off is read off these two numbers.
+🔴 **AND THE ARM I WROTE ON 2026-11-26 HAD PINNED THE DEFECT AS DESIRED BEHAVIOUR.**
+`verifierShadow.test.ts` asserted `expect(row.strict_only).toContain(victim)` with the comment *"an
+unverified rule reads as a plan gaining a code"* — calling the collision loud and correct. It is
+neither: `strict_only` is THE cut-over number, *"rules the verifier fires that the old checker does
+not"*, and a rule that could not evaluate has not fired.
+
+📐 **5 mutations, each verified to have landed, each red** — including the key marker, the
+aggregation, and the collision arm falsified by removing its one declaration.
+
+✅ **THE CUT-OVER NUMBERS ARE RE-MEASURED, AND THE RECORDS WERE STALE IN THE RUNNER'S FAVOUR:**
+
+| | Records said (2026-11-25) | Measured 2026-11-27 |
+|---|---|---|
+| plans assessed | 44 | 44 |
+| `plans_strict_only` | **1**, the level-mismatched plan | **0** |
+| `plans_level_mismatch` | 1 | **0** — `VERIFIER-STORED-LEVEL-01` fixed it |
+| `plans_lost` / `escalated` / `unverified` | 0 / 0 / 0 | 0 / 0 / 0 |
+| `plans_unverified_only` | (did not exist) | **0** |
+| `rules_fired` / identical instances | 51 / 46 | **48 / 46** |
+| `new_findings` / `old_findings` | 489 → 482 / 487 | **467 / 484** |
+
+Two instance deltas remain: `LARGEST-SESSIONS-SPACED` **[102, 95]** (the board fix biting) and
+`NO-INVENTED-AGE` **[1, 25]** (plan-wide against per-week). **So the fleet is CLEANER than the
+records claimed, not worse** — the sign-off's *"0 comparable plans gain a code"* now reads *"0 plans
+gain a code at all"*.
+
+🔴 **AND I REPORTED A WRONG NUMBER ON THE WAY HERE, FROM MY OWN PROBE.** I first measured
+`plans_strict_only: 1` flagged by an **undeclared** `INV-PLAN-LONG-IS-LONGEST-MINS` and reported it
+as a live divergence. It was an artefact: my probe called `validateStoredPlan(plan, storedPlanInput(plan))`
+where **the second parameter is a WEEK NUMBER** (`reshapedWeekN`), so the baseline was garbage.
+`validatePlan` (strict) reports those two findings and `validateStoredPlan` does not — **the two
+checkers agree, and the gap was in what I compared against.** `VERIFIER-RESHAPE-POLICY-01`'s lesson
+verbatim, five days later. Filed: `PROBE-TYPECHECK-BLIND-01`.
+
+🔻 **Negative space: this proves a decline is now reported as a decline in both guards, and that the
+published fleet numbers match the code today. It does not prove the verifier is CORRECT on those 44
+plans** — agreement is not correctness — and `unverified` is 0 live, so the fix is latent on the
+fleet and exercised only by the harness and the planted-crash arms.
+
+### 🔴 `PROBE-TYPECHECK-BLIND-01` — `tsc` does not read `scripts/.tmp/`, which is where every throwaway measurement probe lives *(filed 2026-11-27, found measuring VERIFIER-UNVERIFIED-KEY-COLLISION-01)* ⚙️ **NO BOARD** (tooling)
+
+🔴 **CONTROL MEASUREMENT, not a theory.** The same one-line file —
+`export const x: number = 'a string'` — was written twice and `npx tsc --noEmit` run on each:
+**inside `scripts/.tmp/` it passes cleanly; one directory up under `scripts/` it fails with
+TS2322.** Both scratch files were deleted after the run, so this item names no path for them on
+purpose. `tsconfig.json`'s `include` is `['**/*.ts', …]`, and TypeScript's globs **do not match
+dot-prefixed directories** — reproduce it in two commands whenever this is picked up.
+
+⚠️ **THAT DIRECTORY IS WHERE THIS REPO'S MEASUREMENT PROBES LIVE** — the ones whose numbers reach
+board submissions, registry rows and state blocks. A probe there can pass the wrong type into a real
+function and return a plausible, wrong figure, and nothing says so. **Demonstrated the same day:** a
+probe passed a `GeneratorInput` into `validateStoredPlan`'s `reshapedWeekN?: number` and produced
+`plans_strict_only: 1` with an undeclared rule attached. I reported it before catching it.
+
+🔻 **The obvious fix is wrong and that is why this is filed rather than done.** Adding
+`scripts/.tmp/**/*.ts` to `include` means a half-finished probe breaks `tsc` for every build and
+push — and this repo has recorded four times that a guard firing on ordinary work gets switched off.
+Candidates: a `npm run probe <file>` that typechecks the file and then runs it, so the checked path
+is the easy path; or a non-dot directory for probes with its own gitignore line.
+
+⚠️ **Until then the discipline is explicit: `npx tsc --noEmit` names no probe, so typecheck a probe
+file by path before quoting its numbers.** A number from an untypechecked probe is the
+`a-comparison-is-only-as-honest-as-its-baseline` shape with no mechanism behind it.
 
 ### 🔲 `QUALITY-POOL-PICK-ALIGNMENT-01` — `quality_pool_sizes` has one entry per PICK and the live fleet disagrees on 4 of 44 plans, in both directions *(filed 2026-11-27, split from B10 once its own premise was measured false)* ⚙️ **NO BOARD** (the verifier's reading; prescription unchanged)
 
@@ -17275,7 +17342,7 @@ fails every morning for a reason nobody needs to read is a test everybody learns
 the next real failure in that file arrives pre-ignored. This repo has already recorded that a
 guard which cries wolf gets disabled, which is the same as having no guard.
 
-**State at END of 2026-11-27 — ✅ B3 STEP 2b IS COMPLETE (B10 CLOSED ON A FALSE PREMISE), AND 🔴 THE SIGN-OFF'S OWN EVIDENCE CANNOT SEE A LOST FINDING** (last ship `3b8fd120`). 863 files / **9,116 tests**, 0 errors; `tsc` 0; `verify:parity` **IDENTICAL over 6,210**; `verify:invariants` 171/171; `audit-docs.sh` ALL CLEAN; CI green on the B14 wave; **98 open**. ✅ **`ADR027-B3-STRICT-B10`** — the board ruled *"the bound uses the same weeks it counts"*; **the premise was measured FALSE, so there was nothing to fix and nothing was blocked on the producer** — which the backlog item AND `scripts/audit-docs.sh` had both said for five days. **A race week never holds a `type: 'quality'` session: 0 across 2,396 cohort plans (stride-sampled from 41,472), 37 corpus plans and 44 live plans**, which is also why the board marked the row latent. ✅ The property is **mechanical** now rather than true-by-construction (`lib/plan/qualityPoolAlignment.test.ts`): one pool entry per non-race quality PICK on every generated plan, and no quality session in a race week. ⚠️ **`verifyPlan.ts` is COMMENTS ONLY — no behaviour changed.** 📐 **What survives is a per-PICK misalignment, split out as `QUALITY-POOL-PICK-ALIGNMENT-01`:** live **196 entries against 216 non-race quality sessions, 4 of 44 plans** — three legacy (`pools: 0`, the designed `share` fallback) and **one at 8 entries for 9 picks**; 0 of 2,396 cohort plans reproduce it. ⚠️ **Both directions matter and only one is intuitive:** short lowers the pigeonhole bound and fires falsely; **long raises it and SILENCES a real finding**, reachable because two regen scripts copy the field between plans. 🔴 **I BUILT THE OBVIOUS FIX AND REVERTED IT ON REVIEW:** having the rule decline on a mismatch abandoned the `share` bound too, which needs no pool data at all, so six identical quality rows plus a short list went from a real §53 finding to a bare `unverified`. 🔺 **AND THAT EXPOSED THE WAVE'S REAL FIND, NOW ITEM 4 IN ADR-027's PICK-UP ORDER, AHEAD OF THE SIGN-OFF AT 5 — `VERIFIER-UNVERIFIED-KEY-COLLISION-01`: both guards that should have caught the swap are blind to it.** `verifierAgreement.test.ts` keys findings on `rule|week|day|severity` with **`detail` EXCLUDED**, so an unverified finding is indistinguishable from a real plan-scope one; `verifierShadow.ts`'s `lost` joins on **rule id** with no `isUnverified` filter. ⚠️ **`plans_lost: 0` and `lost_by_rule: {}` over the 44 live plans are cited in ADR-027, the feature registry and three state blocks as the evidence the verifier loses no finding — and they are computed by that join**, so they cannot see the one failure mode the `unverified` contract exists to make visible. **My own *"0 lost across the battery"* in `STRICT_DIVERGENCES` was unfalsifiable for exactly the case it covered.** 📐 **4 mutations, each verified landed, each red** — including one that found **this gate's own population floor was computed from a different expression than the list it asserts on**, so emptying the list left the floor passing; one derivation now. 🔑 **THREE WAVES TODAY AND THE ITEM WAS WRONG IN ALL THREE:** D2/D3 understated its own scope in every column, B14 named one site of four, and B10's premise did not hold at all. **The first step of a build is a count, not a read.** 🔴 **AND CI CAUGHT A THIRD RECORD DEFECT OF MINE IN TWO DAYS, ALL THREE IN PROSE AND NONE IN CODE:** the state-block heading above used 🔺 beside the SHIPPED id, and § 7 requires every id in a 🔺 clause to be an OPEN tracker — the residual is tracked, by `VERIFIER-UNVERIFIED-KEY-COLLISION-01`, in the body where the mark is legal. ⚠️ **The sequencing is the actual lesson: I ran `backlog:verify` BEFORE writing the state blocks and `audit-docs.sh` AFTER, then read ALL CLEAN as covering the wave. They are two scripts with two populations, and only the second one ran on what I wrote last.** Run both after the last edit. **Next: `VERIFIER-UNVERIFIED-KEY-COLLISION-01`, then the cut-over sign-off.** ⚠️ Nothing has run on a device.
+**State at END of 2026-11-27 — ✅ B3 STEP 2b IS COMPLETE (B10 CLOSED ON A FALSE PREMISE), AND 🔴 THE SIGN-OFF'S OWN EVIDENCE CANNOT SEE A LOST FINDING** (last ship `3b8fd120`). 863 files / **9,116 tests**, 0 errors; `tsc` 0; `verify:parity` **IDENTICAL over 6,210**; `verify:invariants` 171/171; `audit-docs.sh` ALL CLEAN; CI green on the B14 wave; **98 open**. ✅ **`ADR027-B3-STRICT-B10`** — the board ruled *"the bound uses the same weeks it counts"*; **the premise was measured FALSE, so there was nothing to fix and nothing was blocked on the producer** — which the backlog item AND `scripts/audit-docs.sh` had both said for five days. **A race week never holds a `type: 'quality'` session: 0 across 2,396 cohort plans (stride-sampled from 41,472), 37 corpus plans and 44 live plans**, which is also why the board marked the row latent. ✅ The property is **mechanical** now rather than true-by-construction (`lib/plan/qualityPoolAlignment.test.ts`): one pool entry per non-race quality PICK on every generated plan, and no quality session in a race week. ⚠️ **`verifyPlan.ts` is COMMENTS ONLY — no behaviour changed.** 📐 **What survives is a per-PICK misalignment, split out as `QUALITY-POOL-PICK-ALIGNMENT-01`:** live **196 entries against 216 non-race quality sessions, 4 of 44 plans** — three legacy (`pools: 0`, the designed `share` fallback) and **one at 8 entries for 9 picks**; 0 of 2,396 cohort plans reproduce it. ⚠️ **Both directions matter and only one is intuitive:** short lowers the pigeonhole bound and fires falsely; **long raises it and SILENCES a real finding**, reachable because two regen scripts copy the field between plans. 🔴 **I BUILT THE OBVIOUS FIX AND REVERTED IT ON REVIEW:** having the rule decline on a mismatch abandoned the `share` bound too, which needs no pool data at all, so six identical quality rows plus a short list went from a real §53 finding to a bare `unverified`. ✅ **AND THAT EXPOSED THE WAVE'S REAL FIND, SHIPPED THE SAME DAY — `VERIFIER-UNVERIFIED-KEY-COLLISION-01`: both guards that should have caught the swap were blind to it.** `verifierAgreement.test.ts` keys findings on `rule|week|day|severity` with **`detail` EXCLUDED**, so an unverified finding is indistinguishable from a real plan-scope one; `verifierShadow.ts`'s `lost` joins on **rule id** with no `isUnverified` filter. ⚠️ **`plans_lost: 0` and `lost_by_rule: {}` over the 44 live plans are cited in ADR-027, the feature registry and three state blocks as the evidence the verifier loses no finding — and they are computed by that join**, so they cannot see the one failure mode the `unverified` contract exists to make visible. **My own *"0 lost across the battery"* in `STRICT_DIVERGENCES` was unfalsifiable for exactly the case it covered.** 📐 **4 mutations, each verified landed, each red** — including one that found **this gate's own population floor was computed from a different expression than the list it asserts on**, so emptying the list left the floor passing; one derivation now. 🔑 **THREE WAVES TODAY AND THE ITEM WAS WRONG IN ALL THREE:** D2/D3 understated its own scope in every column, B14 named one site of four, and B10's premise did not hold at all. **The first step of a build is a count, not a read.** 🔴 **AND CI CAUGHT A THIRD RECORD DEFECT OF MINE IN TWO DAYS, ALL THREE IN PROSE AND NONE IN CODE:** the state-block heading above used `🔺` beside the SHIPPED id, and § 7 requires every id in a `🔺` clause to be an OPEN tracker — the residual is tracked, by `VERIFIER-UNVERIFIED-KEY-COLLISION-01`, in the body where the mark is legal. ⚠️ **The sequencing is the actual lesson: I ran `backlog:verify` BEFORE writing the state blocks and `audit-docs.sh` AFTER, then read ALL CLEAN as covering the wave. They are two scripts with two populations, and only the second one ran on what I wrote last.** Run both after the last edit. **Next: `VERIFIER-UNVERIFIED-KEY-COLLISION-01`, then the cut-over sign-off.** ⚠️ Nothing has run on a device.
 
 **Prior — state at END of 2026-11-27 — ✅ B14: §117'S BOUND READS THE PEAK LONG RUN IN ALL FOUR PLACES, AND 🔴 "DO THE NEXT THING" MEANT ONE THAT SHIPPED TWO DAYS AGO** (last ship `5b731412`). 862 files / **9,113 tests**, 0 errors; `tsc` 0; `verify:parity` **IDENTICAL over 6,210**; `verify:sweep` 16,464 plans, no new violations; `verify:matrix` PASS 62 / FAIL 0 / 14 of 17; `verify:invariants` 171/171; `cohort:shape` and `measure:fitness` baselines unmoved; `audit-docs.sh` ALL CLEAN; CI green on the D2/D3 wave; **96 open**. 🔴 **I WAS ASKED FOR `VERIFIER-STORED-LEVEL-01` AND IT SHIPPED 2026-11-25 IN `b7b2df3f`** — `assessedIntensity` reads `fitness_intensity_level ?? fitness_level ?? assessed.intensity`, all three board conditions met, `plans_level_mismatch` 1 → 0. **ADR-027 § Where to pick up still called it *"the only cut-over blocker, and it is a build, not a question"* two days later, while the backlog and roadmap both said ✅ SHIPPED — and that stale entry is where this morning's state blocks got *"Next: VERIFIER-STORED-LEVEL-01"*.** Second day running that the stale record was the SOURCE and I carried it forward; corrected there, not in the copy. ✅ **`ADR027-B3-STRICT-B14`** — §117 Am. 2's bound reads the peak LONG RUN. The sitting ruled it CORRECT WITH AMENDMENT *conditional on the builder confirming the reading*; ✅ **confirmed from the amendment's own text** (*"whose peak long run falls below"*, twice; the constant is `…MIN_PEAK_LR_KM`), recorded in the amendment, which is the ruling's artifact. 🔴 **THE ITEM NAMED ONE SITE AND THERE ARE FOUR**, each reading the largest session of any kind: `INV-PLAN-RUNWALK-ADEQUATE` (variable **called `peakLr`**), its ported verifier twin, **`planQuality.ts`'s `peakLR`** (the rubric half — it decides whether a plan is SCORED and feeds `LONG-RUN-SHORT`), and **`ruleEngine.ts`'s refusal gate**, found by review after the record claimed three. 🔑 **THE PRODUCER IS THE SITE THAT DECIDES, and leaving it would have been worse than leaving all four:** its own comment says *"an invariant is not enough here — in production `validatePlan` only LOGS"*, so three corrected checkers plus an untouched gate means the engine **ships a plan its own checker then flags.** 📐 **Measured inert on a population built to reach it:** 0 of 37 corpus plans differ, `LONG-RUN-SHORT` **8 of 37 either way**, `adequate` flips on **0**, and `finish_goal_run_walk` / `run_walk_prescribed` each unset on **0 of 44 live plans** — the invariant has never fired for a runner. ⚠️ **PARITY IS BLIND HERE AND THE RECORD SAYS SO**: §117 is reachable only through the `fitness_level` override no grid sets (`COHORT-GRID-UNSET-LEVEL-01`), so a **constructed 432-input cohort** was used — **54 run-walk plans, 0 differences, 0 refusal flips, identical before and after.** ⚠️ **The fix removes a DEPENDENCY, not a live defect:** reading every session is correct only while the long run IS the longest, and **no invariant asserts that** — §9's `INV-PLAN-LONG-IS-LONGEST` bounds it against **EASY** runs only, so a longer QUALITY session is forbidden by nothing. 🔴 **CODE REVIEW FOUND FOUR, ALL MINE, AND THE FIRST WOULD HAVE BLOCKED EVERY PUSH:** the new test called `verifyPlan` with **2 of 3 arguments** — the repo's one `tsc` error — and **`vitest run` passed 4/4 because vitest does not typecheck**; I ran `tsc` before writing the test and not after. Plus the fourth site; a comment reading *"'peak' is the largest SESSION of any kind"* three lines above code that no longer did; and a missing `> 0` guard in the rubric. 🔴 **AND MY FIX TO THAT LAST ONE WAS WORSE THAN THE DEFECT:** `if (peakLR <= 0) return f` inside a **marathon-only** block would have skipped P8 and every later check — happy compiler, fully green suite, because no corpus plan reaches `peakLR === 0`. 📐 **7 mutations, each verified landed, 6 red;** 🔻 **the seventh is DECLARED:** reverting the producer's `.filter(isLongRun)` leaves every arm green, because the arm asserts a property of engine OUTPUT and the gate is not exported — **correct and UNGATED**, and a source assertion would pass on a comment. 🔻 **B10 is now the only piece of `ADR027-B3-STRICT-01` still open**, blocked on the producer stamping a week beside each `quality_pool_sizes` entry. **Next: the founder's cut-over sign-off naming the 14 held rules — B3 has nothing else of mine in it.** ⚠️ Nothing has run on a device.
 

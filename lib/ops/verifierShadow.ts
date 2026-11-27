@@ -94,6 +94,12 @@ export type ShadowRow =
       old_findings: number
       /** A rule that could not evaluate. Never a pass (the verifier reports it as a finding). */
       unverified: number
+      /** 🔴 Rules that reported ONLY `unverified:` — a decline, not a verdict either way
+       *  (`VERIFIER-UNVERIFIED-KEY-COLLISION-01`). These are EXCLUDED from `strict_only`,
+       *  `escalated`, `new_findings` and `instances`, and a rule here whose old finding was real
+       *  also appears in `lost`. Before this they were folded in as ordinary errors, so a rule that
+       *  stopped being able to judge read as a rule that judged — on the cut-over figures. */
+      unverified_only: string[]
       /** The profile's re-derived intensity disagrees with the level the plan was BUILT at, so a
        *  level-dependent finding on this plan measures the derivation, not the rule. */
       level_mismatch: boolean
@@ -175,9 +181,42 @@ export function shadowVerifyPlan(
   const judged = new Set<string>(rulesFor(plan, 'stored') as unknown as string[])
   // Materialised once: the totals, the per-rule counts and the rule-id join must all read the
   // SAME filtered population, or the three numbers describe three different things.
-  const judgedFindings = findings
-    .filter(f => judged.has(f.rule_id as string))
+  //
+  // 🔴 AND UNVERIFIED FINDINGS ARE NOT PART OF THAT POPULATION (`VERIFIER-UNVERIFIED-KEY-COLLISION-01`,
+  // 2026-11-27). An `unverified:` finding means *"this rule could not evaluate"*, which is neither a
+  // verdict nor silence — and it used to be folded in here as an ordinary `error`, so:
+  //   · `lost` joins on rule id, so a rule whose REAL old finding became unverified was still
+  //     "present in next" and **was not counted as lost** — on the figure the cut-over request
+  //     quotes as evidence the verifier loses nothing;
+  //   · `strict_only` counted a DECLINE as a finding the verifier gained;
+  //   · `escalated` read a `warn` old finding against an unverified new one as an escalation;
+  //   · `new_findings` and `instances` counted a non-verdict as a finding.
+  // 📐 Measured in the agreement harness BEFORE any of this changed, from the harness itself:
+  // **8,737 cases, 75 unverified findings from 3 rules** (`PEAK-IN-PEAK-PHASE` 60,
+  // `PEAK-OVER-BASE` 13, `PEAK-VOLUME-FLOOR-LONG-RACES` 2), **6 of them a real `validatePlan`
+  // finding replaced by an unverified one.** ⚠️ My first figures (20 / 1,470 / 2 rules / 4 swaps)
+  // came from a `perGroup 4` probe with the base mutations only, published as the harness's — code
+  // review measured the real ones. **A number from a different population is a different number.**
+  // 🔑 So a decline is its own bucket: counted in `unverified`, named in `unverified_only`, and
+  // excluded from every verdict population. Never a finding, never silence.
+  const judgedAll = findings.filter(f => judged.has(f.rule_id as string))
+  const judgedFindings = judgedAll
+    .filter(f => !isUnverified(f))
     .map(f => ({ rule: f.rule_id as string, severity: f.severity }))
+  const declinedRules = Array.from(new Set(judgedAll.filter(isUnverified).map(f => f.rule_id as string)))
+  const verdictRules = new Set(judgedFindings.map(f => f.rule))
+  /**
+   * A rule that reported ONLY "could not evaluate" — no verdict either way.
+   *
+   * ⚠️ THE `!verdictRules.has(r)` FILTER CANNOT REMOVE ANYTHING TODAY, and that is worth saying
+   * rather than leaving as logic a reader assumes is load-bearing (code review). `verifyPlan`'s
+   * catch REPLACES a rule's whole result with one decline, so a rule either has verdicts or exactly
+   * one decline — never both — and `unverified_only.length === unverified` by construction. It is
+   * kept because the day that stops being true (a predicate returning partial results beside a
+   * decline) is the day a decline must not evict a verdict from this bucket, and
+   * `verifierShadow.test.ts` asserts the equivalence so the divergence is loud rather than silent.
+   */
+  const unverified_only = declinedRules.filter(r => !verdictRules.has(r)).sort()
   const judgedOld = oldViolations
     .filter(v => judged.has(v.code))
     .map(v => ({ rule: v.code, severity: v.severity as string }))
@@ -197,6 +236,8 @@ export function shadowVerifyPlan(
     if (!was) strict_only.push(rule)
     else if (was === 'warn' && sev === 'error') escalated.push(rule)
   }
+  // `next` now holds VERDICTS only, so a rule whose old finding became "could not evaluate" falls
+  // out of it and is counted here — which is the whole point of the change.
   const lost = Array.from(prev.keys()).filter(r => !next.has(r))
 
   return {
@@ -205,6 +246,7 @@ export function shadowVerifyPlan(
     reshape_exempt: reshape_exempt.sort(),
     escalated: escalated.sort(),
     lost: lost.sort(),
+    unverified_only,
     new_findings: judgedFindings.length,
     old_findings: judgedOld.length,
     // ⚠️ `isUnverified` is the VERIFIER's, not a local string match. It was `startsWith('unverified:')`
@@ -258,6 +300,11 @@ export interface VerifierShadowSummary {
   plans_reshape_exempt: number
   plans_escalated: number
   plans_lost: number
+  /** 🔴 Plans where at least one rule could not evaluate (`VERIFIER-UNVERIFIED-KEY-COLLISION-01`).
+   *  Read it BESIDE `plans_lost`: a rule that declines is not a rule that passed, and before this
+   *  a decline was folded into the verdicts and counted as a finding the verifier gained. */
+  plans_unverified_only: number
+  unverified_only_by_rule: Record<string, number>
   /** Plans whose level-dependent findings are not comparable. See `levelMismatch`. */
   plans_level_mismatch: number
   /** Of the strict-only plans, how many are ONLY flagged by a level-dependent rule on a
@@ -317,6 +364,11 @@ export function summariseVerifierShadow(rows: ShadowRow[]): VerifierShadowSummar
     plans_reshape_exempt: done.filter(r => r.reshape_exempt.length).length,
     plans_escalated: done.filter(r => r.escalated.length).length,
     plans_lost: done.filter(r => r.lost.length).length,
+    // 🔴 A PER-ROW FIELD NOBODY AGGREGATES IS INVISIBLE IN THE NUMBER THAT IS READ, which is the
+    // whole shape of `VERIFIER-UNVERIFIED-KEY-COLLISION-01`. A plan where a rule could not evaluate
+    // is now its own figure beside `plans_lost`, not folded into the verdicts.
+    plans_unverified_only: done.filter(r => r.unverified_only.length).length,
+    unverified_only_by_rule: tally(done.flatMap(r => r.unverified_only)),
     plans_level_mismatch: done.filter(r => r.level_mismatch).length,
     plans_strict_only_level_mismatch: done.filter(r => r.strict_only.length && r.level_mismatch).length,
     strict_only_by_rule: tally(done.flatMap(r => r.strict_only)),

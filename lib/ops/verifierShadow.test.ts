@@ -246,6 +246,7 @@ function strictOnlyOf(plan: Plan): string[] {
 describe('summariseVerifierShadow — the figure a founder reads', () => {
   const done = (over: Partial<Extract<ShadowRow, { assessed: true }>> = {}): ShadowRow => ({
     assessed: true, strict_only: [], reshape_exempt: [], escalated: [], lost: [],
+    unverified_only: [],
     new_findings: 0, old_findings: 0, unverified: 0, level_mismatch: false, instances: {}, ...over,
   })
 
@@ -395,8 +396,85 @@ describe('ENGINE-CONTRACT-V2-COVERAGE-01 — a predicate that CANNOT evaluate is
       expect(row.assessed, 'the plan must still be assessed: one bad predicate never ends the run').toBe(true)
       if (!row.assessed) return
       expect(row.unverified, 'the planted crash was not counted').toBeGreaterThanOrEqual(1)
-      // And it is LOUD, not merely tallied: an unverified rule reads as a plan gaining a code.
-      expect(row.strict_only, 'an unverified rule must surface, never be silently absorbed').toContain(victim)
+      // 🔴 THIS ARM ASSERTED THE DEFECT AS DESIRED BEHAVIOUR WHEN I WROTE IT ON 2026-11-26. It read
+      // `expect(row.strict_only).toContain(victim)`, with the comment *"an unverified rule reads as
+      // a plan gaining a code"* — calling the collision LOUD and correct. It is neither:
+      // `strict_only` is THE cut-over number, *"rules the verifier fires that the old checker does
+      // not"*, and a rule that could not evaluate has not fired. Counting a decline there inflates
+      // the figure a founder reads AND hides the opposite case, where the old checker HAD a verdict
+      // (`VERIFIER-UNVERIFIED-KEY-COLLISION-01`).
+      expect(row.unverified_only, 'a decline belongs in its own bucket').toContain(victim)
+      expect(row.strict_only, 'a decline is NOT a rule the verifier fired').not.toContain(victim)
+    } finally {
+      if (original) PREDICATES[victim] = original; else delete PREDICATES[victim]
+    }
+  })
+
+  it('🔴 and a REAL old finding replaced by a decline is counted as LOST — the collision itself', () => {
+    // 📐 THE DIRECTION THAT WAS INVISIBLE, and the one the cut-over figure rests on. `lost` joined on
+    // rule id against a population that INCLUDED unverified findings, so a rule whose real finding
+    // became "could not evaluate" was still "present in next" and counted as neither lost nor
+    // gained. `plans_lost: 0` and `lost_by_rule: {}` over 44 live plans are quoted in ADR-027, the
+    // feature registry and three state blocks as the evidence the verifier loses nothing.
+    //
+    // 📐 Measured in the agreement harness before the fix: **20 unverified findings over 1,470
+    // cases from 2 rules, 4 of them this exact swap**, all four green.
+    const plan = storedPlan()
+    const judged = rulesFor(plan, 'stored')
+    const victim = judged.find(r => PREDICATES[r])!
+    const original = PREDICATES[victim]
+    try {
+      PREDICATES[victim] = () => { throw new Error('planted') }
+      // The old checker reported a REAL finding for the same rule.
+      const oldViolation = [{ code: victim, severity: 'error', week: 1, day: null, message: 'real' }]
+      const row = shadowVerifyPlan(plan, oldViolation as never, `${GENERATED}T00:00:00Z`)
+      expect(row.assessed).toBe(true)
+      if (!row.assessed) return
+      expect(row.lost, 'a real finding replaced by a decline is a LOSS').toContain(victim)
+      expect(row.unverified_only, 'and the decline is named, so the loss has a reason').toContain(victim)
+      expect(row.escalated, 'a decline is not an escalation either').not.toContain(victim)
+    } finally {
+      if (original) PREDICATES[victim] = original; else delete PREDICATES[victim]
+    }
+  })
+
+  it('🔴 the summary AGGREGATES the decline, because a per-row field nobody sums is invisible', () => {
+    // The shape of this whole item: the per-row data was there to be read and the figure a founder
+    // reads did not read it. `plans_unverified_only` sits beside `plans_lost` for that reason.
+    const plan = storedPlan()
+    const judged = rulesFor(plan, 'stored')
+    const victim = judged.find(r => PREDICATES[r])!
+    const original = PREDICATES[victim]
+    try {
+      PREDICATES[victim] = () => { throw new Error('planted') }
+      const summary = summariseVerifierShadow([shadowVerifyPlan(plan, [], `${GENERATED}T00:00:00Z`)])
+      expect(summary.plans_unverified_only, 'the decline never reached the summary').toBe(1)
+      expect(summary.unverified_only_by_rule[victim], 'and it is attributed to its rule').toBe(1)
+      // ⚠️ NOT `plans_strict_only === 0`: the fixture legitimately gains other codes, and asserting
+      // the total would have failed for a reason that has nothing to do with this item. The precise
+      // claim is that the DECLINED rule is not among them.
+      expect(summary.strict_only_by_rule[victim], 'the declined rule must not count as a gain').toBeUndefined()
+    } finally {
+      if (original) PREDICATES[victim] = original; else delete PREDICATES[victim]
+    }
+  })
+
+  it('🔻 `unverified_only` and `unverified` agree by CONSTRUCTION, and the arm says so', () => {
+    // Code review: the `!verdictRules.has(r)` filter in `unverified_only` can never remove anything,
+    // because `verifyPlan`'s catch replaces a rule's whole result with one decline — so a rule has
+    // verdicts or exactly one decline, never both. The filter is kept for the day that changes, and
+    // this arm is what makes that day loud instead of silent.
+    const plan = storedPlan()
+    const judged = rulesFor(plan, 'stored')
+    const victim = judged.find(r => PREDICATES[r])!
+    const original = PREDICATES[victim]
+    try {
+      PREDICATES[victim] = () => { throw new Error('planted') }
+      const row = shadowVerifyPlan(plan, [], `${GENERATED}T00:00:00Z`)
+      expect(row.assessed).toBe(true)
+      if (!row.assessed) return
+      expect(row.unverified_only.length, 'a decline never coexists with a verdict for the same rule')
+        .toBe(row.unverified)
     } finally {
       if (original) PREDICATES[victim] = original; else delete PREDICATES[victim]
     }

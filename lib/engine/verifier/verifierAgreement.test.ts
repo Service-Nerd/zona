@@ -26,13 +26,35 @@ import { GENERATION_CONFIG, raceDistanceKey } from '@/lib/plan/generationConfig'
 import { hasInjuryKeyword, VOLUME_CAPPED_INJURY_KEYWORDS } from '@/lib/plan/injuryScope'
 import { BENCHMARK_VDOT_MAX } from '@/lib/plan/benchmarkCheck'
 import { RULES } from '@/lib/engine/catalogue/rules'
-import { verifyPlan, PORTED_RULES, BASE_BUILD_RULES, MAINTENANCE_RULES } from './verifyPlan'
+import { verifyPlan, PORTED_RULES, BASE_BUILD_RULES, MAINTENANCE_RULES, isUnverified } from './verifyPlan'
 // ADR-027 B3 D3 — the mutation reads the tolerance from its OWNER, not from a re-export of it.
 import { checkParam } from '@/lib/engine/catalogue/checkParams'
 import { buildRunnerProfile, factsFromInput } from '@/lib/engine/profile/buildRunnerProfile'
 
 const clone = (p: Plan): Plan => JSON.parse(JSON.stringify(p))
-const key = (rule: string, week: number, day: string | null | undefined, sev: string) => `${rule}|${week}|${day ?? '-'}|${sev}`
+/**
+ * The `unverified` flag is part of a finding's identity (`VERIFIER-UNVERIFIED-KEY-COLLISION-01`,
+ * 2026-11-27): a decline is not a verdict, so it must not be able to stand in for one.
+ *
+ * 🔴 **AND IT IS DEFENSIVE, NOT THE FIX — CODE REVIEW MEASURED THAT AND I HAD CLAIMED OTHERWISE.**
+ * I wrote that a real finding replaced by a decline was "a no-op to the diff" because both carry the
+ * same four values. **It is not, for any swap that actually occurs:** in all **6** real
+ * decline-over-verdict cases the old key is `INV-PLAN-PEAK-IN-PEAK-PHASE|1|-|warn` against a decline
+ * of `…|0|-|error` (`invariants.ts` pushes `week: highest.n` from a list filtered to `w.n > 0`, at
+ * `warn` for maintenance), so the keys **could never have matched**. Suppressing this suffix leaves
+ * gained/lost/diverged byte-identical for all 30 `STRICT_DIVERGENCES` entries. Only the collision
+ * arm below reads the marker.
+ *
+ * 📐 Measured FROM THIS HARNESS (not a smaller probe — my first figures were `perGroup 4` with the
+ * base mutations only and I published them as the harness's): **8,737 cases, 75 unverified findings
+ * from 3 rules** — `PEAK-IN-PEAK-PHASE` 60, `PEAK-OVER-BASE` 13, `PEAK-VOLUME-FLOOR-LONG-RACES` 2 —
+ * **and 6 of them land where the old checker had a verdict.**
+ *
+ * ⚠️ The marker is APPENDED only when true, so every key for a real finding is byte-identical to
+ * before and no existing comparison moves.
+ */
+const key = (rule: string, week: number, day: string | null | undefined, sev: string, unverified = false) =>
+  `${rule}|${week}|${day ?? '-'}|${sev}${unverified ? '|unverified' : ''}`
 
 /** Breakages the shared liveness battery does not make, added for ported rules it cannot wake or whose
  *  line it never reaches. Kept here, not in `invariantLiveness.ts`, so the liveness baseline does not move.
@@ -1133,7 +1155,7 @@ function build() {
       old: old.map(v => ({ rule: v.code, k: key(v.code, v.week, v.day, v.severity) })),
       eve: raceEveDays.get(c.plan) ?? null,
       extra: c.extra ?? null,
-      new: verifyPlan(c.plan, { input: c.input, profile: buildRunnerProfile(factsFromInput(c.input), { asOf: c.asOf, timezone: null, planStart: c.planStart }) }, 'saved').map(f => ({ rule: f.rule_id as string, k: key(f.rule_id, f.week, f.day, f.severity), detail: f.detail })) }]
+      new: verifyPlan(c.plan, { input: c.input, profile: buildRunnerProfile(factsFromInput(c.input), { asOf: c.asOf, timezone: null, planStart: c.planStart }) }, 'saved').map(f => ({ rule: f.rule_id as string, k: key(f.rule_id, f.week, f.day, f.severity, isUnverified(f)), detail: f.detail })) }]
   })
 }
 
@@ -1233,7 +1255,7 @@ const STRICT_DIVERGENCES: Record<string, StrictDivergence> = {
     ruling: 'C1',
     direction: 'both',
     reach: 'reached',
-    why: '§23 compares peak volume with week 1\'s, and `validatePlan` read both ends off `w.weekly_km` — the plan\'s LABEL for a week\'s volume, where `INV-PLAN-WEEKLY-KM-MATCHES-SESSIONS` exists precisely because the label and the placed sessions can differ. Both ends are now `deliveredKm`. 📐 122 gained / 46 lost across the battery, 0 and 0 on the 37 valid plans. `both` is arithmetic, not a hedge: the ratio has a label on each end, so moving to delivered can raise it or lower it depending on which week the plan over-states. ⚠️ An unpriceable week is UNVERIFIED, not 0 — `?? 0` on a RATIO would read as "peak ran no distance" and fire, or as "week 1 ran none" and divide by zero.',
+    why: '§23 compares peak volume with week 1\'s, and `validatePlan` read both ends off `w.weekly_km` — the plan\'s LABEL for a week\'s volume, where `INV-PLAN-WEEKLY-KM-MATCHES-SESSIONS` exists precisely because the label and the placed sessions can differ. Both ends are now `deliveredKm`. 📐 **122 gained / 34 lost** across the battery (re-measured 2026-11-27 under `VERIFIER-UNVERIFIED-KEY-COLLISION-01`; this entry said 46 lost, which was true when written and had gone stale — nothing compares a register number against the run), 0 and 0 on the 37 valid plans. `both` is arithmetic, not a hedge: the ratio has a label on each end, so moving to delivered can raise it or lower it depending on which week the plan over-states. ⚠️ An unpriceable week is UNVERIFIED, not 0 — `?? 0` on a RATIO would read as "peak ran no distance" and fire, or as "week 1 ran none" and divide by zero.',
   },
   'INV-PLAN-PEAK-VOLUME-FLOOR-LONG-RACES': {
     ruling: 'C1',
@@ -1245,7 +1267,7 @@ const STRICT_DIVERGENCES: Record<string, StrictDivergence> = {
     ruling: 'C1',
     direction: 'both',
     reach: 'reached',
-    why: '"Is the runner\'s biggest week inside the peak phase" is a question about what they run, and `validatePlan` answered it by comparing one label with another. Now every week\'s volume is its placed sessions. 📐 THE LARGEST NUMBER IN THIS REGISTER — 345 gained / 215 lost — and the reason is the corpus, not the fix: the battery\'s volume mutations (invert the curve, make every week a peak, strip a session) move a week\'s LABEL and its SESSIONS independently, so on a deliberately-broken plan the two readings disagree almost everywhere. On the 37 valid plans it is 0 and 0, with the rule firing 3× on each side. ⚠️ `volume_profile` still sets the severity and is NOT converted: see `levelIntensity`\'s note for the measurement that refused it.',
+    why: '"Is the runner\'s biggest week inside the peak phase" is a question about what they run, and `validatePlan` answered it by comparing one label with another. Now every week\'s volume is its placed sessions. 📐 THE LARGEST NUMBER IN THIS REGISTER — **342 gained / 216 lost** (re-measured 2026-11-27; this entry said 345/215) — and the reason is the corpus, not the fix: the battery\'s volume mutations (invert the curve, make every week a peak, strip a session) move a week\'s LABEL and its SESSIONS independently, so on a deliberately-broken plan the two readings disagree almost everywhere. On the 37 valid plans it is 0 and 0, with the rule firing 3× on each side. ⚠️ `volume_profile` still sets the severity and is NOT converted: see `levelIntensity`\'s note for the measurement that refused it.',
   },
   'INV-PLAN-QUALITY-NOT-ZERO': {
     ruling: 'C1',
@@ -1477,6 +1499,67 @@ describe('ADR027-B3-VERIFIER — agreement with validatePlan, per ported rule', 
     expect(hits.get(GOAL_CASE) ?? 0, GOAL_CASE).toBeGreaterThan(0)
     expect(tally.base + tally.refused + tally.threw.length).toBe(tally.rows)
     expect(tally.threw.length, tally.threw.slice(0, 3).join(', ')).toBeLessThanOrEqual(Math.ceil(tally.rows / 10))
+  })
+
+  it('🔴 no rule REPLACES a real finding with "could not evaluate" — the collision, named directly', () => {
+    // 🔴 THIS ARM IS THE WHOLE FIX. The key marker is defensive (see `key` above: the swaps that
+    // actually occur differ in week AND severity, so they never collided), and for a rule carrying a
+    // `both` STRICT_DIVERGENCES entry the harness permits gains and losses either way — so a decline
+    // landing where the old checker had a verdict sits inside a declared divergence and the per-rule
+    // arm is green. **A guard that absorbs a regression hides it**, so the collision is asserted on
+    // its own terms, for every rule, regardless of what any entry declares.
+    //
+    // 📐 Measured from THIS harness: **8,737 cases, 75 unverified findings from 3 rules**
+    // (`PEAK-IN-PEAK-PHASE` 60, `PEAK-OVER-BASE` 13, `PEAK-VOLUME-FLOOR-LONG-RACES` 2), of which
+    // **6 are this swap, all on `PEAK-IN-PEAK-PHASE`**. ⚠️ My first figures (20 / 1,470 / 2 rules /
+    // 4 swaps) came from a `perGroup 4` probe with the base mutations only and were published as
+    // this harness's. **A number measured on a different population is a different number.**
+    //
+    // ⚠️ A decline is legitimate — `deliveredKmAll` refuses a week whose sessions cannot be priced,
+    // and silence on a floor would read as "satisfied". What is NOT legitimate is a decline landing
+    // where the old checker had a verdict and no register saying so. Hence the allowlist: each entry
+    // is a (rule, reason) pair, and a new one has to be argued rather than absorbed.
+    const DECLINE_OVER_VERDICT: Record<string, string> = {
+      // C1 moved both ends of §23's ratio and §78's peak onto `deliveredKm`, which REFUSES a week
+      // whose sessions cannot be priced where `w.weekly_km` always had a number. On a mutated plan
+      // that strips a session's distance the old checker still compares labels and reports; the
+      // verifier declines. That is the ruling working, and the register entry for each already
+      // declares `both` — this names the sub-case so it cannot grow silently.
+      'INV-PLAN-PEAK-IN-PEAK-PHASE': 'C1: `deliveredKm` refuses an unpriceable week where `weekly_km` always had a number',
+      // ⚠️ `INV-PLAN-PEAK-OVER-BASE` WAS DECLARED HERE AND THE ANTI-ROT ARM REMOVED IT. It emits an
+      // unverified finding (1 of the 20) but never where the old checker had a verdict, so the pair
+      // is not reached. I added it from the same ruling by symmetry — which is the habit the arm
+      // exists to break, because an unreachable allowlist entry reads as a case somebody checked.
+    }
+    const swaps = new Map<string, number>()
+    for (const c of runs) {
+      const newFor = new Map<string, { unv: boolean }[]>()
+      for (const n of c.new) {
+        const arr = newFor.get(n.rule) ?? []
+        // ⚠️ `isUnverified`, the VERIFIER's own predicate — not `endsWith('|unverified')` on the key.
+        // A second spelling of one convention is the exact defect `UNVERIFIED_PREFIX` was created to
+        // remove the day before, and code review caught me reintroducing it one layer up.
+        arr.push({ unv: isUnverified(n) })
+        newFor.set(n.rule, arr)
+      }
+      for (const rule of Array.from(new Set(c.old.map((o: { rule: string }) => o.rule)))) {
+        const got = newFor.get(rule)
+        if (!got?.length || got.some(g => !g.unv)) continue
+        swaps.set(rule, (swaps.get(rule) ?? 0) + 1)
+      }
+    }
+    const undeclared = Array.from(swaps).filter(([r]) => !(r in DECLINE_OVER_VERDICT))
+    expect(undeclared.map(([r, n]) => `${r} on ${n} case(s)`),
+      'a rule that stopped being able to judge where the old checker had a verdict, with nothing declaring it').toEqual([])
+    // ⚠️ AND THE ALLOWLIST MUST NOT ROT: an entry that no longer happens is a reason nobody checked.
+    const inert = Object.keys(DECLINE_OVER_VERDICT).filter(r => !swaps.has(r))
+    expect(inert, 'declared decline-over-verdict that no case produces — remove it').toEqual([])
+    // 🔴 AND THE COUNT IS PINNED, because "cannot grow silently" was not what this arm checked:
+    // 6 swaps could have become 60 under the same declaration and stayed green. Code review.
+    // Raising it is a measurement to state in the commit, exactly like a baseline.
+    expect(Object.fromEntries(swaps), 'the decline-over-verdict count moved').toEqual({ 'INV-PLAN-PEAK-IN-PEAK-PHASE': 6 })
+    // The population must be non-empty, or this arm is green by construction.
+    expect(runs.length, 'no cases to compare').toBeGreaterThan(100)
   })
 
   it('🔴 ADR027-B3-STRICT-01 — every declared divergence is live, ported, and reached exactly as declared', () => {

@@ -6,6 +6,53 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-11-27 — VERIFIER-UNVERIFIED-KEY-COLLISION-01: "I couldn't evaluate this" looked exactly like "I checked and it's fine"
+
+**The new plan checker has a contract for giving up.** If a rule crashes, it reports `unverified:`
+rather than passing silently — because silence on a safety check reads as "satisfied", which is the
+worst possible lie. That mechanism is a year of hard-won doctrine in one word.
+
+**Both guards that compare the new checker to the old one were blind to it.** The test harness
+compares findings by rule, week, day and severity. The detail text is excluded — and "I couldn't
+evaluate this" carries the same rule, week, day and severity as a real plan-level finding. The
+nightly live check joins on rule id alone. So a rule that *stopped being able to judge* was
+indistinguishable from a rule that judged and found nothing.
+
+**It was already happening.** 75 declines across 8,737 harness cases, and six of them were a real
+finding from the old checker replaced by a shrug from the new one. All six green. They were hiding
+inside a divergence we'd already declared as "this rule legitimately differs", so nothing looked
+wrong anywhere.
+
+🔴 **The arm I wrote the day before had enshrined it as correct.** It asserted that a crashed rule
+shows up in the "rules the new checker fires that the old one doesn't" bucket, with a comment
+calling that loud and good. It is the opposite: that bucket *is* the number on the approval request,
+and a rule that couldn't evaluate hasn't fired anything.
+
+**Fixing it meant re-measuring the fleet, which is where the real result was.** The records said one
+live plan would gain a finding under the new checker, and that it was the one plan with a known
+level mismatch — so "zero comparable plans affected". Re-measured today: **zero plans gain anything,
+and the level mismatch is gone**, because a fix shipped two days ago. The records were stale in the
+*runner's favour* — the fleet is cleaner than we'd been claiming.
+
+🔴 **And I reported a wrong number on the way there.** My probe called the baseline validator with a
+`GeneratorInput` in a slot that takes a *week number*, so it compared against garbage and told me one
+plan was flagged by an undeclared rule. I passed that to the founder as a finding before catching it.
+The two checkers actually agree on that plan; the gap was entirely in what I compared against. Same
+lesson as five days ago, word for word.
+
+🔑 **The mechanism is worth more than the mistake.** `tsc` does not read `scripts/.tmp/` — a file
+containing `const x: number = 'a string'` passes there and fails one directory up, because
+TypeScript's globs skip dot-prefixed directories. **That folder is where every throwaway measurement
+probe in this repo lives** — the ones whose numbers end up in board submissions and records. A probe
+there can pass the wrong type into a real function and hand back a plausible, wrong figure, silently.
+Filed, and deliberately not "fixed" by adding it to the typecheck: a half-finished probe would then
+break every build and push, and this codebase has four recorded cases of a guard that fires on
+ordinary work being switched off entirely.
+
+Five mutations, five red, including the collision arm falsified by deleting its one declaration.
+
+---
+
 ## 2026-11-27 — ADR027-B3-STRICT-B10: the item was wrong, my fix was worse, and the real find was underneath both
 
 **The board row said the quality-variety bound counted weeks it did not judge.** Race weeks are
