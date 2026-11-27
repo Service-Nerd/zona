@@ -16,6 +16,7 @@ import { RULES, rulesSkippedBy } from '@/lib/engine/catalogue/rules'
 import { GENERATION_CONFIG, raceDistanceKey } from '@/lib/plan/generationConfig'
 import { isLongRun, isShakeout, isSecondaryQuality, isQualitySession, isStructuredSession, isTimeTrial, isVo2maxSession, classifyStimulus, isHardEffort, workClassFor } from '@/lib/plan/sessionRole'
 import { V1_SESSION_CATALOGUE } from '@/lib/plan/sessionCatalogueData'
+import { checkParam } from '@/lib/engine/catalogue/checkParams'
 import { FUELLING_PRACTICE_NOTE, ULTRA_FUELLING_PREFIX } from '@/lib/plan/fuellingNotes'
 import { PLAN_SIGNATURES } from '@/lib/plan/planSignatures'
 import { normaliseDays } from '@/lib/plan/days'
@@ -1243,8 +1244,9 @@ Object.assign(PREDICATES, BATCH_12)
 /** §90: an injury on the profile that the delivered-volume caps apply to, through the owner (a copied injury
  *  predicate drifted from its owner for nine days once, INJURY-GUARD-PREDICATE-01). */
 const deliveredCapInjury = (profile: RunnerProfile) => hasDeliveredCapInjury(profile.injuries?.value ?? [])
-/** ⚠️ A literal in validatePlan, not config: copied so the two agree, and raised with the shakeout RPE cap. */
-export const DELIVERED_ROUNDING_TOLERANCE_PCT = 10
+/** ADR-027 B3 D2/D3 — was a literal here AND twice in `invariants.ts`, three declarations of one
+ *  number with nothing holding them equal. The owner is `CHECK_PARAMS`; this is the read. */
+const DELIVERED_ROUNDING_TOLERANCE_PCT = checkParam('INV-PLAN-INJURY-CAP-DELIVERED', 'delivered_rounding_tolerance_pct')
 
 const BATCH_13: Partial<Record<RuleId, Predicate>> = {
   // §2: for a delivered-cap injury, the week after a deload never exceeds the week before the deload.
@@ -2232,9 +2234,10 @@ const BATCH_27: Partial<Record<RuleId, Predicate>> = {
 }
 Object.assign(PREDICATES, BATCH_27)
 
-/** 🔻 A literal in validatePlan, not in config: the foundation block's week-to-week ceiling (+10%). Copied so the two
- *  checkers agree; raised for the board (FOUNDATION_WEEKLY_INCREASE_PCT says the same today, by coincidence of value). */
-export const FOUNDATION_WEEK_TO_WEEK_LITERAL = 1.10
+/** ADR-027 B3 D2 — "the ramp reads the existing constant" (Coaching Board 2026-11-22). It was a bare
+ *  `1.10` beside a `FOUNDATION_WEEKLY_INCREASE_PCT` of 10 that said the same thing, so the two could
+ *  move apart; now there is one number. Value unchanged: 1 + 10/100. */
+const FOUNDATION_WEEK_TO_WEEK_CEILING = 1 + GENERATION_CONFIG.FOUNDATION_WEEKLY_INCREASE_PCT / 100
 
 /** A row whose paced work (easy steps aside) is all CV-anchored. */
 function rowIsCvAnchored(id: string): boolean {
@@ -2276,7 +2279,7 @@ const BATCH_28: Partial<Record<RuleId, Predicate>> = {
       const prev = fws[i - 1], curr = fws[i]
       const dl = (w: Week) => w.type === 'deload' || w.badge === 'deload'
       if (dl(curr) || dl(prev) || !(prev.weekly_km > 0)) continue
-      if (curr.weekly_km > prev.weekly_km * FOUNDATION_WEEK_TO_WEEK_LITERAL + 0.01) out.push({ rule_id: R, week: curr.n, day: null, detail: 'ramps over the week-to-week ceiling' })
+      if (curr.weekly_km > prev.weekly_km * FOUNDATION_WEEK_TO_WEEK_CEILING + 0.01) out.push({ rule_id: R, week: curr.n, day: null, detail: 'ramps over the week-to-week ceiling' })
     }
     return out
   },
@@ -2393,11 +2396,16 @@ function pacedRepMain(s: Session): number | null {
   return total
 }
 
-/** 🔻 A literal in validatePlan: the two fixed-shape threshold rows whose main set is summed from their steps. */
-const FIXED_SHAPE_ROWS = new Set(['threshold_pyramid', 'threshold_ladder'])
-
+/** ADR-027 B3 D3 — the membership is the catalogue ROW's `sized_from_steps`, not a set here. It is
+ *  WIDER than the two ids this replaced (the producer's four), and the move is measured inert: the
+ *  two added rows are priced from DISTANCE steps, which the loop below cannot resolve, so they
+ *  return null at the same place they used to return null at the membership test.
+ *  🔻 `CHECK-FIXED-SHAPE-DISTANCE-STEP-01` — that is a real blind spot (a 999-minute duration on an
+ *  `hm_pace_intervals` session raises 0 findings in EITHER checker), filed with its numbers and not
+ *  closed here, because closing it changes a stated duration a runner reads. */
 function fixedShapeMain(s: Session): number | null {
-  if (!s.catalogue_id || !FIXED_SHAPE_ROWS.has(s.catalogue_id)) return null
+  if (!s.catalogue_id) return null
+  if (!V1_SESSION_CATALOGUE.find(r => r.id === s.catalogue_id)?.sized_from_steps) return null
   const blocks = s.derived_set?.blocks
   if (!blocks?.length) return null
   let mins = 0
@@ -2470,10 +2478,11 @@ const BATCH_30: Partial<Record<RuleId, Predicate>> = {
       if (mid != null) {
         if (says.vo2) {
           const e = danielsPace(plan.meta.vdot, 0.975)
-          if (Math.abs(mid - e) / e > 0.05) out.push({ rule_id: R, week: w.n, day, detail: 'VO2 pace off vVO2max' })
+          // ADR-027 B3 D3 — the tolerance is the RULE's parameter; 0.975 is a Daniels fraction (D1, exempt).
+          if (Math.abs(mid - e) / e > checkParam(R, 'vo2_pace_tolerance_pct') / 100) out.push({ rule_id: R, week: w.n, day, detail: 'VO2 pace off vVO2max' })
         } else if (says.threshold) {
           const e = danielsPace(plan.meta.vdot_training_anchor ?? plan.meta.vdot, 0.855)
-          if (Math.abs(mid - e) / e > 0.03) out.push({ rule_id: R, week: w.n, day, detail: 'threshold pace off T' })
+          if (Math.abs(mid - e) / e > checkParam(R, 'threshold_pace_tolerance_pct') / 100) out.push({ rule_id: R, week: w.n, day, detail: 'threshold pace off T' })
         }
       }
     }
@@ -2487,14 +2496,19 @@ const BATCH_30: Partial<Record<RuleId, Predicate>> = {
     if (mid == null) return []
     const t = danielsPace(plan.meta.vdot_training_anchor ?? plan.meta.vdot, 0.855)
     const d = ((t - mid) / t) * 100
-    return d < 0 || d > 3 ? [{ rule_id: 'INV-PLAN-OVER-UNDER-MEAN-NEAR-THRESHOLD' as RuleId, week: w.n, day, detail: `${d.toFixed(1)}% from T` }] : []
+    // ADR-027 B3 D3 — §85's own band, named. Signed, never absolute: a mean SLOWER than threshold is
+    // not an over-under, it is a tempo run with a different name.
+    const lo = checkParam('INV-PLAN-OVER-UNDER-MEAN-NEAR-THRESHOLD', 'faster_than_t_min_pct')
+    const hi = checkParam('INV-PLAN-OVER-UNDER-MEAN-NEAR-THRESHOLD', 'faster_than_t_max_pct')
+    return d < lo || d > hi ? [{ rule_id: 'INV-PLAN-OVER-UNDER-MEAN-NEAR-THRESHOLD' as RuleId, week: w.n, day, detail: `${d.toFixed(1)}% from T` }] : []
   })),
 
   // §24b: on a 5K/10K time goal, a peak long run within two weeks of the taper carries no segment faster than HM pace.
   'INV-PLAN-5K10K-LR-PACE-CAP': (plan, { input, profile }) => {
     const dk = raceDistanceKey(input.race_distance_km)
     if (profile.race.goal !== 'time_target' || (dk !== '5K' && dk !== '10K') || !plan.meta.vdot) return []
-    const ceiling = danielsPace(plan.meta.vdot * 0.97, 0.84)
+    // ADR-027 B3 D2 — the VDOT discount is named; the 0.84 beside it is Daniels' HM fraction (D1, exempt).
+    const ceiling = danielsPace(plan.meta.vdot * checkParam('INV-PLAN-5K10K-LR-PACE-CAP', 'vdot_discount'), 0.84)
     const taper = plan.weeks.find(w => w.phase === 'taper')
     return plan.weeks.flatMap(w => {
       if (w.phase !== 'peak' || w.type === 'deload' || (taper ? taper.n - w.n : 999) > 2) return []
@@ -2508,11 +2522,14 @@ const BATCH_30: Partial<Record<RuleId, Predicate>> = {
 }
 Object.assign(PREDICATES, BATCH_30)
 
-/** 🔻 Literals in validatePlan, not config, copied so the two checkers agree and raised for the board: the race-week
- *  shakeout's RPE cap, and the fast-float VO2max rows (with the one whose float must be run). */
-export const RACE_WEEK_SHAKEOUT_MAX_RPE_LITERAL = 3
-const CONTINUOUS_VO2_ROWS = new Set(['intervals_rolling', 'intervals_30_30'])
-const RUN_FLOAT_ROWS = new Set(['intervals_rolling'])
+/** ADR-027 B3 D2 — §30's RPE ceiling, named in `CHECK_PARAMS`. Its MINUTES half was already
+ *  `GENERATION_CONFIG.RACE_WEEK_SHAKEOUT_MAX_MINS`; the RPE half is the asymmetry the sitting caught. */
+const RACE_WEEK_SHAKEOUT_MAX_RPE = checkParam('INV-PLAN-RACE-WEEK-SHAKEOUT-CAP', 'max_rpe')
+/** ADR-027 B3 D3 — §88's two memberships, read from the ROW so this and `invariants.ts` cannot drift. */
+const isContinuousVo2Row = (id?: string | null) =>
+  !!id && !!V1_SESSION_CATALOGUE.find(r => r.id === id)?.continuous_vo2
+const isRunFloatRow = (id?: string | null) =>
+  !!id && !!V1_SESSION_CATALOGUE.find(r => r.id === id)?.float_is_run
 
 const BATCH_31: Partial<Record<RuleId, Predicate>> = {
   // §30: the race-week shakeout stays under RACE_WEEK_SHAKEOUT_MAX_MINS and an easy RPE. Race week is the plan's
@@ -2525,19 +2542,19 @@ const BATCH_31: Partial<Record<RuleId, Predicate>> = {
       if (!s || !isShakeout(s)) return []
       const out: Raw[] = []
       if (s.duration_mins != null && s.duration_mins > GENERATION_CONFIG.RACE_WEEK_SHAKEOUT_MAX_MINS) out.push({ rule_id: 'INV-PLAN-RACE-WEEK-SHAKEOUT-CAP', week: rw.n, day, detail: 'shakeout over its minutes' })
-      if (s.rpe_target != null && s.rpe_target > RACE_WEEK_SHAKEOUT_MAX_RPE_LITERAL) out.push({ rule_id: 'INV-PLAN-RACE-WEEK-SHAKEOUT-CAP', week: rw.n, day, detail: 'shakeout over its RPE' })
+      if (s.rpe_target != null && s.rpe_target > RACE_WEEK_SHAKEOUT_MAX_RPE) out.push({ rule_id: 'INV-PLAN-RACE-WEEK-SHAKEOUT-CAP', week: rw.n, day, detail: 'shakeout over its RPE' })
       return out
     })
   },
 
   // §88: a fast-float VO2max session has a float step, prescribed as a ceiling, and run where the row says run.
   'INV-PLAN-VO2MAX-FLOAT-IS-A-CEILING': plan => plan.weeks.flatMap(w => daysOf(w).flatMap(({ day, session: s }) => {
-    if (!s?.derived_set || !CONTINUOUS_VO2_ROWS.has(s.catalogue_id ?? '')) return []
+    if (!s?.derived_set || !isContinuousVo2Row(s.catalogue_id)) return []
     const float = s.derived_set.blocks.flatMap(b => b.steps ?? []).find(st => st.role === 'recovery')
     if (!float) return [{ rule_id: 'INV-PLAN-VO2MAX-FLOAT-IS-A-CEILING' as RuleId, week: w.n, day, detail: 'no float step' }]
     const out: Raw[] = []
     if (float.pace_mode !== 'ceiling') out.push({ rule_id: 'INV-PLAN-VO2MAX-FLOAT-IS-A-CEILING', week: w.n, day, detail: 'float not a ceiling' })
-    if (RUN_FLOAT_ROWS.has(s.catalogue_id ?? '') && float.modality !== 'run') out.push({ rule_id: 'INV-PLAN-VO2MAX-FLOAT-IS-A-CEILING', week: w.n, day, detail: 'float not run' })
+    if (isRunFloatRow(s.catalogue_id) && float.modality !== 'run') out.push({ rule_id: 'INV-PLAN-VO2MAX-FLOAT-IS-A-CEILING', week: w.n, day, detail: 'float not run' })
     return out
   })),
 }

@@ -1357,8 +1357,12 @@ function fixedShapePlan(
   // MP-BLOCKS-ONE-BLOCK-01 (§19 Am.2, Coaching Board 2026-10-28) — `mp_blocks` joins them: it is now one continuous
   // 4 km at goal pace, a fixed shape priced from its own literal step. Dose unchanged (it sized to one 4 km block for
   // every runner as a reps row); the 3-minute jog after it is gone.
-  const FIXED_SHAPE_SIZED = new Set(['threshold_pyramid', 'threshold_ladder', 'hm_pace_intervals', 'mp_blocks'])
-  if (!row || !FIXED_SHAPE_SIZED.has(row.id) || !isV2Structure(row.main_set_structure)) return null
+  // ADR-027 B3 D3 — the allowlist is now the ROW's own `sized_from_steps`, not a set written out
+  // here. It held the same four ids; the two checkers held a DIFFERENT two, which is what the
+  // sitting's "a row attribute, not a list in the checker" removes. Still an explicit opt-in per
+  // row rather than "every fixed row", because a row joining it changes the length the runner is
+  // told, which is a board matter — the paragraph above is that reasoning and it is unchanged.
+  if (!row?.sized_from_steps || !isV2Structure(row.main_set_structure)) return null
   const parsed = StructureV2Schema.safeParse(row.main_set_structure)
   if (!parsed.success) return null
   let totalSecs = 0

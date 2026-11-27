@@ -26,7 +26,9 @@ import { GENERATION_CONFIG, raceDistanceKey } from '@/lib/plan/generationConfig'
 import { hasInjuryKeyword, VOLUME_CAPPED_INJURY_KEYWORDS } from '@/lib/plan/injuryScope'
 import { BENCHMARK_VDOT_MAX } from '@/lib/plan/benchmarkCheck'
 import { RULES } from '@/lib/engine/catalogue/rules'
-import { verifyPlan, PORTED_RULES, DELIVERED_ROUNDING_TOLERANCE_PCT, BASE_BUILD_RULES, MAINTENANCE_RULES } from './verifyPlan'
+import { verifyPlan, PORTED_RULES, BASE_BUILD_RULES, MAINTENANCE_RULES } from './verifyPlan'
+// ADR-027 B3 D3 — the mutation reads the tolerance from its OWNER, not from a re-export of it.
+import { checkParam } from '@/lib/engine/catalogue/checkParams'
 import { buildRunnerProfile, factsFromInput } from '@/lib/engine/profile/buildRunnerProfile'
 
 const clone = (p: Plan): Plan => JSON.parse(JSON.stringify(p))
@@ -580,7 +582,7 @@ const EXTRA_MUTATIONS: { name: string; apply: (p: Plan, input: GeneratorInput) =
       const lk = (w: Plan['weeks'][number]) => { const l = Object.values(w.sessions ?? {}).find(s => s && isLongRun(s)); return sessionKmSelfPaced(l) ?? 0 }
       const before = p.weeks[k - 1].weekly_km - lk(p.weeks[k - 1])
       if (before <= 0) return false
-      const pct = GENERATION_CONFIG.INJURY_WEEKLY_INCREASE_CAP_PCT + DELIVERED_ROUNDING_TOLERANCE_PCT + 1
+      const pct = GENERATION_CONFIG.INJURY_WEEKLY_INCREASE_CAP_PCT + checkParam('INV-PLAN-INJURY-CAP-DELIVERED', 'delivered_rounding_tolerance_pct') + 1
       const rise = Math.max(before * pct / 100, GENERATION_CONFIG.DELIVERED_ABSOLUTE_FLOOR_KM + 0.5)
       p.weeks[k].weekly_km = Math.round((before + rise + lk(p.weeks[k])) * 10) / 10; return true
     }],

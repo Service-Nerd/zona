@@ -32,6 +32,7 @@ import { hasDeliveredCapInjury, hasVolumeCappedInjuryHistory, hasInjuryKeyword }
 import { assessBaseBuild } from './baseVolume'
 import { PLAN_SIGNATURES } from './planSignatures'
 import { V1_SESSION_CATALOGUE } from './sessionCatalogueData'
+import { checkParam } from '@/lib/engine/catalogue/checkParams'
 import { requiredPaceAnchors } from './sessionCatalogueData'
 import { catalogueRowFor } from './catalogueLink'
 import { isEffortGovernedRow } from './hrBand'
@@ -476,8 +477,14 @@ const KNOWN_SHAPE_WORDS = new Set(
  *  The derived set is what the runner is actually shown.
  */
 function fixedShapeMainMinutes(session: Session): number | null {
-  const FIXED_SHAPE_SIZED = new Set(['threshold_pyramid', 'threshold_ladder'])
-  if (!session.catalogue_id || !FIXED_SHAPE_SIZED.has(session.catalogue_id)) return null
+  // ADR-027 B3 D3 — the membership is the ROW's `sized_from_steps`, one owner shared with the
+  // producer and the verifier. ⚠️ IT IS WIDER THAN THE SET THIS REPLACED (four rows, not two), and
+  // the move is still inert: `hm_pace_intervals` and `mp_blocks` are priced from DISTANCE steps,
+  // which the loop below cannot resolve, so both return null at the same place they used to return
+  // null at the membership test. That blind spot is `CHECK-FIXED-SHAPE-DISTANCE-STEP-01` — measured,
+  // filed, and not closed here, because closing it changes what a runner is told.
+  if (!session.catalogue_id) return null
+  if (!V1_SESSION_CATALOGUE.find(r => r.id === session.catalogue_id)?.sized_from_steps) return null
   const blocks = session.derived_set?.blocks
   if (!blocks?.length) return null
   let mins = 0
@@ -801,19 +808,28 @@ function paceFromVdot(vdot: number, fraction: number): number {
 const DAY_ORDER: Day[] = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']
 
 /**
- * §30's RPE ceiling for a race-week shakeout. Inline rather than in
- * GENERATION_CONFIG deliberately: it is not a tuning knob, it is the definition
- * of "a wake-up for the legs, not training" — the same class as the structural
- * constants INV-CFG-001 exempts. §30 states it in prose and nothing else reads it.
+ * §30's RPE ceiling for a race-week shakeout, read from its owner in the L2 catalogue
+ * (`CHECK_PARAMS`). ADR-027 B3 D2: it was declared independently HERE and in the verifier.
+ *
+ * ⚠️ THE REASON IT IS STILL NOT IN `GENERATION_CONFIG` IS THE ONE THIS COMMENT ALWAYS GAVE, and it
+ * stands: it is not a tuning knob, it is the definition of "a wake-up for the legs, not training" —
+ * the same class as the structural constants INV-CFG-001 exempts, and §30 states it in prose.
+ * 🔴 What this comment USED to claim and no longer can is "nothing else reads it". The verifier
+ * reads the same entry; that is the whole point of the move, and the sentence had become the
+ * opposite of true while sitting directly above the line that made it so.
  */
-const RACE_WEEK_SHAKEOUT_MAX_RPE = 3
+const RACE_WEEK_SHAKEOUT_MAX_RPE = checkParam('INV-PLAN-RACE-WEEK-SHAKEOUT-CAP', 'max_rpe')
 
 /**
  * §88's continuous fast-float rows. Both are `category: vo2max` shapes whose
  * recovery step is RUN rather than jogged; the float's ceiling is Seiler's
  * condition of approval, not a display detail.
+ *
+ * ADR-027 B3 D3 — the membership is read from the catalogue ROW (`continuous_vo2`), so this and the
+ * verifier cannot hold two answers. ⚠️ Only the LIST moved; the reasoning above is unchanged.
  */
-const CONTINUOUS_VO2MAX_ROWS = new Set(['intervals_rolling', 'intervals_30_30'])
+const isContinuousVo2Row = (id?: string | null) =>
+  !!id && !!V1_SESSION_CATALOGUE.find(r => r.id === id)?.continuous_vo2
 
 /**
  * The float-is-RUN rule is `intervals_rolling`'s alone. §88 states it in that
@@ -822,7 +838,9 @@ const CONTINUOUS_VO2MAX_ROWS = new Set(['intervals_rolling', 'intervals_30_30'])
  * cut applied it to both and the sweep returned 46 violations, all of them
  * "Thirty-thirty"'s float being a jog, which is what a 30-30 is.
  */
-const RUN_FLOAT_ROWS = new Set(['intervals_rolling'])
+/** ADR-027 B3 D3 — read from the ROW (`float_is_run`). The paragraph above is why it is one row. */
+const isRunFloatRow = (id?: string | null) =>
+  !!id && !!V1_SESSION_CATALOGUE.find(r => r.id === id)?.float_is_run
 
 /**
  * Does this session carry §28's stride note? Reads `coach_notes` — the field the
@@ -2206,13 +2224,16 @@ export function validatePlan(plan: Plan, rawInput: GeneratorInput): Violation[] 
         if (mid != null) {
           if (labelImpliesVo2) {
             const expected = paceFromVdot(plan.meta.vdot, 0.975)
-            if (Math.abs(mid - expected) / expected > 0.05) {
+            // ADR-027 B3 D3 — the tolerance is the RULE's parameter, shared with the verifier.
+            // The 0.975 beside it is a Daniels fraction and stays inline (D1, exempt).
+            const vo2Tol = checkParam('INV-PLAN-LABEL-MATCHES-PACE', 'vo2_pace_tolerance_pct')
+            if (Math.abs(mid - expected) / expected > vo2Tol / 100) {
               violations.push({
                 code: 'INV-PLAN-LABEL-MATCHES-PACE',
                 principle_ref: 'CoachingPrinciples §19',
                 severity: 'error',
                 week: w.n, day,
-                message: `"${session.label}" pace midpoint ${mid.toFixed(2)}/km is not within ±5% of vVO2max ${expected.toFixed(2)}/km (raw VDOT ${plan.meta.vdot})`,
+                message: `"${session.label}" pace midpoint ${mid.toFixed(2)}/km is not within ±${vo2Tol}% of vVO2max ${expected.toFixed(2)}/km (raw VDOT ${plan.meta.vdot})`,
                 actual: mid.toFixed(2),
                 expected: expected.toFixed(2),
               })
@@ -2220,13 +2241,14 @@ export function validatePlan(plan: Plan, rawInput: GeneratorInput): Violation[] 
           } else if (labelImpliesThreshold && !labelImpliesVo2) {
             const anchorVdot = plan.meta.vdot_training_anchor ?? plan.meta.vdot
             const expected = paceFromVdot(anchorVdot, 0.855)
-            if (Math.abs(mid - expected) / expected > 0.03) {
+            const thrTol = checkParam('INV-PLAN-LABEL-MATCHES-PACE', 'threshold_pace_tolerance_pct')
+            if (Math.abs(mid - expected) / expected > thrTol / 100) {
               violations.push({
                 code: 'INV-PLAN-LABEL-MATCHES-PACE',
                 principle_ref: 'CoachingPrinciples §19',
                 severity: 'error',
                 week: w.n, day,
-                message: `"${session.label}" pace midpoint ${mid.toFixed(2)}/km is not within ±3% of T-pace ${expected.toFixed(2)}/km (training anchor ${anchorVdot})`,
+                message: `"${session.label}" pace midpoint ${mid.toFixed(2)}/km is not within ±${thrTol}% of T-pace ${expected.toFixed(2)}/km (training anchor ${anchorVdot})`,
                 actual: mid.toFixed(2),
                 expected: expected.toFixed(2),
               })
@@ -2268,15 +2290,18 @@ export function validatePlan(plan: Plan, rawInput: GeneratorInput): Violation[] 
       const deltaPct = ((tPace - mid) / tPace) * 100
       // Signed, not absolute: an over-under whose mean is SLOWER than threshold
       // is not an over-under, it is a tempo run with a name.
-      if (deltaPct < 0 || deltaPct > 3) {
+      // ADR-027 B3 D3 — §85's own band, named in the catalogue beside the rule it governs.
+      const ouLo = checkParam('INV-PLAN-OVER-UNDER-MEAN-NEAR-THRESHOLD', 'faster_than_t_min_pct')
+      const ouHi = checkParam('INV-PLAN-OVER-UNDER-MEAN-NEAR-THRESHOLD', 'faster_than_t_max_pct')
+      if (deltaPct < ouLo || deltaPct > ouHi) {
         violations.push({
           code: 'INV-PLAN-OVER-UNDER-MEAN-NEAR-THRESHOLD',
           principle_ref: 'CoachingPrinciples §85',
           severity: 'error',
           week: w.n, day,
-          message: `Over-under mean pace ${mid.toFixed(2)}/km is ${deltaPct.toFixed(1)}% faster than T-pace ${tPace.toFixed(2)}/km — must be inside 0–3% (§85; the margin §19 was held to rely on)`,
+          message: `Over-under mean pace ${mid.toFixed(2)}/km is ${deltaPct.toFixed(1)}% faster than T-pace ${tPace.toFixed(2)}/km — must be inside ${ouLo}–${ouHi}% (§85; the margin §19 was held to rely on)`,
           actual: `${deltaPct.toFixed(1)}%`,
-          expected: '0–3% faster than T-pace',
+          expected: `${ouLo}–${ouHi}% faster than T-pace`,
         })
       }
     }
@@ -4704,7 +4729,11 @@ export function validatePlan(plan: Plan, rawInput: GeneratorInput): Violation[] 
     // CHECKER flags, not what the engine prescribes): absorbs session-distance
     // rounding + MIN_SESSION_DISTANCE granularity on low-volume weeks, where a
     // single dropped/added easy km is a large percentage.
-    const DELIVERED_ROUNDING_TOLERANCE_PCT = 10
+    // ADR-027 B3 D3 — one owner. ⚠️ THE ARGUMENT IN THE PARAGRAPH ABOVE STANDS and is why this is
+    // NOT a GENERATION_CONFIG key: it tunes what the checker flags, not what the engine prescribes.
+    // What was wrong is that the same number was written out three times — here, again below for
+    // §94, and in the verifier — with nothing holding the copies equal.
+    const DELIVERED_ROUNDING_TOLERANCE_PCT = checkParam('INV-PLAN-INJURY-CAP-DELIVERED', 'delivered_rounding_tolerance_pct')
     const longKmOf = (w: Week) => {
       const l = Object.values(w.sessions).find(s => s && isLongRun(s))
       return sessionKmForCheck(l) ?? 0   // SESSION-KM-02
@@ -4870,7 +4899,8 @@ export function validatePlan(plan: Plan, rawInput: GeneratorInput): Violation[] 
       // on low-volume weeks, where one dropped easy km is a large percentage.
       // Tunes the CHECKER, not what the engine prescribes — so it is inline, not
       // a coaching numeric (CLAUDE.md's tunability test).
-      const DELIVERED_ROUNDING_TOLERANCE_PCT = 10
+      // ADR-027 B3 D3 — §94's entry, its own key beside its own rule (see §90's above).
+      const DELIVERED_ROUNDING_TOLERANCE_PCT = checkParam('INV-PLAN-DELIVERED-RAMP', 'delivered_rounding_tolerance_pct')
       const longKmOf = (w: Week) => {
         const l = Object.values(w.sessions).find(s => s && isLongRun(s))
         return sessionKmForCheck(l) ?? 0   // SESSION-KM-02
@@ -7862,16 +7892,19 @@ export function validatePlan(plan: Plan, rawInput: GeneratorInput): Violation[] 
         const prevIsDeload = prev.type === 'deload' || prev.badge === 'deload'
         if (isDeload || prevIsDeload) continue
         if (prev.weekly_km > 0) {
-          const maxAllowed = prev.weekly_km * 1.10 + 0.01
+          // ADR-027 B3 D2 — "the ramp reads the existing constant" (Coaching Board 2026-11-22).
+          // Value unchanged: 1 + 10/100, where the 10 is FOUNDATION_WEEKLY_INCREASE_PCT.
+          const rampCeiling = 1 + GENERATION_CONFIG.FOUNDATION_WEEKLY_INCREASE_PCT / 100
+          const maxAllowed = prev.weekly_km * rampCeiling + 0.01
           if (curr.weekly_km > maxAllowed) {
             violations.push({
               code: 'INV-PLAN-FOUNDATION-BLOCK',
               principle_ref: 'CoachingPrinciples §57',
               severity: 'error',
               week: curr.n,
-              message: `Foundation block W${curr.n} (${curr.weekly_km}km) increases by more than +10% from W${prev.n} (${prev.weekly_km}km)`,
+              message: `Foundation block W${curr.n} (${curr.weekly_km}km) increases by more than +${GENERATION_CONFIG.FOUNDATION_WEEKLY_INCREASE_PCT}% from W${prev.n} (${prev.weekly_km}km)`,
               actual: `${curr.weekly_km}km`,
-              expected: `≤ ${(prev.weekly_km * 1.10).toFixed(1)}km`,
+              expected: `≤ ${(prev.weekly_km * rampCeiling).toFixed(1)}km`,
             })
           }
         }
@@ -8375,7 +8408,8 @@ export function validatePlan(plan: Plan, rawInput: GeneratorInput): Violation[] 
   // segments at 5K intensity on an easy session.
   // (CoachingPrinciples §24b)
   if (isTimeTarget && (distKey === '5K' || distKey === '10K') && plan.meta.vdot) {
-    const hmCeilingPerKm = paceFromVdot(plan.meta.vdot * 0.97, 0.84)
+    // ADR-027 B3 D2 — the VDOT discount is named; the 0.84 is Daniels' HM fraction (D1, exempt).
+    const hmCeilingPerKm = paceFromVdot(plan.meta.vdot * checkParam('INV-PLAN-5K10K-LR-PACE-CAP', 'vdot_discount'), 0.84)
     const taperPh = plan.weeks.find(w => w.phase === 'taper')
     for (const w of plan.weeks) {
       if (w.phase !== 'peak' || w.type === 'deload') continue
@@ -8984,7 +9018,7 @@ export function validatePlan(plan: Plan, rawInput: GeneratorInput): Violation[] 
   {
     for (const w of plan.weeks) {
       for (const [day, sn] of Object.entries(w.sessions) as [Day, Session | undefined][]) {
-        if (!sn?.derived_set || !CONTINUOUS_VO2MAX_ROWS.has(sn.catalogue_id ?? '')) continue
+        if (!sn?.derived_set || !isContinuousVo2Row(sn.catalogue_id)) continue
         const steps = sn.derived_set.blocks.flatMap(b => b.steps ?? [])
         const float = steps.find(st => st.role === 'recovery')
         if (!float) {
@@ -9010,7 +9044,7 @@ export function validatePlan(plan: Plan, rawInput: GeneratorInput): Violation[] 
             expected: 'ceiling',
           })
         }
-        if (RUN_FLOAT_ROWS.has(sn.catalogue_id ?? '') && float.modality !== 'run') {
+        if (isRunFloatRow(sn.catalogue_id) && float.modality !== 'run') {
           violations.push({
             code: 'INV-PLAN-VO2MAX-FLOAT-IS-A-CEILING',
             principle_ref: 'CoachingPrinciples §88',

@@ -499,7 +499,7 @@ adapter lost a field"* and *"the plan is not valid v2"* are different failures.
 through casts today), `restingHr`, `asPlanV2`. Each takes a v1 or a v2 plan. No consumer is migrated yet
 (B4/B5); the gate that bans raw `plan.meta.<key>` reads lands with that migration.
 
-### L2: the rule catalogue, the event vocabulary and the trigger catalogue (B3 steps 1 and 4)
+### L2: the rule catalogue, its check parameters, the event vocabulary and the trigger catalogue (B3 steps 1, 2b D2/D3 and 4)
 
 **What L2 is:** everything the engine BELIEVES, as data. No predicate, no clock, no I/O. ARCH-ENG-001 —
 layers depend downward only — so **no module here may import `lib/coaching/` or `lib/plan/`**, and that
@@ -514,6 +514,7 @@ constraint is why two vocabularies moved rather than being imported from where t
 | `RUN_UNMATCHED_REASONS` — why a run produced no read | `lib/engine/contracts/runOutcome.ts` | data |
 | `TRIGGER_TYPES` / `DETECTED_TRIGGER_TYPES` — the adjustment trigger vocabulary | `lib/engine/contracts/triggers.ts` | data |
 | `TRIGGER_RULES` + `triggersFor(event)` — the ARCH-ENG-018 trigger catalogue | `lib/engine/catalogue/triggers.ts` | yes |
+| `CHECK_PARAMS` + `checkParam(rule, name)` — a rule's own check parameters | `lib/engine/catalogue/checkParams.ts` | yes: throws on a missing parameter |
 
 **The rule catalogue.** A row carries `id`, `principle_ref`, optional `related_refs`, `scope`, `kind`
 (`hard` / `soft` / `prefer`), `config_key`, `explain`, optional `severity_note` and optional `skipped_by`.
@@ -578,12 +579,50 @@ denominator gives **64 held**, which is wrong, and `heldRules.test.ts` derives t
   by founder decision because ARCH-ENG-018 routes its thresholds to the Coaching Board and its FREQUENCY to
   Design and the SLT.
 
+**The check parameters** (D2/D3, Coaching Board 2026-11-22: *"tolerances become the rule's parameters in
+the catalogue; row lists become a row attribute, not a list in the checker"*). One `CHECK_PARAMS` entry per
+rule, holding the numbers that rule reads, plus a `note` opening `slack` or `prescription`.
+
+- 🔑 **THEY ARE HERE AND NOT IN `GENERATION_CONFIG`, AND THE REASON IS A WRITTEN DISAGREEMENT.**
+  `invariants.ts` carried the opposite argument in two places, citing CLAUDE.md's own tunability test:
+  *"Enforcement tolerance (inline, not a coaching numeric — it tunes what the CHECKER flags, not what the
+  engine prescribes)."* The sitting's conflict scan named only the no-benchmark paces, so it never saw that.
+  Both halves hold: a tolerance is not a prescription, **and** a number written out three times with nothing
+  holding the copies equal is a defect wherever it lives. The fix is ownership in the layer that reads it.
+  A `GENERATION_CONFIG` key would also owe a `CoachingPrinciples` § per number (`configPrincipleSync` fails
+  a new key without one), which is doctrine authoring rather than the naming the sitting ruled, against its
+  own *"No value changes"* condition.
+- **`slack` tunes what the checker flags; `prescription` is doctrine with no § yet.** Two entries are
+  prescription — §85's over-under band and §30's shakeout RPE — and they are the set the board may adopt
+  into config with a §. The gate asserts every note declares one or the other, so the two never blur.
+- **A missing parameter THROWS.** A silent `0` turns every rounding artefact into a finding and a silent
+  `Infinity` turns the rule off; both read as the rule working. Absence is never a value.
+- 🔻 **Not a general home for every literal in a checker.** One entry per number the sitting named, and the
+  gate refuses a parameter neither checker reads — the decorative-config class, three times paid for.
+
+**The row attributes** (the other half of D3). `sized_from_steps`, `continuous_vo2` and `float_is_run` on
+`SessionCatalogueRow` replace three `new Set([...])` written out in two or three modules at once.
+
+- 🔴 **The fixed-shape list had TWO memberships: the producer's four rows against both checkers' two.** Two
+  board rulings put `hm_pace_intervals` and `mp_blocks` on the producer's list deliberately, so the
+  producer's was the true statement and the checkers held the stale copy. The attribute carries the four.
+- ⚠️ **The move is measured inert** (`verify:parity` IDENTICAL over 6,210): both checkers price a fixed-shape
+  main set from CLOSED step lengths and return `null` on a distance step, so the two rows added to their
+  reach still fall out — at the step rather than at the membership test. 🔻 That is
+  `CHECK-FIXED-SHAPE-DISTANCE-STEP-01`: a 999-minute duration on an `hm_pace_intervals` session raises
+  **0 findings in either checker**, where the same mutation on a `threshold_pyramid` raises 22, and 15 of 20
+  corpus sessions of the two blind rows understate their own structure by 10.6–26.4 min (**0 of 44 live
+  plans**). Filed to the board, not closed here: the fix changes a stated duration a runner reads, and the
+  gate's last arm **fails when it is closed**, so it cannot resolve quietly.
+
 **Readers today:** the L5 verifier reads `RULES` (severity, conditional severity, `skipped_by`);
 `lib/plan/invariants.ts` derives `RESHAPE_SKIP_INVARIANTS` from `rulesSkippedBy('stored')`;
 `lib/coaching/planAdjustment.ts` re-exports the trigger vocabulary. **The event and trigger catalogues have
-no runtime reader at all.** Gates: `lib/engine/catalogue/rules.test.ts`,
-`lib/engine/catalogue/triggers.test.ts`, `lib/engine/contracts/engineTruths.test.ts`,
-`lib/coaching/triggerProducers.test.ts`.
+no runtime reader at all.** Gates: `lib/engine/catalogue/catalogue.test.ts`,
+`lib/engine/catalogue/triggers.test.ts`, `lib/engine/catalogue/checkParams.test.ts`,
+`lib/engine/contracts/engineTruths.test.ts`, `lib/coaching/triggerProducers.test.ts`.
+⚠️ **`CHECK_PARAMS` and the row attributes are the first L2 data BOTH checkers read at runtime**, so unlike
+the rule and trigger catalogues this part of L2 is live rather than inert.
 
 ### L5: the independent verifier (B3 step 2)
 

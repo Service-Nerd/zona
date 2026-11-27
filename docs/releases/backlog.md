@@ -2475,7 +2475,47 @@ total nearly cancelled. Full numbers: ADR-027 § B3 step 3.
 🔻 **STILL OPEN, and each for a stated reason:**
 - **B10 — RULED AND BLOCKED ON THE PRODUCER.** *"The bound uses the same weeks it counts"* cannot be done in the verifier: the counts skip race weeks and `meta.quality_pool_sizes` is `number[]`, **one entry per PICK with no week key**, so the verifier cannot tell which entries came from the weeks it counted. Aligning them needs the engine to stamp the week beside each pool size; the sitting ruled this one "fix the verifier, prescription unchanged". The other alignment is to COUNT race-week quality, which changes what the rule judges rather than how, and the ruling does not say which side moves. Filed as `B10-POOL-WEEK-KEY-01` at the call site.
 - **B14** — needs the builder to confirm §117's reading before anything changes (the sitting says so).
-- **D2/D3** (phase 3, named parameters and rule data).
+
+✅ **D2/D3 SHIPPED 2026-11-27 as `ADR027-B3-STRICT-D23`.** `lib/engine/catalogue/checkParams.ts` —
+one entry per rule, the same shape as 4b's `TRIGGER_RULES`. **No value changed; `verify:parity`
+IDENTICAL over 6,210.** 12 arms, 16 mutations each verified to have landed.
+- 📐 **Re-measured before building, and the item was low in every column:** D2's "3 literals" are 3
+  but **all three existed in BOTH checkers**; D3's four tolerances are **seven declarations** (the
+  10% is written out three times — twice as a local `const` inside `invariants.ts`, once in the
+  verifier, and the §94 copy is in a rule the verifier has not ported, so nothing could ever have
+  compared them); D3's "two row lists" are **three sets**.
+- 🔴 **And the fixed-shape list had TWO MEMBERSHIPS: the producer's four rows against both checkers'
+  two.** Two board rulings (CB-HMPACE-SIZING-01, MP-BLOCKS-ONE-BLOCK-01) put `hm_pace_intervals` and
+  `mp_blocks` on the producer's list deliberately, so the producer's was the true statement and the
+  checkers held a stale copy. The attribute carries the producer's four.
+- 🔑 **The parameters are in the CATALOGUE, not `GENERATION_CONFIG`, and the reason is that
+  `invariants.ts` argued the other way IN WRITING, twice**, citing CLAUDE.md's tunability test:
+  *"it tunes what the CHECKER flags, not what the engine prescribes."* The sitting's conflict scan
+  never saw it. Both halves are right — a tolerance is not a prescription, AND a number written out
+  three times with nothing holding the copies equal is a defect wherever it lives — so the fix is
+  ownership in the layer that reads it. A config key would also owe a `CoachingPrinciples` § per
+  number, which is doctrine authoring, not the naming the sitting ruled. **Each entry declares
+  itself `slack` or `prescription`**, and the two prescription numbers (§85's over-under band, §30's
+  shakeout RPE) are what the board can adopt into config with a §.
+- ✅ **The ramp reads the existing constant**, as the sitting instructed: `1 + FOUNDATION_WEEKLY_INCREASE_PCT / 100`
+  in both checkers, replacing a bare `1.10` that sat beside a `10` meaning the same thing.
+- 🔴 **One of my own 16 mutations stayed GREEN and that is the finding in the gate:** re-introducing
+  the ramp as `const FOUNDATION_WEEK_TO_WEEK_CEILING = 1.10` matched neither banned pattern, because
+  one looked for the OLD NAME and the other for one spelling of the multiplication. **A name is not
+  a number.** Fixed with a value pattern plus a POSITIVE arm asserting both checkers derive the
+  ceiling from the config key — the arm that actually binds.
+- 🔻 **The messages now interpolate.** `invariants.ts` wrote "±5%", "±3%" and "0–3%" into its own
+  violation text, so naming the constant and leaving the prose would have been a false sentence
+  beside correct code the moment anyone tuned one.
+- 🔴 **Writing it found `CHECK-FIXED-SHAPE-DISTANCE-STEP-01`** (filed, 🏃): §8's duration-coherence
+  rule raises **0 findings on a 999-minute `hm_pace_intervals` session in either checker** where the
+  same mutation on a `threshold_pyramid` raises 22, and 15 of 20 corpus sessions of the two blind
+  rows understate their own structure by 10.6–26.4 min. **0 of 44 live plans affected.** Not closed
+  here: the fix changes a stated duration a runner reads.
+- 🔻 **Negative space: this proves each number has one owner and no value moved. It does not prove a
+  value is coaching-correct**, and the two `prescription` entries have no § stating them. The tree
+  sweep is a regex, so a copy written as `30 / 10` or read through a variable passes — it catches the
+  shape all seven original declarations had.
 
 ✅ **C1 SHIPPED 2026-11-25 — THE VERIFIER READS THE RUNNER AND THE DELIVERED SESSIONS.** Five readings, one owner each
 (`levelIntensity`, `levelStructural`, `raceKm`, `injuriesOf`, `deliveredKm`); `checkerFitness` — `validatePlan`'s
@@ -2555,6 +2595,43 @@ runner's own facts, or by a note that names the delivered constraint* is checkab
 📐 **Measured 2026-11-25: 19 of 44 live plans are maintenance, and 0 of them carry the label without its
 `volume_constraint_note`** — so the cheapest version (require the note before honouring the exemption) is latent today
 and buys only a ratchet. **The board rules on whether the stronger version is worth a rule at all.**
+
+### 🔴 `CHECK-FIXED-SHAPE-DISTANCE-STEP-01` — §8's duration-coherence rule is blind to 2 of the 6 fixed-shape rows, and the two it cannot see UNDERSTATE a stated duration by 10–26 minutes *(filed 2026-11-27, found measuring `ADR027-B3-STRICT-01` D3)* 🏃 **COACHING BOARD** (the fix changes a duration a runner reads)
+
+📐 **Measured, not reasoned.** `INV-PLAN-STRUCTURED-SESSION-DURATION-COHERENT` prices a fixed-shape
+main set from CLOSED step lengths ("8 min", "1:30", "90 s") and returns `null` on a DISTANCE step
+("2 km"). Of the six `scaling: 'fixed'` catalogue rows, `hm_pace_intervals` and `mp_blocks` are
+priced from distance steps, so the rule returns `[]` for every session of either.
+
+**Falsified both ways.** Set a session's `duration_mins` to 999 across the golden corpus:
+
+| Row | Plans mutated | `validatePlan` findings | verifier findings |
+|---|---|---|---|
+| `threshold_pyramid` | 17 | **22** | **22** |
+| `hm_pace_intervals` | 6 | **0** | **0** |
+| `mp_blocks` | 1 | **0** | **0** |
+
+🔴 **And the blind spot is hiding a live understatement.** Pricing the 20 corpus sessions from their
+OWN derived sets: **15 of 20 state a duration 10.6 to 26.4 minutes short of their structure** — e.g.
+`stated 72 min` against a main set of 59.3 min, which needs **82.6** with §8's warm-up floor and
+cool-down. All half-marathon plans, all peak weeks. ⚠️ **This is the defect CB-HMPACE-SIZING-01
+(2026-09-10) was convened for** — *"an intermediate runner was told 45 min for a session whose main
+set alone needs 57"* — and the producer-side fix landed while the check that would catch it
+recurring was never extended to the row.
+
+📐 **It does NOT reach the live fleet: 44 stored plans, 9 `hm_pace_intervals`/`mp_blocks` sessions,
+all priced, 0 outside tolerance** (live `hm_pace_intervals` states 83 against an expected 80.1). So
+the understatement arrived AFTER those plans were generated and is latent only because no plan has
+been regenerated. **Any new HM plan carrying the row gets it.**
+
+**Why it is the board's, not a defect fix.** Closing it changes what a runner is told a session
+takes (72 → ~83 min on a peak HM weekday), which is McMillan's *"the runner finds out on the
+road"* either way: today they are told too little, and the correction costs them their evening. The
+RCA of WHERE the producer's `mainMins` diverges from the derived set is not done — `/zona-debug`
+first, then the board on the direction.
+
+⚠️ **Held, not hidden:** `checkParams.test.ts`'s last arm asserts exactly which two rows are priced
+from distance steps, **and it fails when the blind spot is closed**, so this cannot quietly resolve.
 
 ### 🔲 `DELIVERED-TONNAGE-VS-BAND-01` — nobody checks that the tonnage a runner RECEIVES stays inside their assessed band *(filed 2026-11-25, ADR027-B3-STRICT-01 C1; INSUFFICIENT EVIDENCE 2026-11-25)* 🏃 **COACHING BOARD**
 

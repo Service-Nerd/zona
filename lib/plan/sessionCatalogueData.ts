@@ -75,6 +75,26 @@ export interface SessionCatalogueRow {
    *  below `REP_ROW_MIN_REPS` reps. Read by `makeQualitySession`. Only a row the board has ruled the same adaptation
    *  (§19 Am., CD-1-MILE-CRUISE-01) may be named here, and it must not name a sibling of its own. */
   one_rep_sibling?:     string
+  /**
+   * ADR-027 B3 D3 (Coaching Board 2026-11-22) — "row lists become a row attribute, not a list in
+   * the checker". Each of the three below replaces a `new Set([...])` that was written out in two
+   * or three modules at once, where nothing held the copies equal.
+   *
+   * 🔴 THE FIXED-SHAPE LIST HAD TWO MEMBERSHIPS WHEN THIS WAS WRITTEN: the producer
+   * (`ruleEngine.ts`) listed four rows, both checkers listed two. The attribute carries the
+   * PRODUCER's four, because the producer's is the true statement — two board rulings put
+   * `hm_pace_intervals` (CB-HMPACE-SIZING-01) and `mp_blocks` (MP-BLOCKS-ONE-BLOCK-01) there
+   * deliberately — and the move is measured inert for the checkers, which fall out at the
+   * distance step before the membership is consulted. See `CHECK-FIXED-SHAPE-DISTANCE-STEP-01`
+   * for the blind spot that makes it inert, which this attribute makes attributable rather than
+   * fixing.
+   */
+  /** This row's main set is summed from its OWN steps rather than taking the flat quality share. */
+  sized_from_steps?:    true
+  /** §88 — a continuous fast-float VO2max shape: the recovery step is prescribed as a ceiling. */
+  continuous_vo2?:      true
+  /** §88 — and this row's float is RUN, not jogged. `intervals_rolling`'s alone; a 30-30 jogs. */
+  float_is_run?:        true
   difficulty_tier:      number
   main_set_structure:   Record<string, unknown>
   /**
@@ -346,6 +366,7 @@ export const V1_SESSION_CATALOGUE: SessionCatalogueRow[] = [
   // ('intermediate') and the proxy is retired (CAT-ULTRA-THIN-01, 2026-08-21).
   {
     id: 'threshold_ladder',
+    sized_from_steps: true,
     name: 'Threshold ladder',
     category: 'threshold',
     purpose: 'Threshold work that changes shape as it goes. Rewards discipline early and honesty late.',
@@ -478,6 +499,7 @@ export const V1_SESSION_CATALOGUE: SessionCatalogueRow[] = [
   },
   {
     id: 'threshold_pyramid', name: 'Pyramid', category: 'threshold',
+    sized_from_steps: true,
     purpose: 'Rungs up and back down. Every rep feels different and all of them are threshold.',
     phase_eligibility: ['build', 'peak'],
     distance_eligibility: ['10K', 'HM', 'MARATHON', '50K', '100K'],
@@ -647,6 +669,7 @@ export const V1_SESSION_CATALOGUE: SessionCatalogueRow[] = [
   // (Willy) — the highest-turnover work in the catalogue.
   {
     id: 'intervals_30_30', name: 'Thirty-thirty', category: 'vo2max',
+    continuous_vo2: true,
     purpose: 'Short on, short off, no stopping. The dose you can hold when three-minute reps are too blunt.',
     phase_eligibility: ['build', 'peak'],
     // 10K ONLY, not 5K — narrowed on the property sweep (§88). At 5K, I-pace ≈
@@ -693,6 +716,7 @@ export const V1_SESSION_CATALOGUE: SessionCatalogueRow[] = [
   },
   {
     id: 'intervals_rolling', name: 'Rolling reps', category: 'vo2max',
+    continuous_vo2: true, float_is_run: true,
     purpose: 'Fast, then float, never stopping. Time at the top of the effort adds up across the whole set.',
     phase_eligibility: ['build', 'peak'],
     // 10K ONLY — same §22 race-specific-ratio reason as intervals_30_30 above.
@@ -1098,6 +1122,7 @@ export const V1_SESSION_CATALOGUE: SessionCatalogueRow[] = [
     // continuous run and a jog that led to the cool-down. Now one continuous 4 km at marathon pace; the marathon-pace
     // work is unchanged. The id keeps its old spelling: it is stamped on live plans and never shown.
     id: 'mp_blocks', name: 'Marathon-pace run', category: 'race_specific',
+    sized_from_steps: true,
     purpose: 'Marathon pace away from the long run. Goal pace on fresh legs, so it survives a week the long run does not.',
     phase_eligibility: ['peak'],
     distance_eligibility: ['MARATHON'],
@@ -1122,6 +1147,7 @@ export const V1_SESSION_CATALOGUE: SessionCatalogueRow[] = [
   },
   {
     id: 'hm_pace_intervals', name: 'HM-pace intervals', category: 'race_specific',
+    sized_from_steps: true,
     purpose: 'Race-specific intervals at HM pace. Bridges the gap between threshold and race day.',
     phase_eligibility: ['peak'],
     distance_eligibility: ['HM'],

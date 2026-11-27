@@ -17,6 +17,7 @@ const ALLOWED = new Set([
   '@/lib/engine/contracts/rule',         // the rule contract
   '@/lib/engine/contracts/profile',      // L1's output type: the runner, as the verifier must read them
   '@/lib/engine/catalogue/rules',        // rule data
+  '@/lib/engine/catalogue/checkParams',   // rule data: each rule's own check parameters (ADR-027 B3 D2/D3)
   '@/lib/plan/generationConfig',         // rule data (the numerics the rules reference)
   '@/lib/plan/sessionRole',              // the classification owner (INV-CLASS), fixture-tested
   '@/lib/plan/sessionDistance',          // the measurement owner (`sessionKm`), fixture-tested

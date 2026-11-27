@@ -41,7 +41,7 @@ paused: only defects that harm runners are fixed, each one added to the hotfix t
 | B2 L1 runner facts + profile | ✅ done; part 1 of the route adoption done | `ADR027-B2-PROFILE`, `ADR027-B2B-PROFILE`. Parts 2–4 of `ADR027-B2B-PROFILE-ADOPTION` land in B4 (founder) |
 | B3 step 1: rule catalogue (L2) | ✅ done | `ADR027-B3-CATALOGUE`, `lib/engine/catalogue/rules.ts`, 221 rules |
 | B3 step 2: independent verifier (L5) | 🟡 **207 of 221 rules ported**, each agreeing finding for finding with the old checker | `ADR027-B3-VERIFIER`, `lib/engine/verifier/` |
-| B3 step 2b: the board's strict readings | 🟡 **14 of 14 B rows + C1 shipped**; D2–D3 open, B10 blocked on the producer, B14 on a §117 reading, two of C1's seven named fields reclassified (below) | `ADR027-B3-STRICT-01`, `lib/engine/verifier/verifierStrict.test.ts` |
+| B3 step 2b: the board's strict readings | 🟡 **14 of 14 B rows + C1 + D2/D3 shipped**; B10 blocked on the producer, B14 on a §117 reading, two of C1's seven named fields reclassified (below) | `ADR027-B3-STRICT-01`, `lib/engine/verifier/verifierStrict.test.ts`, `lib/engine/catalogue/checkParams.test.ts` |
 | B3 step 3: nightly check of every live plan, observe-only | ✅ done 2026-11-25 | `ADR027-B3-SHADOW-01`, `lib/ops/verifierShadow.ts`, inside `/api/ops/plan-audit` |
 | B3 step 4: trigger catalogue (ARCH-ENG-018) + the event vocabulary (ARCH-ENG-022) | ✅ **4a + 4b DONE 2026-11-26**, which is the whole of step 4 as scoped — **4c parked by founder decision** as `TRIGGERS-ON-DATA-ARRIVAL-01`. ⚠️ Nothing emits an event or evaluates a trigger yet, deliberately: 4a+4b define the vocabulary and the catalogue, 4c wires evaluation and needs three boards | `ADR027-B3-STEP4A` (`lib/engine/contracts/events.ts`, `runOutcome.ts`, **`docs/canonical/engine-truths.md` created**), `ADR027-B3-STEP4B` (`lib/engine/catalogue/triggers.ts`, `lib/engine/contracts/triggers.ts`) |
 | B3 exit: founder signs off the verifier replacing `validatePlan` as the gate | 🔲 | must name the 14 held rules (below) |
@@ -201,9 +201,20 @@ upward on intensity); §89 is the one veto a self-declaration must not unlock. C
    plans exposed, 9 masked by an upward declaration that coincidentally resolves to the same level.** Spiked: the
    collapse goes 1 → 0 and `verify:parity` is IDENTICAL over 6,210. **Three binding conditions**, of which the one
    parity does NOT cover is that `property-validate-plans.ts` and `r23-phase7-validation.ts` must both run clean.
-2. **`ADR027-B3-STRICT-01`**: D2/D3 (named parameters and rule data). ✅ C1 shipped 2026-11-25, and the chair accepted
-   its scope correction on §23/§46 grounds. B10 needs a `quality_pool_sizes` week key from the producer; B14 needs the
-   §117 reading. ✅ `VERIFIER-RESHAPE-POLICY-01` shipped 2026-11-25 — both port gaps are now closed or ruled.
+2. ✅ **`ADR027-B3-STRICT-01`: D2/D3 SHIPPED 2026-11-27** (`ADR027-B3-STRICT-D23`) — `lib/engine/catalogue/checkParams.ts`,
+   one entry per rule, plus three `SessionCatalogueRow` attributes (`sized_from_steps`, `continuous_vo2`,
+   `float_is_run`) replacing sets written out in two or three modules at once. **No value changed; parity IDENTICAL
+   over 6,210.** 🔑 The parameters live in the CATALOGUE rather than `GENERATION_CONFIG`, because `invariants.ts`
+   argued the other way in writing twice (*"it tunes what the CHECKER flags, not what the engine prescribes"*) and the
+   sitting's conflict scan never saw it; each entry declares itself `slack` or `prescription`, and the two
+   prescription numbers are what the board may adopt into config with a §. 🔴 **Found while measuring it:
+   `CHECK-FIXED-SHAPE-DISTANCE-STEP-01`** — the producer's fixed-shape list held FOUR rows against both checkers' two,
+   and §8's duration-coherence rule raises **0 findings on a 999-minute `hm_pace_intervals` session in either
+   checker** (22 on a `threshold_pyramid`), with 15 of 20 corpus sessions understating their own structure by
+   10.6–26.4 min. **0 of 44 live plans.** Filed to the board; not closed here, because the fix changes a stated
+   duration a runner reads. ✅ C1 shipped 2026-11-25, and the chair accepted its scope correction on §23/§46 grounds.
+   **Still open: B10** (needs a `quality_pool_sizes` week key from the producer) and **B14** (the §117 reading).
+   ✅ `VERIFIER-RESHAPE-POLICY-01` shipped 2026-11-25 — both port gaps are now closed or ruled.
 3. **B3 step 4 — SCOPED TO 4a + 4b** (founder decision, 2026-11-26). **4a**: the event vocabulary plus the
    run→session matcher's `engine-truths.md` row — the matcher is in **no layer** today, and this carries step 4's
    only live finding (**27 of 176 completion rows carry a run link, 15.3%; 39 runs unmatched in 14 days**). **4b**:
@@ -309,7 +320,7 @@ The coaching doctrine is unchanged. Rulings become L2 entries.
 |---|---|
 | ARCH-ENG-001 | Layers depend downward only. Nothing mutates the plan after L3, except L6 copy, which is re-verified |
 | ARCH-ENG-002 | A canonical truth registry (`docs/canonical/engine-truths.md`): one owner per truth |
-| ARCH-ENG-003 | A rule references its § and its config key, and never copies a value |
+| ARCH-ENG-003 | A rule references its § and its config key, and never copies a value. ⚠️ **Scoped to the RULE ROW, and `lib/engine/catalogue/checkParams.ts` is the declared exception, from D2/D3 (2026-11-27).** `RuleSchema` is unchanged — strict, `config_key` only, no value field — so a rule row still never holds a number. But six rules read tolerances that have **no config key to point at**: `GENERATION_CONFIG` does not hold them, and `invariants.ts` argued in writing twice that they should not, because they tune what the checker flags rather than what the engine prescribes. The choice was between referencing a place the number does not live, which is a fiction, and OWNING it beside the rule. 🔑 **ARCH-ENG-003 exists to stop a second copy drifting from the first; a table that is the only declaration cannot drift**, and `checkParams.test.ts` sweeps the tree so a second declaration fails the build. `triggers.ts` holds SYMBOLS and not numbers for the opposite reason: its thresholds already had an owner |
 | ARCH-ENG-004 | One metrics owner for derived quantities, tested against hand fixtures |
 | ARCH-ENG-005 | Determinism: no wall-clock read inside the engine; `as_of` is required; outputs are stamped |
 | ARCH-ENG-006 | A refusal is a typed result, never a throw |
