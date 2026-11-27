@@ -6,6 +6,49 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-11-27 — ADR027-B3-BATCH39: the two rules held as examples of why rules get held
+
+**The approval request I'd put in front of the founder said "the new checker doesn't cover these 14
+rules."** He asked why not. Fair question, and I hadn't asked it — the list was written weeks ago and
+nobody had re-read it.
+
+**The reason given for two of them was wrong.** They were held because they "need the planner's
+delivered-volume and trimmable-room helpers", and sharing planner code would make the checker a
+mirror instead of a check. That reasoning is sound. It just doesn't apply: those helpers are defined
+inside the *old checker's own file*, four lines of arithmetic each, over two things the new checker
+already imports. Nothing planner-side was ever involved.
+
+**And they were the paragraph's own examples.** When the record explains why rules get held, those
+are the two it names.
+
+So they're ported. Both fire in the hundreds and agree exactly with the old checker — 750 findings
+each side on one, 186 on the other, zero differences. Not two silent checkers nodding at each other.
+**The list is 12.**
+
+🔑 **That's the fourth time this list has shrunk the moment someone re-derived it** — three rules came
+off earlier for the same shape of reason, each time because the helper it supposedly needed turned
+out to be the checker's own. **A held reason is a judgement someone made under time pressure, and it
+reads exactly like a structural constraint afterwards.** Of the 12 left, 4 are behind two classifiers
+the import gate already allows the *class* of, 2 are behind a lint rule rather than a design one, and
+6 are real.
+
+**Where I was sloppy, and review caught all of it.** Two gates still pinned the old counts and I'd
+only updated the architecture doc — so the suite went red, which is the system working: those pins
+exist because a number in a doc drifts and a number a script checks doesn't. I'd also run two of the
+three checks and then said "all gates green" before reading the third.
+
+🔴 **And the worst one was in the port itself.** I added a guard against dividing by zero. The old
+checker divides unguarded and warns at "Infinity%". The test corpus can't produce that case, so the
+agreement harness was perfectly green on a behaviour change nobody had declared. **A port either
+agrees or declares the difference — it doesn't quietly tidy up on the way through.** That is the
+whole reason the port is trustworthy at all, and I nearly undermined it to avoid an ugly number.
+
+Last thing: the "750 and 186" above was, until review, a sentence in three documents backed by
+nothing. It's a pinned assertion now, and I broke it to check — nudge the tolerance and it reports
+478 disagreements.
+
+---
+
 ## 2026-11-27 — VERIFIER-UNVERIFIED-KEY-COLLISION-01: "I couldn't evaluate this" looked exactly like "I checked and it's fine"
 
 **The new plan checker has a contract for giving up.** If a rule crashes, it reports `unverified:`

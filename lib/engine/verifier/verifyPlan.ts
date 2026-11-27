@@ -3034,6 +3034,112 @@ const BATCH_37: Partial<Record<RuleId, Predicate>> = {
   }),
 }
 Object.assign(PREDICATES, BATCH_37)
+
+// ─── BATCH 39 — TWO RULES THAT WERE HELD ON A REASON THAT DID NOT SURVIVE READING ──────────────
+//
+// 🔴 Both were on the 14-rule held list as *"the planner's delivered-volume and trimmable-room
+// helpers"* — the record's own two EXAMPLES of producer dependence. **Neither depends on the
+// planner.** `deliveredKm`, `longKmOf`, `runCountOf`, `meanPerSession` and `trimmableKm` are all
+// defined INSIDE `lib/plan/invariants.ts`, four lines of arithmetic each over `sessionKmSelfPaced`
+// and `GENERATION_CONFIG` — both of which this file already imports. Re-derived 2026-11-27 at the
+// founder's request, the same way `5K10K-LR-PACE-CAP` was unheld on 2026-11-21 when `paceFromVdot`
+// turned out to be the old checker's own local formula rather than planner code.
+//
+// 🔑 So they are written FRESH here, not shared: the sums below are this file's, and the agreement
+// harness is what proves they match. The held list is a judgement, and it has now been wrong four
+// times in the same direction — holding too much.
+
+/** Every session's self-paced km. DELIVERED-RAMP sums ALL sessions (a rest or strength day prices
+ *  to null and contributes 0); TAPER-DELIVERED-DEPTH excludes them by type. Copied as each is. */
+const deliveredAllKm = (w: Week) =>
+  Object.values((w.sessions ?? {}) as Record<string, Session | undefined>)
+    .reduce((a, s) => a + (sessionKmSelfPaced(s) ?? 0), 0)
+
+const BATCH_39: Partial<Record<RuleId, Predicate>> = {
+  // §94 (§2), §100, §94 Am. 4: §2's weekly cap measured on the PLACED SESSIONS, not the volume
+  // curve. The earlier delivered check was scoped to injury-history runners, so a healthy runner had
+  // none — which is why §94 exists and is not a scope restriction.
+  'INV-PLAN-DELIVERED-RAMP': (plan, { input }) => {
+    const capPct = GENERATION_CONFIG.MAX_WEEKLY_VOLUME_INCREASE_PCT
+    const tol = checkParam('INV-PLAN-DELIVERED-RAMP', 'delivered_rounding_tolerance_pct')
+    const out: Raw[] = []
+    for (let i = 1; i < plan.weeks.length; i++) {
+      const w = plan.weeks[i], prev = plan.weeks[i - 1]
+      if (w.n < 1 || prev.n < 1) continue                     // foundation: §57
+      if (isDeloadWeek(w) || isDeloadWeek(prev)) continue     // §2 bounceback / DELOAD-IS-A-REDUCTION
+      if (w.phase === 'taper' || w.type === 'race') continue  // a planned drop
+      const now = deliveredAllKm(w), before = deliveredAllKm(prev)
+      // The runner's CURRENT volume is the floor: a week at or below what they already run is not a ramp.
+      if (now <= (input.current_weekly_km ?? 0)) continue
+      // ⚠️ NO `before > 0` GUARD, DELIBERATELY. The old checker divides unguarded, so a week rising
+      // from a zero-priced previous week reads `Infinity%` and fires once the absolute rise clears
+      // `DELIVERED_ABSOLUTE_FLOOR_KM`. My first cut added the guard and code review caught it: it is
+      // an UNDECLARED NARROWING — the corpus cannot reach it, so the agreement harness was green on
+      // a divergence with no register entry. A port agrees or it declares; it does not quietly tidy.
+      const risePct = ((now - before) / before) * 100
+      const absRiseKm = now - before
+      if (risePct > capPct + tol && absRiseKm > GENERATION_CONFIG.DELIVERED_ABSOLUTE_FLOOR_KM) {
+        // The DRIVER attribution (§94 Am. 3 / §45 / §100) shapes the old checker's message only — it
+        // never gates the finding — so it is not re-derived here. `detail` is excluded from the
+        // agreement key, and inventing a second copy of four attribution branches would be the
+        // duplication this layer exists to remove.
+        out.push({ rule_id: 'INV-PLAN-DELIVERED-RAMP', week: w.n, day: null,
+          detail: `delivered +${risePct.toFixed(0)}% (${before.toFixed(1)}→${now.toFixed(1)} km) over §2's ${capPct}% cap` })
+      }
+    }
+    return out
+  },
+
+  // §6: each taper week's DELIVERED volume sits at or below the delivered pre-taper week stepped
+  // down by the distance's shallowest configured taper. The CURVE tapers faithfully; the delivered
+  // sessions are what the runner does.
+  'INV-PLAN-TAPER-DELIVERED-DEPTH': (plan, { input }) => {
+    const taperWeeks = plan.weeks.filter(w => w.n > 0 && w.phase === 'taper' && w.type !== 'race')
+    if (!taperWeeks.length) return []
+    // ⚠️ Strength and rest EXCLUDED here and included in DELIVERED-RAMP above. Two readings of
+    // "the week's volume" in one old file; the port keeps each rule's own.
+    const weekKm = (w: Week) => Object.values((w.sessions ?? {}) as Record<string, Session | undefined>)
+      .reduce((a, s) => a + (!s || s.type === 'strength' || s.type === 'rest' ? 0 : sessionKmSelfPaced(s) ?? 0), 0)
+    // §6 Am. 2's lever order: easy runs only, never the §52 long run, never quality.
+    const trimmableKm = (w: Week) => Object.values((w.sessions ?? {}) as Record<string, Session | undefined>)
+      .reduce((a, s) => a + (!s || s.type !== 'easy' || isLongRun(s)
+        ? 0 : Math.max(0, (sessionKmSelfPaced(s) ?? 0) - GENERATION_CONFIG.MIN_SESSION_DISTANCE_KM.easy)), 0)
+
+    const firstTaperN = Math.min(...taperWeeks.map(w => w.n))
+    const anchorWeek = plan.weeks.find(w => w.n === firstTaperN - 1)
+    const anchorKm = anchorWeek ? weekKm(anchorWeek) : 0
+    const distKey = raceDistanceKey(input.race_distance_km)
+    const taperConfig = GENERATION_CONFIG.TAPER_BY_DISTANCE[distKey]
+    const fullTaperWeeks = Math.max(1, GENERATION_CONFIG.TAPER_QUALITY_PER_WEEK[distKey].length - 1)
+    if (!(anchorKm > 0) || !taperConfig) return []
+    const shallowStepPct = (taperConfig.volume_reduction_pct
+      * (GENERATION_CONFIG.LOW_VOLUME_TAPER_REDUCTION_FACTOR_PCT / 100)) / fullTaperWeeks
+    const out: Raw[] = []
+    for (const w of taperWeeks) {
+      const step = w.n - firstTaperN + 1
+      const ceiling = anchorKm * (1 - (shallowStepPct * step) / 100)
+      const delivered = weekKm(w)
+      const overshoot = delivered - ceiling
+      if (overshoot <= 0) continue
+      // The engine pass's own materiality gate, from the shared constant.
+      if ((overshoot / anchorKm) * 100 < GENERATION_CONFIG.TAPER_DELIVERED_REANCHOR_MATERIAL_PCT) continue
+      let longKm = 0
+      for (const s of Object.values((w.sessions ?? {}) as Record<string, Session | undefined>)) {
+        if (!s || !isLongRun(s)) continue
+        longKm = Math.max(longKm, sessionKmSelfPaced(s) ?? 0)
+      }
+      // §52: the long run is never the lever, so the floor it imposes bounds what the week can give.
+      const lrFloorKm = longKm > 0 ? longKm / (GENERATION_CONFIG.LONG_RUN_MAX_PCT_OF_WEEKLY / 100) : 0
+      const legalRoom = Math.min(trimmableKm(w), Math.max(0, delivered - lrFloorKm))
+      // No legal room to give means the depth is not this week's to fix — §34's honest residual.
+      if (legalRoom < overshoot) continue
+      out.push({ rule_id: 'INV-PLAN-TAPER-DELIVERED-DEPTH', week: w.n, day: null,
+        detail: `taper week delivers ${delivered.toFixed(1)} km against a ${ceiling.toFixed(1)} km ceiling, with ${legalRoom.toFixed(1)} km of legal room` })
+    }
+    return out
+  },
+}
+Object.assign(PREDICATES, BATCH_39)
 /** Maintenance plans are their own population: compared in `verifierMaintenance.test.ts`. */
 export const MAINTENANCE_RULES = Object.keys(BATCH_37) as RuleId[]
 

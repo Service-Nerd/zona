@@ -30,7 +30,7 @@ import { PORTED_RULES, UNVERIFIED_PREFIX } from '@/lib/engine/verifier/verifyPla
  *  2. `§ v2` asserted *"`Rule` and `Decision` have no producer"*. `Rule` gained one at B3 step 1 — 221 rows,
  *     read by L5. **A contract asserting a filled absence is exactly what a records audit cannot see.**
  *  3. ADR-027's *"207 of 221 ported"* is a **sum over two modules** (157 `INV-` + 50 `S-`), and
- *     `PORTED_RULES` is 157. Reasoning from that constant against the 221 denominator gives 64 held, not 14.
+ *     `PORTED_RULES` is 159 (2026-11-27). Reasoning from that constant against the 221 denominator gives 62 held, not 12.
  *
  * 🔻 WHAT IT DOES NOT CHECK, stated rather than discovered later. It proves the contract MENTIONS each
  * module and that the NUMBERS it publishes are the live ones. **It cannot prove a section is correct** —
@@ -107,27 +107,31 @@ describe('ENGINE-CONTRACT-V2-COVERAGE-01 — the numbers it publishes are the li
   const inv = RULES.filter(r => r.id.startsWith('INV-'))
   const strength = RULES.filter(r => r.id.startsWith('S-'))
 
-  it('🔴 221 = 171 INV + 50 S, and PORTED_RULES is 157 of the INV family', () => {
+  it('🔴 221 = 171 INV + 50 S, and PORTED_RULES is 159 of the INV family', () => {
     expect(RULES.length).toBe(221)
     expect(inv.length).toBe(171)
     expect(strength.length).toBe(50)
-    expect(PORTED_RULES.length).toBe(157)
+    // ⚠️ 157 → 159 on 2026-11-27: `DELIVERED-RAMP` and `TAPER-DELIVERED-DEPTH` left the held list
+    // once their stated reason was re-derived (both "planner" helpers are `invariants.ts`'s own).
+    // This number is PINNED on purpose — every port must come past this arm and the contract
+    // together, so the published figure cannot drift from the code.
+    expect(PORTED_RULES.length).toBe(159)
     expect(PORTED_RULES.filter(r => r.startsWith('S-')), 'no strength rule is in PORTED_RULES').toEqual([])
     // The held count the cut-over sign-off names, derived rather than typed.
-    expect(inv.length - PORTED_RULES.length).toBe(14)
+    expect(inv.length - PORTED_RULES.length).toBe(12)
     // ⚠️ IN CONTEXT, not as bare digits. Code review mutation-verified that 2 of 5 were vacuous: `'50'`
     // matched the pre-existing `engine fault | 500` row and `'14'` matched `ARCH-ENG-013/014/019` and a
     // `**144**` cell — so **the 14-held figure the cut-over sign-off names was bound to nothing.**
     expect(V2, 'the catalogue total').toMatch(/\*\*221 entries\*\*/)
     expect(V2, 'the INV/S decomposition').toMatch(/221 = 171 `INV-` \+ 50 `S-`/)
-    expect(V2, 'the ported count with its family').toMatch(/`PORTED_RULES` is 157, all `INV-`/)
-    expect(V2, 'the 14 held rules, as a derivation not a bare number').toMatch(/14 are HELD/)
-    expect(V2, 'and where the 14 comes from').toMatch(/171 . 157/)
+    expect(V2, 'the ported count with its family').toMatch(/`PORTED_RULES` is 159, all `INV-`/)
+    expect(V2, 'the 12 held rules, as a derivation not a bare number').toMatch(/12 are HELD/)
+    expect(V2, 'and where the 12 comes from').toMatch(/171 . 159/)
   })
 
   it('🔴 the contract names the family with the number, so 207/221 cannot be misread', () => {
     // The whole point of the finding: `PORTED_RULES` against the 221 denominator gives 64 held, not 14.
-    expect(V2).toMatch(/157 of 171/)
+    expect(V2).toMatch(/159 of 171/)
     expect(V2, 'the sum-over-two-modules reading must be stated').toMatch(/sum over both modules|SUM OVER BOTH MODULES/i)
   })
 

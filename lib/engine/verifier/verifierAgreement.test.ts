@@ -1501,6 +1501,28 @@ describe('ADR027-B3-VERIFIER — agreement with validatePlan, per ported rule', 
     expect(tally.threw.length, tally.threw.slice(0, 3).join(', ')).toBeLessThanOrEqual(Math.ceil(tally.rows / 10))
   })
 
+  it('🔴 batch 39\'s two ports agree EXACTLY, and the published counts are pinned here', () => {
+    // 🔴 THESE TWO NUMBERS ARE QUOTED IN ADR-027, THE REGISTRY AND THE L5 CONTRACT as the evidence
+    // that unholding `DELIVERED-RAMP` and `TAPER-DELIVERED-DEPTH` was safe — and code review found
+    // them bound to nothing, because `compare()` is private to this file and no arm pinned a
+    // per-rule count. **A number in a doc drifts; a number a script checks does not.**
+    //
+    // The pairing is the point: both sides fire in the HUNDREDS and agree exactly, so this is not
+    // two silent checkers agreeing. If a port ever diverges, or the corpus stops reaching these
+    // rules, this fails with the real figures rather than a vaguer arm passing.
+    for (const [rule, expected] of [
+      ['INV-PLAN-DELIVERED-RAMP', 750],
+      ['INV-PLAN-TAPER-DELIVERED-DEPTH', 186],
+    ] as const) {
+      const c = compare(rule)
+      expect(c.diffs, `${rule}: ${c.diffs.length} disagreement(s)`).toEqual([])
+      expect(c.gained, `${rule} gained`).toBe(0)
+      expect(c.lost, `${rule} lost`).toBe(0)
+      expect(c.fired.old, `${rule}: the OLD checker's count moved`).toBe(expected)
+      expect(c.fired.new, `${rule}: the verifier's count moved`).toBe(expected)
+    }
+  })
+
   it('🔴 no rule REPLACES a real finding with "could not evaluate" — the collision, named directly', () => {
     // 🔴 THIS ARM IS THE WHOLE FIX. The key marker is defensive (see `key` above: the swaps that
     // actually occur differ in week AND severity, so they never collided), and for a rule carrying a

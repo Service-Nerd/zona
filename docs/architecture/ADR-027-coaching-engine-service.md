@@ -40,20 +40,38 @@ paused: only defects that harm runners are fixed, each one added to the hotfix t
 | B1 contracts + canonical types | ✅ done | `ADR027-B1-CONTRACTS` (v1↔v2 adapter, 123 of 123 stored plans round-trip) |
 | B2 L1 runner facts + profile | ✅ done; part 1 of the route adoption done | `ADR027-B2-PROFILE`, `ADR027-B2B-PROFILE`. Parts 2–4 of `ADR027-B2B-PROFILE-ADOPTION` land in B4 (founder) |
 | B3 step 1: rule catalogue (L2) | ✅ done | `ADR027-B3-CATALOGUE`, `lib/engine/catalogue/rules.ts`, 221 rules |
-| B3 step 2: independent verifier (L5) | 🟡 **207 of 221 rules ported**, each agreeing finding for finding with the old checker | `ADR027-B3-VERIFIER`, `lib/engine/verifier/` |
+| B3 step 2: independent verifier (L5) | 🟡 **209 of 221 rules ported**, each agreeing finding for finding with the old checker | `ADR027-B3-VERIFIER`, `lib/engine/verifier/` |
 | B3 step 2b: the board's strict readings | ✅ **ALL 14 B rows + C1 + D2/D3 + B14 + B10 shipped or closed**; two of C1's seven named fields reclassified (below). ✅ `VERIFIER-UNVERIFIED-KEY-COLLISION-01` shipped 2026-11-27, so the sign-off's fleet numbers are re-measured and a decline can no longer read as a verdict | `ADR027-B3-STRICT-01`, `lib/engine/verifier/verifierStrict.test.ts`, `lib/engine/catalogue/checkParams.test.ts` |
 | B3 step 3: nightly check of every live plan, observe-only | ✅ done 2026-11-25 | `ADR027-B3-SHADOW-01`, `lib/ops/verifierShadow.ts`, inside `/api/ops/plan-audit` |
 | B3 step 4: trigger catalogue (ARCH-ENG-018) + the event vocabulary (ARCH-ENG-022) | ✅ **4a + 4b DONE 2026-11-26**, which is the whole of step 4 as scoped — **4c parked by founder decision** as `TRIGGERS-ON-DATA-ARRIVAL-01`. ⚠️ Nothing emits an event or evaluates a trigger yet, deliberately: 4a+4b define the vocabulary and the catalogue, 4c wires evaluation and needs three boards | `ADR027-B3-STEP4A` (`lib/engine/contracts/events.ts`, `runOutcome.ts`, **`docs/canonical/engine-truths.md` created**), `ADR027-B3-STEP4B` (`lib/engine/catalogue/triggers.ts`, `lib/engine/contracts/triggers.ts`) |
-| B3 exit: founder signs off the verifier replacing `validatePlan` as the gate | 🔲 | must name the 14 held rules (below) |
+| B3 exit: founder signs off the verifier replacing `validatePlan` as the gate | 🔲 | must name the 12 held rules (below) |
 | B4–B8 (planner, adapt, explanation, single writer, enrichment) | 🔲 not started | HLD |
 | Hotfixes 1–7 | ✅ six shipped, #4 dropped | table below |
 
-**The 14 rules the verifier does not yet check itself.** The old checker keeps judging them, and the cut-over gate
-is the verifier plus these 14 until B4 gives each an independent derivation (Coaching Board `ADR027-B3-RAISED-LIST-01`,
-E3–E4): `DELIVERED-RAMP`, `INJURY-NO-HILLS`, `RACE-WEEK-SHARPENING`, `COPY-MATCHES-SESSIONS`, `BEGINNER-NEUROMUSCULAR`,
-`RACE-SPECIFIC-LONG-RUN`, `BASE-BUILD-RATIO`, `TAPER-DELIVERED-DEPTH`, `STRIDES-PRESENT`, `STRIDES-NO-CARRIER`,
+**The 12 rules the verifier does not yet check itself.** The old checker keeps judging them, and the cut-over gate
+is the verifier plus these 12 until B4 gives each an independent derivation (Coaching Board `ADR027-B3-RAISED-LIST-01`,
+E3–E4): `INJURY-NO-HILLS`, `RACE-WEEK-SHARPENING`, `COPY-MATCHES-SESSIONS`, `BEGINNER-NEUROMUSCULAR`,
+`RACE-SPECIFIC-LONG-RUN`, `BASE-BUILD-RATIO`, `STRIDES-PRESENT`, `STRIDES-NO-CARRIER`,
 `SURPLUS-IN-PLAN`, `RUNWALK-PRESCRIBED-WHEN-UNREADY`, `RUNWALK-SHORTDIST-SCOPE` and `STAGED-DOOR-RATIO` (all
-`INV-PLAN-*`). Most need a derivation only the planner has today. `STAGED-DOOR-RATIO` builds a race block to judge the
+`INV-PLAN-*`).
+
+🔴 **IT WAS 14 UNTIL 2026-11-27, AND THE TWO THAT LEFT WERE THIS PARAGRAPH'S OWN EXAMPLES.**
+`DELIVERED-RAMP` and `TAPER-DELIVERED-DEPTH` were held as *"the planner's delivered-volume and
+trimmable-room helpers"* — and `deliveredKm`, `longKmOf`, `runCountOf`, `meanPerSession` and
+`trimmableKm` are all defined **inside `lib/plan/invariants.ts`**, four lines of arithmetic each over
+`sessionKmSelfPaced` and `GENERATION_CONFIG`, both of which the verifier already imports. Nothing
+planner-side was involved. Ported fresh in batch 39: **750 findings on each side for `DELIVERED-RAMP`
+and 186 for `TAPER-DELIVERED-DEPTH`, 0 gained, 0 lost, 0 differences.**
+
+⚠️ **THAT IS THE FOURTH TIME THIS LIST HAS BEEN WRONG IN THE SAME DIRECTION** — `5K10K-LR-PACE-CAP`
+came off on 2026-11-21 when `paceFromVdot` turned out to be the old checker's own formula, and
+`RACE-WEEK-SHAKEOUT-CAP` and `VO2MAX-FLOAT-IS-A-CEILING` came off when holding them proved
+inconsistent with how literals were copied elsewhere. **A held rule's stated reason is a judgement,
+and re-deriving it has shrunk the list every time anyone has.** Of the 12 left: 4 are blocked by two
+classifiers in `neuromuscular.ts` (`strideCarrierDay`, `hasHillRestrictingInjury`) that are the same
+class as `hasInjuryKeyword`, which the import gate already allows by name — a decision, not a
+rewrite; 2 (`RACE-WEEK-SHARPENING`, `RACE-SPECIFIC-LONG-RUN`) are blocked by the pre-commit hook's
+ban on label matching rather than by independence; and **6 are genuinely structural.** `STAGED-DOOR-RATIO` builds a race block to judge the
 door, so it is the producer checking itself. `INJURY-NO-HILLS`, `RACE-WEEK-SHARPENING` and `RACE-SPECIFIC-LONG-RUN` are
 ruled to be ported on structural signals (B15, B18). One ported rule, `ZONE-LABEL-HAS-PRESCRIPTION`, can never run in
 production and is named dead in the harness.
@@ -263,7 +281,7 @@ upward on intensity); §89 is the one veto a self-declaration must not unlock. C
    `NO-INVENTED-AGE` [1, 25]). **So *"0 comparable plans gain a code"* now reads *"0 plans gain a code at all"*.**
    🔴 **One wrong number was reported on the way there, from an untypechecked probe** (`GeneratorInput` into
    `validateStoredPlan`'s `reshapedWeekN?: number`): `PROBE-TYPECHECK-BLIND-01`.
-5. **The founder's cut-over sign-off**, naming the 14 held rules. ✅ **That list is now held to the derived one by
+5. **The founder's cut-over sign-off**, naming the 12 held rules. ✅ **That list is now held to the derived one by
    `lib/engine/verifier/heldRules.test.ts`** (`HELD-RULE-LIST-DERIVED-01`, 2026-11-26): the paragraph above is compared,
    **by name and in both directions**, against `RULES` INV ids minus `PORTED_RULES`, and its own stated count is checked
    too. ⚠️ So **editing that list is now a build-breaking act unless the code agrees** — which is the point, because the
@@ -279,8 +297,8 @@ B2/B4 and B3/B4b, mockups owed).
 
 ### Before resuming
 - Re-measure before planning: re-run `npx vitest run lib/engine` and `./scripts/audit-docs.sh`, and re-count the
-  verifier's rules. At the pause: `PORTED_RULES` ∪ `BASE_BUILD_RULES` ∪ `MAINTENANCE_RULES` = 157 of the catalogue's
-  171 `INV-*` rules, plus all 50 strength rules (`verifyStrength.ts`) = 207 of 221. Do not trust these figures, recount.
+  verifier's rules. At the pause: `PORTED_RULES` ∪ `BASE_BUILD_RULES` ∪ `MAINTENANCE_RULES` = 159 of the catalogue's
+  171 `INV-*` rules, plus all 50 strength rules (`verifyStrength.ts`) = 209 of 221. Do not trust these figures, recount.
 - Re-read the sitting `docs/decisions/coaching-2026-11-22-b3-raised-list.md`; it holds the rulings step 2b builds.
 - ✅ **Housekeeping DONE 2026-11-25, and the advice it used to give here was dangerous.** The **11 agent worktrees**
   under `.claude/worktrees/` are removed: **743 MB**, gitignored, and the only dirty path in any of them was

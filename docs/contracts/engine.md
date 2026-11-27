@@ -534,12 +534,17 @@ constraint is why two vocabularies moved rather than being imported from where t
   the verifier's first live shadow run read **6 of its 8 flagged plans off exactly that gap**.
 
 📐 **221 = 171 `INV-` + 50 `S-`, AND THE DECOMPOSITION MATTERS BECAUSE TWO MODULES VERIFY THEM.**
-Measured 2026-11-26. **`PORTED_RULES` is 157, all `INV-`** — the 50 strength rules are named in
+Measured 2026-11-27. **`PORTED_RULES` is 159, all `INV-`** — the 50 strength rules are named in
 `verifyStrength.ts`, a separate entry point that does not feed `PORTED_RULES`. ⚠️ **So ADR-027's
-*"207 of 221 ported"* is a SUM OVER BOTH MODULES** (157 + 50), and the 14 held rules are
-`171 − 157`, not `221 − 207` applied to `PORTED_RULES`. Reasoning from `PORTED_RULES` against the 221
-denominator gives **64 held**, which is wrong, and `heldRules.test.ts` derives the real list as
+*"209 of 221 ported"* is a SUM OVER BOTH MODULES** (159 + 50), and the 12 held rules are
+`171 − 159`, not `221 − 209` applied to `PORTED_RULES`. Reasoning from `PORTED_RULES` against the 221
+denominator gives **62 held**, which is wrong, and `heldRules.test.ts` derives the real list as
 `RULES` INV ids minus `PORTED_RULES`. **Cite the family with the number.**
+⏱️ **157 → 159 on 2026-11-27** (batch 39): `DELIVERED-RAMP` and `TAPER-DELIVERED-DEPTH` left the held
+list once their stated reason was re-derived — both "planner" helpers are `invariants.ts`'s own
+locals. ⚠️ **This section published 157 and 14 while ADR-027 said 159 and 12 for part of that
+commit**, which is the two-registers-with-a-human-between shape; `engineContractV2.test.ts` pins
+these figures so the two cannot drift again.
 
 **The event vocabulary.** Three events in the order a run passes through them — `run_arrived`,
 `run_logged`, `run_analysed` — each carrying `evaluates_triggers` and the ruling that set it.
@@ -680,10 +685,14 @@ place of `validatePlan`.
 
 **Coverage, and what the cut-over gate actually is.**
 
-📐 **157 of 171 `INV-` rules have a predicate; 14 are HELD** and the old checker keeps judging them, so **the
-cut-over gate is the verifier PLUS those 14** until B4 gives each an independent derivation. The 14 are named
+📐 **159 of 171 `INV-` rules have a predicate; 12 are HELD** and the old checker keeps judging them, so **the
+cut-over gate is the verifier PLUS those 12** until B4 gives each an independent derivation. The 12 are named
 in ADR-027 § Build status and that paragraph is held to the derived list by `heldRules.test.ts` — it is the
 one document a founder decision is read from, and it was hand-written beside a derivable set.
+⚠️ **The held list is a JUDGEMENT and re-deriving it has shrunk it every time anyone has** — four rules have
+left it (`5K10K-LR-PACE-CAP`, `RACE-WEEK-SHAKEOUT-CAP`, `VO2MAX-FLOAT-IS-A-CEILING`, then `DELIVERED-RAMP`
+and `TAPER-DELIVERED-DEPTH` together), each because the helper it was said to need turned out to be the old
+checker's own. **Re-read a held reason before quoting the count.**
 ⚠️ **One ported rule, `ZONE-LABEL-HAS-PRESCRIPTION`, can never fire in production** and is named dead in the
 harness. ⚠️ **Strength is a SEPARATE ENTRY POINT with a DIFFERENT finding shape** — `StrengthFinding` carries
 `at: string | null` where `VerifierFinding` carries `day` — and its 50 rules are outside `PORTED_RULES` by

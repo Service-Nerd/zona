@@ -85,8 +85,10 @@ export const CHECK_PARAMS: Readonly<Record<string, CheckParams>> = {
   },
 
   // §94. SLACK, the same number for the same reason against a different cap. ⚠️ It was a SECOND
-  // local `const` of the same name in `invariants.ts`, in a rule the verifier has not ported
-  // (DELIVERED-RAMP is one of the 14 held), so nothing could ever have compared the two.
+  // local `const` of the same name in `invariants.ts`, and when this was written DELIVERED-RAMP was
+  // one of the 14 held rules, so nothing could compare the two. **Both halves are now false:** the
+  // rule was ported in batch 39 on 2026-11-27 and the verifier reads THIS entry, so the two are one
+  // number. Corrected rather than deleted, because the reason it was written still explains the key.
   'INV-PLAN-DELIVERED-RAMP': {
     note: 'slack — the same rounding allowance as §90\'s, against MAX_WEEKLY_VOLUME_INCREASE_PCT (§94)',
     values: { delivered_rounding_tolerance_pct: 10 },
