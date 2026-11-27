@@ -691,8 +691,11 @@ construction, which is why `heldRules.test.ts` pins its population to `INV-` onl
 
 **Readers today:** `lib/ops/verifierShadow.ts` only, inside `/api/ops/plan-audit`, **observe-only** — it runs
 the verifier beside `validateStoredPlan` on every stored plan and writes nothing back to a plan. Nothing in a
-runner-facing path calls L5. Gates: `lib/engine/verifier/verifyPlan.test.ts`, `verifierStrict.test.ts`,
-`verifierAgreement.test.ts`, `heldRules.test.ts`, `verifyStrength.test.ts`, `lib/ops/verifierShadow.test.ts`.
+runner-facing path calls L5. Gates: `lib/engine/verifier/verifierStrict.test.ts`,
+`verifierAgreement.test.ts`, `verifierIndependence.test.ts`, `verifierBaseBuild.test.ts`,
+`verifierMaintenance.test.ts`, `verifierStatic.test.ts`, `verifierStrength.test.ts`, `heldRules.test.ts`,
+`formulas.test.ts`, `lib/ops/verifierShadow.test.ts`. ⚠️ **There is no `verifyPlan.test.ts`** — this line
+named one, and `backlog:verify § 1b` is what said so, on CI, after a code review had caught its twin.
 
 🔻 **What L5 does not prove.** It has never refused a save, because nothing calls it on the save path. Its
 agreement with the old checker is measured on the golden corpus and on the live fleet as of 2026-11-25 — **not on
