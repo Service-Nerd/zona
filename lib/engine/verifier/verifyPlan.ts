@@ -633,15 +633,29 @@ const BATCH_5: Partial<Record<RuleId, Predicate>> = {
     }
     if (!total) return []
     const share = Math.floor(total / GENERATION_CONFIG.QUALITY_VARIETY_DENOMINATOR) + GENERATION_CONFIG.QUALITY_VARIETY_ALLOWANCE
-    // 🔻 ADR027-B3-STRICT-01 / sitting B10 — RULED AND NOT IMPLEMENTABLE HERE, deliberately left.
-    // The board: *"The bound uses the same weeks it counts."* The counts above skip race weeks
-    // (`w.type === 'race'`); `quality_pool_sizes` is `number[]`, **one entry per PICK with no week
-    // key**, so the verifier cannot tell which entries came from the weeks it counted. Aligning
-    // them needs the producer to stamp the week alongside each pool size — an engine change, and
-    // the sitting ruled this one "fix the verifier; prescription unchanged". The other way to
-    // align them is to COUNT race-week quality too, which changes what the rule judges rather
-    // than how, and the ruling does not say which side moves. Raised rather than guessed:
-    // `B10-POOL-WEEK-KEY-01`. Latent either way (M: 0 live).
+    // ✅ ADR027-B3-STRICT-01 / sitting B10 — *"The bound uses the same weeks it counts."* IT ALREADY
+    // DOES, and the premise the board ruled on was measured FALSE: a race week never holds a
+    // `type: 'quality'` session, so no pool entry ever comes from one. **0 race-week quality
+    // sessions across 2,396 cohort plans (stride-sampled from 41,472), 37 corpus plans and 44 live
+    // plans.** There was nothing to align BY WEEK, which is also why the board marked the row
+    // latent. Held mechanical by `lib/plan/qualityPoolAlignment.test.ts`, so if the engine ever
+    // puts quality in a race week the premise becomes live and a gate says so.
+    //
+    // 🔴 WHAT IS REALLY MISALIGNED IS PER-PICK, NOT PER-WEEK, AND IT IS FILED RATHER THAN FIXED
+    // HERE (`QUALITY-POOL-PICK-ALIGNMENT-01`). The producer pushes one pool size per PICK, and the
+    // live fleet carries **196 entries against 216 non-race quality sessions, 4 of 44 plans
+    // disagreeing** — three legacy plans predating the field, and one with **8 entries for 9
+    // picks**. Short lowers the pigeonhole bound and can fire falsely; long raises it and can
+    // silence a real finding (reachable: two regen scripts copy `quality_pool_sizes` between plans).
+    //
+    // ⚠️ I TRIED TO MAKE THE VERIFIER DECLINE ON A MISMATCH AND REVERTED IT ON REVIEW. Returning
+    // early abandoned the `share` bound too, which needs no pool data at all — so a plan with six
+    // identical rows and a short list went from a real §53 finding to a bare `unverified`. **And
+    // the two guards that should have caught the swap are both blind to it**: the agreement
+    // harness keys findings on `rule|week|day|severity` with the detail excluded, and the shadow's
+    // `lost` joins on rule id with no `isUnverified` filter, so a real finding REPLACED by an
+    // unverified one counts as neither lost nor gained. Those are the bigger finds and they are
+    // filed: `VERIFIER-UNVERIFIED-KEY-COLLISION-01`.
     const pools = plan.meta.quality_pool_sizes ?? []
     let pigeon = 0
     for (const size of Array.from(new Set(pools))) {

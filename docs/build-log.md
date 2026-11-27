@@ -6,6 +6,54 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-11-27 — ADR027-B3-STRICT-B10: the item was wrong, my fix was worse, and the real find was underneath both
+
+**The board row said the quality-variety bound counted weeks it did not judge.** Race weeks are
+excluded from the count but — the worry went — not from the pool list the bound is computed from.
+Five days of records said this was "ruled and blocked on the producer".
+
+**It was measured false in about ten minutes.** A race week never holds a quality session: zero
+across 2,396 plans sampled from a 41,472-input grid, zero across the test corpus, zero across all 44
+live plans. There was nothing to align. The board had even marked the row latent — this is *why*.
+
+**So I did the thing worth doing instead:** made the property mechanical. It held by construction,
+which is the shape this codebase keeps paying for. Now one gate says "one pool entry per quality
+pick, on every generated plan" and another says "no quality session in a race week" — so if the
+engine ever changes, the premise becomes live and something tells us, rather than someone
+rediscovering it.
+
+**What actually is broken is a different thing.** The pool record has one entry per *pick*, and the
+live fleet disagrees on 4 of 44 plans: three predate the field entirely, and one has eight entries
+for nine picks. Both directions bite, and only one is obvious — too few entries makes the rule fire
+when it shouldn't; **too many silences a real finding**, and two of our own regeneration scripts copy
+that field between plans.
+
+🔴 **I built the obvious fix and review killed it, correctly.** Having the rule decline when the
+numbers disagree also abandoned the half of the bound that needs no pool data at all. A plan with six
+identical quality sessions and a list short by one went from a real breach to a shrug.
+
+🔴 **And that is how the real find surfaced.** Both of the guards that exist to catch exactly that
+swap are blind to it. The agreement harness compares findings by rule, week, day and severity — the
+*detail* is excluded, and "I couldn't evaluate this" carries the same rule, week, day and severity as
+a real plan-level finding. The nightly live check joins on rule id alone. So a rule that stops being
+able to judge looks identical to a rule that judged and found nothing.
+
+**That matters because of which numbers they produce.** "Zero findings lost across 44 live plans" is
+quoted in the architecture decision, the feature registry and three state blocks as the evidence the
+new checker loses nothing — and it is computed by that join. It cannot see the one failure mode the
+whole "unverified" mechanism was built to make visible. My own claim in the divergence register, "0
+lost across the battery", was unfalsifiable for precisely the case it was written to cover.
+
+Filed, to be fixed **before** the sign-off, because the sign-off is read off those two numbers.
+
+**Smaller, same flavour:** one of my four mutations found that this new gate's population floor was
+computed from a different expression than the list it asserts on, so emptying the list left the floor
+happily passing. Two derivations of one population, again.
+
+Nothing shipped that changes behaviour. The measurement did all the work.
+
+---
+
 ## 2026-11-27 — ADR027-B3-STRICT-B14: "do the next thing" turned out to mean "the next thing shipped two days ago"
 
 **What happened first.** Asked to do the next item, I went to the file every pick-up is read from,

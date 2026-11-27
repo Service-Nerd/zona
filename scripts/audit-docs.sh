@@ -585,11 +585,12 @@ fi
 #     lands, or if the item is killed.**
 #   ADR027-B3-STRICT-01 (2026-11-25): a MULTI-WAVE item by the sitting's own structure. Phase 0
 #     (the `STRICT_DIVERGENCES` register) and 13 of the 14 B-rows are LIVE in the verifier and
-#     carry a registry row; C1 (the self-label replacement, its own wave), D2/D3 (named parameters
-#     and rule data) and E1 (moves a rule onto the base-build ROUTE, a production change) are
-#     still open under the same heading, which is marked 🟡. B10 is ruled and blocked on the
-#     producer: `quality_pool_sizes` carries no week key. **Remove when C1, D2, D3 and E1 have
-#     shipped, or when the remainder is split into its own id.**
+#     carry a registry row. C1, D2/D3, E1 and B14 have all shipped since (2026-11-25 to -27), so
+#     the heading stays 🟡 for B10 alone.
+#     ⚠️ B10's own premise was measured FALSE on 2026-11-27 (a race week never holds a quality
+#     session: 0 across 2,396 cohort, 37 corpus and 44 live plans), so it is no longer "blocked on
+#     the producer" — this comment said so for five days. What survives is a per-PICK misalignment,
+#     split out as `QUALITY-POOL-PICK-ALIGNMENT-01`. **Remove this entry when B10's heading closes.**
 _SHIPPED_AND_OPEN_OK='READINESS-SURFACE-01 STEPPER-CONTROL-01 TODAY-CTA-CLEARANCE-01 NATIVE-BATCH-01 CONTRACT-COVERAGE-03 BASEBUILD-DURATION-01 ADR027-B3-STRICT-01'
 for id in $(comm -12 /tmp/_reg /tmp/_open); do
   case " $_SHIPPED_AND_OPEN_OK " in *" $id "*) continue ;; esac

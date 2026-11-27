@@ -41,7 +41,7 @@ paused: only defects that harm runners are fixed, each one added to the hotfix t
 | B2 L1 runner facts + profile | ✅ done; part 1 of the route adoption done | `ADR027-B2-PROFILE`, `ADR027-B2B-PROFILE`. Parts 2–4 of `ADR027-B2B-PROFILE-ADOPTION` land in B4 (founder) |
 | B3 step 1: rule catalogue (L2) | ✅ done | `ADR027-B3-CATALOGUE`, `lib/engine/catalogue/rules.ts`, 221 rules |
 | B3 step 2: independent verifier (L5) | 🟡 **207 of 221 rules ported**, each agreeing finding for finding with the old checker | `ADR027-B3-VERIFIER`, `lib/engine/verifier/` |
-| B3 step 2b: the board's strict readings | 🟡 **14 of 14 B rows + C1 + D2/D3 + B14 shipped**; **B10 alone remains**, blocked on the producer; two of C1's seven named fields reclassified (below) | `ADR027-B3-STRICT-01`, `lib/engine/verifier/verifierStrict.test.ts`, `lib/engine/catalogue/checkParams.test.ts` |
+| B3 step 2b: the board's strict readings | ✅ **ALL 14 B rows + C1 + D2/D3 + B14 + B10 shipped or closed**; two of C1's seven named fields reclassified (below). 🔺 Not blocked, but `VERIFIER-UNVERIFIED-KEY-COLLISION-01` must be fixed before the sign-off reads its numbers | `ADR027-B3-STRICT-01`, `lib/engine/verifier/verifierStrict.test.ts`, `lib/engine/catalogue/checkParams.test.ts` |
 | B3 step 3: nightly check of every live plan, observe-only | ✅ done 2026-11-25 | `ADR027-B3-SHADOW-01`, `lib/ops/verifierShadow.ts`, inside `/api/ops/plan-audit` |
 | B3 step 4: trigger catalogue (ARCH-ENG-018) + the event vocabulary (ARCH-ENG-022) | ✅ **4a + 4b DONE 2026-11-26**, which is the whole of step 4 as scoped — **4c parked by founder decision** as `TRIGGERS-ON-DATA-ARRIVAL-01`. ⚠️ Nothing emits an event or evaluates a trigger yet, deliberately: 4a+4b define the vocabulary and the catalogue, 4c wires evaluation and needs three boards | `ADR027-B3-STEP4A` (`lib/engine/contracts/events.ts`, `runOutcome.ts`, **`docs/canonical/engine-truths.md` created**), `ADR027-B3-STEP4B` (`lib/engine/catalogue/triggers.ts`, `lib/engine/contracts/triggers.ts`) |
 | B3 exit: founder signs off the verifier replacing `validatePlan` as the gate | 🔲 | must name the 14 held rules (below) |
@@ -227,7 +227,19 @@ upward on intensity); §89 is the one veto a self-declaration must not unlock. C
    432-input cohort was used: **54 run-walk plans, 0 differences, identical before and after.** ⚠️ The fix removes a
    DEPENDENCY: reading every session is correct only while the long run is the longest, and **§9's
    `INV-PLAN-LONG-IS-LONGEST` bounds it against EASY runs only.**
-   **Still open: B10 only** — it needs a `quality_pool_sizes` week key from the producer.
+   ✅ **B10 CLOSED 2026-11-27 — ITS PREMISE WAS MEASURED FALSE.** The row worried that race-week pool entries inflated
+   the quality-variety bound; **a race week never holds a `type: 'quality'` session** (0 across 2,396 cohort plans
+   sampled from 41,472, 37 corpus plans and 44 live plans), so the bound and the counts already use the same weeks and
+   nothing was blocked on the producer — which this file and `audit-docs.sh` both said for five days. The property is
+   now mechanical (`lib/plan/qualityPoolAlignment.test.ts`). 📐 What survives is a per-PICK misalignment,
+   `QUALITY-POOL-PICK-ALIGNMENT-01` (live 196 entries against 216 sessions, 4 of 44 plans, both directions).
+   🔴 **AND REVIEWING IT FOUND A MEASUREMENT DEFECT THAT BLOCKS THE SIGN-OFF BELOW:
+   `VERIFIER-UNVERIFIED-KEY-COLLISION-01`** — `verifierAgreement`'s comparison key is
+   `rule|week|day|severity` with `detail` EXCLUDED, and `verifierShadow`'s `lost` joins on rule id with no
+   `isUnverified` filter, so **a real finding replaced by "could not evaluate" is invisible to both.**
+   ⚠️ `plans_lost: 0` and `lost_by_rule: {}` over the 44 live plans are cited in this ADR, the feature registry and
+   three state blocks as the evidence the verifier loses nothing — and they are computed by that join.
+   **So `ADR027-B3-STRICT-01` has nothing open that is BLOCKED; what is open is the measurement the sign-off reads.**
    ✅ `VERIFIER-RESHAPE-POLICY-01` shipped 2026-11-25 — both port gaps are now closed or ruled.
 3. **B3 step 4 — SCOPED TO 4a + 4b** (founder decision, 2026-11-26). **4a**: the event vocabulary plus the
    run→session matcher's `engine-truths.md` row — the matcher is in **no layer** today, and this carries step 4's
@@ -236,13 +248,17 @@ upward on intensity); §89 is the one veto a self-declaration must not unlock. C
    evaluating triggers when data ARRIVES — is PARKED** as `TRIGGERS-ON-DATA-ARRIVAL-01`: ARCH-ENG-018 routes
    thresholds to the Coaching Board and frequency to Design/SLT, so it cannot be built before it is ruled, and 4a+4b
    change nothing a runner experiences. Original scope, for the record: the trigger catalogue with values unchanged (Coaching Board 2026-11-21), **plus ARCH-ENG-022** — add `run_analysed` (that sitting asked for it) and `run_arrived` with its match outcome; `run_logged` keeps its ratified meaning. Amended 2026-11-25 while the list was still only prose; the mechanical check is this step's.
-4. **The founder's cut-over sign-off**, naming the 14 held rules. ✅ **That list is now held to the derived one by
+4. 🔺 **`VERIFIER-UNVERIFIED-KEY-COLLISION-01` FIRST — IT IS THE SIGN-OFF'S OWN EVIDENCE.** The two numbers the
+   request quotes (`plans_lost: 0`, `lost_by_rule: {}`) cannot see a rule that stopped being able to judge, because
+   both guards key on identity that excludes the `unverified:` marker. Demonstrated 2026-11-27, not theorised. Small
+   fix; the care is re-measuring every `STRICT_DIVERGENCES` entry afterwards, since some may have passed on it.
+5. **The founder's cut-over sign-off**, naming the 14 held rules. ✅ **That list is now held to the derived one by
    `lib/engine/verifier/heldRules.test.ts`** (`HELD-RULE-LIST-DERIVED-01`, 2026-11-26): the paragraph above is compared,
    **by name and in both directions**, against `RULES` INV ids minus `PORTED_RULES`, and its own stated count is checked
    too. ⚠️ So **editing that list is now a build-breaking act unless the code agrees** — which is the point, because the
    sign-off is the one document a founder decision is read from and every ported rule shrinks the real set while leaving
    prose untouched.
-5. Then B4, starting with 5K/10K, in shadow.
+6. Then B4, starting with 5K/10K, in shadow.
 
 Filed alongside, not blocking B3: `STRENGTH-S13-S14-LIVE-01` (no board; production never runs S13/S14),
 `PACE-GUIDE-PROVENANCE-01` (Coaching Board; the no-benchmark paces set 18 of 39 live race plans and have no principle,

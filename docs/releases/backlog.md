@@ -2473,7 +2473,10 @@ total nearly cancelled. Full numbers: ADR-027 § B3 step 3.
 - 📐 `verify:parity` **IDENTICAL over 6,210** on every commit (a verifier-only change must not move the engine) · `verify:invariants` 171/171 · `review:coaching --fast` no measured rate moved · round written back at `coaching-review/2026-11-25/review.md`.
 
 🔻 **STILL OPEN, and each for a stated reason:**
-- **B10 — RULED AND BLOCKED ON THE PRODUCER.** *"The bound uses the same weeks it counts"* cannot be done in the verifier: the counts skip race weeks and `meta.quality_pool_sizes` is `number[]`, **one entry per PICK with no week key**, so the verifier cannot tell which entries came from the weeks it counted. Aligning them needs the engine to stamp the week beside each pool size; the sitting ruled this one "fix the verifier, prescription unchanged". The other alignment is to COUNT race-week quality, which changes what the rule judges rather than how, and the ruling does not say which side moves. Filed as `B10-POOL-WEEK-KEY-01` at the call site.
+- 🔴 **B10 — THE PREMISE WAS MEASURED FALSE 2026-11-27, SO THERE WAS NOTHING TO FIX AND NOTHING WAS BLOCKED.** The board ruled *"the bound uses the same weeks it counts"* against a worry that race-week pool entries inflated it. **A race week never holds a `type: 'quality'` session: 0 across 2,396 cohort plans (stride-sampled from 41,472), 37 corpus plans and 44 live plans** — which is also why the board marked the row latent. The bound and the counts already use the same weeks. ✅ Made mechanical by `lib/plan/qualityPoolAlignment.test.ts`: one pool entry per non-race quality PICK on every generated plan, and no quality session in a race week, so if either stops holding a gate says so instead of a reader rediscovering it.
+  📐 **What survives is a per-PICK misalignment, split out as `QUALITY-POOL-PICK-ALIGNMENT-01`:** the live fleet carries **196 entries against 216 non-race quality sessions, 4 of 44 plans disagreeing** — three legacy plans predating the field, and one with **8 entries for 9 picks**.
+  🔴 **I TRIED TO MAKE THE VERIFIER DECLINE ON A MISMATCH AND REVERTED IT ON REVIEW.** The early return abandoned the `share` bound too, which needs no pool data at all, so a plan with six identical rows and a short list went from a real §53 finding to a bare `unverified`. ⚠️ **And both guards that should have caught the swap are blind to it** — filed as `VERIFIER-UNVERIFIED-KEY-COLLISION-01`.
+  *(original filing, for the record)* **RULED AND BLOCKED ON THE PRODUCER.** *"The bound uses the same weeks it counts"* cannot be done in the verifier: the counts skip race weeks and `meta.quality_pool_sizes` is `number[]`, **one entry per PICK with no week key**, so the verifier cannot tell which entries came from the weeks it counted. Aligning them needs the engine to stamp the week beside each pool size; the sitting ruled this one "fix the verifier, prescription unchanged". The other alignment is to COUNT race-week quality, which changes what the rule judges rather than how, and the ruling does not say which side moves. Filed as `B10-POOL-WEEK-KEY-01` at the call site.
 ✅ **B14 SHIPPED 2026-11-27 as `ADR027-B3-STRICT-B14`.** The sitting ruled it CORRECT WITH AMENDMENT
 *"if §117's text means the long run; the builder confirms the reading before changing it"* —
 ✅ **confirmed**: §117 Am. 2 says *"whose peak long run falls below"* twice, the constant is
@@ -2638,6 +2641,57 @@ runner's own facts, or by a note that names the delivered constraint* is checkab
 📐 **Measured 2026-11-25: 19 of 44 live plans are maintenance, and 0 of them carry the label without its
 `volume_constraint_note`** — so the cheapest version (require the note before honouring the exemption) is latent today
 and buys only a ratchet. **The board rules on whether the stronger version is worth a rule at all.**
+
+### 🔴 `VERIFIER-UNVERIFIED-KEY-COLLISION-01` — an UNVERIFIED finding is indistinguishable from a real one in both guards, so a rule that stops being able to judge reads as a rule that judged cleanly *(filed 2026-11-27, found by code review of B10)* ⚙️ **NO BOARD** (measurement defect)
+
+🔴 **THIS IS THE ONE THAT MATTERS, AND IT IS NOT ABOUT B10.** The verifier's `unverified:` contract
+exists so a rule that cannot evaluate says so rather than passing silently. **Neither of the two
+guards that compare the verifier to `validatePlan` can tell an unverified finding from a real one.**
+
+| Guard | Why it is blind |
+|---|---|
+| `verifierAgreement.test.ts:35` | the comparison key is `rule\|week\|day\|severity` — **`detail` is excluded**, and an unverified finding carries `week 0 / day null / error`, the same key a real plan-scope finding carries. A real finding REPLACED by an unverified one is a no-op to the diff |
+| `verifierShadow.ts:200` | `lost = prev.keys().filter(r => !next.has(r))` joins on **rule id** with no `isUnverified` filter, so the rule is still "present in next" and the loss is invisible |
+
+🔴 **THE CONSEQUENCE IS THE NUMBER THE CUT-OVER REQUEST QUOTES.** `plans_lost: 0` and
+`lost_by_rule: {}` over 44 live plans are cited in ADR-027, the feature registry and three state
+blocks as evidence the verifier loses no finding. **Both are computed by the join above**, so they
+cannot see the one failure mode the `unverified` contract was built to make visible.
+
+📐 **Demonstrated, not theorised** (code review's probe, B10's reverted change): a plan with six
+identical quality rows and a pool list short by one went from a real §53 finding under
+`validatePlan` to a bare `unverified: …` under the verifier, and **the agreement harness stayed
+green and the shadow reported 0 lost.** My own "0 lost across the battery" claim in the register was
+unfalsifiable for exactly the case it was written to cover.
+
+**Fix:** the key must include whether the finding is unverified, and the shadow's `lost` must treat
+"a rule that now only reports unverified" as a loss. Both are small; the care is in re-measuring
+every `STRICT_DIVERGENCES` entry afterwards, because some may have been passing on this collision.
+⚠️ **Do this BEFORE the cut-over sign-off**: the sign-off is read off these two numbers.
+
+### 🔲 `QUALITY-POOL-PICK-ALIGNMENT-01` — `quality_pool_sizes` has one entry per PICK and the live fleet disagrees on 4 of 44 plans, in both directions *(filed 2026-11-27, split from B10 once its own premise was measured false)* ⚙️ **NO BOARD** (the verifier's reading; prescription unchanged)
+
+📐 **Live: 196 pool entries against 216 non-race quality sessions.** Three of the four disagreeing
+plans predate the field entirely (`pools: 0`, generated 2026-06-10 and -06-26 plus one with no
+`generated_at`) and keep the designed `share` fallback — that is no data, not bad data. **The fourth
+has 8 entries for 9 picks** (generated 2026-10-10). 0 of 2,396 cohort plans reproduce it on today's
+engine, so there is nothing left to localise from the engine side.
+
+⚠️ **BOTH DIRECTIONS MATTER AND ONLY ONE IS INTUITIVE.** Short list → lower pigeonhole bound → lower
+cap → the rule fires where it should not. **Long list → higher bound → a real finding is silenced**,
+and that direction is reachable: `scripts/rca-1026-regen.ts` and `scripts/goalpace-5k-01-regen.ts`
+copy `quality_pool_sizes` from a freshly generated plan onto a candidate whose past weeks are
+preserved.
+
+🔻 **Blocked on `VERIFIER-UNVERIFIED-KEY-COLLISION-01`, deliberately.** The obvious fix — the rule
+declines when the pool list does not match the picks — was built and **reverted on review**: the
+early return abandoned the `share` bound, which needs no pool data, and neither guard could see the
+real finding it swapped out. **Fix the measurement first, then this is a few lines.**
+
+⚠️ **One more path, measured latent:** `selectCatalogueSession` can return null before its
+`poolSizes?.push`, and `ruleEngine.ts` places the quality session anyway — so a pick with no pool
+entry is possible by construction. 0 of 3,835 cohort plans and 0 quality sessions without a
+`catalogue_id`, so it is the one route by which §53 could self-disable on engine output.
 
 ### 🔴 `CHECK-FIXED-SHAPE-DISTANCE-STEP-01` — §8's duration-coherence rule is blind to 2 of the 6 fixed-shape rows, and the two it cannot see UNDERSTATE a stated duration by 10–26 minutes *(filed 2026-11-27, found measuring `ADR027-B3-STRICT-01` D3)* 🏃 **COACHING BOARD** (the fix changes a duration a runner reads)
 
