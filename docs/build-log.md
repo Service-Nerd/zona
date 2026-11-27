@@ -6,6 +6,55 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-11-27 — ADR027-B3-STRICT-B14: "do the next thing" turned out to mean "the next thing shipped two days ago"
+
+**What happened first.** Asked to do the next item, I went to the file every pick-up is read from,
+took item 1, and started. It had shipped two days earlier. Both the backlog and the roadmap said so;
+the architecture doc still said *"the only cut-over blocker, and it is a build, not a question"*. And
+I had already copied that sentence into this morning's state blocks without checking the code.
+
+**Second day running that the stale thing was the SOURCE and I propagated it.** Yesterday it was
+three records I'd fixed in the copy and left the original asserting. Today it was one I read
+forward. The fix both times is the same and it is cheap: the first step of a build is a count, not a
+read. Re-deriving it took one grep.
+
+**So I did the thing that actually was left.** A board row from last week: does §117's bound mean
+the peak *long run*, or the largest session of any kind? The board ruled the fix correct *if* the
+text means the long run, and made me confirm it before changing anything. It does — the amendment
+says "whose peak long run falls below", twice, and the constant is named after it.
+
+🔴 **The item named one place. There are four.** Both checkers, the rubric that decides whether a
+plan is scored at all, and — found by review, after I'd written "three sites" into the record —
+**the producer's own refusal gate.** That last one is the one that matters, and its own comment says
+why: an invariant only *logs* in production, so the refusal is the real guard. Correcting the three
+checkers and leaving the gate would have had the engine ship a plan its own checker then flags.
+Worse than leaving all four alone.
+
+**It changes nothing today, and I checked that properly.** Zero of 37 corpus plans and zero of 44
+live plans read differently. The usual parity check is **blind** here — the rule is only reachable
+through an input the wizard never sends — so I built a 432-input cohort specifically to reach it: 54
+plans that do, zero differences, identical before and after. Saying "parity is identical" would have
+been true and worthless.
+
+**What it does remove is a dependency nobody had noticed.** Reading every session is correct only
+while the long run is the longest run — and no rule says it is. §9's rule bounds the long run
+against *easy* runs only, so a longer quality session breaks the assumption and nothing forbids one.
+Four places were relying on a coincidence.
+
+**Where I was worst.** Review found four defects, all mine. The first was a type error — I'd run
+`tsc` before writing the test and not after, and the test's own run passed 4 of 4 because the test
+runner doesn't typecheck. That one error would have blocked every push. Then: a comment left saying
+the opposite of the code three lines below it. And a missing guard, which I then fixed **worse than
+the defect** — an early return inside a marathon-only block that would have skipped every later
+check, with a happy compiler and a fully green suite, because no real plan reaches that branch.
+
+Seven mutations, six went red. The seventh stays green and I left it that way with the reason
+written down: the producer's change can't be observed through the engine, because the engine never
+builds the plan the two readings disagree about. A source assertion would have "passed" on a
+comment, which this repo has already paid for once.
+
+---
+
 ## 2026-11-27 — ADR027-B3-STRICT-D23: a membership gap that had been hiding a blind spot for months
 
 **What shipped.** The Coaching Board's D2/D3 rows: every check tolerance and every row list in the

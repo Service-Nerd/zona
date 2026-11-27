@@ -10787,12 +10787,20 @@ function buildRulePlanOnce(
     // must fall back to the refusal §117 was trying to avoid. **Refusing is
     // worse for the metric and better for the runner, which is the trade the
     // board made explicitly.**
+    // 🔴 B14 (Coaching Board 2026-11-22, reading confirmed 2026-11-27) — THE LONG RUN, and this is
+    // THE SITE THAT DECIDES, which is why it matters more than the three checkers. The paragraph
+    // above says it: an invariant only LOGS in production, so the refusal is the real guard. This
+    // read the largest session of ANY kind into a variable called `peakLr`, so with the checkers
+    // corrected and this left alone the producer would SHIP a plan the checker then flags —
+    // strictly worse than the two agreeing on the wrong reading. Found by code review as the
+    // fourth site after the record claimed three.
     const peakLr = plan.weeks
       .filter(w => w.n > 0 && w.type !== 'race' && w.type !== 'deload')
       .flatMap(w => Object.values(w.sessions))
+      .filter((sn): sn is Session => !!sn && isLongRun(sn as Session))
       // SESSION-KM-02 — beginner plans are duration-anchored; `distance_km ?? 0`
       // reads a real long run as zero, and that error was made twice today.
-      .reduce((mx, sn) => Math.max(mx, sessionKmSelfPaced(sn as Session) ?? 0), 0)
+      .reduce((mx, sn) => Math.max(mx, sessionKmSelfPaced(sn) ?? 0), 0)
 
     if (peakLr > 0 && peakLr < GENERATION_CONFIG.FINISH_GOAL_RUNWALK_MIN_PEAK_LR_KM) {
       // Reuses the SAME refusal builder as §111's own throw at :5957, so the

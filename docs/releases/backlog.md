@@ -2474,7 +2474,50 @@ total nearly cancelled. Full numbers: ADR-027 § B3 step 3.
 
 🔻 **STILL OPEN, and each for a stated reason:**
 - **B10 — RULED AND BLOCKED ON THE PRODUCER.** *"The bound uses the same weeks it counts"* cannot be done in the verifier: the counts skip race weeks and `meta.quality_pool_sizes` is `number[]`, **one entry per PICK with no week key**, so the verifier cannot tell which entries came from the weeks it counted. Aligning them needs the engine to stamp the week beside each pool size; the sitting ruled this one "fix the verifier, prescription unchanged". The other alignment is to COUNT race-week quality, which changes what the rule judges rather than how, and the ruling does not say which side moves. Filed as `B10-POOL-WEEK-KEY-01` at the call site.
-- **B14** — needs the builder to confirm §117's reading before anything changes (the sitting says so).
+✅ **B14 SHIPPED 2026-11-27 as `ADR027-B3-STRICT-B14`.** The sitting ruled it CORRECT WITH AMENDMENT
+*"if §117's text means the long run; the builder confirms the reading before changing it"* —
+✅ **confirmed**: §117 Am. 2 says *"whose peak long run falls below"* twice, the constant is
+`FINISH_GOAL_RUNWALK_MIN_PEAK_LR_KM`, and the registry row says *"peak long run"*.
+- 🔴 **THE ITEM NAMED ONE SITE; THERE ARE FOUR**, each reading the largest session of any kind:
+  `INV-PLAN-RUNWALK-ADEQUATE` in `invariants.ts` (its variable was **called `peakLr`** and read
+  everything), its ported twin in the verifier, **`planQuality.ts`'s `peakLR`** — the rubric half of
+  the same bound, which decides whether a plan is SCORED and also feeds `LONG-RUN-SHORT` — and
+  **`ruleEngine.ts`'s refusal gate**, found by code review after the record claimed three.
+- 🔑 **THE PRODUCER IS THE SITE THAT DECIDES, and leaving it would have been worse than leaving all
+  four.** Its own comment says *"AN INVARIANT IS NOT ENOUGH HERE. In production `validatePlan` only
+  LOGS an error-severity violation — the runner still receives the plan"*, so with the three
+  checkers corrected and the gate alone it would **ship a plan the checker then flags.**
+- 📐 **MEASURED INERT, on a population built to reach it.** 0 of 37 corpus plans differ between the
+  two readings; `LONG-RUN-SHORT` is **8 of 37 either way** and `adequate` flips on **0**;
+  `finish_goal_run_walk` and `run_walk_prescribed` are each unset on **0 of 44 live plans**, so the
+  invariant has never fired for a runner. ⚠️ **Parity is BLIND here and says so** — §117 is reachable
+  only through the `fitness_level` API override, which the corpus, the parity grid and the targeted
+  grid all leave unset (`COHORT-GRID-UNSET-LEVEL-01`), so a constructed 432-input cohort was used
+  instead: **54 run-walk plans, 0 peak differences, 0 refusal flips, identical before and after.**
+- ⚠️ **WHAT THE FIX REMOVES IS A DEPENDENCY, NOT A LIVE DEFECT.** Reading every session is correct
+  only while the long run IS the longest run, and **no invariant asserts that**: §9's
+  `INV-PLAN-LONG-IS-LONGEST` bounds the long run against **EASY** runs only, so a longer QUALITY
+  session is forbidden by no rule. The coincidence was load-bearing and unguarded.
+- 🔴 **CODE REVIEW FOUND FOUR, ALL MINE, AND THE FIRST WOULD HAVE BLOCKED EVERY PUSH:** the new
+  test called `verifyPlan` with **2 of 3 arguments**, smuggling the policy in as a `rules` key the
+  context type does not have — the repo's one `tsc` error, and **`vitest run` passed 4/4 because
+  vitest does not typecheck.** I had run `tsc` before writing the test and not after. Plus the
+  fourth site; a surviving comment saying *"'peak' is the largest SESSION of any kind"* three lines
+  above code that no longer did; and a missing `> 0` guard in the rubric, where an empty long-run
+  list now reads as a hard objection stating *"peak long run 0.0km = 0% of race"*.
+- 🔴 **AND MY FIX TO THAT LAST ONE WAS WORSE THAN THE DEFECT:** `if (peakLR <= 0) return f`, inside a
+  **marathon-only** block, would have skipped P8 and every check after it. `tsc` was happy and the
+  **whole suite stayed green**, because no corpus plan reaches `peakLR === 0`. It guards the two
+  pushes now, with an arm asserting `NEVER-BUILDS` still fires.
+- 📐 **7 mutations, each verified to have landed; 6 red.** 🔻 **The seventh is declared, not hidden:**
+  reverting the producer's own `.filter(isLongRun)` leaves every arm green, because the arm asserts a
+  property of engine OUTPUT that holds under either reading and the gate is not exported. **The
+  producer's change is correct and UNGATED**, and a source assertion would pass on a comment.
+- 📐 `verify:parity` **IDENTICAL over 6,210** · `verify:sweep` **16,464 plans, no new violations** ·
+  `verify:matrix` **PASS 62 / FAIL 0 / 14 of 17** · `verify:invariants` 171/171 · `cohort:shape` and
+  `measure:fitness` baselines unmoved.
+
+🔻 **B10 is now the only piece of this item still open**, and it is blocked on the producer.
 
 ✅ **D2/D3 SHIPPED 2026-11-27 as `ADR027-B3-STRICT-D23`.** `lib/engine/catalogue/checkParams.ts` —
 one entry per rule, the same shape as 4b's `TRIGGER_RULES`. **No value changed; `verify:parity`

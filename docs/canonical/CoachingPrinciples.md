@@ -12117,6 +12117,27 @@ discovered by a runner.
 
 **Config.** `FINISH_GOAL_RUNWALK_MIN_PEAK_LR_KM = 17`. **Enforced by** `INV-PLAN-RUNWALK-ADEQUATE`.
 
+✅ **THE READING IS CONFIRMED, AND IT WAS NOT WHAT THE CODE DID** (B14, Coaching Board
+`ADR027-B3-RAISED-LIST-01` 2026-11-22; confirmed by the builder 2026-11-27, the sitting's own
+condition). The board asked whether this amendment's subject is the **long run** or the largest
+session of any kind, and ruled the fix CORRECT *if* the text means the long run. It does: the
+Principle above says *"whose peak long run falls below"*, the constant is named `…MIN_PEAK_LR_KM`,
+and `plan-invariants.md`'s row says *"peak long run"*.
+
+🔴 **Three sites read every session, and the item named one.** `INV-PLAN-RUNWALK-ADEQUATE` in
+`invariants.ts` (its variable was called `peakLr` and read everything), its ported twin in the v2
+verifier, and — the one nobody had looked at — **`planQuality.ts`'s `peakLR`, which feeds both this
+bound's rubric half and `LONG-RUN-SHORT`**, i.e. whether a plan is SCORED at all.
+
+📐 **Measured inert: 0 of 37 corpus plans and 0 of 44 live plans differ between the two readings**,
+`LONG-RUN-SHORT` is 8 of 37 either way, and `finish_goal_run_walk` is unset on all 44 live plans, so
+this rule has never fired for a runner. ⚠️ **What the fix removes is a DEPENDENCY, not a live
+defect:** reading every session is correct only while the long run IS the longest run, and **no
+invariant asserts that** — §9's `INV-PLAN-LONG-IS-LONGEST` bounds the long run against **easy** runs
+only, so a longer QUALITY session breaks the coincidence and no rule forbids one. Held by
+`lib/plan/runWalkAdequateLongRun.test.ts`, whose fixture is hand-built because no corpus plan can
+reach it.
+
 🟢 **UPDATE 2026-09-23 — THE BOUND IS NOW BINDING, AND IT BOUND EXACTLY AS THIS AMENDMENT
 PREDICTED.** Three days after it was written, the `MARA-LR-LOWBASE-01` re-sitting measured it
 refusing the **knee/shin-history marathoner at 8-12 km/week**, whose longest run projects to

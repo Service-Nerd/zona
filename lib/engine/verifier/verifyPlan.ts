@@ -1478,15 +1478,20 @@ const BATCH_17: Partial<Record<RuleId, Predicate>> = {
 Object.assign(PREDICATES, BATCH_17)
 
 const BATCH_18: Partial<Record<RuleId, Predicate>> = {
-  // §117 Am. 2: a finish-goal run-walk plan's biggest main-week session reaches the floor.
-  // ⚠️ Ported faithfully: "peak" is the largest SESSION of any kind, not the long run.
+  // §117 Am. 2: a finish-goal run-walk plan's peak main-week LONG RUN reaches the floor.
+  // ✅ B14 (Coaching Board 2026-11-22, reading confirmed 2026-11-27) — this used to read the largest
+  // SESSION of any kind, and these two lines said so while the code three lines down no longer did.
+  // A comment that contradicts the data beside it is the shape this wave keeps paying for.
   'INV-PLAN-RUNWALK-ADEQUATE': plan => {
     if (!plan.meta.finish_goal_run_walk) return []
+    // 🔴 B14 — the peak LONG RUN, not the largest session of any kind. The port was faithful and
+    // honest about it (`peak session` in its own detail string); the old checker's variable was
+    // called `peakLr` and read everything. §117 Am. 2's subject is the long run.
     let peak = 0
     for (const w of plan.weeks.filter(x => x.n > 0 && x.type !== 'race' && x.type !== 'deload'))
-      for (const { session: s } of daysOf(w)) peak = Math.max(peak, sessionKmSelfPaced(s) ?? 0)
+      for (const { session: s } of daysOf(w)) if (s && isLongRun(s)) peak = Math.max(peak, sessionKmSelfPaced(s) ?? 0)
     return peak > 0 && peak < GENERATION_CONFIG.FINISH_GOAL_RUNWALK_MIN_PEAK_LR_KM
-      ? [{ rule_id: 'INV-PLAN-RUNWALK-ADEQUATE', week: PLAN, day: null, detail: `peak session ${peak.toFixed(1)} km` }] : []
+      ? [{ rule_id: 'INV-PLAN-RUNWALK-ADEQUATE', week: PLAN, day: null, detail: `peak long run ${peak.toFixed(1)} km` }] : []
   },
 
   // §117 Am. 4: run-walk is never the answer for a volume-capped injury.

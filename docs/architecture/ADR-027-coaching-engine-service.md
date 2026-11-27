@@ -41,7 +41,7 @@ paused: only defects that harm runners are fixed, each one added to the hotfix t
 | B2 L1 runner facts + profile | ✅ done; part 1 of the route adoption done | `ADR027-B2-PROFILE`, `ADR027-B2B-PROFILE`. Parts 2–4 of `ADR027-B2B-PROFILE-ADOPTION` land in B4 (founder) |
 | B3 step 1: rule catalogue (L2) | ✅ done | `ADR027-B3-CATALOGUE`, `lib/engine/catalogue/rules.ts`, 221 rules |
 | B3 step 2: independent verifier (L5) | 🟡 **207 of 221 rules ported**, each agreeing finding for finding with the old checker | `ADR027-B3-VERIFIER`, `lib/engine/verifier/` |
-| B3 step 2b: the board's strict readings | 🟡 **14 of 14 B rows + C1 + D2/D3 shipped**; B10 blocked on the producer, B14 on a §117 reading, two of C1's seven named fields reclassified (below) | `ADR027-B3-STRICT-01`, `lib/engine/verifier/verifierStrict.test.ts`, `lib/engine/catalogue/checkParams.test.ts` |
+| B3 step 2b: the board's strict readings | 🟡 **14 of 14 B rows + C1 + D2/D3 + B14 shipped**; **B10 alone remains**, blocked on the producer; two of C1's seven named fields reclassified (below) | `ADR027-B3-STRICT-01`, `lib/engine/verifier/verifierStrict.test.ts`, `lib/engine/catalogue/checkParams.test.ts` |
 | B3 step 3: nightly check of every live plan, observe-only | ✅ done 2026-11-25 | `ADR027-B3-SHADOW-01`, `lib/ops/verifierShadow.ts`, inside `/api/ops/plan-audit` |
 | B3 step 4: trigger catalogue (ARCH-ENG-018) + the event vocabulary (ARCH-ENG-022) | ✅ **4a + 4b DONE 2026-11-26**, which is the whole of step 4 as scoped — **4c parked by founder decision** as `TRIGGERS-ON-DATA-ARRIVAL-01`. ⚠️ Nothing emits an event or evaluates a trigger yet, deliberately: 4a+4b define the vocabulary and the catalogue, 4c wires evaluation and needs three boards | `ADR027-B3-STEP4A` (`lib/engine/contracts/events.ts`, `runOutcome.ts`, **`docs/canonical/engine-truths.md` created**), `ADR027-B3-STEP4B` (`lib/engine/catalogue/triggers.ts`, `lib/engine/contracts/triggers.ts`) |
 | B3 exit: founder signs off the verifier replacing `validatePlan` as the gate | 🔲 | must name the 14 held rules (below) |
@@ -194,13 +194,17 @@ reads `levels.intensity` deliberately, because that is the level the planner bui
 upward on intensity); §89 is the one veto a self-declaration must not unlock. Corrected.
 
 ### Where to pick up, in order
-1. 🔺 **`VERIFIER-STORED-LEVEL-01` — THE ONLY CUT-OVER BLOCKER, AND IT IS A BUILD, NOT A QUESTION.** The Coaching
-   Board ruled it **EXEMPT** on 2026-11-25 (`STORED-LEVEL-AND-C1-SCOPE-01`): §79 already decided it — *"Two inputs,
-   two axes — do not merge them … collapsing them is what produced the defect"* — and `fitnessAssessment.ts:201` lets
-   the API STRUCTURAL declaration set the INTENSITY axis. A defect fix restoring documented intent. **10 of 44 live
-   plans exposed, 9 masked by an upward declaration that coincidentally resolves to the same level.** Spiked: the
-   collapse goes 1 → 0 and `verify:parity` is IDENTICAL over 6,210. **Three binding conditions**, of which the one
-   parity does NOT cover is that `property-validate-plans.ts` and `r23-phase7-validation.ts` must both run clean.
+1. ✅ **`VERIFIER-STORED-LEVEL-01` SHIPPED 2026-11-25 in `b7b2df3f` — THE CUT-OVER IS UNBLOCKED.**
+   `assessedIntensity` reads `input.fitness_intensity_level ?? input.fitness_level ?? assessed.intensity`, all three
+   board conditions were met, and `plans_level_mismatch` went **1 → 0** on the live fleet.
+   🔴 **THIS ITEM READ "THE ONLY CUT-OVER BLOCKER, AND IT IS A BUILD, NOT A QUESTION" FOR TWO DAYS AFTER IT SHIPPED**,
+   while `backlog.md` and `roadmap.md` both said ✅ SHIPPED — and on 2026-11-27 I read it from HERE and wrote "Next:
+   `VERIFIER-STORED-LEVEL-01`" into both state blocks without checking the code. **This file is the SOURCE every
+   pick-up is read from, so a stale entry here is copied forward, which is exactly what happened.** The Coaching Board
+   had ruled it EXEMPT on 2026-11-25 (`STORED-LEVEL-AND-C1-SCOPE-01`): §79 already decided it — *"Two inputs, two axes
+   — do not merge them … collapsing them is what produced the defect"* — and `fitnessAssessment.ts` let the API
+   STRUCTURAL declaration set the INTENSITY axis. **10 of 44 live plans were exposed, 9 masked by an upward
+   declaration that coincidentally resolved to the same level.**
 2. ✅ **`ADR027-B3-STRICT-01`: D2/D3 SHIPPED 2026-11-27** (`ADR027-B3-STRICT-D23`) — `lib/engine/catalogue/checkParams.ts`,
    one entry per rule, plus three `SessionCatalogueRow` attributes (`sized_from_steps`, `continuous_vo2`,
    `float_is_run`) replacing sets written out in two or three modules at once. **No value changed; parity IDENTICAL
@@ -213,7 +217,17 @@ upward on intensity); §89 is the one veto a self-declaration must not unlock. C
    checker** (22 on a `threshold_pyramid`), with 15 of 20 corpus sessions understating their own structure by
    10.6–26.4 min. **0 of 44 live plans.** Filed to the board; not closed here, because the fix changes a stated
    duration a runner reads. ✅ C1 shipped 2026-11-25, and the chair accepted its scope correction on §23/§46 grounds.
-   **Still open: B10** (needs a `quality_pool_sizes` week key from the producer) and **B14** (the §117 reading).
+   ✅ **B14 SHIPPED 2026-11-27** (`ADR027-B3-STRICT-B14`): §117 Am. 2's bound reads the peak LONG RUN, the reading the
+   sitting made its condition — confirmed from the amendment's own text. 🔴 **The item named one site and there are
+   FOUR**, the fourth found by code review: both checkers, `planQuality.ts`'s rubric `peakLR`, and
+   **`ruleEngine.ts`'s refusal gate, which is the one that decides** (its own comment: *"an invariant is not enough
+   here… in production `validatePlan` only LOGS"*), so correcting the checkers alone would have had the producer ship
+   a plan the checker then flags. 📐 Measured inert — 0 of 37 corpus plans and **0 of 44 live** differ, and parity is
+   **blind** because §117 is reachable only through the `fitness_level` override that no grid sets, so a constructed
+   432-input cohort was used: **54 run-walk plans, 0 differences, identical before and after.** ⚠️ The fix removes a
+   DEPENDENCY: reading every session is correct only while the long run is the longest, and **§9's
+   `INV-PLAN-LONG-IS-LONGEST` bounds it against EASY runs only.**
+   **Still open: B10 only** — it needs a `quality_pool_sizes` week key from the producer.
    ✅ `VERIFIER-RESHAPE-POLICY-01` shipped 2026-11-25 — both port gaps are now closed or ruled.
 3. **B3 step 4 — SCOPED TO 4a + 4b** (founder decision, 2026-11-26). **4a**: the event vocabulary plus the
    run→session matcher's `engine-truths.md` row — the matcher is in **no layer** today, and this carries step 4's

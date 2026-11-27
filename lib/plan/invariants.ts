@@ -7934,9 +7934,22 @@ export function validatePlan(plan: Plan, rawInput: GeneratorInput): Violation[] 
   {
     if (plan.meta.finish_goal_run_walk) {
       const main = plan.weeks.filter(w => w.n > 0 && w.type !== 'race' && w.type !== 'deload')
+      // 🔴 B14 (Coaching Board 2026-11-22) — THE LONG RUN, NOT THE LARGEST SESSION OF ANY KIND.
+      // This loop read every session and took the max, into a variable called `peakLr`. §117 Am. 2's
+      // subject is the peak LONG RUN — its text says so twice, the constant is
+      // `FINISH_GOAL_RUNWALK_MIN_PEAK_LR_KM`, and the registry row says "peak long run". The board
+      // ruled the fix CORRECT conditional on the builder confirming that reading; it is confirmed.
+      //
+      // ⚠️ MEASURED INERT AND STILL WORTH DOING. 0 of 37 corpus plans and 0 of 44 live plans differ
+      // between the two readings, and `finish_goal_run_walk` is unset on all 44, so this rule has
+      // never fired for a runner. What the change removes is a DEPENDENCY: reading every session is
+      // correct only while the long run is the longest run, and **nothing asserts that** — §9's
+      // `INV-PLAN-LONG-IS-LONGEST` bounds the long run against EASY runs only, so a longer quality
+      // session is not forbidden by any rule. The coincidence was load-bearing and unguarded.
       let peakLr = 0
       for (const w of main) {
         for (const s of Object.values(w.sessions)) {
+          if (!s || !isLongRun(s)) continue
           // SESSION-KM-02 — beginner plans are duration-anchored, so
           // `distance_km ?? 0` reads a real long run as zero. That mistake was
           // made AGAIN while measuring this very finding: the fifth recorded

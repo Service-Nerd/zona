@@ -19,6 +19,7 @@
  */
 
 import { sessionKmSelfPaced } from './sessionDistance'
+import { isLongRun } from './sessionRole'   // B14 — the classification owner (INV-CLASS)
 import { week1StepBaseKm } from './startVolume'
 import { GENERATION_CONFIG as G } from './generationConfig'
 import type { GeneratorInput, Plan, Week, Session } from '@/types/plan'
@@ -51,6 +52,9 @@ const runsIn = (w: Week) =>
   Object.values(w.sessions ?? {}).filter(
     (s): s is Session => !!s && s.type !== 'rest' && s.type !== 'strength' && s.type !== 'cross-train')
 const kmsIn = (w: Week) => runsIn(w).map(s => sessionKmSelfPaced(s) ?? 0)
+/** B14 — the LONG RUNS only, for §9's and §117's long-run bars. `kmsIn` is every run and stays
+ *  that way for the ratio and volume arms, which are about runs in general. */
+const lrKmsIn = (w: Week) => runsIn(w).filter(isLongRun).map(s => sessionKmSelfPaced(s) ?? 0)
 
 /**
  * §2 Amendment 2 — how much bigger is each of week 1's runs than the runner's
@@ -283,17 +287,36 @@ export function auditPlanQuality(plan: Plan, input: GeneratorInput): Finding[] {
     // carries the old figure so the two can never be confused.
     const meta = plan.meta as unknown as { run_walk_prescribed?: boolean }
     const runWalk = !!meta.run_walk_prescribed
-    const peakLR = Math.max(0, ...weeks.filter(w => w.type !== 'deload').flatMap(kmsIn))
+    // 🔴 B14 (Coaching Board 2026-11-22) — THE THIRD SITE, AND THE ITEM NAMED ONLY THE FIRST.
+    // This was `kmsIn`, every run in the week, into a variable called `peakLR`. §117 Am. 2's subject
+    // is the peak LONG RUN, and this is the site that decides whether a plan is SCORED — the
+    // rubric half of the same bound, as the paragraph below says. ⚠️ Measured identical on the
+    // corpus (`LONG-RUN-SHORT` 8 of 37 either way, `adequate` flips on 0), because the long run is
+    // normally the longest run. **Nothing guarantees that**: §9's `INV-PLAN-LONG-IS-LONGEST` bounds
+    // the long run against EASY runs only, so a longer quality session breaks the coincidence and
+    // no rule forbids one.
+    const peakLR = Math.max(0, ...weeks.filter(w => w.type !== 'deload').flatMap(lrKmsIn))
     // ⚠️ AND IT IS BOUNDED HERE, NOT ONLY BY THE INVARIANT. §117 Am.2's whole
     // finding was *"the exemption was correct; its BOUND was missing — an
     // exemption without a bound is not a relaxation, it is a hole."*
     // `INV-PLAN-RUNWALK-ADEQUATE` guards `finish_goal_run_walk` plans; it does
     // not see a prescribed-but-not-reduced one, so the bound is applied here
     // too. Below 17 km the plan is SCORED, run-walk or not. Willy's condition.
+    // 🔴 B14 code review — THE `> 0` GUARD, which both sibling sites have and this one did not.
+    // With `kmsIn` an empty week was impossible; with `lrKmsIn` a plan carrying no session the
+    // classifier calls a long run yields 0, and 0 reads as a hard objection stating "peak long run
+    // 0.0km = 0% of race". **Absence is not a value** — a plan with no long run at all is §9's
+    // finding, not this bar's.
+    //
+    // 🔴 AND MY FIRST ATTEMPT AT THIS GUARD WAS WORSE THAN THE DEFECT: `if (peakLR <= 0) return f`,
+    // inside a MARATHON-ONLY block, which would have skipped P8 and every check after it for any
+    // marathon plan with no stamped long run. `tsc` was happy and the whole suite stayed green,
+    // because no corpus plan reaches `peakLR === 0`. It guards the two pushes, not the function.
     const adequate = peakLR >= G.FINISH_GOAL_RUNWALK_MIN_PEAK_LR_KM
-    if (runWalk && adequate && peakLR < input.race_distance_km * 0.55)
+    const short = peakLR > 0 && peakLR < input.race_distance_km * 0.55
+    if (runWalk && adequate && short)
       f.push({ code: 'LONG-RUN-SHORT-RUNWALK', watched: true, detail: `peak long run ${peakLR.toFixed(1)}km = ${(peakLR / input.race_distance_km * 100).toFixed(0)}% of race — run-walk shape, adequacy ruled by the board, NOT scored` })
-    else if (peakLR < input.race_distance_km * 0.55)
+    else if (short)
       f.push({ code: 'LONG-RUN-SHORT', detail: `peak long run ${peakLR.toFixed(1)}km = ${(peakLR / input.race_distance_km * 100).toFixed(0)}% of race` })
   }
 
