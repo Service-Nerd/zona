@@ -38,6 +38,20 @@ const ALLOWED_NAMES: Record<string, string[]> = {
   '@/lib/plan/sessionFormat': ['SESSION_FORMAT'],      // the universal session format: rule data (the split is derived here)
   '@/lib/plan/sessionStructureV2': ['workAnchorsOf', 'goalPaceShapeWord', 'isV2Structure', 'StructureV2Schema'], // read a catalogue row's anchors and shape noun: rule data
   '@/lib/plan/hrBand': ['isEffortGovernedRow'],        // classifies a row by its targets (INV-CLASS, the builder's same test), fixture-tested
+  // ✅ FOUNDER DECISION 2026-11-27: two CLASSIFIERS, by name, nothing else from this module.
+  // `hasHillRestrictingInjury` matches a runner's injury chips to §21's restricted list and
+  // `strideCarrierDay` names the day §28's strides attach to — both are the same class as
+  // `hasInjuryKeyword` and `normaliseDays` already allowed above: a question with ONE right answer,
+  // where a second copy is an opportunity to disagree about a fact rather than a check on a
+  // decision. ⚠️ The module's PLACEMENT and PRESCRIPTION functions stay out of reach, which is why
+  // this is a named allowance and not the module.
+  // ⚠️ THE GRANT AS USED IS NOT THE GRANT AS ASKED FOR, and that is recorded rather than quietly
+  // matched: the founder allowed `strideCarrierDay` and `hasHillRestrictingInjury`, and §28 turned
+  // out to need `strideCarrierDay` and `isDayAfterLongRun` instead. `hasHillRestrictingInjury` is
+  // NOT listed, because its only consumer (`INJURY-NO-HILLS`) is still held — an allowed name with
+  // no call site is a permission nobody checked. `isDayAfterLongRun` is the same class (arithmetic
+  // over the day order) and its own docstring forbids re-deriving it.
+  '@/lib/plan/neuromuscular': ['strideCarrierDay', 'isDayAfterLongRun'],
   '@/lib/coaching/zoneRules': ['zoneStringFromZoneKeys'], // the zone-string format owner (keys to "Zone 3–4")
   '@/lib/plan/goalPaceReach': ['quotesGoalPace', 'hasGoalGapSentence'], // match the plan's OWN copy (the gap sentence), not maths
   // The strength package's index, named exports only: the catalogue and config (rule data) and types, never its

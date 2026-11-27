@@ -65,6 +65,25 @@ const governedWeek = (w: Plan['weeks'][number]) =>
 const checkedEasy = (s: Session | undefined) =>
   !!s && s.type === 'easy' && !isLongRun(s) && !isStructuredSession(s) && !s.floor_protected && !!s.duration_mins
 const EXTRA_MUTATIONS: { name: string; apply: (p: Plan, input: GeneratorInput) => boolean; targets?: string[] }[] = [
+  // 🔴 §28's "strides on ONE run" arm was UNREACHED by the whole battery and a mutation proved it:
+  // deleting that arm from the verifier left all 174 arms green (2026-11-27). No corpus plan and no
+  // liveness breakage puts a stride note on two runs in a week, so the arm was ported and
+  // UNPROVEN — the shape the liveness baseline exists to refuse. This copies the stride note onto a
+  // second easy run in the same week, which is the only thing that wakes it.
+  { name: 'a stride note copied onto a second easy run', apply: p => {
+    for (const w of p.weeks.filter(governedWeek)) {
+      const entries = Object.entries(w.sessions ?? {}) as [string, Session | undefined][]
+      const noted = entries.find(([, s]) => s && /strides/i.test(
+        Array.isArray(s.coach_notes) ? s.coach_notes.join(' ') : String(s.coach_notes ?? '')))
+      if (!noted) continue
+      const other = entries.find(([d, s]) => d !== noted[0] && s?.type === 'easy' && !/strides/i.test(
+        Array.isArray(s.coach_notes) ? s.coach_notes.join(' ') : String(s.coach_notes ?? '')))
+      if (!other?.[1]) continue
+      other[1].coach_notes = ['Add 4 x 20s strides.']
+      return true
+    }
+    return false
+  } },
   { name: 'duration-anchored session loses its minutes', apply: p => {
     for (const w of p.weeks.filter(governedWeek)) for (const s of Object.values(w.sessions ?? {})) {
       if (s && s.type === 'easy') { s.duration_anchored = true; s.duration_mins = undefined; return true }
@@ -977,6 +996,12 @@ const STATIC_RULES = new Set<string>(['INV-PLAN-PHASE-FOCUS-REACHABLE'])
  *  condition), so a CONDITIONAL_PORTED line cannot stand in for logic the predicate does not have. */
 const CONDITIONAL_PORTED: Record<string, { why: string; branches: ('warn' | 'error')[] }> = {
   'INV-PLAN-NOT-DETRAINING': { why: 'not conditional: always warn; the note is a planned promotion', branches: ['warn'] },
+  // §28's two halves carry different severities for a documented reason: the CARRIER arm warns
+  // because §28 places its note before `applyWeekdayMinsCap` can convert a quality session to easy
+  // (S28-CAP-ORDER-01, a pre-existing ordering gap at every level), while a stride note landing ON a
+  // quality session is an error — it ends §28 Am. 1's safety argument that these are notes on EASY
+  // runs, which is what keeps a beginner's quality count at 0 by construction.
+  'INV-PLAN-BEGINNER-NEUROMUSCULAR': { why: 'warn on the carrier arm (S28-CAP-ORDER-01), error when a stride note lands on a quality session', branches: ['warn', 'error'] },
   'INV-PLAN-PEAK-IN-PEAK-PHASE': { why: 'warn on a maintenance profile, error otherwise (set in the predicate)', branches: ['warn', 'error'] },
   'INV-PLAN-LR-MAX-WEEKLY-PCT': { why: 'warn on a maintenance profile, error otherwise (set in the predicate)', branches: ['warn', 'error'] },
   'INV-PLAN-WALKRUN-START-PROGRESSION': { why: 'warn when the walk-run route is not ratified, error otherwise', branches: ['warn', 'error'] },
@@ -1511,7 +1536,11 @@ describe('ADR027-B3-VERIFIER — agreement with validatePlan, per ported rule', 
     // two silent checkers agreeing. If a port ever diverges, or the corpus stops reaching these
     // rules, this fails with the real figures rather than a vaguer arm passing.
     for (const [rule, expected] of [
-      ['INV-PLAN-DELIVERED-RAMP', 750],
+      // ⚠️ 750 → 753 ON 2026-11-27 and the pin is why it had to be said out loud: adding the
+      // stride-note mutation below grew the corpus, so these counts moved for a POPULATION reason
+      // and not a code one. **A rate moving is not automatically good news** — the engine can move,
+      // the definition can move, or the population can move, and only the first is a change.
+      ['INV-PLAN-DELIVERED-RAMP', 753],
       ['INV-PLAN-TAPER-DELIVERED-DEPTH', 186],
     ] as const) {
       const c = compare(rule)

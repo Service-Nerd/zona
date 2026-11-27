@@ -6,6 +6,56 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-11-27 — ADR027-B3-BATCH40: the permission was cheap, the port was not
+
+**I asked the founder for one thing: let the new checker import two CLASSIFIERS from the old
+engine's neuromuscular module** — which day of the week carries strides, and is this day after the
+long run. Same class as the two it already imports: questions with one right answer, where a second
+copy is an opportunity to disagree about a fact rather than a check on a decision.
+
+He said yes. I told him it was "a decision, not a rewrite." **That was wrong**, and worth writing
+down because it was said to him and not just to myself.
+
+**The first rule has six arms and I ported one.** Missing stride note on an eligible carrier; strides
+on more than one run; hill strides the day after the long run; a non-easy carrier; the day before the
+long run; the day after quality. 95 disagreements, with duplicate keys on the old side — which is
+what two arms firing in the same week looks like when you have only built one of them. The second
+rule has two halves and I ported one of those too. 38 more.
+
+**And then the port corrected a record.** The registry row for the beginner neuromuscular rule says
+severity `error`. The code has WARNED on half of it since it shipped, deliberately: §28 places its
+stride note before the weekday-minutes cap runs, and that cap can convert a quality session to easy,
+so a run that becomes eligible afterwards is never offered strides. A pre-existing ordering gap at
+every level, not a beginner problem — so the carrier arm warns and the rest errors. The new checker
+derives severity from the catalogue's `kind`, read `error`, and produced **171 disagreements, every
+single one of them severity alone.** The row is corrected, the catalogue carries the note, and the
+register now asserts both branches are actually produced.
+
+**One arm nothing could wake.** I deleted the "strides on more than one run" check and all 174 arms
+stayed green: no corpus plan and no mutation puts strides on two runs in a week. So it was ported and
+unproven, which is the same as untested. A new mutation copies a stride note onto a second easy run,
+it goes red, and the pinned finding count moved 750 → 753 — a population change, declared, not a code
+one.
+
+**Code review found five, all mine, and the first would have corrupted the number I am asking him to
+sign.** My port gated on the profile's structural level and dropped a guard whose own docstring names
+this rule: zero-volume reconstructed plans read as `beginner` from the profile and `undefined` from
+the old path, so those warns would have landed in `plans_strict_only` — the cut-over figure — with
+the mismatch arm unable to see them, because it reads the intensity axis. Absence written as a value,
+in the number the sign-off quotes. Measured the two functions directly rather than trusting my
+reproduction probe, which did not reach it.
+
+**Second: the grant as used is not the grant as asked for.** I named two functions to the founder and
+needed a different second one. The first cut imported the unused one AND hand-wrote the one it needed,
+with the stated reason "rather than widening the grant" — false, since the grant was being widened in
+the same commit. An allowed name with no call site is a permission nobody checked, so it is not
+listed.
+
+212 of 221 rules ported. Held list 12 → 9, and the remaining nine are structural: they need the
+planner's reasoning, not a label.
+
+---
+
 ## 2026-11-27 — ADR027-B3-BATCH39: the two rules held as examples of why rules get held
 
 **The approval request I'd put in front of the founder said "the new checker doesn't cover these 14

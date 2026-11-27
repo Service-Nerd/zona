@@ -17,6 +17,7 @@ import { GENERATION_CONFIG, raceDistanceKey } from '@/lib/plan/generationConfig'
 import { isLongRun, isShakeout, isSecondaryQuality, isQualitySession, isStructuredSession, isTimeTrial, isVo2maxSession, classifyStimulus, isHardEffort, workClassFor } from '@/lib/plan/sessionRole'
 import { V1_SESSION_CATALOGUE } from '@/lib/plan/sessionCatalogueData'
 import { checkParam } from '@/lib/engine/catalogue/checkParams'
+import { strideCarrierDay, isDayAfterLongRun } from '@/lib/plan/neuromuscular'
 import { FUELLING_PRACTICE_NOTE, ULTRA_FUELLING_PREFIX } from '@/lib/plan/fuellingNotes'
 import { PLAN_SIGNATURES } from '@/lib/plan/planSignatures'
 import { normaliseDays } from '@/lib/plan/days'
@@ -3140,6 +3141,172 @@ const BATCH_39: Partial<Record<RuleId, Predicate>> = {
   },
 }
 Object.assign(PREDICATES, BATCH_39)
+
+// ─── BATCH 40 — §28's THREE STRIDE RULES, UNBLOCKED BY A FOUNDER DECISION ──────────────────────
+//
+// ✅ 2026-11-27: the import gate now allows `strideCarrierDay` and `hasHillRestrictingInjury` from
+// `neuromuscular.ts` BY NAME. Both are classifiers — "which day may carry strides", "is this chip on
+// §21's restricted list" — questions with one right answer, the same class as `hasInjuryKeyword` and
+// `normaliseDays`, which were already allowed. A second copy of a FACT is an opportunity to disagree
+// about the fact, not a check on a decision. The module's placement and prescription functions stay
+// out of reach: this is a named allowance, not the module.
+//
+// ⚠️ `hasStrideNote` is NOT shared and must not be. It reads `coach_notes` and deliberately does
+// NOT read the label — the label arm was removed on 2026-09-19 because the enricher rewrites labels
+// and a stripped NOTE under an intact label passed silently (ENRICH-STRIDES-01: 12 of 17 weeks of a
+// live plan). Written here so the two checkers can disagree about the note.
+const strideNoted = (s: Session | null | undefined): boolean => {
+  if (!s) return false
+  const notes = Array.isArray(s.coach_notes) ? s.coach_notes.join(' ') : String(s.coach_notes ?? '')
+  return /strides/i.test(notes)
+}
+
+const BATCH_40: Partial<Record<RuleId, Predicate>> = {
+  // §28, SIX ARMS. 🔴 My first cut ported ONE of them and the agreement harness reported 95
+  // disagreements with DUPLICATE keys on the old side — which is what two arms firing in the same
+  // week looks like. The rule is: from STRIDES_FIRST_WEEK, every non-deload non-race week carries a
+  // stride note, on ONE run, on an EASY day, not the day before the long run, not the day after
+  // quality, and never HILL strides the day after the long run (§28 Am. 3).
+  'INV-PLAN-STRIDES-PRESENT': (plan, { input }) => {
+    const raceWeekN = Math.max(0, ...plan.weeks.map(w => w.n))
+    const out: Raw[] = []
+    const R = 'INV-PLAN-STRIDES-PRESENT' as RuleId
+    for (const w of plan.weeks) {
+      if (w.n < GENERATION_CONFIG.STRIDES_FIRST_WEEK) continue   // also excludes foundation (n <= 0)
+      if (w.type === 'deload' || w.n === raceWeekN) continue     // §28 exempts both
+      const sessions = (w.sessions ?? {}) as Record<string, Session | undefined>
+      const entries = Object.entries(sessions).filter(([, sn]) => !!sn) as [string, Session][]
+      const stride = entries.filter(([, sn]) => strideNoted(sn))
+      const longDay = entries.find(([, sn]) => isLongRun(sn))?.[0]
+      const carrier = longDay
+        ? strideCarrierDay(sessions as never, longDay as never, normaliseDays(input.days_cannot_train) as never)
+        : null
+      // No eligible carrier at all is STRIDES-NO-CARRIER's finding, not this one.
+      if (stride.length === 0 && carrier === null) continue
+      if (stride.length === 0) {
+        out.push({ rule_id: R, week: w.n, day: carrier as VerifierDay, detail: `no stride note, and ${carrier} was eligible` })
+        continue
+      }
+      // ⚠️ NO `day` on this arm, as the old checker pushes it — the finding is about the week.
+      if (stride.length > 1) out.push({ rule_id: R, week: w.n, day: null, detail: `strides on ${stride.length} runs` })
+      const [day, sn] = stride[0]
+      const notes = Array.isArray(sn.coach_notes) ? sn.coach_notes.join(' ') : String(sn.coach_notes ?? '')
+      // §28 Am. 3: the flat 4x20s is permitted the day after the long run; hills there are not —
+      // eccentric loading on fatigued tissue.
+      // 🔴 `isDayAfterLongRun` IS IMPORTED, AND MY FIRST CUT WROTE IT OUT HERE with the reason
+      // "rather than widening the grant" — which code review showed was false twice over: the grant
+      // WAS widened in the same commit (to `hasHillRestrictingInjury`, which nothing uses yet), and
+      // that function's own docstring forbids re-deriving it by name (STRIDES-CHECKER-OWNER-01:
+      // "writing it out twice would repeat the defect one function later"). The grant now names the
+      // two classifiers actually used — `strideCarrierDay` and `isDayAfterLongRun`.
+      if (longDay && isDayAfterLongRun(day as never, longDay as never) && /hill strides/i.test(notes))
+        out.push({ rule_id: R, week: w.n, day: day as VerifierDay, detail: 'hill strides the day after the long run' })
+      if (sn.type !== 'easy')
+        out.push({ rule_id: R, week: w.n, day: day as VerifierDay, detail: `strides on a '${sn.type}' session` })
+      const i = DAYS.indexOf(day as VerifierDay)
+      const next = DAYS[i + 1], prev = DAYS[i - 1]
+      const nextSn = next ? sessions[next] : undefined
+      const prevSn = prev ? sessions[prev] : undefined
+      if (nextSn && isLongRun(nextSn))
+        out.push({ rule_id: R, week: w.n, day: day as VerifierDay, detail: 'strides the day before the long run' })
+      if (prevSn && prevSn.type === 'quality')
+        out.push({ rule_id: R, week: w.n, day: day as VerifierDay, detail: 'strides the day after quality' })
+    }
+    return out
+  },
+
+  // §28: a week with no eligible midweek easy run carries no neuromuscular stimulus at all. The
+  // engine is CORRECT to decline — the gap is the runner's week, not the engine (STRIDES-CHECKER-OWNER-01).
+  'INV-PLAN-STRIDES-NO-CARRIER': (plan, { input }) => {
+    const raceWeekN = Math.max(0, ...plan.weeks.map(w => w.n))
+    const out: Raw[] = []
+    for (const w of plan.weeks) {
+      if (w.n < GENERATION_CONFIG.STRIDES_FIRST_WEEK) continue
+      if (w.type === 'deload' || w.n === raceWeekN) continue
+      const entries = Object.entries((w.sessions ?? {}) as Record<string, Session | undefined>)
+        .filter(([, sn]) => !!sn) as [string, Session][]
+      if (entries.some(([, sn]) => strideNoted(sn))) continue
+      const longDay = entries.find(([, sn]) => isLongRun(sn))?.[0]
+      const carrier = longDay
+        ? strideCarrierDay(w.sessions as never, longDay as never, normaliseDays(input.days_cannot_train) as never)
+        : null
+      if (carrier !== null) continue
+      out.push({ rule_id: 'INV-PLAN-STRIDES-NO-CARRIER', week: w.n, day: null,
+        detail: 'no §28-eligible stride carrier in the week' })
+    }
+    return out
+  },
+
+  // §28: a BEGINNER's eligible carrier day must actually carry the stride note. 🔴 C1's reading —
+  // "beginner" is the RUNNER's STRUCTURAL level, not the plan's label for it.
+  'INV-PLAN-BEGINNER-NEUROMUSCULAR': (plan, ctx) => {
+    const { input } = ctx
+    // 🔴 THE ZEROED-FIELD GUARD, AND DROPPING IT WOULD HAVE CORRUPTED THE CUT-OVER FIGURE.
+    // `fitnessFromVolume(0, 0)` is `beginner`, and `validateReshapedPlan` reconstructs a pre-PV2-A
+    // plan with BOTH volume fields at 0 — so the profile reads `beginner` for a runner we know
+    // nothing about. The old checker self-skips there (`structuralLevelForCheck` returns
+    // `undefined`), and its own docstring names this rule as the one with no such guard.
+    //
+    // ⚠️ My first cut gated on `levelStructural(ctx)` alone. Code review probed it: on a
+    // `storedPlanInput`-reconstructed legacy plan the old checker is silent and the port fires a
+    // warn per eligible build week — and the nightly shadow runs every live plan with none of §28's
+    // rules in `skipped_by('stored')`, so those warns would land in `plans_strict_only`, the
+    // cut-over number, with `levelMismatch` unable to flag them (it reads the INTENSITY axis).
+    // **Absence must not be written as a value.**
+    //
+    // 🔑 The guard reads the INPUT's volume signal, not the plan's label: C1 deleted the label
+    // chain deliberately, and "this runner has no recorded volume" is a different question from
+    // "what level does the plan claim".
+    const hasVolumeSignal = (input.current_weekly_km ?? 0) > 0 || (input.longest_recent_run_km ?? 0) > 0
+    if (!hasVolumeSignal) return []
+    if (levelStructural(ctx) !== 'beginner') return []
+    const blocked = normaliseDays(input.days_cannot_train)
+    const out: Raw[] = []
+    // ⚠️ `'sun'` when no long run is found, exactly as the old checker falls back — a week with no
+    // long run still has a carrier question, and defaulting elsewhere would change which day is asked.
+    const longDayOf = (w: Week): string => {
+      for (const d of DAYS) {
+        const sess = (w.sessions as Record<string, Session | undefined>)?.[d]
+        if (sess && isLongRun(sess)) return d
+      }
+      return 'sun'
+    }
+    for (const w of plan.weeks.filter(x => x.n > 0 && x.type !== 'race' && x.phase !== 'taper')) {
+      if (w.n < GENERATION_CONFIG.STRIDES_FIRST_WEEK) continue
+      if (w.type === 'deload') continue
+      const carrier = strideCarrierDay(w.sessions as never, longDayOf(w) as never, blocked as never)
+      if (!carrier) continue
+      if (strideNoted((w.sessions as Record<string, Session | undefined>)?.[carrier as string])) continue
+      // 🔴 `warn`, NOT the catalogue's `hard`, and the old checker documents why at length: a
+      // PRE-EXISTING §28 ORDERING GAP, not a beginner problem. §28 places the note in step 4 of
+      // `buildWeekSessions` and `applyWeekdayMinsCap` runs in step 5 and can CONVERT a quality
+      // session to easy — a run that becomes eligible after the cap has run is never offered
+      // strides. ⚠️ My first cut took the severity from the catalogue's `kind` and the agreement
+      // harness reported **171 disagreements that were ALL severity** (same weeks, same days,
+      // `warn` against `error`), which is the conditional-severity shape batch 20 and
+      // `HEADER-PACE-MATCHES-WORK` already hit. The rule's OTHER arm is a genuine error, so the
+      // catalogue keeps the stricter `hard` plus a `severity_note` naming the condition.
+      out.push({ rule_id: 'INV-PLAN-BEGINNER-NEUROMUSCULAR', week: w.n, day: carrier as VerifierDay,
+        detail: 'beginner carrier day has no stride note', severity: 'warn' })
+    }
+    // 🔴 THE SECOND HALF, AND MY FIRST CUT PORTED ONLY THE FIRST — 38 disagreements remained after
+    // the severity was fixed. §28 Am. 1's whole safety argument is that strides are COACH NOTES ON
+    // EASY RUNS, so a beginner's `QUALITY_SESSIONS_PER_WEEK_MAX` of 0 cannot be breached BY
+    // CONSTRUCTION. A note on a quality-typed session silently ends that argument and the beginner
+    // acquires quality through a door nobody watches — hence `error`, and hence EVERY week rather
+    // than the build weeks the first half walks.
+    for (const w of plan.weeks) {
+      for (const [day, sn] of Object.entries((w.sessions ?? {}) as Record<string, Session | undefined>)) {
+        if (!sn || !strideNoted(sn)) continue
+        if (sn.type !== 'quality' && sn.type !== 'hard') continue
+        out.push({ rule_id: 'INV-PLAN-BEGINNER-NEUROMUSCULAR', week: w.n, day: day as VerifierDay,
+          detail: `stride note on a '${sn.type}' session`, severity: 'error' })
+      }
+    }
+    return out
+  },
+}
+Object.assign(PREDICATES, BATCH_40)
 /** Maintenance plans are their own population: compared in `verifierMaintenance.test.ts`. */
 export const MAINTENANCE_RULES = Object.keys(BATCH_37) as RuleId[]
 

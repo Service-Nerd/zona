@@ -82,7 +82,7 @@ export const RULES: readonly Rule[] = [
   { id: 'INV-PLAN-WEEK-1-2-LONG-CAP', principle_ref: '§9', related_refs: ['§10', '§113'], scope: 'week', kind: 'hard', config_key: null, explain: null },
   { id: 'INV-INPUT-LONGEST-LE-WEEKLY', principle_ref: '§18', scope: 'week', kind: 'hard', config_key: null, explain: null },
   { id: 'INV-PLAN-QUALITY-PER-WEEK', principle_ref: '§8', scope: 'week', kind: 'hard', config_key: null, explain: null },
-  { id: 'INV-PLAN-BEGINNER-NEUROMUSCULAR', principle_ref: '§28', scope: 'session', kind: 'hard', config_key: null, explain: null },
+  { id: 'INV-PLAN-BEGINNER-NEUROMUSCULAR', principle_ref: '§28', scope: 'session', kind: 'hard', config_key: null, explain: null, severity_note: 'error, OR warn on the carrier arm: §28 places the note before the weekday cap can convert a quality session to easy, so a run that becomes eligible afterwards is never offered strides (a pre-existing ordering gap, every level)' },
   { id: 'INV-PLAN-QUALITY-LONG-SPACING', principle_ref: '§7', scope: 'session', kind: 'hard', config_key: null, explain: null },
   { id: 'INV-PLAN-QUALITY-EXPECTED', principle_ref: '§1', related_refs: ['§6', '§8'], scope: 'week', kind: 'hard', config_key: null, explain: null },
   { id: 'INV-PLAN-MAX-WEEKDAY-MINS', principle_ref: '§81', scope: 'session', kind: 'hard', config_key: null, explain: null },

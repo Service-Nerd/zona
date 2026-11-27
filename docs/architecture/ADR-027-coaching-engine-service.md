@@ -40,20 +40,41 @@ paused: only defects that harm runners are fixed, each one added to the hotfix t
 | B1 contracts + canonical types | ✅ done | `ADR027-B1-CONTRACTS` (v1↔v2 adapter, 123 of 123 stored plans round-trip) |
 | B2 L1 runner facts + profile | ✅ done; part 1 of the route adoption done | `ADR027-B2-PROFILE`, `ADR027-B2B-PROFILE`. Parts 2–4 of `ADR027-B2B-PROFILE-ADOPTION` land in B4 (founder) |
 | B3 step 1: rule catalogue (L2) | ✅ done | `ADR027-B3-CATALOGUE`, `lib/engine/catalogue/rules.ts`, 221 rules |
-| B3 step 2: independent verifier (L5) | 🟡 **209 of 221 rules ported**, each agreeing finding for finding with the old checker | `ADR027-B3-VERIFIER`, `lib/engine/verifier/` |
+| B3 step 2: independent verifier (L5) | 🟡 **212 of 221 rules ported**, each agreeing finding for finding with the old checker | `ADR027-B3-VERIFIER`, `lib/engine/verifier/` |
 | B3 step 2b: the board's strict readings | ✅ **ALL 14 B rows + C1 + D2/D3 + B14 + B10 shipped or closed**; two of C1's seven named fields reclassified (below). ✅ `VERIFIER-UNVERIFIED-KEY-COLLISION-01` shipped 2026-11-27, so the sign-off's fleet numbers are re-measured and a decline can no longer read as a verdict | `ADR027-B3-STRICT-01`, `lib/engine/verifier/verifierStrict.test.ts`, `lib/engine/catalogue/checkParams.test.ts` |
 | B3 step 3: nightly check of every live plan, observe-only | ✅ done 2026-11-25 | `ADR027-B3-SHADOW-01`, `lib/ops/verifierShadow.ts`, inside `/api/ops/plan-audit` |
 | B3 step 4: trigger catalogue (ARCH-ENG-018) + the event vocabulary (ARCH-ENG-022) | ✅ **4a + 4b DONE 2026-11-26**, which is the whole of step 4 as scoped — **4c parked by founder decision** as `TRIGGERS-ON-DATA-ARRIVAL-01`. ⚠️ Nothing emits an event or evaluates a trigger yet, deliberately: 4a+4b define the vocabulary and the catalogue, 4c wires evaluation and needs three boards | `ADR027-B3-STEP4A` (`lib/engine/contracts/events.ts`, `runOutcome.ts`, **`docs/canonical/engine-truths.md` created**), `ADR027-B3-STEP4B` (`lib/engine/catalogue/triggers.ts`, `lib/engine/contracts/triggers.ts`) |
-| B3 exit: founder signs off the verifier replacing `validatePlan` as the gate | 🔲 | must name the 12 held rules (below) |
+| B3 exit: founder signs off the verifier replacing `validatePlan` as the gate | 🔲 | must name the 9 held rules (below) |
 | B4–B8 (planner, adapt, explanation, single writer, enrichment) | 🔲 not started | HLD |
 | Hotfixes 1–7 | ✅ six shipped, #4 dropped | table below |
 
-**The 12 rules the verifier does not yet check itself.** The old checker keeps judging them, and the cut-over gate
-is the verifier plus these 12 until B4 gives each an independent derivation (Coaching Board `ADR027-B3-RAISED-LIST-01`,
-E3–E4): `INJURY-NO-HILLS`, `RACE-WEEK-SHARPENING`, `COPY-MATCHES-SESSIONS`, `BEGINNER-NEUROMUSCULAR`,
-`RACE-SPECIFIC-LONG-RUN`, `BASE-BUILD-RATIO`, `STRIDES-PRESENT`, `STRIDES-NO-CARRIER`,
+**The 9 rules the verifier does not yet check itself.** The old checker keeps judging them, and the cut-over gate
+is the verifier plus these 9 until B4 gives each an independent derivation (Coaching Board `ADR027-B3-RAISED-LIST-01`,
+E3–E4): `INJURY-NO-HILLS`, `RACE-WEEK-SHARPENING`, `COPY-MATCHES-SESSIONS`,
+`RACE-SPECIFIC-LONG-RUN`, `BASE-BUILD-RATIO`,
 `SURPLUS-IN-PLAN`, `RUNWALK-PRESCRIBED-WHEN-UNREADY`, `RUNWALK-SHORTDIST-SCOPE` and `STAGED-DOOR-RATIO` (all
 `INV-PLAN-*`).
+
+✅ **12 → 9 ON 2026-11-27** (batch 40). §28's three rules — `STRIDES-PRESENT`, `STRIDES-NO-CARRIER`,
+`BEGINNER-NEUROMUSCULAR` — were blocked on CLASSIFIERS in `neuromuscular.ts`, the same class as
+`hasInjuryKeyword` and `normaliseDays` that the gate already allowed by name: a question with one
+right answer, where a second copy is an opportunity to disagree about a FACT rather than a check on a
+decision. The founder allowed two by name; the module's placement and prescription functions stay out
+of reach.
+
+⚠️ **THE GRANT AS USED IS NOT THE GRANT AS ASKED FOR, and it is recorded rather than quietly matched.**
+The decision named `strideCarrierDay` and `hasHillRestrictingInjury`; §28 needs `strideCarrierDay` and
+**`isDayAfterLongRun`**. `hasHillRestrictingInjury`'s only consumer (`INJURY-NO-HILLS`) is still held,
+and **an allowed name with no call site is a permission nobody checked**, so it is not listed.
+
+🔴 **AND "A DECISION, NOT A REWRITE" WAS WRONG, WHICH IS WORTH SAYING BECAUSE IT WAS SAID TO THE
+FOUNDER.** The permission was cheap; the ports were not. `STRIDES-PRESENT` has **SIX arms** (missing
+note · more than one stride run · hill strides the day after the long run · a non-easy carrier · the
+day before the long run · the day after quality) and the first cut ported one — **95 disagreements
+with DUPLICATE keys on the old side**, which is what two arms firing in one week looks like.
+`BEGINNER-NEUROMUSCULAR` has two halves and the first cut ported one (**38 more**). And the rule was
+also named as unblocking `INJURY-NO-HILLS`, which it does not: that rule needs B18's structural
+rewrite as well.
 
 🔴 **IT WAS 14 UNTIL 2026-11-27, AND THE TWO THAT LEFT WERE THIS PARAGRAPH'S OWN EXAMPLES.**
 `DELIVERED-RAMP` and `TAPER-DELIVERED-DEPTH` were held as *"the planner's delivered-volume and
@@ -281,7 +302,7 @@ upward on intensity); §89 is the one veto a self-declaration must not unlock. C
    `NO-INVENTED-AGE` [1, 25]). **So *"0 comparable plans gain a code"* now reads *"0 plans gain a code at all"*.**
    🔴 **One wrong number was reported on the way there, from an untypechecked probe** (`GeneratorInput` into
    `validateStoredPlan`'s `reshapedWeekN?: number`): `PROBE-TYPECHECK-BLIND-01`.
-5. **The founder's cut-over sign-off**, naming the 12 held rules. ✅ **That list is now held to the derived one by
+5. **The founder's cut-over sign-off**, naming the 9 held rules. ✅ **That list is now held to the derived one by
    `lib/engine/verifier/heldRules.test.ts`** (`HELD-RULE-LIST-DERIVED-01`, 2026-11-26): the paragraph above is compared,
    **by name and in both directions**, against `RULES` INV ids minus `PORTED_RULES`, and its own stated count is checked
    too. ⚠️ So **editing that list is now a build-breaking act unless the code agrees** — which is the point, because the
