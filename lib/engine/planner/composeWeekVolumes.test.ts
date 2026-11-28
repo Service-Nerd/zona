@@ -363,16 +363,4 @@ describe('ADR-027 B4b — the strangler boundary', () => {
     expect(mod, 'it must still read the set it is given').toMatch(/deloadWeeks\.has\(/)
   })
 
-  it('ARCH-ENG-001 — L3 reaches down to config and the metrics owner, and no further', () => {
-    // Layers depend downward only. The HLD names `deloadCadence` as a module that "becomes L3's
-    // metrics owner, used by the planner and the verifier alike", so importing it is the intended
-    // direction. Reaching into `ruleEngine` or `invariants` is not: the strangler would lose its grip.
-    const ALLOWED = ['@/lib/plan/generationConfig', '@/lib/plan/deloadCadence']
-    for (const f of ['lib/engine/planner/composeBlocks.ts', 'lib/engine/planner/composeWeekVolumes.ts']) {
-      const imports = Array.from(src(f).matchAll(/^\s*import[^;]*?from\s+'([^']+)'/gm)).map(m => m[1])
-      expect(imports.length, `${f}: no imports read — the arm would pass on an empty file`).toBeGreaterThan(0)
-      const forbidden = imports.filter(i => /^@\/lib\/(plan|coaching)\//.test(i) && !ALLOWED.includes(i))
-      expect(forbidden, `${f} reached back into the old engine`).toEqual([])
-    }
-  })
 })

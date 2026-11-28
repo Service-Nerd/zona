@@ -104,6 +104,70 @@ beginner with no quality anywhere in the plan has no quality in the taper either
 
 ---
 
+### 🔲 `WEEKDAY-BUDGET-BYPASSERS-01` — the weekday budget is read in four places, and two of them hand-roll it *(filed 2026-11-28)* ⚙️ **NO BOARD** (defect class; restoring documented intent)
+
+**Found by code review of ADR-027 B4d**, where I had written that `applyWeekdayMinsCap` was *"the
+engine's only capacity reader"* — in the module header and twice in the contract. 🔴 **It is not.**
+
+`weekdayBudgetFor` (`weekdayOverrunNote.ts`) is the stated single owner of *"what is this day's
+cap"*, and its own comment says why: *"the day's limit through the one producer-side owner, so the
+cap trimmed here and the cap the note quotes cannot drift"*. 📐 But `ruleEngine.ts` hand-rolls
+`input.day_budgets?.[d] ?? input.max_weekday_mins` in **two** more places — the quality-day
+selection (`:3517`) and the easy-km ceiling (`:3813`) — plus two further direct reads of the cap
+(`:8187`, `:9221`). Four readers, one of them the owner.
+
+⚠️ **The duplication has already shipped a defect once:** `SHORTFALL-PINNED-DAY-BUDGET-01`. That is
+the whole argument for filing it rather than leaving it — this is not a tidiness item, it is a
+recurrence.
+
+🔻 **Not fixed inside B4d on purpose.** The two hand-rolled sites answer slightly different
+questions (*"can this day hold the structured session?"* and *"what is the easy ceiling in km?"*) and
+one of them converts minutes to km through the pace, so routing them through the owner is a
+behavioural change that needs its own parity run — not a rename inside a move whose whole claim is
+byte-identical output. ⚠️ **And `verify:parity` cannot see any of it**: its grid sets neither
+`max_weekday_mins` nor `day_budgets`, so every one of these four readers is inert across all 6,210
+cases. The gate will have to be built with the fix.
+
+**What to do:** give `weekdayBudgetFor` the two shapes the bypassers need (a minutes cap and a km
+ceiling at a given pace), route all four readers through it, and gate the count at one — the
+`sumWeeklyKm` / `deloadCadence` pattern. 📐 Count first: four readers is this review's figure, and
+this repo's own history says the next reader is found by widening the search, not by trusting it.
+
+---
+
+### 🔲 `EASY-FLOOR-DECLARATION-UNREACHABLE-01` — §82's `floor_protected` stamp cannot fire for any wizard input *(filed 2026-11-28)* 🏃 **COACHING BOARD** · ⚙️ measurement done
+
+**Found while producing `WEEK-VOLUME-CAPACITY-01`'s measurement** (ADR-027 B4d), which reported
+`floorProtected: 0` across 135 generated corpus plans. 🔴 **That is not a sampling gap. It is
+arithmetically unreachable.**
+
+📐 **The mechanism, in one line.** `heldEasyMins(cap, floorKmMins) = max(cap, min(floorKmMins,
+EASY_FLOOR_HELD_MINS))` with `EASY_FLOOR_HELD_MINS = 30`. The stamp is set only when
+`held > cap`, which requires **`cap < 30`**. 📐 `WIZARD_DAY_BUDGET_MINS` is `30, 45, 60, 90, 120,
+180` — **the smallest budget the product can send IS 30.** Swept: **0 of 270** combinations of every
+wizard chip × every easy floor (2–4 km) × paces from 5 to 13 min/km produce `held > cap`.
+
+⚠️ **Reachable through the API, not through the product.** A caller posting `max_weekday_mins: 20`
+trips it immediately (verified directly in `weekdayCap.test.ts`'s §82 arm, which uses 12). So this is
+the `corpusProductionShape.test.ts` distinction, not dead code: the branch is live, the **product
+cannot reach it**.
+
+**Two readings, and the board should pick one rather than letting it sit:**
+- **(a) correct by construction.** §82 is satisfied because the minimum budget and the held ceiling
+  are the same number, so the floor never *needs* to exceed the budget. The stamp is there for an
+  API caller, and the right action is to say so in §82 and gate the reachability.
+- **(b) the declaration is dead where it matters.** §82's promise is that an over-budget easy run is
+  **declared rather than hidden**; if no runner can ever see that declaration, the promise is
+  decorative for the product. Then either `EASY_FLOOR_HELD_MINS` or the wizard's smallest chip is the
+  wrong number.
+
+⚠️ **Do not assume (b).** The two 30s agreeing may be exactly the design — and §82's companion, the
+**weekday overrun note, fires 255 times in the same measurement and is declared every single time**,
+so §81's half of the promise demonstrably works. 🔻 What is NOT measured: whether any live runner has
+ever posted a sub-30 budget (the API has no such caller today, but nothing refuses one).
+
+---
+
 ### 🔲 `WEEK-VOLUME-CAPACITY-01` — the week planner has never read the runner's time budget *(filed 2026-11-28)* 🏃 **COACHING BOARD**
 
 **The HLD's own sentence, with the half that is not built.** ADR-027 § 3 says the week planner
@@ -17461,7 +17525,7 @@ fails every morning for a reason nobody needs to read is a test everybody learns
 the next real failure in that file arrives pre-ignored. This repo has already recorded that a
 guard which cries wolf gets disabled, which is the same as having no guard.
 
-**State at END of 2026-11-28 — ✅ B4 STEPS 1–3's FIRST BRICK + §49 Am. 1 SHIPPED, AND 🔴 THE RULING BROKE THE CONSTANT IT ADDED** (last ship `2d86d088`). 867 files / **9,173 tests**, 0 errors; `tsc` 0; `verify:parity` **IDENTICAL over 6,210**; property sweep 16,464 plans, no new violations; `invariant:liveness` 169/172 woken; `backlog:verify` 0; `audit-docs.sh` ALL CLEAN; **101 open**. 👥 **Founder: "Start b4" → "Yes" → "carry on" → "run coaching board" → approved the taper fix, kept §44 at 4 weeks.** ✅ **`ADR027-B4A-BLOCKS`** phase table · ✅ **`ADR027-B4B-WEEKS`** volume curve · ✅ **`ADR027-B4C-VOLUME`** `sumWeeklyKm` (re-exported, 39 refs unchanged) — `computePhases`, `buildVolumeSequence` and `getPhaseForWeek` all **deleted** from `ruleEngine.ts`. ✅ **`BLOCK-TAPER-SQUEEZE-01`** — 🏃 Coaching Board, CORRECT WITH AMENDMENT: §49's cap becomes a **band** and the **peak yields** to the taper. Catalogue 221 → **222**, ported, held list still **9**. 📐 **The defect: a 5-week 5K delivered 0 actual taper weeks and a 6-week 5K 0, against §49's table of 1 — and at six weeks the week BEFORE THE RACE was the plan's highest volume week.** One live plan of 44, generated 2026-11-27. Blast radius **272 of 17,856 producible phase tables (1.52%), all 5K at 5w and 6w**. 🔴 **EVERY DEFECT TODAY WAS IN WHAT HAD BEEN WRITTEN ABOUT THE CODE, NOT THE CODE — until the board ruling, where two were in my own fix.** Four gates written to assert the old text went RED and the code was right each time (*"preserves taper duration as authored"*; *"the injury cap can only reduce a week"*; *"then the injured deload is always higher"*; *"appears three times"* → **twelve**). Then §49 Am. 1's own gate tested the **UNGATED** base floor, so 4 plans got a peak **below the constant that commit introduces**, in a cohort both my arms excluded; and §31's compression verdict was forced **FALSE** wherever the peak phase went absent — absence written as a value, on exactly the plans the ruling changed. ⚠️ **AND THE HARNESSES WERE BLIND EVERY TIME, WHICH IS THE DAY'S REAL LESSON.** `verify:parity` IDENTICAL on all four waves while its grid pins `today` and its shortest runway is ~12 weeks; `cohortGrid`'s 5K is FIXED at 12 weeks; `measure:fitness` is all marathon/injury. **A green harness that cannot reach the change is not evidence.** Equivalence was measured directly instead: **94,080 and 76,032 cases, 0 differences**, and a 272-cell comparison for the ruling. ⚠️ **Four falsification mutations came back green because the MUTATION was wrong, not the arm** (first-occurrence-only; not a `strength` test; a subset of three suites where 22 tests across 10 files catch it). And a mutation making the new invariant count race week left **every suite green** although liveness wakes it — **liveness proves a rule CAN fire, not that it fires on the shape it was written for**. 🔻 **Deferred with numbers, not dropped:** Willy's condition — only **66.7%** of taper weeks carry their §6 quality session, pre-existing (`TAPER-QUALITY-NOT-DELIVERED-01` 🏃) · the HLD's *"within capacity"* is unbuilt, and **24.7% of plans already declare a weekday overrun** (`WEEK-VOLUME-CAPACITY-01` 🏃, INSUFFICIENT EVIDENCE) · **nothing checks a week may not EXCEED the peak target** (`PEAK-CEILING-NO-INVARIANT-01` ⚙️). ⚠️ **What this does not prove:** the SESSION PLACER has not moved (`buildWeekSessions` 1,266 lines + ~15 passes), the curve does not read capacity, §89's gate / `total_weeks` / §87's placement / §98's ladder are all still the old engine's, nothing reads the decisions (L4 is B5), and **213 of 222 rules ported with the held list still 9**. **The only runner-visible change today is the 5K taper.**
+**State at END of 2026-11-28 — ✅ FOUR L3 BRICKS + §49 Am. 1 SHIPPED, AND 🔴 EIGHTEEN REVIEW FINDINGS IN ONE DAY, ALL MINE, FOUR OF THEM LOGIC** (last ship `2d86d088`). 869 files / **9,181 tests**, 0 errors; `tsc` 0; `verify:parity` **IDENTICAL over 6,210**; property sweep 16,464 plans, no new violations; `invariant:liveness` 169/172; `backlog:verify` 0; `audit-docs.sh` ALL CLEAN; **103 open**. 👥 **Founder: "Start b4" → "Yes" → "carry on" → "run coaching board" → approved the taper fix → "carry on".** ✅ **B4a** `composeBlocks` (phase table + §97) · ✅ **B4b** `composeWeekVolumes` (each week's km) · ✅ **B4c** `deliveredVolume` (`sumWeeklyKm`, re-exported, 39 refs unchanged) · ✅ **B4d** `weekdayCap` (§81/§82's per-day trim). `computePhases`, `buildVolumeSequence`, `getPhaseForWeek` and `applyWeekdayMinsCap` are all **deleted** from `ruleEngine.ts`. ✅ **`BLOCK-TAPER-SQUEEZE-01`** — 🏃 §49 Am. 1: the cap is a BAND and the peak yields; catalogue 221 → **222**, held list still **9**. 🔴 **THE STANDING HARNESSES WERE BLIND ON ALL FOUR WAVES, AND THAT IS THE DAY'S LESSON.** B4a: parity pins `today`, so `early_onset` false on all 6,210. B4b: it never sets `training_age`. B4c/B4d: **it sets neither weekday-budget field, so `applyWeekdayMinsCap` RETURNS EARLY on every one of its 6,210 cases — the function does nothing and IDENTICAL says exactly that.** The taper ruling: parity's shortest runway is ~12 weeks, `cohortGrid`'s 5K is FIXED at 12, `measure:fitness` is all marathon/injury. 📐 Equivalence measured directly instead — **94,080 · 76,032 · 15,360 cases, 0 differences**, plus **272 of 17,856** for the ruling. 🥇 **FOUR GATES WRITTEN TO ASSERT WHAT THE OLD CODE SAID WENT RED, AND THE CODE WAS RIGHT EVERY TIME** (*"preserves taper duration as authored"* · *"the injury cap can only reduce a week"* · *"then the injured deload is always higher"* · *"appears three times"* → **twelve**). 🔴 **AND TWO CLAIMS OF MINE WERE FALSE IN THE SAME WAY:** *"the engine's ONLY capacity reader"* (it is one of four — two hand-roll the budget past its owner, which has already shipped `SHORTFALL-PINNED-DAY-BUDGET-01`), and a protection that does not exist. **A single-ownership claim must be COUNTED, never asserted.** 🔴 **FOUR HAND-TYPED COPIES OF THE LAYER-BOUNDARY ARM, FOUR INCONSISTENT ALLOW-LISTS — a module importing the old engine passed ALL FOUR, 50/50 green.** One arm now (`boundary.test.ts`), population from `git ls-files`. **Four copies of a guard are not four guards.** 🥇 **B4d produced the board's missing number:** 87.4% of runners state a weekday budget · 914 easy runs trimmed · **255 overruns, 255 DECLARED** · binds in 55.3% of intermediate plans. ⚠️ My first run said **0 declared** — my own `else` ordering. 🔴 And **§82's floor-protection cannot fire for ANY wizard input**: `heldEasyMins` needs a cap under 30 and the smallest chip IS 30 (0 of 270). ⚠️ **What this does not prove:** `buildWeekSessions` (1,266 lines) and ~15 post-passes have NOT moved, the curve does not read capacity, §89's gate / `total_weeks` / §87's placement / §98's ladder are all still the old engine's, nothing reads the decisions (L4 is B5), and **213 of 222 rules ported, held list 9**. **The only runner-visible change today is the 5K taper.**
 
 **Prior — state at END of 2026-11-27 — ✅ THE HELD LIST IS 12, NOT 14, AND THE TWO THAT LEFT WERE THE RECORD'S OWN EXAMPLES OF WHY RULES GET HELD** (last ship `371dbe13`). 863 files / **9,123 tests**, 0 errors; `tsc` 0; `verify:parity` **IDENTICAL over 6,210**; `verify:invariants` 171/171; `backlog:verify` 0; `audit-docs.sh` ALL CLEAN; **98 open**. 👥 **The founder asked why the 14 were held before signing the cut-over, and the answer was that nobody had re-read the list.** ✅ **`ADR027-B3-BATCH39`** — `INV-PLAN-DELIVERED-RAMP` and `INV-PLAN-TAPER-DELIVERED-DEPTH` were held as *"the planner's delivered-volume and trimmable-room helpers"*, **and they are the two rules that paragraph offers as its EXAMPLES.** `deliveredKm`, `longKmOf`, `runCountOf`, `meanPerSession` and `trimmableKm` are all defined **inside `lib/plan/invariants.ts`** — four lines of arithmetic each over `sessionKmSelfPaced` and `GENERATION_CONFIG`, both already imported by the verifier. Nothing planner-side was involved. 📐 **Ported fresh: `DELIVERED-RAMP` fires 750 times on each side, `TAPER-DELIVERED-DEPTH` 186 — 0 gained, 0 lost, 0 differences.** Both sides fire in the HUNDREDS, so this is not two silent checkers agreeing. **159 of 171 `INV-` ported; the held list is 12.** ⚠️ **FOURTH TIME THE LIST HAS SHRUNK ON RE-READING** (`5K10K-LR-PACE-CAP` on 11-21, `RACE-WEEK-SHAKEOUT-CAP` and `VO2MAX-FLOAT-IS-A-CEILING` before it) — **a held rule's stated reason is a judgement, and re-deriving it has shrunk the list every single time anyone has.** 📐 **Of the 12 left: 4** are blocked by two classifiers in `neuromuscular.ts` that are the same class as `hasInjuryKeyword`, which the import gate **already allows by name** — a decision, not a rewrite; **2** are blocked by the pre-commit hook's ban on label matching rather than by independence; **6 are genuinely structural.** 🔴 **CODE REVIEW FOUND SEVEN, ALL MINE, AND TWO HAD THE SUITE RED:** `engineContractV2.test.ts` pinned `PORTED_RULES` at 157 and the held count at 14, and `docs/contracts/engine.md § L5` published the same — **I updated ADR-027 only**, the two-registers-with-a-human-between shape, and those pins are exactly why it failed loudly instead of drifting. 🔴 **WORSE, AN UNDECLARED NARROWING IN MY OWN PORT:** I added `if (before <= 0) continue` where the old checker divides unguarded and warns at `Infinity%` — the corpus cannot reach it, so **the agreement harness was green on a divergence with no register entry.** **A port agrees or it declares; it does not quietly tidy**, and that faithfulness is the only reason the port is worth anything. Also: a dead helper I wrote and never called, a §90 citation `verifierComments.test.ts` rejects, and two notes the port made false. 🔴 **AND MY PUBLISHED 750/186 WAS BOUND TO NOTHING** — `compare()` is private to the agreement test and no arm pinned a per-rule count, so the evidence for unholding two rules was a sentence in three documents. Pinned both sides now, falsified at **478 disagreements** by nudging the tolerance. ⚠️ **And I ran parity and invariants, said "all gates green", and had not read the full suite I had started** — which is how two red files reached code review instead of me. 🔻 **Negative space: this proves the two ports agree with the old checker on 8,737 harness cases and that the published counts are pinned. It does not prove either rule is coaching-correct**, and nothing a runner sees changed. **Next: the cut-over sign-off on a 12-rule list, or the `neuromuscular` classifier decision first, which would take it to 8.** ⚠️ Nothing has run on a device.
 

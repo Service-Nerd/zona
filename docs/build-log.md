@@ -6,6 +6,58 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-11-28 — ADR027-B4D-WEEKDAY-CAP: four copies of a guard are not four guards
+
+Fourth brick of the planner: §81/§82's per-day minutes trim, the thing that cuts a weekday run to
+the budget the runner said they had. Four call sites, all in one file, nothing outside referenced it.
+A move.
+
+**I picked this one because it wasn't just another move.** The board had ruled
+`WEEK-VOLUME-CAPACITY-01` insufficient evidence and named the measurement it needed. This function
+*is* the capacity logic, so producing that number was adjacent work rather than a detour: 87.4% of
+runners state a weekday budget, 914 easy runs get trimmed, 255 sessions overrun — 59 long runs and
+196 structured sessions, both ruled exemptions — and **all 255 are declared.** §81's promise holds
+exactly.
+
+**Except my first run of that said zero declared.** I'd counted the note in an `else` branch below
+the structured exemption, so every declared overrun on a structured session scored as an exemption
+instead. Had I shipped that I'd have told the board §81 declares nothing — a frightening, false
+number from a four-line ordering mistake in my own harness.
+
+**The other zero turned out to be arithmetic.** §82's floor-protection stamp never fired. Not a
+sampling gap: `heldEasyMins = max(cap, min(floorKmMins, 30))` needs the cap below 30, and the
+wizard's smallest budget chip *is* 30. Zero of 270 combinations of chip × floor × pace can trip it.
+So §82's "declare the over-budget run rather than hide it" is unreachable through the product, though
+an API caller trips it immediately. Filed, with the arithmetic.
+
+**And `verify:parity` cannot test this function at all** — not "misses some cases". Its grid sets
+neither weekday budget field, and the function returns on the first line when both are absent. So
+across all 6,210 cases it does nothing, and IDENTICAL says precisely that. Fourth wave today where a
+standing harness came back green on something it could not reach. The gate was 15,360 cases against
+the pre-move function, falsified three ways.
+
+**Then code review found two things I'd rather have found myself.**
+
+I had written that this was "the engine's only capacity reader" — in the module header and twice in
+the contract. It isn't. The old engine hand-rolls `day_budgets?.[d] ?? max_weekday_mins` in two more
+places, bypassing the stated owner, plus two direct cap reads. That duplication has already shipped a
+defect once. **A single-ownership claim is the one thing in a move that has to be counted rather than
+asserted**, and I asserted it three times — in the same wave where I found another function's
+docstring undercounting its own look-alikes by nine. I don't have a clever explanation for that.
+
+Worse, in a quiet way: each of the four planner bricks had added its own copy of the layer-boundary
+check, each widened just enough for its own module. Four copies, four different allow-lists. The
+reviewer dropped in a file importing the old engine and **all four suites passed, fifty of fifty
+green.** Four copies of a guard are not four guards — it's the same lesson this codebase has a name
+for, applied to a test instead of to production code. One arm now, one allow-list with a reason per
+entry, population from git rather than a directory listing, because a directory listing counts the
+scratch probe I'd just deleted and produces a confidently wrong diagnosis when it finds one.
+
+**Running total of today's reviews: thirteen findings before this wave, five in it, every one mine.**
+Four of the eighteen were logic. The rest were things I wrote about the logic.
+
+---
+
 ## 2026-11-28 — BLOCK-TAPER-SQUEEZE-01: the board ruled, and then the ruling broke its own rule
 
 The taper finding from this morning went to the Coaching Board. The founder approved the fix and kept

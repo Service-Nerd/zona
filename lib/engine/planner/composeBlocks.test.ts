@@ -388,14 +388,4 @@ describe('ADR-027 B4a — the strangler boundary', () => {
     expect(strip(src('lib/plan/ruleEngine.ts'))).toMatch(/composeBlocks\(\{/)
   })
 
-  it('ARCH-ENG-001 — L3 does not import the engine it replaces', () => {
-    // Layers depend downward only. L3 may read L2's config (that is what a rule REFERENCES,
-    // ARCH-ENG-003); it may not reach back into the old planner, or the strangler has no grip.
-    const imports = Array.from(src('lib/engine/planner/composeBlocks.ts')
-      .matchAll(/^\s*import[^;]*?from\s+'([^']+)'/gm)).map(m => m[1])
-    expect(imports.length, 'no imports read — the arm would pass on an empty file').toBeGreaterThan(0)
-    const forbidden = imports.filter(i => /^@\/lib\/(plan|coaching)\//.test(i)
-      && i !== '@/lib/plan/generationConfig')
-    expect(forbidden, 'L3 reached back into the old engine').toEqual([])
-  })
 })

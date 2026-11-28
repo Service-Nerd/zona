@@ -66,7 +66,21 @@ describe('ADR-027 B4c — the eight look-alikes, counted', () => {
    * safe only because a RACE WEEK is excluded one level up, by a guard connected to none of them.
    */
   it('🔴 exactly twelve sites test `strength` on a session, in BOTH spellings', () => {
-    const code = strip(src('lib/plan/ruleEngine.ts')) + strip(src('lib/engine/planner/deliveredVolume.ts'))
+    // 🔴 THE POPULATION IS GLOBBED OVER L3, NOT A TWO-FILE LIST, AND A MOVE IS WHAT TAUGHT IT.
+    // B4d took `applyWeekdayMinsCap` out of `ruleEngine.ts` into `weekdayCap.ts` and this arm went
+    // red at 11 — one of the twelve had simply changed address. **Second time in one day a count
+    // pinned to one file could not tell a relocation from a deletion** (`DELOAD-OWNER-01`'s widened
+    // pin was the first). The population now follows the strangler: the old engine plus every L3
+    // module, so a look-alike moving between them is invisible to the count and a NEW one is not.
+    // ⚠️ FROM GIT, NOT `readdirSync`. A directory listing includes untracked scratch files: code
+    // review verified that restoring an equivalence probe took this count 8 → 9 and failed with
+    // "add a THIRTEENTH to the owner's docstring" — a confident, wrong diagnosis. Only tracked
+    // modules are the engine.
+    const planner = execSync("git ls-files 'lib/engine/planner/*.ts'", { cwd: root, encoding: 'utf8' })
+      .trim().split('\n').filter(f => f && !f.endsWith('.test.ts'))
+    expect(planner.length, 'no tracked L3 modules — this arm would read only ruleEngine').toBeGreaterThanOrEqual(4)
+    const code = strip(src('lib/plan/ruleEngine.ts'))
+      + planner.map(f => strip(src(f))).join('')
     // Matching the TYPE TEST rather than the whole predicate is deliberate: most of these omit
     // `race`, so a pattern spelling out all three types would have found only the documented ones —
     // which is precisely how "appears three times" survived.
@@ -170,22 +184,6 @@ describe('ADR-027 B4c — the eight look-alikes, counted', () => {
 })
 
 describe('ADR-027 B4c — the boundary and the metric', () => {
-  it('ARCH-ENG-001 — L3 reaches down to config and the metrics owners, and no further', () => {
-    // The HLD names `sessionKm`, `deloadCadence` and the config as modules that become L3's metrics
-    // owners, "used by the planner and the verifier alike". Reaching into `ruleEngine` or
-    // `invariants` is what the strangler forbids.
-    const ALLOWED = [
-      '@/lib/plan/generationConfig', '@/lib/plan/deloadCadence',
-      '@/lib/plan/sessionDistance', '@/lib/plan/days', '@/lib/plan/paceBands',
-    ]
-    const files = ['composeBlocks.ts', 'composeWeekVolumes.ts', 'deliveredVolume.ts']
-    for (const f of files) {
-      const imports = Array.from(src(`lib/engine/planner/${f}`).matchAll(/^\s*import[^;]*?from\s+'([^']+)'/gm)).map(m => m[1])
-      expect(imports.length, `${f}: no imports read — the arm would pass on an empty file`).toBeGreaterThan(0)
-      const forbidden = imports.filter(i => /^@\/lib\/(plan|coaching)\//.test(i) && !ALLOWED.includes(i))
-      expect(forbidden, `${f} reached back into the old engine`).toEqual([])
-    }
-  })
 
   it('a week of nothing but strength and rest delivers zero, and absence is not zero km', () => {
     // The one behavioural property not already covered by `raceNotVolume.test.ts`: the excluded

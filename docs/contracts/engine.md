@@ -281,6 +281,7 @@ is still what runs. The engine's prescription code is frozen; nothing here chang
 | `lib/engine/contracts/planV2.ts` | Plan v2 (strict Zod), built by extending `lib/plan/schema.ts` |
 | `lib/engine/contracts/planV1V2.ts` | `toV2`, `toV1`, `parsePlanV2` |
 | `lib/engine/planner/composeBlocks.ts` | **L3: the block planner** — `composeBlocks`, the single owner of a race plan's phase table and of §97's `shortOnRamp` predicate (B4a; § L3 below) and `getPhaseForWeek`, the phase table's reader, moved in B4b |
+| `lib/engine/planner/weekdayCap.ts` | **L3: the per-day TRIM** — `applyWeekdayMinsCap`, §81/§82's weekday minutes trim. ⚠️ Not capacity's single owner: `ruleEngine.ts` hand-rolls the budget in 2 more places (`WEEKDAY-BUDGET-BYPASSERS-01`) (B4d; § L3 below) |
 | `lib/engine/planner/deliveredVolume.ts` | **L3: the delivered-volume owner** — `sumWeeklyKm`, the HLD's defining property for the session placer. Re-exported from `ruleEngine.ts` so its 39 references are unchanged (B4c; § L3 below) |
 | `lib/engine/planner/composeWeekVolumes.ts` | **L3: the week planner** — `composeWeekVolumes`, the single owner of each week's km: ramp, deloads, §2's cap and its injury tightening, the bounceback, the peak clamp, the taper step-down and §31's `compressed` verdict (B4b; § L3 below) |
 | `lib/engine/readModel.ts` | typed plan accessors (ARCH-ENG-010) |
@@ -816,6 +817,69 @@ MUTATION was wrong, not the arm** — two replaced only the first of several occ
 predicate that was not a `strength` test at all. Re-run until each went red. ⚠️ **The §121 race exclusion is deliberately
 NOT re-asserted here, and that is checked rather than claimed:** removing it leaves this file 9/9
 green and takes `raceNotVolume.test.ts` to 6 failed. The gate works where it was put.
+
+#### B4d: the capacity rule (`ADR027-B4D-WEEKDAY-CAP`)
+
+`applyWeekdayMinsCap` — §81/§82's per-day minutes trim. 4 call sites, all inside `ruleEngine.ts`,
+no code outside it referenced the name.
+
+🔴 **AND IT IS NOT CAPACITY'S SINGLE OWNER, WHICH THIS SECTION CLAIMED TWICE.** Code review
+measured it: `ruleEngine.ts` hand-rolls `day_budgets?.[d] ?? max_weekday_mins` in the quality-day
+selection and the easy-km ceiling, bypassing `weekdayBudgetFor`, plus two further direct cap reads.
+⚠️ **That duplication has already shipped a defect** (`SHORTFALL-PINNED-DAY-BUDGET-01`). Filed as
+`WEEKDAY-BUDGET-BYPASSERS-01`. **A single-ownership claim is the one thing in a move that must be
+counted rather than asserted** — and I asserted it, in three places, in the same wave that found the
+`sumWeeklyKm` docstring undercounting its own look-alikes by nine.
+
+🔴 **`verify:parity` CANNOT TEST THIS FUNCTION AT ALL.** 📐 Its grid sets neither
+`max_weekday_mins` nor `day_budgets` — **0 occurrences of either in `scripts/verify-parity.ts`** —
+and the function's first line returns when both are absent. So across all 6,210 parity cases it
+**does nothing**, and IDENTICAL reports exactly that. **Fourth wave in one day where a standing
+harness came back green on a change it could not reach.**
+📐 **The gate is an exhaustive equivalence diff against the pre-move function: 15,360 cases, 0
+differences** (6 caps × 4 budget shapes × 4 longest-run values × race week × 8 session types × 5
+durations × structured), every branch reached — trimmed 9,664 · long-run exempt 1,920 · structured
+exempt 960 · floor-protected 228 · no-budget early return 640. **Falsified three ways:** a trim off
+by one → 9,664 differences, the race exemption dropped → 1,280, `continue` → `break` → 384.
+
+🔻 **THE ORDERING IS A KNOWN DEFECT AND THE MOVE DOES NOT BLESS IT.** It runs at four points, and
+`S28-CAP-ORDER-01` records why that matters: §28 places its stride note in step 4 of
+`buildWeekSessions` while this runs in step 5 **and can convert a quality session to easy**, so a run
+that becomes stride-eligible afterwards is never offered strides. Pre-existing, at every level. The
+call-site count is pinned at 4 so a fifth is a deliberate act.
+
+⚠️ **And the look-alike count's population had to be globbed.** `deliveredVolume.test.ts` pinned the
+twelve `strength` type-tests to `ruleEngine.ts` + the owner; this move took one of them to a new
+address and the arm went red at 11. **Second time in one day a count pinned to one file could not
+tell a relocation from a deletion.** The population is now `ruleEngine.ts` plus every L3 module.
+
+### 📐 `WEEK-VOLUME-CAPACITY-01` — the measurement the board asked for
+
+Produced here because this module IS the capacity logic. 135 corpus plans generated (225 refused):
+
+| | |
+|---|---|
+| Runners who STATED a weekday budget | **118 of 135 (87.4%)** |
+| Easy runs TRIMMED to fit | **914 session-days** |
+| Overruns, all causes | **255** — long run exempt 59, structured exempt 196 |
+| Overruns DECLARED (§81's note) | **255 — every single one** |
+| §82 floor-protection stamped | **0** |
+| Plans where it bound at least once | **intermediate 26 of 47 (55.3%)** · beginner 28 of 88 (31.8%) |
+
+✅ **§81's promise holds exactly: 255 overruns, 255 notes.** ⚠️ **The first run of this measurement
+reported 0 notes, and that was my branch ordering, not the engine** — the note was counted in an
+`else` below the structured exemption, so every declared overrun on a structured session scored as an
+exemption instead. The exemptions and the declaration are different facts about the same session.
+🔴 **The §82 zero is NOT a sampling gap — it is arithmetically unreachable for any wizard input**:
+`heldEasyMins = max(cap, min(floorKmMins, 30))` needs `cap < 30`, and the wizard's smallest budget
+chip IS 30 (swept: 0 of 270 chip × floor × pace combinations). Reachable through the API, not the
+product. Filed `EASY-FLOOR-DECLARATION-UNREACHABLE-01`.
+
+🔻 **What this still does not settle, which is why `WEEK-VOLUME-CAPACITY-01` stays open.** The
+board asked how often capacity binds — answered — **and whether the CURVE reading it would help.**
+These numbers say the trim absorbs it 914 times and the declared overrun 255; they do not say whether
+setting a lower weekly target up front would serve the runner better than trimming after placement.
+That is the ruling, and it needs a comparison that does not exist yet.
 
 ### L5: the independent verifier (B3 step 2)
 
