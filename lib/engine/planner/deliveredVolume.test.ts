@@ -13,6 +13,7 @@
 // that nothing connected to it.
 import { describe, it, expect } from 'vitest'
 import { readFileSync } from 'node:fs'
+import { engineCode, engineRegion, stripComments } from './__enginePopulation'
 import { join } from 'node:path'
 import { execSync } from 'node:child_process'
 import { sumWeeklyKm } from './deliveredVolume'
@@ -20,10 +21,10 @@ import * as engine from '@/lib/plan/ruleEngine'
 
 const root = process.cwd()
 const src = (f: string) => readFileSync(join(root, f), 'utf8')
-/** A comment is prose (HOOK-RGBA-COMMENTS-01). Line count preserved so positions line up. */
-const strip = (s: string) => s
-  .replace(/\/\*[\s\S]*?\*\//g, m => m.replace(/[^\n]/g, ' '))
-  .replace(/(^|[^:])\/\/[^\n]*/g, (m, p) => p + ' '.repeat(m.length - p.length))
+// ⚠️ THE LOCAL COPY IS GONE. It was byte-identical to `__enginePopulation.ts`'s, which is itself
+// the file that exists to stop this — and because it was a copy, the ordering fix that landed in the
+// owner (block-before-line blanked 248 code lines) would never have reached it. Found by code review.
+const strip = stripComments
 
 describe('ADR-027 B4c — the owner moved, and nothing that reads it moved', () => {
   it('🔴 the re-export is LOAD-BEARING: both names are the same function', () => {
@@ -66,29 +67,12 @@ describe('ADR-027 B4c — the eight look-alikes, counted', () => {
    * safe only because a RACE WEEK is excluded one level up, by a guard connected to none of them.
    */
   it('🔴 exactly twelve sites test `strength` on a session, in BOTH spellings', () => {
-    // 🔴 THE POPULATION IS GLOBBED OVER L3, NOT A TWO-FILE LIST, AND A MOVE IS WHAT TAUGHT IT.
-    // B4d took `applyWeekdayMinsCap` out of `ruleEngine.ts` into `weekdayCap.ts` and this arm went
-    // red at 11 — one of the twelve had simply changed address. **Second time in one day a count
-    // pinned to one file could not tell a relocation from a deletion** (`DELOAD-OWNER-01`'s widened
-    // pin was the first). The population now follows the strangler: the old engine plus every L3
-    // module, so a look-alike moving between them is invisible to the count and a NEW one is not.
-    // ⚠️ FROM GIT, NOT `readdirSync`. A directory listing includes untracked scratch files: code
-    // review verified that restoring an equivalence probe took this count 8 → 9 and failed with
-    // "add a THIRTEENTH to the owner's docstring" — a confident, wrong diagnosis. Only tracked
-    // modules are the engine.
-    const planner = execSync("git ls-files 'lib/engine/planner/*.ts'", { cwd: root, encoding: 'utf8' })
-      .trim().split('\n').filter(f => f && !f.endsWith('.test.ts'))
-    expect(planner.length, 'no tracked L3 modules — this arm would read only ruleEngine').toBeGreaterThanOrEqual(4)
-    const code = strip(src('lib/plan/ruleEngine.ts'))
-      + planner.map(f => strip(src(f))).join('')
-    // Matching the TYPE TEST rather than the whole predicate is deliberate: most of these omit
-    // `race`, so a pattern spelling out all three types would have found only the documented ones —
-    // which is precisely how "appears three times" survived.
-    //
-    // 🔴 AND BOTH SPELLINGS, BECAUSE COUNTING ONE IS HOW I GOT IT WRONG THE SECOND TIME. My first
-    // correction asserted EIGHT and matched only `=== 'strength'`; code review found four more
-    // written `!== 'strength'`, two of them km comparisons with no race mention. A negated
-    // thirteenth would have left this gate green.
+    // 🔴 THE POPULATION IS THE WHOLE ENGINE, AND IT IS A SHARED OWNER NOW. Pinned to one file it
+    // went red on every brick that moved code out: B4d took one `strength` test to a new address and
+    // this read 11 of 12; B4f took three cap passes and three arms fired at once. **Third
+    // recurrence, so the population stopped being re-invented per arm** —
+    // `__enginePopulation.ts` owns "every file the race-plan engine is spread across".
+    const code = engineCode(root)
     const positive = code.match(/type === 'strength'/g) ?? []
     const negated = code.match(/type !== 'strength'/g) ?? []
     expect(positive.length, 'the `=== strength` count moved').toBe(8)
@@ -111,16 +95,14 @@ describe('ADR-027 B4c — the eight look-alikes, counted', () => {
     // deload skip four times), so searching the whole file passed while the guard that MATTERS was
     // deleted: two falsification mutations stayed green and the arm, not the mutation, was at fault.
     // Each guard is now asserted inside the function that depends on it.
-    const code = strip(src('lib/plan/ruleEngine.ts'))
-    // ⚠️ LINES, NOT CHARACTERS. `strip` blanks comment TEXT while preserving length, so a
-    // character window over a well-commented function is mostly blanks — a 500-char region reached
-    // 6 lines into `applyTaperLongRunCap` and the arm failed on a guard that is right there.
-    const codeLines = code.split('\n')
-    const region = (startMarker: string, lineCount: number) => {
-      const i = codeLines.findIndex(l => l.includes(startMarker))
-      expect(i, `${startMarker} is gone — the region this arm reads no longer exists`).toBeGreaterThan(0)
-      return codeLines.slice(i, i + lineCount).join('\n')
-    }
+    // ⚠️ AND THE REGION IS FOUND IN WHICHEVER ENGINE FILE NOW HOLDS IT. B4f moved
+    // `applyTaperLongRunCap` into L3 and this arm went red for a relocation it should not care
+    // about — third recurrence of a population pinned to one file. `engineRegion` searches the whole
+    // engine and THROWS if the marker is in none of them, so a DELETED guard still fails.
+    // ⚠️ By LINES, not characters: `stripComments` blanks comment text while preserving length, so a
+    // character window over a well-commented function is mostly blanks (a 500-char window reached
+    // 6 lines into `applyTaperLongRunCap` and failed on a guard that was right there).
+    const region = (startMarker: string, lineCount: number) => engineRegion(startMarker, lineCount, root)
     // `exactWeekKm` sums a week without excluding the race; its pass must filter race weeks out.
     expect(
       region('function applyTaperDeliveredDepth(', 30),

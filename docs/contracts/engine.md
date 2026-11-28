@@ -281,6 +281,8 @@ is still what runs. The engine's prescription code is frozen; nothing here chang
 | `lib/engine/contracts/planV2.ts` | Plan v2 (strict Zod), built by extending `lib/plan/schema.ts` |
 | `lib/engine/contracts/planV1V2.ts` | `toV2`, `toV1`, `parsePlanV2` |
 | `lib/engine/planner/composeBlocks.ts` | **L3: the block planner** — `composeBlocks`, the single owner of a race plan's phase table and of §97's `shortOnRamp` predicate (B4a; § L3 below) and `getPhaseForWeek`, the phase table's reader, moved in B4b |
+| `lib/engine/planner/longRunCaps.ts` | **L3: the long-run cap passes** — §45's progression cap, §52's step-backs, §6 Am. 1's taper ceiling, §47's ramped specificity floor (B4f; § L3 below) |
+| `lib/engine/planner/__enginePopulation.ts` | **test support** — the single owner of "every file the race-plan engine is spread across". Exists because a count pinned to one file went red on three separate relocations (§ L3 below) |
 | `lib/engine/planner/longRunAccess.ts` | **L3: the long-run accessor** — `longRunOf`, `longRunSessionOf`, `computeLongRunHrs`. One owner where the engine had FOUR (B4e; § L3 below) |
 | `lib/engine/planner/weekdayCap.ts` | **L3: the per-day TRIM** — `applyWeekdayMinsCap`, §81/§82's weekday minutes trim. ⚠️ Not capacity's single owner: `ruleEngine.ts` hand-rolls the budget in 2 more places (`WEEKDAY-BUDGET-BYPASSERS-01`) (B4d; § L3 below) |
 | `lib/engine/planner/deliveredVolume.ts` | **L3: the delivered-volume owner** — `sumWeeklyKm`, the HLD's defining property for the session placer. Re-exported from `ruleEngine.ts` so its 39 references are unchanged (B4c; § L3 below) |
@@ -944,6 +946,70 @@ null not 0 (`SESSION-KM-01`) · insertion order pinned · **no NAMED implementat
 engine** · **exactly one across the tracked engine** from `git ls-files` · and **the `isLongRun` use
 count pinned at 17 with every survivor categorised**, because the name-based arm could not see five
 of the eight.
+
+#### B4f: the long-run cap passes (`ADR027-B4F-LONGRUN-CAPS`)
+
+The four passes deciding how far the long run may go — §45's progression cap, §52's step-backs,
+§6 Am. 1's taper ceiling, §47's ramped specificity floor. **The first post-pass group to move, and
+the brick B4e existed to unblock.**
+
+🔑 **THEY COULD NOT MOVE UNTIL THE ACCESSORS DID.** Every one called a long-run finder private to
+`ruleEngine.ts` — `applyLongRunProgressionCap` had its own `findLong`, `applyTaperLongRunCap` an
+inline `.find`. B4e folded eight implementations into one owner and `dur` (32 callers, the inverse of
+`sessionDistance`'s own conversion) moved to that module in the same wave. **This module imports only
+exported single owners; that was the precondition, and measuring it is what reordered the two bricks.**
+
+⚠️ **THE CALL ORDER IS LOAD-BEARING AND ONE PASS RUNS TWICE:** step-backs → §45's cap →
+`reclampPeakStepBacks` → **§45's cap AGAIN** → the taper ceiling. The second call is not redundant:
+`reclampPeakStepBacks` re-reads the peak anchor and can lift a long run the first cap had lowered.
+**The move changes none of it** — the call sites stay in `buildRulePlanOnce` until an orchestrator
+owns the order. Recorded because a reader finding two calls to one pass will assume one is dead, and
+`S28-CAP-ORDER-01` is this repo's standing evidence that pass ordering is where its silent defects live.
+🔻 `reclampPeakStepBacks` deliberately stayed behind: it reads the peak step-back SET that
+`buildRulePlanOnce` threads through several passes, so moving it means moving that state's owner too.
+
+✅ `verify:parity` **IDENTICAL over 6,210**, and it is real evidence here — these passes run on every
+race plan the grid builds.
+
+🔴 **AND THREE ARMS WENT RED FOR A RELOCATION, WHICH IS THE THIRD TIME IN ONE DAY.** A count or a
+region pinned to `ruleEngine.ts` cannot tell a move from a deletion — the one thing those pins exist
+to distinguish. It happened in B4b (`deloadWeeks.has(` 6 → 3), in B4d (the `strength` look-alike count
+12 → 11) and in B4f (three arms at once). **So the population stopped being re-invented per arm:**
+`lib/engine/planner/__enginePopulation.ts` is the single owner of *"every tracked file the race-plan
+engine is spread across"*, with `engineCode`, `engineSources` and `engineRegion` — the last searching
+every engine file for a marker and **throwing when it is in none of them**, so a deleted guard still
+fails while a moved one does not. ⚠️ From `git ls-files`, never `readdirSync`, and by LINES not
+characters, for the reasons both of those already cost once.
+
+🔴 **AND THE NEW SHARED OWNER SHIPPED THE 405-LINE BLIND SPOT AGAIN, IN ITS FIRST HOUR.**
+`stripComments` was written block-pass-then-line-pass, so a `//` comment containing a `/*` opened a
+block that blanked real code to the next `*/`. 📐 **92 code lines across 10 tracked non-test files
+under `lib/`** by my measurement (code review measured 248 across 21 on a wider scope — different
+method, same defect). ⚠️ **Restoring the broken version left the whole suite GREEN** — 67 arms read
+through it and every one asserts what the engine CONTAINS, and a blanked window contains nothing.
+**That is verbatim what `scripts/lib/strip-comments.test.py` already records for the same function in
+Python**, and I reinvented it in TypeScript rather than porting the lesson. One ordered pass now,
+with both declared limits asserted as cases, gated by `enginePopulation.test.ts` (9 arms) — because
+the fix was otherwise **ungated**, which the restore proved.
+
+🔴 **AND MY OWN EDIT HAD DELETED TWO OF B4e'S OWNERSHIP ARMS TWO HOURS AFTER WRITING THEM.** A
+region-based replacement swallowed both; the survivor kept the ownership TITLE while carrying the
+count's body, so a second named `longRunOfWeek` in `ruleEngine.ts` left every suite green. **A title
+is not an assertion, and editing a test file by character offsets is the fastest way to produce
+one.** Restored, re-falsified, and the shape pin now carries its 20-use breakdown (`ruleEngine.ts` 16
++ L3 4) rather than a bare number.
+
+⚠️ Three smaller review findings, all the same shape: the SIBLING arm in `deloadCadence.test.ts`
+still read raw source (half a fix reads exactly like a whole one); `deliveredVolume.test.ts` kept a
+**byte-identical copy** of the stripper, which the ordering fix would never have reached; and
+`engineSources` counted **itself**, whose header cites the very shapes the arms count.
+
+**Gates:** `verify:parity` IDENTICAL · suite 871 files / 9,197 tests · property sweep 16,464 plans,
+no new violations · the repaired arms re-falsified (a guard **deleted** in its new home → red · a new
+finder in L3 → red · the population glob matching nothing → red · the old stripper → red · the
+self-exclusion removed → red · `engineRegion` returning empty instead of throwing → red) · and the
+`isLongRun` count re-pinned at **20 across the whole engine**, up from 17 **for a relocation plus a
+widened population, not three new finders**.
 
 ### L5: the independent verifier (B3 step 2)
 

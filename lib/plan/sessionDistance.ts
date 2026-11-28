@@ -210,3 +210,16 @@ export function weeksWithoutStatedDistance(
 ): number {
   return (plan.weeks ?? []).filter(w => w.weekly_km == null).length
 }
+
+/**
+ * Minutes for a distance at a given pace — the INVERSE of this module's own
+ * `distance_km ?? duration_mins / minPerKmEasy` reading, and so its owner too.
+ *
+ * Moved out of `ruleEngine.ts` in ADR-027 B4e/B4f, where it was a private `dur` with 32 callers.
+ * ⚠️ THE NAME IS KEPT so those 32 call sites are untouched: a rename would have been churn in a
+ * move whose whole claim is byte-identical output. `durationForMainSet` in `sessionFormat.ts` is a
+ * different thing (§ warm-up/cool-down composition) despite the similar name.
+ */
+export function dur(distKm: number, minsPerKm: number): number {
+  return Math.round(distKm * minsPerKm)
+}

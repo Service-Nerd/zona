@@ -6,6 +6,58 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-11-28 — ADR027-B4F-LONGRUN-CAPS: I rebuilt a defect this codebase already has a test suite for
+
+The long-run cap passes moved into L3 — the group yesterday's accessor brick existed to unblock. That
+part went cleanly: four passes, 273 lines, parity identical over 6,210, and this time parity is real
+evidence because these passes run on every race plan.
+
+**One thing worth writing down about the code itself.** The passes are called in a fixed order and
+one of them runs *twice*: step-backs, then §45's cap, then a peak reclamp, then **§45's cap again**,
+then the taper ceiling. The second call isn't dead — the reclamp re-reads the peak anchor and can lift
+a long run the first cap lowered. A reader finding two calls to one function will assume one is
+redundant, so the module says why it isn't. Ordering is where this engine's silent defects live and
+there's a filed item that proves it.
+
+**Then three gates went red, and none of them for a real problem.** Each L3 brick moves code out of
+the old engine, and every arm that *counts* something in the old engine then fires for a relocation.
+It happened in B4b (a pin of six read three), in B4d (a pin of twelve read eleven), and today three at
+once. A count scoped to one file cannot tell a move from a deletion — which is the one thing those
+pins exist to distinguish. So I stopped fixing numbers and made one owner for "every file the engine
+is spread across", with a region reader that *throws* when a marker is in none of them, so a deleted
+guard still fails while a moved one doesn't.
+
+**And then the new owner shipped a defect this codebase already has a dedicated test suite for.**
+
+I wrote its comment-stripper as two regex passes: blocks first, then line comments. That means a `//`
+comment containing a `/*` opens a block that blanks real code until the next `*/`. Ninety-two code
+lines across ten files, by my count. **Restoring the broken version left the entire suite green** —
+sixty-seven arms read through that function and every one of them asserts what the engine *contains*,
+and a blanked window contains nothing.
+
+`scripts/lib/strip-comments.py` paid for this exact defect months ago — four hundred and five lines
+across eleven files, including a two-hundred-and-thirty-one-line contiguous window — and its test
+suite records, in as many words, that restoring the broken version left four suites all green. I
+reinvented it in TypeScript instead of porting the lesson. The fix is one ordered pass; it now has
+nine arms of its own, including both of its declared limits as cases, because the restore proved the
+fix was otherwise ungated.
+
+**Two more, both mine.** A region-based edit earlier had deleted two of yesterday's ownership arms —
+two hours after I wrote them — and the survivor kept the ownership *title* while carrying the count's
+body, so a second implementation would have passed every suite. Editing a test file by character
+offsets is the fastest way to produce a title that asserts nothing.
+
+And the best one: **a comment I wrote about this defect broke the deload guard.** The new helper's
+header cites "`deloadWeeks.has(` reads → a pin of 6 read 3" as the incident it exists to prevent. The
+arm counted that sentence. Seven of six. Searching for the hardcoded thing finds the comment about
+the hardcoded thing — which is the defect class the sentence was describing.
+
+Today: twenty-four review findings before this wave, seven in it, every one mine. The code moved
+without incident every time. What kept breaking was what I wrote around it, and twice it was prose
+about the exact failure it caused.
+
+---
+
 ## 2026-11-28 — ADR027-B4E-LONGRUN-ACCESS: I said four, it was eight, and five of them had no name
 
 The next brick was meant to be the long-run cap passes. I measured their dependencies first and

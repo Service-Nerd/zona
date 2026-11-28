@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest'
+import { stripComments } from '@/lib/engine/planner/__enginePopulation'
 import { readFileSync, readdirSync, statSync } from 'node:fs'
 import { join } from 'node:path'
 import { isDeloadWeek, computeDeloadWeeks } from './deloadCadence'
@@ -85,7 +86,10 @@ describe('DELOAD-OWNER-01 — single ownership is mechanical, not remembered', (
     const offenders: string[] = []
     for (const file of tsFiles(LIB)) {
       if (file.endsWith(OWNER) || file.endsWith(CHECKER)) continue
-      const src = readFileSync(file, 'utf8')
+      // ⚠️ STRIPPED TOO. Only ONE of the two arms in this block got the stripper when
+      // `__enginePopulation.ts` landed, so prose about `% recoveryFreq` still false-fired. Found by
+      // code review — half a fix reads exactly like a whole one.
+      const src = stripComments(readFileSync(file, 'utf8'))
       if (/%\s*recoveryFreq/.test(src)) offenders.push(file.replace(process.cwd() + '/', ''))
     }
     expect(
@@ -125,9 +129,14 @@ describe('DELOAD-OWNER-01 — single ownership is mechanical, not remembered', (
     // same block. **This repo has paid for a hand-typed population before** (the hook runner's
     // three-of-seven shell-suite list). Globbed: the population follows the code, the TOTAL stays
     // pinned at 6, and a read anywhere under `lib/` counts.
+    // 🔴 COMMENTS ARE STRIPPED, AND THIS ARM WENT RED WITHOUT IT — on prose I wrote ABOUT this very
+    // defect. ADR-027 B4f added `__enginePopulation.ts`, whose header cites "`deloadWeeks.has(` reads
+    // → a pin of 6 read 3" as the B4b incident; the arm counted that sentence and reported 7 of 6.
+    // `HOOK-RGBA-COMMENTS-01`: searching for the hardcoded thing finds the COMMENT ABOUT it, and a
+    // guard that fires on a correct explanation is a guard that gets switched off.
     const sources = tsFiles(LIB)
       .filter(f => !f.endsWith(OWNER))
-      .map(f => readFileSync(f, 'utf8'))
+      .map(f => stripComments(readFileSync(f, 'utf8')))
       .filter(src => /deloadWeeks\.has\(/.test(src))
     expect(sources.length, 'no file reads the computed set — the arm would pass on nothing')
       .toBeGreaterThan(0)
@@ -144,7 +153,7 @@ describe('DELOAD-OWNER-01 — single ownership is mechanical, not remembered', (
     const computes = sources.flatMap(s => s.match(/computeDeloadWeeks\(/g) ?? [])
     expect(computes.length, 'placement must be computed exactly once per plan').toBe(1)
     // And the week planner takes the set as an INPUT: it must not derive placement itself.
-    expect(readFileSync(join(LIB, 'engine', 'planner', 'composeWeekVolumes.ts'), 'utf8'))
+    expect(stripComments(readFileSync(join(LIB, 'engine', 'planner', 'composeWeekVolumes.ts'), 'utf8')))
       .not.toMatch(/computeDeloadWeeks\(/)
   })
 })
