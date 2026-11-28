@@ -281,6 +281,7 @@ is still what runs. The engine's prescription code is frozen; nothing here chang
 | `lib/engine/contracts/planV2.ts` | Plan v2 (strict Zod), built by extending `lib/plan/schema.ts` |
 | `lib/engine/contracts/planV1V2.ts` | `toV2`, `toV1`, `parsePlanV2` |
 | `lib/engine/planner/composeBlocks.ts` | **L3: the block planner** — `composeBlocks`, the single owner of a race plan's phase table and of §97's `shortOnRamp` predicate (B4a; § L3 below) and `getPhaseForWeek`, the phase table's reader, moved in B4b |
+| `lib/engine/planner/deliveredVolume.ts` | **L3: the delivered-volume owner** — `sumWeeklyKm`, the HLD's defining property for the session placer. Re-exported from `ruleEngine.ts` so its 39 references are unchanged (B4c; § L3 below) |
 | `lib/engine/planner/composeWeekVolumes.ts` | **L3: the week planner** — `composeWeekVolumes`, the single owner of each week's km: ramp, deloads, §2's cap and its injury tightening, the bounceback, the peak clamp, the taper step-down and §31's `compressed` verdict (B4b; § L3 below) |
 | `lib/engine/readModel.ts` | typed plan accessors (ARCH-ENG-010) |
 
@@ -753,6 +754,65 @@ the runner declaring more volume genuinely moves the number (peak 130 + declared
 only the ceiling clamp is immune. ⚠️ **And the fix was ungated — a mutation restoring the old
 expression stayed GREEN**, so an arm was added and falsified. Plus: the gate cited a measurement the
 record did not contain, the parity claim above, and an import left unused by the move.
+
+#### B4c: the delivered-volume owner (`ADR027-B4C-VOLUME`)
+
+The HLD's defining property for the session placer, made literal: *"the single owner of delivered
+volume"*. `sumWeeklyKm` is that owner and now lives in L3.
+
+🔑 **A MOVE WITH ZERO CONSUMER CHURN.** Unlike the block and week planners, this function was
+EXPORTED, with **39 references across ~20 files** — `invariants.ts`, `planScale`, `cohortShape`,
+`easyDistribution`, `sessionComposer` and nine suites. `ruleEngine.ts` re-exports it, so none of them
+changed (the ARCH-ENG-001 precedent: `TRIGGER_TYPES` moved into L2 and `planAdjustment` kept
+exporting it). The re-export is **load-bearing** — a gate asserts the two names are the same
+function object, and a second a definition cannot reappear in the old home.
+
+🔻 **WHAT THIS WAVE IS NOT.** The placer proper is `buildWeekSessions` (1,266 lines),
+`applyWeekdayMinsCap` and some fifteen `apply*` post-passes, and **none of it has moved.** This is
+the metric every placement rule reads — ADR-022's delivered ceiling, §82's easy trim, §52's long run.
+⚠️ **No decisions:** a `Decision` records what L3 SET; this MEASURES. Emitting one would be decoration.
+
+🔴 **THE OWNER'S OWN DOCSTRING SAID ITS PREDICATE "APPEARS THREE TIMES". IT APPEARS TWELVE,
+AND MY FIRST CORRECTION SAID EIGHT.** That paragraph is the one forbidding a DRY — *"the single
+owner would be the defect"* — so an undercount is the dangerous direction. 📐 Counted, **both
+spellings**: `type === 'strength'` 8 times, `type !== 'strength'` 4 more. ⚠️ **The eight-figure was
+mine and it was wrong by four because it counted one spelling** — code review found the negated
+ones, two of them km comparisons with no race mention. **Five of the twelve sum or compare km and
+never exclude the race, and not one is safe because its predicate is right:** each is safe because a
+RACE WEEK is filtered one level up, by a guard written elsewhere and connected to none of them — an
+early return **897 lines** before `placedKm`, a `w.type !== 'race'` filter before `exactWeekKm`, a
+`w.type === 'race'` skip in `lopsidedWeek`, the same in `applyTaperLongRunCap`, and a `steppedBack`
+set built from race-excluded peak weeks for `reclampPeakStepBacks`. All five verified.
+⚠️ **AND I CLAIMED A SIXTH PROTECTION THAT DOES NOT EXIST:** an earlier draft said the easy fill was
+also behind `!isRaceWeek`. Code review measured it false — the only nearby `!isRaceWeek` guards
+§9's redistribution 548 lines away. **The early return is the SOLE protection**, and a reader who
+believed in a second one could have removed it, leaving race week with no easy runs at all.
+⚠️ **The divergence is the RULING, not debt:** §121 is explicitly *"DISPLAY AND TOTALS ONLY …
+nothing placed in race week moves"*, so routing any of the five through the owner would change
+PLACEMENT and breach the ruling's own scope. `placedKm` carried the comment *"Mirror sumWeeklyKm"*,
+false in exactly the way that invites that breach; corrected. The count and all five guards are
+pinned, so a thirteenth — **in either spelling** — is a deliberate act.
+
+🔻 **A measured negative, recorded because it looks like a live defect and is not.**
+`foundationBlock.ts` sums a capped deload week with `Number(x.distance_km ?? 0)`, which is
+`SESSION-KM-01`'s exact shape — `?? 0` asserts "this session covered no ground", and beginners are
+duration-anchored on 95.8% of sessions. 📐 **Measured: 10,206 foundation sessions across a
+4×4×4×3×3×2 grid, 0 without `distance_km`, 0 weeks that would understate.**
+`buildFoundationSessions` always sets it, so it is latent by construction. Not filed.
+
+**Gates** (`lib/engine/planner/deliveredVolume.test.ts`, 9 arms, each falsified — **11 mutations**):
+the re-export's identity · no second definition in the old home · the consumer population (>15 files,
+`git grep --untracked`, because a tracked-only search reported the owner absent from its own
+population) · the twelve-site count in both spellings · `placedKm` still omitting `race` · the five
+upstream guards · the boundary · the excluded types and SESSION-KM-01's duration anchoring.
+⚠️ **Two of the guard arms grepped the whole 3,744-line file and passed while the guard that mattered
+was deleted** — both literals occur more than once. Bounded to their functions now, **by LINES not
+characters**, because `strip` blanks comment text while preserving length, so a character window over
+a commented function is mostly blanks. ⚠️ **And four falsification mutations stayed green because the
+MUTATION was wrong, not the arm** — two replaced only the first of several occurrences, two added a
+predicate that was not a `strength` test at all. Re-run until each went red. ⚠️ **The §121 race exclusion is deliberately
+NOT re-asserted here, and that is checked rather than claimed:** removing it leaves this file 9/9
+green and takes `raceNotVolume.test.ts` to 6 failed. The gate works where it was put.
 
 ### L5: the independent verifier (B3 step 2)
 

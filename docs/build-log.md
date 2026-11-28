@@ -6,6 +6,64 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-11-28 — ADR027-B4C-VOLUME: I corrected a count, and my correction was wrong too
+
+Step 3 of the planner is the session placer, and it's 1,266 lines plus fifteen post-passes, so it
+isn't one wave. The first brick is the thing the HLD calls the placer's defining property: "the
+single owner of delivered volume". That's `sumWeeklyKm`, and it moved into L3.
+
+**This move was a different shape from the last two.** The phase table and the volume curve were
+private functions with one caller each. This one is exported, with 39 references across about twenty
+files — invariants, the scale, the cohort grid, nine test suites. So the old home re-exports it and
+not one consumer changed. The gate for that is identity, not behaviour: both names must be the *same
+function object*, because if the re-export were ever shadowed by a reimplementation in the old file,
+every one of those 39 references would still compile and would be reading something else.
+
+**Before scoping it I went looking for rogue week-summers, and the measurement is the interesting
+part.** Three candidates. One is the verifier's own and is supposed to be independent. One looked
+exactly like a defect this codebase has a name for — summing a week with `distance_km ?? 0`, which
+reads "covered no ground" for every duration-anchored session, and beginners are duration-anchored on
+96% of theirs. I generated 10,206 foundation sessions across a grid to check: **zero without a
+distance**. Latent by construction. Not a defect, and worth the twenty minutes to know rather than
+file.
+
+**The third one opened the actual finding.** The owner's docstring carries a standing instruction not
+to DRY its predicate, because each site asks a different question that happens to list the same
+session types — and it said the predicate "appears three times". I found a fourth, with a comment
+claiming it mirrored the owner when it doesn't. Wrote a gate pinning the count at four.
+
+**The gate went red at eight.** So I'd found one and assumed it was the only one. Fixed the docstring,
+pinned it at eight, falsified it, moved on.
+
+**Then code review found four more, written in the negated spelling** — `type !== 'strength'` instead
+of `type === 'strength'`. My count matched one spelling. Twelve, not eight, not three. And two of the
+four new ones are km comparisons with no race exclusion at all.
+
+So I checked what protects each of them, and that's the part worth keeping: **five of the twelve sum
+or compare kilometres and never mention the race, and not one of them is safe because its predicate is
+right.** Each is safe because a race *week* gets filtered somewhere else — an early return 897 lines
+away, a week-level filter, a skip on the first line of a loop. Five independent guards, none connected
+to the code that depends on it.
+
+**And I'd claimed a sixth protection that doesn't exist.** I wrote that the easy fill was "also behind
+`!isRaceWeek`". Review falsified it by deleting an unrelated guard 548 lines away and watching my arm
+go red — the only thing standing between a marathon and that sum is the early return. A reader
+trusting my sentence could have removed it.
+
+**Two more things I got wrong about my own gates.** Two arms grepped the whole 3,744-line file for a
+literal that appears more than once, so they passed while the guard that mattered was deleted — bound
+to their functions now, and by *lines* rather than characters, because the comment-stripper blanks
+comment text while keeping its length, so a character window over a well-commented function is mostly
+blanks. And four falsification mutations came back green because the *mutation* was wrong: two
+replaced only the first of several occurrences, two added a predicate that wasn't a `strength` test at
+all. Eleven mutations before all nine arms were honestly red.
+
+**The through-line of all three waves today:** the code was right nearly every time. What was wrong
+was what had been written about it — a comment claiming a mirror, a docstring undercounting by nine, a
+protection that didn't exist, and twice my own correction of someone else's number.
+
+---
+
 ## 2026-11-28 — ADR027-B4B-WEEKS: I made B4a's mistake again, from the other side, one day later
 
 Step 2 of the planner: the weekly volume curve. Same shape as yesterday's — `buildVolumeSequence` had

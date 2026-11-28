@@ -3731,8 +3731,16 @@ function buildWeekSessions(
   let remainingVolume = 0
   let easyCap = Infinity
   if (remainingSlots > 0) {
-    // Mirror sumWeeklyKm: distance metric reads distance_km; duration metric
-    // converts duration_mins back to km via easy pace. Strength has no volume.
+    // 🔴 THIS DOES NOT MIRROR `sumWeeklyKm`, AND THE COMMENT SAYING SO WAS FALSE (B4c).
+    // It excludes `strength || rest` and NOT `race`, which the owner has excluded since §121.
+    // ⚠️ THE DIVERGENCE IS CORRECT: §121's ruling is explicitly "DISPLAY AND TOTALS ONLY … nothing
+    // placed in race week moves", so mirroring the owner here would change PLACEMENT and breach the
+    // ruling's own scope. It cannot fire either way — `if (isRaceWeek) { … return sessions }` 897
+    // lines above means a race session is never present when this is summed. **Safe by an early
+    // return that nothing connected to it**, which `deliveredVolume.test.ts` now pins, because
+    // removing that return would count a marathon here and leave race week with no easy runs.
+    // What IS shared with the owner: distance metric reads `distance_km`, duration metric converts
+    // `duration_mins` back to km via easy pace, and strength carries no volume.
     const placedKm = Object.values(sessions).reduce((sum, s) => {
       if (!s || s.type === 'strength' || s.type === 'rest') return sum
       return sum + sessionKmOrZero(s, pace.minPerKmEasy)
@@ -4200,70 +4208,14 @@ function computeLongRunHrs(sessions: Partial<Record<Day, Session>>, pace: PaceGu
   return null
 }
 
-/**
- * §121 — THE RACE IS THE TEST, NOT THE TRAINING.
- *
- * `type === 'race'` is excluded on exactly the ground §77 already uses to keep
- * the race out of `days_cannot_train`, and which this file states in its own
- * words at the §77 site: *"the race is an external fixed event, not a training
- * session."* Nobody followed that sentence through to volume.
- *
- * ⚠️ WHAT IT WAS DOING TO THE SCREEN. Measured on 8,510 plans: the taper phase
- * peak exceeded the peak phase peak in **15.3%** of plans, race week was the
- * plan's biggest week in **16.3%**, and at MARATHON it was **50%**. Worst case,
- * a 12 km/week beginner: peak training week 25 km, race week 59 km. Excluding
- * the race session, no taper anywhere exceeds its peak phase — the race is the
- * entire cause. A beginner opening the plan preview read
- * `Base 25 · Build 38 · Peak 41 · Taper 47` and was taught that the taper is the
- * hardest block, which is the most commonly misunderstood idea in amateur
- * running. **The screen argued for the mistake**, hardest at the beginner and
- * injury-history cohorts (22% and 20%, against 9% experienced).
- *
- * 🔴 **THIS IS AN HONESTY FIX AND MUST NOT BE SOLD AS A SAFETY ONE** (Willy,
- * binding). A 12 km/week runner racing 42.2 km is at 1.7x their largest ever
- * week, and taking the race out of a total does not reduce that by one gram. It
- * makes it VISIBLE. The readiness question is §114's and is filed separately
- * (MARATHON-READINESS-GAP-01).
- *
- * ⚠️ DISPLAY AND TOTALS ONLY. Nothing placed in race week moves, so no session
- * changes and no cohort is reclassified by this. `verify:parity` reports ~16% of
- * plans changed and that is the ruling, not a regression.
- */
-/**
- * The DELIVERED weekly volume of a set of placed sessions.
- *
- * §121 — "the race is the test, not the training": a race session contributes
- * NOTHING here, beside `strength` and `rest`. That exclusion is one of the two
- * mechanisms §121's Config line names, and `planScale` is the other.
- *
- * ⚠️ EXPORTED FOR ITS GATE, not for new callers (TAPER-OVER-PEAK-SLOW-01,
- * 2026-10-03). `planScale`'s half of §121 has had a direct test since the ruling;
- * this half was covered only by `INV-PLAN-RACE-NOT-VOLUME`, a PLAN-LEVEL proxy
- * that cannot see a re-inclusion on a 5K or 10K plan at all — measured, 0 of
- * 20,736 such plans would be caught. `raceNotVolume.test.ts` now asserts the
- * exclusion here, directly, for every distance. New volume callers belong on
- * `sessionKm`/`sessionKmOrZero` (SESSION-KM-01), not on this.
- *
- * ⚠️ DO NOT "DRY" THIS PREDICATE WITH ITS TWO LOOK-ALIKES. The expression
- * `strength || rest || race` appears three times in this file and the three are NOT
- * copies of one rule — they are three different questions that happen to list the
- * same types: `applyWeekdayMinsCap` asks "may this be shrunk to the weekday cap?"
- * (a race is a fixed external event), this asks "does this count as training
- * volume?" (§121), and the HR-note pass asks "should this carry an estimated-HR
- * note?". A shared owner would COUPLE three independent decisions, so a later change
- * to what §121 counts would silently move the weekday cap and a coach note with it.
- * Duplication is correct here; the single owner would be the defect. Found
- * 2026-10-03 while falsifying this gate, as a mutation that refused to apply.
- */
-export function sumWeeklyKm(sessions: Partial<Record<Day, Session>>, pace: PaceGuide): number {
-  let total = 0
-  for (const s of Object.values(sessions)) {
-    if (!s || s.type === 'strength' || s.type === 'rest' || s.type === 'race') continue
-    total += sessionKmOrZero(s, pace.minPerKmEasy)
-  }
-  return Math.round(total)
-}
-
+// §121 / SESSION-KM-01 — THE DELIVERED-VOLUME OWNER MOVED TO L3 (ADR-027 B4c).
+// `sumWeeklyKm` is `lib/engine/planner/deliveredVolume.ts`'s, which is the HLD's defining property
+// for the session placer. It is RE-EXPORTED here, deliberately: it had 39 references across ~20
+// files and the re-export keeps every one of them unchanged (the ARCH-ENG-001 precedent). The
+// re-export is load-bearing, not politeness — `deliveredVolume.test.ts` asserts the two names are
+// the same function object, and §121's race exclusion and the TWELVE-look-alike note live there.
+import { sumWeeklyKm } from '@/lib/engine/planner/deliveredVolume'
+export { sumWeeklyKm }
 /**
  * §6 Amendment 1 — cap each taper week's long run at the peak phase's long run.
  *
