@@ -6,6 +6,36 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-11-28 — ADR027-B4G-PEAK-STEPBACKS: the gates followed the code for the first time
+
+Second post-pass group: §47's step-back re-clamp and §80's delivered step-back. Parity identical, both
+call sites untouched, nothing for a runner.
+
+**A mistake of a shape I hadn't made before today.** One wave earlier I'd written, in a module header,
+that `reclampPeakStepBacks` couldn't move — that it read a step-back set the main builder threads
+through several passes, so moving it meant moving that state's owner too. I checked the signature
+today. The set is a parameter. It was movable the whole time, and the only cost was a wave's delay.
+
+Every other error today was a count that was too low — three times. This one is the opposite: a claim
+that something was *harder* than it was. That's the more dangerous direction, because an underestimate
+eventually trips a gate and an overestimate just quietly doesn't get done. Nothing fails when you talk
+yourself out of work.
+
+**And the scaffolding finally paid.** Each of the three previous bricks broke two or three gates purely
+by moving code — a count pinned to one file can't tell a relocation from a deletion. On this one
+nothing moved: the use-count pin, the look-alike count and both region readers followed the code with
+no edit from me. The only thing that fired was the contract gate asking for its section, which is
+exactly what it's for.
+
+**One measurement saved a wasted start.** The next group is the two note passes. I checked their
+dependencies before beginning: both call helpers still private to the old engine, with seven and three
+callers — the same precondition that made yesterday's accessor brick necessary. So the helpers are
+their own brick, and I know it before writing anything rather than three edits in.
+
+Eight of the ten post-passes left.
+
+---
+
 ## 2026-11-28 — ADR027-B4F-LONGRUN-CAPS: I rebuilt a defect this codebase already has a test suite for
 
 The long-run cap passes moved into L3 — the group yesterday's accessor brick existed to unblock. That

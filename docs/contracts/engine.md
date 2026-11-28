@@ -281,6 +281,7 @@ is still what runs. The engine's prescription code is frozen; nothing here chang
 | `lib/engine/contracts/planV2.ts` | Plan v2 (strict Zod), built by extending `lib/plan/schema.ts` |
 | `lib/engine/contracts/planV1V2.ts` | `toV2`, `toV1`, `parsePlanV2` |
 | `lib/engine/planner/composeBlocks.ts` | **L3: the block planner** — `composeBlocks`, the single owner of a race plan's phase table and of §97's `shortOnRamp` predicate (B4a; § L3 below) and `getPhaseForWeek`, the phase table's reader, moved in B4b |
+| `lib/engine/planner/peakStepBacks.ts` | **L3: the peak step-back passes** — §47's step-back re-clamp, §80's delivered-volume step-back (B4g; § L3 below) |
 | `lib/engine/planner/longRunCaps.ts` | **L3: the long-run cap passes** — §45's progression cap, §52's step-backs, §6 Am. 1's taper ceiling, §47's ramped specificity floor (B4f; § L3 below) |
 | `lib/engine/planner/__enginePopulation.ts` | **test support** — the single owner of "every file the race-plan engine is spread across". Exists because a count pinned to one file went red on three separate relocations (§ L3 below) |
 | `lib/engine/planner/longRunAccess.ts` | **L3: the long-run accessor** — `longRunOf`, `longRunSessionOf`, `computeLongRunHrs`. One owner where the engine had FOUR (B4e; § L3 below) |
@@ -1010,6 +1011,31 @@ finder in L3 → red · the population glob matching nothing → red · the old 
 self-exclusion removed → red · `engineRegion` returning empty instead of throwing → red) · and the
 `isLongRun` count re-pinned at **20 across the whole engine**, up from 17 **for a relocation plus a
 widened population, not three new finders**.
+
+#### B4g: the peak step-back passes (`ADR027-B4G-PEAK-STEPBACKS`)
+
+§47's step-back re-clamp and §80's delivered-volume step-back. Second post-pass group; both call
+sites stay exactly where they were in `buildRulePlanOnce`, so this is a code-ownership change and not
+a sequencing one. `verify:parity` IDENTICAL over 6,210.
+
+🔴 **B4f SAID THIS PAIR COULD NOT MOVE, AND THE REASON I GAVE WAS FALSE — WRITTEN THE SAME DAY.**
+`longRunCaps.ts`'s header claimed `reclampPeakStepBacks` *"reads the peak-phase step-back SET that
+`buildRulePlanOnce` computes and threads through several other passes, so moving it means moving that
+state's owner too"*. 📐 It does not: `steppedBack` is a `ReadonlySet<number>` **parameter**, and
+`applyPeakStepBackVolume` takes only `(weeks, pace, input)`. Both were movable all along.
+⚠️ **I asserted an obstacle instead of reading the signature.** That is the day's miscount class in
+the opposite direction — a claim that something is *harder* than it is costs a brick rather than
+earning a correction, and nothing catches it because nothing fails. Corrected in that header too.
+
+🔻 **THE NEXT GROUP NEEDS ITS HELPERS FIRST, MEASURED BEFORE STARTING IT.** The two note passes
+(`applyV3HrEstimationNotePropagation`, `applyV7TaperRationale` — 62 lines) call `appendCoachNote`
+(7 callers) and `firstActiveSession` (3), both still private to `ruleEngine.ts`. **Same precondition
+B4e existed for**, so the helpers are their own brick. 8 of the 10 post-passes remain.
+
+✅ **AND THIS IS THE FIRST PROOF `__enginePopulation.ts` EARNS ITS PLACE.** Three gates fired for a
+relocation on each of the three previous bricks. On this one **not a single count moved** — the
+`isLongRun` pin, the look-alike count and the region readers all followed the code without an edit.
+The only arm that fired was the contract-coverage gate asking for this section, which is its job.
 
 ### L5: the independent verifier (B3 step 2)
 

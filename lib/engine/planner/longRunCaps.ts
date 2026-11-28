@@ -24,9 +24,13 @@
 // calls to one pass will assume one of them is dead, and `S28-CAP-ORDER-01` is this repo's standing
 // evidence that pass ordering is where its silent defects live.
 //
-// ⚠️ `reclampPeakStepBacks` DELIBERATELY STAYED BEHIND. It reads the peak-phase step-back SET that
-// `buildRulePlanOnce` computes and threads through several other passes, so moving it means moving
-// that state's owner too. Named here so its absence is a decision rather than an oversight.
+// 🔴 `reclampPeakStepBacks` STAYED BEHIND IN B4f AND THE REASON GIVEN HERE WAS FALSE.
+// This header said it "reads the peak-phase step-back SET that `buildRulePlanOnce` computes and
+// threads through several other passes, so moving it means moving that state's owner too".
+// 📐 It does not: `steppedBack` is a `ReadonlySet<number>` **parameter**. It moved in B4g, one wave
+// later, with no state owner to follow. ⚠️ **I asserted an obstacle instead of reading the
+// signature**, which is the day's miscount class in the opposite direction — a claim that something
+// is harder than it is costs a brick rather than a correction.
 
 import { GENERATION_CONFIG } from '@/lib/plan/generationConfig'
 import { isLongRun } from '@/lib/plan/sessionRole'
