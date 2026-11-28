@@ -199,6 +199,12 @@
       "reason": "Generates plans and runs validatePlan over them \u2014 the cost IS the claim, since the arm's whole point is that the producer and the checker agree on the same output rather than one of them being asserted alone. \u26a0\ufe0f Crossed the 1,000 ms reporting line during ADR-026's re-baseline (28 -> 32) and is NOT part of that change; it is the eight-slow-tests-entered-unflagged class CHECK-SLOW-STALE-01 recorded, caught here because the register now refuses a TODO."
     },
     {
+      "file": "lib/engine/planner/composeWeekVolumes.test.ts",
+      "title": "\ud83d\udd34 every week decision carries that week's km, and the set covers the plan exactly once",
+      "ms": 1121,
+      "reason": "ADR-027 B4b. It walks the week planner's whole input grid (~1.9k rows: 5 distances x 6 runways x onset x 4 start volumes x 4 peaks x returning x injury) and, per row, checks every week's Decision carries that week's delivered km and that the set covers the plan exactly once - the L4 contradiction class at its source. The grid has to be wide because the curve's branches are interactions, not axes: the injury cap only shows against its healthy twin, and the no-taper-phase case exists only on a 5-week 5K. composeWeekVolumes is memoised across all 15 arms (the same reduction B4a needed), so what is left is the walk plus one extra composition per injured row for the healthy comparison."
+    },
+    {
       "file": "lib/email/noRawEmailSends.test.ts",
       "title": "sendEmail has exactly one caller, and it is sendToUser",
       "ms": 1101,
