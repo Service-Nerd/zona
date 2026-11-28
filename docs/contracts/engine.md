@@ -280,6 +280,7 @@ is still what runs. The engine's prescription code is frozen; nothing here chang
 | `lib/engine/contracts/decision.ts` | `Decision`, `Lever`, `Finding` (Zod), `findingFromViolation` |
 | `lib/engine/contracts/planV2.ts` | Plan v2 (strict Zod), built by extending `lib/plan/schema.ts` |
 | `lib/engine/contracts/planV1V2.ts` | `toV2`, `toV1`, `parsePlanV2` |
+| `lib/engine/planner/composeBlocks.ts` | **L3: the block planner** — `composeBlocks`, the single owner of a race plan's phase table and of §97's `shortOnRamp` predicate (B4a; § L3 below) |
 | `lib/engine/readModel.ts` | typed plan accessors (ARCH-ENG-010) |
 
 `lib/engine` is inside `ENGINE-PURITY-GATE-01`'s population: it may not import `next/`, `react`,
@@ -631,6 +632,58 @@ no runtime reader at all.** Gates: `lib/engine/catalogue/catalogue.test.ts`,
 `lib/engine/contracts/engineTruths.test.ts`, `lib/coaching/triggerProducers.test.ts`.
 ⚠️ **`CHECK_PARAMS` and the row attributes are the first L2 data BOTH checkers read at runtime**, so unlike
 the rule and trigger catalogues this part of L2 is live rather than inert.
+
+### L3: the block planner (B4a, `ADR027-B4A-BLOCKS`)
+
+**What L3 is:** the delivered plan. The HLD builds it in three steps — block → week → session — and B4a is
+the first: **how many weeks of base, build, peak and taper a race plan gets, and which rule bound each
+number.** `lib/engine/planner/composeBlocks.ts` is the single owner.
+
+🔑 **It is a MOVE, not a second derivation, and that is the design.** L5 is *required* to derive
+everything itself, because a checker sharing the producer's code cannot catch the producer being wrong. **L3
+IS the producer**, so a `composeBlocks` written beside `ruleEngine.ts`'s `computePhases` would be
+`DELOAD-OWNER-01` with a layer diagram on top. `computePhases` had exactly one caller and is **deleted**;
+that call site now calls L3. §97's `shortOnRamp` predicate moved with it — it was derived seven lines above
+the call, had that one consumer, and selects which §91 cap binds the base, which is a phase length.
+
+| Owns | Does **not** own, and why |
+|---|---|
+| The phase table: §4's order and floors, §49's authored taper, §89's shortened base, §91's week cap and foundation credit, §98's yield applied, §97's `shortOnRamp` | The §89 **gate** (it reads `peakKm` → `returningRunner` → the whole volume model: B4b) · `total_weeks` (§17, `lib/plan/length.ts`) · §98's ladder and §95 Am. 1's deload yield, which decide by REGENERATING the whole plan and measuring it, so they are the orchestrator's · `getPhaseForWeek`, which reads a phase table rather than composing one |
+
+**Decisions (ARCH-ENG-009).** One `Decision` per phase length, plus §97's verdict and any phase dropped for
+being empty. Each names the rule that bound it — tracked as the number is set, not reconstructed afterwards,
+because by the end of the composition four rules could have set the same base and only the planner knows
+which. `Decision.unit` gained **`'weeks'`** here: B4a is its first consumer, and a phase length written in
+`null` units is absence written as a value. ⚠️ **Nothing reads the decisions yet** — L4 is B5.
+
+**Evidence.** `verify:parity` IDENTICAL over 6,210 cases — ⚠️ **and that grid cannot see most of this
+change.** It pins `today` to `planStart` and never sets `recent_quality_training`, so `early_onset` is false
+and `foundation_weeks` 0 in **all** 6,210 rows: the entire `if (earlyOnset)` block is outside it
+(`FOUNDATION-LONG-RUNWAY-01`'s class). 📐 So equivalence was measured directly instead, against the
+pre-move function taken from `b41e3396`, over an exhaustive grid of 6 distances × 40 runways × onset × 7
+foundation-week values × 4 relax rungs × 7 days-available: **94,080 cases, 0 differences**, with every branch
+reached — early onset 47,040, foundation credit changing the base 34,778, the §98 yield moving it 34,398,
+`shortOnRamp` 12,320, base reaching zero 8,840, taper squeezed 16,151. Falsified: widening §91's cap by one
+week produced 12,748 differences. The probe is a scratch file and is deliberately **not committed** — a copy
+of the old derivation living in `lib/engine/` is the duplicate this slice removed.
+
+🔴 **One false claim was found by writing the tests, and it was in the old code's own comment.**
+`computePhases` carried *"Preserves taper duration as authored"* beside its overage take-back. The take-back
+never reduces the taper directly, but `taperEnd` is pinned to `totalWeeks` while `peakEnd` grows, so any
+overage build and base cannot absorb comes out of the **taper**: it is the residual, not a protected block.
+📐 Bounded by the §44 prep gate to exactly two producible cases, both 5K — a 5-week plan gets **no
+taper phase** and a 6-week plan gets 1 against an authored 2 (shortest producible plan measured against
+`generateRulePlan`: 5 weeks at 5K, 7 at 10K, 9 at HM, 11 at MARATHON, over 11 for both ultras). Filed as
+`BLOCK-TAPER-SQUEEZE-01` (🏃 Coaching Board, non-blocking): whether a 5-week 5K *should* spend 2 of its 5
+weeks tapering is a coaching question, not a defect to patch inside a move.
+
+**Gates:** `lib/engine/planner/composeBlocks.test.ts` — §4's order/contiguity/coverage, §49's authored length
+with the squeeze stated, §91/§98's bounds, §97's two scopes, **every phase-length decision equalling the
+phase it describes** (the L4 contradiction class at its source), every `bound_by` resolving in the catalogue,
+and the strangler boundary (no `function computePhases` in `ruleEngine.ts`; §97's config key named there
+0 times, comments stripped first; L3 importing nothing from `lib/plan` but `generationConfig`). Each arm was
+falsified. 🔻 **What the file cannot prove: that the move is faithful** — it shares the derivation. That
+is what the 94,080-case probe and the suite are for.
 
 ### L5: the independent verifier (B3 step 2)
 

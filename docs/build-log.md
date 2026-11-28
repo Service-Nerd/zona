@@ -6,6 +6,57 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-11-28 — ADR027-B4A-BLOCKS: B4 starts, and the first thing it found was a sentence
+
+Founder said *"Start b4"*. B4 is the planner, and the HLD builds it in three steps — block, then
+week, then session. So: the block planner. How many weeks of base, build, peak and taper a race
+plan gets.
+
+**The first real decision was whether to write it or move it.** The verifier I have been porting for
+weeks is *required* to derive everything itself, because a checker that shares the producer's code
+cannot catch the producer being wrong. I nearly applied that to the planner by reflex. It is the
+opposite case: L3 **is** the producer, so a second phase-composition function sitting beside the old
+one would be two derivations of one number, agreeing by accident of who was edited last. That is a
+defect class this repo has paid for by name four times. So `computePhases` is deleted, not shadowed.
+§97's `shortOnRamp` predicate came with it — it was computed seven lines above the call, had exactly
+one consumer, and decides a phase length, so it was always in the wrong file.
+
+**Then: how do I know the move is faithful?** I reached for `verify:parity` — 6,210 cases, byte-for-
+byte — and it came back IDENTICAL, and code review pointed out that sentence was wrong. Parity pins
+`today` to `planStart` and never sets `recent_quality_training`, so `early_onset` is false and
+`foundation_weeks` is 0 in **every one of those 6,210 rows**. The entire early-onset block I had just
+moved was outside the grid. IDENTICAL was true and answered a narrower question than the one I asked.
+It is the same shape as a defect recorded in this file months ago, one layer up.
+
+So I measured it directly instead: pulled the old function out of the previous commit and diffed it
+against the new one over 94,080 inputs — 6 distances × 40 runways × onset × 7 foundation values × 4
+relax rungs × 7 days-available. **0 differences**, with every branch reached, and widening §91's cap
+by one week produces 12,748 differences, so the probe can see. Then I deleted the probe, because a
+copy of the old derivation living inside `lib/engine/` is precisely the duplicate the slice removed.
+
+**The thing I did not expect.** I wrote a test arm asserting what the old code's comment said — *"Preserves
+taper duration as authored"* — and it went red. The take-back never reduces the taper directly, which is
+what the sentence was reaching for. But the taper's end is pinned to the last week of the plan while the
+peak's end grows under §4's floors, so any overage that build and base cannot absorb comes out of the
+**taper**. It is the residual, not a protected block. A 5-week 5K plan has **no taper phase at all**.
+
+That turns out to be bounded to exactly two producible cases — 5K on a 5- or 6-week runway — because
+§44's prep-time gate refuses everything shorter, and I had to probe the engine one runway at a time to
+establish that rather than assume it. Two cases is not nothing, and the honest move was not to patch it
+inside a slice whose whole claim is byte-identical output. Whether a 5-week 5K *should* spend two of its
+five weeks tapering is a coaching question. It is filed for the board.
+
+**What I keep relearning:** the code was right and the sentence about it was wrong, and the sentence is
+what the next person reads. Three of the four real findings in this wave — mine and the reviewer's —
+were claims, not logic. One of them was a comment I had just written myself.
+
+**Where B4 actually is:** one brick of nine. No week planner, no session placer, the §89 gate and the
+plan length and §98's ladder all still the old engine's, no scorecard line moved, nothing a runner sees
+changed. 212 of 221 rules ported, held list still 9. The founder has decided the cut-over waits for all
+221, and the last nine need this planner to exist before they can be written independently.
+
+---
+
 ## 2026-11-27 — ADR027-B3-BATCH40: the permission was cheap, the port was not
 
 **I asked the founder for one thing: let the new checker import two CLASSIFIERS from the old

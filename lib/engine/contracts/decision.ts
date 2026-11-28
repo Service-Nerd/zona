@@ -28,7 +28,9 @@ export interface Decision {
   week: number | null
   day: DayKey | null
   value: number | string | boolean | null
-  unit: 'km' | 'min' | 'bpm' | 'pct' | 'sessions' | null
+  /** `'weeks'` was added by B4a, the first consumer: a phase length has a unit, and writing it
+   *  as `null` is absence written as a value (MAXHR-AGE-ABSENT-01's class, in a contract). */
+  unit: 'km' | 'min' | 'bpm' | 'pct' | 'sessions' | 'weeks' | null
   /** The rule that set or capped it. */
   bound_by: RuleId
   /** What the runner could change to move it; null when nothing they control would. */

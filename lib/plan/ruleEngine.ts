@@ -109,6 +109,9 @@ import { rescalePaceBand, paceBandCentreSecs } from './rescalePaceBand'
 // this module into its bundle. Re-exported here so every existing import still works.
 export { parseBenchmarkTime, calcVDOT } from './vdot'
 import { parseBenchmarkTime, calcVDOT } from './vdot'
+// ADR-027 B4a — L3 owns phase composition. `lib/plan` -> `lib/engine` is the strangler
+// direction: the old engine calls the new layer, never the reverse (ARCH-ENG-001).
+import { composeBlocks } from '@/lib/engine/planner/composeBlocks'
 
 // Parse pace string ("5:00 /km" or "5:00") to total minutes-per-km.
 function paceStrToMins(s: string): number | null {
@@ -304,128 +307,11 @@ export function buildFallbackPace(fitness: FitnessLevel): PaceGuide {
 }
 
 // ─── Phase distribution ───────────────────────────────────────────────────────
-// Taper phase weeks are anchored to TAPER_QUALITY_PER_WEEK[dist].length
-// (covers full taper weeks + race week). Base/build/peak fill the remaining
-// weeks proportionally to PHASE_DISTRIBUTION (35:35:15). See ADR-009.
-
-function computePhases(
-  totalWeeks: number,
-  distanceKm: number,
-  earlyOnset = false,
-  foundationWeeks = 0,
-  // §97 — may this runner's on-ramp shorten to one week? Distance-scoped, because
-  // §1's ceiling tightens with distance while a shorter base raises the quality
-  // share. False falls back to §91's two-week cap.
-  shortOnRamp = false,
-  // §98 (CB-ONSET-YIELD-01) — how many weeks of base to give BACK, walking §89's
-  // benefit down one rung at a time until the plan satisfies §1. Zero for every
-  // plan that complies at full benefit, which is 84% of the gated cohort.
-  // Bounded by the base an UNGATED runner would receive: §89 may be trimmed to
-  // nothing, never past nothing.
-  onsetRelax = 0,
-): Phase[] {
-  const distKey = raceDistanceKey(distanceKm)
-  const taperPhaseWeeks = GENERATION_CONFIG.TAPER_QUALITY_PER_WEEK[distKey].length
-  const remaining = Math.max(0, totalWeeks - taperPhaseWeeks)
-
-  const dist = GENERATION_CONFIG.PHASE_DISTRIBUTION
-  // §89 — a demonstrably-ready runner gets a shorter base so build/quality starts
-  // sooner; the freed weeks flow to build+peak (more quality weeks). Base stays
-  // all-easy — this is a shorter base, NOT a base with quality in it (§88 veto
-  // preserved). The `Math.max(2, …)` below is the 2-week floor (Seiler's on-ramp).
-  const basePct = earlyOnset ? GENERATION_CONFIG.EARLY_ONSET_BASE_PCT : dist.base_pct
-  const denom = basePct + dist.build_pct + dist.peak_pct
-  const baseFloor = GENERATION_CONFIG.MIN_BASE_WEEKS_FLOOR
-  let baseWeeks  = Math.max(baseFloor, Math.round(remaining * basePct  / denom))
-
-  // §91 (CB-ONSET-02) — THE ON-RAMP IS COUNTED IN WEEKS THE RUNNER RUNS.
-  //
-  // Two corrections, both scoped to the §89-gated runner so nobody else moves:
-  //
-  //  (a) Cap base in WEEKS as well as percent. A percentage re-grew the base on
-  //      longer plans — the runner who entered their race 14 weeks out got MORE
-  //      on-ramp than one 12 weeks out, which is backwards.
-  //
-  //  (b) Credit foundation weeks against it. §57 foundation weeks are all-easy
-  //      running at the runner's current volume; so is base. They are the same
-  //      object to the tissue, and Seiler's floor is a physiological on-ramp,
-  //      not an administrative one. Uncredited, §89's whole effect was cancelled
-  //      for the 62% of plans that carry a block: measured delivered onset was
-  //      calendar week 4/5/6/6 at 12/13/14/15 weeks-to-race, against week 3 for
-  //      a runner with no block at all.
-  //
-  // Base may reach ZERO here, and that is the intended terminal case: two
-  // foundation weeks ARE the two-week floor. It is never negative, and the
-  // floor still binds in full for every runner the §89 gate did not pass.
-  if (earlyOnset) {
-    const cap = shortOnRamp
-      ? GENERATION_CONFIG.EARLY_ONSET_BASE_MAX_WEEKS
-      : GENERATION_CONFIG.MIN_BASE_WEEKS_FLOOR
-    baseWeeks = Math.min(baseWeeks, cap)
-    baseWeeks = Math.max(0, baseWeeks - Math.min(foundationWeeks, baseWeeks))
-    // §98 — the §1 yield. See the ladder in generateRulePlan.
-    if (onsetRelax > 0) {
-      const ungatedBase = Math.max(
-        baseFloor,
-        Math.round(remaining * dist.base_pct / (dist.base_pct + dist.build_pct + dist.peak_pct)),
-      )
-      baseWeeks = Math.min(ungatedBase, baseWeeks + onsetRelax)
-    }
-  }
-  let buildWeeks = Math.max(1, Math.round(remaining * dist.build_pct / denom))
-  let peakWeeks  = Math.max(2, remaining - baseWeeks - buildWeeks)
-
-  // If the max-2 peak floor pushed total > remaining, take back from build
-  // first (most flexible), then base. Preserves taper duration as authored.
-  let overage = (baseWeeks + buildWeeks + peakWeeks) - remaining
-  if (overage > 0 && buildWeeks > 1) {
-    const take = Math.min(overage, buildWeeks - 1)
-    buildWeeks -= take
-    overage -= take
-  }
-  if (overage > 0 && baseWeeks > baseFloor) {
-    const take = Math.min(overage, baseWeeks - baseFloor)
-    baseWeeks -= take
-  }
-
-  const baseEnd  = baseWeeks
-  const buildEnd = baseEnd + buildWeeks
-  const peakEnd  = buildEnd + peakWeeks
-  const taperEnd = totalWeeks
-
-  const built: Phase[] = [
-    { name: 'base',  start_week: 1,            end_week: baseEnd  },
-    { name: 'build', start_week: baseEnd + 1,  end_week: buildEnd },
-    { name: 'peak',  start_week: buildEnd + 1, end_week: peakEnd  },
-    { name: 'taper', start_week: peakEnd + 1,  end_week: taperEnd },
-    // A PHASE WITH NO WEEKS IS NOT A PHASE (PHASE-EMPTY-01, 2026-09-19).
-    //
-    // ADR-021's early-onset gate shortens the base for a demonstrably-ready
-    // runner, and on a SHORT plan it shortens to nothing: `baseWeeks` reaches 0
-    // and this emitted `{ name: 'base', start_week: 1, end_week: 0 }` — an
-    // INVERTED range persisted into `plan_json`. `PlanSchema`, which calls
-    // itself the single source of runtime validation for plan JSON, rejects it
-    // (`end_week` must be positive); nothing else did, because the schema is
-    // only ever run against ENRICHER output and never against engine output.
-    //
-    // Measured: 12 of 360 plans in the affected cell — `experienced` +
-    // `recent_quality_training: 'regular'` + a 12-week plan, across 10K, HM
-    // and marathon, both goals.
-    //
-    // ⚠️ AND NEITHER GRID CAN REACH IT: **0 of 45,776** corpus plans hit this,
-    // because `cohortGrid` and `targetedGrid` never combine an experienced
-    // runner with regular recent quality on a short runway. A hand-built
-    // realistic runner hit it on the first attempt. Same class as the
-    // injury x masters cell and CB-SUBFLOOR-ADMIT-01: the corpus cannot see it,
-    // so the corpus said the engine was clean.
-    //
-    // Benign today by luck rather than design — `adjust-plan` matches phases
-    // with `start <= w <= end` so an empty one never matches, and every other
-    // consumer looks up by NAME. A consumer computing `end - start + 1` would
-    // get -1 - 1 = a negative length.
-  ]
-  return built.filter(p => p.end_week >= p.start_week)
-}
+// MOVED TO L3 (ADR-027 B4a). `composeBlocks` in `lib/engine/planner/composeBlocks.ts` is the
+// single owner of how many weeks of base / build / peak / taper a race plan gets, and it also
+// owns §97's `shortOnRamp` predicate, which used to be derived at this file's one call site.
+// L3 is the PRODUCER, so a copy here would be two derivations of one number (DELOAD-OWNER-01).
+// The arithmetic is unchanged; `npm run verify:parity` is the gate for that claim.
 
 function getPhaseForWeek(weekN: number, phases: Phase[]): PhaseType {
   return (phases.find(p => weekN >= p.start_week && weekN <= p.end_week)?.name ?? 'base') as PhaseType
@@ -7581,24 +7467,18 @@ function buildRulePlanOnce(
   const foundationWeeksAhead = plannedFoundationWeeks(
     today, anchoredStartIso, input.foundation_decision,
   )
-  // §97 — the shortened on-ramp is distance-scoped; see ONSET_SHORT_ONRAMP_DISTANCES.
-  // §97 Amendment 1 (INTENSITY-3DAY-01) — and denominator-scoped. A shortened base
-  // is affordable only where the §1 ceiling permits ≥1 quality session per week the
-  // runner actually runs (ceiling_fraction × days_available). Otherwise the ~1
-  // quality/week the short on-ramp drives breaches §1 on low-day plans — the 3-day
-  // 10K / 4-day HM the distance-only gate never saw. Base then falls back to §91's
-  // two-week floor. See ONSET_SHORT_ONRAMP_MIN_WEEKLY_QUALITY_HEADROOM.
   const onsetDistKey = raceDistanceKey(input.race_distance_km)
-  const ceilingFraction =
-    GENERATION_CONFIG.INTENSITY_DISTRIBUTION[onsetDistKey].max_quality_session_pct / 100
-  const shortOnRamp = earlyQualityOnset
-    && (GENERATION_CONFIG.ONSET_SHORT_ONRAMP_DISTANCES as readonly string[]).includes(onsetDistKey)
-    && ceilingFraction * input.days_available
-       >= GENERATION_CONFIG.ONSET_SHORT_ONRAMP_MIN_WEEKLY_QUALITY_HEADROOM
-  const phases = computePhases(
-    totalWeeks, input.race_distance_km, earlyQualityOnset, foundationWeeksAhead, shortOnRamp,
-    onsetRelax,
-  )
+  // §97 / §97 Am. 1 (INTENSITY-3DAY-01) — the shortened on-ramp's predicate is NO LONGER DERIVED
+  // HERE. It selects which §91 cap binds the base, which is a phase length, so it moved into the
+  // block planner with the composition it feeds; the reasoning moved with it (ADR-027 B4a).
+  const { phases } = composeBlocks({
+    total_weeks: totalWeeks,
+    distance_km: input.race_distance_km,
+    early_onset: earlyQualityOnset,
+    foundation_weeks: foundationWeeksAhead,
+    onset_relax: onsetRelax,
+    days_available: input.days_available,
+  })
   // §87 (CB-DELOAD-01) — WHERE the deloads fall, decided once for the whole
   // plan and passed to every consumer. Computing it twice from the same inputs
   // is what DELOAD-OWNER-01 removed; re-deriving it inside buildVolumeSequence

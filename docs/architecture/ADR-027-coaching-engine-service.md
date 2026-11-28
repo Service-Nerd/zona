@@ -45,7 +45,8 @@ paused: only defects that harm runners are fixed, each one added to the hotfix t
 | B3 step 3: nightly check of every live plan, observe-only | ✅ done 2026-11-25 | `ADR027-B3-SHADOW-01`, `lib/ops/verifierShadow.ts`, inside `/api/ops/plan-audit` |
 | B3 step 4: trigger catalogue (ARCH-ENG-018) + the event vocabulary (ARCH-ENG-022) | ✅ **4a + 4b DONE 2026-11-26**, which is the whole of step 4 as scoped — **4c parked by founder decision** as `TRIGGERS-ON-DATA-ARRIVAL-01`. ⚠️ Nothing emits an event or evaluates a trigger yet, deliberately: 4a+4b define the vocabulary and the catalogue, 4c wires evaluation and needs three boards | `ADR027-B3-STEP4A` (`lib/engine/contracts/events.ts`, `runOutcome.ts`, **`docs/canonical/engine-truths.md` created**), `ADR027-B3-STEP4B` (`lib/engine/catalogue/triggers.ts`, `lib/engine/contracts/triggers.ts`) |
 | B3 exit: founder signs off the verifier replacing `validatePlan` as the gate | 🔲 | must name the 9 held rules (below) |
-| B4–B8 (planner, adapt, explanation, single writer, enrichment) | 🔲 not started | HLD |
+| B4 step 1: L3's block planner | ✅ **done 2026-11-28** | `ADR027-B4A-BLOCKS`, `lib/engine/planner/composeBlocks.ts`, `docs/contracts/engine.md § L3`. Phase composition and §97's `shortOnRamp` MOVED out of `ruleEngine.ts` (`computePhases` deleted) — L3 is the producer, so a copy would be `DELOAD-OWNER-01`. 📐 94,080-case equivalence against `b41e3396`, 0 differences, every branch reached; ⚠️ `verify:parity`'s grid cannot reach the early-onset block at all. 🥇 Found a false claim in the old code's comment → `BLOCK-TAPER-SQUEEZE-01` |
+| B4 steps 2–3 (week planner, session placer), B4b adapt, B5–B8 | 🔲 not started | HLD |
 | Hotfixes 1–7 | ✅ six shipped, #4 dropped | table below |
 
 **The 9 rules the verifier does not yet check itself.** The old checker keeps judging them, and the cut-over gate
