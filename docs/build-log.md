@@ -6,6 +6,48 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-11-28 — ADR027-B4E-LONGRUN-ACCESS: I said four, it was eight, and five of them had no name
+
+The next brick was meant to be the long-run cap passes. I measured their dependencies first and
+stopped: they call accessors that live in the old engine, and L3 isn't allowed to import that. The
+dependency moves or nothing does. So: one owner for "which session is the long run of this week".
+
+**I counted four implementations. There were eight.** Two local closures of one shape, one of
+another, a module-level function identical to that, a `findLong` byte-identical to it *again*, an
+`lrOf`, and three inline `.find(sn => sn && isLongRun(sn))` expressions. All eight behaviourally
+identical — first match in the object's own key order. They agreed because they'd been written the
+same way eight times.
+
+**Code review found the four I missed, and five of the eight had no name at all.** That's the third
+count I got wrong in the same direction today: a docstring said its predicate appeared three times
+and it appeared twelve; a module called itself "the engine's only capacity reader" and was one of
+four. The pattern is clear enough to state as a rule — **a single-ownership claim has to be counted
+by shape, not by name.** You cannot grep for a thing that was never given a name.
+
+So the gate pins the count by shape instead. **And that number was wrong on its first writing too:**
+18 from a raw grep, 17 once comments are stripped, because one `isLongRun` sits inside a comment.
+That is a defect class this codebase has a name for, and I walked into it in the same breath as
+building a gate against it.
+
+**One good thing: parity is real evidence this time.** For the four bricks before this, `verify:parity`
+came back IDENTICAL on changes its grid could not reach — pinned dates, unset fields, a function that
+returns on its first line for every case it runs. These accessors run on every week of every plan:
+`long_run_hrs` is set on fifteen of sixteen weeks of a sample plan. So IDENTICAL over 6,210 actually
+means something, and I'd rather say which of the two it is each time than let the word do the work.
+
+**And putting the two accessors side by side found something neither had shown alone.** `longRunOf`
+takes the first long run. `computeLongRunHrs` skips one with no duration and no distance, and prices
+the next. So on a week with two long runs where the first is anchorless, **the number the runner reads
+describes a different session from the one every cap pass operates on.** They lived a thousand lines
+apart, so nobody had read them together. Nothing forbids two long runs in a week either — two engine
+loops iterate *every* long run precisely because the case is real. Filed, unfixed: either reading
+changes a rendered number, and that is a ruling, not a relocation.
+
+Two more review findings were my own prose: a rationale that held for one of three passes rather than
+three, and "two of its eleven call sites" where it was ten sites and exactly one.
+
+---
+
 ## 2026-11-28 — ADR027-B4D-WEEKDAY-CAP: four copies of a guard are not four guards
 
 Fourth brick of the planner: §81/§82's per-day minutes trim, the thing that cuts a weekday run to

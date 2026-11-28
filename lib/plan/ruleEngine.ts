@@ -113,6 +113,9 @@ import { parseBenchmarkTime, calcVDOT } from './vdot'
 // direction: the old engine calls the new layer, never the reverse (ARCH-ENG-001).
 import { composeBlocks, getPhaseForWeek } from '@/lib/engine/planner/composeBlocks'
 import { applyWeekdayMinsCap } from '@/lib/engine/planner/weekdayCap'
+// ADR-027 B4e — "which session is the long run of this week?" had FOUR implementations in this file
+// (two shapes; three of them local closures). One owner now; that module's header holds the count.
+import { longRunOf, longRunSessionOf, computeLongRunHrs } from '@/lib/engine/planner/longRunAccess'
 import { composeWeekVolumes } from '@/lib/engine/planner/composeWeekVolumes'
 
 // Parse pace string ("5:00 /km" or "5:00") to total minutes-per-km.
@@ -4082,15 +4085,6 @@ function capitalise(s: string): string {
   return s.charAt(0).toUpperCase() + s.slice(1)
 }
 
-function computeLongRunHrs(sessions: Partial<Record<Day, Session>>, pace: PaceGuide): number | null {
-  for (const session of Object.values(sessions)) {
-    if (session != null && isLongRun(session)) {
-      const mins = session.duration_mins ?? (session.distance_km ? session.distance_km * pace.minPerKmEasy : null)
-      if (mins) return Math.round((mins / 60) * 10) / 10
-    }
-  }
-  return null
-}
 
 // §121 / SESSION-KM-01 — THE DELIVERED-VOLUME OWNER MOVED TO L3 (ADR-027 B4c).
 // `sumWeeklyKm` is `lib/engine/planner/deliveredVolume.ts`'s, which is the HLD's defining property
@@ -4117,7 +4111,7 @@ function applyTaperLongRunCap(weeks: Week[], pace: PaceGuide): void {
   const peakLr = Math.max(0, ...weeks
     .filter(w => w.n > 0 && w.phase === 'peak' && w.type !== 'deload' && w.type !== 'race')
     .map(w => {
-      const s = Object.values(w.sessions).find(sn => sn && isLongRun(sn))
+      const s = longRunSessionOf(w)
       return s ? sessionKmOrZero(s, pace.minPerKmEasy) : 0
     }))
   if (peakLr <= 0) return
@@ -4127,11 +4121,9 @@ function applyTaperLongRunCap(weeks: Week[], pace: PaceGuide): void {
 
   for (const w of weeks) {
     if (w.n <= 0 || w.phase !== 'taper' || w.type === 'race') continue
-    const entry = (Object.entries(w.sessions) as [Day, Session | undefined][])
-      .find(([, sn]) => sn && isLongRun(sn))
+    const entry = longRunOf(w)
     if (!entry) continue
-    const [day, long] = entry
-    if (!long) continue
+    const { day, session: long } = entry
     // 🔴 THIS USED TO READ `if (long.distance_km == null) continue`, SO THE CAP
     // NEVER RAN ON A DURATION-ANCHORED PLAN — and beginners are 95.8%
     // duration-anchored (SESSION-KM-01). Measured on a real stored plan: its
@@ -4332,14 +4324,6 @@ function applyPeakLongRunAlternation(
   if (peakWeekIdxs.length < 2) return steppedBack  // single peak week — nothing to alternate
 
   // Find max peak-level LR distance to anchor the step-back fraction.
-  const longRunOf = (w: Week): { day: Day; session: Session } | null => {
-    for (const [d, s] of Object.entries(w.sessions) as [Day, Session | undefined][]) {
-      if (s && isLongRun(s)) {
-        return { day: d, session: s }
-      }
-    }
-    return null
-  }
   // §47 + §80 (PEAK-LR-STEPBACK-MINUTES-01, Coaching Board 2026-09-13) — the peak
   // anchor is computed on BOTH axes, because a plan is anchored on one of them
   // and a beginner's is minutes.
@@ -4586,14 +4570,13 @@ function reclampPeakStepBacks(
 ): void {
   if (steppedBack.size === 0) return
   const peak = weeks.filter(w => w.n > 0 && w.phase === 'peak' && w.type !== 'deload' && w.type !== 'race')
-  const lrOf = (w: Week) => Object.values(w.sessions ?? {}).find(s => s && isLongRun(s)) as Session | undefined
   // ⚠️ ABSENT IS NOT ZERO (SESSION-KM-01). A peak week whose long run is
   // duration-anchored has no `distance_km` at all, and reading that as 0 would
   // drag the max down and under-bound every step-back on the plan. Each axis
   // takes only the weeks that actually speak it.
   const notSteppedBack = peak.filter(w => !steppedBack.has(w.n))
-  const kmVals = notSteppedBack.map(w => lrOf(w)?.distance_km).filter((k): k is number => k != null)
-  const minsVals = notSteppedBack.map(w => lrOf(w)?.duration_mins).filter((m): m is number => m != null)
+  const kmVals = notSteppedBack.map(w => longRunSessionOf(w)?.distance_km).filter((k): k is number => k != null)
+  const minsVals = notSteppedBack.map(w => longRunSessionOf(w)?.duration_mins).filter((m): m is number => m != null)
   const peakKmFinal = kmVals.length ? Math.max(...kmVals) : 0
   const peakMinsFinal = minsVals.length ? Math.max(...minsVals) : 0
   const pct = GENERATION_CONFIG.PEAK_LR_STEPBACK_MAX_PCT / 100
@@ -4602,7 +4585,7 @@ function reclampPeakStepBacks(
   const minRatio = GENERATION_CONFIG.LONG_RUN_MIN_RATIO_VS_EASY
   for (const w of weeks) {
     if (!steppedBack.has(w.n)) continue
-    const s = lrOf(w)
+    const s = longRunSessionOf(w)
     if (!s) continue
     // §9 — the long run must stay the LONGEST run of its week. Lowering it
     // without this floor inverts the long-vs-easy ratio and
@@ -4679,15 +4662,11 @@ function applyPeakStepBackVolume(weeks: Week[], pace: PaceGuide, input: Generato
   const minEasyMins = dur(minEasy, pace.minPerKmEasy)
   const kmOf = (s: Session): number =>
     s.distance_km ?? (s.duration_mins != null ? s.duration_mins / pace.minPerKmEasy : 0)
-  const longRunOf = (w: Week): Session | null => {
-    for (const s of Object.values(w.sessions)) if (s && isLongRun(s)) return s
-    return null
-  }
 
   for (let idx = 0; idx < weeks.length; idx++) {
     const w = weeks[idx]
     if (w.phase !== 'peak' || w.type === 'deload') continue
-    const lr = longRunOf(w)
+    const lr = longRunSessionOf(w)
     if (!lr || !(lr.coach_notes ?? []).some(n => n?.includes(STEPBACK_NOTE))) continue
 
     const prevWeek = weeks[idx - 1]
@@ -4731,16 +4710,10 @@ function applyPeakStepBackVolume(weeks: Week[], pace: PaceGuide, input: Generato
 // are the culmination (and carry the §80 finish-goal floor), deloads already
 // step the whole week back. Metric-agnostic (distance or duration).
 function applyLongRunStepBacks(weeks: Week[], pace: PaceGuide, minLongKm: number): void {
-  const longRunOf = (w: Week): Session | null => {
-    for (const s of Object.values(w.sessions)) {
-      if (s && isLongRun(s)) return s
-    }
-    return null
-  }
   const buildLRs: Array<{ session: Session; wIdx: number }> = []
   for (let i = 0; i < weeks.length; i++) {
     if (weeks[i].phase !== 'build' || weeks[i].type === 'deload') continue
-    const lr = longRunOf(weeks[i])
+    const lr = longRunSessionOf(weeks[i])
     if (lr) buildLRs.push({ session: lr, wIdx: i })
   }
   const cadence   = GENERATION_CONFIG.LONG_RUN_STEPBACK_CADENCE_N
@@ -4829,22 +4802,14 @@ function applyLongRunProgressionCap(weeks: Week[], pace: PaceGuide, floors: Sess
   // run straight back up to 5 km after the cap above had just bounded it.
   const minLong = floors.long
 
-  const findLong = (w: Week): { day: Day; session: Session } | null => {
-    for (const [d, s] of Object.entries(w.sessions) as [Day, Session | undefined][]) {
-      if (s && isLongRun(s)) {
-        return { day: d, session: s }
-      }
-    }
-    return null
-  }
 
   for (let i = 1; i < weeks.length; i++) {
     const prev = weeks[i - 1]
     const curr = weeks[i]
     if (curr.type === 'race') continue
 
-    const prevLR = findLong(prev)
-    const currLR = findLong(curr)
+    const prevLR = longRunOf(prev)
+    const currLR = longRunOf(curr)
     if (!prevLR || !currLR) continue
 
     // ⚠️ THIS USED TO BAIL OUT ON `distance_km == null`, WHICH MEANT §45 WAS
@@ -4894,7 +4859,7 @@ function applyLongRunProgressionCap(weeks: Week[], pace: PaceGuide, floors: Sess
     //
     // Detected STRUCTURALLY (prev long run shorter than the one before it)
     // rather than by re-deriving the step-back cadence, so the two cannot drift.
-    const prevPrevLR = i >= 2 ? findLong(weeks[i - 2]) : null
+    const prevPrevLR = i >= 2 ? longRunOf(weeks[i - 2]) : null
     const prevPrevKm = prevPrevLR ? sessionKmSelfPaced(prevPrevLR.session) : null
     const prevWasStepBack = prevPrevKm != null
       && prev.type !== 'race'
@@ -5141,14 +5106,6 @@ function firstActiveSession(week: Week): Session | null {
 
 // Helper: identify the long-run session in a week (mirrors findLong inside
 // applyLongRunProgressionCap). Returns null if none.
-function longRunOfWeek(week: Week): { day: Day; session: Session } | null {
-  for (const [d, s] of Object.entries(week.sessions) as [Day, Session | undefined][]) {
-    if (s && isLongRun(s)) {
-      return { day: d, session: s }
-    }
-  }
-  return null
-}
 
 // V5 — map a quality-session label to a STIMULUS_RANK key. Substring match,
 // case-insensitive. Returns null when the label doesn't fit any known bucket
@@ -5255,7 +5212,7 @@ function trimWeekEasyToTarget(
   perSessionFloorKm: number = minEasy,
 ): { before: number; after: number } | null {
   // Identify the long-run session — it is excluded from scaling.
-  const lr = longRunOfWeek(curr)
+  const lr = longRunOf(curr)
 
   // Sum easy-only volume (excluding long run, quality, strength, rest).
   // Easy = type 'easy' AND NOT the long run.
@@ -5423,7 +5380,7 @@ function flattenIntroducingWeek(
  *  re-anchor may not trim below. Returns 0 when the week has no easy runs, which
  *  makes the floor a no-op rather than an accidental constraint. */
 function smallestEasyKm(w: Week, pace: PaceGuide): number {
-  const lr = longRunOfWeek(w)
+  const lr = longRunOf(w)
   const easies = Object.entries(w.sessions)
     .filter(([d, s]) => s && s.type === 'easy' && !(lr && d === lr.day))
     .map(([, s]) => sessionKmOrZero(s, pace.minPerKmEasy))
@@ -5832,7 +5789,7 @@ function applyV4LongRunRepeatCeiling(
       streakCount = 0
       continue
     }
-    const lr = longRunOfWeek(w)
+    const lr = longRunOf(w)
     // ⚠️ READS THE SESSION'S SIZE, NOT ITS `distance_km` FIELD (V4-ANCHOR-01,
     // 2026-09-19). This gate was `lr.session.distance_km == null`, and a
     // session is anchored EITHER by distance OR by duration — beginners and
@@ -7446,8 +7403,8 @@ function buildRulePlanOnce(
     const prevIsDeload = prev.type === 'deload' || prev.badge === 'deload'
     if (!isDeloadWeek || prevIsDeload || curr.type === 'race') continue
     if (prev.weekly_km <= 0 || (curr.weekly_km ?? 0) <= 0) continue
-    const prevLr = Object.values(prev.sessions).find(x => x && isLongRun(x)) as Session | undefined
-    const currLr = Object.values(curr.sessions).find(x => x && isLongRun(x)) as Session | undefined
+    const prevLr = longRunSessionOf(prev)
+    const currLr = longRunSessionOf(curr)
     if (!prevLr || !currLr) continue
     const prevKm = sessionKmSelfPaced(prevLr)
     const currKm = sessionKmSelfPaced(currLr)
@@ -8570,7 +8527,7 @@ function buildRulePlanOnce(
   const planLrMinsDelivered = Math.max(0, ...weeks
     .filter(w => w.n >= 1 && w.type !== 'race')
     .map(w => {
-      const lr = Object.values(w.sessions ?? {}).find(sn => !!sn && isLongRun(sn))
+      const lr = longRunSessionOf(w)
       return lr?.duration_mins ?? 0
     }))
   const longRunIsAtTimeCap = longRunCapMinsForNote > 0

@@ -281,6 +281,7 @@ is still what runs. The engine's prescription code is frozen; nothing here chang
 | `lib/engine/contracts/planV2.ts` | Plan v2 (strict Zod), built by extending `lib/plan/schema.ts` |
 | `lib/engine/contracts/planV1V2.ts` | `toV2`, `toV1`, `parsePlanV2` |
 | `lib/engine/planner/composeBlocks.ts` | **L3: the block planner** — `composeBlocks`, the single owner of a race plan's phase table and of §97's `shortOnRamp` predicate (B4a; § L3 below) and `getPhaseForWeek`, the phase table's reader, moved in B4b |
+| `lib/engine/planner/longRunAccess.ts` | **L3: the long-run accessor** — `longRunOf`, `longRunSessionOf`, `computeLongRunHrs`. One owner where the engine had FOUR (B4e; § L3 below) |
 | `lib/engine/planner/weekdayCap.ts` | **L3: the per-day TRIM** — `applyWeekdayMinsCap`, §81/§82's weekday minutes trim. ⚠️ Not capacity's single owner: `ruleEngine.ts` hand-rolls the budget in 2 more places (`WEEKDAY-BUDGET-BYPASSERS-01`) (B4d; § L3 below) |
 | `lib/engine/planner/deliveredVolume.ts` | **L3: the delivered-volume owner** — `sumWeeklyKm`, the HLD's defining property for the session placer. Re-exported from `ruleEngine.ts` so its 39 references are unchanged (B4c; § L3 below) |
 | `lib/engine/planner/composeWeekVolumes.ts` | **L3: the week planner** — `composeWeekVolumes`, the single owner of each week's km: ramp, deloads, §2's cap and its injury tightening, the bounceback, the peak clamp, the taper step-down and §31's `compressed` verdict (B4b; § L3 below) |
@@ -880,6 +881,69 @@ board asked how often capacity binds — answered — **and whether the CURVE re
 These numbers say the trim absorbs it 914 times and the declared overrun 255; they do not say whether
 setting a lower weekly target up front would serve the runner better than trimming after placement.
 That is the ruling, and it needs a comparison that does not exist yet.
+
+#### B4e: the long-run accessor (`ADR027-B4E-LONGRUN-ACCESS`)
+
+*"Which session is the long run of this week?"* — **one owner, where `ruleEngine.ts` had four.**
+
+⚠️ **THIS WAS NOT THE INTENDED BRICK, AND MEASURING FIRST IS WHY IT CHANGED.** The next post-pass
+slice was the long-run cap group (`applyTaperLongRunCap`, `applyLongRunStepBacks`,
+`applyLongRunProgressionCap`, 289 lines — and it contains the one pass called **twice**, at `:7538`
+and `:7552` with `reclampPeakStepBacks` between them). Its dependencies came first: the group calls
+these accessors, which were private to `ruleEngine.ts`, and ARCH-ENG-001 forbids L3 importing the old
+planner. **The dependency moves first or nothing moves.**
+
+🔴 **EIGHT ANSWERERS, THREE SHAPES, AND MY FIRST COUNT SAID FOUR.** Two local
+`const longRunOf` → `Session | null` (identical to each other), one → `{ day, session } | null`, a
+module-level `longRunOfWeek` identical to it, a local `findLong` **byte-identical to it again**, a
+local `lrOf` → `Session | undefined`, and **three inline `.find(sn => sn && isLongRun(sn))`
+expressions**. 📐 All eight behaviourally identical — first `isLongRun` match in the session
+object's own key order. **I published FOUR and code review found the other four, five of which
+carried no name at all.** ⚠️ **Third count I got wrong in the same direction in one day**
+(`sumWeeklyKm`'s docstring: three look-alikes → twelve; `weekdayCap`: "the only capacity reader" →
+one of four). **A single-ownership claim has to be counted by SHAPE, not by name** — which is why
+the gate pins the `isLongRun` use count in the old engine and categorises every survivor.
+📐 All eight folded in; **29 call sites reach one owner** (counted with comments stripped — the raw line count said 23).
+
+⚠️ **AND THE PINNED COUNT WAS WRONG ON ITS FIRST WRITING TOO — 18 from a raw `grep`, 17 after
+stripping comments**, because one `isLongRun` sits inside a comment. `HOOK-RGBA-COMMENTS-01`, in the
+same breath as building a gate to stop exactly this.
+
+⚠️ **TWO LOOPS AND SIX OTHER USES ARE DIFFERENT QUESTIONS AND STAY.** `:4251` takes a max across
+**every** long run in the week and `applyRacePaceSegmentDuration` processes each one — "every long
+run" is not "the long run", and that they exist is evidence a week CAN hold two. Plus 11 predicates,
+2 `.filter` collections, a PLAN-level first-day finder, and **one unclassified nested loop (`:7924`)
+left alone rather than folded on a guess, named in the gate so it is a known gap.**
+
+✅ **AND `verify:parity` IS GENUINE EVIDENCE HERE, WHICH IT WAS NOT FOR B4a–B4d.** These are pure
+readers invoked on every week of every plan: 📐 measured, `long_run_hrs` is set on **15 of 16**
+weeks of a sample HM plan, so `computeLongRunHrs` runs across essentially the whole grid. **IDENTICAL
+over 6,210 therefore means something** — stated because the previous four bricks each came back
+IDENTICAL on a change the grid could not reach, and the difference is the whole point.
+
+🔻 **INSERTION ORDER IS PRESERVED AND IT IS A FRAGILITY, NOT A CHOICE.** All four copies iterated
+the session object's own key order. Iterating `DAY_ORDER` would be deterministic by construction and
+would answer differently for a week carrying two `isLongRun` sessions out of calendar order — a
+prescription change, not a move. Recorded rather than silently "improved"; the test pins it.
+⚠️ **`lib/scorecard/metrics.ts` has its own `longRunOf` and it must NOT be merged in**: it reads
+`runsOf(w)`, which iterates `DAYS` in calendar order over run types only. Different question,
+different layer — the same reasoning that keeps §121's look-alikes apart. It is excluded by the
+one-owner gate's POPULATION (`lib/scorecard/` is outside the glob), not by a named exemption.
+
+🔴 **AND `computeLongRunHrs` DOES NOT ALWAYS DESCRIBE THE SESSION `longRunOf` RETURNS**, which
+co-locating them made visible. `longRunOf` takes the FIRST `isLongRun` session; `computeLongRunHrs`
+SKIPS one with neither anchor and prices the next. On a week holding two long runs where the first is
+anchorless, `week.long_run_hrs` describes a different session from the one the cap passes operate on.
+⚠️ Pre-existing, and **no invariant forbids two long runs in a week**. Filed
+`LONG-RUN-HRS-SECOND-SESSION-01`; not reconciled inside a move, because either reading changes a
+rendered number.
+
+**Gates** (`longRunAccess.test.ts`, 7 arms, **5 mutations all red**): the accessor's behaviour · null
+rather than an invented session · hours from duration else distance at the easy pace, with absence
+null not 0 (`SESSION-KM-01`) · insertion order pinned · **no NAMED implementation left in the old
+engine** · **exactly one across the tracked engine** from `git ls-files` · and **the `isLongRun` use
+count pinned at 17 with every survivor categorised**, because the name-based arm could not see five
+of the eight.
 
 ### L5: the independent verifier (B3 step 2)
 
