@@ -113,17 +113,39 @@ describe('DELOAD-OWNER-01 — single ownership is mechanical, not remembered', (
     // all. Placement is computed ONCE by `computeDeloadWeeks` and every site
     // reads that set — which is a stronger form of the same ownership, since
     // even the predicate cannot now be applied inconsistently per site.
-    const engine = readFileSync(join(LIB, 'plan', 'ruleEngine.ts'), 'utf8')
+    // 🔴 THE POPULATION IS THE WHOLE TREE NOW, AND IT TOOK TWO GOES TO GET THERE.
+    // ADR-027 B4b took the weekly volume curve out of `ruleEngine.ts` into L3's
+    // `composeWeekVolumes.ts`, which carried 3 of these 6 reads with it. The pin went 6 -> 3 and the
+    // arm went red, correctly: a count scoped to one file cannot tell "three reads were relocated"
+    // from "three cadence decisions were lost".
+    //
+    // 🔴 MY FIRST REPAIR WAS A HAND-TYPED TWO-FILE LIST, AND CODE REVIEW CALLED IT: a read landing
+    // in any THIRD file would have kept the arm green, so the pin no longer made a seventh site a
+    // deliberate act — which is the one thing it exists to do. `tsFiles(LIB)` was already in this
+    // same block. **This repo has paid for a hand-typed population before** (the hook runner's
+    // three-of-seven shell-suite list). Globbed: the population follows the code, the TOTAL stays
+    // pinned at 6, and a read anywhere under `lib/` counts.
+    const sources = tsFiles(LIB)
+      .filter(f => !f.endsWith(OWNER))
+      .map(f => readFileSync(f, 'utf8'))
+      .filter(src => /deloadWeeks\.has\(/.test(src))
+    expect(sources.length, 'no file reads the computed set — the arm would pass on nothing')
+      .toBeGreaterThan(0)
     // 5 -> 6 on 2026-09-07 (§97). The sixth read is `vo2BuildSlotIndex`, which
     // walks the build weeks to find the first one clear of an intensity re-entry
     // window and must skip deload weeks (they carry no quality). It reads the
     // OWNER's computed set, which is exactly what this test exists to require —
     // the count is a proxy for "nobody recomputed the cadence", not a ceiling on
     // legitimate consumers.
-    const setReads = engine.match(/deloadWeeks\.has\(/g) ?? []
+    const setReads = sources.flatMap(s => s.match(/deloadWeeks\.has\(/g) ?? [])
     expect(setReads.length, 'every cadence decision should read the one computed set').toBe(6)
-    const computes = engine.match(/computeDeloadWeeks\(/g) ?? []
+    // Still exactly once, and still in the engine: placement is §87's, not the week planner's,
+    // and `composeWeekVolumes` takes the computed set as an INPUT rather than deriving it.
+    const computes = sources.flatMap(s => s.match(/computeDeloadWeeks\(/g) ?? [])
     expect(computes.length, 'placement must be computed exactly once per plan').toBe(1)
+    // And the week planner takes the set as an INPUT: it must not derive placement itself.
+    expect(readFileSync(join(LIB, 'engine', 'planner', 'composeWeekVolumes.ts'), 'utf8'))
+      .not.toMatch(/computeDeloadWeeks\(/)
   })
 })
 

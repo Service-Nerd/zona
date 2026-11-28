@@ -280,7 +280,8 @@ is still what runs. The engine's prescription code is frozen; nothing here chang
 | `lib/engine/contracts/decision.ts` | `Decision`, `Lever`, `Finding` (Zod), `findingFromViolation` |
 | `lib/engine/contracts/planV2.ts` | Plan v2 (strict Zod), built by extending `lib/plan/schema.ts` |
 | `lib/engine/contracts/planV1V2.ts` | `toV2`, `toV1`, `parsePlanV2` |
-| `lib/engine/planner/composeBlocks.ts` | **L3: the block planner** — `composeBlocks`, the single owner of a race plan's phase table and of §97's `shortOnRamp` predicate (B4a; § L3 below) |
+| `lib/engine/planner/composeBlocks.ts` | **L3: the block planner** — `composeBlocks`, the single owner of a race plan's phase table and of §97's `shortOnRamp` predicate (B4a; § L3 below) and `getPhaseForWeek`, the phase table's reader, moved in B4b |
+| `lib/engine/planner/composeWeekVolumes.ts` | **L3: the week planner** — `composeWeekVolumes`, the single owner of each week's km: ramp, deloads, §2's cap and its injury tightening, the bounceback, the peak clamp, the taper step-down and §31's `compressed` verdict (B4b; § L3 below) |
 | `lib/engine/readModel.ts` | typed plan accessors (ARCH-ENG-010) |
 
 `lib/engine` is inside `ENGINE-PURITY-GATE-01`'s population: it may not import `next/`, `react`,
@@ -684,6 +685,74 @@ and the strangler boundary (no `function computePhases` in `ruleEngine.ts`; §97
 0 times, comments stripped first; L3 importing nothing from `lib/plan` but `generationConfig`). Each arm was
 falsified. 🔻 **What the file cannot prove: that the move is faithful** — it shares the derivation. That
 is what the 94,080-case probe and the suite are for.
+
+#### B4b: the week planner (`ADR027-B4B-WEEKS`)
+
+`composeWeekVolumes` owns **how many kilometres each week carries**. `buildVolumeSequence` had one
+caller and is **deleted**; `getPhaseForWeek` moved to `composeBlocks.ts`, beside the phase table it
+reads (which makes that file's B4a header line about it false, and it is corrected there).
+
+🔴 **THE HLD SAYS *"sets volume within capacity"* AND THE SECOND HALF IS NOT BUILT.** The HLD's
+own canonical-models table says why: `WeekCapacity | L1 → L3 | **Nothing; the curve never knew the
+time budget**`. L1 has built `schedule.capacity` since B2 and **no planner reads it.** Reading it
+would change what runners are prescribed, so it is a Coaching Board ruling, not a slice of a
+byte-identical move — filed as `WEEK-VOLUME-CAPACITY-01` (🏃). **Step 2 is the curve, moved. It
+does not read capacity.**
+
+| Owns | Does **not** own |
+|---|---|
+| The ramp and its allowances (§2, returning-runner grace), deload drops and the §3 re-anchor, §2's week-on-week cap and its injury tightening, §2 Am. 3's bounceback bound, the §106 peak clamp, §6's taper step-down and race week, §31's `compressed` verdict | `start_km` / `peak_km` (the volume model) · `deload_weeks` (§87, `computeDeloadWeeks` — passed IN, never re-derived here, and a gate asserts this module never calls it) · `injury_cap_pct` · **capacity** |
+
+**Decisions.** One `week.volume_km` per week naming the rule that **last wrote** it — three passes
+write the same slot, so the binding rule is the last writer and only the planner knows which. Plus
+`plan.volume_start_km` and `plan.volume_compressed`. ⚠️ **The init band has no invariant**: §2
+documents both keys (`BUILD_VOL_INIT_FLOOR_VS_PEAK` / `_CEILING_VS_PEAK`) and nothing checks the
+band, so the opening decision cites the ramp rule §94 cites §2 through, and says so rather than
+naming a rule that does not check it.
+
+🔻 **Two findings from reading the function, neither caused by the move.**
+**(1) `recoveryFreq` was a dead parameter** — in the signature, referenced nowhere in 227 lines,
+left behind when `DELOAD-OWNER-01` moved cadence out and `deload_weeks` came in. TypeScript does not
+flag an unused parameter by default, so it survived every read. Dropped; the only signature change.
+**(2) `phases.find(p => p.name === 'taper')!` is safe by luck, not design.** B4a proved a race plan
+can have **no** taper phase (the 5-week 5K, `BLOCK-TAPER-SQUEEZE-01`), so it is `undefined` there. It
+never throws only because pass 3 `continue`s on every non-taper week. Asserted in the test rather
+than left to the next reader.
+
+**Evidence.** 📐 **Exhaustive equivalence against the pre-move function from `98d227ad`: 76,032
+cases, 0 differences**, every branch reached — deload drops 68,976 · injury cap 29,290 · bounceback
+22,786 · peak clamp 45,086 · taper 71,712 · `compressed` 29,231 · **no taper phase 4,320** · start
+below floor 25,344 · above ceiling 31,680. **Falsified three ways:** a deeper deload → 59,567
+differences, a loosened peak clamp → 43,827, a loosened ramp cap → 52,177. ⚠️ The first falsification
+attempt used `perl -pi -e` and the regexes did not match, so two mutations reported **0 differences
+having never applied** — re-run with literal replacement and an assertion that the edit landed.
+The probe is not committed, for the reason B4a's gives. `verify:parity` IDENTICAL over 6,210.
+⚠️ **AND THE PARITY CLAIM WAS HALF FALSE AS FIRST WRITTEN:** I said its grid could not reach the
+injury branches; it sweeps `['Knee']` and `['Shin splints']`, exactly `hasVolumeCappedInjury`'s
+cohort. What it genuinely cannot reach is the **returning-runner** allowance — it never sets
+`training_age`, which `isReturningRunner` requires.
+
+⚠️ **`DELOAD-OWNER-01`'s pin had to widen, and it took two goes.**
+`deloadCadence.test.ts` counted `deloadWeeks.has(` in `ruleEngine.ts` and pinned it at 6; three reads
+moved, the count read 3, the arm went red. **A count scoped to one file cannot tell "three reads were
+relocated" from "three cadence decisions were lost."** 🔴 My first repair was a **hand-typed
+two-file list**, which code review called: a read landing in any third file would have kept it green,
+so the pin no longer made a seventh site a deliberate act — the one thing it exists to do. Globbed
+over `lib/` now; the total stays pinned at 6.
+
+🔴 **CODE REVIEW FOUND SIX, ALL MINE, AND TWO WERE ATTRIBUTION DEFECTS OF THE KIND B4a HAD
+ALREADY PAID FOR — ONE DAY EARLIER, FROM THE OTHER SIDE.**
+**(1) The peak clamp was attributed to `INV-PLAN-PEAK-NOT-BELOW-START`, which is a FLOOR check**
+("a plan never peaks BELOW where the runner already is"). Every loading week after the curve reaches
+peak would have carried it, making a floor rule the most-cited binding in a long plan. 📐 **No
+catalogue rule asserts a week may not EXCEED the peak target** — on the figure CLAUDE.md calls the
+single most consequential in a plan. Attribution dropped to the ramp rule, the gap filed as
+`PEAK-CEILING-NO-INVARIANT-01` (⚙️), and `composeWeekVolumes.test.ts`'s §106 arm is the first check of
+the property anywhere. **(2) `plan.volume_start_km`'s lever was null on every FLOOR clamp**, where
+the runner declaring more volume genuinely moves the number (peak 130 + declared 20 opens at 46);
+only the ceiling clamp is immune. ⚠️ **And the fix was ungated — a mutation restoring the old
+expression stayed GREEN**, so an arm was added and falsified. Plus: the gate cited a measurement the
+record did not contain, the parity claim above, and an import left unused by the move.
 
 ### L5: the independent verifier (B3 step 2)
 

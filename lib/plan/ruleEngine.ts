@@ -55,7 +55,7 @@ import { PLAN_SIGNATURES } from './planSignatures'
 import { isV2Structure, StructureV2Schema, goalPaceShapeWord, PACE_ANCHORS, type PaceAnchor, workAnchorOf, workAnchorsOf } from './sessionStructureV2'
 import { durationForMainSet, segmentPricedDistance, meetsQualityFloor } from './sessionFormat'
 import { resolveMainSet, type PaceAnchorMap } from './resolveMainSet'
-import { isDeloadWeek, computeDeloadWeeks, deloadVolumeFraction, shortOpeningBlockWeeks, buildWeekCeilingKm } from './deloadCadence'
+import { isDeloadWeek, computeDeloadWeeks, deloadVolumeFraction, shortOpeningBlockWeeks } from './deloadCadence'
 import { computeIntensityReentry } from './intensityReentry'
 import { catalogueRowFor } from './catalogueLink'
 import { plannedFoundationWeeks } from './foundationBlock'
@@ -111,7 +111,8 @@ export { parseBenchmarkTime, calcVDOT } from './vdot'
 import { parseBenchmarkTime, calcVDOT } from './vdot'
 // ADR-027 B4a — L3 owns phase composition. `lib/plan` -> `lib/engine` is the strangler
 // direction: the old engine calls the new layer, never the reverse (ARCH-ENG-001).
-import { composeBlocks } from '@/lib/engine/planner/composeBlocks'
+import { composeBlocks, getPhaseForWeek } from '@/lib/engine/planner/composeBlocks'
+import { composeWeekVolumes } from '@/lib/engine/planner/composeWeekVolumes'
 
 // Parse pace string ("5:00 /km" or "5:00") to total minutes-per-km.
 function paceStrToMins(s: string): number | null {
@@ -313,10 +314,6 @@ export function buildFallbackPace(fitness: FitnessLevel): PaceGuide {
 // L3 is the PRODUCER, so a copy here would be two derivations of one number (DELOAD-OWNER-01).
 // The arithmetic is unchanged; `npm run verify:parity` is the gate for that claim.
 
-function getPhaseForWeek(weekN: number, phases: Phase[]): PhaseType {
-  return (phases.find(p => weekN >= p.start_week && weekN <= p.end_week)?.name ?? 'base') as PhaseType
-}
-
 // ─── Weekly volume sequence ───────────────────────────────────────────────────
 
 // Detects a returning runner: deep training history (>2 years) AND current
@@ -328,238 +325,16 @@ function isReturningRunner(input: GeneratorInput, peakKm: number): boolean {
   return isExperienced && lowVolume
 }
 
-interface VolumeSequenceResult {
-  volumes:   number[]
-  compressed: boolean  // true if 10% cap forced any week below its uncapped value
-}
-
-function buildVolumeSequence(
-  totalWeeks: number,
-  phases: Phase[],
-  startKm: number,
-  peakKm: number,
-  distanceKm: number,
-  recoveryFreq: number,
-  returningRunner: boolean,
-  // §2 — the injury weekly-increase cap, applied INSIDE the curve.
-  //
-  // It used to be applied per-week in the session loop, downstream of the
-  // curve, against `volumes[i - 1]` — the raw curve value, not the previous
-  // week's adjusted result. Two defects followed: the cap never compounded (a
-  // capped week was followed by one measured against the higher curve value,
-  // producing a 35% sawtooth), and everything else that anchors on the curve —
-  // the taper depth, the deload step-down, the long-run share — was working
-  // from volumes the runner never actually saw.
-  //
-  // Applying it here makes the curve the single truth. Undefined for uninjured
-  // runners, who keep §2's standard allowance.
-  injuryCapPct: number | undefined,
-  /** §87 (CB-DELOAD-01) — the plan's deload weeks, already phase-corrected.
-   *  Passed in rather than recomputed so the volume curve and the week badge
-   *  cannot disagree about placement, which is the fault DELOAD-OWNER-01
-   *  removed one layer down. */
-  deloadWeeks: ReadonlySet<number>,
-): VolumeSequenceResult {
-  const taperPhase = phases.find(p => p.name === 'taper')!
-  const distKey = raceDistanceKey(distanceKm)
-  const taperConfig = GENERATION_CONFIG.TAPER_BY_DISTANCE[distKey]
-  const taperPhaseWeeks = GENERATION_CONFIG.TAPER_QUALITY_PER_WEEK[distKey].length
-  const fullTaperWeeks = Math.max(1, taperPhaseWeeks - 1)  // exclude race week
-  // §2 Am.2 — depth comes from deloadCadence, the single owner (see there for why).
-  const recoveryPct = deloadVolumeFraction(injuryCapPct != null)
-
-  // Returning-runner allowance (CoachingPrinciples §2): first 3 weeks may grow
-  // at 15% instead of 10%.
-  const allowanceForWeek = (weekN: number): number => {
-    if (returningRunner && weekN <= GENERATION_CONFIG.RETURNING_RUNNER_GRACE_WEEKS) {
-      return GENERATION_CONFIG.RETURNING_RUNNER_ALLOWANCE_PCT
-    }
-    return GENERATION_CONFIG.MAX_WEEKLY_VOLUME_INCREASE_PCT
-  }
-
-  const volumes: number[] = new Array(totalWeeks).fill(0)
-
-  // Clamp start volume to a band relative to peakKm.
-  // Floor prevents starting too low for the target; ceiling prevents
-  // starting too close to peak (no room to ramp).
-  // ⚠️ §2 Am. 3 CONSIDERED BOUNDING THIS BY A WEEK-1 CEILING AND IT WAS REVERTED ON
-  // MEASUREMENT (`WEEK1-FROM-LONGEST-RUN-01`, 2026-11-07). The curve is NOT the
-  // producer of the week-1 leap: at a declared 6 km/week with a 5 km longest run the
-  // curve opens at 6 and the runner is DELIVERED 13 (40+32+32 minutes of placed
-  // sessions). Bounding the floor lowered the curve, which lowered the delivered base,
-  // which OPENED §111's ratio door for runners the engine was deliberately refusing:
-  // designed refusals 782 -> 664 across 2,520 probe inputs, and plans carrying
-  // `WEEK1-LEAP` rose 70 -> 94 (half 4 -> 17, marathon 6 -> 17). A safety bound that
-  // admitted 118 refused runners and gave more of them the leap. The leap is ADR-022's
-  // DELIVERED-volume divergence, whose levers are injury-scoped by ruling.
-  const initFloor   = peakKm * GENERATION_CONFIG.BUILD_VOL_INIT_FLOOR_VS_PEAK   / 100
-  const initCeiling = peakKm * GENERATION_CONFIG.BUILD_VOL_INIT_CEILING_VS_PEAK / 100
-  let buildVol = Math.min(Math.max(startKm, initFloor), initCeiling)
-  let lastBuildVol = buildVol
-
-  // Pass 1 — fill non-taper weeks (base/build/peak) with the natural ramp +
-  // recovery-week drops. Taper deferred to pass 3 so it can anchor on the
-  // post-cap pre-taper value.
-  for (let i = 0; i < totalWeeks; i++) {
-    const weekN = i + 1
-    const phase = getPhaseForWeek(weekN, phases)
-    if (phase === 'taper') continue
-
-    const isDeload = deloadWeeks.has(weekN)
-    if (isDeload) {
-      volumes[i] = Math.round(lastBuildVol * recoveryPct)
-      buildVol = lastBuildVol
-    } else {
-      const allowance = 1 + allowanceForWeek(weekN) / 100
-      const growthFactor = phase === 'peak' ? 1 + (allowance - 1) / 2 : allowance
-      buildVol = Math.min(buildVol * growthFactor, peakKm)
-      volumes[i] = Math.round(buildVol)
-      lastBuildVol = buildVol
-    }
-  }
-
-  // Pass 2 — enforce week-on-week cap on non-taper weeks. Drops are exempt;
-  // deload weeks themselves are exempt (they intentionally drop). After-deload
-  // bouncebacks are NOT exempt — this is the primary effect of the cap
-  // (CoachingPrinciples §2).
-  for (let i = 1; i < volumes.length; i++) {
-    const weekN = i + 1
-    const phase = getPhaseForWeek(weekN, phases)
-    if (phase === 'taper') continue
-    const isThisDeload = deloadWeeks.has(weekN)
-    if (isThisDeload) {
-      // DELOAD-INVERSION-01 part 1 (§3, Coaching Board 2026-09-06) — a recovery
-      // week drops to 70% of the prior BUILD week. Pass 1 set it to 70% of the
-      // pre-cap `lastBuildVol`, but pass 2 caps the prior week LOWER (injury/ramp),
-      // so 70%-of-uncapped could equal/exceed the delivered prior — a "recovery"
-      // week that reduces nothing (12.8% of plans, D-21). Re-anchor to 70% of the
-      // ACTUAL (post-cap) prior week — §3's literal intent. Here, not a later pass,
-      // so the bounceback below reads the reduced deload. A MIN — only reduces.
-      // volumes[i-1] is the pre-deload build week, capped this pass; §3/§87 never
-      // place back-to-back deloads. Taper deloads: pass 3.
-      volumes[i] = Math.min(volumes[i], Math.round(volumes[i - 1] * recoveryPct))
-      continue
-    }
-    if (volumes[i] <= volumes[i - 1]) continue
-
-    // §2's injury cap tightens its own standard allowance for knee / shin-splint history. Same pass, so
-    // it compounds week on week exactly as the standard cap does.
-    // ONRAMP-INJURY-CLIMB-01 — the ceiling (this cap AND the bounceback below) is `buildWeekCeilingKm`'s
-    // (deloadCadence.ts), shared with the base-build ramp; this caller keeps its whole-km rounding.
-    // Byte-identical by construction (every volume here is already a whole km, and rounding is monotone),
-    // and checked: `verify:parity` IDENTICAL.
-
-    // CoachingPrinciples §2 (amended 2026-08-06 / D1) — the cap does NOT apply
-    // to a post-deload bounceback. Previously it did, and the arithmetic was
-    // fatal: a deload drops to 70%, so the next week could rise only 10% above
-    // THAT — 77% of where the runner already was. Every deload ratcheted the
-    // ceiling permanently down, making progressive overload arithmetically
-    // impossible in any plan containing a recovery week. The first organic
-    // user's 14-week plan peaked in week 3, in the base phase.
-    //
-    // Returning to a volume held two weeks ago is not a spike — chronic load
-    // has not moved. The bounceback may return to the pre-deload level, and no
-    // further: growth resumes from there next week.
-    const prevWeekN = weekN - 1
-    const prevWasDeload = deloadWeeks.has(prevWeekN)
-    // THE BOUNCEBACK RULE, now applied inside `buildWeekCeilingKm` — its history stays here:
-      // RAMP-BOUNCEBACK-01 (Coaching Board 2026-09-06, Willy-led). The bounceback
-      // splits by injury status, and MEASUREMENT (not intuition) drew the line:
-      //
-      // INJURY history — BOUNDED by the injury cap, no exemption. Injured tissue's
-      // binding constraint is the ACUTE weekly load; a "return" does not lessen it
-      // (cardiovascular readiness ≠ tissue readiness). This branch used to
-      // `Math.max`-override §2's injury cap entirely, shipping +26% weeks to knee-history
-      // runners — the live safety hole that blocked CB-PHASE-01. The bounceback now
-      // returns TOWARD pre-deload only as fast as the injury cap allows; the
-      // remainder completes next week (§2: "growth resumes from there").
-      //
-      // HEALTHY — keeps §2's exemption UNBOUNDED. The board provisionally proposed
-      // a 20% bound for healthy runners too, conditional on measurement. Measured
-      // across a 144-plan grid: a 20% bound flipped the difficulty note to
-      // "constrained by inputs" on +50pp of plans and raised the maintenance rate
-      // +7.6pp, for ZERO safety benefit — §2's evidence is that returning to a
-      // volume held two weeks ago is not a spike for healthy tissue, and no
-      // mainstream model caps a bounceback. The measurement resolved the board's
-      // recorded Willy/Hutchinson split toward Hutchinson for healthy runners.
-      //
-      // §2 AMENDMENT 3 (PLAN-FITNESS-01, Coaching Board 2026-09-17) — THE INJURY
-      // BOUNCEBACK MAY RETURN TO PRE-DELOAD, AND NO HIGHER.
-      //
-      // Amendment 1 set the condition this failed: "the curve still RISES within
-      // each block — slow is right, STUCK IS NOT." Measured, same runner with and
-      // without the knee flag, 18 weeks, nothing else changed: net build
-      // **+91% healthy vs +6% injured** (standard cadence), **+79% vs +3%**
-      // (masters). 28.9% of injury plans never exceeded their own week-1 volume.
-      //
-      // Amendment 2 raised the injury deload 70% -> 85% but the number is short of
-      // its own break-even: standard needs 1/1.05^3 = 86.4%, masters 1/1.05^2 =
-      // 90.7%. At 85% that is -1.6%/cycle and -6.3%/cycle. D-21.
-      //
-      // WHY WILLY REVERSED HIS OWN VETO: he rejected the unbounded return because
-      // a 70% cut returning to 100% is **+43%** onto healing tissue. Amendment 2's
-      // shallower cut makes the same return **+17.6%**, of a load the tissue
-      // carried seven days earlier.
-      //
-      // ⚠️ HIS CONDITION IS MECHANICAL: valid only while the cut stays shallow.
-      // Lower INJURY_RECOVERY_WEEK_VOLUME_PCT and this exemption withdraws itself.
-      // The gate is `injuryBouncebackMayReturnToPreDeload()`, one owner read by both callers.
-    const maxAllowed = Math.round(buildWeekCeilingKm({
-      prevKm: volumes[i - 1],
-      preDeloadKm: volumes[i - 2] ?? volumes[i - 1],
-      prevWasDeload,
-      allowancePct: allowanceForWeek(weekN),
-      injuryCapPct,
-    }))
-
-    if (volumes[i] > maxAllowed) {
-      volumes[i] = maxAllowed
-    }
-  }
-
-  // Pass 3 — fill taper weeks using the POST-CAP pre-taper as anchor.
-  // (Bug fix: previously taper ran in pass 1, anchored on the pre-cap pre-taper
-  // value. With the cap reducing real build/peak volumes, the resulting
-  // taper-from-spec-target was visibly smaller than spec because it was applied
-  // to an inflated baseline.)
-  for (let i = 0; i < totalWeeks; i++) {
-    const weekN = i + 1
-    const phase = getPhaseForWeek(weekN, phases)
-    if (phase !== 'taper') continue
-
-    const taperIdx = weekN - taperPhase.start_week
-    const preTaper = volumes[taperPhase.start_week - 2] ?? lastBuildVol
-    if (weekN === totalWeeks) {
-      volumes[i] = Math.round(preTaper * GENERATION_CONFIG.RACE_WEEK_VOLUME_PCT / 100)
-    } else {
-      // CD-5 / §6 — shallower cut for a low-volume runner (little fatigue to
-      // shed; a full cut would just detrain them). Depth only, not week count.
-      const reductionFull = peakKm < GENERATION_CONFIG.LOW_VOLUME_TAPER_THRESHOLD_KM
-        ? taperConfig.volume_reduction_pct * (GENERATION_CONFIG.LOW_VOLUME_TAPER_REDUCTION_FACTOR_PCT / 100)
-        : taperConfig.volume_reduction_pct
-      const stepPct = reductionFull / fullTaperWeeks
-      const reductionPct = stepPct * (taperIdx + 1)
-      volumes[i] = Math.round(preTaper * (1 - reductionPct / 100))
-    }
-  }
-
-  // "Ramp can't fit" check (CoachingPrinciples §2 intent). The plan is
-  // compressed-by-volume if peak-phase weeks never reach peakKm — i.e. the
-  // cap forced the ramp short of target. Single-week firing in build is
-  // expected and not flagged.
-  const peakPhase = phases.find(p => p.name === 'peak')
-  let compressed = false
-  if (peakPhase) {
-    const peakThreshold = peakKm * GENERATION_CONFIG.PEAK_REACHED_THRESHOLD_PCT / 100
-    const peakReached = volumes.some((v, i) => {
-      const wn = i + 1
-      return wn >= peakPhase.start_week && wn <= peakPhase.end_week && v >= peakThreshold
-    })
-    compressed = !peakReached
-  }
-
-  return { volumes, compressed }
-}
+// ─── Weekly volume curve ──────────────────────────────────────────────────────
+// MOVED TO L3 (ADR-027 B4b). `composeWeekVolumes` in `lib/engine/planner/composeWeekVolumes.ts`
+// is the single owner of how many km each week carries — ramp, deloads, §2's cap and its injury
+// tightening, the bounceback, the peak clamp, the taper step-down and §31's `compressed` verdict.
+// `getPhaseForWeek` moved too, to `composeBlocks.ts`, beside the phase table it reads.
+// The arithmetic is unchanged; the gate is the exhaustive equivalence diff recorded in
+// `docs/contracts/engine.md § L3` (76,032 cases, 0 differences, falsified three ways).
+// ⚠️ `verify:parity` is IDENTICAL over 6,210 and reaches the injury branches (its grid sweeps
+// `['Knee']` and `['Shin splints']`); what it cannot reach is the returning-runner allowance, which
+// needs a `training_age` it never sets.
 
 // ─── Day utilities ────────────────────────────────────────────────────────────
 
@@ -7495,14 +7270,18 @@ function buildRulePlanOnce(
   const shortOpeningWeeks = shortOpeningBlockWeeks(
     totalWeeks, recoveryFreq, wn => getPhaseForWeek(wn, phases), deloadAvoidPosition2)
 
-  const { volumes, compressed: capCompressed } = buildVolumeSequence(
-    totalWeeks, phases, startKm, peakKm, input.race_distance_km,
-    recoveryFreq, returningRunner,
-    hasVolumeCappedInjury(input)
+  const { volumes, compressed: capCompressed } = composeWeekVolumes({
+    total_weeks: totalWeeks,
+    phases,
+    start_km: startKm,
+    peak_km: peakKm,
+    distance_km: input.race_distance_km,
+    returning_runner: returningRunner,
+    injury_cap_pct: hasVolumeCappedInjury(input)
       ? GENERATION_CONFIG.INJURY_WEEKLY_INCREASE_CAP_PCT
       : undefined,
-    deloadWeeks,
-  )
+    deload_weeks: deloadWeeks,
+  })
 
   // ── Build weeks ─────────────────────────────────────────────────────────────
   const weeks: Week[] = []

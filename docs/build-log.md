@@ -6,6 +6,56 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-11-28 — ADR027-B4B-WEEKS: I made B4a's mistake again, from the other side, one day later
+
+Step 2 of the planner: the weekly volume curve. Same shape as yesterday's — `buildVolumeSequence` had
+one caller, so it moved into L3 rather than being written twice.
+
+**The HLD's sentence for this step is "sets volume within capacity", and the second half does not
+exist.** Its own table says so: *"Nothing; the curve never knew the time budget."* L1 has been
+building the runner's capacity — minutes per available day, km at their easy pace — since B2, and no
+planner reads it. I could have quietly shipped "step 2 done" and let that imply the curve now reads a
+budget. It doesn't. Making it read one changes what people are prescribed, so it's a board question,
+and it's filed as one.
+
+**Two things fell out of just reading the function.** A parameter that had been in the signature for
+months and was referenced nowhere in 227 lines — TypeScript doesn't flag an unused parameter, so it
+survived every read anyone gave that function. And a `!` on the taper phase, which yesterday's work
+had just proved can be absent: it never throws, but only because the loop that would dereference it
+skips every week when there's no taper. Safe by luck. Both are asserted now.
+
+**The best thing that happened was an arm I had to write twice.** I asserted "the injury cap can only
+ever reduce a week" and it went red: the injured runner was getting *more* in week 2. That's
+`deloadVolumeFraction` — 70% healthy, 85% injured — which is a ratified amendment, the one Willy
+reversed his own veto for. So I wrote "then the injured deload is always higher" and **that went red
+too**: the re-anchor takes 85% of a capped week, which can land below 70% of an uncapped one. Measured
+across the grid: higher 1,776, lower 400, equal 96. Neither direction holds. Two attempts, two red
+arms, two facts I'd have asserted wrongly if I'd reasoned instead of run it.
+
+**And then code review found I'd repeated yesterday's exact mistake, from the other side.** Yesterday
+I attributed a decision to §4 (order and contiguity) when §91's floor had bound it. Today I attributed
+the peak clamp to §106's only rule — which turns out to be a *floor* check, "a plan never peaks below
+where the runner already is". Citing it would have made a floor rule the most-cited binding in every
+long plan. Worse, chasing it down showed **nothing anywhere checks that a week may not exceed the peak
+target** — on the number this codebase calls the most consequential figure in a plan. It holds today
+by one `Math.min` in one pass, checked by nothing. My test arm is now the first check of it; the
+catalogue rule is filed.
+
+The other one is sharper still: I fixed a lever that was wrong on every floor-clamped plan, re-ran the
+suite, green. Then I mutated it back to the broken version to prove the arm worked — **and it was
+still green.** The fix had no check at all. That one is worth remembering: a passing suite after a fix
+tells you nothing about the fix.
+
+**Also: my first falsification run was worthless and said so in green.** I used `perl -pi -e` with
+unescaped regexes, the substitutions never matched, and two mutations dutifully reported "0
+differences" on code I hadn't changed. Literal replacement and an assertion that the edit landed.
+
+Equivalence: 76,032 cases, 0 differences, every branch reached including the no-taper-phase case,
+falsified three ways. Six review findings, all mine, four of them claims rather than logic. That ratio
+hasn't moved in weeks.
+
+---
+
 ## 2026-11-28 — ADR027-B4A-BLOCKS: B4 starts, and the first thing it found was a sentence
 
 Founder said *"Start b4"*. B4 is the planner, and the HLD builds it in three steps — block, then

@@ -38,7 +38,11 @@
 //   · §98's yield ladder and §95 Am. 1's deload yield. Both decide by REGENERATING the whole plan
 //     and measuring it, so they are the orchestrator's, not the block planner's. `onset_relax` is
 //     an input, exactly as it was an argument.
-//   · `getPhaseForWeek`. It READS a phase table; it does not compose one.
+//   · ⚠️ `getPhaseForWeek` WAS LISTED HERE AND IT MOVED IN B4b, ONE DAY LATER. The reasoning
+//     ("it reads a phase table, it does not compose one") is why it is not part of `composeBlocks`
+//     itself — but the owner of a reader is the owner of the thing read, and the week planner needed
+//     it. It is exported below. **A sentence that was true when written is the thing this wave
+//     already paid for once; it is corrected rather than left to age.**
 //
 // ⚠️ NOTHING READS THE DECISIONS YET. L4 is B5. They are emitted now because the decision is only
 // knowable at the moment the number is set — reconstructing "which rule bound this" afterwards is
@@ -46,7 +50,7 @@
 // holds them to the phases they describe so they cannot drift the way copy drifts from sessions.
 
 import { GENERATION_CONFIG, raceDistanceKey } from '@/lib/plan/generationConfig'
-import type { Phase } from '@/types/plan'
+import type { Phase, GeneratorPhase } from '@/types/plan'
 import type { Decision } from '@/lib/engine/contracts/decision'
 
 /** What the block planner needs, and nothing else. Every field is a value some other owner
@@ -232,4 +236,17 @@ export function composeBlocks(req: BlockRequest): BlockPlan {
   }
 
   return { phases, short_on_ramp: shortOnRamp, decisions }
+}
+
+/**
+ * Which phase does week `n` fall in? The phase table's reader, so it lives with the phase table's
+ * owner (ADR-027 B4b). Moved verbatim from `ruleEngine.ts`, where it was private with 9 callers.
+ *
+ * ⚠️ THE `?? 'base'` IS A REAL FALLBACK, not defensive noise: a week outside every phase range
+ * reads as base. That happens on a runway too short for §4's floors, where the table overruns
+ * `total_weeks` (see the arm in `composeBlocks.test.ts`), and §57 foundation weeks (`n <= 0`) sit
+ * outside the arc by design. Changing it would change plan output, so it is preserved exactly.
+ */
+export function getPhaseForWeek(weekN: number, phases: Phase[]): GeneratorPhase {
+  return (phases.find(p => weekN >= p.start_week && weekN <= p.end_week)?.name ?? 'base') as GeneratorPhase
 }
