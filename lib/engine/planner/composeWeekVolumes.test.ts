@@ -67,7 +67,7 @@ describe('ADR-027 B4b — composeWeekVolumes: the curve', () => {
     expect(CASES.length).toBeGreaterThan(1000)
     const reach = {
       deloadDrop: 0, injuryCapped: 0, bounceback: 0, taperWeeks: 0,
-      compressed: 0, noTaperPhase: 0, startBelowFloor: 0, startAboveCeiling: 0,
+      compressed: 0, startBelowFloor: 0, startAboveCeiling: 0,
     }
     for (const req of CASES) {
       const rules = new Set(weekRules(req).map(d => d.bound_by))
@@ -76,7 +76,6 @@ describe('ADR-027 B4b — composeWeekVolumes: the curve', () => {
       if (rules.has('INV-PLAN-BOUNCEBACK-BOUNDED')) reach.bounceback++
       if (rules.has('INV-PLAN-TAPER-DELIVERED-DEPTH')) reach.taperWeeks++
       if (planOf(req).compressed) reach.compressed++
-      if (!req.phases.some(p => p.name === 'taper')) reach.noTaperPhase++
       const floor = req.peak_km * GENERATION_CONFIG.BUILD_VOL_INIT_FLOOR_VS_PEAK / 100
       const ceiling = req.peak_km * GENERATION_CONFIG.BUILD_VOL_INIT_CEILING_VS_PEAK / 100
       if (req.start_km < floor) reach.startBelowFloor++
@@ -115,6 +114,27 @@ describe('ADR-027 B4b — composeWeekVolumes: the curve', () => {
     }
   })
 
+  it('🔴 §31 — the compression verdict is not forced FALSE when §49 Am. 1 removes the peak phase', () => {
+    // 🔴 FOUND BY CODE REVIEW. The verdict read `phases.find(… 'peak')` and left `compressed` false
+    // when there was none. §49 Am. 1 makes the peak absent on a 5- or 6-week 5K, so the ruling would
+    // have forced the verdict false on exactly the plans it changed — **absence written as a value**,
+    // since "did the ramp reach target?" is not answered NO when it was asked of no weeks at all.
+    // 📐 Measured: a 5-week 5K beginner at start 10 / peak 14 flipped true → false, and
+    // `cohort:shape` could not have caught it because `cohortGrid`'s 5K is fixed at 12 weeks.
+    const { phases } = composeBlocks({
+      total_weeks: 5, distance_km: 5, early_onset: false, foundation_weeks: 0, onset_relax: 0, days_available: 4,
+    })
+    expect(phases.some(p => p.name === 'peak'), 'the fixture must have NO peak phase or it proves nothing').toBe(false)
+    const deload_weeks = computeDeloadWeeks(5, 4, wn => getPhaseForWeek(wn, phases), true)
+    const squeezed = composeWeekVolumes({
+      total_weeks: 5, phases, start_km: 10, peak_km: 14, distance_km: 5,
+      returning_runner: false, injury_cap_pct: undefined, deload_weeks,
+    })
+    // The ramp cannot reach a 14 km peak from 10 in a 5-week plan whose loading block is one week.
+    expect(squeezed.compressed, '§31 must still classify a plan with no peak phase').toBe(true)
+    expect(squeezed.decisions.find(d => d.what === 'plan.volume_compressed')!.value).toBe(true)
+  })
+
   it('🔴 §3 — a deload reduces, measured against the week the runner actually got', () => {
     // DELOAD-INVERSION-01: pass 1 sets the deload to a fraction of the PRE-CAP prior week, and pass
     // 2 then caps that prior week lower — so "70% of uncapped" could equal or exceed the delivered
@@ -149,19 +169,25 @@ describe('ADR-027 B4b — composeWeekVolumes: the curve', () => {
     }
   })
 
-  it('🔴 a plan with NO taper phase does not throw — the `!` in pass 3 is safe by luck, not design', () => {
-    // B4a proved `composeBlocks` can drop the taper entirely: the shortest PRODUCIBLE 5K is 5 weeks
-    // and has no taper phase (BLOCK-TAPER-SQUEEZE-01). `phases.find(… 'taper')!` is `undefined`
-    // there, and the only reason it never throws is that pass 3 `continue`s on every non-taper week,
-    // so the body that dereferences it does not run. Nothing asserted that before this arm.
-    const noTaper = CASES.filter(r => !r.phases.some(p => p.name === 'taper'))
-    expect(noTaper.length, 'no case lacks a taper phase — this arm proves nothing').toBeGreaterThan(0)
-    for (const req of noTaper) {
-      expect(() => composeWeekVolumes(req)).not.toThrow()
-      const { volumes } = composeWeekVolumes(req)
-      expect(volumes.length).toBe(req.total_weeks)
-      expect(volumes.every(v => Number.isFinite(v) && v > 0)).toBe(true)
-    }
+  it('🔴 the `!` in pass 3 is now safe by RULING, not by luck — and still does not throw without a taper', () => {
+    // 🔴 WHAT THIS ARM USED TO SAY, AND WHY IT CHANGED. B4a proved `composeBlocks` could drop the
+    // taper entirely (the 5-week 5K), so `phases.find(… 'taper')!` was `undefined` on a real plan
+    // and survived only because pass 3 `continue`s on every non-taper week. §49 Amendment 1
+    // (Coaching Board 2026-11-28) reserves the taper before §4's peak floor, so **no producible
+    // plan lacks a taper phase any more** — the grid below has none to test.
+    //
+    // The `!` is therefore safe by the amendment rather than by accident. ⚠️ That is a WEAKER
+    // guarantee than it sounds: it holds only while the amendment does. So the throw-safety is
+    // still asserted, against a SYNTHETIC phase list with no taper, which is the shape a future
+    // phase-composition change could reintroduce.
+    expect(CASES.every(r => r.phases.some(p => p.name === 'taper')),
+      '§49 Am. 1 should leave no producible plan without a taper phase').toBe(true)
+    const base = CASES[0]
+    const taperless = { ...base, phases: base.phases.filter(p => p.name !== 'taper') }
+    expect(() => composeWeekVolumes(taperless)).not.toThrow()
+    const { volumes } = composeWeekVolumes(taperless)
+    expect(volumes.length).toBe(taperless.total_weeks)
+    expect(volumes.every(v => Number.isFinite(v) && v > 0)).toBe(true)
   })
 
   it('🔴 §2 — the cap reduces every LOADING week, and the DELOAD comparison is non-monotone BY RULING', () => {

@@ -137,25 +137,93 @@ describe('ADR-027 B4a — composeBlocks: the phase table', () => {
     }
   })
 
-  it('🔴 below five weeks the phase table OVERRUNS `total_weeks` — unreachable, and only §44 makes it so', () => {
-    // §4's floors sum to 5 weeks of base+build+peak, so on a runway of 1–4 the take-back has nothing
-    // left to give and `peakEnd` runs past the last week of the plan. ⚠️ **Nothing in the block
-    // planner prevents this** — the only reason no runner sees it is the §44 prep-time gate upstream,
-    // which refuses every distance below its minimum (5K needs 4 weeks of prep, so 5 total). That is
-    // a guard in a different layer, so it is asserted here rather than assumed: if §44 is ever
-    // relaxed, this arm is the thing that says what breaks.
-    let overran = 0
+  it('🔴 §49 Am. 1 — every runway §44 can permit now DELIVERS the authored taper', () => {
+    // 🔴 THIS ARM USED TO PIN THE OPPOSITE, AND THE RULING IS WHY IT CHANGED. It asserted that the
+    // phase table overruns `total_weeks` on every runway of 1–4 weeks, because §4's peak floor was
+    // applied before the taper was reserved. §49 Amendment 1 (Coaching Board 2026-11-28) reversed
+    // the order: the peak yields, so the overrun now occurs only at 1–2 weeks and no plan from 4
+    // weeks up lacks a taper phase. Re-measured rather than re-derived.
+    const noTaper: number[] = []
+    const overran: number[] = []
     for (const distance_km of [5, 10, 21.1, 42.2]) {
-      for (let total_weeks = 1; total_weeks <= 4; total_weeks++) {
+      for (let total_weeks = 1; total_weeks <= 16; total_weeks++) {
         const { phases } = composeBlocks({
           total_weeks, distance_km, early_onset: false, foundation_weeks: 0, onset_relax: 0, days_available: 5,
         })
         const last = phases[phases.length - 1]
-        expect(last.end_week, `${distance_km}km / ${total_weeks}w`).toBeGreaterThan(total_weeks)
-        overran++
+        if (last.end_week > total_weeks) overran.push(total_weeks)
+        if (!phases.some(p => p.name === 'taper')) noTaper.push(total_weeks)
       }
     }
-    expect(overran).toBe(16)
+    // ⚠️ Both residuals are below §44's floor for EVERY distance (5K blocks under 4 weeks of prep,
+    // so 5 total weeks is the shortest producible plan; 10K 7, HM 9, marathon 11). They are
+    // asserted rather than assumed because §44 is a guard in a different layer: if it is ever
+    // relaxed, this arm is what says what breaks.
+    expect(Array.from(new Set(overran)).sort((a, b) => a - b), 'the overrun moved').toEqual([1, 2])
+    expect(Array.from(new Set(noTaper)).sort((a, b) => a - b), 'a taper-less runway moved').toEqual([1, 2, 3])
+  })
+
+  it('🔴 §49 Am. 1 — no producible plan gets a peak of ONE week, below the floor this ruling added', () => {
+    // 🔴 FOUND BY CODE REVIEW, AND IT WAS MY OWN RULING VIOLATING ITS OWN CONSTANT. The first cut
+    // tested `remaining >= baseFloor + 1 + peakFloor` — the UNGATED base floor — so for a §89-gated
+    // runner whose base had legitimately been shortened it dropped the peak floor that the same
+    // commit introduces. 📐 Measured: 4 of 10,962 producible plans got a ONE-week peak; 0 now.
+    // ⚠️ The cohort was outside my own test population (both arms above pass `early_onset: false`),
+    // and `INV-PLAN-PEAK-LR-ALTERNATION` / `INV-PLAN-PEAK-STEPBACK-VOLUME` need ≥2 peak weeks, so
+    // they would have gone SILENT rather than caught it.
+    const peakFloor = GENERATION_CONFIG.MIN_PEAK_WEEKS_FLOOR
+    let checked = 0, noPeak = 0
+    for (const distance_km of [5, 10, 21.1, 42.2, 50, 100]) {
+      const key = raceDistanceKey(distance_km)
+      for (let total_weeks = GENERATION_CONFIG.PREP_TIME_THRESHOLDS[key].block + 1; total_weeks <= 30; total_weeks++)
+      for (const early_onset of [false, true])
+      for (const foundation_weeks of [0, 1, 2, 3])
+      for (const onset_relax of [0, 1, 2])
+      for (const days_available of [2, 3, 4, 5, 6, 7]) {
+        const { phases } = composeBlocks({
+          total_weeks, distance_km, early_onset, foundation_weeks, onset_relax, days_available,
+        })
+        const peak = phases.find(p => p.name === 'peak')
+        const len = peak ? peak.end_week - peak.start_week + 1 : 0
+        // Either the peak is absent entirely (the intended terminal case, PHASE-EMPTY-01) or it
+        // meets its floor. A peak of 1 is neither.
+        expect(len === 0 || len >= peakFloor,
+          `${key}/${total_weeks}w eo=${early_onset} fw=${foundation_weeks} → peak of ${len}`).toBe(true)
+        if (len === 0) noPeak++
+        checked++
+      }
+    }
+    expect(checked, 'nothing was checked').toBeGreaterThan(10000)
+    expect(noPeak, 'no plan dropped the peak — the terminal case is unreached and the arm is weaker than it reads').toBeGreaterThan(0)
+  })
+
+  it('🔴 §49 Am. 1 — the taper FLOOR holds for every producible runway', () => {
+    // The ruling's own property: §49's table is a band, so a plan delivers at least its stated
+    // number of actual taper weeks BEFORE the race. Counted before the race, not including it —
+    // the 6-week 5K passed the old cap check precisely because its taper phase WAS race week alone.
+    // ⚠️ SCOPED TO PRODUCIBLE RUNWAYS, from §44's OWN thresholds rather than a hand-typed list.
+    // Below them the floor is arithmetically unreachable — an HM at 5 weeks would need
+    // base 2 + build 1 + taper 3 = 6 — and the ruling forbids the base yielding (§91) while build
+    // is already at its own floor. §44 refuses every one of those, which is the same relationship
+    // the overrun arm above records: a real floor whose only violations are refused upstream.
+    let checked = 0
+    for (const distance_km of [5, 10, 21.1, 42.2, 50, 100]) {
+      const key = raceDistanceKey(distance_km)
+      const authored = GENERATION_CONFIG.TAPER_QUALITY_PER_WEEK[key].length - 1
+      const shortest = GENERATION_CONFIG.PREP_TIME_THRESHOLDS[key].block + 1
+      for (let total_weeks = shortest; total_weeks <= 30; total_weeks++) {
+        const { phases } = composeBlocks({
+          total_weeks, distance_km, early_onset: false, foundation_weeks: 0, onset_relax: 0, days_available: 5,
+        })
+        const taper = phases.find(p => p.name === 'taper')!
+        const beforeRace = taper.end_week === total_weeks
+          ? taper.end_week - taper.start_week   // race week excluded
+          : taper.end_week - taper.start_week + 1
+        expect(beforeRace, `${distance_km}km / ${total_weeks}w`).toBeGreaterThanOrEqual(authored)
+        checked++
+      }
+    }
+    expect(checked, 'nothing was checked').toBeGreaterThan(100)
   })
 
   it('§91 / §98 — the base floor binds for every ungated runner, and the yield never exceeds the ungated base', () => {

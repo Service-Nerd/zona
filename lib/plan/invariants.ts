@@ -186,6 +186,7 @@ export const INVARIANT_CODES = [
   'INV-PLAN-PEAK-LR-ALTERNATION',
   'INV-PLAN-PEAK-STEPBACK-VOLUME',
   'INV-PLAN-TAPER-DURATION-CAP',
+  'INV-PLAN-TAPER-WEEKS-FLOOR',
   'INV-PLAN-RETURNING-RUNNER-NOTE-PRESENT',
   'INV-PLAN-LR-SHORTFALL-CAUSE',
   'INV-PLAN-REENTRY-OMISSION-DECLARED',
@@ -7580,6 +7581,43 @@ export function validatePlan(plan: Plan, rawInput: GeneratorInput): Violation[] 
         actual: taperWeeks,
         expected: `≤ ${cap}`,
       })
+    }
+
+    // INV-PLAN-TAPER-WEEKS-FLOOR — §49 Amendment 1 (BLOCK-TAPER-SQUEEZE-01, Coaching Board 2026-11-28).
+    //
+    // §49's table is a BAND, not a ceiling. The cap above has been enforced since the section was
+    // written; nothing enforced the floor, and §4's peak floor — a bare `Math.max(2, …)` with no
+    // principle behind it — took priority over it on a short runway.
+    //
+    // 📐 MEASURED: a 5-week 5K delivered 0 actual taper weeks and a 6-week 5K 0, against the
+    // table's 1, and at six weeks the week BEFORE THE RACE was the plan's highest volume week
+    // (26 km against a peak of 24). One live plan, generated 2026-11-27: [17, 13, 19, 21, 5].
+    //
+    // ⚠️ COUNTED BEFORE THE RACE, which is the figure §49's second column states. The cap above
+    // counts taper-phase weeks INCLUDING race week, and reusing that count here would have made a
+    // plan whose taper phase is race week alone look compliant — which is exactly the 6-week case.
+    // Two numbers, one section: the band's two ends are measured differently on purpose.
+    //
+    // ⚠️ SCOPED TO A PLAN THAT HAS A RACE. A maintenance or base-build block has no taper by design
+    // (measured: 5 of the 7 live plans with no taper week are `base_build`), so a floor would fire on
+    // every one of them. `taper` never appears in their phases, and `MAX_TAPER_PHASE_WEEKS` is the
+    // race ladder, so the guard is "this plan builds to a race".
+    const buildsToARace = plan.weeks.some(w => w.phase === 'taper' || w.type === 'race')
+    if (buildsToARace) {
+      const lastWeekN = Math.max(...plan.weeks.filter(w => w.n > 0).map(w => w.n), 0)
+      const authored = GENERATION_CONFIG.TAPER_QUALITY_PER_WEEK[distCfgKey].length - 1
+      const beforeRace = plan.weeks.filter(w => w.phase === 'taper' && w.n > 0 && w.n < lastWeekN).length
+      if (beforeRace < authored) {
+        violations.push({
+          code: 'INV-PLAN-TAPER-WEEKS-FLOOR',
+          principle_ref: 'CoachingPrinciples §49 Amendment 1',
+          severity: 'error',
+          week: 0,
+          message: `Only ${beforeRace} actual taper week(s) before the race; §49's table gives ${authored} for ${distCfgKey}. The peak phase yields to the taper, never the reverse — a runner must not go from their largest week straight into race week.`,
+          actual: `${beforeRace} taper week(s) before the race`,
+          expected: `≥ ${authored}`,
+        })
+      }
     }
   }
 

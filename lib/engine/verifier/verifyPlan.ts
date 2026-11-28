@@ -411,6 +411,29 @@ const BATCH_3: Partial<Record<RuleId, Predicate>> = {
     return n > cap ? [{ rule_id: 'INV-PLAN-TAPER-DURATION-CAP', week: PLAN, day: null, detail: `${n} taper weeks over a cap of ${cap}` }] : []
   },
 
+  // §49 Amendment 1: the cap's OTHER END. The table is a band, so the plan must also deliver its
+  // stated number of actual taper weeks BEFORE the race.
+  // ⚠️ COUNTED DIFFERENTLY FROM THE RULE ABOVE, deliberately: the cap counts taper-phase weeks
+  // INCLUDING race week, and reusing that count would pass a plan whose taper phase IS race week
+  // alone — which is exactly the 6-week 5K the amendment was ruled for.
+  // ⚠️ Derived from L2's catalogue, not from the plan's own phase labels, for the usual reason: a
+  // plan that mislabels its phases must not be able to talk its way out of the rule.
+  'INV-PLAN-TAPER-WEEKS-FLOOR': (plan, { input }) => {
+    // Scoped to a plan that builds to a race: a maintenance or base-build block has no taper by
+    // design, and a floor would fire on every one of them.
+    const buildsToARace = plan.weeks.some(w => w.phase === 'taper' || w.type === 'race')
+    if (!buildsToARace) return []
+    const key = raceDistanceKey(input.race_distance_km) as keyof typeof GENERATION_CONFIG.TAPER_QUALITY_PER_WEEK
+    const authored = GENERATION_CONFIG.TAPER_QUALITY_PER_WEEK[key].length - 1
+    const live = plan.weeks.filter(w => w.n > 0)
+    const lastWeekN = live.length ? Math.max(...live.map(w => w.n)) : 0
+    const beforeRace = live.filter(w => w.phase === 'taper' && w.n < lastWeekN).length
+    return beforeRace < authored
+      ? [{ rule_id: 'INV-PLAN-TAPER-WEEKS-FLOOR', week: PLAN, day: null,
+           detail: `${beforeRace} taper weeks before the race, floor is ${authored}` }]
+      : []
+  },
+
   // §39 Am. 1: in the protected days before a race, nothing longer than the shakeout cap.
   //
   // 🔴 ADR027-B3-STRICT-01 / sitting B1, SECOND HALF — A DISTANCE-ONLY SESSION WAS PRICED AT ZERO

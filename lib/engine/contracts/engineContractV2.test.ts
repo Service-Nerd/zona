@@ -107,31 +107,39 @@ describe('ENGINE-CONTRACT-V2-COVERAGE-01 — the numbers it publishes are the li
   const inv = RULES.filter(r => r.id.startsWith('INV-'))
   const strength = RULES.filter(r => r.id.startsWith('S-'))
 
-  it('🔴 221 = 171 INV + 50 S, and PORTED_RULES is 162 of the INV family', () => {
-    expect(RULES.length).toBe(221)
-    expect(inv.length).toBe(171)
+  it('🔴 222 = 172 INV + 50 S, and PORTED_RULES is 163 of the INV family', () => {
+    // ⚠️ 221 → 222 on 2026-11-28: `INV-PLAN-TAPER-WEEKS-FLOOR` is a NEW rule, not a port — §49
+    // Amendment 1 (BLOCK-TAPER-SQUEEZE-01, Coaching Board 2026-11-28) gave the taper cap a floor,
+    // and the invariant is that ruling's third artifact. It shipped ported, so the held list is
+    // unchanged at 9 and the cut-over's denominator moves 221 → 222.
+    expect(RULES.length).toBe(222)
+    expect(inv.length).toBe(172)
     expect(strength.length).toBe(50)
     // ⚠️ 157 → 159 on 2026-11-27: `DELIVERED-RAMP` and `TAPER-DELIVERED-DEPTH` left the held list
     // once their stated reason was re-derived (both "planner" helpers are `invariants.ts`'s own).
     // This number is PINNED on purpose — every port must come past this arm and the contract
     // together, so the published figure cannot drift from the code.
-    expect(PORTED_RULES.length).toBe(162)
+    expect(PORTED_RULES.length).toBe(163)
     expect(PORTED_RULES.filter(r => r.startsWith('S-')), 'no strength rule is in PORTED_RULES').toEqual([])
     // The held count the cut-over sign-off names, derived rather than typed.
     expect(inv.length - PORTED_RULES.length).toBe(9)
     // ⚠️ IN CONTEXT, not as bare digits. Code review mutation-verified that 2 of 5 were vacuous: `'50'`
     // matched the pre-existing `engine fault | 500` row and `'14'` matched `ARCH-ENG-013/014/019` and a
     // `**144**` cell — so **the 14-held figure the cut-over sign-off names was bound to nothing.**
-    expect(V2, 'the catalogue total').toMatch(/\*\*221 entries\*\*/)
-    expect(V2, 'the INV/S decomposition').toMatch(/221 = 171 `INV-` \+ 50 `S-`/)
-    expect(V2, 'the ported count with its family').toMatch(/`PORTED_RULES` is 162, all `INV-`/)
+    // ⚠️ DERIVED FROM THE CODE, NOT TYPED, so the next rule moves both together or the arm fires.
+    expect(V2, 'the catalogue total').toMatch(new RegExp(`\\*\\*${RULES.length} entries\\*\\*`))
+    expect(V2, 'the INV/S decomposition').toMatch(
+      new RegExp(`${RULES.length} = ${inv.length} \`INV-\` \\+ ${strength.length} \`S-\``))
+    expect(V2, 'the ported count with its family').toMatch(
+      new RegExp(`\`PORTED_RULES\` is ${PORTED_RULES.length}, all \`INV-\``))
     expect(V2, 'the 9 held rules, as a derivation not a bare number').toMatch(/9 are HELD/)
-    expect(V2, 'and where the 9 comes from').toMatch(/171 . 162/)
+    expect(V2, 'and where the 9 comes from').toMatch(
+      new RegExp(`${inv.length} . ${PORTED_RULES.length}`))
   })
 
   it('🔴 the contract names the family with the number, so 207/221 cannot be misread', () => {
     // The whole point of the finding: `PORTED_RULES` against the 221 denominator gives 59 held, not 9.
-    expect(V2).toMatch(/162 of 171/)
+    expect(V2).toMatch(new RegExp(`${PORTED_RULES.length} of ${inv.length}`))
     expect(V2, 'the sum-over-two-modules reading must be stated').toMatch(/sum over both modules|SUM OVER BOTH MODULES/i)
   })
 

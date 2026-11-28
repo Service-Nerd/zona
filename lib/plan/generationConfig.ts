@@ -564,6 +564,16 @@ export const GENERATION_CONFIG = {
   // hardcoded `Math.max(2, …)` in computePhases; named here because the invariant
   // and the phase builder must agree on it (Configuration Singularity).
   MIN_BASE_WEEKS_FLOOR: 2,
+  // §49 Amendment 1 (BLOCK-TAPER-SQUEEZE-01, Coaching Board 2026-11-28) — the peak phase's week
+  // floor, and the ONLY phase floor that yields. It was a bare `Math.max(2, …)` in the phase
+  // builder with no principle behind it, and because it was applied before the taper was reserved it
+  // took priority over §49's authored taper on a short runway: a 5- or 6-week 5K delivered ZERO
+  // actual taper weeks against §49's table of one, and at 6 weeks the week before the race was the
+  // plan's HIGHEST volume week. Named here so the yield is expressible at all.
+  // ⚠️ The yield order is peak → build → never base (§91 is physiological). Build's and base's rungs
+  // are unreachable in the producible set — measured, the peak alone absorbs it at every runway §44
+  // permits — so they stay expressed by the existing floors rather than inventing two more keys.
+  MIN_PEAK_WEEKS_FLOOR: 2,
   // §97 (CB-ONSET-03) — the on-ramp floor for the §89-GATED cohort only.
   // Everyone else keeps MIN_BASE_WEEKS_FLOOR (2). Seiler accepts one week for a
   // runner whose gate requires `recent_quality_training: 'regular'`; he refuses

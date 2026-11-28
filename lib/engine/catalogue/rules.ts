@@ -140,6 +140,8 @@ export const RULES: readonly Rule[] = [
   { id: 'INV-PLAN-PEAK-LR-ALTERNATION', principle_ref: '§47', scope: 'week', kind: 'hard', config_key: null, explain: null },
   { id: 'INV-PLAN-PEAK-STEPBACK-VOLUME', principle_ref: '§47', related_refs: ['§47 Am. 3', '§52', '§34'], scope: 'week', kind: 'hard', config_key: null, explain: null, severity_note: 'error / warn when §52-limited' },
   { id: 'INV-PLAN-TAPER-DURATION-CAP', principle_ref: '§49', scope: 'week', kind: 'hard', config_key: null, explain: null },
+  // §49 Amendment 1 (BLOCK-TAPER-SQUEEZE-01, Coaching Board 2026-11-28) — the cap's other end.
+  { id: 'INV-PLAN-TAPER-WEEKS-FLOOR', principle_ref: '§49 Am. 1', related_refs: ['§6', '§4'], scope: 'week', kind: 'hard', config_key: null, explain: null },
   { id: 'INV-PLAN-RETURNING-RUNNER-NOTE-PRESENT', principle_ref: '§51', scope: 'note', kind: 'hard', config_key: null, explain: null },
   { id: 'INV-PLAN-LR-SHORTFALL-CAUSE', principle_ref: '§80 Am. 1', related_refs: ['§40c'], scope: 'week', kind: 'hard', config_key: null, explain: null },
   { id: 'INV-PLAN-REENTRY-OMISSION-DECLARED', principle_ref: '§79', scope: 'week', kind: 'hard', config_key: null, explain: null },

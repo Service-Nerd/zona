@@ -162,19 +162,54 @@ export function composeBlocks(req: BlockRequest): BlockPlan {
   }
 
   let buildWeeks = Math.max(1, Math.round(remaining * dist.build_pct / denom))
-  let peakWeeks = Math.max(2, remaining - baseWeeks - buildWeeks)
+
+  // §49 AMENDMENT 1 (BLOCK-TAPER-SQUEEZE-01, Coaching Board 2026-11-28) — THE TAPER IS RESERVED
+  // BEFORE THE PEAK FLOOR, AND THE PEAK IS THE PHASE THAT YIELDS.
+  //
+  // §49's table is a CEILING with no floor ("MUST NOT allocate MORE weeks to the taper phase than
+  // the cap"), and §4's peak floor was a bare `Math.max(2, …)` with no principle behind it. Applied
+  // first, it took priority over §6's authored shape: `base 2 + build 1 + peak 2 + taper 2` needs
+  // SEVEN weeks at 5K, so below that the taper absorbed the shortfall.
+  // 📐 Measured: a 5-week 5K delivered **0** actual taper weeks and a 6-week 5K **0** (its taper
+  // phase was race week alone), against §49's table of 1 — and at 6 weeks the week BEFORE THE RACE
+  // was the plan's highest volume week, 26 km against a peak of 24. One live plan, generated
+  // 2026-11-27: `[17, 13, 19, 21, 5]`.
+  //
+  // ⚠️ THE YIELD IS SCOPED, which is the board's first amendment. It fires only when the floors
+  // cannot ALL be met — not whenever the peak sits above its floor. 📐 That confines the change to
+  // **5K at 5 and 6 weeks**: every 7-week-plus 5K and every producible 10K (min 7w), HM (min 9w) and
+  // marathon (min 11w) comes out byte-identical, because `remaining` already clears the floors.
+  // ⚠️ Willy's condition is binding and lives in `INV-PLAN-TAPER-WEEKS-FLOOR`: the delivered taper
+  // week must carry its §6 quality session, or the plan is refused rather than shipped short.
+  // 🔻 AND THE PEAK PHASE THEN HAS NO WEEKS, which is the intended terminal case (PHASE-EMPTY-01
+  // drops it). Declared limit: `INV-PLAN-PEAK-IN-PEAK-PHASE` is guarded on `peakPhase.length > 0`,
+  // so it goes SILENT on these plans. A known hole, surfaced at the sitting, not a new one.
+  const peakFloor = GENERATION_CONFIG.MIN_PEAK_WEEKS_FLOOR
+  // 🔴 `baseWeeks`, NOT `baseFloor`. The first cut tested the UNGATED floor (2), so for a
+  // §89-gated runner whose base had legitimately been shortened it dropped the peak floor that this
+  // same commit introduces — measured by code review: 4 of 10,962 producible plans got a ONE-week
+  // peak, below `MIN_PEAK_WEEKS_FLOOR`, with the taper already correct in both readings. Both of the
+  // new test arms pass `early_onset: false`, so that cohort was outside the test population, and
+  // `INV-PLAN-PEAK-LR-ALTERNATION` / `INV-PLAN-PEAK-STEPBACK-VOLUME` need ≥2 peak weeks, so they
+  // would have gone silent rather than caught it. The question is whether the floors fit the weeks
+  // THIS runner's phases actually need.
+  const floorsFit = remaining >= baseWeeks + 1 + peakFloor
+  let peakWeeks = Math.max(floorsFit ? peakFloor : 0, remaining - baseWeeks - buildWeeks)
 
   // §4 — a phase has one purpose and one block, so build has a floor of 1 week and peak of 2. When
   // those floors push the total past `remaining`, take it back from build first (most flexible),
   // then base.
   //
-  // 🔴 THE LINE THIS REPLACES SAID "preserves taper duration as authored" AND THAT IS NOT WHAT THE
-  // CODE DOES. The take-back never touches the taper, which is what the sentence was reaching for,
-  // but `taperEnd` is pinned to `totalWeeks` while `peakEnd` grows — so any overage build and base
-  // cannot absorb comes out of the TAPER. It is the residual, not a protected block. 📐 Bounded by
-  // the §44 prep gate to exactly two producible cases, both 5K: a 5-week plan gets no taper phase
-  // and a 6-week plan gets 1 against an authored 2 (`BLOCK-TAPER-SQUEEZE-01`, 🏃 Coaching Board).
-  // Asserted in `composeBlocks.test.ts`'s §49 arm, which went red on the old claim.
+  // 🔴 THE LINE THIS REPLACES SAID "preserves taper duration as authored" AND THAT WAS NOT WHAT
+  // THE CODE DID. The take-back never touches the taper, which is what the sentence was reaching
+  // for, but `taperEnd` is pinned to `totalWeeks` while `peakEnd` grows — so any overage build and
+  // base could not absorb came out of the TAPER. ✅ **§49 Amendment 1 closed that above**, by
+  // reserving the taper before the peak floor; the squeeze is no longer reachable on any runway §44
+  // permits. The note stays because the ORDERING is the fix: reverse it and the squeeze returns.
+  // ⚠️ And the two counts are different numbers, which is what made the old defect hard to see:
+  // `INV-PLAN-TAPER-DURATION-CAP` counts taper-phase weeks INCLUDING race week, while §49's floor
+  // counts actual taper weeks BEFORE it. A 6-week 5K passed the cap with a taper phase of one week,
+  // because that one week was race week.
   let overage = (baseWeeks + buildWeeks + peakWeeks) - remaining
   if (overage > 0 && buildWeeks > 1) {
     const take = Math.min(overage, buildWeeks - 1)

@@ -4881,6 +4881,53 @@ Enforced by `INV-PLAN-TAPER-DURATION-CAP`.
 
 ---
 
+### Amendment 1 — the cap is a BAND, and the peak is the phase that yields (BLOCK-TAPER-SQUEEZE-01, Coaching Board 2026-11-28)
+
+**Principle.** The table above is a **floor as well as a ceiling**. A race plan MUST deliver the
+stated number of *actual taper weeks before the race*. Where the runway cannot accommodate every
+phase at its floor, the **peak phase yields** — to one week, then to none — before the taper is
+shortened. **The base never yields** (§91 is a physiological on-ramp, not an administrative one).
+
+**Why this needed stating.** §49 was written as a ceiling and only as a ceiling — *"The engine MUST
+NOT allocate MORE weeks to the taper phase than the cap"* — while §4's peak floor was a bare
+`Math.max(2, …)` in the phase builder with **no principle behind it at all**. Applied first, the
+unprincipled floor took priority over this section's authored shape: `base 2 + build 1 + peak 2 +
+taper 2` needs **seven weeks** at 5K, so on any shorter runway the taper silently absorbed the
+shortfall.
+
+📐 **Measured 2026-11-28.** A 5-week 5K delivered **0** actual taper weeks and a 6-week 5K **0** (its
+taper phase was race week alone), against this section's table of **1**. At six weeks **the week
+before the race was the plan's highest volume week** — 26 km against a peak of 24. One live plan,
+generated 2026-11-27: `[17, 13, 19, 21, 5]`, twenty-one kilometres straight into race week.
+
+**The yield is scoped** (board amendment 1). It fires only where the floors cannot *all* be met, not
+whenever the peak sits above its floor. 📐 That confines the change to **5K at 5 and 6 weeks**: every
+7-week-plus 5K and every producible 10K (minimum 7 weeks), HM (9) and marathon (11) comes out
+byte-identical, because `remaining` already clears the floors. Delivered instead: 5 weeks →
+`base 1-2, build 3, taper 4-5` with week 4 cut 22 → 17 km; 6 weeks → `base 1-2, build 3-4,
+taper 5-6` with week 5 cut 26 → 18 km.
+
+🔻 **The peak phase then has no weeks, and that is the intended terminal case** (PHASE-EMPTY-01 drops
+an empty phase). ⚠️ **Declared limit:** `INV-PLAN-PEAK-IN-PEAK-PHASE` is guarded on the peak phase
+existing, so it goes **silent** on these plans. A known hole, surfaced at the sitting.
+
+> 🔴 **WILLY'S CONDITION IS NOT ENFORCED AS A REFUSAL, AND THE REASON IS A MEASUREMENT.** He made it
+> binding that a delivered taper week must carry its §6 quality session (`[1, 0]` at 5K) rather than
+> become a detraining week. 📐 **Measured across 63 plans with a taper week: only 42 (66.7%) carry
+> it, and 4 of the 6 at 5–6 weeks.** The gap is **pre-existing and independent of this amendment** —
+> it is unchanged by the yield above. Refusing on it would refuse **a third of every taper-carrying
+> plan**, which is a far larger prescription change than this board ruled on. Filed as
+> `TAPER-QUALITY-NOT-DELIVERED-01` for its own sitting. **The condition stands; its enforcement is
+> deferred with a number against it, not dropped.**
+
+**Config.**
+- `GENERATION_CONFIG.MIN_PEAK_WEEKS_FLOOR` — the peak phase's week floor, and the only phase floor
+  that yields. Extracted from the hardcoded `Math.max(2, …)` so the yield is expressible at all.
+
+Enforced by `INV-PLAN-TAPER-WEEKS-FLOOR`.
+
+---
+
 ## 50. HR data fallbacks (assumption surfacing)
 
 **Principle.** The engine MUST generate plans even when HR inputs are incomplete. Missing HR data does not block generation — it triggers a fallback with a surfaced assumption.

@@ -510,7 +510,7 @@ constraint is why two vocabularies moved rather than being imported from where t
 
 | Piece | Where | Pure? |
 |---|---|---|
-| `RULES` — the rule catalogue, **221 entries** | `lib/engine/catalogue/rules.ts` | data |
+| `RULES` — the rule catalogue, **222 entries** | `lib/engine/catalogue/rules.ts` | data |
 | `RuleSchema` / `Rule` / `RuleId` — the row shape, `z.strictObject` | `lib/engine/contracts/rule.ts` | type |
 | `rulesSkippedBy(policy)` — the rules a caller's strictness exempts | `lib/engine/catalogue/rules.ts` | yes |
 | `RUN_EVENTS` + `TRIGGER_EVALUATION_EVENTS` — the three run events | `lib/engine/contracts/events.ts` | data |
@@ -527,7 +527,7 @@ constraint is why two vocabularies moved rather than being imported from where t
   `explain` and `severity_note` are both refused by the schema if they contain a value: numbers reach copy
   through an L4 `{placeholder}` filled from a Decision.
 - **`explain` is `null` on every row today, deliberately.** Explanations are B5's job on the founder's copy
-  delegation; 221 placeholder sentences written at B3 would be invented copy.
+  delegation; 222 placeholder sentences written at B3 would be invented copy.
 - **`kind` sets severity, `severity_note` keeps a condition the registry states conditionally.** `soft` →
   `warn`, everything else → `error`; a rule whose registry row says *"error, OR warn on maintenance plans"*
   carries the stricter reading in `kind` and the condition in `severity_note` until its predicate is ported.
@@ -536,11 +536,14 @@ constraint is why two vocabularies moved rather than being imported from where t
   dispatch under three callers. Two lists with a human between them is the shape this repo keeps paying for:
   the verifier's first live shadow run read **6 of its 8 flagged plans off exactly that gap**.
 
-📐 **221 = 171 `INV-` + 50 `S-`, AND THE DECOMPOSITION MATTERS BECAUSE TWO MODULES VERIFY THEM.**
-Measured 2026-11-27. **`PORTED_RULES` is 162, all `INV-`** — the 50 strength rules are named in
+📐 **222 = 172 `INV-` + 50 `S-`, AND THE DECOMPOSITION MATTERS BECAUSE TWO MODULES VERIFY THEM.**
+⚠️ **221 → 222 on 2026-11-28:** `INV-PLAN-TAPER-WEEKS-FLOOR` is a NEW rule, not a port — §49
+Amendment 1's third artifact (`BLOCK-TAPER-SQUEEZE-01`). It shipped ported, so the held list is
+unchanged at 9 and only the denominator moved.
+Measured 2026-11-28. **`PORTED_RULES` is 163, all `INV-`** — the 50 strength rules are named in
 `verifyStrength.ts`, a separate entry point that does not feed `PORTED_RULES`. ⚠️ **So ADR-027's
-*"212 of 221 ported"* is a SUM OVER BOTH MODULES** (162 + 50), and the 9 held rules are
-`171 − 162`, not `221 − 212` applied to `PORTED_RULES`. Reasoning from `PORTED_RULES` against the 221
+*"213 of 222 ported"* is a SUM OVER BOTH MODULES** (163 + 50), and the 9 held rules are
+`172 − 163`, not `222 − 213` applied to `PORTED_RULES`. Reasoning from `PORTED_RULES` against the 222
 denominator gives **59 held**, which is wrong, and `heldRules.test.ts` derives the real list as
 `RULES` INV ids minus `PORTED_RULES`. **Cite the family with the number.**
 ⏱️ **157 → 159 → 162 on 2026-11-27.** Batch 39: `DELIVERED-RAMP` and `TAPER-DELIVERED-DEPTH` left
@@ -870,7 +873,7 @@ place of `validatePlan`.
 
 **Coverage, and what the cut-over gate actually is.**
 
-📐 **162 of 171 `INV-` rules have a predicate; 9 are HELD** and the old checker keeps judging them, so **the
+📐 **163 of 172 `INV-` rules have a predicate; 9 are HELD** and the old checker keeps judging them, so **the
 cut-over gate is the verifier PLUS those 9** until B4 gives each an independent derivation. The 9 are named
 in ADR-027 § Build status and that paragraph is held to the derived list by `heldRules.test.ts` — it is the
 one document a founder decision is read from, and it was hand-written beside a derivable set.

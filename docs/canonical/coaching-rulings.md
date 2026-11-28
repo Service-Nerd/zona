@@ -4174,3 +4174,48 @@ acts (precedent §129); `triggerCatalogue.test.ts`. **Nothing built (ADR-027 fre
 **Hand-off:** 🧭 Design Board rules before build on (c)'s question and on (a)'s re-shown level.
 
 **Sitting:** `docs/decisions/coaching-2026-11-21-input-layer-defects.md`.
+
+---
+
+### `BLOCK-TAPER-SQUEEZE-01`, 2026-11-28 · a 5- or 6-week 5K delivered ZERO actual taper weeks · **CORRECT WITH AMENDMENT (§49 Am. 1): the cap is a BAND, and the peak is the phase that yields**
+
+**What was wrong.** §49 was written as a ceiling and only as a ceiling — *"The engine MUST NOT
+allocate MORE weeks to the taper phase than the cap"* — while §4's peak floor was a bare
+`Math.max(2, …)` in the phase builder with **no principle behind it**. Applied first, the
+unprincipled floor took priority over §6's authored shape: `base 2 + build 1 + peak 2 + taper 2`
+needs **seven weeks** at 5K, so below that the taper absorbed the shortfall.
+
+📐 **Measured.** 5-week 5K → **0** actual taper weeks; 6-week 5K → **0** (its taper phase was race
+week alone), against §49's table of **1**. At six weeks **the week before the race was the plan's
+highest volume week**, 26 km against a peak of 24. **One live plan of 44**, generated 2026-11-27:
+`[17, 13, 19, 21, 5]`.
+
+**Ruling: CORRECT WITH AMENDMENT.** Two amendments from the sitting:
+1. **The yield is scoped** — it fires only where the floors cannot *all* be met, not whenever the
+   peak sits above its floor. 📐 **272 of 17,856 producible phase tables change (1.52%): 144 at
+   5K/5w and 128 at 5K/6w. Nothing else.**
+2. **Willy's condition** — the delivered taper week must carry its §6 quality session rather than
+   become a detraining week.
+
+⚡ **Recorded disagreement.** Hutchinson and Sims would rather **raise §44's 5K block threshold from
+4 to 6 weeks** and refuse the plan; McMillan and Willy would not, on the ground that the runner has a
+race either way. **Founder decided 2026-11-28: leave §44 at 4 weeks.** Not re-raisable without new
+evidence.
+
+🔴 **WILLY'S CONDITION IS DEFERRED WITH A NUMBER, NOT DROPPED.** 📐 Measured across 63 plans with a
+taper week, **only 42 (66.7%) carry the authored quality session** — and **4 of the 6** at 5–6 weeks.
+The gap is **pre-existing and unchanged by this amendment**. Enforcing it as a refusal would refuse
+**a third of every taper-carrying plan**, a far larger prescription change than this board ruled on.
+Filed `TAPER-QUALITY-NOT-DELIVERED-01` for its own sitting.
+
+🔻 **Declared limit.** With no peak phase, `INV-PLAN-PEAK-IN-PEAK-PHASE` is guarded on the peak phase
+existing and goes **silent** on these plans. A known hole, surfaced at the sitting, not created by it.
+
+⚠️ **AND THREE STANDING HARNESSES CAME BACK UNCHANGED, NONE OF WHICH CAN REACH THIS.**
+`verify:parity` IDENTICAL over 6,210 (its shortest runway is ~12 weeks), `cohort:shape` unmoved (its
+5K is fixed at 12 weeks), `measure:fitness` unmoved (every cohort it measures is marathon or injury).
+**A green harness that cannot see the change is not evidence**; the 272-cell comparison and the
+generated plans are.
+
+**Artifacts:** §49 Amendment 1 · `GENERATION_CONFIG.MIN_PEAK_WEEKS_FLOOR` ·
+`INV-PLAN-TAPER-WEEKS-FLOOR` (catalogue 221 → 222; ported, so the held list stays 9).

@@ -6,6 +6,59 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-11-28 — BLOCK-TAPER-SQUEEZE-01: the board ruled, and then the ruling broke its own rule
+
+The taper finding from this morning went to the Coaching Board. The founder approved the fix and kept
+§44's 5K minimum where it was. Three artifacts, one commit.
+
+**What was actually wrong is worth stating precisely, because it isn't "a bug".** §49 was written as a
+ceiling and only as a ceiling — "the engine MUST NOT allocate MORE weeks to the taper phase than the
+cap". Meanwhile §4's peak floor was a bare `Math.max(2, …)` with no principle behind it at all.
+Applied first, the unprincipled floor took priority over the ratified shape. Base 2 + build 1 + peak 2
++ taper 2 needs seven weeks at 5K, so on a five- or six-week runway the taper is what gave way. A real
+runner, one of forty-four, had a plan generated yesterday that went 21 km — its biggest week — straight
+into race week.
+
+**The fix is an ordering, not a number.** Reserve the taper first; the peak yields, to one week and
+then to none; the base never yields because Seiler's on-ramp is physiological. Scoped so it only fires
+when the floors genuinely cannot all be met: 272 of 17,856 producible phase tables change, all of them
+5K at five or six weeks.
+
+**Three standing harnesses came back unchanged, and not one of them can see this.** Parity: identical
+over 6,210 cases, shortest runway twelve weeks. Cohort shape: unmoved, and its 5K is *fixed* at twelve
+weeks. Fitness: unmoved, every cohort it measures is a marathon or an injury history. That's the third
+time today I've written down the same lesson — a green harness that cannot reach the change is not
+evidence, and the only reason I knew the blast radius was a grid I built for the question.
+
+**Then code review found two behavioural defects in my own ruling.** The first is the one worth
+remembering: my yield gate tested the *ungated* base floor rather than the base this runner actually
+gets, so for an early-onset runner it dropped the peak floor **that the same commit introduces**. Four
+plans ended up with a one-week peak — below the constant I had just added, in the change that added it.
+Both my new test arms passed `early_onset: false`, so the cohort was outside my own population, and
+the two invariants that might have caught it need two peak weeks to say anything, so they'd have gone
+silent.
+
+The second: §31's "did the ramp fit?" verdict was guarded on the peak phase existing. My change makes
+the peak absent, so the verdict was forced to *false* on exactly the plans I'd changed. Not "the ramp
+fitted" — the question was asked of no weeks at all. Absence written as a value, again.
+
+**And a mutation that should have been easy came back green.** I made the new invariant count race week
+— the single mistake its own comment warns about — and every suite stayed green, even though the
+liveness harness wakes that rule. Liveness proves a rule *can* fire. It says nothing about whether it
+fires on the shape it was written for. So the shape now has its own file.
+
+**One more, and it cuts the other way.** I mutated the new constant 2 → 3, saw three suites stay green,
+and nearly filed a hole. It's caught by twenty-two tests across ten files — my falsification subset was
+too small. Fourth time today the mutation was the problem rather than the gate.
+
+**What I'm leaving undone, with a number on it.** Willy made it binding that a taper week carries its
+quality session rather than becoming a detraining week. Only 66.7% of them do. That's pre-existing and
+unchanged by this fix, and enforcing it as a refusal would refuse a third of every taper-carrying plan
+— hardest on the low-volume runners it's meant to protect. So it's filed with its measurement rather
+than shipped as a refusal, and the register says so.
+
+---
+
 ## 2026-11-28 — ADR027-B4C-VOLUME: I corrected a count, and my correction was wrong too
 
 Step 3 of the planner is the session placer, and it's 1,266 lines plus fifteen post-passes, so it

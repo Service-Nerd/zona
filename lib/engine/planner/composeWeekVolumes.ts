@@ -97,11 +97,13 @@ export function composeWeekVolumes(req: WeekVolumeRequest): WeekVolumePlan {
    *  last writer and only this function knows which that was. */
   const boundBy: (Decision['bound_by'])[] = new Array(totalWeeks).fill('INV-PLAN-DELIVERED-RAMP')
 
-  // ⚠️ THE `!` IS SAFE BY LUCK, NOT BY DESIGN, and B4a is what proved it. A race plan can have NO
-  // taper phase — `composeBlocks` drops an empty one, and the shortest producible 5K (5 weeks) has
-  // none (`BLOCK-TAPER-SQUEEZE-01`). This is `undefined` there. It never throws because pass 3
-  // `continue`s on every non-taper week, so with no taper phase the body that dereferences it does
-  // not run. Asserted in `composeWeekVolumes.test.ts` rather than left to the next reader.
+  // ⚠️ THE `!` IS SAFE BY RULING SINCE §49 Am. 1, AND WAS SAFE ONLY BY LUCK BEFORE IT.
+  // B4a proved a race plan could have NO taper phase — the shortest producible 5K (5 weeks) had
+  // none — so this was `undefined` on a real plan and never threw only because pass 3 `continue`s
+  // on every non-taper week. §49 Amendment 1 (BLOCK-TAPER-SQUEEZE-01, Coaching Board 2026-11-28)
+  // reserves the taper before §4's peak floor, so no producible plan lacks one now.
+  // 🔻 That is a WEAKER guarantee than it sounds: it holds only while the amendment does, so
+  // `composeWeekVolumes.test.ts` still asserts the no-throw against a SYNTHETIC taper-less phase list.
   const taperPhase = phases.find(p => p.name === 'taper')!
   const distKey = raceDistanceKey(distanceKm)
   const taperConfig = GENERATION_CONFIG.TAPER_BY_DISTANCE[distKey]
@@ -316,13 +318,21 @@ export function composeWeekVolumes(req: WeekVolumeRequest): WeekVolumePlan {
   // compressed-by-volume if peak-phase weeks never reach peakKm — i.e. the
   // cap forced the ramp short of target. Single-week firing in build is
   // expected and not flagged.
-  const peakPhase = phases.find(p => p.name === 'peak')
+  // 🔴 AND IT IS MEASURED ON THE HIGHEST LOADING PHASE PRESENT, NOT ALWAYS THE PEAK (B4c round 2).
+  // This read `phases.find(… 'peak')` and left `compressed` FALSE when there was none. §49 Am. 1
+  // makes the peak phase absent on a 5- or 6-week 5K, so the change would have forced the verdict
+  // false on exactly those plans — measured: a 5-week 5K beginner at 10 km/week flipped true →
+  // false. **That is absence written as a value**: with no peak phase the question "did the ramp
+  // reach target?" is not answered NO, it is asked of the wrong weeks. Found by code review, and
+  // ⚠️ `cohort:shape` could not have caught it — `cohortGrid`'s 5K is fixed at 12 weeks.
+  // The build phase IS the loading block on such a plan, so that is where the question belongs.
+  const loadingPhase = phases.find(p => p.name === 'peak') ?? phases.find(p => p.name === 'build')
   let compressed = false
-  if (peakPhase) {
+  if (loadingPhase) {
     const peakThreshold = peakKm * GENERATION_CONFIG.PEAK_REACHED_THRESHOLD_PCT / 100
     const peakReached = volumes.some((v, i) => {
       const wn = i + 1
-      return wn >= peakPhase.start_week && wn <= peakPhase.end_week && v >= peakThreshold
+      return wn >= loadingPhase.start_week && wn <= loadingPhase.end_week && v >= peakThreshold
     })
     compressed = !peakReached
   }
